@@ -1,0 +1,259 @@
+/** C06 selection workbench. Paint and geometry are intentionally different modes. */
+import type {BrushSurface} from '../brushSurface';
+import {rasterizeSelection,combineSelection,invertSelection,fullSelection,translateSelection,featherMask,boundsOfSelection,
+  type SelectionShape,type MaskData,type CombineMode} from './mask';
+import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection} from './store';
+
+export type SelectionWorkbench=Readonly<{
+  active:()=>MaskData|null;
+  documentChanged:()=>void;
+  refresh:()=>void;
+  applyRectangle:(rect:Readonly<{x:number;y:number;width:number;height:number}>)=>void;
+}>;
+type SelectionCallbacks=Readonly<{
+  getSurface:()=>BrushSurface|null;
+  getDocument:()=>{id:string;width:number;height:number}|null;
+  onMaskChanged:(mask:MaskData|null)=>void;
+}>;
+type Tool='rectangle'|'ellipse'|'lasso'|'polygon';
+const asButton=(label:string,fn:()=>void)=>{
+  const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=fn;
+  return button;
+};
+export function installSelectionWorkbench(callbacks:SelectionCallbacks):SelectionWorkbench{
+  const host=document.getElementById('documentBoxBody');
+  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},applyRectangle:()=>{}};
+  const panel=document.createElement('details');panel.className='c06-selection-panel';
+  const summary=document.createElement('summary');summary.textContent='選択範囲を編集';
+  const intro=document.createElement('p');
+  intro.textContent='選択の形を作り、足す・引く・重なる部分だけ残す操作ができます。解除しても描いた画素は消えません。';
+  const tools=document.createElement('div');tools.className='c06-selection-tools';
+  const modes=document.createElement('div');modes.className='c06-selection-tools';
+  const actions=document.createElement('div');actions.className='c06-selection-tools';
+  const saveArea=document.createElement('div');saveArea.className='c06-selection-save';
+  const status=document.createElement('output');status.setAttribute('role','status');
+  const mode=document.createElement('select');mode.setAttribute('aria-label','選択範囲を組み合わせる方法');
+  for(const [key,label] of [
+    ['replace','新しい範囲に置き換える'],['add','範囲を足す'],
+    ['subtract','範囲を引く'],['intersect','重なる部分だけ残す']
+  ] as const)mode.add(new Option(label,key));
+  modes.append(mode);
+  const shapeButtons=new Map<Tool,HTMLButtonElement>();
+  let tool:Tool|null=null,active:MaskData|null=null,
+    currentDocumentId:string|null=null,points:{x:number;y:number}[]=[],
+    drawing:{pointer:number;first:{x:number;y:number}}|null=null;
+  const history:MaskData[]=[];const future:MaskData[]=[];
+  let previous:MaskData|null=null;let lastSelection:MaskData|null=null;
+  const viewport=document.querySelector<HTMLElement>('.surface');
+  const box=document.createElement('div');box.className='c06-selection-notice';box.hidden=true;
+  const preview=document.createElement('svg');
+  preview.classList.add('c06-selection-preview');preview.setAttribute('aria-hidden','true');
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  preview.append(path);
+  viewport?.append(preview,box);
+  let currentWork:null|string=null;
+  const source=()=>{
+    const info=callbacks.getDocument();
+    if(!info||!callbacks.getSurface())return null;
+    if(info.id!==currentWork){
+      currentWork=info.id;active=null;lastSelection=null;history.length=0;future.length=0;
+      tool=null;points=[];drawing=null;callbacks.onMaskChanged(null);refresh();
+    }
+    return info;
+  };
+  const toDoc=(e:PointerEvent)=>{
+    const drawing=callbacks.getSurface(),rect=drawing?.viewportRect;
+    if(!drawing||!rect)return {x:0,y:0};
+    return drawing.screenToDocument({x:e.clientX-rect.left,y:e.clientY-rect.top});
+  };
+  function overlayPath(){
+    const drawingSurface=callbacks.getSurface();
+    if(!viewport||!drawingSurface||!tool||points.length===0){
+      preview?.setAttribute('data-empty','true');return;
+    }
+    const viewPoints=points.map(p=>drawingSurface.documentToScreen(p));
+    const d=(tool==='rectangle'||tool==='ellipse')&&viewPoints.length>=2?
+      (()=>{const a=viewPoints[0]!,b=viewPoints.at(-1)!;
+        if(tool==='rectangle')return [
+          'M',a.x,a.y,'L',b.x,a.y,'L',b.x,b.y,'L',a.x,b.y,'Z'].join(' ');
+        const x=(a.x+b.x)/2,y=(a.y+b.y)/2,rx=Math.abs(b.x-a.x)/2,ry=Math.abs(b.y-a.y)/2;
+        return 'M '+(x-rx)+' '+y+' a '+rx+' '+ry+' 0 1 0 '+2*rx+' 0 a '+rx+' '+ry+' 0 1 0 '+(-2*rx)+' 0';
+      })():viewPoints.map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
+    path.setAttribute('d',d);preview.setAttribute('data-empty','false');
+  }
+  function publish(next:MaskData|null,record=true){
+    const doc=source();if(!doc)return;
+    if(next&&(next.width!==doc.width||next.height!==doc.height))throw Error('作品と選択範囲の大きさが異なります。');
+    if(record){if(active)history.push(active);else if(lastSelection)history.push(lastSelection);
+      if(history.length>30)history.shift();future.length=0;}
+    if(active)lastSelection=active;
+    active=next;
+    const bounds=active?boundsOfSelection(active):null;
+    callbacks.getSurface()?.restoreRectangleSelection(bounds);
+    callbacks.onMaskChanged(active);
+    box.hidden=!active;
+    box.textContent=bounds?'選択中：'+bounds.width+'×'+bounds.height+'px'+
+      ' · 加算・減算・解除ができます。':'選択範囲はありません。';
+    status.textContent=bounds?'選択範囲を更新しました。':'選択を解除しました。';
+    refresh();
+  }
+  function applyShape(shape:SelectionShape){
+    const doc=source();if(!doc)return;
+    const result=rasterizeSelection(shape,doc.width,doc.height);
+    const next=combineSelection(active,result,mode.value as CombineMode);
+    publish(next);
+    points=[];drawing=null;overlayPath();tool=null;refresh();
+  }
+  function endStroke(){
+    if(!drawing||!tool)return;
+    if(points.length<2){points=[];drawing=null;overlayPath();return;}
+    if(tool==='rectangle'||tool==='ellipse'){
+      const a=points[0]!,b=points.at(-1)!;
+      applyShape({type:tool,x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),width:Math.abs(b.x-a.x),height:Math.abs(b.y-a.y)});
+    }else if(tool==='lasso'&&points.length>=3)applyShape({type:'lasso',points});
+    else{points=[];drawing=null;overlayPath();}
+  }
+  function arm(shape:Tool){
+    const doc=source();if(!doc)return;
+    tool=tool===shape?null:shape;points=[];drawing=null;
+    callbacks.getSurface()?.setSelectionMode(false);
+    refresh();overlayPath();
+  }
+  for(const [name,label] of [
+    ['rectangle','四角形'],['ellipse','楕円'],['lasso','投げ縄'],['polygon','多角形']
+  ] as const){
+    const button=asButton(label,()=>arm(name));shapeButtons.set(name,button);tools.append(button);
+  }
+  const undoPoint=asButton('直前の点を戻す',()=>{
+    if(tool==='polygon'){points.pop();overlayPath();refresh();}
+  });
+  const finishPolygon=asButton('多角形を閉じる',()=>{
+    if(tool==='polygon'&&points.length>=3)applyShape({type:'polygon',points});
+  });
+  tools.append(undoPoint,finishPolygon);
+  const all=asButton('すべて選ぶ',()=>{const d=source();if(d)publish(fullSelection(d.width,d.height));});
+  const clear=asButton('選択を解除',()=>publish(null));
+  const reselect=asButton('直前を選び直す',()=>{if(lastSelection)publish(lastSelection);});
+  const invert=asButton('選択を反転',()=>{
+    const d=source();if(d)publish(invertSelection(active??fullSelection(d.width,d.height)));
+  });
+  const shift=asButton('境界だけ移動',()=>{
+    if(!active)return;
+    const dx=window.prompt('横に何pxずらしますか？','0');if(dx===null)return;
+    const dy=window.prompt('縦に何pxずらしますか？','0');if(dy===null)return;
+    if(!Number.isFinite(Number(dx))||!Number.isFinite(Number(dy)))return;
+    publish(translateSelection(active,Number(dx),Number(dy)));
+  });
+  const feather=asButton('選択の縁をぼかす',()=>{
+    if(!active)return;
+    const value=window.prompt('ぼかし幅 0〜32px','3');if(value===null)return;
+    const amount=Number(value);if(!Number.isInteger(amount)||amount<0||amount>32){status.textContent='0〜32pxで指定してください。';return;}
+    publish(featherMask(active,amount));
+  });
+  const undo=asButton('選択だけ元に戻す',()=>{
+    if(!history.length)return;
+    const prior=history.pop()!;if(active)future.push(active);
+    publish(prior,false);
+  });
+  const redo=asButton('選択だけやり直す',()=>{
+    if(!future.length)return;
+    if(active)history.push(active);
+    publish(future.pop()!,false);
+  });
+  actions.append(all,clear,reselect,invert,shift,feather,undo,redo);
+  const named=document.createElement('select');named.setAttribute('aria-label','保存した選択範囲');
+  const save=asButton('名前を付けて保存',()=>void saveCurrent());
+  const load=asButton('保存した範囲を使う',()=>void loadCurrent());
+  const remove=asButton('保存した範囲を削除',()=>void deleteCurrent());
+  saveArea.append(named,save,load,remove);
+  async function updateNamed(){
+    const doc=source();if(!doc)return;
+    const previousName=named.value;
+    const list=await listSavedSelections(doc.id);
+    if(source()?.id!==doc.id)return;
+    named.replaceChildren(new Option('保存した範囲を選ぶ',''),...list.map(x=>new Option(x.name,x.id)));
+    if(list.some(item=>item.id===previousName))named.value=previousName;
+  }
+  async function saveCurrent(){
+    const doc=source();if(!doc||!active)return;
+    const name=window.prompt('選択範囲の名前','選択範囲');if(!name)return;
+    try{await saveNamedSelection(doc.id,name,active);await updateNamed();status.textContent='選択範囲を保存しました。';}
+    catch(error){status.textContent=String(error);}
+  }
+  async function loadCurrent(){
+    const doc=source();if(!doc)return;
+    try{
+      const entry=(await listSavedSelections(doc.id)).find(x=>x.id===named.value);
+      if(!entry)throw Error('保存した範囲が見つかりません。');
+      const mask=await loadNamedSelection(entry);
+      if(mask.width!==doc.width||mask.height!==doc.height)throw Error('キャンバスサイズが違います。移し替えるときは座標を調整してください。');
+      publish(combineSelection(active,mask,mode.value as CombineMode));
+    }catch(error){status.textContent=String(error);}
+  }
+  async function deleteCurrent(){
+    const doc=source();if(!doc||!named.value)return;
+    if(!window.confirm('保存した選択範囲を削除しますか？ 現在の選択は維持します。'))return;
+    await deleteNamedSelection(named.value);await updateNamed();
+  }
+  panel.append(summary,intro,modes,tools,actions,saveArea,status);host.append(panel);
+  panel.addEventListener('toggle',()=>{if(panel.open)void updateNamed();});
+  function refresh(){
+    for(const [name,button] of shapeButtons){button.setAttribute('aria-pressed',String(tool===name));}
+    undoPoint.disabled=tool!=='polygon'||points.length===0;
+    finishPolygon.disabled=tool!=='polygon'||points.length<3;
+    const enabled=!!active;
+    for(const button of [clear,invert,shift,feather])button.disabled=!enabled;
+    reselect.disabled=!lastSelection;undo.disabled=!history.length;redo.disabled=!future.length;
+    save.disabled=!enabled;
+  }
+  // Intercept only while intentionally entering a selection gesture. In all other
+  // cases brush, pen, touch navigation and pointer capture remain untouched.
+  document.addEventListener('pointerdown',event=>{
+    if(!tool||!source()||!viewport||!(event.target instanceof Element)||!event.target.closest('.surface')||
+      event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame')||
+      event.button!==0)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    const point=toDoc(event);
+    if(tool==='polygon'){
+      if(points.length<4096)points.push(point);
+      overlayPath();refresh();return;
+    }
+    if(drawing)return;
+    drawing={pointer:event.pointerId,first:point};
+    points=[point,point];overlayPath();
+  },true);
+  document.addEventListener('pointermove',event=>{
+    if(!drawing||event.pointerId!==drawing.pointer||!tool)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    const point=toDoc(event);
+    if(tool==='lasso'){
+      const last=points.at(-1)!;
+      if(Math.hypot(point.x-last.x,point.y-last.y)>2&&points.length<4096)points.push(point);
+    }else points[1]=point;
+    overlayPath();
+  },true);
+  document.addEventListener('pointerup',event=>{
+    if(!drawing||event.pointerId!==drawing.pointer)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    const point=toDoc(event);
+    if(tool==='lasso'){if(points.length<4096)points.push(point);}
+    else points[1]=point;
+    endStroke();
+  },true);
+  document.addEventListener('pointercancel',event=>{
+    if(!drawing||event.pointerId!==drawing.pointer)return;
+    drawing=null;points=[];overlayPath();
+  },true);
+  const documentChanged=()=>{currentWork=null;source();void updateNamed();};
+  refresh();documentChanged();
+  return {
+    active:()=>active,
+    documentChanged,
+    refresh,
+    applyRectangle:rect=>{
+      const doc=source();if(!doc)return;
+      publish(combineSelection(active,
+        rasterizeSelection({type:'rectangle',...rect},doc.width,doc.height),mode.value as CombineMode));
+    }
+  };
+}
