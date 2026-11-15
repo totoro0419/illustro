@@ -1,6 +1,6 @@
 import {ContiguousProtection} from './contiguousProtection';
 import {hasPixelData} from './pixelPresence';
-import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,updateWork,deleteWork,resetWorkLibrary,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
+import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,updateWork,deleteWork,restoreWork,purgeWork,resetWorkLibrary,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
 import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
 import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
 import {makeEditorState,readEditorState} from './editorState';
@@ -102,7 +102,27 @@ async function handle(message:RequestMessage){
       const id=uuid(message.documentId,'document id'),name=String(message.name??'').trim().slice(0,120);if(!name)throw new Error('作品名を入力してください。');
       await updateWork(id,entry=>({...entry,name,updatedAt:Date.now()}));if(libraryWork?.documentId===id)libraryWork={...libraryWork,name};reply(message.id,true,{});break;
     }
-    case 'library-delete':{const id=uuid(message.documentId,'document id');await deleteWork(id);if(libraryWork?.documentId===id)libraryWork=null;try{await store.removeTree('m05/sessions/'+id);await store.removeTree('m05/documents/'+id);}catch{}reply(message.id,true,{});break;}
+    case 'library-delete':{
+      const id=uuid(message.documentId,'document id');
+      await deleteWork(id);
+      if(libraryWork?.documentId===id)libraryWork=null;
+      // C05: keep OPFS journals so the user can restore from Trash.
+      reply(message.id,true,{trashed:true});break;
+    }
+    case 'library-restore':{
+      const id=uuid(message.documentId,'document id');
+      await restoreWork(id);reply(message.id,true,{restored:true});break;
+    }
+    case 'library-purge':{
+      const id=uuid(message.documentId,'document id'),work=await getWork(id);
+      if(!work?.trashedAt)throw Error('完全削除はゴミ箱にある作品だけ実行できます。');
+      // Delete recovery data first; leave the catalog until this finishes.
+      await store.removeTree('m05/sessions/'+id);
+      await store.removeTree('m05/documents/'+id);
+      await purgeWork(id);
+      if(libraryWork?.documentId===id)libraryWork=null;
+      reply(message.id,true,{purged:true});break;
+    }
     case 'library-reset':{
       // Debug-only full initialization: remove internal works AND recovery files,
       // so a deleted artwork cannot reappear under the Resume section.
