@@ -41,6 +41,7 @@ export class DocumentTransaction{
       this.setLayerOpacity(id,source.opacity);
       this.setLayerVisibility(id,source.visible);
       if(source.colorTag)this.setLayerColorTag(id,source.colorTag);
+      if(source.clipSourceId)this.meta(id,{clipSourceId:source.clipSourceId});
     }
     const layer=this.updatesValue.get(id)!;
     if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('対応していない画素形式です。');
@@ -322,6 +323,14 @@ export class DocumentTransaction{
   renameLayer(id:LayerId,name:string){return this.meta(id,{name:name.trim()});}
   setLayerVisibility(id:LayerId,visible:boolean){return this.meta(id,{visible});}
   setLayerLocked(id:LayerId,locked:boolean){return this.meta(id,{locked});}
+  setLayerClipping(id:LayerId,enabled:boolean){
+    const layer=this.rootValue.getLayer(id);
+    if(layer.baseColor==='white')throw new Error('白背景にはクリッピングを設定できません。');
+    const source=enabled?this.rootValue.availableClippingSource(id):null;
+    if(enabled&&!source)throw new Error('同じグループにクリッピング元となる下のレイヤーがありません。');
+    if((layer.clipSourceId??null)===(source?.id??null))return false;
+    return this.meta(id,{clipSourceId:source?.id??null});
+  }
   setLayerAlphaLocked(id:LayerId,alphaLocked:boolean){
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if((layer.alphaLocked??false)===alphaLocked)return false;
@@ -348,7 +357,7 @@ export class DocumentTransaction{
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'|'clipSourceId'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

@@ -606,9 +606,11 @@ export class BrushSurface{
       const visible=this.layerCompPreview
         ?(candidate?.visible??layer.visible)&&root.groupsForLayer(layer.id).every(group=>groups?.get(group.id)??group.visible)
         :root.isLayerVisible(layer.id);
+      const clip=root.clippingSource(layer.id);
       return {
         surfaceKey:layer.surface.descriptor.surfaceId,
         visible:solo?layer.id===solo.id:visible,
+        ...(!solo&&clip?{clipKey:clip.surface.descriptor.surfaceId}:{}),
         opacity:preview?.layerId===layer.id?preview.opacity:candidate?.opacity??layer.opacity,
       };
     }));

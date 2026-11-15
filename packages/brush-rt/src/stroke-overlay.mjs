@@ -38,7 +38,7 @@ export function previewPlan(view,preset={},ratio='auto'){
 }
 export function directOverlaySupported(p,surfaceKey,backend){
  const style=backend.surfaceStyles?.get(surfaceKey);
- return !!p?.__foundation&&!p.__alphaLocked&&p.blend==='normal'&&surfaceKey===backend.surfaceStack.filter(key=>{const s=backend.surfaceStyles?.get(key);return s?.visible!==false&&(s?.opacity??1)>0;}).at(-1)&&(!style||(style.visible!==false&&(style.opacity??1)===1&&(style.blend??'normal')==='normal'&&!style.mask&&!style.clipping))&&!p.__foundation.readsCanvas;
+ return ![...backend.surfaceStyles?.values()??[]].some(style=>style.clipKey!==undefined)&&!!p?.__foundation&&!p.__alphaLocked&&p.blend==='normal'&&surfaceKey===backend.surfaceStack.filter(key=>{const s=backend.surfaceStyles?.get(key);return s?.visible!==false&&(s?.opacity??1)>0;}).at(-1)&&(!style||(style.visible!==false&&(style.opacity??1)===1&&(style.blend??'normal')==='normal'&&!style.mask&&!style.clipping))&&!p.__foundation.readsCanvas;
 }
 export function thinCoverage(radius,distance){return 2*radius*clamp(1-distance);}
 function accumulate(a,i,c,k,p){k*=c[6];const old=a[i+3];if(p.__foundation.coverageUnion||continuous(p)){const d=Math.max(0,k*c[5]-old);for(let j=0;j<3;j++)a[i+j]+=c[8+j]*d;a[i+3]+=d;}else if(p.__foundation.material){const x=k*c[5];for(let j=0;j<3;j++)a[i+j]=a[i+j]*(1-x)+c[8+j]*x;a[i+3]+=x*(1-old);}else{const d=Math.max(0,c[5]-old)*k;for(let j=0;j<3;j++)a[i+j]+=c[8+j]*d;a[i+3]+=d;}}

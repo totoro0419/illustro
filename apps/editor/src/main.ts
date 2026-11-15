@@ -278,7 +278,11 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
     const first=root.rootLayerIds.indexOf(sourceOrder[0]!),last=root.rootLayerIds.indexOf(sourceOrder.at(-1)!);
     const interleaved=last-first+1!==ids.size;
     const message=ids.size+'枚を一枚に結合します。非表示の内容と個別のレイヤー設定は結合後のレイヤーに残りません。';
-    if(!window.confirm(message+(interleaved?' 間にあるレイヤーとの重なり順が変わる場合があります。':'')))return;
+    const externalClip=root.rootLayerIds.some(id=>{
+      const base=root.clippingSource(id);
+      return base&&ids.has(base.id)!==ids.has(id);
+    });
+    if(!window.confirm(message+(externalClip?' 結合範囲の外とのクリッピング関係が変わります。':'')+(interleaved?' 間にあるレイヤーとの重なり順が変わる場合があります。':'')))return;
   }
   geometryBusy=true;
   drawing.setInputBarrier(true);
@@ -286,7 +290,12 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
   byId('status').textContent=label+'しています。';
   try{
     const head=document.head;
-    const snapshots=await drawing.captureDocumentLayers(ids);
+    const captureIds=new Set(ids);
+    if(mode!=='duplicate')for(const id of ids){
+      const clip=root.clippingSource(id);
+      if(clip&&root.isLayerVisible(clip.id))captureIds.add(clip.id);
+    }
+    const snapshots=await drawing.captureDocumentLayers(captureIds);
     if(surface!==drawing||controller.document!==document||document.head!==head)throw new Error('作品が変わったため操作を取り消しました。');
     const reference=mode==='copy'?root.rootLayerIds.at(-1)!:mode==='merge'?(sourceOrder.findLast(id=>root.isLayerVisible(id))??sourceOrder.at(-1)!):sourceOrder.at(-1)!;
     let pixels:Uint8Array|Uint8ClampedArray;
@@ -295,7 +304,9 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
     }else{
       const combined=new Uint8ClampedArray(root.width*root.height*4);
       for(const id of sourceOrder){
-        if(root.isLayerVisible(id))compositeLayer(combined,snapshots.get(id)!,root.getLayer(id).opacity);
+        const clip=root.clippingSource(id);
+        if(!root.isLayerVisible(id)||(clip&&!root.isLayerVisible(clip.id)))continue;
+        compositeLayer(combined,snapshots.get(id)!,root.getLayer(id).opacity,clip?{pixels:snapshots.get(clip.id)!,opacity:clip.opacity}:undefined);
       }
       pixels=combined;
     }
@@ -325,7 +336,13 @@ function visibleLayerIds(){
 
 function deleteLayers(ids:ReadonlySet<LayerId>){
   if(!ids.size)return;
-  if(!window.confirm(ids.size===1?'このレイヤーを削除しますか？':ids.size+'枚のレイヤーを削除しますか？'))return;
+  const root=controller.document.root;
+  const affected=root.rootLayerIds.filter(id=>{
+    const source=root.getLayer(id).clipSourceId;
+    return !ids.has(id)&&source&&ids.has(source);
+  }).length;
+  const message=ids.size===1?'このレイヤーを削除しますか？':ids.size+'枚のレイヤーを削除しますか？';
+  if(!window.confirm(message+(affected?' '+affected+'枚のレイヤーのクリッピングが外れます。':'')))return;
   changeLayer('レイヤーを削除しました。',tx=>tx.deleteRasterLayers(ids));
 }
 
@@ -560,6 +577,11 @@ const renderLayers=()=>{
   batchButton.setAttribute('aria-pressed',String(layerBatchMode));
   byId('layerBatchActions').hidden=!layerBatchMode;
   byId('layerBatchCount').textContent=layerBatchIds.size+'枚を選択';
+  const clipControl=byId<HTMLButtonElement>('layerClipping'),clip=root.clippingSource(selectedLayer.id);
+  clipControl.textContent=selectedLayer.clipSourceId?'クリッピングを解除':'下の絵でクリップ';
+  clipControl.setAttribute('aria-pressed',String(!!selectedLayer.clipSourceId));
+  clipControl.disabled=!documentReady||(!selectedLayer.clipSourceId&&!root.availableClippingSource(selectedLayer.id));
+  byId('layerClippingStatus').textContent=clip?'クリップ元 '+clip.name:selectedLayer.clipSourceId?'クリッピング元が見つかりません。':'';
   const alphaLock=byId<HTMLButtonElement>('layerAlphaLock');
   alphaLock.disabled=!documentReady||selectedLayer.baseColor==='white';
   alphaLock.textContent=selectedLayer.alphaLocked?'不透明度ロックを解除':'不透明度をロック';
@@ -646,7 +668,7 @@ const renderLayers=()=>{
         row.dataset.colorTag=layer.colorTag;
         row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
       }
-      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
+      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',layer.clipSourceId?(root.clippingSource(layer.id)?'クリップ中':'クリップ元なし'):'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
       row.onclick=event=>{
         if(batchRow){
@@ -810,6 +832,10 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   renderLayers();
 };
 byId<HTMLButtonElement>('pickLayerOnCanvas').onclick=pickLayerOnCanvas;
+byId<HTMLButtonElement>('layerClipping').onclick=()=>{
+  const layer=controller.selectedLayer;
+  changeLayer(layer.clipSourceId?'クリッピングを解除しました。':'クリッピングを設定しました。',tx=>tx.setLayerClipping(layer.id,!layer.clipSourceId));
+};
 byId<HTMLButtonElement>('layerAlphaLock').onclick=()=>{
   const layer=controller.selectedLayer;
   changeLayer(layer.alphaLocked?'不透明度のロックを解除しました。':'不透明度をロックしました。',tx=>tx.setLayerAlphaLocked(layer.id,!layer.alphaLocked));

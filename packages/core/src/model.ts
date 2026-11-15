@@ -20,6 +20,7 @@ export type LayerNode=Readonly<{
   colorTag?:LayerColorTag|null;
   positionLocked?:boolean;
   alphaLocked?:boolean;
+  clipSourceId?:LayerId|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number}>;
@@ -41,6 +42,23 @@ export class DocumentRoot{
   get layerGroups(){return this.metadata.layerGroups??EMPTY_LAYER_GROUPS;}
   groupsForLayer(id:LayerId){return groupsForLayer(this.layerGroups,id);}
   isLayerVisible(id:LayerId){return this.getLayer(id).visible&&this.groupsForLayer(id).every(group=>group.visible);}
+  clippingSource(id:LayerId){
+    const source=this.getLayer(id).clipSourceId;
+    if(!source||!this.hasLayer(source))return null;
+    if(this.rootLayerIds.indexOf(source)>=this.rootLayerIds.indexOf(id))return null;
+    if(this.groupsForLayer(id).at(-1)?.id!==this.groupsForLayer(source).at(-1)?.id)return null;
+    return this.getLayer(source);
+  }
+  availableClippingSource(id:LayerId){
+    const parent=this.groupsForLayer(id).at(-1)?.id;
+    let index=this.rootLayerIds.indexOf(id)-1;
+    for(;index>=0;index--){
+      const candidate=this.getLayer(this.rootLayerIds[index]!);
+      if(this.groupsForLayer(candidate.id).at(-1)?.id!==parent)return null;
+      if(!this.clippingSource(candidate.id))return candidate;
+    }
+    return null;
+  }
   isLayerPositionLocked(id:LayerId){return this.isLayerLocked(id)||!!this.getLayer(id).positionLocked;}
   isLayerLocked(id:LayerId){return this.getLayer(id).locked||this.groupsForLayer(id).some(group=>group.locked);}
   withLayerGroups(groups:readonly LayerGroup[]){

@@ -202,13 +202,28 @@ export const glFeedbackComposeVertex=glDisplayVertex.replace('vec2 p=doc/params[
 export const glFeedbackCompose=glDisplay.replace('pos=ivec2(gl_FragCoord.xy)', 'pos=ivec2(q.x,127-q.y)').replace('result=vec4(d.rgb*d.a,d.a);', 'result=d;');
 // Same quantized composition, directly into the retained scene. Sparse previews
 // use tile-local feedback coordinates; no intermediate RGBA8 copy is needed.
-export const glFeedbackDirect=glDisplay.replace('pos=ivec2(gl_FragCoord.xy)', 'pos=ivec2(q.x,127-q.y)');
+const glClipCoverage=`float clipCoverage(ivec2 q){
+ float kind=params[7].y;
+ if(kind<.5)return 1.;
+ if(kind<1.5)return params[7].z;
+ if(kind>2.5)q.y=127-q.y;
+ return texelFetch(archiveImage,q,0).a*params[7].z;
+}`;
+const wgClipCoverage=`fn clipCoverage(q:vec2i)->f32{
+ let kind=p.v[7].y;
+ if(kind<.5){return 1.;}
+ if(kind<1.5){return p.v[7].z;}
+ return textureLoad(archiveImage,q,0).a*p.v[7].z;
+}`;
+export const glFeedbackDirect=glDisplay.replace('pos=ivec2(gl_FragCoord.xy)', 'pos=ivec2(q.x,127-q.y)').replace('void main()',glClipCoverage+'\nvoid main()');
 export const glFeedbackContinue=glFeedbackCompose.replace('d=texelFetch(layer,q,0)', 'd=texelFetch(layer,ivec2(q.x,127-q.y),0)');
 export const glFeedbackTile=`#version 300 es
-precision highp float;uniform vec4 params[16];uniform sampler2D layer;in vec2 doc;out vec4 result;
+precision highp float;uniform vec4 params[16];uniform sampler2D layer,archiveImage;in vec2 doc;out vec4 result;
+${glClipCoverage}
 void main(){ivec2 q=ivec2(doc-params[0].xy);vec4 color=texelFetch(layer,ivec2(q.x,127-q.y),0);result=vec4(color.rgb*color.a,color.a);}`;
 export const wgFeedbackCompose=wgDisplay.replace('let xy=o.doc/p.v[4].xy;', 'let xy=corner;').replace('return vec4f(d.rgb*d.a,d.a);', 'return d;');
 export const wgFeedbackTile=wgDisplay.slice(0,wgDisplay.indexOf('@fragment fn fragment('))+`
+${wgClipCoverage}
 @fragment fn fragment(v:VOut)->@location(0)vec4f{let q=vec2i(v.doc-p.v[0].xy);let color=textureLoad(layer,q,0);return vec4f(color.rgb*color.a,color.a);}`;
 
-export const wgFeedbackDirect=wgDisplay.replaceAll('preview(i,vec2i(v.position.xy))','preview(i,q)').replaceAll('preview(i+1,vec2i(v.position.xy))','preview(i+1,q)');
+export const wgFeedbackDirect=wgDisplay.replace('@fragment fn fragment(',wgClipCoverage+'\n@fragment fn fragment(').replaceAll('preview(i,vec2i(v.position.xy))','preview(i,q)').replaceAll('preview(i+1,vec2i(v.position.xy))','preview(i+1,q)');
