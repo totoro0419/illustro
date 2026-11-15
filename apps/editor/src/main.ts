@@ -14,6 +14,7 @@ import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
+import {layerBlendNames,openLayerBlendDialog} from './ui/layerBlendDialog';
 import {drawMaskPreview,paintPixelMask} from './layerMaskEditing';
 import {penEraserInput} from './stylusButtons';
 import {parseSavedCanvasView} from './canvasView';
@@ -308,7 +309,7 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
         const clip=root.clippingSource(id);
         if(!root.isLayerVisible(id)||(clip&&!root.isLayerVisible(clip.id)))continue;
         const item=root.getLayer(id);
-        compositeLayer(combined,snapshots.get(id)!,item.opacity,clip?{pixels:snapshots.get(clip.id)!,opacity:clip.opacity,mask:clip.vectorMask??null}:undefined,{width:root.width,mask:item.vectorMask??null});
+        compositeLayer(combined,snapshots.get(id)!,item.opacity,clip?{pixels:snapshots.get(clip.id)!,opacity:clip.opacity,mask:clip.vectorMask??null}:undefined,{width:root.width,mask:item.vectorMask??null,blend:item.blend??null});
       }
       pixels=combined;
     }
@@ -576,40 +577,52 @@ function pickLayerOnCanvas(){
       return;
     }
     const dialog=document.createElement('dialog'),form=document.createElement('form');
-    const title=document.createElement('h2'),options=document.createElement('select'),label=document.createElement('label');
+    const title=document.createElement('h2'),list=document.createElement('fieldset'),legend=document.createElement('legend');
     const choose=document.createElement('button'),close=document.createElement('button');
     title.textContent='この場所に重なるレイヤー';
-    label.textContent='上のレイヤーから順に表示 ';
+    legend.textContent='上のレイヤーから順に表示';
+    list.append(legend);
+    let candidate=ids[0]!;
+    const lock=artwork.root;
     for(const id of ids){
-      const root=artwork.root,layer=root.getLayer(id);
-      options.add(new Option(layer.name+(root.isLayerLocked(id)?'（ロック中）':''),id));
+      const layer=lock.getLayer(id),radio=document.createElement('input'),label=document.createElement('label');
+      radio.type='radio';radio.name='layerCandidate';radio.value=id;radio.checked=id===candidate;
+      radio.onchange=()=>{candidate=id;void drawing.showLayerOutline(id);};
+      radio.onfocus=()=>{void drawing.showLayerOutline(id);};
+      label.onpointerenter=event=>{if(event.pointerType==='mouse')void drawing.showLayerOutline(id);};
+      label.append(radio,layer.name+(lock.isLayerLocked(id)?'（ロック中）':''));
+      list.append(label);
     }
-    label.append(options);
-    const initialSolo=drawing.inspectedLayer?.id??null;
-    options.onchange=()=>drawing.setSoloLayer(options.value as LayerId);
+    list.onpointerleave=()=>{void drawing.showLayerOutline(candidate);};
     form.method='dialog';
     choose.type='submit';choose.value='choose';choose.textContent='描画先に選ぶ';
     close.type='submit';close.value='cancel';close.textContent='取消';
-    form.append(title,label,choose,close);
-    dialog.className='export-dialog';
+    form.append(title,list,choose,close);
+    dialog.className='layer-blend-dialog layer-pick-dialog';
     dialog.setAttribute('aria-label','この場所に重なるレイヤー');
     dialog.append(form);
     document.body.append(dialog);
+    drawing.setInputBarrier(true);
+    const key=(event:KeyboardEvent)=>{
+      if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close('cancel');}
+    };
+    window.addEventListener('keydown',key);
     dialog.addEventListener('close',()=>{
+      window.removeEventListener('keydown',key);
       dialog.remove();
+      void drawing.showLayerOutline(null);
       if(surface!==drawing||controller.document!==artwork)return;
-      drawing.setSoloLayer(initialSolo&&artwork.root.hasLayer(initialSolo)?initialSolo:null);
-      if(dialog.returnValue==='choose'&&artwork.root.hasLayer(options.value as LayerId)){
-        const id=options.value as LayerId;
-        controller.selectLayer(id);
-        if(!qaMode)void persistence.selectWorkLayer(id).catch(showStorageError);
+      drawing.setInputBarrier(false);
+      if(dialog.returnValue==='choose'&&artwork.root.hasLayer(candidate)){
+        controller.selectLayer(candidate);
+        if(!qaMode)void persistence.selectWorkLayer(candidate).catch(showStorageError);
         byId('status').textContent=controller.selectedLayer.name+'を描画先に選びました。';
       }
       shellUi.setLayerPage(true);
       renderLayers();updateQa();
     },{once:true});
-    drawing.setSoloLayer(ids[0]!);
-    dialog.showModal();
+    dialog.show();
+    void drawing.showLayerOutline(candidate);
   });
 }
 
@@ -677,6 +690,33 @@ function groupLayerRow(group:LayerGroup,depth:number){
   return row;
 }
 
+let activeBlend:{dialog:HTMLDialogElement;drawing:BrushSurface;id:LayerId}|null=null;
+function editLayerBlend(){
+  const drawing=surface,artwork=controller.document,layer=controller.selectedLayer;
+  if(!drawing||drawing.busy||geometryBusy||historyPending||layer.baseColor==='white')return;
+  activeBlend?.dialog.close('cancel');
+  stopLayerCompComparison();
+  stopMaskEditing();
+  stopMaskInspection();
+  updateVectorMaskControls();
+  if(drawing.inspectedLayer)drawing.setSoloLayer(null);
+  shellUi.setLayerPage(false);
+  const dialog=openLayerBlendDialog({
+    title:layer.name,
+    current:layer.blend??{mode:'normal',space:'encoded',seed:parseInt(layer.id.slice(-8),16)>>>0},
+    preview:blend=>drawing.setLayerBlendPreview(blend?{layerId:layer.id,blend}:null),
+    complete:blend=>{
+      if(activeBlend?.dialog!==dialog)return;
+      activeBlend=null;
+      drawing.setLayerBlendPreview(null);
+      if(blend&&surface===drawing&&controller.document===artwork&&artwork.root.hasLayer(layer.id)){
+        changeLayer('レイヤーの合成モードを変更しました。',tx=>tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'?null:blend));
+      }
+    },
+  });
+  activeBlend={dialog,drawing,id:layer.id};
+}
+
 let layerCompComparison:{surface:BrushSurface;id:LayerId}|null=null;
 
 function selectedLayerComp(){
@@ -704,7 +744,7 @@ function renderLayerComps(){
   const saved=new Set(comp?.layers.map(layer=>layer.id));
   const deleted=comp?.layers.filter(layer=>!root.hasLayer(layer.id)).length??0;
   const added=comp?root.rootLayerIds.filter(id=>!saved.has(id)).length:0;
-  const attributes=comp?[comp.saveVisibility?'表示':'',comp.saveOpacity?'不透明度':''].filter(Boolean).join('・'):'';
+  const attributes=comp?[comp.saveVisibility?'表示':'',comp.saveOpacity?'不透明度':'',comp.saveBlend?'合成モード':''].filter(Boolean).join('・'):'';
   byId('layerCompStatus').textContent=comp
     ?attributes+(deleted||added?'。削除済み '+deleted+'枚、追加 '+added+'枚は適用対象外。':'')
     :'保存した表示案はありません。';
@@ -713,8 +753,9 @@ function saveLayerComp(comp?:LayerComp){
   const name=byId<HTMLInputElement>('layerCompName').value.trim();
   const visibility=byId<HTMLInputElement>('layerCompVisibility').checked;
   const opacity=byId<HTMLInputElement>('layerCompOpacity').checked;
+  const blend=byId<HTMLInputElement>('layerCompBlend').checked;
   stopLayerCompComparison();
-  changeLayer(comp?'表示案を更新しました。':'表示案を保存しました。',tx=>tx.saveLayerComp(name||comp?.name||'',visibility,opacity,comp?.id));
+  changeLayer(comp?'表示案を更新しました。':'表示案を保存しました。',tx=>tx.saveLayerComp(name||comp?.name||'',visibility,opacity,comp?.id,blend));
 }
 function loadLayerCompFields(){
   const comp=selectedLayerComp();
@@ -722,6 +763,7 @@ function loadLayerCompFields(){
   name.value=comp?.name??'';
   byId<HTMLInputElement>('layerCompVisibility').checked=comp?.saveVisibility??true;
   byId<HTMLInputElement>('layerCompOpacity').checked=comp?.saveOpacity??true;
+  byId<HTMLInputElement>('layerCompBlend').checked=comp?!!comp.saveBlend:true;
 }
 
 const renderLayers=()=>{
@@ -778,6 +820,8 @@ const renderLayers=()=>{
   }
   const query=byId<HTMLInputElement>('layerSearch').value.trim().toLocaleLowerCase();
   const tagFilter=byId<HTMLSelectElement>('layerTagFilter').value;
+  const kindFilter=byId<HTMLSelectElement>('layerKindFilter').value;
+  const filtering=!!(query||tagFilter||kindFilter);
   const tagField=byId<HTMLSelectElement>('selectedLayerTag');
   tagField.value=selectedLayer.colorTag??'';
   tagField.disabled=!documentReady;
@@ -792,7 +836,11 @@ const renderLayers=()=>{
   nameField.disabled=!documentReady;
   const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
   const sameParent=(a:LayerId,b:LayerId)=>root.groupsForLayer(a).at(-1)?.id===root.groupsForLayer(b).at(-1)?.id;
-  const canMove=!!documentReady&&!layerBatchMode&&!query&&!tagFilter&&!root.isLayerPositionLocked(selectedLayer.id)&&selectedLayer.baseColor!=='white';
+  const blendButton=byId<HTMLButtonElement>('layerBlendMode');
+  blendButton.disabled=!documentReady||selectedLayer.baseColor==='white';
+  blendButton.textContent='合成モード '+layerBlendNames[selectedLayer.blend?.mode??'normal'];
+  if(activeBlend?.dialog.open&&(!documentReady||activeBlend.drawing!==surface||activeBlend.id!==selectedLayer.id))activeBlend.dialog.close('cancel');
+  const canMove=!!documentReady&&!layerBatchMode&&!filtering&&!root.isLayerPositionLocked(selectedLayer.id)&&selectedLayer.baseColor!=='white';
   for(const direction of [-1,1] as const){
     const id=direction===1?'layerBatchUp':'layerBatchDown';
     const selected=rows.filter(layer=>layerBatchIds.has(layer.id));
@@ -801,7 +849,7 @@ const renderLayers=()=>{
       const adjacent=rows[index-direction];
       return layerBatchIds.has(layer.id)&&adjacent&&!layerBatchIds.has(adjacent.id)&&adjacent.baseColor!=='white'&&sameParent(layer.id,adjacent.id);
     });
-    byId<HTMLButtonElement>(id).disabled=!documentReady||!!query||!!tagFilter||!movable||!hasRoom;
+    byId<HTMLButtonElement>(id).disabled=!documentReady||filtering||!movable||!hasRoom;
   }
   const previous=rows[selectedIndex-1],next=rows[selectedIndex+1];
   byId<HTMLButtonElement>('moveLayerUp').disabled=!canMove||!previous||previous.baseColor==='white'||!sameParent(selectedLayer.id,previous.id);
@@ -810,13 +858,23 @@ const renderLayers=()=>{
     const list=byId<HTMLDivElement>(id);
     const matching=id==='layerPageList'?rows.filter(layer=>{
       const tagMatches=!tagFilter||(layer.colorTag??'none')===tagFilter;
-      return tagMatches&&layer.name.toLocaleLowerCase().includes(query);
+      const kind=layer.baseColor==='white'?'background':layer.kind;
+      return tagMatches&&(!kindFilter||kindFilter===kind)&&layer.name.toLocaleLowerCase().includes(query);
     }):rows;
     if(id==='layerPageList'){
       byId('layerPageSelected').textContent=selectedName+(matching.includes(selectedLayer)?'':'（絞り込みで一覧に表示されていません）');
     }
     const seenGroups=new Set<LayerId>();
     const entries:HTMLElement[]=[];
+    if(id==='layerPageList'&&kindFilter==='group'){
+      for(const layer of rows){
+        if(tagFilter&&(layer.colorTag??'none')!==tagFilter)continue;
+        for(const [depth,group] of root.groupsForLayer(layer.id).entries()){
+          if(seenGroups.has(group.id)||!group.name.toLocaleLowerCase().includes(query))continue;
+          seenGroups.add(group.id);entries.push(groupLayerRow(group,depth));
+        }
+      }
+    }
     for(const layer of matching){
       const groups=root.groupsForLayer(layer.id);
       if(id==='layerPageList'){
@@ -825,9 +883,9 @@ const renderLayers=()=>{
             entries.push(groupLayerRow(group,depth));
             seenGroups.add(group.id);
           }
-          if(!query&&!tagFilter&&collapsedLayerGroups.has(group.id))break;
+          if(!filtering&&collapsedLayerGroups.has(group.id))break;
         }
-        if(!query&&!tagFilter&&groups.some(group=>collapsedLayerGroups.has(group.id)))continue;
+        if(!filtering&&groups.some(group=>collapsedLayerGroups.has(group.id)))continue;
       }
       const selected=layer.id===controller.selectedLayerId,row=document.createElement('button'),name=document.createElement('span'),state=document.createElement('span');
       const batchRow=id==='layerPageList'&&layerBatchMode;
@@ -857,7 +915,7 @@ const renderLayers=()=>{
       const entry=document.createElement('div');
       entry.className='layer-entry';
       if(id==='layerPageList'&&groups.length)entry.style.marginInlineStart=Math.min(groups.length,8)*10+'px';
-      if(id==='layerPageList'&&documentReady&&!layerBatchMode&&!query&&!tagFilter&&layer.baseColor!=='white'){
+      if(id==='layerPageList'&&documentReady&&!layerBatchMode&&!filtering&&layer.baseColor!=='white'){
         row.draggable=!root.isLayerPositionLocked(layer.id);
         row.ondragstart=event=>{
           if(!event.dataTransfer)return;
@@ -1003,6 +1061,7 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   layerBatchAnchor=null;
   renderLayers();
 };
+byId<HTMLButtonElement>('layerBlendMode').onclick=editLayerBlend;
 byId<HTMLButtonElement>('pickLayerOnCanvas').onclick=pickLayerOnCanvas;
 byId<HTMLButtonElement>('vectorMaskFromSelection').onclick=()=>{
   const rect=surface?.selectedRectangle,layer=controller.selectedLayer;
@@ -1079,6 +1138,7 @@ byId<HTMLButtonElement>('layerBatchShow').onclick=()=>changeLayerBatch('選ん�
 byId<HTMLButtonElement>('layerBatchHide').onclick=()=>changeLayerBatch('選んだレイヤーを非表示にしました。',(tx,id)=>tx.setLayerVisibility(id,false));
 byId<HTMLButtonElement>('layerBatchLock').onclick=()=>changeLayerBatch('選んだレイヤーをロックしました。',(tx,id)=>tx.setLayerLocked(id,true));
 byId<HTMLButtonElement>('layerBatchUnlock').onclick=()=>changeLayerBatch('選んだレイヤーのロックを解除しました。',(tx,id)=>tx.setLayerLocked(id,false));
+byId<HTMLSelectElement>('layerKindFilter').onchange=()=>renderLayers();
 byId<HTMLSelectElement>('layerTagFilter').onchange=renderLayers;
 const layerTagField=byId<HTMLSelectElement>('selectedLayerTag');
 layerTagField.onchange=()=>changeLayer('レイヤーの色タグを変更しました。',tx=>tx.setLayerColorTag(controller.selectedLayerId,parseLayerColorTag(layerTagField.value||null)));

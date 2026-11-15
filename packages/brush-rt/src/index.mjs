@@ -5,3 +5,5 @@ export {CanonicalBuilder,Stabilizer,LatestMailbox,predict,validateRecord,cpuRefe
 export {FOUNDATION,createPreset,validateFoundation,compilePreset,evaluateDynamics,referenceBrushes,captureInput,exportPresets,importPresets,PresetState,RendererRegistry,rendererRegistry,cursorState,geometryContext,correctGeometry,predictFoundation} from '@rt/foundation';
 
 export {decodeMaskTile,layerMaskTile,layerMaskCoverage,samplePixelMask,traceMaskPath} from '@rt/layer-mask-coverage';
+
+export {blendArtworkPixel} from '@rt/layer-blending';

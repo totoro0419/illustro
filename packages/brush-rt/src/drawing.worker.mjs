@@ -144,6 +144,38 @@ async function command(method,a){const r=renderer,s=session;
  case 'readViewport':await r.drain();return r.backend.readViewport();
  case 'readTiles':return readTiles(a);
  case 'pixel':return pixel(a);
+ case 'layerOutline':{
+  const {surfaceKey}=a,b=r.backend,style=b.surfaceStyles?.get(surfaceKey);
+  if(!style?.visible||!style.opacity)return null;
+  const width=b.width,height=b.height,scale=Math.min(1,512/Math.max(width,height));
+  const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
+  const pixels=style.white?null:await r.read(surfaceKey);
+  const source=style.clipKey&&b.surfaceStyles.get(style.clipKey);
+  const clipped=source&&b.surfaceStack.includes(style.clipKey)?await r.read(style.clipKey):null;
+  const alpha=new Uint8Array((w+2)*(h+2)),stride=w+2;
+  const visible=(x,y)=>{
+   if(pixels&&!pixels[(y*width+x)*4+3])return false;
+   if(!layerMaskCoverage(style.mask,x,y))return false;
+   return !source||(source.visible&&source.opacity&&(!clipped||clipped[(y*width+x)*4+3])&&layerMaskCoverage(source.mask,x,y));
+  };
+  const dx=width/w,dy=height/h;
+  for(let y=0;y<h;y++){
+   const y0=Math.floor((y+.25)*dy),y1=Math.floor((y+.75)*dy);
+   for(let x=0;x<w;x++){
+    const x0=Math.floor((x+.25)*dx),x1=Math.floor((x+.75)*dx);
+    if(visible(x0,y0)||visible(x1,y0)||visible(x0,y1)||visible(x1,y1))alpha[(y+1)*stride+x+1]=1;
+   }
+  }
+  const data=new Uint8ClampedArray(w*h*4);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+   const slot=(y+1)*stride+x+1;
+   const edge=alpha[slot]
+    ?!(alpha[slot-1]&&alpha[slot+1]&&alpha[slot-stride]&&alpha[slot+stride])
+    :alpha[slot-1]||alpha[slot+1]||alpha[slot-stride]||alpha[slot+stride];
+   if(edge)data.set([58,209,255,255],(y*w+x)*4);
+  }
+  return {data,width:w,height:h};
+ }
  case 'layerHits':{
   if(!Array.isArray(a.layers))throw Error('Invalid layer hit request');
   const ids=[];

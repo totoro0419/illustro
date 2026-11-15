@@ -1,3 +1,4 @@
+import type {LayerBlend} from './layerBlend';
 import type {LayerId} from './ids';
 
 export type LayerComp = Readonly<{
@@ -5,6 +6,7 @@ export type LayerComp = Readonly<{
   name: string;
   saveVisibility: boolean;
   saveOpacity: boolean;
-  layers: readonly Readonly<{id:LayerId;visible?:boolean;opacity?:number}>[];
+  saveBlend?: boolean;
+  layers: readonly Readonly<{id:LayerId;visible?:boolean;opacity?:number;blend?:LayerBlend|null}>[];
   groups: readonly Readonly<{id:LayerId;visible:boolean}>[];
 }>;

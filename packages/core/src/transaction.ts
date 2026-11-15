@@ -1,3 +1,4 @@
+import {validateLayerBlend,type LayerBlend} from './layerBlend';
 import {transformLayerMask,validateLayerMask,type LayerMask} from './layerMask';
 import type {LayerComp} from './layerComps';
 import {validateLayerGroups,type LayerGroup} from './layerGroups';
@@ -43,6 +44,7 @@ export class DocumentTransaction{
       this.setLayerVisibility(id,source.visible);
       if(source.colorTag)this.setLayerColorTag(id,source.colorTag);
       if(source.clipSourceId)this.meta(id,{clipSourceId:source.clipSourceId});
+      if(source.blend)this.meta(id,{blend:source.blend});
       if(source.vectorMask)this.meta(id,{vectorMask:source.vectorMask});
     }
     const layer=this.updatesValue.get(id)!;
@@ -123,18 +125,18 @@ export class DocumentTransaction{
     this.slotsValue.push(Object.freeze({type:'restore-revision',revisionId}));
     return true;
   }
-  saveLayerComp(name:string,saveVisibility:boolean,saveOpacity:boolean,existingId?:LayerId){
+  saveLayerComp(name:string,saveVisibility:boolean,saveOpacity:boolean,existingId?:LayerId,saveBlend=false){
     this.open();
     const title=name.trim(),root=this.rootValue,existing=root.layerComps;
-    if(!title||title.length>4096||(!saveVisibility&&!saveOpacity))throw new Error('名前と保存する項目を指定してください。');
+    if(!title||title.length>4096||(!saveVisibility&&!saveOpacity&&!saveBlend))throw new Error('名前と保存する項目を指定してください。');
     if(existingId&&!existing.some(comp=>comp.id===existingId))throw new Error('表示案が見つかりません。');
     const id=existingId??this.doc._internal(CORE_INTERNAL).ids.layer();
     const layers=root.rootLayerIds.map(layerId=>{
       const layer=root.getLayer(layerId);
-      return Object.freeze({id:layerId,...(saveVisibility?{visible:layer.visible}:{}),...(saveOpacity?{opacity:layer.opacity}:{})});
+      return Object.freeze({id:layerId,...(saveVisibility?{visible:layer.visible}:{}),...(saveOpacity?{opacity:layer.opacity}:{}),...(saveBlend?{blend:layer.blend??null}:{})});
     });
     const groups=saveVisibility?root.layerGroups.map(group=>Object.freeze({id:group.id,visible:group.visible})):[];
-    const comp=Object.freeze({id,name:title,saveVisibility,saveOpacity,layers:Object.freeze(layers),groups:Object.freeze(groups)});
+    const comp=Object.freeze({id,name:title,saveVisibility,saveOpacity,...(saveBlend?{saveBlend:true}:{}),layers:Object.freeze(layers),groups:Object.freeze(groups)});
     return this.editComps(id,existingId?'update':'create',existingId?existing.map(old=>old.id===id?comp:old):[...existing,comp]);
   }
   deleteLayerComp(id:LayerId){
@@ -152,6 +154,7 @@ export class DocumentTransaction{
       if(!root.hasLayer(state.id))continue;
       if(state.visible!==undefined)changed=this.setLayerVisibility(state.id,state.visible)||changed;
       if(state.opacity!==undefined)changed=this.setLayerOpacity(state.id,state.opacity)||changed;
+      if(state.blend!==undefined)changed=this.setLayerBlend(state.id,state.blend)||changed;
     }
     const groupStates=new Map(comp.groups.map(group=>[group.id,group.visible]));
     const groups=root.layerGroups.map(group=>{
@@ -368,6 +371,13 @@ export class DocumentTransaction{
   renameLayer(id:LayerId,name:string){return this.meta(id,{name:name.trim()});}
   setLayerVisibility(id:LayerId,visible:boolean){return this.meta(id,{visible});}
   setLayerLocked(id:LayerId,locked:boolean){return this.meta(id,{locked});}
+  setLayerBlend(id:LayerId,value:LayerBlend|null){
+    const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
+    if(layer.baseColor==='white'&&value)throw new Error('白背景の合成モードは通常に固定されています。');
+    const blend=validateLayerBlend(value),before=layer.blend??null;
+    if(blend===before||(blend&&before&&blend.mode===before.mode&&blend.space===before.space&&blend.seed===before.seed))return false;
+    return this.meta(id,{blend});
+  }
   setVectorLayerMask(id:LayerId,mask:LayerMask|null){
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(layer.baseColor==='white')throw new Error('白背景は描画できるレイヤーに変えてからマスクを設定してください。');
@@ -410,7 +420,7 @@ export class DocumentTransaction{
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='restore-revision'||x.type==='pin-revision'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'|'blend'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

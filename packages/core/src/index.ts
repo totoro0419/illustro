@@ -14,3 +14,5 @@ export {CANONICAL_TILE_SIZE,createRasterSurfaceDescriptor,pixelToTile,tileKey,ty
 export type {LayerGroup} from './layerGroups';
 export type {LayerComp} from './layerComps';
 export {MASK_TILE_SIZE,vectorMaskCoverage,type LayerMask,type MaskPoint,type PathLayerMask,type PixelLayerMask,type VectorLayerMask} from './layerMask';
+
+export {LAYER_BLEND_MODES,validateLayerBlend,type LayerBlend,type LayerBlendMode} from './layerBlend';

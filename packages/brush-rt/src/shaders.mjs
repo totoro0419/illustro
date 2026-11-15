@@ -232,7 +232,7 @@ const wgClipCoverage=`fn clipCoverage(q:vec2i)->f32{
 export const glFeedbackDirect=glDisplay.replace('pos=ivec2(gl_FragCoord.xy)', 'pos=ivec2(q.x,127-q.y)').replace('void main()',glShapeCoverage+glClipCoverage+'\nvoid main()');
 export const glFeedbackContinue=glFeedbackCompose.replace('d=texelFetch(layer,q,0)', 'd=texelFetch(layer,ivec2(q.x,127-q.y),0)');
 export const glFeedbackTile=`#version 300 es
-precision highp float;uniform vec4 params[16];uniform sampler2D layer,archiveImage;in vec2 doc;out vec4 result;
+precision highp float;precision highp int;uniform vec4 params[16];uniform sampler2D layer,archiveImage;in vec2 doc;out vec4 result;
 ${glShapeCoverage}
 ${glClipCoverage}
 void main(){ivec2 q=ivec2(doc-params[0].xy);vec4 color=texelFetch(layer,ivec2(q.x,127-q.y),0);result=vec4(color.rgb*color.a,color.a);}`;

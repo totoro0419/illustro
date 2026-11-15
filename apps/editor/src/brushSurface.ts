@@ -7,7 +7,7 @@ import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
-import {CANONICAL_TILE_SIZE,type LayerMask,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,type LayerBlend,type LayerMask,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import drawingWorkerUrl from '../../../packages/brush-rt/dist/rt/drawing.worker.mjs?worker&url';
 import presentationWorkerUrl from '../../../packages/brush-rt/dist/rt/presentation.worker.mjs?worker&url';
@@ -34,6 +34,8 @@ export class BrushSurface{
   private maskPoints:MaskStrokePoint[]=[];
   private maskOutline:SVGSVGElement|null=null;
   private maskInspection:HTMLCanvasElement|null=null;
+  private layerOutline:HTMLCanvasElement|null=null;
+  private layerOutlineSequence=0;
   private readonly restoredRecords=new WeakMap<object,StrokeRecord>();
   private pendingStrokeIds=new Map<StrokeReservation,number>();private pendingBranch=false;
   private historyTraces:Array<{direction:string;id:number|null;at:number;invalidatedAt:number;kind:string}>=[];
@@ -131,7 +133,7 @@ export class BrushSurface{
     if(!this.navigation)return;
     e.preventDefault();this.navigation.wheelZoom(e.deltaY,this.pointerLocation(e));
   };
-  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.maskPointer!==null)this.updateMaskOutline();if(this.maskInspection)this.positionMaskInspection();if(immediate)this.onStateChanged('view-command');}}
+  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.maskPointer!==null)this.updateMaskOutline();if(this.maskInspection)this.positionDocumentOverlay(this.maskInspection);if(this.layerOutline)this.positionDocumentOverlay(this.layerOutline);if(immediate)this.onStateChanged('view-command');}}
   get viewState(){return this.view?.state??null;}
   restoreView(state:SavedCanvasView){this.view?.restore(state);this.updateView(true);}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
@@ -248,12 +250,36 @@ export class BrushSurface{
     drawMaskPreview(canvas,mask,width,height,mode);
     if(!this.maskInspection)this.inputViewport.append(canvas);
     this.maskInspection=canvas;
-    this.positionMaskInspection();
+    this.positionDocumentOverlay(canvas);
   }
-  private positionMaskInspection(){
-    if(!this.maskInspection||!this.view)return;
+  private positionDocumentOverlay(overlay:HTMLCanvasElement){
+    if(!this.view)return;
     const origin=this.view.screen({x:0,y:0}),x=this.view.screen({x:1,y:0}),y=this.view.screen({x:0,y:1});
-    this.maskInspection.style.transform='matrix('+[x.x-origin.x,x.y-origin.y,y.x-origin.x,y.y-origin.y,origin.x,origin.y].join(',')+')';
+    overlay.style.transform='matrix('+[x.x-origin.x,x.y-origin.y,y.x-origin.x,y.y-origin.y,origin.x,origin.y].join(',')+')';
+  }
+  async showLayerOutline(id:LayerId|null){
+    const sequence=++this.layerOutlineSequence;
+    this.layerOutline?.remove();
+    this.layerOutline=null;
+    const document=this.controller.document,root=document.root,revision=document.head;
+    const host=this.renderer as unknown as {call:(name:string,args:unknown)=>Promise<{data:Uint8ClampedArray;width:number;height:number}|null>}|null;
+    if(!id||!host||!root.hasLayer(id))return;
+    try{
+      const surfaceKey=root.getLayer(id).surface.descriptor.surfaceId;
+      const result=await host.call('layerOutline',{surfaceKey});
+      if(!result||this.disposed||sequence!==this.layerOutlineSequence||document!==this.controller.document||document.head!==revision)return;
+      const canvas=this.inputViewport.ownerDocument.createElement('canvas');
+      canvas.setAttribute('aria-hidden','true');
+      canvas.width=result.width;canvas.height=result.height;
+      canvas.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(result.data),result.width,result.height),0,0);
+      canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:4;transform-origin:0 0;filter:drop-shadow(0 0 1px #083c53)';
+      canvas.style.width=root.width+'px';canvas.style.height=root.height+'px';
+      this.inputViewport.append(canvas);
+      this.layerOutline=canvas;
+      this.positionDocumentOverlay(canvas);
+    }catch{
+      if(sequence===this.layerOutlineSequence&&!this.disposed)this.status('このレイヤーの輪郭を取得できませんでした。');
+    }
   }
   setMaskGesture(gesture:MaskGesture|null){
     this.clearMaskGestureStroke();
@@ -345,7 +371,7 @@ export class BrushSurface{
       this.inputViewport.setPointerCapture(e.pointerId);return;
     }
     if(this.maskGesture){
-      if(e.button!==0||this.busy||this.inputBarrier||this.inspectedLayer||this.layerCompPreview)return;
+      if(e.button!==0||this.busy||this.inputBarrier||this.inspectedLayer||this.layerCompPreview||this.layerBlendPreview)return;
       e.preventDefault();
       this.maskPointer=e.pointerId;
       this.maskPointerType=e.pointerType;
@@ -364,6 +390,7 @@ export class BrushSurface{
       }
       this.strokeClip=clipped;this.strokeExited=false;
     }else this.strokeClip=null;
+    if(this.layerBlendPreview){this.status('合成モードを確定または取り消してから描いてください。');return;}
     if(this.layerCompPreview){this.status('表示案の比較を終了してから描いてください。');return;}
     if(this.inspectedLayer){this.status('レイヤーの単独表示を解除してから描いてください。');return;}
     const layer=this.controller.selectedLayer;
@@ -704,6 +731,11 @@ export class BrushSurface{
     this.syncLayerStyles();
   }
   private layerCompPreview:LayerComp|null=null;
+  private layerBlendPreview:{layerId:LayerId;blend:LayerBlend}|null=null;
+  setLayerBlendPreview(preview:{layerId:LayerId;blend:LayerBlend}|null){
+    this.layerBlendPreview=preview;
+    this.syncLayerStyles();
+  }
   setLayerCompPreview(comp:LayerComp|null){
     this.layerCompPreview=comp;
     this.syncLayerStyles();
@@ -721,11 +753,15 @@ export class BrushSurface{
         ?(candidate?.visible??layer.visible)&&root.groupsForLayer(layer.id).every(group=>groups?.get(group.id)??group.visible)
         :root.isLayerVisible(layer.id);
       const clip=root.clippingSource(layer.id);
+      const blend=this.layerBlendPreview?.layerId===layer.id?this.layerBlendPreview.blend
+        :candidate?.blend!==undefined?candidate.blend:layer.blend;
       return {
         surfaceKey:layer.surface.descriptor.surfaceId,
         visible:solo?layer.id===solo.id:visible,
         ...(!solo&&clip?{clipKey:clip.surface.descriptor.surfaceId}:{}),
         ...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),
+        ...(!solo&&blend?{blend}:{}),
+        ...(layer.baseColor==='white'?{white:true}:{}),
         opacity:preview?.layerId===layer.id?preview.opacity:candidate?.opacity??layer.opacity,
       };
     }));
@@ -797,5 +833,5 @@ export class BrushSurface{
   get performanceDiagnostics(){const r=this.renderer as any;return {...this.renderer?.performanceSummary(),handoff:{inputAttempts:this.traceHandoff?this.inputAttempts:[],accepted:this.handoffAccepted,rejected:this.handoffRejected,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,pendingEntries:this.handoff?.diagnostics,historyVisibility:this.historyTraces,protectionQueue:this.protectionQueueLength,fault:this.handoffFault,traces:this.traceHandoff?this.handoffTraces:[]},frameState:{lastFrameAt:this.lastFrameAt,disposed:this.disposed,operationMode:this.operationMode,pointer:this.pointer,finishing:this.finishing,historySyncing:this.historySyncing,inputBarrier:this.inputBarrier,pendingRawCount:this.session?.pendingRawCount??0,formalCommands:r?.document.count??0,inflight:r?.inflight,viewPending:r?.viewPending,navigationActive:r?.navigationActive,navigationUntil:r?.navigationUntil,guardPreparing:r?.guardPreparing,overlayViewPending:!!r?.overlayViewPending,overlayPending:r?.proxy?.pending.size,overlayFinalizations:r?.proxy?.finalizations.size,viewFence:!!r?.backend.viewFence,viewSubmission:!!r?.backend.viewSubmission,cancellingStroke:!!r?.cancellingStroke,needsFrame:r?.needsFrame,jobs:r?.document.jobs.length,presentationHeld:r?.backend.presentationHeld,glFence:!!r?.backend.fence,pending:!!r?.backend.pending,errors:r?.errors,sessionErrors:this.session?.errors},checkpoint:{...this.checkpointMetrics},strokeReplayFallbacks:this.historyReplayFallbacks,fullDocumentRebuilds:this.session?.fullDocumentRebuilds??0,fullReplayStrokes:this.session?.fullReplayStrokes??0,cancelledStrokeCount:this.session?.cancelledStrokeCount??0,projectionRestoreMode:this._projectionRestoreMode};}
   get interacting(){return !!this.navigation?.touching||this.busy;}
   get initializationError(){return this._initializationError;}get backendSelection(){return this.renderer?.info.selection??null;}get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get rendererArtworkAlpha(){return Boolean(this.renderer?.info.artworkAlpha);}get presentationOpaque(){return Boolean(this.renderer?.info.presentationOpaque);}get presentationMode(){return 'worker-images';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get projectionRestoreMs(){return this._projectionRestoreMs;}get projectionRestoreMode(){return this._projectionRestoreMode;}get projectionCacheRevision(){return this._projectionCacheRevision;}get browserPredictionSamples(){return this.session?.browserPredictions??0;}get brushName(){return this.preset?.name??'未選択';}get brushId(){return this.preset?.id??'未選択';}get blendMode(){return this.preset?.blend??'normal';}get eraserType(){return this.preset?.id==='foundation-hard-eraser'?'hard':this.preset?.id==='foundation-soft-eraser'?'soft':this.preset?.blend==='erase'?'erase':null;}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.inputActive||this.hasPendingStrokes;}
-  destroy(){this.setMaskGesture(null);this.setMaskInspection();this.activeGuide=null;this.selectionRect=null;this.updateSelectionOverlay();this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
+  destroy(){void this.showLayerOutline(null);this.setMaskGesture(null);this.setMaskInspection();this.activeGuide=null;this.selectionRect=null;this.updateSelectionOverlay();this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
 }
