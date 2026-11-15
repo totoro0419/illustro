@@ -2,7 +2,7 @@ import {type WorkEntry} from './workLibrary';
 import {CoreDocument,type CoreRecoveryPacketV1,type LayerId,type PersistenceHandoff,type RevisionId} from '@illustro/core';
 import workerUrl from './persistence.worker.ts?worker&url';
 import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortableData} from './portable';
-import type {DecodedPortableFile,PortableManifestSection} from './format';
+import type {DecodedPortableFile,PortableManifestSection,PortableSectionInput} from './format';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
 import {cloneProjectionTiles} from './projectionTransfer';
 import type {SelectionRect} from '../strokeSelection';
@@ -28,6 +28,8 @@ export class PersistenceCoordinator{
   private destroyed=false;private navigationSequence=0;private navigationPending=0;
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
+  private saveAttachmentProvider:(()=>Promise<readonly PortableSectionInput[]>)|null=null;
+  setSaveAttachmentProvider(provider:(()=>Promise<readonly PortableSectionInput[]>)|null){this.saveAttachmentProvider=provider;}
   private preserved:PreservedPortableData|undefined;private selection:SelectionRect|null=null;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
     currentRevision:null,savedRevision:null,dirty:true,protectionPending:false,protectedThrough:'0',saving:false,recovered:false,storageError:null,backend:'未初期化',
     storagePersisted:null,storageUsage:null,storageQuota:null,queueLength:0,lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,reloadDurationMs:null,recoveryDurationMs:null,lastGood:false,previousGood:false,offline:!navigator.onLine,
@@ -95,7 +97,7 @@ export class PersistenceCoordinator{
   }
   async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false,pending?:Promise<RevisionId>,selection:SelectionRect|null=null){
     if(this.stateValue.saving)throw new Error('保存中です。');
-    const existingHandle=this.fileHandle,previousFingerprint=this.externalFingerprint,preserved=this.preserved;
+    const existingHandle=this.fileHandle,previousFingerprint=this.externalFingerprint;
     const suggestedName=safeFileName(document.root.name)+(forceSaveCopy?'（コピー）':'')+'.illustro',started=performance.now();
     this.patch({saving:true});
     try{
@@ -111,6 +113,15 @@ export class PersistenceCoordinator{
         generationId=crypto.randomUUID(),createdAt=Date.now();
       const destination=picker?await picker:null;
       if(destination?.error)throw destination.error;
+      const extras=await this.saveAttachmentProvider?.()??[];
+      const old=this.preserved??{manifestExtras:{},optionalSections:[]};
+      const ids=new Set(extras.map(section=>section.id));
+      if(ids.size!==extras.length||extras.some(section=>section.required))
+        throw Error('追加の保存データが正しくありません。');
+      const preserved:PreservedPortableData={
+        manifestExtras:old.manifestExtras,
+        optionalSections:[...old.optionalSections.filter(section=>!ids.has(section.id)),...extras]
+      };
       const transfer=blockEntries.map(x=>x.bytes.buffer as ArrayBuffer);
       const raw=await this.request('encode-save',{snapshot,blocks:blockEntries,selectedLayerId,generationId,createdAt,preserved,selection},transfer) as {bytes:Uint8Array};
       const bytes=raw.bytes;
