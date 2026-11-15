@@ -703,10 +703,6 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/brush/evidence/browser-run.txt",
-      "status": "EXPERIMENTAL"
-    },
-    {
       "path": "docs/brush/evidence/browser-summary.json",
       "status": "EXPERIMENTAL"
     },
@@ -1175,19 +1171,7 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/production-prep/region-extension-verification.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/production-prep/region-feedback-verification.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
       "path": "docs/production-prep/region-raster-verification.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/production-prep/region-structure-verification.json",
       "status": "EXPERIMENTAL"
     },
     {
