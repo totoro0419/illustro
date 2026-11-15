@@ -19,6 +19,8 @@ import {exportFonts,importFonts} from './artwork/fontAttachments';
 import {installTextPanel} from './artwork/textPanel';
 import {installVectorPanel} from './artwork/vectorPanel';
 import {installRulerPanel} from './artwork/ruler';
+import {installSymmetryPanel} from './artwork/symmetryPanel';
+import {DEFAULT_SYMMETRY,normalizeSymmetry,SYMMETRY_SECTION,SYMMETRY_TYPE,type SymmetrySettings} from './strokeSymmetry';
 import {installShapeGradientPanel} from './artwork/shapeGradient';
 import {runArtwork} from './artwork/run';
 import {selectionAsLayerMask} from './artwork/selectionMask';
@@ -135,6 +137,8 @@ try{
  const saved=JSON.parse(localStorage.getItem('illustro.guide-settings.v1')??'null') as Partial<GuideSettings>|null;
  if(saved&&typeof saved==='object')guidePreferences=normalizeGuideSettings(saved);
 }catch{/* Drawing remains usable when preferences are unavailable. */}
+let symmetrySettings:SymmetrySettings=DEFAULT_SYMMETRY;
+let symmetryPanel:ReturnType<typeof installSymmetryPanel>|undefined;
 let c05ReferenceBoard:ReferenceBoardService|undefined;
 let c06ClipboardUI:ClipboardUI|undefined;
 let c06Selection:SelectionWorkbench|undefined;
@@ -1428,6 +1432,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
     });
   }};
  drawing.setGuideSettings(guidePreferences);
+ drawing.setSymmetry(symmetrySettings);
  drawing.setCommonStabilization(commonStabilization);
  drawing.setPressureCalibration(devicePressureSensitivity);
  return drawing;
@@ -2271,7 +2276,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
   if(documentActivationPending)throw new Error('別の作品を開いています。');
-  const previous=controller,previousPreserved=persistence.preservedData,wasReady=documentReady;
+  const previous=controller,previousPreserved=persistence.preservedData,previousSymmetry=symmetrySettings,wasReady=documentReady;
   persistCanvasView();documentActivationPending=true;documentReady=false;
   // A NEW work has no dependency between the GPU worker and the storage
   // worker. Start storage during GPU initialization, but do not expose input
@@ -2290,6 +2295,17 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     const canvas=byId<HTMLCanvasElement>('canvas');
     canvas.width=canvas.width;
   }
+  symmetrySettings=DEFAULT_SYMMETRY;
+  try{
+    const local=localStorage.getItem('illustro.symmetry.'+opened.document.root.documentId);
+    const section=opened.preserved.optionalSections.find(item=>item.id===SYMMETRY_SECTION&&item.type===SYMMETRY_TYPE);
+    const encoded=local??(section&&section.bytes.length<4096?new TextDecoder().decode(section.bytes):null);
+    if(encoded){
+      const state=JSON.parse(encoded);
+      if(state&&typeof state==='object')symmetrySettings=normalizeSymmetry(state);
+    }
+  }catch{/* The symmetry mode remains off if the work's settings cannot be read. */}
+  symmetryPanel?.restore(symmetrySettings);
   controller=EditorController.restored(opened.document,opened.selectedLayerId);loadHistoryUndoLimit(opened.document);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
   if(opened.generationId==='new'){
     persistence.clearFileDestination();
@@ -2363,6 +2379,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     // A started storage initialization must finish before rollback restores
     // the previous document, or the late worker reply could replace its state.
     if(newStorageInit)await newStorageInit;
+    symmetrySettings=previousSymmetry;symmetryPanel?.restore(previousSymmetry);
     surface?.destroy();const snapshot=previous.document.capturePersistenceSnapshot();controller=EditorController.restored(CoreDocument.restore({snapshot,blockPayloads:previous.document.persistenceBlockPayloads(snapshot)}),previous.selectedLayerId);surface=makeSurface();documentReady=false;
     if(wasReady){try{await initializeCurrentSurface(true);await persistence.initialize(controller,null,previousPreserved,false);const current=(await persistence.listWorks()).works.find(x=>x.documentId===controller.document.root.documentId);if(!qaMode)await persistence.bindWork(current?.writerEpochId??null);}catch{}}
     throw error;
@@ -3339,13 +3356,14 @@ c06Selection=installSelectionWorkbench({
 });
 persistence.setSaveAttachmentProvider(()=>{
   const preserved=persistence.preservedData;
+  const symmetry={id:SYMMETRY_SECTION,type:SYMMETRY_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(symmetrySettings))};
   const editingState=Promise.all([c05References.exportNative(),c06Selection?.exportNative()??[]])
     .then(values=>({values}),error=>({error}));
   return async root=>{
     const result=await editingState;
     if('error' in result)throw result.error;
     const [reference,selections]=result.values,fonts=await exportFonts(root,preserved);
-    return [...(reference?[reference]:[]),...selections,...fonts];
+    return [...(reference?[reference]:[]),...selections,...fonts,symmetry];
   };
 });
 installTransformPanel(byId('documentBoxBody'),async target=>{
@@ -3597,6 +3615,13 @@ installRulerPanel(byId('documentBoxBody'),artworkActions,settings=>{
   surface?.setGuideSettings(settings);
   try{localStorage.setItem('illustro.guide-settings.v1',JSON.stringify(settings));}catch{}
 });
+symmetryPanel=installSymmetryPanel(byId('documentBoxBody'),artworkActions,settings=>{
+  if(!documentReady)return;
+  symmetrySettings=settings;
+  surface?.setSymmetry(settings);
+  try{localStorage.setItem('illustro.symmetry.'+controller.document.root.documentId,JSON.stringify(settings));}catch{}
+});
+symmetryPanel.restore(symmetrySettings);
 c06ClipboardUI=installClipboardPanel({
   canEdit:()=>documentReady&&!!surface&&!geometryBusy&&!historyPending&&!documentActivationPending,
   hasSelection:()=>!!surface?.selectedRectangle,
