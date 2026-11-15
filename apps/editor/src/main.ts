@@ -11,6 +11,7 @@ import './color/color.css';
 import './color/harmony.css';
 import {ForegroundColor,rgb,hex} from './color/model';
 import {installColorPanel} from './color/panel';
+import {installEyedropperSettings} from './color/eyedropperSettings';
 import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {installCommandPalette} from './ui/commandPalette';
@@ -1347,7 +1348,7 @@ function queueLatestCommit(){
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const drawing=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'||reason==='view-command')scheduleViewSave(drawing);if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();if(releasedColorHold)restoreDrawingTool();return;}
  if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';if(!holdingColorKey)restoreDrawingTool();}return;}
- const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value!=='layer');
+ const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value==='composite');
  const channels=rgba.slice(0,3).map(v=>Math.min(1,Math.max(0,v/255)));
  // Composite surfaces store premultiplied alpha; restore the displayed RGB at translucent edges.
  const color=rgb(...(fromComposite&&alpha>0&&alpha<1?channels.map(v=>Math.min(1,v/alpha)):channels) as [number,number,number]);
@@ -1511,6 +1512,7 @@ byId<HTMLButtonElement>('c04ContextLayer').onclick=()=>shellUi.setLayerPage(true
 byId<HTMLButtonElement>('c04ContextSelection').onclick=()=>byId<HTMLButtonElement>('selection').click();
 byId<HTMLButtonElement>('c04ContextReference').onclick=()=>shellUi.openBox('colorBox');
 const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity)});
+const eyedropperSettings=installEyedropperSettings({foreground,getSurface:()=>surface,getLayers:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name}))});
 function refreshSelectionControls(){
  const selecting=surface?.selectingRectangle??false;
  const rectangle=surface?.selectedRectangle;
@@ -1524,7 +1526,7 @@ function refreshSelectionControls(){
  updateContextBar();
 }
 function reflectRailTool(){for(const [id,active] of [['paint',selectedTool==='brush'],['erase',selectedTool==='eraser'],['eyedropper',selectedTool==='eyedropper']] as const)byId(id).setAttribute('aria-pressed',String(active));updateContextBar();}
-function activateEyedropper(){if(!surface||!documentReady)return;surface.panTool=false;byId('panView').setAttribute('aria-pressed','false');if(selectedTool!=='eyedropper')lastDrawingTool=selectedTool==='eraser'?'eraser':'brush';eyedropperOriginal=foreground.current;selectedTool='eyedropper';surface.setEyedropper(true,byId<HTMLSelectElement>('colorSampleSource').value as 'composite'|'layer');reflectRailTool();byId('status').textContent='キャンバスに触れて、取りたい色を選んでください。';updateQa();}
+function activateEyedropper(){if(!surface||!documentReady)return;surface.panTool=false;byId('panView').setAttribute('aria-pressed','false');if(selectedTool!=='eyedropper')lastDrawingTool=selectedTool==='eraser'?'eraser':'brush';eyedropperOriginal=foreground.current;selectedTool='eyedropper';surface.configureSample(eyedropperSettings.options());surface.setEyedropper(true,eyedropperSettings.options().source);reflectRailTool();byId('status').textContent='キャンバスに触れて、取りたい色を選んでください。';updateQa();}
 let holdingColorKey=false,releasedColorHold=false;
 function restoreDrawingTool(){if(!surface)return;holdingColorKey=releasedColorHold=false;byId('colorSampleLoupe').hidden=true;surface.setEyedropper(false);selectPreset(lastDrawingTool==='eraser'?lastEraserPresetId:lastBrushPresetId);updateQa();}
 document.addEventListener('keydown',event=>{
@@ -1540,7 +1542,7 @@ function releaseColorHold(){
 document.addEventListener('keyup',event=>{if(event.key==='Alt')releaseColorHold();});
 window.addEventListener('blur',releaseColorHold);
 byId('eyedropper').onclick=activateEyedropper;
-byId<HTMLSelectElement>('colorSampleSource').onchange=()=>{if(selectedTool==='eyedropper')surface?.setEyedropper(true,byId<HTMLSelectElement>('colorSampleSource').value as 'composite'|'layer');updateContextBar();};
+byId<HTMLSelectElement>('colorSampleSource').onchange=()=>{eyedropperSettings.apply();if(selectedTool==='eyedropper'){surface?.setEyedropper(true,eyedropperSettings.options().source);}updateContextBar();};
 addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='i'||e.altKey||e.ctrlKey||e.metaKey||e.repeat||(e.target instanceof HTMLElement&&e.target.closest('input,textarea,select,[contenteditable]')))return;e.preventDefault();if(selectedTool==='eyedropper')restoreDrawingTool();else activateEyedropper();});
 
 function savedBrush(id:string):FoundationPreset|undefined{return brushPresets.all(builtInBrushes).find(p=>p.id===id);}
