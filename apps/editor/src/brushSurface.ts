@@ -937,7 +937,7 @@ export class BrushSurface{
       if(!rgba||rgba.length<4)continue;
       if(mode==='skip'&&(rgba[3]??0)===0)continue;
       const c=mode==='white'?this.sampleAgainstWhite(rgba):rgba;
-      for(let i=0;i<4;i++)sum[i]+=c[i]??0;
+      for(let i=0;i<4;i++)sum[i]=(sum[i]??0)+(c[i]??0);
       count++;
     }
     if(!count)return null;
