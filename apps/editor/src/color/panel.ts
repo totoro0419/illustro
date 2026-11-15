@@ -15,6 +15,7 @@ export function colorMarkup():string {
   '<div class="color-describe"><strong>現在の色</strong><output id="colorCode">#1F2633</output></div>'+
   '<button id="colorPrevious" class="color-chip color-previous" type="button" aria-label="変更前の色に戻す"></button><span class="color-previous-label">変更前</span>'+
  '</div>'+
+ '<div class="c04-secondary-color"><label>背景の色 <input id="c04BackgroundColor" type="color" value="#FFFFFF" aria-label="背景色を選ぶ"></label><button id="c04SwapColor" type="button">描画色と交換</button></div>'+
  '<div class="color-mode-switch" role="tablist" aria-label="カラーウィンドウ">'+
   '<button type="button" id="colorShowColor" role="tab" aria-controls="colorScreen" aria-selected="true" tabindex="0">カラー</button>'+
   '<button type="button" id="colorShowPalette" role="tab" aria-controls="colorPaletteScreen" aria-selected="false" tabindex="-1">パレット</button>'+
@@ -119,6 +120,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(hsv.v>1e-7){saturationMemory=hsv.s;if(hsv.s>1e-7)hueMemory=hsv.h;}
   const displayS=hsv.v<=1e-7?saturationMemory:hsv.s;
   current.style.backgroundColor=hex(c);code.textContent=hex(c);previous.style.backgroundColor=hex(state.previous);
+  id<HTMLInputElement>('c04BackgroundColor').value=hex(state.background);
   id<HTMLElement>('colorBoxSummary').textContent=hex(c);
   plane.style.setProperty('--pure',hex(hsvToRgb(hueMemory,1,1)));
   const angle=hueMemory*Math.PI/180,hue=id<HTMLElement>('colorHueMarker');
@@ -136,6 +138,8 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  }
  current.onclick=()=>{(pickerMode==='orbit'?id<HTMLElement>('colorOrbitWheel'):ring).focus({preventScroll:true});};
  previous.onclick=()=>state.choose(state.previous);
+ id<HTMLInputElement>('c04BackgroundColor').onchange=event=>{const next=fromHex((event.target as HTMLInputElement).value);if(next)state.setBackground(next);};
+ id<HTMLButtonElement>('c04SwapColor').onclick=()=>state.swapBackground();
  const commitHex=()=>{if(!editingHex)return;const parsed=fromHex(hexField.value);
   if(!parsed){id('colorHexError').textContent='#の後に6桁の英数字を入力してください。';if(document.activeElement!==hexField){editingHex=false;state.cancel();hexField.value=hex(state.current);}return;}
   editingHex=false;id('colorHexError').textContent='';state.commit(parsed);
