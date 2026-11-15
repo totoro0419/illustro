@@ -30,3 +30,8 @@ body.c04-gray-proof .surface{filter:grayscale(1)}
 body[data-c04-vision="protan"] .surface{filter:url("#c04-vision-protan")}
 body[data-c04-vision="deutan"] .surface{filter:url("#c04-vision-deutan")}
 body[data-c04-vision="tritan"] .surface{filter:url("#c04-vision-tritan")}
+
+.c04-color-opacity{display:grid;grid-template-columns:auto minmax(65px,1fr) 48px auto;align-items:center;gap:6px;padding:7px 9px;font-size:11px}
+.c04-color-opacity input[type=range]{width:100%;min-width:0}
+.c04-color-opacity input[type=number]{width:48px;padding:5px 2px;min-height:36px;border:1px solid var(--a-border,#ddd);border-radius:7px;color:inherit;background:var(--a-surface,#fff);text-align:center}
+#c04ColorOpacityStatus{display:block;font-size:10px;color:var(--a-subtle,#667);padding:0 9px}
