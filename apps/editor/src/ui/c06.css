@@ -44,3 +44,10 @@
 .c06-drop-actions{display:grid;gap:8px;margin:12px 0}
 .c06-drop-actions button{min-height:45px;padding:10px;border:1px solid var(--a-border,#ddd);border-radius:9px;background:var(--a-accent-soft,#fff0d5);color:inherit}
 .c06-drop-actions button:disabled{opacity:.5}
+
+.c06-selection-brush{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0;padding:8px;border:1px solid var(--a-border,#ddd);border-radius:9px;background:var(--a-surface-soft,#fbfaf6)}
+.c06-selection-brush>button{min-height:40px;border:1px solid var(--a-border,#ddd);border-radius:8px;background:var(--a-accent-soft,#fff0d7);color:inherit;font-size:11px}
+.c06-selection-brush>button[aria-pressed=true]{box-shadow:inset 0 0 0 2px var(--a-focus,#85501c)}
+.c06-selection-brush>label{grid-column:1/-1;font-size:11px;display:grid;grid-template-columns:minmax(90px,1fr) minmax(70px,1.2fr);align-items:center;gap:7px}
+.c06-selection-brush input{min-width:0;width:100%;accent-color:#368da8}
+.c06-selection-brush input[type=number]{min-height:37px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-surface,#fff);color:inherit;padding:5px}
