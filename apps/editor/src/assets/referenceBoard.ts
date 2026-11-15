@@ -4,6 +4,9 @@
  */
 import {readBoard,writeBoard,newBoardItem,type BoardSnapshot,type BoardItem} from './referenceBoardStore';
 import {getAsset} from './library';
+import {exportAssetPack,importAssetPack,readAssetPack} from './packs';
+import type {PortableSectionInput} from '../persistence/format';
+import type {PreservedPortableData} from '../persistence/portable';
 import type {ForegroundColor} from '../color/model';
 export type ReferenceBoardService=Readonly<{
   add:(assetId:string)=>Promise<void>;
@@ -12,6 +15,8 @@ export type ReferenceBoardService=Readonly<{
   exportLayout:()=>Promise<Blob>;
   undo:()=>Promise<void>;
   redo:()=>Promise<void>;
+  exportNative:()=>Promise<PortableSectionInput|null>;
+  importNative:(preserved:PreservedPortableData|undefined)=>Promise<void>;
 }>;
 type Options=Readonly<{
   getDocumentId:()=>string|null;
@@ -26,7 +31,8 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   const panel=document.getElementById('referenceBoxBody');
   if(!panel)return {
     add:async()=>{},refresh:async()=>{},refreshIfChanged:async()=>{},
-    exportLayout:async()=>new Blob(),undo:async()=>{},redo:async()=>{}
+    exportLayout:async()=>new Blob(),undo:async()=>{},redo:async()=>{},
+    exportNative:async()=>null,importNative:async()=>{}
   };
   panel.replaceChildren();
   const root=document.createElement('div');root.className='c05-reference-editor';
@@ -123,6 +129,53 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   async function exportLayout(){
     await refreshIfChanged();if(!board)throw Error('作品がありません。');
     return new Blob([JSON.stringify(board,null,2)],{type:'application/json'});
+  }
+  const NATIVE_ID='c05.reference-board';
+  const NATIVE_TYPE='reference.board.embedded.v1';
+  async function exportNative():Promise<PortableSectionInput|null>{
+    await refreshIfChanged();
+    if(!board)return null;
+    await saving;
+    const current=board;
+    // Include each original file only once, even if the same reference is shown
+    // in several windows. The corresponding document pixels remain untouched.
+    const ids=[...new Set(current.items.map(item=>item.assetId))];
+    const packageBlob=await exportAssetPack(ids);
+    const packageInfo=JSON.parse(await packageBlob.text()) as unknown;
+    const data={schema:'illustro.reference-bundle',version:1,board:current,pack:packageInfo};
+    return {id:NATIVE_ID,type:NATIVE_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(data))};
+  }
+  async function importNative(preserved:PreservedPortableData|undefined):Promise<void>{
+    const section=preserved?.optionalSections.find(item=>item.id===NATIVE_ID&&item.type===NATIVE_TYPE);
+    if(!section)return;
+    await refreshIfChanged();
+    const doc=options.getDocumentId();
+    if(!doc||!board)return;
+    // Do not erase the user's current local board when opening an older file.
+    if(board.items.length>0){status.textContent='端末に保存した資料配置を維持しました。';return;}
+    if(section.bytes.byteLength>70*1024*1024)throw Error('作品内の資料が大きすぎます。');
+    const raw=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(section.bytes)) as unknown;
+    if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('作品内の資料情報が正しくありません。');
+    const data=raw as Record<string,unknown>;
+    if(data.schema!=='illustro.reference-bundle'||data.version!==1||!data.board||!data.pack)
+      throw Error('対応していない資料データです。');
+    const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
+    const result=await importAssetPack(embedded);
+    if(result.failures.length)throw Error('資料の一部を復元できませんでした：'+result.failures.slice(0,2).join('、'));
+    const input=data.board as Partial<BoardSnapshot>;
+    if(!Array.isArray(input.items)||input.items.length>80)throw Error('資料の配置情報が正しくありません。');
+    const newItems:BoardItem[]=input.items.map((item,index)=>{
+      if(!item||typeof item.assetId!=='string'||!result.renamedIds[item.assetId])
+        throw Error('資料の参照先を復元できませんでした。');
+      return {
+        ...newBoardItem(result.renamedIds[item.assetId]!,index),
+        ...item,assetId:result.renamedIds[item.assetId]!,
+        id:crypto.randomUUID()
+      };
+    });
+    const imported:BoardSnapshot={version:1,documentId:doc,items:newItems,hidden:!!input.hidden};
+    syncAfter(imported,false);
+    status.textContent=newItems.length+'枚の資料を作品ファイルから読み込みました。';
   }
   function drawList(){
     list.replaceChildren();const current=board;
@@ -229,5 +282,5 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     }
   }
   void refreshIfChanged();
-  return {add,refresh,refreshIfChanged,exportLayout,undo,redo};
+  return {add,refresh,refreshIfChanged,exportLayout,undo,redo,exportNative,importNative};
 }
