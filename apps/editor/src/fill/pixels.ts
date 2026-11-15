@@ -11,6 +11,7 @@ export type GapCandidate=Readonly<{from:Point;to:Point;length:number}>;
 export type RegionGraph=Readonly<{
   width:number;height:number;walls:Uint8Array;bridges:Uint8Array;labels:Uint32Array;external:Uint8Array;count:number;
   candidates:readonly GapCandidate[];
+  neighborOffsets:Uint32Array;neighbors:Uint32Array;depth:Int32Array;
 }>;
 
 const limit=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
@@ -27,6 +28,45 @@ function flood(width:number,height:number,seed:number,hit:(index:number)=>boolea
     if(y+1<height)visit(p+width);else touchesEdge=true;
   }
   return touchesEdge;
+}
+
+function regionTopology(labels:Uint32Array,width:number,height:number,external:Uint8Array){
+  // Consecutive labels separated by a wall share a boundary. Label 0 is
+  // outside the canvas and accounts for strokes touching the canvas edge.
+  const contacts=new Map<number,Set<number>>();
+  const link=(a:number,b:number)=>{
+    if(a===b)return;
+    const first=contacts.get(a)??new Set<number>(),second=contacts.get(b)??new Set<number>();
+    first.add(b);second.add(a);contacts.set(a,first);contacts.set(b,second);
+  };
+  const scan=(start:number,skip:number,length:number)=>{
+    let previous=0;
+    for(let i=0;i<length;i++){
+      const current=labels[start+i*skip]!;
+      if(!current||current===previous)continue;
+      link(previous,current);previous=current;
+    }
+    link(previous,0);
+  };
+  for(let y=0;y<height;y++)scan(y*width,1,width);
+  for(let x=0;x<width;x++)scan(x,width,height);
+  const neighborOffsets=new Uint32Array(external.length+1);
+  for(let id=0;id<external.length;id++)neighborOffsets[id+1]=neighborOffsets[id]!+(contacts.get(id)?.size??0);
+  const neighbors=new Uint32Array(neighborOffsets[external.length]!);
+  for(const [id,values] of contacts)neighbors.set([...values].sort((a,b)=>a-b),neighborOffsets[id]!);
+  const depth=new Int32Array(external.length).fill(-1),queue=new Uint32Array(depth.length);
+  let next=0,tail=0;
+  depth[0]=0;queue[tail++]=0;
+  for(let id=1;id<external.length;id++)if(external[id]){depth[id]=0;queue[tail++]=id;}
+  while(next<tail){
+    const id=queue[next++]!;
+    for(let i=neighborOffsets[id]!;i<neighborOffsets[id+1]!;i++){
+      const other=neighbors[i]!;
+      if(depth[other]!>=0)continue;
+      depth[other]=depth[id]!+1;queue[tail++]=other;
+    }
+  }
+  return {neighborOffsets,neighbors,depth};
 }
 
 export function buildRegions(source:Uint8Array,width:number,height:number,tolerance:number,gap:number,manual:Walls):RegionGraph{
@@ -85,7 +125,9 @@ export function buildRegions(source:Uint8Array,width:number,height:number,tolera
     const outside=flood(width,height,i,j=>!walls[j]&&!labels[j],j=>{labels[j]=regions;},queue);
     external.push(outside?1:0);
   }
-  return {width,height,walls,bridges,labels,external:Uint8Array.from(external),count:regions,candidates};
+  const externalFlags=Uint8Array.from(external);
+  return {width,height,walls,bridges,labels,external:externalFlags,count:regions,candidates,
+    ...regionTopology(labels,width,height,externalFlags)};
 }
 
 export function fillMask(source:Uint8Array,width:number,height:number,settings:FillSettings,points:readonly Point[],

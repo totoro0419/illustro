@@ -34,7 +34,7 @@ export function installFillPanel(host:HTMLElement,api:{
   preview.setAttribute('aria-label','塗り候補と線画領域のプレビュー');
   let gesture:BrushSurface|null=null,running=false,currentGraph:RegionGraph|null=null,previous:RegionGraph|null=null;
   let capture:FillCapture|null=null,previousCapture:FillCapture|null=null,graphTolerance=0,graphGap=0,confirmed=false;
-  let saved:Entry|undefined,candidate:Candidate|null=null,excludedGap=-1;
+  let saved:Entry|undefined,candidate:Candidate|null=null,excludedGap=-1,inspectedRegion=0;
   let pending:Awaited<ReturnType<typeof runFill>>|null=null;
   let displayDocument='';
   let candidateGeneration=0,pendingColor='#000000';
@@ -66,10 +66,11 @@ export function installFillPanel(host:HTMLElement,api:{
   const selectedRefs=document.createElement('div');selectedRefs.className='c06-clipboard-grid';options.append(selectedRefs);
   const destination=select('塗る場所',[['active','選んだレイヤー'],['new','上の新しいレイヤー'],['under','下の新しいレイヤー'],['color-layer','色の名前でレイヤーを作る']]);
   const regionLayers=select('作品に保存した線画領域',[]);
-  const view=select('解析の表示',[['regions','色分け'],['walls','境界と補完候補'],['outside','外側と閉領域'],['original','元の線画']]);
+  const view=select('解析の表示',[['regions','色分け'],['walls','境界と補完候補'],['outside','外側と閉領域'],['holes','囲まれた穴'],['original','元の線画']]);
   const tolerance=number('色の許容範囲・線の濃さ（%）',15,0,100);
   const gap=number('埋める隙間（px）',0,0,12);
   const edge=number('塗りの拡張・縮小（px）',0,-24,24);
+  const inspectId=number('調べる領域の番号',1,1,1);
   const trace=number('なぞりの幅（px）',1,1,25);
   const opacity=number('塗りの濃さ（%）',100,0,100);
   const condition=select('画素の条件',[['all','すべて'],['transparent','透明な画素だけ'],['color','設定色に近い画素だけ']]);
@@ -128,7 +129,7 @@ export function installFillPanel(host:HTMLElement,api:{
     regionLayers.replaceChildren(new Option('選択してください',''),...entries.map(entry=>new Option(entry.name,entry.id)));
     regionLayers.value=entries.some(entry=>entry.id===current)?current:'';
   }
-  function forgetAnalysis(){capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;pending=null;excludedGap=-1;paint();}
+  function forgetAnalysis(){capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;pending=null;excludedGap=-1;inspectedRegion=0;paint();}
   function sync(){
     if(displayDocument!==api.documentId()){
       displayDocument=api.documentId();forgetAnalysis();refreshReferences(true);
@@ -163,6 +164,9 @@ export function installFillPanel(host:HTMLElement,api:{
     if(!context)return;
     const image=context.createImageData(w,h);
     const result=showBefore.checked?null:pending;
+    const neighbors=graph&&inspectedRegion?new Set(graph.neighbors.subarray(
+      graph.neighborOffsets[inspectedRegion],graph.neighborOffsets[inspectedRegion+1]
+    )):null;
     for(let y=0;y<h;y++)for(let x=0;x<w;x++){
       const p=Math.floor(y*height/h)*width+Math.floor(x*width/w),at=(y*w+x)*4,id=graph?.labels[p]??0;
       const pixels=result?.pixels??source,alpha=pixels[p*4+3]!/255;
@@ -173,7 +177,12 @@ export function installFillPanel(host:HTMLElement,api:{
       }else if(!pending&&graph&&view.value!=='original'){
         if(graph.bridges[p]){r=231;g=124;b=26;}
         else if(graph.walls[p]){r=32;g=32;b=35;}
+        else if(id===inspectedRegion){r=239;g=130;b=40;}
+        else if(neighbors?.has(id)){r=57;g=173;b=206;}
         else if(graph.external[id]){r=207;g=212;b=219;}
+        else if(view.value==='holes'){
+          if(graph.depth[id]!>=2){r=149;g=100;b=215;}else{r=223;g=223;b=223;}
+        }
         else if(view.value==='outside'){r=86;g=148;b=205;}
         else if(view.value==='regions'){r=100+id*37%130;g=115+id*71%115;b=130+id*109%100;}
       }
@@ -208,7 +217,8 @@ export function installFillPanel(host:HTMLElement,api:{
     previous=capture?.key===source.key?currentGraph:null;
     previousCapture=previous?capture:null;
     currentGraph=response.graph;capture=source;graphTolerance=current.tolerance;graphGap=current.gap;
-    compare.checked=false;compare.disabled=!previous;confirmed=!!stored&&!points;excludedGap=-1;candidate=null;pending=null;
+    compare.checked=false;compare.disabled=!previous;confirmed=!!stored&&!points;excludedGap=-1;inspectedRegion=0;candidate=null;pending=null;
+    inspectId.max=String(Math.max(1,currentGraph.count));
     paint();
     const outside=currentGraph.external.reduce((sum,x)=>sum+x,0);
     output.textContent=(confirmed?'保存済み':'確認待ち')+' '+source.name+'。閉領域 '+(currentGraph.count-outside)+' 件、外側 '+outside+' 件。';
@@ -237,7 +247,7 @@ export function installFillPanel(host:HTMLElement,api:{
       output:asSelection?'selection':'pixels',alphaLocked:source.alphaLocked});
     if(candidate!==edit||request!==candidateGeneration||!source.valid())return;
     pending=result;pendingColor=options.color;paint();
-    output.textContent='塗り候補を表示しました。設定を調整するか「候補を適用」を押してください。';
+    output.textContent='塗り候補を表示しました。範囲や濃さを調整してから適用できます。';
   }
   async function fill(points:readonly Point[],asSelection:boolean){
     const options=settings();
@@ -324,7 +334,8 @@ export function installFillPanel(host:HTMLElement,api:{
   referenceLayer.onchange=()=>{forgetAnalysis();rememberRefs();sync();};
   method.onchange=()=>{candidate=null;pending=null;paint();sync();};
   destination.onchange=()=>{candidate=null;pending=null;paint();sync();};
-  compare.onchange=paint;showBefore.onchange=paint;view.onchange=paint;compare.disabled=true;
+  compare.onchange=()=>{inspectedRegion=0;inspectId.max=String(Math.max(1,(compare.checked?previous:currentGraph)?.count??1));paint();};
+  showBefore.onchange=paint;view.onchange=paint;compare.disabled=true;
   for(const control of [opacity,edge,trace,condition,closedOnly,erase,contiguous]){
     control.addEventListener('change',()=>{if(candidate)void work(refreshCandidate);});
   }
@@ -333,19 +344,33 @@ export function installFillPanel(host:HTMLElement,api:{
       if(currentGraph){confirmed=false;candidate=null;pending=null;output.textContent='条件を変えたため、線画をもう一度解析して確定してください。';paint();sync();}
     }else if(candidate)void work(refreshCandidate);
   });
+  function inspect(graph:RegionGraph,id:number){
+    if(id<1||id>graph.count)return;
+    inspectedRegion=id;inspectId.value=String(id);paint();
+    const neighbors=Array.from(graph.neighbors.subarray(graph.neighborOffsets[id],graph.neighborOffsets[id+1]));
+    const kind=graph.external[id]?'外側につながる領域':graph.depth[id]!>=2?'閉領域に囲まれた穴':'閉じた領域';
+    const labels=neighbors.map(item=>item===0?'キャンバスの外':String(item));
+    output.textContent='領域 '+id+' は'+kind+'です。隣り合う領域 '+(labels.join('、')||'なし')+'。';
+  }
+  inspectId.onchange=()=>{
+    const graph=compare.checked?previous:currentGraph;
+    if(graph)inspect(graph,value(inspectId));
+  };
   preview.onclick=event=>{
+    const inspectedGraph=compare.checked&&previous&&!pending?previous:currentGraph;
     const frozen=candidate?.source??capture;
-    if(!frozen||!currentGraph)return;
+    if(!frozen||!inspectedGraph)return;
     const rect=preview.getBoundingClientRect(),x=Math.floor((event.clientX-rect.left)*frozen.width/rect.width),y=Math.floor((event.clientY-rect.top)*frozen.height/rect.height);
     if(x<0||x>=frozen.width||y<0||y>=frozen.height)return;
-    const region=currentGraph.labels[y*frozen.width+x]!;
+    const region=inspectedGraph.labels[y*frozen.width+x]!;
     if(region&&candidate&&usesRegions()){
       const c=candidate;
       if(c.excluded.includes(region))c.excluded=c.excluded.filter(id=>id!==region);
       else if(pending?.mask?.alpha[y*frozen.width+x])c.excluded.push(region);
       else if(method.value==='line')c.included=[...c.included,region];
       void work(refreshCandidate);
-    }else output.textContent=region?'領域 '+region+(currentGraph.external[region]?'。画面端につながっています。':'。閉じた領域です。'):'線画境界です。';
+    }else if(region)inspect(inspectedGraph,region);
+    else output.textContent='線画境界です。';
   };
   panel.ontoggle=()=>{if(panel.open){sync();refreshReferences();refreshRegionList();}else stopGesture();};
   panel.append(summary,options,targets,actions,preview,output);host.append(panel);sync();

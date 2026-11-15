@@ -15,7 +15,8 @@ self.onmessage=({data}:MessageEvent<FillJob>)=>{
     const post=self as unknown as Worker;
     if(data.type==='graph'){
       const graph=buildRegions(source,width,height,settings.tolerance,settings.gap,data.manual);
-      post.postMessage({graph},[graph.labels.buffer as ArrayBuffer,graph.walls.buffer as ArrayBuffer,graph.bridges.buffer as ArrayBuffer,graph.external.buffer as ArrayBuffer]);
+      post.postMessage({graph},[graph.labels.buffer as ArrayBuffer,graph.walls.buffer as ArrayBuffer,graph.bridges.buffer as ArrayBuffer,graph.external.buffer as ArrayBuffer,
+        graph.neighborOffsets.buffer as ArrayBuffer,graph.neighbors.buffer as ArrayBuffer,graph.depth.buffer as ArrayBuffer]);
       return;
     }
     const mask=fillMask(source,width,height,settings,data.points,data.graph,data.selection);
