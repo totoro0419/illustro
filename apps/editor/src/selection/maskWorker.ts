@@ -1,5 +1,6 @@
 /** C06 bounded asynchronous mask jobs. The input thread never waits for pixel loops. */
 import {rasterizeSelection,combineSelection,featherMask,growOrShrink,selectionBorder,type SelectionShape,type MaskData,type CombineMode} from './mask';
+import {selectFromPixels,type AnalyzeOptions} from './autoSelect';
 type Reply=Readonly<{id:number;ok:boolean;alpha?:Uint8Array;error?:string}>;
 export class MaskRasterWorker{
   private worker:Worker|null=null;
@@ -57,6 +58,19 @@ export class MaskRasterWorker{
   }
   adjust(mask:MaskData,radius:number,mode:'grow'|'shrink'|'border'){
     return this.execute(mask.width,mask.height,mode,{previous:mask,radius});
+  }
+  analyze(pixels:Uint8ClampedArray,options:AnalyzeOptions):Promise<MaskData>{
+    if(pixels.length!==options.width*options.height*4)
+      return Promise.reject(Error('選択に必要な画素が不足しています。'));
+    if(!this.worker)return Promise.resolve().then(()=>selectFromPixels(pixels,options));
+    const id=++this.nextId,transfer=new Uint8ClampedArray(pixels);
+    return new Promise((resolve,reject)=>{
+      this.pending.set(id,{resolve,reject,width:options.width,height:options.height});
+      this.worker!.postMessage({
+        id,action:'analyze',width:options.width,height:options.height,
+        analyze:options,pixels:transfer
+      },[transfer.buffer]);
+    });
   }
   destroy(){
     this.worker?.terminate();this.worker=null;
