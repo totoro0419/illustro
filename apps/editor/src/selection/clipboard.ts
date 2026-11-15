@@ -117,6 +117,9 @@ export class ArtworkClipboard {
     const document=controller.document,root=document.root;
     if(record.sourceColorProfile!==root.colorProfileId)
       throw Error('元作品と色空間が異なります。色変換はC15の機能を使ってください。');
+    if(record.sourceDocumentId!=='external-image'&&record.sourceDocumentId!==root.documentId&&
+      !window.confirm('別の作品から貼り付けます。現段階では画素だけを新しいレイヤーへ移し、元のブラシ履歴・特殊なレイヤー設定は移せません。続けますか？'))
+      throw Error('別作品への貼り付けを取り消しました。');
     const x=placement==='original'?record.originX:Math.round((root.width-record.width)/2);
     const y=placement==='original'?record.originY:Math.round((root.height-record.height)/2);
     if(x>=root.width||y>=root.height||x+record.width<=0||y+record.height<=0)
