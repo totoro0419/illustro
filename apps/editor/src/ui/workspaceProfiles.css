@@ -29,3 +29,14 @@ body.workspace-compact-density .box-stack{padding-top:5px}
  body.workspace-left-handed .features-panel{left:auto;right:var(--features-right,calc(var(--rail) + 6px))}
  body.workspace-left-handed .bottom{right:0;left:0}
 }
+
+.c04-shortcut-settings{border-top:1px solid var(--a-border,#ddd);margin:12px 8px;padding:10px 2px 14px;font-size:12px}
+.c04-shortcut-settings>summary{font-weight:600;cursor:pointer;min-height:36px;padding:8px}
+.c04-shortcut-settings>p{color:var(--a-subtle,#64686f);font-size:11px}
+.c04-shortcut-settings>select{display:block;width:100%;margin:8px 0;border:1px solid var(--a-border,#ddd);border-radius:8px;min-height:38px}
+.c04-shortcut-settings>label{display:flex;align-items:center;gap:6px;margin:6px 0;min-height:34px}
+.c04-shortcut-settings>output{display:block;margin:7px 0;min-height:20px;font-size:11px;color:var(--a-subtle,#676a72)}
+.c04-shortcut-list{display:grid;gap:5px;max-height:30vh;overflow:auto}
+.c04-shortcut-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px;border:1px solid var(--a-border,#ddd);border-radius:8px}
+.c04-shortcut-row span{font-size:11px;line-height:1.4;min-width:0;word-break:break-word}
+.c04-shortcut-row button{flex:none;min-width:42px;min-height:34px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:transparent;color:inherit}
