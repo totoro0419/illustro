@@ -23,15 +23,34 @@ export class DocumentPresentation {
    group.context.transferFromImageBitmap(data.bitmap);
   }
  }
- // Bitmap uploads yield to touch events while remaining invisible. Only
- // the final, synchronous DOM swap reveals a complete Undo/Redo revision.
+ // For a newly opened canvas there are no OLD image tiles to protect.
+ // Fill this first scene directly, without duplicating all display canvases.
+ // This also preserves the earlier low-allocation startup path.
  async applyCooperatively(groups,isCurrent){
-  // A single group already switches in one task. Keep the established
-  // low-allocation path for the common short stroke.
   if(groups.length<=1){
    if(isCurrent&&!isCurrent()){for(const group of groups)group.bitmap?.close?.();return false;}
    this.apply(groups);return true;
   }
+  if(this.tiles.size===0){
+   let consumed=0,lastYield=performance.now();
+   try{
+    for(;consumed<groups.length;consumed++){
+     if(isCurrent&&!isCurrent())return false;
+     this.apply([groups[consumed]]);
+     if(consumed+1<groups.length&&performance.now()-lastYield>=8){
+      await new Promise(resolve=>setTimeout(resolve,0));
+      lastYield=performance.now();
+     }
+    }
+    return true;
+   }finally{
+    // A stale packet may be superseded while its next group has not been
+    // installed. Close only unconsumed transfers.
+    for(let i=consumed;i<groups.length;i++)groups[i]?.bitmap?.close?.();
+   }
+  }
+  // History and other changes to a displayed document stay atomic. Each
+  // replacement is prepared offscreen and the full set is swapped at once.
   return publishDocumentGroupsAtomically(this,groups,isCurrent);
  }
  update(view){if(!view)return;this.element.style.display=view[12]>.5||view[14]>.5?'none':'block';this.element.style.imageRendering=view[13]>.5?'pixelated':'auto';this.element.style.transform='matrix('+viewAffine(this.view,view).join(',')+')';}
