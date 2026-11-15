@@ -1,5 +1,5 @@
 {
-  "commit": "a126d16d5a8c51f8e478ee613173717aa4fb34ea",
+  "commit": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
   "mode": "local",
   "tests": [
     {
@@ -212,7 +212,7 @@
       "backend": "WebGL2",
       "width": 2048,
       "ordinal": 1,
-      "elapsedMs": 4142,
+      "elapsedMs": 1871,
       "softwareGpu": false
     },
     {
@@ -220,7 +220,7 @@
       "backend": "WebGL2",
       "width": 2048,
       "ordinal": 2,
-      "elapsedMs": 1554,
+      "elapsedMs": 612,
       "softwareGpu": false
     },
     {
@@ -259,7 +259,7 @@
       "backend": "WebGL2",
       "width": 3000,
       "ordinal": 1,
-      "elapsedMs": 3036,
+      "elapsedMs": 1674,
       "softwareGpu": false
     },
     {
@@ -267,7 +267,7 @@
       "backend": "WebGL2",
       "width": 3000,
       "ordinal": 2,
-      "elapsedMs": 937,
+      "elapsedMs": 715,
       "softwareGpu": false
     },
     {
@@ -511,7 +511,7 @@
       "backend": "WebGPU",
       "width": 2048,
       "ordinal": 1,
-      "elapsedMs": 1288,
+      "elapsedMs": 950,
       "softwareGpu": false
     },
     {
@@ -519,7 +519,7 @@
       "backend": "WebGPU",
       "width": 2048,
       "ordinal": 2,
-      "elapsedMs": 3529,
+      "elapsedMs": 1139,
       "softwareGpu": false
     },
     {
@@ -558,7 +558,7 @@
       "backend": "WebGPU",
       "width": 3000,
       "ordinal": 1,
-      "elapsedMs": 1161,
+      "elapsedMs": 878,
       "softwareGpu": true
     },
     {
@@ -566,7 +566,7 @@
       "backend": "WebGPU",
       "width": 3000,
       "ordinal": 2,
-      "elapsedMs": 5823,
+      "elapsedMs": 1270,
       "softwareGpu": true
     },
     {
@@ -669,7 +669,7 @@
     ]
   },
   "referenceLatencyMs": {
-    "webgl2": 1893,
-    "webgpu": 811
+    "webgl2": 1197,
+    "webgpu": 480
   }
 }
