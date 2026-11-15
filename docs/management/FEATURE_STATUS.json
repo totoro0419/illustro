@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-12",
+  "updated_at": "2026-11-15",
   "repository": "totoro0419/illustro",
   "source_branch": "integration/production-prep-2026-10-05",
   "source_commit": "47c560078ba436d07219d35a6b22c9c9241cfb82",
@@ -14,8 +14,8 @@
     "total": 247
   },
   "assignment_rule": "C01/C02/C03 exact IDs are from archived PR #10/#12/#13; C04-C16 are PROVISIONAL category-to-roadmap assignments until authoritatively reviewed. C17 is QA-only and not assigned feature IDs. Keep one primary chunk per unique feature ID.",
-  "status_rule": "要照合 means unknown item-level completion, not unfinished. Do not upgrade to 合格・固定 without independently verified full new specification and explicit owner approval. Archive implementation never counts as current production implementation.",
-  "historical_acceptance": "M01-M10 owner accepted as milestones; the feature IDs have NOT been independently reconciled or individually approved under archived canonical specs.",
+  "status_rule": "要照合 means unknown item-level completion, not unfinished. Do not upgrade to 合格・固定 without independently verified full new specification and explicit owner approval. Archive implementation never counts as current production implementation. 2026-11-15: C01/C02 have owner-accepted CHUNK milestones; per-ID '要照合' still means unverified detailed contract, not that the accepted chunk is open. See accepted_chunks and feature_rows[].chunk_owner_acceptance.",
+  "historical_acceptance": "M01-M10 owner accepted as milestones; the feature IDs have NOT been independently reconciled or individually approved under archived canonical specs. 2026-11-15 C01 17 and C02 18 (35 original features) owner accepted as completed development chunks at 7944d9d9; full per-ID detailed canonical tests are not attested.",
   "chunk_counts_primary_provisional": {
     "C01": 17,
     "C02": 19,
@@ -49,7 +49,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/CAN.md#can-001"
+      "source_spec": "docs/product-planning/features/CAN.md#can-001",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "CAN-002",
@@ -65,7 +74,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/CAN.md#can-002"
+      "source_spec": "docs/product-planning/features/CAN.md#can-002",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "CAN-003",
@@ -81,7 +99,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/CAN.md#can-003"
+      "source_spec": "docs/product-planning/features/CAN.md#can-003",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "CAN-004",
@@ -97,7 +124,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/CAN.md#can-004"
+      "source_spec": "docs/product-planning/features/CAN.md#can-004",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "CAN-005",
@@ -161,7 +197,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/CAN.md#can-008"
+      "source_spec": "docs/product-planning/features/CAN.md#can-008",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "CAN-009",
@@ -177,7 +222,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/CAN.md#can-009"
+      "source_spec": "docs/product-planning/features/CAN.md#can-009",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "CAN-010",
@@ -209,7 +263,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/INP.md#inp-001"
+      "source_spec": "docs/product-planning/features/INP.md#inp-001",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "INP-002",
@@ -225,7 +288,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/INP.md#inp-002"
+      "source_spec": "docs/product-planning/features/INP.md#inp-002",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "INP-003",
@@ -241,7 +313,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/INP.md#inp-003"
+      "source_spec": "docs/product-planning/features/INP.md#inp-003",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "INP-004",
@@ -257,7 +338,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/INP.md#inp-004"
+      "source_spec": "docs/product-planning/features/INP.md#inp-004",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "INP-005",
@@ -273,7 +363,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/INP.md#inp-005"
+      "source_spec": "docs/product-planning/features/INP.md#inp-005",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "INP-006",
@@ -289,7 +388,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/INP.md#inp-006"
+      "source_spec": "docs/product-planning/features/INP.md#inp-006",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "INP-007",
@@ -305,7 +413,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/INP.md#inp-007"
+      "source_spec": "docs/product-planning/features/INP.md#inp-007",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "INP-008",
@@ -337,7 +454,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-001"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-001",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-002",
@@ -353,7 +479,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-002"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-002",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-003",
@@ -369,7 +504,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-003"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-003",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-004",
@@ -385,7 +529,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-004"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-004",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-005",
@@ -401,7 +554,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-005"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-005",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-006",
@@ -417,7 +579,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-006"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-006",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-007",
@@ -433,7 +604,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-007"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-007",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-008",
@@ -449,7 +629,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-008"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-008",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-009",
@@ -465,7 +654,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-009"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-009",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-010",
@@ -481,7 +679,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-010"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-010",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-011",
@@ -497,7 +704,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-011"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-011",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "BRU-012",
@@ -513,7 +729,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/BRU.md#bru-012"
+      "source_spec": "docs/product-planning/features/BRU.md#bru-012",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "WET-001",
@@ -643,7 +868,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/COL.md#col-001"
+      "source_spec": "docs/product-planning/features/COL.md#col-001",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "COL-002",
@@ -2179,7 +2413,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/HIS.md#his-001"
+      "source_spec": "docs/product-planning/features/HIS.md#his-001",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "HIS-002",
@@ -2307,7 +2550,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/SAV.md#sav-003"
+      "source_spec": "docs/product-planning/features/SAV.md#sav-003",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "SAV-004",
@@ -2723,7 +2975,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/UI.md#ui-001"
+      "source_spec": "docs/product-planning/features/UI.md#ui-001",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "UI-002",
@@ -2851,7 +3112,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/GST.md#gst-001"
+      "source_spec": "docs/product-planning/features/GST.md#gst-001",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "GST-002",
@@ -2883,7 +3153,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/GST.md#gst-003"
+      "source_spec": "docs/product-planning/features/GST.md#gst-003",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "GST-004",
@@ -2899,7 +3178,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/GST.md#gst-004"
+      "source_spec": "docs/product-planning/features/GST.md#gst-004",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C02",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "GST-005",
@@ -2931,7 +3219,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/DEV.md#dev-001"
+      "source_spec": "docs/product-planning/features/DEV.md#dev-001",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "DEV-002",
@@ -2947,7 +3244,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/DEV.md#dev-002"
+      "source_spec": "docs/product-planning/features/DEV.md#dev-002",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "DEV-003",
@@ -2963,7 +3269,16 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/DEV.md#dev-003"
+      "source_spec": "docs/product-planning/features/DEV.md#dev-003",
+      "chunk_owner_acceptance": {
+        "accepted": true,
+        "accepted_date": "2026-11-15",
+        "chunk": "C01",
+        "acceptance_type": "工程完了・製品オーナー受入（個別詳細仕様の全条件検証とは区別）",
+        "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+        "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+        "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md"
+      }
     },
     {
       "id": "DEV-004",
@@ -3379,7 +3694,11 @@
       "qa_url": null,
       "user_accepted_date": null,
       "next_action": "正式開発コードに照合し、完全動作・履歴・保存・実機合格を個別確認",
-      "source_spec": "docs/product-planning/features/PIX.md#pix-001"
+      "source_spec": "docs/product-planning/features/PIX.md#pix-001",
+      "chunk_owner_acceptance": {
+        "accepted": false,
+        "reason": "C02原典18件外の暫定割当。今回のオーナー受入35件に含めない。"
+      }
     },
     {
       "id": "PIX-002",
@@ -3990,5 +4309,64 @@
       "source_spec": "docs/product-planning/features/FX.md#fx-136"
     }
   ],
-  "legacy_overlap_method": "This field identifies accepted M01-M10 capabilities from docs/IMPLEMENTATION_CHECKLIST.md that overlap with archived feature IDs; it NEVER establishes full feature acceptance."
+  "legacy_overlap_method": "This field identifies accepted M01-M10 capabilities from docs/IMPLEMENTATION_CHECKLIST.md that overlap with archived feature IDs; it NEVER establishes full feature acceptance.",
+  "accepted_chunks": {
+    "C01": {
+      "status": "完了・オーナー受入済み",
+      "accepted_date": "2026-11-15",
+      "accepted_feature_count": 17,
+      "accepted_feature_ids": [
+        "CAN-001",
+        "CAN-002",
+        "CAN-003",
+        "CAN-004",
+        "CAN-009",
+        "INP-001",
+        "INP-002",
+        "BRU-001",
+        "BRU-002",
+        "COL-001",
+        "UI-001",
+        "DEV-001",
+        "DEV-002",
+        "DEV-003",
+        "GST-001",
+        "HIS-001",
+        "SAV-003"
+      ],
+      "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+      "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+      "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md",
+      "verification": "工程単位の受入。個別新仕様のすべての数値項目について全面合格は未証明"
+    },
+    "C02": {
+      "status": "完了・オーナー受入済み",
+      "accepted_date": "2026-11-15",
+      "accepted_feature_count": 18,
+      "accepted_feature_ids": [
+        "CAN-008",
+        "INP-003",
+        "INP-004",
+        "INP-005",
+        "INP-006",
+        "INP-007",
+        "BRU-003",
+        "BRU-004",
+        "BRU-005",
+        "BRU-006",
+        "BRU-007",
+        "BRU-008",
+        "BRU-009",
+        "BRU-010",
+        "BRU-011",
+        "BRU-012",
+        "GST-003",
+        "GST-004"
+      ],
+      "code_sha": "7944d9d9229d6df95349bbebf99a8805d74ff52e",
+      "pr_url": "https://github.com/totoro0419/illustro/pull/71",
+      "record_path": "docs/c01-c02/ACCEPTANCE_2026-11-15.md",
+      "verification": "工程単位の受入。PIX-001を含まない。詳細性能と実機数値は未測定"
+    }
+  }
 }
