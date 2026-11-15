@@ -60,6 +60,7 @@ export function colorMarkup():string {
   '<details id="colorPaletteTools" class="color-disclosure color-manage"><summary>パレットの編集・管理</summary><div class="color-detail-inner">'+
    '<div class="color-palette-actions">'+button('新規作成','new-palette')+button('名前の変更','rename-palette')+'</div>'+
    '<div class="color-palette-actions">'+button('書き出す','export-palette')+button('読み込む','import-palette')+'</div>'+
+  '<label class="c04-palette-folder-label">整理用フォルダー名<input id="c04PaletteFolder" type="text" maxlength="80" placeholder="例：背景・人物・資料"></label>'+
    '<input type="file" id="colorPaletteFile" accept=".json,application/json" hidden>'+
    '<p class="color-help">色の並べ替え・削除</p><div id="colorPaletteManageList" class="color-manage-grid" role="group" aria-label="パレットの色の並べ替え・削除"></div>'+
    '<small id="colorPaletteError" class="color-error" role="status"></small>'+
@@ -225,10 +226,11 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   const b=document.createElement('button');b.type='button';b.className='color-swatch';b.style.backgroundColor=hex(color);b.dataset.hex=hex(color);b.title=label+' '+hex(color);b.setAttribute('aria-label',label+' '+hex(color));b.setAttribute('aria-pressed',String(hex(color)===hex(state.current)));b.onclick=onSelect;return b;
  }
  function renderCollections(){
-  selector.replaceChildren(...state.palettes.map(p=>{const op=new Option(p.name,p.id);op.selected=p.id===state.paletteId;return op;}));
+  selector.replaceChildren(...state.palettes.map(p=>{const op=new Option((p.folder?p.folder+' / ':'')+p.name,p.id);op.selected=p.id===state.paletteId;return op;}));
+  const folder=id<HTMLInputElement>('c04PaletteFolder');if(document.activeElement!==folder)folder.value=state.palette.folder??'';
   list.replaceChildren();manager.replaceChildren();
   for(const [i,s] of state.palette.swatches.entries()){
-   list.append(makeChip(s.color,'保存した色 '+(i+1),()=>state.choose(s.color)));
+   list.append(makeChip(s.color,'保存した色 '+(i+1)+(s.tags?.length?' タグ: '+s.tags.join('・'):''),()=>state.choose(s.color)));
    const cell=document.createElement('div');cell.className='color-swatch-cell';
    cell.append(makeChip(s.color,'保存した色 '+(i+1),()=>state.choose(s.color)));
    for(const [mark,move] of [['◀',-1],['▶',1],['×',0]] as const){
@@ -236,7 +238,12 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
     b.setAttribute('aria-label',move===0?'色を削除':move<0?'前へ移動':'後へ移動');
     b.disabled=move!==0&&(i+move<0||i+move>=state.palette.swatches.length);
     b.onclick=()=>move===0?state.removeSwatch(s.id):state.moveSwatch(s.id,move);cell.append(b);
-   }manager.append(cell);
+   }
+   const tags=document.createElement('input');tags.type='text';tags.className='c04-color-tags';
+   tags.maxLength=240;tags.placeholder='タグ（カンマ区切り）';tags.value=(s.tags??[]).join(', ');
+   tags.setAttribute('aria-label','保存した色 '+(i+1)+' のタグ');
+   tags.onchange=()=>state.setSwatchTags(s.id,tags.value.split(/[,、，]+/));
+   cell.append(tags);manager.append(cell);
   }
   if(!list.childElementCount)list.innerHTML='<span class="color-empty">「＋ 色を追加」で現在の色を登録</span>';
   if(!manager.childElementCount)manager.innerHTML='<span class="color-empty">保存した色はありません。</span>';
@@ -244,6 +251,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(!history.childElementCount)history.innerHTML='<span class="color-empty">色を選ぶと、ここからすぐ戻せます。</span>';
  }
  selector.onchange=()=>state.selectPalette(selector.value);
+ id<HTMLInputElement>('c04PaletteFolder').onchange=e=>state.setPaletteFolder((e.target as HTMLInputElement).value);
  const error=id<HTMLElement>('colorPaletteError');
  const dialog=id<HTMLDialogElement>('colorPaletteDialog'),form=id<HTMLFormElement>('colorPaletteForm'),paletteName=id<HTMLInputElement>('colorPaletteName');
  let dialogMode:'new'|'rename'='new';
