@@ -3,7 +3,8 @@ import type {EditorController} from '../controller';
 import type {BrushSurface} from '../brushSurface';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 import type {SelectionRect} from '../strokeSelection';
-import {type MaskData,maskImage,eraseMaskedPixels,rasterizeSelection} from './mask';
+import {type MaskData,rasterizeSelection} from './mask';
+import {runMaskedPixelJob} from './pixels';
 
 export type ClipboardItem=Readonly<{
   sourceDocumentId:string;sourceColorProfile:string;sourceName:string;
@@ -54,7 +55,8 @@ export class ArtworkClipboard {
     }
     if(document.head!==head)throw Error('コピー中に作品が変更されました。もう一度コピーしてください。');
     const masked=this.selectionMask&&this.selectionMask.width===root.width&&this.selectionMask.height===root.height&&selection
-      ?maskImage(source,this.selectionMask):source;
+      ?await runMaskedPixelJob(source,this.selectionMask,'copy'):source;
+    if(document.head!==head)throw Error('コピー中に作品が変更されました。');
     const pixels=crop(masked,root.width,area);
     const record:ClipboardItem={
       sourceDocumentId:root.documentId,sourceColorProfile:root.colorProfileId,
@@ -77,15 +79,10 @@ export class ArtworkClipboard {
     if(head!==document.head)throw Error('作品が変更されたため切り取りを中止しました。');
     const previous=(await drawing.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
     if(!previous||head!==document.head)throw Error('切り取るレイヤーの読み込みに失敗しました。');
-    const result=this.selectionMask&&this.selectionMask.width===root.width&&this.selectionMask.height===root.height
-      ?eraseMaskedPixels(previous,this.selectionMask):new Uint8ClampedArray(previous);
-    if(!this.selectionMask){
-      const rect=safeRect(area,root.width,root.height);
-      for(let y=rect.y;y<rect.y+rect.height;y++){
-        const from=(y*root.width+rect.x)*4;
-        result.fill(0,from,from+rect.width*4);
-      }
-    }
+    const mask=this.selectionMask&&this.selectionMask.width===root.width&&this.selectionMask.height===root.height
+      ?this.selectionMask:rasterizeSelection({type:'rectangle',...area},root.width,root.height);
+    const result=await runMaskedPixelJob(previous,mask,'cut');
+    if(document.head!==head)throw Error('切り取り中に作品が変更されました。');
     const tx=document.begin('選択範囲を切り取る');
     tx.replaceLayerRaster(layer.id,result);
     controller.lastPersistenceHandoff=tx.commit().persistence;
@@ -107,21 +104,8 @@ export class ArtworkClipboard {
       throw Error('選択範囲の大きさが作品と異なります。');
     const snapshot=(await drawing.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
     if(!snapshot||document.head!==head)throw Error('作品が変更されたため、移動を中止しました。');
-    const selected=maskImage(snapshot,selection),target=eraseMaskedPixels(snapshot,selection);
-    // Selected material is composited on top of the remaining layer.
-    const w=root.width,h=root.height;
-    for(let y=0;y<h;y++){
-      const py=y+dy;if(py<0||py>=h)continue;
-      for(let x=0;x<w;x++){
-        const px=x+dx;if(px<0||px>=w)continue;
-        const src=(y*w+x)*4,sa=selected[src+3]!/255;if(!sa)continue;
-        const dest=(py*w+px)*4,da=target[dest+3]!/255;
-        const outA=sa+da*(1-sa);
-        for(let c=0;c<3;c++)
-          target[dest+c]=outA?Math.round((selected[src+c]!*sa+target[dest+c]!*da*(1-sa))/outA):0;
-        target[dest+3]=Math.round(outA*255);
-      }
-    }
+    const target=await runMaskedPixelJob(snapshot,selection,'move',dx,dy);
+    if(document.head!==head)throw Error('移動中に作品が変更されました。');
     const transaction=document.begin('選択した絵を移動');
     transaction.replaceLayerRaster(layer.id,target);
     controller.lastPersistenceHandoff=transaction.commit().persistence;
