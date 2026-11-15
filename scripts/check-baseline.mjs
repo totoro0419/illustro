@@ -36,6 +36,7 @@ const migrationSupportingDocs=new Set([
  'docs/migration/before-archive-2026-11-12/README.md',
  'docs/revival/M10_CLOSURE_2026-11-12.md',
  'docs/c01-c02/FEATURE_AUDIT.md',
+ 'docs/c01-c02/ACCEPTANCE_2026-11-15.md',
  'docs/c01-c02/OFFICIAL_REFERENCE_REVIEW.md'
 ]);
 for(const p of files('docs'))assert.ok(seen.has(p)||imported.has(p)||migrationSupportingDocs.has(p),'unclassified document '+p);
