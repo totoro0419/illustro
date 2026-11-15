@@ -3276,6 +3276,12 @@ c06Selection=installSelectionWorkbench({
       throw Error('計算中に作品が変更されました。もう一度選択してください。');
     if(result.length!==width*height*4)throw Error('作品の画素が不足しています。');
     return new Uint8ClampedArray(result);
+  },
+  moveContent:async(dx,dy)=>{
+    await withClipboardAccess(async drawing=>{
+      await c06Clipboard.moveContent(controller,drawing,dx,dy);
+      return 'edit';
+    });
   }
 });
 c06ClipboardUI=installClipboardPanel({
