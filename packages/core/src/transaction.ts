@@ -71,6 +71,19 @@ export class DocumentTransaction{
     if(this.slotsValue.length)throw new Error('Layer deletion must start its own transaction');
     return this.removeRasterLayers(ids);
   }
+  bakeVectorLayerMask(id:LayerId,pixels:Uint8Array){
+    this.open();
+    if(this.slotsValue.length)throw new Error('Apply the mask as its own transaction');
+    const layer=this.rootValue.getLayer(id);
+    if(!layer.vectorMask?.enabled||this.rootValue.isLayerLocked(id))throw new Error('有効なマスクが付いた、ロックされていないレイヤーを選んでください。');
+    const replacement=this.addRasterSnapshotAbove(id,pixels,layer.name,true);
+    this.meta(replacement,{vectorMask:null,...(layer.positionLocked?{positionLocked:true}:{})});
+    for(const otherId of this.rootValue.rootLayerIds){
+      if(this.rootValue.getLayer(otherId).clipSourceId===id)this.meta(otherId,{clipSourceId:replacement});
+    }
+    this.removeRasterLayers(new Set([id]));
+    return replacement;
+  }
   replaceRasterLayers(ids:ReadonlySet<LayerId>,referenceId:LayerId,pixels:Uint8ClampedArray,name:string){
     if(!ids.size||!ids.has(referenceId)||this.slotsValue.length)throw new Error('結合するレイヤーを選んでください。');
     const id=this.addRasterSnapshotAbove(referenceId,pixels,name);

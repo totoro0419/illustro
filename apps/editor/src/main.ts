@@ -31,7 +31,7 @@ import {captureExport,compositeLayer,exportImage,exportFileName,renderFrozenArtw
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type VectorLayerMask,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,vectorMaskCoverage,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type VectorLayerMask,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -339,9 +339,10 @@ function updateVectorMaskControls(){
   const layer=controller.selectedLayer,mask=layer.vectorMask;
   const disabled=!documentReady||layer.baseColor==='white'||controller.document.root.isLayerLocked(layer.id);
   byId<HTMLButtonElement>('vectorMaskFromSelection').disabled=disabled||!surface?.selectedRectangle;
-  for(const id of ['vectorMaskEnabled','vectorMaskInverted','vectorMaskDensity','vectorMaskRemove']){
+  for(const id of ['vectorMaskEnabled','vectorMaskInverted','vectorMaskDensity','vectorMaskRemove','vectorMaskApply']){
     (byId(id) as HTMLInputElement|HTMLButtonElement).disabled=disabled||!mask;
   }
+  byId<HTMLButtonElement>('vectorMaskApply').disabled=disabled||!mask?.enabled;
   byId<HTMLInputElement>('vectorMaskEnabled').checked=mask?.enabled??false;
   byId<HTMLInputElement>('vectorMaskInverted').checked=mask?.inverted??false;
   byId<HTMLInputElement>('vectorMaskDensity').value=String(Math.round((mask?.density??1)*100));
@@ -350,6 +351,41 @@ function updateVectorMaskControls(){
 function modifyVectorMask(patch:Partial<VectorLayerMask>){
   const layer=controller.selectedLayer;
   if(layer.vectorMask)changeLayer('マスクを変更しました。',tx=>tx.setVectorLayerMask(layer.id,{...layer.vectorMask!,...patch}));
+}
+
+async function applyVectorMask(){
+  const drawing=surface,artwork=controller.document,layer=controller.selectedLayer,mask=layer.vectorMask;
+  if(!drawing?.canChangeGeometry||!mask?.enabled||geometryBusy||historyPending)return;
+  if(!window.confirm('マスクを絵に適用します。隠れていた画素に戻すには、元に戻す操作を使ってください。'))return;
+  const head=artwork.head,root=artwork.root;
+  geometryBusy=true;
+  drawing.setInputBarrier(true);
+  try{
+    const pixels=(await drawing.captureDocumentLayers(new Set([layer.id]))).get(layer.id)!;
+    if(surface!==drawing||controller.document!==artwork||artwork.head!==head)throw new Error('作品が切り替わりました。');
+    for(let y=0;y<root.height;y++){
+      for(let x=0;x<root.width;x++){
+        const index=(y*root.width+x)*4;
+        const alpha=Math.round(pixels[index+3]!*vectorMaskCoverage(mask,x+.5,y+.5));
+        pixels[index+3]=alpha;
+        if(!alpha)pixels.fill(0,index,index+3);
+      }
+    }
+    const tx=artwork.begin('マスクをレイヤーに適用');
+    const id=tx.bakeVectorLayerMask(layer.id,pixels);
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    controller.selectLayer(id);
+    queueLatestCommit();
+    checkpointNeedsFullSeed=true;
+    await drawing.restoreDocumentProjection();
+    byId('status').textContent='マスクをレイヤーに適用しました。';
+  }catch(error){
+    byId('status').textContent='マスクの適用中にエラーが発生しました。'+(error instanceof Error?error.message:'');
+  }finally{
+    geometryBusy=false;
+    if(surface===drawing)drawing.setInputBarrier(false);
+    renderLayers();updateHistoryButtons();updateQa();
+  }
 }
 
 function deleteLayers(ids:ReadonlySet<LayerId>){
@@ -860,6 +896,7 @@ byId<HTMLButtonElement>('vectorMaskFromSelection').onclick=()=>{
 byId<HTMLInputElement>('vectorMaskEnabled').onchange=event=>modifyVectorMask({enabled:(event.currentTarget as HTMLInputElement).checked});
 byId<HTMLInputElement>('vectorMaskInverted').onchange=event=>modifyVectorMask({inverted:(event.currentTarget as HTMLInputElement).checked});
 byId<HTMLInputElement>('vectorMaskDensity').onchange=event=>modifyVectorMask({density:Number((event.currentTarget as HTMLInputElement).value)/100});
+byId<HTMLButtonElement>('vectorMaskApply').onclick=()=>{void applyVectorMask();};
 byId<HTMLButtonElement>('vectorMaskRemove').onclick=()=>changeLayer('マスクを外しました。',tx=>tx.setVectorLayerMask(controller.selectedLayerId,null));
 byId<HTMLButtonElement>('layerClipping').onclick=()=>{
   const layer=controller.selectedLayer;
