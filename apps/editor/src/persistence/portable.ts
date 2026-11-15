@@ -59,12 +59,21 @@ export function openDecodedPortableDocument(decoded:DecodedPortableFile):Portabl
   if(editor){
     if((editor.descriptor.type!=='editor.state.v1'&&editor.descriptor.type!==EDITOR_TYPE)||editor.descriptor.required)throw new Error('invalid editor state section');
     let state:ReturnType<typeof readEditorState>;
-    try{state=readEditorState(JSON.parse(textDecoder.decode(editor.bytes)),document.root.width,document.root.height);}
-    catch(error){throw new Error('編集状態を読み込めません。'+(error instanceof Error?error.message:''));}
+    let extraLegacyFields:string[]=[];
+    try{
+      const rawState=JSON.parse(textDecoder.decode(editor.bytes));
+      state=readEditorState(rawState,document.root.width,document.root.height);
+      if(state.sourceVersion===1&&rawState&&typeof rawState==='object'&&!Array.isArray(rawState)){
+        extraLegacyFields=Object.keys(rawState).filter(key=>key!=='version'&&key!=='selectedLayerId');
+      }
+    }catch(error){throw new Error('編集状態を読み込めません。'+(error instanceof Error?error.message:''));}
     if(editor.descriptor.type!==('editor.state.v'+state.sourceVersion))throw new Error('編集状態の版が一致しません。');
     if(state.selectedLayerId&&document.root.hasLayer(state.selectedLayerId as LayerId))selectedLayerId=state.selectedLayerId as LayerId;
     selection=state.selection;
-    if(state.sourceVersion===1)legacyEditorState={version:1,notices:['旧形式には選択範囲の保存欄がありません。保存されていない選択範囲は復元できません。']};
+    if(state.sourceVersion===1)legacyEditorState={version:1,notices:[
+      '旧形式には選択範囲の保存欄がありません。保存されていない選択範囲は復元できません。',
+      ...(extraLegacyFields.length?['旧形式の未対応の編集状態（'+extraLegacyFields.join('、')+'）は新形式では引き継げません。']:[]),
+    ]};
   }else{
     legacyEditorState={version:0,notices:['旧形式には編集対象レイヤーと選択範囲の保存欄がありません。開いた時の描画先は先頭のレイヤーです。']};
   }
