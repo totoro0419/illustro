@@ -805,17 +805,32 @@ function editLayerBlend(){
   updateVectorMaskControls();
   if(drawing.inspectedLayer)drawing.setSoloLayer(null);
   shellUi.setLayerPage(false);
+  const root=artwork.root,clip=root.clippingSource(layer.id);
+  const stages=[
+    layer.deformation?'変形した絵と、その上に描いた線':layer.editable?'編集できる図形・文字・グラデーション':'レイヤーの絵',
+    ...(layer.vectorMask?.enabled?['レイヤーマスクで表示する範囲を決める']:[]),
+    ...(clip?['「'+clip.name+'」で切り抜く']:[]),
+    'レイヤーの不透明度と、選んだモードで下の絵に重ねる'
+  ];
   const dialog=openLayerBlendDialog({
-    title:layer.name,
-    current:layer.blend??{mode:'normal',space:'encoded',seed:parseInt(layer.id.slice(-8),16)>>>0},
-    preview:blend=>drawing.setLayerBlendPreview(blend?{layerId:layer.id,blend}:null),
-    complete:blend=>{
+    title:layer.name,stages,
+    current:{blend:layer.blend??{mode:'normal',space:'encoded',seed:parseInt(layer.id.slice(-8),16)>>>0},opacity:layer.opacity},
+    preview:choice=>drawing.setLayerBlendPreview(choice?{layerId:layer.id,...choice}:null),
+    complete:choice=>{
       if(activeBlend?.dialog!==dialog)return;
       activeBlend=null;
       drawing.setLayerBlendPreview(null);
-      if(blend&&surface===drawing&&controller.document===artwork&&artwork.root.hasLayer(layer.id)){
-        changeLayer('レイヤーの合成モードを変更しました。',tx=>tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'?null:blend));
+      if(!choice||surface!==drawing||controller.document!==artwork||!artwork.root.hasLayer(layer.id))return;
+      const latest=artwork.root.getLayer(layer.id);
+      if(latest.blend!==layer.blend||latest.opacity!==layer.opacity){
+        byId('status').textContent='合成設定が変わりました。開き直して調整してください。';
+        return;
       }
+      changeLayer('レイヤーの合成設定を変更しました。',tx=>{
+        const {blend,opacity}=choice;
+        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'?null:blend);
+        return tx.setLayerOpacity(layer.id,opacity)||changed;
+      });
     },
   });
   activeBlend={dialog,drawing,id:layer.id};

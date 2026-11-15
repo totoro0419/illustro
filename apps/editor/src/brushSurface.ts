@@ -499,7 +499,7 @@ export class BrushSurface{
     }
     if(this.editGesture){
       if(this.editGesture.pointEdit)return;
-      if(e.button!==0||this.busy||this.inputBarrier||this.inspectedLayer||this.layerCompPreview||this.layerBlendPreview)return;
+      if(e.button!==0||this.busy||this.inputBarrier||this.inspectedLayer||this.layerCompPreview||this.layerBlendPreview?.layerId===this.controller.selectedLayer.id)return;
       e.preventDefault();
       this.editPointer=e.pointerId;
       this.editPointerType=e.pointerType;
@@ -511,7 +511,7 @@ export class BrushSurface{
     const eraser=penEraserInput(e,this.barrelErases)?this.eraserPreset():null,preset=eraser??this.preset;
     const mask=this.selectionMask();
     if(mask&&this.busy){this.status('前の描画を反映しています。');return;}
-    if(this.layerBlendPreview){this.status('合成モードを確定または取り消してから描いてください。');return;}
+    if(this.layerBlendPreview?.layerId===this.controller.selectedLayer.id){this.status('合成モードを確定または取り消してから描いてください。');return;}
     if(this.layerCompPreview){this.status('表示案の比較を終了してから描いてください。');return;}
     if(this.inspectedLayer){this.status('レイヤーの単独表示を解除してから描いてください。');return;}
     const layer=this.controller.selectedLayer;
@@ -879,8 +879,8 @@ export class BrushSurface{
     this.syncLayerStyles();
   }
   private layerCompPreview:LayerComp|null=null;
-  private layerBlendPreview:{layerId:LayerId;blend:LayerBlend}|null=null;
-  setLayerBlendPreview(preview:{layerId:LayerId;blend:LayerBlend}|null){
+  private layerBlendPreview:{layerId:LayerId;blend:LayerBlend;opacity:number}|null=null;
+  setLayerBlendPreview(preview:{layerId:LayerId;blend:LayerBlend;opacity:number}|null){
     this.layerBlendPreview=preview;
     this.syncLayerStyles();
   }
@@ -901,7 +901,8 @@ export class BrushSurface{
         ?(candidate?.visible??layer.visible)&&root.groupsForLayer(layer.id).every(group=>groups?.get(group.id)??group.visible)
         :root.isLayerVisible(layer.id);
       const clip=root.clippingSource(layer.id);
-      const blend=this.layerBlendPreview?.layerId===layer.id?this.layerBlendPreview.blend
+      const blendPreview=this.layerBlendPreview?.layerId===layer.id?this.layerBlendPreview:null;
+      const blend=blendPreview?blendPreview.blend
         :candidate?.blend!==undefined?candidate.blend:layer.blend;
       return {
         surfaceKey:layer.surface.descriptor.surfaceId,
@@ -910,7 +911,7 @@ export class BrushSurface{
         ...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),
         ...(!solo&&blend?{blend}:{}),
         ...(layer.baseColor==='white'?{white:true}:{}),
-        opacity:preview?.layerId===layer.id?preview.opacity:candidate?.opacity??layer.opacity,
+        opacity:preview?.layerId===layer.id?preview.opacity:blendPreview?.opacity??candidate?.opacity??layer.opacity,
       };
     }));
   }

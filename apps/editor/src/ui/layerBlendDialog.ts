@@ -9,8 +9,10 @@ export const layerBlendNames:Record<LayerBlendMode,string>={
   luminosity:'輝度',dissolve:'ディザ合成',
 };
 
+export type LayerBlendChoice=Readonly<{blend:LayerBlend;opacity:number}>;
 export function openLayerBlendDialog(options:{
-  title:string;current:LayerBlend;preview:(blend:LayerBlend|null)=>void;complete:(blend?:LayerBlend)=>void;
+  title:string;current:LayerBlendChoice;stages:readonly string[];
+  preview:(choice:LayerBlendChoice|null)=>void;complete:(choice?:LayerBlendChoice)=>void;
 }){
   const dialog=document.createElement('dialog'),form=document.createElement('form');
   dialog.className='layer-blend-dialog';
@@ -19,21 +21,28 @@ export function openLayerBlendDialog(options:{
   const title=document.createElement('strong');title.textContent=options.title+' の合成モード';
   const mode=document.createElement('select');
   mode.replaceChildren(...LAYER_BLEND_MODES.map(value=>new Option(layerBlendNames[value],value)));
-  mode.value=options.current.mode;
+  mode.value=options.current.blend.mode;
   const space=document.createElement('select');
   space.replaceChildren(new Option('通常の色','encoded'),new Option('明るさに比例する色','linear'));
-  space.value=options.current.space;
+  space.value=options.current.blend.space;
+  const amount=document.createElement('input');amount.type='range';
+  amount.min='0';amount.max='100';amount.step='.1';amount.value=String(options.current.opacity*100);
+  const percentage=document.createElement('output');
+  let opacity=options.current.opacity;
   const comparison=document.createElement('button');comparison.type='button';
-  const selected=():LayerBlend=>({
-    mode:mode.value as LayerBlendMode,space:space.value==='linear'?'linear':'encoded',seed:options.current.seed,
+  const selected=():LayerBlendChoice=>({
+    blend:{mode:mode.value as LayerBlendMode,space:space.value==='linear'?'linear':'encoded',seed:options.current.blend.seed},
+    opacity,
   });
   let before=false;
   const update=()=>{
     comparison.setAttribute('aria-pressed',String(before));
+    percentage.value=Math.round(opacity*1000)/10+'%';
     comparison.textContent=before?'変更後を見る':'変更前を見る';
     options.preview(before?null:selected());
   };
   mode.onchange=space.onchange=()=>{before=false;update();};
+  amount.oninput=()=>{opacity=amount.valueAsNumber/100;before=false;update();};
   comparison.onclick=()=>{before=!before;update();};
   const field=(name:string,input:HTMLElement)=>{
     const label=document.createElement('label');
@@ -44,7 +53,17 @@ export function openLayerBlendDialog(options:{
   const cancel=document.createElement('button');cancel.type='submit';cancel.value='cancel';cancel.textContent='取り消す';
   const apply=document.createElement('button');apply.type='submit';apply.value='apply';apply.textContent='確定';
   actions.append(comparison,cancel,apply);
-  form.append(title,field('モード',mode),field('色の混ぜ方',space),actions);
+  const strength=field('レイヤーの不透明度',amount);strength.append(percentage);
+  const stages=document.createElement('details'),stageTitle=document.createElement('summary');
+  stageTitle.textContent='処理の順番と透明部分';
+  const order=document.createElement('ol');
+  for(const stage of options.stages){
+    const row=document.createElement('li');row.textContent=stage;order.append(row);
+  }
+  const transparency=document.createElement('p');
+  transparency.textContent='透明部分は透明度の分だけ合成が弱まります。透明度が0の部分は下の絵に影響しません。';
+  stages.append(stageTitle,order,transparency);
+  form.append(title,field('モード',mode),field('色の混ぜ方',space),strength,actions,stages);
   dialog.append(form);document.body.append(dialog);
   const key=(event:KeyboardEvent)=>{
     if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close('cancel');}
