@@ -70,9 +70,10 @@ import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
 import {compilePreset,layerMaskTile,TILE,type FoundationPreset} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
-import {captureExport,compositeLayer,exportImage,exportFileName,renderFrozenArtwork,type ImageFormat,type ImageExportResult} from './export/basicExport';
+import {captureExport,compositeLayer,exportImage,exportFileName,renderFrozenArtwork,type FrozenExport,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
+import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
 import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerId} from '@illustro/core';
 
@@ -2775,19 +2776,32 @@ byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew(
 byId<HTMLInputElement>('openFile').onchange=async e=>{
   const input=e.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file)return;
   byId('status').textContent='作品ファイルを確認しています。';let opened:PortableOpenResult;
-  try{opened=await persistence.decodePortable(new Uint8Array(await file.arrayBuffer()));}
-  catch(error){const message='この作品ファイルは安全に読み込めませんでした。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);updateQa();return;}
   let migrationCopy=false;
-  let migrationSource:CoreDocument|null=null,migrationNotices:readonly string[]=[];
+  let migrationSource:(()=>Promise<FrozenExport>)|null=null,migrationNotices:readonly string[]=[];
+  try{
+    if(await isLegacyStrokeFile(file)){
+      const migrated=await convertLegacyStrokeFile(file);
+      opened=await persistence.decodePortable(migrated.bytes);
+      migrationNotices=migrated.notices;
+      if(!confirm('旧Illustroの描線ファイルを別の作品として取り込みます。\n'+migrationNotices.join('\n')+'\n続けますか？'))return;
+      migrationCopy=true;
+      const converted=opened.document;
+      migrationSource=()=>legacySourcePreview(file,converted);
+    }else opened=await persistence.decodePortable(new Uint8Array(await file.arrayBuffer()));
+  }catch(error){const message='この作品ファイルは安全に読み込めませんでした。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);updateQa();return;}
   if(opened.legacyEditorState){
     const source=opened.legacyEditorState.version===0?'編集状態なし':'編集状態 v1';
     const explanation=opened.legacyEditorState.notices.join('\n');
     const decision=window.confirm('旧形式の作品です（'+source+' → 編集状態 v2）。\n'+explanation+
       '\n\n元ファイルを変更せず、別の作品として取り込みます。新しい作品ファイルは「別名で保存」から作れます。続けますか？');
     if(!decision)return;
-    migrationSource=opened.document;
+    const original=opened.document;
+    migrationSource=async()=>captureExport(original);
     migrationNotices=opened.legacyEditorState.notices;
-    opened=copyOpened(opened,opened.document.root.name.slice(0,4060)+'（形式移行）');
+    const openedCopy=copyOpened(opened,opened.document.root.name.slice(0,4060)+'（形式移行）');
+    opened={...openedCopy,preserved:{...openedCopy.preserved,manifestExtras:{
+      ...openedCopy.preserved.manifestExtras,legacyMigration:{format:'illustro.container.v1',editorStateVersion:opened.legacyEditorState.version}
+    }}};
     migrationCopy=true;
   }
   byId('status').textContent='作品を表示しています。';
@@ -2812,7 +2826,7 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
   catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);}
   updateQa();
 };
-function showMigrationDetails(source:CoreDocument,converted:CoreDocument,notices:readonly string[]){
+function showMigrationDetails(source:()=>Promise<FrozenExport>,converted:CoreDocument,notices:readonly string[]){
   const dialog=document.createElement('dialog'),section=document.createElement('section');
   const title=document.createElement('h2'),message=document.createElement('p'),status=document.createElement('output');
   title.textContent='旧形式から移行した作品';
@@ -2832,9 +2846,9 @@ function showMigrationDetails(source:CoreDocument,converted:CoreDocument,notices
   compare.onclick=async()=>{
     compare.disabled=true;status.textContent='比較画像を準備しています。';
     try{
-      for(const [artwork,label] of [[source,'移行前'],[converted,'移行コピー']] as const){
+      for(const [capture,label] of [[source,'移行前'],[async()=>captureExport(converted),'移行コピー']] as const){
         if(!dialog.open)return;
-        const output=await exportImage(captureExport(artwork),'png');
+        const output=await exportImage(await capture(),'png');
         if(!dialog.open)return;
         const url=URL.createObjectURL(output.blob);urls.push(url);
         const view=createHistoryComparison(url,label,output.width,output.height);

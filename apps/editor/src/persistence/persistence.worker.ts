@@ -4,6 +4,7 @@ import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,update
 import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
 import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
 import {makeEditorState,readEditorState} from './editorState';
+import {openDecodedPortableDocument} from './portable';
 import {clampSelectionRect,type SelectionRect} from '../strokeSelection';
 
 type RequestMessage={id:number;type:string;[key:string]:unknown};
@@ -225,7 +226,8 @@ async function handle(message:RequestMessage){
         }
       }
       const bytes=await encodeIllustroFile({generationId,documentId:target.root.documentId,snapshotRevisionId:snapshot.snapshotRevisionId,createdAt,sections:sectionInputs,manifestExtras:preserved.manifestExtras});
-      await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
+      const verified=await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
+      if(preserved.manifestExtras.legacyMigration)openDecodedPortableDocument(verified);
       const transfers=[bytes.buffer as ArrayBuffer];reply(message.id,true,{bytes,durationMs:0},undefined,transfers);break;
     }
     case 'activate-last-good':{
