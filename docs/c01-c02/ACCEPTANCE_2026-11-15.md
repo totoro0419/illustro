@@ -85,3 +85,12 @@
 ## 7. 記録の変更不可事項
 
 正式リポジトリ `totoro0419/illustro`、受入コード基準SHA、テスト証拠、固定QA URL、履歴、ユーザーの完了意思を保持する。本記録はC01/C02の区切りを明確化する目的であり、未確認技術を証明したり、C03以降の設計を無断で簡略化したりしない。
+
+## 8. GitHub正式統合の結果
+
+- **製品・C01/C02完了PR [#71](https://github.com/totoro0419/illustro/pull/71)**：2026-11-15、`integration/production-prep-2026-10-05` へ **merged**。統合コミット `b04a7a2a73beef4e14cd9d0a3190f127373e2066`。
+- **開発マネージャーPR [#70](https://github.com/totoro0419/illustro/pull/70)**：同日、受入済み35件の管理台帳・C03引継ぎを同じintegrationへ **merged**。統合コミット `5976983b495fc1dd93598034e94b39b8512f7363`。
+- 最終的な管理台帳は `docs/management/FEATURE_STATUS.json`。固有ID247件を保存し、受入済みC01の17件・C02の18件のみ `chunk_owner_acceptance.accepted=true` とする。C02へ仮割当されていた `PIX-001` はこの35件に含めない。
+- 統合後の Core CI [#43688890869](https://github.com/totoro0419/illustro/actions/runs/43688890869)：**success**（`5976983b...`）。
+- **C03の開始位置**：上記の受入済みコードと管理資料を含む、`integration/production-prep-2026-10-05` の開始時点の**最新コミット**。旧2026-11-12の `47c560...` を新たな作業の起点にしない。
+- C01/C02の工程は今回の統合で終了した。改善項目は次工程やC17へ引き継ぎ、35件の受入記録と過去のQAを保持する。
