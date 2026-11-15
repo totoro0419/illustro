@@ -3,6 +3,8 @@ import {hasPixelData} from './pixelPresence';
 import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,updateWork,deleteWork,resetWorkLibrary,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
 import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
 import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
+import {makeEditorState,readEditorState} from './editorState';
+import type {SelectionRect} from '../strokeSelection';
 
 type RequestMessage={id:number;type:string;[key:string]:unknown};
 type Session={documentId:string;writerEpochId:string;path:string};
@@ -44,7 +46,7 @@ async function handle(message:RequestMessage){
       const old=await getWork(session.documentId),now=Date.now();
       const entry:WorkEntry={documentId:session.documentId,writerEpochId:session.writerEpochId,revisionId,protectedThrough,
         name:root.name,width:root.width,height:root.height,createdAt:old?.createdAt??root.createdAt,updatedAt:old?.updatedAt??now,openedAt:now,
-        selectedLayerId:uuid(message.selectedLayerId,'selected layer'),thumbnail:old?.thumbnail??null,thumbnailRevision:old?.thumbnailRevision??null,
+        selectedLayerId:uuid(message.selectedLayerId,'selected layer'),selection:requestedSelection(message.selection,root.width,root.height),thumbnail:old?.thumbnail??null,thumbnailRevision:old?.thumbnailRevision??null,
         previewLayers:root.rootLayerIds.map(id=>{const layer=root.layers.find(layer=>layer.id===id);if(!layer)throw new Error('work binding layer missing');return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible&&!(root.layerGroups??[]).some(group=>!group.visible&&group.members.some(member=>member===id)),opacity:layer.opacity,...(layer.baseColor==='white'?{baseColor:'white' as const}:{})};}),
         previous:old?{writerEpochId:old.writerEpochId,revisionId:old.revisionId,protectedThrough:old.protectedThrough}:null,preserved:message.preserved};
       await publishWork(entry,typeof message.expectedEpoch==='string'?message.expectedEpoch:null);libraryWork=entry;reply(message.id,true,entry);break;
@@ -73,6 +75,10 @@ async function handle(message:RequestMessage){
     }
     case 'library-selection':{
       if(libraryWork)await publishCurrent({selectedLayerId:uuid(message.selectedLayerId,'selected layer')});reply(message.id,true,{});break;
+    }
+    case 'library-editor-selection':{
+      if(libraryWork)await publishCurrent({selection:requestedSelection(message.selection,libraryWork.width,libraryWork.height)});
+      reply(message.id,true,{});break;
     }
     case 'library-thumbnail':{
       const id=uuid(message.documentId,'document id');const stored=await storeWorkThumbnail(id,String(message.revisionId??''),message.thumbnail as Blob);reply(message.id,true,{stored});break;
@@ -157,16 +163,19 @@ async function handle(message:RequestMessage){
       const loaded=await loadRecovery(store,session),projectionCache=await loadProjectionCheckpointRaw(store,session,new Set((loaded.snapshot.revisions as readonly {id:string}[]).map(r=>r.id)));const transfers:Transferable[]=[];
       for(const block of loaded.blocks)transfers.push(block.bytes.buffer as ArrayBuffer);
       for(const layer of projectionCache?.layers??[]){if('pixels' in layer)transfers.push(layer.pixels.buffer as ArrayBuffer);else for(const tile of layer.tiles)transfers.push(tile.pixels.buffer as ArrayBuffer);}
-      reply(message.id,true,{...loaded,projectionCache},undefined,transfers);break;
+      const entry=await getWork(documentId);
+      reply(message.id,true,{...loaded,projectionCache,selection:entry?.selection??null},undefined,transfers);break;
     }
     case 'encode-save':{
       const snapshot=message.snapshot as CorePersistenceSnapshotV1;if(snapshot?.schema!=='illustro.core.snapshot'||snapshot.schemaVersion!==1)throw new Error('invalid save snapshot');
       const selectedLayerId=uuid(message.selectedLayerId,'selected layer'),blocks=blockInputs(message.blocks),generationId=uuid(message.generationId,'generation id'),createdAt=integer(message.createdAt,'createdAt',0);
       const sectionInputs:PortableSectionInput[]=[{id:'document',type:'document.core.v1',required:true,bytes:encoder.encode(JSON.stringify(snapshot))}];
       const byId=new Map(blocks.map(x=>[x.id,x.bytes]));for(const descriptor of snapshot.blocks){const bytes=byId.get(descriptor.id);if(!bytes)throw new Error('save block dependency missing');sectionInputs.push({id:'block:'+descriptor.id,type:'raster.block.v1',required:true,bytes});}
-      sectionInputs.push({id:'editor-state',type:'editor.state.v1',required:false,bytes:encoder.encode(JSON.stringify({version:1,selectedLayerId}))});
-      const preserved=preservedSections(message.preserved);for(const section of preserved.sections){if(section.required)throw new Error('unknown preserved section cannot be required');if(sectionInputs.some(x=>x.id===section.id))continue;sectionInputs.push(section);}
       const target=snapshot.revisions.find(r=>r.id===snapshot.snapshotRevisionId);if(!target)throw new Error('save target missing');
+      sectionInputs.push({id:'editor-state',type:'editor.state.v2',required:false,bytes:encoder.encode(JSON.stringify(
+        makeEditorState(selectedLayerId,requestedSelection(message.selection,target.root.width,target.root.height),target.root.width,target.root.height)
+      ))});
+      const preserved=preservedSections(message.preserved);for(const section of preserved.sections){if(section.required)throw new Error('unknown preserved section cannot be required');if(sectionInputs.some(x=>x.id===section.id))continue;sectionInputs.push(section);}
       const preview=await getWorkThumbnail(target.root.documentId,snapshot.snapshotRevisionId);
       if(preview&&preview.size<=8*1024*1024&&preview.type==='image/png'){
         const image=new Uint8Array(await preview.arrayBuffer());
@@ -596,6 +605,10 @@ function idbHas(db:IDBDatabase,key:string){return new Promise<boolean>((resolve,
 function idbDelete(db:IDBDatabase,key:string){return new Promise<void>((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
 function idbEntries(db:IDBDatabase,path:string){return new Promise<Entry[]>((resolve,reject)=>{const prefix=path.replace(/\/+$/,'')+'/',entries=new Map<string,'file'|'directory'>(),tx=db.transaction('files','readonly'),request=tx.objectStore('files').openKeyCursor();request.onsuccess=()=>{const cursor=request.result;if(!cursor){resolve([...entries].map(([name,kind])=>({name,kind})));return;}const key=String(cursor.key);if(key.startsWith(prefix)){const rest=key.slice(prefix.length),slash=rest.indexOf('/'),name=slash<0?rest:rest.slice(0,slash);if(name)entries.set(name,slash<0?'file':'directory');}cursor.continue();};request.onerror=()=>reject(request.error);});}
 
+function requestedSelection(value:unknown,width:number,height:number):SelectionRect|null{
+  if(value===undefined||value===null)return null;
+  return readEditorState({version:2,selectedLayerId:'',selection:{kind:'rectangle',rect:value}},width,height).selection;
+}
 async function publishCurrent(patch:Partial<WorkEntry>){if(!libraryWork)return;const old=libraryWork,current=await getWork(old.documentId);if(!current)throw new Error('この作品は作品一覧から削除されています。');const entry={...current,...patch,writerEpochId:old.writerEpochId,...(patch.revisionId&&patch.revisionId!==current.revisionId?{previous:{writerEpochId:current.writerEpochId,revisionId:current.revisionId,protectedThrough:current.protectedThrough}}:{})};await publishWork(entry,old.writerEpochId);libraryWork=entry;}
 
 type VerifiedHead={revisionId:string;selectedLayerId:string;width:number;height:number};
