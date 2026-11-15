@@ -281,3 +281,5 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
 
 .layer-pick-dialog fieldset { display: grid; gap: .35rem; max-height: 40dvh; overflow: auto; }
 .layer-pick-dialog label { justify-content: flex-start; }
+
+#layerDrawingThumbnail { width: 36px; height: 36px; vertical-align: middle; background: #dedfe2; border: 1px solid #9998; }

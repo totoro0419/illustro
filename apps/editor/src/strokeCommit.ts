@@ -10,14 +10,14 @@ export class CoreStrokeDocumentPort implements DocumentPort{
   target():DrawingTarget{
     const root=this.document.root,layer=root.getLayer(this.selectedLayer());
     if(layer.kind!=='raster')throw new Error('選択中のレイヤーには描けません。');
-    if(layer.locked)throw new Error('選択中のレイヤーはロックされています。');
+    if(root.isLayerContentLocked(layer.id))throw new Error('選択中のレイヤーはロックされています。');
     return Object.freeze({documentId:root.documentId,layerId:layer.id,surfaceId:layer.surface.descriptor.surfaceId,width:root.width,height:root.height,baseRevision:this.document.head});
   }
   async commitStroke(target:DrawingTarget,record:StrokeRecord,additional:readonly StrokeRecord[]=[]):Promise<StrokeCommitResult>{
     const root=this.document.root;if(root.documentId!==target.documentId)throw new Error('描画先の文書が変わりました。');
     if(this.document.head!==target.baseRevision)throw new Error('描画中に作品の状態が変わりました。');
     const layer=root.getLayer(target.layerId);if(layer.kind!=='raster'||layer.surface.descriptor.surfaceId!==target.surfaceId)throw new Error('描画先のレイヤーが変わりました。');
-    if(layer.locked)throw new Error('描画先のレイヤーはロックされています。');
+    if(root.isLayerContentLocked(layer.id))throw new Error('描画先のレイヤーはロックされています。');
     const records=[record,...additional],dirtyByRecord:DirtyTileHint[][]=[];
     // This preparation runs on the editor's main thread. Yield before a large
     // stroke can starve later touchstart events until formal completion.
@@ -32,7 +32,7 @@ export class CoreStrokeDocumentPort implements DocumentPort{
     if(this.document.head!==target.baseRevision||this.document.root.documentId!==target.documentId)
       throw new Error('描画中に作品の状態が変わりました。');
     const current=this.document.root.getLayer(target.layerId);
-    if(current.kind!=='raster'||current.surface.descriptor.surfaceId!==target.surfaceId||current.locked)
+    if(current.kind!=='raster'||current.surface.descriptor.surfaceId!==target.surfaceId||this.document.root.isLayerContentLocked(current.id))
       throw new Error('描画先のレイヤーが変わりました。');
     const tx=this.document.begin(current.implicitRaster?'描画レイヤーを作って描く':'Brush stroke');
     tx.activateDrawingLayer(target.layerId);

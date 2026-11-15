@@ -214,6 +214,18 @@ export class BrushSurface{
   setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView(true);}}
   private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e),p=snapToStraightGuide({x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0)},this.activeGuide);return {x:p.x,y:p.y,t:e.timeStamp,...nativeBrushSensors(e)};}
   private layerPick:((ids:readonly LayerId[])=>void)|null=null;
+  onLayerPickShortcut:(point:Point)=>void=()=>{};
+  private layerPickHold:{pointer:number;position:Point;timer:number}|null=null;
+  private cancelLayerPickHold(){
+    if(!this.layerPickHold)return;
+    window.clearTimeout(this.layerPickHold.timer);
+    this.layerPickHold=null;
+  }
+  pickLayerAt(point:Point){
+    const receive=this.layerPick;
+    this.layerPick=null;
+    if(receive)void this.findLayersAt(point,receive);
+  }
   setLayerPick(callback:((ids:readonly LayerId[])=>void)|null){this.layerPick=callback;}
   private async findLayersAt(point:Point,receive:(ids:readonly LayerId[])=>void){
     const root=this.controller.document.root,revision=this.controller.document.head,solo=this.inspectedLayer;
@@ -256,6 +268,13 @@ export class BrushSurface{
     if(!this.view)return;
     const origin=this.view.screen({x:0,y:0}),x=this.view.screen({x:1,y:0}),y=this.view.screen({x:0,y:1});
     overlay.style.transform='matrix('+[x.x-origin.x,x.y-origin.y,y.x-origin.x,y.y-origin.y,origin.x,origin.y].join(',')+')';
+  }
+  async layerThumbnail(id:LayerId){
+    const root=this.controller.document.root;
+    const host=this.renderer as unknown as {call:(name:string,args:unknown)=>Promise<Uint8ClampedArray>}|null;
+    if(!host||!root.hasLayer(id))return null;
+    const surfaceKey=root.getLayer(id).surface.descriptor.surfaceId;
+    return host.call('layerThumbnail',{surfaceKey});
   }
   async showLayerOutline(id:LayerId|null){
     const sequence=++this.layerOutlineSequence;
@@ -339,9 +358,12 @@ export class BrushSurface{
     if(e.target instanceof Element&&e.target.closest('button,input,select,textarea,[contenteditable="true"],.crop-overlay,[data-canvas-no-input]'))return;
     if(this.layerPick&&e.button===0){
       e.preventDefault();
-      const receive=this.layerPick;
-      this.layerPick=null;
-      void this.findLayersAt(this.screenToDocument(this.pointerLocation(e)),receive);
+      this.pickLayerAt(this.screenToDocument(this.pointerLocation(e)));
+      return;
+    }
+    if(e.button===0&&e.altKey&&e.pointerType==='mouse'&&!this.busy&&!this.inputBarrier&&!this.editGesture&&!this.selectionMode&&!this.eyedropper){
+      e.preventDefault();
+      this.onLayerPickShortcut(this.screenToDocument(this.pointerLocation(e)));
       return;
     }
     if(this.selectionMode){
@@ -363,6 +385,15 @@ export class BrushSurface{
        if(this.pointer!==null){void this.cancelStroke();}
       }
       if(this.navigation?.touchCount&&this.editPointerType==='touch')this.clearCanvasEditGestureStroke();
+      this.cancelLayerPickHold();
+      if(!this.fingerDrawing&&!penActive&&!this.panTool&&!this.busy&&!this.editGesture&&!this.inputBarrier&&!this.navigation?.touchCount){
+        const position=this.pointerLocation(e);
+        const timer=window.setTimeout(()=>{
+          this.layerPickHold=null;
+          if(!this.busy&&!this.inputBarrier&&!this.disposed)this.onLayerPickShortcut(this.screenToDocument(position));
+        },550);
+        this.layerPickHold={pointer:e.pointerId,position,timer};
+      }
       this.navigation?.touchDown(e.pointerId,this.pointerLocation(e),!this.fingerDrawing||penActive||this.panTool);
       this.inputViewport.setPointerCapture(e.pointerId);
       if(this.navigation?.active||!this.fingerDrawing||penActive)return;
@@ -394,7 +425,7 @@ export class BrushSurface{
     if(this.layerCompPreview){this.status('表示案の比較を終了してから描いてください。');return;}
     if(this.inspectedLayer){this.status('レイヤーの単独表示を解除してから描いてください。');return;}
     const layer=this.controller.selectedLayer;
-    const root=this.controller.document.root,locked=root.isLayerLocked(layer.id);
+    const root=this.controller.document.root,locked=root.isLayerContentLocked(layer.id);
     if(locked||!root.isLayerVisible(layer.id)){
       this.status(locked?'このレイヤーはロック中です。解除するか、別のレイヤーを選んでください。':'このレイヤーは非表示です。表示するか、別のレイヤーを選んでください。');
       return;
@@ -414,6 +445,10 @@ export class BrushSurface{
       const context={...(layer.alphaLocked?{alphaLocked:true}:{}),...(this.pressureCalibrationMidpoint===0.5?{}:{deviceCurve:[[0,0],[0.5,this.pressureCalibrationMidpoint],[1,1]] as const}),...(preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{})};
       this.activeStrokeId=this.session.begin(preset,0,context,this.target.surfaceId);this.pendingStrokeIds.set(this.reservation!,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.strokeLast={x:s.x,y:s.y};this.session.predictions([]);this.pointer=e.pointerId;this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
   private move=(e:PointerEvent)=>{
+    if(this.layerPickHold?.pointer===e.pointerId){
+      const p=this.pointerLocation(e),start=this.layerPickHold.position;
+      if(Math.hypot(p.x-start.x,p.y-start.y)>7)this.cancelLayerPickHold();
+    }
     if(e.pointerId===this.editPointer){
       e.preventDefault();
       const samples=e.getCoalescedEvents?.()??[];
@@ -448,6 +483,7 @@ export class BrushSurface{
     const predicted=this.strokeExited?[]:this.clampPredicted(actual.at(-1)??this.sample(e),predictedEvents.slice(0,2).map(event=>({...this.sample(event),origin:'predicted'})));
     this.session.predictions(predicted);};
   private up=(e:PointerEvent)=>{
+    if(this.layerPickHold?.pointer===e.pointerId)this.cancelLayerPickHold();
     if(e.pointerId===this.editPointer){
       if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);
       e.preventDefault();this.finishCanvasEditGesture(e);return;
@@ -505,6 +541,7 @@ export class BrushSurface{
   get hasPendingStrokes(){return (this.handoff?.pending??0)>0||this.gpuFinishes.size>0;}
   get inputActive(){return this.editPointer!==null||this.pointer!==null||this.finishing||this.historySyncing;}
   private cancel=(e:PointerEvent)=>{
+    if(this.layerPickHold?.pointer===e.pointerId)this.cancelLayerPickHold();
     if(e.pointerId===this.editPointer)this.clearCanvasEditGestureStroke();
     if(e.pointerId===this.selectionPointer){
       this.selectionPointer=null;this.selectionAnchor=null;this.selectionMode=false;this.updateSelectionOverlay();this.onSelectionChanged();return;
@@ -512,6 +549,7 @@ export class BrushSurface{
     if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId===this.pointer){void this.cancelStroke();this.status('入力が中断されたため、この線を取り消しました。');}};
   private interruptInput=()=>{
     this.spacePressed=false;
+    this.cancelLayerPickHold();
     this.clearCanvasEditGestureStroke();
     if(this.selectionPointer!==null){this.selectionPointer=null;this.selectionAnchor=null;this.selectionMode=false;this.updateSelectionOverlay();this.onSelectionChanged();}
     this.suppressedTouches.clear();
@@ -832,5 +870,5 @@ export class BrushSurface{
   get performanceDiagnostics(){const r=this.renderer as any;return {...this.renderer?.performanceSummary(),handoff:{inputAttempts:this.traceHandoff?this.inputAttempts:[],accepted:this.handoffAccepted,rejected:this.handoffRejected,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,pendingEntries:this.handoff?.diagnostics,historyVisibility:this.historyTraces,protectionQueue:this.protectionQueueLength,fault:this.handoffFault,traces:this.traceHandoff?this.handoffTraces:[]},frameState:{lastFrameAt:this.lastFrameAt,disposed:this.disposed,operationMode:this.operationMode,pointer:this.pointer,finishing:this.finishing,historySyncing:this.historySyncing,inputBarrier:this.inputBarrier,pendingRawCount:this.session?.pendingRawCount??0,formalCommands:r?.document.count??0,inflight:r?.inflight,viewPending:r?.viewPending,navigationActive:r?.navigationActive,navigationUntil:r?.navigationUntil,guardPreparing:r?.guardPreparing,overlayViewPending:!!r?.overlayViewPending,overlayPending:r?.proxy?.pending.size,overlayFinalizations:r?.proxy?.finalizations.size,viewFence:!!r?.backend.viewFence,viewSubmission:!!r?.backend.viewSubmission,cancellingStroke:!!r?.cancellingStroke,needsFrame:r?.needsFrame,jobs:r?.document.jobs.length,presentationHeld:r?.backend.presentationHeld,glFence:!!r?.backend.fence,pending:!!r?.backend.pending,errors:r?.errors,sessionErrors:this.session?.errors},checkpoint:{...this.checkpointMetrics},strokeReplayFallbacks:this.historyReplayFallbacks,fullDocumentRebuilds:this.session?.fullDocumentRebuilds??0,fullReplayStrokes:this.session?.fullReplayStrokes??0,cancelledStrokeCount:this.session?.cancelledStrokeCount??0,projectionRestoreMode:this._projectionRestoreMode};}
   get interacting(){return !!this.navigation?.touching||this.busy;}
   get initializationError(){return this._initializationError;}get backendSelection(){return this.renderer?.info.selection??null;}get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get rendererArtworkAlpha(){return Boolean(this.renderer?.info.artworkAlpha);}get presentationOpaque(){return Boolean(this.renderer?.info.presentationOpaque);}get presentationMode(){return 'worker-images';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get projectionRestoreMs(){return this._projectionRestoreMs;}get projectionRestoreMode(){return this._projectionRestoreMode;}get projectionCacheRevision(){return this._projectionCacheRevision;}get browserPredictionSamples(){return this.session?.browserPredictions??0;}get brushName(){return this.preset?.name??'未選択';}get brushId(){return this.preset?.id??'未選択';}get blendMode(){return this.preset?.blend??'normal';}get eraserType(){return this.preset?.id==='foundation-hard-eraser'?'hard':this.preset?.id==='foundation-soft-eraser'?'soft':this.preset?.blend==='erase'?'erase':null;}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.inputActive||this.hasPendingStrokes;}
-  destroy(){void this.showLayerOutline(null);this.setCanvasEditGesture(null);this.setMaskInspection();this.activeGuide=null;this.selectionRect=null;this.updateSelectionOverlay();this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
+  destroy(){this.cancelLayerPickHold();void this.showLayerOutline(null);this.setCanvasEditGesture(null);this.setMaskInspection();this.activeGuide=null;this.selectionRect=null;this.updateSelectionOverlay();this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
 }

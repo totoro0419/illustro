@@ -13,7 +13,7 @@ const actionLabels:Readonly<Record<string,readonly [string,string][]>>={
   'document-output':[['新規キャンバス','new'],['作品を開く','open'],['作品情報','documentInfoOpen'],['作品を保存','save'],['別名保存','saveCopy'],['自動保存から戻す','recover'],['PNG / JPEG / WebP','exportImage']],
   'workspace-settings':[['右側の表示を切り替え','workspaceToggle']],
 };
-export function installShellUi():ShellControl{
+export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellControl{
   const workspace=byId<HTMLElement>('workspace'),rightDock=byId<HTMLElement>('rightDock'),page=byId<HTMLElement>('layerPage');
   const drawer=byId<HTMLButtonElement>('drawer'),compact=matchMedia('(max-width:760px)'),coarse=matchMedia('(any-pointer:coarse)'),touch=()=>coarse.matches||navigator.maxTouchPoints>0;
   const toggle=byId<HTMLButtonElement>('workspaceToggle'),layer=byId<HTMLButtonElement>('layer');
@@ -72,8 +72,10 @@ export function installShellUi():ShellControl{
   // must not leave an unrelated Close button selected or focus-highlighted.
   const setLayerPage=(open:boolean,keyboardNavigation=false)=>{
     const focusWasInside=page.contains(document.activeElement);
+    const changed=layerOpen!==open;
     layerOpen=open;if(open){document.body.classList.remove('right-collapsed');if(compact.matches)rightDock.classList.add('open');}
     syncPresentation();
+    if(changed)onLayerPageChange?.(open);
     if(open&&keyboardNavigation)byId<HTMLButtonElement>('closeLayerPage').focus({preventScroll:true});
     else if(!open&&focusWasInside&&keyboardNavigation)layer.focus({preventScroll:true});
   };

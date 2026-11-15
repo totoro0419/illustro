@@ -22,6 +22,7 @@ export type LayerNode=Readonly<{
   implicitRaster?:boolean;
   colorTag?:LayerColorTag|null;
   positionLocked?:boolean;
+  contentLocked?:boolean;
   alphaLocked?:boolean;
   clipSourceId?:LayerId|null;
   vectorMask?:LayerMask|null;
@@ -64,6 +65,7 @@ export class DocumentRoot{
     }
     return null;
   }
+  isLayerContentLocked(id:LayerId){return this.isLayerLocked(id)||!!this.getLayer(id).contentLocked;}
   isLayerPositionLocked(id:LayerId){return this.isLayerLocked(id)||!!this.getLayer(id).positionLocked;}
   isLayerLocked(id:LayerId){return this.getLayer(id).locked||this.groupsForLayer(id).some(group=>group.locked);}
   withLayerGroups(groups:readonly LayerGroup[]){

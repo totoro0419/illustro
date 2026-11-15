@@ -144,6 +144,19 @@ async function command(method,a){const r=renderer,s=session;
  case 'readViewport':await r.drain();return r.backend.readViewport();
  case 'readTiles':return readTiles(a);
  case 'pixel':return pixel(a);
+ case 'layerThumbnail':{
+  const {surfaceKey}=a,{width,height}=r.backend;
+  const side=48,scale=Math.min(side/width,side/height);
+  const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
+  const pixels=await r.read(surfaceKey),image=new Uint8ClampedArray(side*side*4);
+  const left=Math.floor((side-w)/2),top=Math.floor((side-h)/2);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+   const sx=Math.floor((x+.5)*width/w),sy=Math.floor((y+.5)*height/h);
+   const source=(sy*width+sx)*4,destination=((top+y)*side+left+x)*4;
+   image.set(pixels.subarray(source,source+4),destination);
+  }
+  return image;
+ }
  case 'layerOutline':{
   const {surfaceKey}=a,b=r.backend,style=b.surfaceStyles?.get(surfaceKey);
   if(!style?.visible||!style.opacity)return null;

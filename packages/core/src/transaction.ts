@@ -96,7 +96,7 @@ export class DocumentTransaction{
     this.open();
     if(this.slotsValue.length)throw new Error('Apply the mask as its own transaction');
     const layer=this.rootValue.getLayer(id);
-    if(!layer.vectorMask?.enabled||this.rootValue.isLayerLocked(id))throw new Error('有効なマスクが付いた、ロックされていないレイヤーを選んでください。');
+    if(!layer.vectorMask?.enabled||this.rootValue.isLayerContentLocked(id))throw new Error('有効なマスクが付いた、ロックされていないレイヤーを選んでください。');
     this.replaceLayerRaster(id,pixels);
     this.meta(id,{vectorMask:null});
     return id;
@@ -396,7 +396,7 @@ export class DocumentTransaction{
   setVectorLayerMask(id:LayerId,mask:LayerMask|null){
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(layer.baseColor==='white')throw new Error('白背景は描画できるレイヤーに変えてからマスクを設定してください。');
-    if(this.rootValue.isLayerLocked(id))throw new Error('マスクを変える前にロックを解除してください。');
+    if(this.rootValue.isLayerContentLocked(id))throw new Error('マスクを変える前にロックを解除してください。');
     const value=validateLayerMask(mask);
     if(value===(layer.vectorMask??null))return false;
     return this.meta(id,{vectorMask:value});
@@ -413,6 +413,10 @@ export class DocumentTransaction{
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if((layer.alphaLocked??false)===alphaLocked)return false;
     return this.meta(id,{alphaLocked});
+  }
+  setLayerContentLocked(id:LayerId,contentLocked:boolean){
+    const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
+    return (layer.contentLocked??false)!==contentLocked&&this.meta(id,{contentLocked});
   }
   setLayerPositionLocked(id:LayerId,positionLocked:boolean){
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
@@ -433,9 +437,9 @@ export class DocumentTransaction{
   cancel(){if(this.closed)throw new Error('transaction closed');this.workingValue.clear();this.updatesValue.clear();this.slotsValue.length=0;this.rootOrderValue=null;this.dimensionUpdate=null;this.closed=true;}
   _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,slots:this.slotsValue,rootLayerIds:this.rootOrderValue,groups:this.groupsValue,comps:this.compsValue,deleted:this.deletedValue,dimensions:this.dimensionUpdate,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
-  private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
+  private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||layer.contentLocked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='restore-revision'||x.type==='pin-revision'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'|'blend'|'implicitRaster'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'contentLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'|'blend'|'implicitRaster'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

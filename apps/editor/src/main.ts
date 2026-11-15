@@ -19,7 +19,7 @@ import {createHistoryComparison,historyThumbnail} from './ui/artworkHistoryView'
 import {drawMaskPreview,paintPixelMask,type MaskStrokePoint} from './layerMaskEditing';
 import {restoreHistoryPixels} from './historyBrush';
 import {penEraserInput} from './stylusButtons';
-import {parseSavedCanvasView} from './canvasView';
+import {parseSavedCanvasView,type Point} from './canvasView';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,type GuideSettings} from './strokeGuide';
 import {BrushPresetLibrary} from './brushPresets';
 import {additionalBrushes} from './brushStarterPresets';
@@ -282,11 +282,16 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
     const first=root.rootLayerIds.indexOf(sourceOrder[0]!),last=root.rootLayerIds.indexOf(sourceOrder.at(-1)!);
     const interleaved=last-first+1!==ids.size;
     const message=ids.size+'枚を一枚に結合します。非表示の内容と個別のレイヤー設定は結合後のレイヤーに残りません。';
+    const hasExternalBlend=first>0&&sourceOrder.some(id=>{
+      const blend=root.getLayer(id).blend;
+      return blend&&(blend.mode!=='normal'||blend.space==='linear');
+    });
+    const asymmetricGroups=new Set(sourceOrder.map(id=>root.groupsForLayer(id).at(-1)?.id)).size>1;
     const externalClip=root.rootLayerIds.some(id=>{
       const base=root.clippingSource(id);
       return base&&ids.has(base.id)!==ids.has(id);
     });
-    if(!window.confirm(message+(externalClip?' 結合範囲の外とのクリッピング関係が変わります。':'')+(interleaved?' 間にあるレイヤーとの重なり順が変わる場合があります。':'')))return;
+    if(!window.confirm(message+(externalClip?' 結合範囲の外とのクリッピング関係が変わります。':'')+(interleaved?' 間にあるレイヤーとの重なり順が変わる場合があります。':'')+(hasExternalBlend?' 結合範囲の外の絵との混ざり方が変わる場合があります。':'')+(asymmetricGroups?' 異なるグループをまたぐため、表示やロックの継承が変わります。':'')))return;
   }
   geometryBusy=true;
   drawing.setInputBarrier(true);
@@ -340,6 +345,7 @@ function visibleLayerIds(){
 }
 
 type MaskEditMode='pixels'|'path';
+let historyBrush:HistoryBrushSession|null=null;
 let maskEditing:{drawing:BrushSurface;artwork:CoreDocument;id:LayerId;mode:MaskEditMode;reveal:boolean}|null=null;
 let thumbnailState:{mask:LayerMask;width:number;height:number}|null=null;
 let maskInspection:{drawing:BrushSurface;artwork:CoreDocument;id:LayerId;mode:'red'|'grayscale';mask:LayerMask;width:number;height:number}|null=null;
@@ -365,7 +371,7 @@ function stopMaskEditing(){
 }
 function updateVectorMaskControls(){
   const layer=controller.selectedLayer,mask=layer.vectorMask,root=controller.document.root;
-  const disabled=!documentReady||layer.implicitRaster||layer.baseColor==='white'||root.isLayerLocked(layer.id);
+  const disabled=!documentReady||layer.implicitRaster||layer.baseColor==='white'||root.isLayerContentLocked(layer.id);
   if(maskEditing&&(disabled||maskEditing.id!==layer.id||maskEditing.artwork!==controller.document||
     maskEditing.drawing!==surface||(maskEditing.mode==='pixels'&&mask?.shape!=='pixels')))stopMaskEditing();
   if(maskInspection){
@@ -422,7 +428,7 @@ function replaceMaskAllowed(next:LayerMask['shape']){
 }
 function startMaskEditing(mode:MaskEditMode,reveal=false){
   const drawing=surface,artwork=controller.document,layer=controller.selectedLayer;
-  if(!drawing||drawing.busy||geometryBusy||historyPending||artwork.root.isLayerLocked(layer.id))return;
+  if(!drawing||drawing.busy||geometryBusy||historyPending||artwork.root.isLayerContentLocked(layer.id))return;
   if(!artwork.root.isLayerVisible(layer.id)){
     byId('status').textContent='レイヤーを表示するとマスクを編集できます。';return;
   }
@@ -550,7 +556,7 @@ function chooseLayerGroupDestination(action:(id:LayerId|null)=>void){
 
 let cancelLayerPick:(()=>void)|null=null;
 
-function pickLayerOnCanvas(){
+function pickLayerOnCanvas(point?:Point){
   const drawing=surface,artwork=controller.document;
   if(!drawing||!documentReady||drawing.busy||geometryBusy||historyPending)return;
   cancelLayerPick?.();
@@ -627,6 +633,7 @@ function pickLayerOnCanvas(){
     dialog.show();
     void drawing.showLayerOutline(candidate);
   });
+  if(point)drawing.pickLayerAt(point);
 }
 
 function groupLayerRow(group:LayerGroup,depth:number){
@@ -770,6 +777,36 @@ function loadLayerCompFields(){
   byId<HTMLInputElement>('layerCompBlend').checked=comp?!!comp.saveBlend:true;
 }
 
+let layerDrawingThumbTimer:number|null=null,layerDrawingThumbTicket=0;
+function scheduleLayerDrawingThumbnail(open=documentReady&&shellUi.layerPageOpen()){
+  if(layerDrawingThumbTimer!==null){window.clearTimeout(layerDrawingThumbTimer);layerDrawingThumbTimer=null;}
+  const drawing=surface,artwork=controller.document,layer=controller.selectedLayer;
+  const canvas=byId<HTMLCanvasElement>('layerDrawingThumbnail'),ctx=canvas.getContext('2d');
+  const ticket=++layerDrawingThumbTicket,head=artwork.head;
+  canvas.hidden=!open||!documentReady||layer.implicitRaster;
+  if(canvas.hidden||!drawing||!ctx)return;
+  if(canvas.dataset.layerId!==layer.id){
+    canvas.dataset.layerId=layer.id;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  if(layer.baseColor==='white'){
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+    return;
+  }
+  layerDrawingThumbTimer=window.setTimeout(async()=>{
+    layerDrawingThumbTimer=null;
+    if(drawing.busy)return;
+    try{
+      const data=await drawing.layerThumbnail(layer.id);
+      if(data&&ticket===layerDrawingThumbTicket&&artwork===controller.document&&head===artwork.head){
+        ctx.putImageData(new ImageData(new Uint8ClampedArray(data),canvas.width,canvas.height),0,0);
+      }
+    }catch{
+      if(ticket===layerDrawingThumbTicket)ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+  },200);
+}
+
 const renderLayers=()=>{
   syncHistoryBrush();
   renderLayerComps();
@@ -807,6 +844,10 @@ const renderLayers=()=>{
   alphaLock.disabled=!hasLayer||selectedLayer.baseColor==='white';
   alphaLock.textContent=selectedLayer.alphaLocked?'不透明度ロックを解除':'不透明度をロック';
   alphaLock.setAttribute('aria-pressed',String(!!selectedLayer.alphaLocked));
+  const contentLock=byId<HTMLButtonElement>('layerContentLock');
+  contentLock.disabled=!hasLayer||root.isLayerLocked(selectedLayer.id);
+  contentLock.textContent=selectedLayer.contentLocked?'内容のロックを解除':'内容をロック';
+  contentLock.setAttribute('aria-pressed',String(!!selectedLayer.contentLocked));
   const positionLock=byId<HTMLButtonElement>('layerPositionLock');
   positionLock.disabled=!hasLayer;
   positionLock.textContent=selectedLayer.positionLocked?'位置ロックを解除':'位置をロック';
@@ -905,7 +946,7 @@ const renderLayers=()=>{
         row.dataset.colorTag=layer.colorTag;
         row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
       }
-      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',layer.vectorMask?.enabled?'マスク中':'',layer.clipSourceId?(root.clippingSource(layer.id)?'クリップ中':'クリップ元なし'):'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
+      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'全体ロック中':'',layer.contentLocked?'内容ロック中':'',layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',layer.vectorMask?.enabled?'マスク中':'',layer.clipSourceId?(root.clippingSource(layer.id)?'クリップ中':'クリップ元なし'):'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
       row.onclick=event=>{
         if(batchRow){
@@ -916,7 +957,7 @@ const renderLayers=()=>{
           void materializeAndSelectWhiteLayer(layer.id).catch(showStorageError);
           return;
         }
-        try{controller.selectLayer(layer.id);if(!qaMode)void persistence.selectWorkLayer(layer.id).catch(showStorageError);renderLayers();byId('status').textContent=layer.name+(effectiveLocked?'を選びました。内容はロック中です。':effectiveVisible?'を選びました。次の線はこのレイヤーに入ります。':'を選びました。描くにはレイヤーを表示してください。');updateHistoryButtons();updateQa();}
+        try{controller.selectLayer(layer.id);if(!qaMode)void persistence.selectWorkLayer(layer.id).catch(showStorageError);renderLayers();byId('status').textContent=layer.name+(root.isLayerContentLocked(layer.id)?'を選びました。内容はロック中です。':effectiveVisible?'を選びました。次の線はこのレイヤーに入ります。':'を選びました。描くにはレイヤーを表示してください。');updateHistoryButtons();updateQa();}
         catch{byId('status').textContent='そのレイヤーを選択できませんでした。';}
       };
       const entry=document.createElement('div');
@@ -972,6 +1013,7 @@ const renderLayers=()=>{
     list.replaceChildren(...entries);
     if(!entries.length)list.textContent=selectedLayer.implicitRaster?'ひと筆描くとレイヤーができます。':'一致するレイヤーがありません。';
   }
+  scheduleLayerDrawingThumbnail();
   byId('layersBoxSummary').textContent=selectedName;
   byId('documentBoxSummary').textContent=controller.document.root.width+'×'+controller.document.root.height;
 };
@@ -1074,7 +1116,7 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   renderLayers();
 };
 byId<HTMLButtonElement>('layerBlendMode').onclick=editLayerBlend;
-byId<HTMLButtonElement>('pickLayerOnCanvas').onclick=pickLayerOnCanvas;
+byId<HTMLButtonElement>('pickLayerOnCanvas').onclick=()=>pickLayerOnCanvas();
 byId<HTMLButtonElement>('vectorMaskFromSelection').onclick=()=>{
   const rect=surface?.selectedRectangle,layer=controller.selectedLayer;
   if(!rect)return;
@@ -1116,6 +1158,10 @@ byId<HTMLButtonElement>('layerClipping').onclick=()=>{
 byId<HTMLButtonElement>('layerAlphaLock').onclick=()=>{
   const layer=controller.selectedLayer;
   changeLayer(layer.alphaLocked?'不透明度のロックを解除しました。':'不透明度をロックしました。',tx=>tx.setLayerAlphaLocked(layer.id,!layer.alphaLocked));
+};
+byId<HTMLButtonElement>('layerContentLock').onclick=()=>{
+  const layer=controller.selectedLayer;
+  changeLayer(layer.contentLocked?'内容のロックを解除しました。':'レイヤーの内容をロックしました。',tx=>tx.setLayerContentLocked(layer.id,!layer.contentLocked));
 };
 byId<HTMLButtonElement>('layerPositionLock').onclick=()=>{
   const layer=controller.selectedLayer;
@@ -1254,6 +1300,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
   return eraser?.blend==='erase'?(inputPreferences.eraserSizeLink&&active?{...eraser,size:active.size}:eraser):null;
  };
  applyInputPreferences(drawing);
+ drawing.onLayerPickShortcut=point=>{if(surface===drawing&&documentReady)pickLayerOnCanvas(point);};
  drawing.onSelectionChanged=()=>{if(surface===drawing){refreshSelectionControls();updateVectorMaskControls();}};
  drawing.setGuideSettings(guidePreferences);
  drawing.setCommonStabilization(commonStabilization);
@@ -1367,7 +1414,7 @@ byId('panView').onclick=()=>{
  byId('panView').setAttribute('aria-pressed',String(surface.panTool));
  byId('status').textContent=surface.panTool?'キャンバスをドラッグして移動できます。':'描画に戻りました。';
 };
-const shellUi=installShellUi(),workspace=shellUi.workspace;
+const shellUi=installShellUi(scheduleLayerDrawingThumbnail),workspace=shellUi.workspace;
 const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b])});
 function refreshSelectionControls(){
  const selecting=surface?.selectingRectangle??false;
@@ -1602,7 +1649,6 @@ type HistoryBrushSession={
   artwork:CoreDocument;drawing:BrushSurface;target:LayerId;revision:RevisionId;sourceName:string;
   source:Uint8ClampedArray;width:number;height:number;
 };
-let historyBrush:HistoryBrushSession|null=null;
 function stopHistoryBrush(){
   historyBrush?.drawing.setCanvasEditGesture(null);
   historyBrush=null;
@@ -1613,12 +1659,12 @@ function syncHistoryBrush(){
   if(!session)return;
   const root=controller.document.root;
   if(session.artwork!==controller.document||session.drawing!==surface||controller.selectedLayerId!==session.target||
-    root.isLayerLocked(session.target)||!root.isLayerVisible(session.target))stopHistoryBrush();
+    root.isLayerContentLocked(session.target)||!root.isLayerVisible(session.target))stopHistoryBrush();
 }
 async function startHistoryBrush(artwork:CoreDocument,revision:RevisionId,sourceLayer:LayerId){
   const drawing=surface,layer=controller.selectedLayer,root=artwork.root;
   if(artwork!==controller.document||!drawing?.canChangeGeometry||geometryBusy||historyPending)return;
-  if(layer.baseColor==='white'||root.isLayerLocked(layer.id)||!root.isLayerVisible(layer.id)){
+  if(layer.baseColor==='white'||root.isLayerContentLocked(layer.id)||!root.isLayerVisible(layer.id)){
     byId('status').textContent='表示中でロックされていない描画レイヤーを選んでください。';return;
   }
   const older=artwork.revision(revision).root,sourceName=older.getLayer(sourceLayer).name;
@@ -1649,7 +1695,7 @@ async function startHistoryBrush(artwork:CoreDocument,revision:RevisionId,source
 async function applyHistoryBrush(session:HistoryBrushSession,points:readonly MaskStrokePoint[]){
   const {drawing,artwork,target}=session,head=artwork.head,root=artwork.root;
   if(session!==historyBrush||surface!==drawing||artwork!==controller.document||drawing.busy||geometryBusy||historyPending)return;
-  if(root.isLayerLocked(target)||!root.isLayerVisible(target))return;
+  if(root.isLayerContentLocked(target)||!root.isLayerVisible(target))return;
   const opacity=Number(byId<HTMLInputElement>('historyBrushStrength').value)/100;
   if(!opacity||!points.length)return;
   geometryBusy=true;drawing.setInputBarrier(true);
