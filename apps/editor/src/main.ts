@@ -2661,12 +2661,15 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
   try{opened=await persistence.decodePortable(new Uint8Array(await file.arrayBuffer()));}
   catch(error){const message='この作品ファイルは安全に読み込めませんでした。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);updateQa();return;}
   let migrationCopy=false;
+  let migrationSource:CoreDocument|null=null,migrationNotices:readonly string[]=[];
   if(opened.legacyEditorState){
     const source=opened.legacyEditorState.version===0?'編集状態なし':'編集状態 v1';
     const explanation=opened.legacyEditorState.notices.join('\n');
     const decision=window.confirm('旧形式の作品です（'+source+' → 編集状態 v2）。\n'+explanation+
       '\n\n元ファイルを変更せず、別の作品として取り込みます。新しい作品ファイルは「別名で保存」から作れます。続けますか？');
     if(!decision)return;
+    migrationSource=opened.document;
+    migrationNotices=opened.legacyEditorState.notices;
     opened=copyOpened(opened,opened.document.root.name.slice(0,4060)+'（形式移行）');
     migrationCopy=true;
   }
@@ -2686,11 +2689,53 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
       ?'旧形式から移行コピーを開きました。元ファイルは変更していません。新形式を残すには「別名で保存」を押してください。'
       :'作品ファイルを開きました。自動保存を開始しました。';
     homeUi?.showEditor();
+    if(migrationSource)showMigrationDetails(migrationSource,opened.document,migrationNotices);
     if(!qaMode){scheduleWorkThumbnail();void refreshWorks();}
   }
   catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);}
   updateQa();
 };
+function showMigrationDetails(source:CoreDocument,converted:CoreDocument,notices:readonly string[]){
+  const dialog=document.createElement('dialog'),section=document.createElement('section');
+  const title=document.createElement('h2'),message=document.createElement('p'),status=document.createElement('output');
+  title.textContent='旧形式から移行した作品';
+  message.textContent='元ファイルは変更されていません。移行コピーを新しい作品ファイルとして保存できます。';
+  const details=document.createElement('ul');
+  for(const notice of notices){const item=document.createElement('li');item.textContent=notice;details.append(item);}
+  const compare=document.createElement('button'),save=document.createElement('button'),close=document.createElement('button');
+  compare.type=save.type=close.type='button';
+  compare.textContent='移行前後の絵を見比べる';
+  save.textContent='新形式で別名保存';
+  close.textContent='閉じる';
+  const previews=document.createElement('div'),urls:string[]=[],views:Array<()=>void>=[];
+  previews.className='artwork-history-previews';
+  status.setAttribute('aria-live','polite');
+  close.onclick=()=>dialog.close();
+  save.onclick=()=>{dialog.close();if(controller.document===converted)void saveWork(true);};
+  compare.onclick=async()=>{
+    compare.disabled=true;status.textContent='比較画像を準備しています。';
+    try{
+      for(const [artwork,label] of [[source,'移行前'],[converted,'移行コピー']] as const){
+        if(!dialog.open)return;
+        const output=await exportImage(captureExport(artwork),'png');
+        if(!dialog.open)return;
+        const url=URL.createObjectURL(output.blob);urls.push(url);
+        const view=createHistoryComparison(url,label,output.width,output.height);
+        previews.append(view.figure);views.push(view.dispose);
+      }
+      status.textContent='画像を並べました。見た目の違いがないか確認できます。';
+    }catch(error){
+      if(dialog.open)status.textContent='比較画像を作成できませんでした。'+(error instanceof Error?error.message:'');
+      compare.disabled=false;
+    }
+  };
+  section.append(title,message,details,compare,save,close,status,previews);
+  dialog.className='export-dialog artwork-history-dialog';
+  dialog.setAttribute('aria-label','旧形式の移行結果');
+  dialog.append(section);document.body.append(dialog);
+  dialog.addEventListener('close',()=>{for(const dispose of views)dispose();for(const url of urls)URL.revokeObjectURL(url);dialog.remove();},{once:true});
+  dialog.showModal();
+}
 function showExternalSaveConflict(error:ExternalFileConflict,local:CoreDocument){
   const dialog=document.createElement('dialog'),section=document.createElement('section'),title=document.createElement('h2');
   const details=document.createElement('p'),status=document.createElement('output'),previews=document.createElement('div');
