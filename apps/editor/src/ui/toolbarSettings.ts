@@ -5,14 +5,14 @@ const KEY='illustro.c04.toolbar-layout.v1';
 const MUST_SHOW=new Set(['paint','erase']);
 const rail=()=>document.querySelector<HTMLElement>('.rail');
 const buttons=()=>[...document.querySelectorAll<HTMLButtonElement>('.rail>.tool-button[id]')];
-const baseline=buttons().map(b=>b.id);
-const defaultLayout=():ToolLayout=>({order:baseline,hidden:[]});
+const baseline=()=>buttons().map(b=>b.id);
+const defaultLayout=():ToolLayout=>({order:baseline(),hidden:[]});
 const normalize=(data:unknown):ToolLayout=>{
   if(!data||typeof data!=='object'||Array.isArray(data))return defaultLayout();
   const obj=data as Record<string,unknown>;
   const order=Array.isArray(obj.order)?obj.order.filter((id):id is string=>typeof id==='string'&&id.length<90):[];
   const hidden=Array.isArray(obj.hidden)?obj.hidden.filter((id):id is string=>typeof id==='string'&&id.length<90&&!MUST_SHOW.has(id)):[];
-  return {order:[...new Set([...order,...baseline])],hidden:[...new Set(hidden)]};
+  return {order:[...new Set([...order,...baseline()])],hidden:[...new Set(hidden)]};
 };
 const read=()=>{try{return normalize(JSON.parse(localStorage.getItem(KEY)||'null'));}catch{return defaultLayout();}};
 const save=(data:ToolLayout)=>{try{localStorage.setItem(KEY,JSON.stringify({version:1,...data}));}catch{/* no storage */}};
