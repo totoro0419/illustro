@@ -1406,6 +1406,7 @@ function updateViewControls(){const state=surface?.viewState;if(!state)return;
   for(const [id,on] of [['flipH',state.flipX],['flipV',state.flipY]] as const){const button=byId<HTMLButtonElement>(id),value=String(on);if(button.getAttribute('aria-pressed')!==value)button.setAttribute('aria-pressed',value);}
   const tile=byId<HTMLInputElement>('seamless');if(tile)tile.checked=state.seamless;
   updatePixelGrid();
+  c06Selection?.updateView();
 }
 let viewSaveTimer:number|undefined;
 let viewSaveRequest:{documentId:string;view:NonNullable<BrushSurface['viewState']>}|null=null;
