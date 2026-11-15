@@ -45,3 +45,20 @@ body.illustro-focus-mode .c05-reference-layer{display:none}
 .ih-work-trash-entry strong{flex:1 1 100%;font-size:13px}
 .ih-work-trash-entry small{font-size:10px;color:var(--a-subtle,#667)}
 .ih-work-trash-entry button{min-height:40px;padding:8px 12px;border:1px solid var(--a-border,#ddd);border-radius:8px;background:var(--a-accent-soft,#fff1d7);color:inherit}
+
+.c05-reference-groups{display:grid;grid-template-columns:minmax(90px,1fr) auto;gap:5px}
+.c05-reference-groups select,.c05-reference-navigator select{min-height:38px;width:100%;border:1px solid var(--a-border,#ddd);border-radius:7px;color:inherit;background:var(--a-surface,#fff);padding:5px}
+.c05-reference-groups button{min-height:39px;border:1px solid var(--a-border,#ddd);border-radius:7px;color:inherit;background:var(--a-accent-soft,#fff0d5);font-size:11px}
+.c05-reference-navigator{border-top:1px solid var(--a-border,#ddd);padding-top:6px;font-size:11px}
+.c05-reference-navigator summary{font-size:12px;font-weight:600;min-height:38px;padding:7px 0;cursor:pointer}
+.c05-reference-navigator>p{margin:5px 0}
+.c05-reference-nav-pair{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:7px 0}
+.c05-reference-nav-full,.c05-reference-nav-detail{height:134px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#f7f6f2 0% 25%,#e4e3df 0% 50%) 50%/16px 16px;border:1px solid var(--a-border,#ddd);border-radius:7px}
+.c05-reference-nav-full img,.c05-reference-nav-detail img{max-width:100%;max-height:100%;object-fit:contain;cursor:crosshair;user-select:none}
+.c05-reference-nav-detail img{cursor:default}
+.c05-asset-preview{position:fixed;inset:9dvh auto auto 50%;transform:translateX(-50%);margin:0;width:min(620px,calc(100vw - 20px));max-height:80dvh;overflow:auto;border:1px solid var(--a-border,#ddd);border-radius:12px;background:var(--a-surface,#fff);color:inherit;box-shadow:0 14px 42px #19253344;padding:16px}
+.c05-asset-preview::backdrop{background:#111c3352}
+.c05-asset-preview h3{margin:0 0 10px;font-size:16px}
+.c05-asset-preview img{display:block;width:auto;height:auto;max-width:100%;max-height:58dvh;margin:auto;object-fit:contain}
+.c05-asset-preview p{font-size:11px;overflow-wrap:anywhere}
+.c05-asset-preview button{min-height:40px;border:1px solid var(--a-border,#ddd);border-radius:7px;padding:8px 15px;background:var(--a-accent-soft,#fff2d5)}
