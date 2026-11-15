@@ -475,10 +475,11 @@ export class BrushSurface{
     if(this.busy||this.disposed)throw new Error('Thumbnail became stale');
     return output.convertToBlob({type:'image/png'});
   }
-  async captureDocumentLayers(){if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
+  async captureDocumentLayers(ids?:ReadonlySet<LayerId>){if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
     await this.renderer.drain();
     const result=new Map<ReturnType<EditorController['target']>['layerId'],Uint8Array>();
     for(const layer of this.controller.layers){
+      if(ids&&!ids.has(layer.id))continue;
       const bytes=new Uint8Array(await this.renderer.read(layer.surface.descriptor.surfaceId));
       if(layer.baseColor==='white')bytes.fill(255);
       result.set(layer.id,bytes);
@@ -506,7 +507,10 @@ export class BrushSurface{
     const started=performance.now();this.historySyncing=true;this.onStateChanged();    try{
       this.syncLayerStack();const operations=this.controller.document.operationsTo(),geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
       const root=this.controller.document.root;
-      const geometry=geometryIndex>=0;((this.renderer as any).proxy)?.setEnabled(!geometry);const visibleOperations=geometry?operations.slice(geometryIndex+1):operations;
+      const geometry=geometryIndex>=0,visibleOperations=operations.slice(geometryIndex+1);
+      const seededLayers=new Set(visibleOperations.filter(op=>op.kind==='layer.snapshot').flatMap(op=>op.targetEntityIds));
+      const needsSeed=geometry||this.controller.layers.some(layer=>seededLayers.has(layer.id));
+      ((this.renderer as any).proxy)?.setEnabled(!needsSeed);
       const entries:Array<{operation:SemanticOperation;record:StrokeRecord;surfaceKey:string;keys:string[]}>=[];for(const operation of visibleOperations){
         const target=operation.targetEntityIds[0];
         if(target&&!root.hasLayer(target))continue;
@@ -514,10 +518,10 @@ export class BrushSurface{
         else if(operation.kind==='raster.strict-delta')throw new Error('Direct raster deltas outside geometry need materialization');
       }
       const savedCache=this.validProjectionCache(cache);
-      const baseGeometry:ProjectionCacheV1|undefined=geometry&&!savedCache?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,layers:this.controller.layers.map(layer=>({surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)}))}:undefined;
-      const validCache=savedCache??this.validProjectionCache(baseGeometry);
-      const cachedKeys=geometry&&!savedCache?new Set<SemanticOperation['key']>():new Set(validCache?this.controller.document.operationsTo(validCache.revisionId as RevisionId).filter(op=>op.kind==='brush.stroke').map(op=>op.key):[]);
-      await (this.session as any).restore(entries.map(e=>({...e,cached:cachedKeys.has(e.operation.key)})),validCache,geometry);
+      const baseGeometry:ProjectionCacheV1|undefined=needsSeed&&!savedCache?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,layers:this.controller.layers.filter(layer=>geometry||seededLayers.has(layer.id)).map(layer=>({surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)}))}:undefined;
+      const validCache=savedCache??baseGeometry;
+      const cachedKeys=needsSeed&&!savedCache?new Set<SemanticOperation['key']>():new Set(validCache?this.controller.document.operationsTo(validCache.revisionId as RevisionId).filter(op=>op.kind==='brush.stroke').map(op=>op.key):[]);
+      await (this.session as any).restore(entries.map(e=>({...e,cached:cachedKeys.has(e.operation.key)})),validCache,needsSeed);
       this._projectionRestoreMode=validCache?'cache':'replay-fallback';this._projectionCacheRevision=validCache?.revisionId??null;
     }finally{
       this._projectionRestoreMs=performance.now()-started;this.historySyncing=false;this.onStateChanged();

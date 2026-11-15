@@ -28,8 +28,12 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId):Frozen
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
   const strokes: {surfaceId:string;record:StrokeRecord}[]=[];
   const operations=document.operationsTo(revision),geometryIndex=operations.findLastIndex(op=>['document.crop','document.canvas-resize','document.image-resize'].includes(op.kind));
-  const basePixels=geometryIndex>=0?root.rootLayerIds.map(id=>({surfaceId:root.getLayer(id).surface.descriptor.surfaceId,pixels:document.readBaseRasterPixels(id)})):undefined;
-  for(const op of operations.slice(geometryIndex+1)){
+  const visibleOperations=operations.slice(geometryIndex+1);
+  const seededLayers=new Set(visibleOperations.filter(op=>op.kind==='layer.snapshot').flatMap(op=>op.targetEntityIds));
+  const basePixels=root.rootLayerIds.filter(id=>geometryIndex>=0||seededLayers.has(id)).map(id=>({
+    surfaceId:root.getLayer(id).surface.descriptor.surfaceId,pixels:document.readBaseRasterPixels(id),
+  }));
+  for(const op of visibleOperations){
     const target=op.targetEntityIds[0];
     if(target&&!byLayer.has(target))continue;
     if(op.kind==='brush.stroke'){
@@ -38,7 +42,7 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId):Frozen
       strokes.push(Object.freeze({surfaceId,record:validateRecord(op.parameters.strokeRecord)}));
     }else if(op.kind==='raster.strict-delta')throw new Error('厳密なラスターデータの書き出しはまだ利用できません。');
   }
-  return Object.freeze({revision,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,layers:Object.freeze(layers),strokes:Object.freeze(strokes),...(basePixels?{basePixels}:{})});
+  return Object.freeze({revision,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,layers:Object.freeze(layers),strokes:Object.freeze(strokes),...(basePixels.length?{basePixels}:{})});
 }
 
 /** Straight-alpha source-over; layer order is bottom to top. Output is never the presentation canvas. */

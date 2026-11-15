@@ -9,7 +9,7 @@ import type {CanonicalTileStore,RasterBlockDescriptor} from './raster/store';
 
 export const CORE_PERSISTENCE_SCHEMA_VERSION=1 as const;
 const UUID_V4=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','layer.delete','document.crop','document.canvas-resize','document.image-resize','document.info']);
+const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','layer.delete','layer.snapshot','document.crop','document.canvas-resize','document.image-resize','document.info']);
 const SAMPLE_ENCODINGS=new Set<RasterSampleEncoding>(['rgba.unorm8.v1','rgba.unorm16.v1','rgba.float32.v1']);
 const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES_PER_ROOT=2_000_000,MAX_OPERATIONS_PER_REVISION=100_000;
 
@@ -217,7 +217,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
       for(const footprint of operation.dirtyFootprint){const key=`${footprint.tileX},${footprint.tileY}`,value=layer.surface.tiles.get(key);if(!value)throw new Error('recovery brush tile missing');
         const mutation=[...value.mutations].reverse().find(item=>operationKeyText(item.operationKey)===operationKeyText(operation.key));if(!mutation)throw new Error('recovery brush mutation missing');
         tileChanges.push(Object.freeze({mode:'append-mutation' as const,layerId,key,mutation}));}
-    }else if(operation.kind==='raster.strict-delta'){
+    }else if(operation.kind==='raster.strict-delta'||operation.kind==='layer.snapshot'){
       for(const footprint of operation.dirtyFootprint){const key=`${footprint.tileX},${footprint.tileY}`,value=layer.surface.tiles.get(key);if(!value?.baseBlockId||value.mutations.length)throw new Error('recovery strict block missing');
         tileChanges.push(Object.freeze({mode:'set-block' as const,layerId,key,blockId:value.baseBlockId}));}
     }else throw new Error('unsupported recovery operation');

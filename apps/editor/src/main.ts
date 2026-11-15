@@ -27,7 +27,7 @@ import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
 import {compilePreset,type FoundationPreset} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
-import {captureExport,exportImage,exportFileName,type ImageFormat,type ImageExportResult} from './export/basicExport';
+import {captureExport,compositeLayer,exportImage,exportFileName,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
@@ -263,6 +263,65 @@ function clearLayerOpacityPreview(){
   opacityPreview=null;
 }
 
+async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:ReadonlySet<LayerId>){
+  const drawing=surface,document=controller.document,root=document.root;
+  if(!drawing?.canChangeGeometry||!documentReady||geometryBusy||historyPending||!ids.size)return;
+  const sourceOrder=root.rootLayerIds.filter(id=>ids.has(id));
+  if(sourceOrder.length!==ids.size)return;
+  if(mode==='merge'){
+    if(ids.size<2)return;
+    if(sourceOrder.some(id=>root.isLayerLocked(id))){
+      byId('status').textContent='結合するレイヤーのロックを解除してください。';
+      return;
+    }
+    const first=root.rootLayerIds.indexOf(sourceOrder[0]!),last=root.rootLayerIds.indexOf(sourceOrder.at(-1)!);
+    const interleaved=last-first+1!==ids.size;
+    const message=ids.size+'枚を一枚に結合します。非表示の内容と個別のレイヤー設定は結合後のレイヤーに残りません。';
+    if(!window.confirm(message+(interleaved?' 間にあるレイヤーとの重なり順が変わる場合があります。':'')))return;
+  }
+  geometryBusy=true;
+  drawing.setInputBarrier(true);
+  const label=mode==='duplicate'?'レイヤーを複製':mode==='copy'?'統合コピーを作成':'レイヤーを結合';
+  byId('status').textContent=label+'しています。';
+  try{
+    const head=document.head;
+    const snapshots=await drawing.captureDocumentLayers(ids);
+    if(surface!==drawing||controller.document!==document||document.head!==head)throw new Error('作品が変わったため操作を取り消しました。');
+    const reference=mode==='copy'?root.rootLayerIds.at(-1)!:mode==='merge'?(sourceOrder.findLast(id=>root.isLayerVisible(id))??sourceOrder.at(-1)!):sourceOrder.at(-1)!;
+    let pixels:Uint8Array|Uint8ClampedArray;
+    if(mode==='duplicate'){
+      pixels=snapshots.get(reference)!;
+    }else{
+      const combined=new Uint8ClampedArray(root.width*root.height*4);
+      for(const id of sourceOrder){
+        if(root.isLayerVisible(id))compositeLayer(combined,snapshots.get(id)!,root.getLayer(id).opacity);
+      }
+      pixels=combined;
+    }
+    const tx=document.begin(label);
+    const id=mode==='merge'
+      ?tx.replaceRasterLayers(ids,reference,pixels as Uint8ClampedArray,'結合レイヤー')
+      :tx.addRasterSnapshotAbove(reference,pixels,mode==='copy'?'統合コピー':root.getLayer(reference).name.slice(0,4070)+' のコピー',mode==='duplicate',mode==='duplicate');
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    controller.selectLayer(id);
+    queueLatestCommit();
+    checkpointNeedsFullSeed=true;
+    await drawing.restoreDocumentProjection();
+    byId('status').textContent=label+'しました。';
+  }catch(error){
+    byId('status').textContent=label+'できませんでした。'+(error instanceof Error?error.message:'');
+  }finally{
+    geometryBusy=false;
+    if(surface===drawing)drawing.setInputBarrier(false);
+    renderLayers();updateHistoryButtons();updateQa();
+  }
+}
+
+function visibleLayerIds(){
+  const root=controller.document.root;
+  return new Set(root.rootLayerIds.filter(id=>root.isLayerVisible(id)&&root.getLayer(id).opacity>0));
+}
+
 function deleteLayers(ids:ReadonlySet<LayerId>){
   if(!ids.size)return;
   if(!window.confirm(ids.size===1?'このレイヤーを削除しますか？':ids.size+'枚のレイヤーを削除しますか？'))return;
@@ -383,6 +442,11 @@ const renderLayers=()=>{
   batchButton.setAttribute('aria-pressed',String(layerBatchMode));
   byId('layerBatchActions').hidden=!layerBatchMode;
   byId('layerBatchCount').textContent=layerBatchIds.size+'枚を選択';
+  byId<HTMLButtonElement>('duplicateLayer').disabled=!documentReady;
+  byId<HTMLButtonElement>('flattenLayerCopy').disabled=!documentReady||!visibleLayerIds().size;
+  byId<HTMLButtonElement>('mergeVisibleLayers').disabled=!documentReady||visibleLayerIds().size<2;
+  byId<HTMLButtonElement>('mergeLayerDown').disabled=!documentReady||!rows[rows.indexOf(selectedLayer)+1];
+  byId<HTMLButtonElement>('layerBatchMerge').disabled=!documentReady||layerBatchIds.size<2;
   byId<HTMLButtonElement>('deleteLayer').disabled=!documentReady||root.isLayerLocked(selectedLayer.id)||!rows.some(layer=>layer.id!==selectedLayer.id&&layer.baseColor!=='white');
   byId<HTMLButtonElement>('layerBatchDelete').disabled=!documentReady||!layerBatchIds.size||[...layerBatchIds].some(id=>root.isLayerLocked(id))||!rows.some(layer=>!layerBatchIds.has(layer.id)&&layer.baseColor!=='white');
   byId<HTMLButtonElement>('layerBatchGroup').disabled=!documentReady||!layerBatchIds.size;
@@ -584,6 +648,14 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   layerBatchAnchor=null;
   renderLayers();
 };
+byId<HTMLButtonElement>('duplicateLayer').onclick=()=>{void createLayerFromPixels('duplicate',new Set([controller.selectedLayerId]));};
+byId<HTMLButtonElement>('flattenLayerCopy').onclick=()=>{void createLayerFromPixels('copy',visibleLayerIds());};
+byId<HTMLButtonElement>('mergeVisibleLayers').onclick=()=>{void createLayerFromPixels('merge',visibleLayerIds());};
+byId<HTMLButtonElement>('layerBatchMerge').onclick=()=>{void createLayerFromPixels('merge',new Set(layerBatchIds));};
+byId<HTMLButtonElement>('mergeLayerDown').onclick=()=>{
+  const root=controller.document.root,id=controller.selectedLayerId,lower=root.rootLayerIds[root.rootLayerIds.indexOf(id)-1];
+  if(lower)void createLayerFromPixels('merge',new Set([id,lower]));
+};
 byId<HTMLButtonElement>('deleteLayer').onclick=()=>deleteLayers(new Set([controller.selectedLayerId]));
 byId<HTMLButtonElement>('layerBatchDelete').onclick=()=>deleteLayers(new Set(layerBatchIds));
 byId<HTMLButtonElement>('layerDestination').onclick=()=>{
@@ -663,7 +735,7 @@ function noteCheckpointOperations(operations:readonly SemanticOperation[]){
 }
 async function createProjectionCheckpoint(){
   if(projectionCheckpointBusy||!surface||!documentReady){if(documentReady)scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);return;}
-  if(historyPending||surface.interacting){scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);return;}
+  if(historyPending||geometryBusy||surface.interacting){scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);return;}
   const activeSurface=surface,revisionId=controller.document.head,operations=checkpointOperations.slice(),fullSeed=checkpointNeedsFullSeed;projectionCheckpointBusy=true;
   try{
     const delta=await activeSurface.captureProjectionDelta(revisionId,fullSeed?undefined:operations);
@@ -1280,7 +1352,7 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
     for(const direction of directions){const change=admittedHistoryChanges.shift();if(!change||change.direction!==direction)throw new Error('履歴操作の順序が一致しません。');if(change.changed)changes.push(change);}
     if(!changes.length){byId('status').textContent='これ以上その方向へ履歴を移動できません。';return;}
     updateQa();
-    if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'||op.kind==='layer.delete')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
+    if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'||op.kind==='layer.delete'||op.kind==='layer.snapshot')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
     undoCount+=changes.filter(c=>c.direction==='undo').length;redoCount+=changes.filter(c=>c.direction==='redo').length;
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(changes.flatMap(c=>c.operations));
     const last=changes.at(-1)!;byId('status').textContent=last.direction==='undo'?'前の状態に戻しました。':'取り消した操作をやり直しました。';
