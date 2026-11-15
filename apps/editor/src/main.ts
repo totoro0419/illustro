@@ -300,6 +300,16 @@ const renderLayers=()=>{
   nameField.disabled=!documentReady;
   const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
   const canMove=!!documentReady&&!layerBatchMode&&!query&&!tagFilter&&!selectedLayer.locked&&selectedLayer.baseColor!=='white';
+  for(const direction of [-1,1] as const){
+    const id=direction===1?'layerBatchUp':'layerBatchDown';
+    const selected=rows.filter(layer=>layerBatchIds.has(layer.id));
+    const movable=selected.length>0&&selected.every(layer=>!layer.locked&&layer.baseColor!=='white');
+    const hasRoom=rows.some((layer,index)=>{
+      const adjacent=rows[index-direction];
+      return layerBatchIds.has(layer.id)&&adjacent&&!layerBatchIds.has(adjacent.id)&&adjacent.baseColor!=='white';
+    });
+    byId<HTMLButtonElement>(id).disabled=!documentReady||!!query||!!tagFilter||!movable||!hasRoom;
+  }
   const previous=rows[selectedIndex-1],next=rows[selectedIndex+1];
   byId<HTMLButtonElement>('moveLayerUp').disabled=!canMove||!previous||previous.baseColor==='white';
   byId<HTMLButtonElement>('moveLayerDown').disabled=!canMove||!next||next.baseColor==='white';
@@ -450,6 +460,8 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   layerBatchAnchor=null;
   renderLayers();
 };
+byId<HTMLButtonElement>('layerBatchUp').onclick=()=>changeLayer('選んだレイヤーを上に移動しました。',tx=>tx.moveRasterLayers(layerBatchIds,1));
+byId<HTMLButtonElement>('layerBatchDown').onclick=()=>changeLayer('選んだレイヤーを下に移動しました。',tx=>tx.moveRasterLayers(layerBatchIds,-1));
 byId<HTMLButtonElement>('layerBatchShow').onclick=()=>changeLayerBatch('選んだレイヤーを表示しました。',(tx,id)=>tx.setLayerVisibility(id,true));
 byId<HTMLButtonElement>('layerBatchHide').onclick=()=>changeLayerBatch('選んだレイヤーを非表示にしました。',(tx,id)=>tx.setLayerVisibility(id,false));
 byId<HTMLButtonElement>('layerBatchLock').onclick=()=>changeLayerBatch('選んだレイヤーをロックしました。',(tx,id)=>tx.setLayerLocked(id,true));

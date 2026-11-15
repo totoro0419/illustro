@@ -46,6 +46,31 @@ export class DocumentTransaction{
     this.slotsValue.push(Object.freeze({type:'reorder',layerId:id,fromIndex,toIndex}));
     return true;
   }
+  moveRasterLayers(ids:ReadonlySet<LayerId>,direction:-1|1){
+    this.open();
+    if(this.slotsValue.length)throw new Error('Layer move must start its own transaction');
+    if(direction!==-1&&direction!==1)throw new Error('invalid layer move direction');
+    const order=[...this.rootValue.rootLayerIds];
+    if(!ids.size)return false;
+    for(const id of ids){
+      const layer=this.rootValue.getLayer(id);
+      if(layer.locked||layer.baseColor==='white')throw new Error('ロック中のレイヤーまたは白背景はまとめて移動できません。');
+    }
+    const original=new Map(order.map((id,index)=>[id,index]));
+    for(let index=direction===1?order.length-2:1;index>=0&&index<order.length;index-=direction){
+      const id=order[index]!,adjacent=order[index+direction];
+      if(!ids.has(id)||!adjacent||ids.has(adjacent)||this.rootValue.getLayer(adjacent).baseColor==='white')continue;
+      order[index]=adjacent;
+      order[index+direction]=id;
+    }
+    for(const [toIndex,id] of order.entries()){
+      const fromIndex=original.get(id)!;
+      if(ids.has(id)&&fromIndex!==toIndex)this.slotsValue.push(Object.freeze({type:'reorder',layerId:id,fromIndex,toIndex}));
+    }
+    if(!this.slotsValue.length)return false;
+    this.rootOrderValue=order;
+    return true;
+  }
   editTile(layerId:LayerId,x:number,y:number,edit:(b:Uint8Array)=>void){this.open();tileKey(x,y);let w=this.workingValue.get(layerId);
     if(!w){const l=this.editableRaster(layerId);if(l.baseColor==='white')throw new Error('Materialize the white background before direct pixel editing');if(l.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('direct byte edit requires rgba.unorm8.v1');w=new RasterWorkingSet(l.surface,this.doc._internal(CORE_INTERNAL).store);this.workingValue.set(layerId,w);this.slotsValue.push(Object.freeze({type:'working' as const,layerId}));}
     try{w.editTile(x,y,edit);}catch(e){this.failed=true;throw e;}}
