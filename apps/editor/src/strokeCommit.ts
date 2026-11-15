@@ -34,7 +34,8 @@ export class CoreStrokeDocumentPort implements DocumentPort{
     const current=this.document.root.getLayer(target.layerId);
     if(current.kind!=='raster'||current.surface.descriptor.surfaceId!==target.surfaceId||current.locked)
       throw new Error('描画先のレイヤーが変わりました。');
-    const tx=this.document.begin('Brush stroke');
+    const tx=this.document.begin(current.implicitRaster?'描画レイヤーを作って描く':'Brush stroke');
+    tx.activateDrawingLayer(target.layerId);
     let operationKey:StrokeCommitResult['operationKey']|null=null,dirtyTileCount=0;
     for(let i=0;i<records.length;i++){const item=records[i]!,dirty=dirtyByRecord[i]!;
       if(!dirty.length)continue;

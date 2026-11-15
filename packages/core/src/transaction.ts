@@ -12,7 +12,7 @@ import type {SemanticOperationDraft} from './history';
 import {CANONICAL_TILE_SIZE,pixelToTile,tileKey,RasterSurfaceManifest,type DirtyTileHint} from './raster/surface';
 
 export type DocumentGeometryKind='document.crop'|'document.canvas-resize'|'document.image-resize';
-type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
+type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;source?:RevisionId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
 
 export class DocumentTransaction{
@@ -20,6 +20,10 @@ export class DocumentTransaction{
   private readonly updatesValue=new Map<LayerId,LayerNode>();private readonly slotsValue:OperationSlot[]=[];private rootOrderValue:LayerId[]|null=null;private groupsValue:readonly LayerGroup[]|null=null;private compsValue:readonly LayerComp[]|null=null;private deletedValue=new Set<LayerId>();private closed=false;private failed=false;private dimensionUpdate:{width:number;height:number}|null=null;
   constructor(private readonly doc:CoreDocument,readonly label:string){if(!label.trim())throw new Error('empty transaction label');this.baseValue=doc.head;this.rootValue=doc.root;this.idValue=doc._internal(CORE_INTERNAL).ids.transaction();}
   get transactionId(){return this.idValue;}get baseRevision(){return this.baseValue;}
+  activateDrawingLayer(id:LayerId){
+    const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
+    return !!layer.implicitRaster&&this.meta(id,{implicitRaster:false});
+  }
   addRasterLayerAbove(referenceId:LayerId,inheritGroup=true):LayerId{
     this.open();const reference=this.updatesValue.get(referenceId)??this.rootValue.layers.get(referenceId);if(!reference)throw new Error('missing reference layer');if(reference.kind!=='raster')throw new Error('reference layer is not raster');
     const order=this.rootOrderValue??[...this.rootValue.rootLayerIds],index=order.indexOf(referenceId);if(index<0)throw new Error('reference layer is not in root order');
@@ -47,26 +51,41 @@ export class DocumentTransaction{
       if(source.blend)this.meta(id,{blend:source.blend});
       if(source.vectorMask)this.meta(id,{vectorMask:source.vectorMask});
     }
+    this.seedRasterPixels(id,pixels);
+    return id;
+  }
+  replaceLayerRaster(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,source?:RevisionId){
+    this.open();
+    if(this.slotsValue.length)throw new Error('Replace layer pixels as a standalone operation');
+    if(source&&!this.doc.hasRevision(source))throw new Error('復元元の履歴が見つかりません。');
+    const layer=this.editableRaster(id);
+    if(layer.baseColor==='white')throw new Error('白背景を描画用に変換してから復元してください。');
+    this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
+    this.seedRasterPixels(id,pixels,true,source);
+    return true;
+  }
+  private seedRasterPixels(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,replace=false,source?:RevisionId){
+    const {width:documentWidth,height:documentHeight}=this.rootValue;
+    if(pixels.length!==documentWidth*documentHeight*4)throw new Error('画像の大きさが作品と一致しません。');
     const layer=this.updatesValue.get(id)!;
     if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('対応していない画素形式です。');
     const working=new RasterWorkingSet(layer.surface,this.doc._internal(CORE_INTERNAL).store);
     const size=CANONICAL_TILE_SIZE;
-    for(let tileY=0;tileY*size<root.height;tileY++){
-      for(let tileX=0;tileX*size<root.width;tileX++){
-        const width=Math.min(size,root.width-tileX*size),height=Math.min(size,root.height-tileY*size);
+    for(let tileY=0;tileY*size<documentHeight;tileY++){
+      for(let tileX=0;tileX*size<documentWidth;tileX++){
+        const width=Math.min(size,documentWidth-tileX*size),height=Math.min(size,documentHeight-tileY*size);
         const tile=new Uint8Array(size*size*4);
         for(let row=0;row<height;row++){
-          const offset=((tileY*size+row)*root.width+tileX*size)*4;
+          const offset=((tileY*size+row)*documentWidth+tileX*size)*4;
           tile.set(pixels.subarray(offset,offset+width*4),row*size*4);
         }
         if(tile.some(value=>value!==0))working.editTile(tileX,tileY,bytes=>bytes.set(tile));
       }
     }
-    if(working.changedTileCount){
+    if(working.changedTileCount||replace){
       this.workingValue.set(id,working);
-      this.slotsValue.push(Object.freeze({type:'working',layerId:id,initial:true}));
+      this.slotsValue.push(Object.freeze({type:'working',layerId:id,initial:true,...(replace?{replace:true as const}:{}),...(source?{source}:{})}));
     }
-    return id;
   }
   deleteRasterLayers(ids:ReadonlySet<LayerId>){
     this.open();
@@ -78,13 +97,9 @@ export class DocumentTransaction{
     if(this.slotsValue.length)throw new Error('Apply the mask as its own transaction');
     const layer=this.rootValue.getLayer(id);
     if(!layer.vectorMask?.enabled||this.rootValue.isLayerLocked(id))throw new Error('有効なマスクが付いた、ロックされていないレイヤーを選んでください。');
-    const replacement=this.addRasterSnapshotAbove(id,pixels,layer.name,true);
-    this.meta(replacement,{vectorMask:null,...(layer.positionLocked?{positionLocked:true}:{}),...(layer.alphaLocked?{alphaLocked:true}:{})});
-    for(const otherId of this.rootValue.rootLayerIds){
-      if(this.rootValue.getLayer(otherId).clipSourceId===id)this.meta(otherId,{clipSourceId:replacement});
-    }
-    this.removeRasterLayers(new Set([id]));
-    return replacement;
+    this.replaceLayerRaster(id,pixels);
+    this.meta(id,{vectorMask:null});
+    return id;
   }
   replaceRasterLayers(ids:ReadonlySet<LayerId>,referenceId:LayerId,pixels:Uint8ClampedArray,name:string){
     if(!ids.size||!ids.has(referenceId)||this.slotsValue.length)throw new Error('結合するレイヤーを選んでください。');
@@ -420,7 +435,7 @@ export class DocumentTransaction{
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='restore-revision'||x.type==='pin-revision'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'|'blend'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'|'blend'|'implicitRaster'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

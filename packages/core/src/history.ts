@@ -14,7 +14,7 @@ export type Revision<T>=Readonly<{id:RevisionId;parentIds:readonly RevisionId[];
 export type RevisionHistoryState<T>=Readonly<{revisions:readonly Revision<T>[];head:RevisionId;redoIds:readonly RevisionId[]}>;
 
 export class RevisionHistory<T>{
-  private readonly revisions=new Map<RevisionId,Revision<T>>();private headValue:RevisionId;private readonly redoIds:RevisionId[]=[];
+  private readonly revisions=new Map<RevisionId,Revision<T>>();private headValue:RevisionId;private readonly redoIds:RevisionId[]=[];private undoLimitValue:number|null=null;
   constructor(root:T,private readonly ids:IdFactory,at=0,hydrate?:RevisionHistoryState<T>){
     if(hydrate){
       if(!hydrate.revisions.length)throw new Error('history is empty');
@@ -27,7 +27,12 @@ export class RevisionHistory<T>{
   }
   static hydrate<T>(state:RevisionHistoryState<T>,ids:IdFactory){const seed=state.revisions[0];if(!seed)throw new Error('history is empty');return new RevisionHistory(seed.root,ids,0,state);}
   get head(){return this.headValue;}get current(){const r=this.revisions.get(this.headValue);if(!r)throw new Error('missing revision');return r;}get count(){return this.revisions.size;}
-  get canUndo(){return this.current.parentIds[0]!==undefined;}get canRedo(){return this.redoIds.length>0;}
+  get canUndo(){return this.current.parentIds[0]!==undefined&&(this.undoLimitValue===null||this.redoIds.length<this.undoLimitValue);}
+  get undoLimit(){return this.undoLimitValue;}
+  setUndoLimit(limit:number|null){
+    if(limit!==null&&(!Number.isSafeInteger(limit)||limit<1))throw new Error('履歴の件数が正しくありません。');
+    this.undoLimitValue=limit;
+  }get canRedo(){return this.redoIds.length>0;}
   has(id:RevisionId){return this.revisions.has(id);}get(id:RevisionId){const r=this.revisions.get(id);if(!r)throw new Error('missing revision');return r;}
   snapshot():RevisionHistoryState<T>{return Object.freeze({revisions:Object.freeze([...this.revisions.values()]),head:this.headValue,redoIds:Object.freeze([...this.redoIds])});}
   assertHead(id:RevisionId){if(id!==this.headValue)throw new Error('stale transaction');}
@@ -35,7 +40,7 @@ export class RevisionHistory<T>{
     const operations=Object.freeze(command.operations.map(x=>Object.freeze(x)));const cmd=Object.freeze({...command,operations});
     const revision=Object.freeze({id,parentIds:Object.freeze([this.headValue]),transactionId:tx,root,command:cmd,commitStamp,committedAt:at}) as Revision<T>;
     this.revisions.set(id,revision);this.headValue=id;this.redoIds.length=0;return revision;}
-  undo(){const parent=this.current.parentIds[0];if(parent===undefined)return this.current;this.redoIds.push(this.headValue);this.headValue=parent;return this.current;}
+  undo(){const parent=this.current.parentIds[0];if(parent===undefined||!this.canUndo)return this.current;this.redoIds.push(this.headValue);this.headValue=parent;return this.current;}
   redo(){const next=this.redoIds.pop();if(next===undefined)return this.current;this.headValue=next;return this.current;}
 }
 export function finalizeOperation(transactionId:TransactionId,operationOrdinal:number,draft:SemanticOperationDraft):SemanticOperation{

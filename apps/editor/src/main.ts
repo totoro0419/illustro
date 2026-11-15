@@ -15,7 +15,9 @@ import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {layerBlendNames,openLayerBlendDialog} from './ui/layerBlendDialog';
-import {drawMaskPreview,paintPixelMask} from './layerMaskEditing';
+import {createHistoryComparison,historyThumbnail} from './ui/artworkHistoryView';
+import {drawMaskPreview,paintPixelMask,type MaskStrokePoint} from './layerMaskEditing';
+import {restoreHistoryPixels} from './historyBrush';
 import {penEraserInput} from './stylusButtons';
 import {parseSavedCanvasView} from './canvasView';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,type GuideSettings} from './strokeGuide';
@@ -112,11 +114,11 @@ let initialBlankWarmup:BlankWarmup|null=null;
 let documentActivationPending=false;
 // Keep the original editable raster background and the top drawing layer in the
 // Core document. Only the initial GPU upload differs from normal saved-work replay.
-function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white',dpi=72,author='',description=''){
+function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white',dpi=72,author='',description='',emptyDrawingLayer=false){
   // White is a logical base color, not 4*width*height initial raster bytes.
   // The upper transparent drawing layer is immediately usable. Native saves
   // carry the white-base metadata, and image export composites it on demand.
-  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',dpi,author,description,...(background==='white'?{blankBackground:'white' as const}:{})});
+  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',dpi,author,description,emptyDrawingLayer,...(background==='white'?{blankBackground:'white' as const}:{})});
   let selected=document.root.rootLayerIds[0]!;
   let whiteSurfaceKey:string|null=null;
   if(background==='white'){
@@ -334,7 +336,7 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
 
 function visibleLayerIds(){
   const root=controller.document.root;
-  return new Set(root.rootLayerIds.filter(id=>root.isLayerVisible(id)&&root.getLayer(id).opacity>0));
+  return new Set(root.rootLayerIds.filter(id=>root.isLayerVisible(id)&&!root.getLayer(id).implicitRaster&&root.getLayer(id).opacity>0));
 }
 
 type MaskEditMode='pixels'|'path';
@@ -358,12 +360,12 @@ function inspectSelectedMask(mode:'red'|'grayscale'){
 
 function stopMaskEditing(){
   if(!maskEditing)return;
-  maskEditing.drawing.setMaskGesture(null);
+  maskEditing.drawing.setCanvasEditGesture(null);
   maskEditing=null;
 }
 function updateVectorMaskControls(){
   const layer=controller.selectedLayer,mask=layer.vectorMask,root=controller.document.root;
-  const disabled=!documentReady||layer.baseColor==='white'||root.isLayerLocked(layer.id);
+  const disabled=!documentReady||layer.implicitRaster||layer.baseColor==='white'||root.isLayerLocked(layer.id);
   if(maskEditing&&(disabled||maskEditing.id!==layer.id||maskEditing.artwork!==controller.document||
     maskEditing.drawing!==surface||(maskEditing.mode==='pixels'&&mask?.shape!=='pixels')))stopMaskEditing();
   if(maskInspection){
@@ -434,13 +436,14 @@ function startMaskEditing(mode:MaskEditMode,reveal=false){
     if(mask?.shape!=='pixels')return;
   }
   if(mode==='path'&&!replaceMaskAllowed('path'))return;
+  stopHistoryBrush();
   stopLayerCompComparison();
   cancelLayerPick?.();
   drawing.setSelectionMode(false);
   if(drawing.inspectedLayer)drawing.setSoloLayer(null);
   stopMaskInspection();
   maskEditing={drawing,artwork,id:layer.id,mode,reveal};
-  drawing.setMaskGesture({
+  drawing.setCanvasEditGesture({
     path:mode==='path',width:drawing.brushSize,color:mode==='path'?'#43bfea':reveal?'#fff':'#e35060',
     complete:points=>{
       if(surface!==drawing||controller.document!==artwork||controller.selectedLayerId!==layer.id)return;
@@ -696,6 +699,7 @@ function editLayerBlend(){
   if(!drawing||drawing.busy||geometryBusy||historyPending||layer.baseColor==='white')return;
   activeBlend?.dialog.close('cancel');
   stopLayerCompComparison();
+  stopHistoryBrush();
   stopMaskEditing();
   stopMaskInspection();
   updateVectorMaskControls();
@@ -767,10 +771,13 @@ function loadLayerCompFields(){
 }
 
 const renderLayers=()=>{
+  syncHistoryBrush();
   renderLayerComps();
   updateVectorMaskControls();
   const root=controller.document.root;
-  const rows=[...controller.layers].reverse(),selectedLayer=controller.selectedLayer,selectedName=selectedLayer.name;
+  const rows=[...controller.layers].reverse().filter(layer=>!layer.implicitRaster);
+  const selectedLayer=controller.selectedLayer,selectedName=selectedLayer.implicitRaster?'最初の一筆で描画レイヤーを作成':selectedLayer.name;
+  const hasLayer=documentReady&&!selectedLayer.implicitRaster;
   if(layerBatchDocument!==controller.document){
     layerBatchDocument=controller.document;
     layerBatchMode=false;
@@ -782,12 +789,12 @@ const renderLayers=()=>{
     if(!controller.document.root.hasLayer(id))layerBatchIds.delete(id);
   }
   const soloButton=byId<HTMLButtonElement>('layerSoloToggle'),inspected=surface?.inspectedLayer;
-  soloButton.disabled=!documentReady;
+  soloButton.disabled=!hasLayer;
   soloButton.setAttribute('aria-pressed',String(!!inspected));
   soloButton.textContent=inspected?'単独表示を解除':'選択レイヤーだけ表示';
   byId('layerSoloStatus').textContent=inspected?inspected.name+'を単独表示中':'';
   const batchButton=byId<HTMLButtonElement>('layerBatchToggle');
-  batchButton.disabled=!documentReady;
+  batchButton.disabled=!hasLayer;
   batchButton.setAttribute('aria-pressed',String(layerBatchMode));
   byId('layerBatchActions').hidden=!layerBatchMode;
   byId('layerBatchCount').textContent=layerBatchIds.size+'枚を選択';
@@ -797,15 +804,15 @@ const renderLayers=()=>{
   clipControl.disabled=!documentReady||(!selectedLayer.clipSourceId&&!root.availableClippingSource(selectedLayer.id));
   byId('layerClippingStatus').textContent=clip?'クリップ元 '+clip.name:selectedLayer.clipSourceId?'クリッピング元が見つかりません。':'';
   const alphaLock=byId<HTMLButtonElement>('layerAlphaLock');
-  alphaLock.disabled=!documentReady||selectedLayer.baseColor==='white';
+  alphaLock.disabled=!hasLayer||selectedLayer.baseColor==='white';
   alphaLock.textContent=selectedLayer.alphaLocked?'不透明度ロックを解除':'不透明度をロック';
   alphaLock.setAttribute('aria-pressed',String(!!selectedLayer.alphaLocked));
   const positionLock=byId<HTMLButtonElement>('layerPositionLock');
-  positionLock.disabled=!documentReady;
+  positionLock.disabled=!hasLayer;
   positionLock.textContent=selectedLayer.positionLocked?'位置ロックを解除':'位置をロック';
   positionLock.setAttribute('aria-pressed',String(!!selectedLayer.positionLocked));
-  byId<HTMLButtonElement>('pickLayerOnCanvas').disabled=!documentReady;
-  byId<HTMLButtonElement>('duplicateLayer').disabled=!documentReady;
+  byId<HTMLButtonElement>('pickLayerOnCanvas').disabled=!rows.length||!documentReady;
+  byId<HTMLButtonElement>('duplicateLayer').disabled=!hasLayer;
   byId<HTMLButtonElement>('flattenLayerCopy').disabled=!documentReady||!visibleLayerIds().size;
   byId<HTMLButtonElement>('mergeVisibleLayers').disabled=!documentReady||visibleLayerIds().size<2;
   byId<HTMLButtonElement>('mergeLayerDown').disabled=!documentReady||!rows[rows.indexOf(selectedLayer)+1];
@@ -824,23 +831,23 @@ const renderLayers=()=>{
   const filtering=!!(query||tagFilter||kindFilter);
   const tagField=byId<HTMLSelectElement>('selectedLayerTag');
   tagField.value=selectedLayer.colorTag??'';
-  tagField.disabled=!documentReady;
+  tagField.disabled=!hasLayer;
   clearLayerOpacityPreview();
   const opacity=byId<HTMLInputElement>('layerOpacity');
   opacity.value=String(Math.round(selectedLayer.opacity*100));
-  opacity.disabled=!documentReady;
+  opacity.disabled=!hasLayer;
   byId('layerOpacityValue').textContent=opacity.value+'%';
   const nameField=byId<HTMLInputElement>('selectedLayerName');
   if(document.activeElement!==nameField||nameField.dataset.layerId!==selectedLayer.id)nameField.value=selectedName;
   nameField.dataset.layerId=selectedLayer.id;
-  nameField.disabled=!documentReady;
+  nameField.disabled=!hasLayer;
   const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
   const sameParent=(a:LayerId,b:LayerId)=>root.groupsForLayer(a).at(-1)?.id===root.groupsForLayer(b).at(-1)?.id;
   const blendButton=byId<HTMLButtonElement>('layerBlendMode');
-  blendButton.disabled=!documentReady||selectedLayer.baseColor==='white';
+  blendButton.disabled=!hasLayer||selectedLayer.baseColor==='white';
   blendButton.textContent='合成モード '+layerBlendNames[selectedLayer.blend?.mode??'normal'];
   if(activeBlend?.dialog.open&&(!documentReady||activeBlend.drawing!==surface||activeBlend.id!==selectedLayer.id))activeBlend.dialog.close('cancel');
-  const canMove=!!documentReady&&!layerBatchMode&&!filtering&&!root.isLayerPositionLocked(selectedLayer.id)&&selectedLayer.baseColor!=='white';
+  const canMove=hasLayer&&!layerBatchMode&&!filtering&&!root.isLayerPositionLocked(selectedLayer.id)&&selectedLayer.baseColor!=='white';
   for(const direction of [-1,1] as const){
     const id=direction===1?'layerBatchUp':'layerBatchDown';
     const selected=rows.filter(layer=>layerBatchIds.has(layer.id));
@@ -963,7 +970,7 @@ const renderLayers=()=>{
       entries.push(entry);
     }
     list.replaceChildren(...entries);
-    if(!matching.length)list.textContent='一致するレイヤーがありません。';
+    if(!entries.length)list.textContent=selectedLayer.implicitRaster?'ひと筆描くとレイヤーができます。':'一致するレイヤーがありません。';
   }
   byId('layersBoxSummary').textContent=selectedName;
   byId('documentBoxSummary').textContent=controller.document.root.width+'×'+controller.document.root.height;
@@ -975,7 +982,12 @@ function updateHistoryButtons(){
   byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(surface?.canUndo||historyPending);
   byId<HTMLButtonElement>('redo').disabled=blocked||!(surface?.canRedo||historyPending);
   byId<HTMLButtonElement>('compactRedo').disabled=blocked||!(surface?.canRedo||historyPending);
+  const undoLabel=controller.document.currentRevision.command?.label;
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
+  if(undoLabel){
+    const name=undoLabel==='Brush stroke'?'描画':undoLabel==='Add raster layer'?'レイヤーを追加':undoLabel;
+    for(const id of ['undo','compactUndo'])byId(id).title='元に戻す · '+name;
+  }else for(const id of ['undo','compactUndo'])byId(id).title='元に戻す';
 }
 function updatePersistenceDisplay(){
   const state=persistenceState,indicator=byId('saveState'),inputPending=historyPending||(surface?.hasUncommittedInput??false);
@@ -1586,10 +1598,127 @@ async function copyHistoricalLayer(artwork:CoreDocument,revision:RevisionId,laye
   }
 }
 
+type HistoryBrushSession={
+  artwork:CoreDocument;drawing:BrushSurface;target:LayerId;revision:RevisionId;sourceName:string;
+  source:Uint8ClampedArray;width:number;height:number;
+};
+let historyBrush:HistoryBrushSession|null=null;
+function stopHistoryBrush(){
+  historyBrush?.drawing.setCanvasEditGesture(null);
+  historyBrush=null;
+  byId('historyBrushBar').hidden=true;
+}
+function syncHistoryBrush(){
+  const session=historyBrush;
+  if(!session)return;
+  const root=controller.document.root;
+  if(session.artwork!==controller.document||session.drawing!==surface||controller.selectedLayerId!==session.target||
+    root.isLayerLocked(session.target)||!root.isLayerVisible(session.target))stopHistoryBrush();
+}
+async function startHistoryBrush(artwork:CoreDocument,revision:RevisionId,sourceLayer:LayerId){
+  const drawing=surface,layer=controller.selectedLayer,root=artwork.root;
+  if(artwork!==controller.document||!drawing?.canChangeGeometry||geometryBusy||historyPending)return;
+  if(layer.baseColor==='white'||root.isLayerLocked(layer.id)||!root.isLayerVisible(layer.id)){
+    byId('status').textContent='表示中でロックされていない描画レイヤーを選んでください。';return;
+  }
+  const older=artwork.revision(revision).root,sourceName=older.getLayer(sourceLayer).name;
+  const adjusted=root.width!==older.width||root.height!==older.height||layer.id!==sourceLayer;
+  if(adjusted&&!window.confirm('復元元「'+sourceName+'」を、左上をそろえて「'+layer.name+'」に重ねます。続けますか？'))return;
+  const head=artwork.head;
+  stopHistoryBrush();stopMaskEditing();stopMaskInspection();stopLayerCompComparison();
+  updateVectorMaskControls();
+  if(drawing.inspectedLayer)drawing.setSoloLayer(null);
+  drawing.setSelectionMode(false);
+  byId('status').textContent='履歴ブラシの復元元を読み込んでいます。';
+  try{
+    const frozen=captureExport(artwork,sourceLayer,revision);
+    const source=await renderFrozenArtwork({...frozen,layers:frozen.layers.map(item=>item.visible?{...item,opacity:1}:item)});
+    if(surface!==drawing||artwork!==controller.document||artwork.head!==head||drawing.busy||controller.selectedLayerId!==layer.id)return;
+    historyBrush={artwork,drawing,target:layer.id,revision,sourceName,source,width:older.width,height:older.height};
+    byId('historyBrushBar').hidden=false;
+    byId('historyBrushTarget').textContent='履歴ブラシ '+sourceName+' → '+layer.name;
+    drawing.setCanvasEditGesture({
+      path:false,width:drawing.brushSize,color:'#25a486',
+      complete:points=>{if(historyBrush)void applyHistoryBrush(historyBrush,points);},
+    });
+    byId('status').textContent='戻したい場所をブラシでなぞってください。';
+  }catch(error){
+    byId('status').textContent='履歴ブラシを準備できませんでした。'+(error instanceof Error?error.message:'');
+  }
+}
+async function applyHistoryBrush(session:HistoryBrushSession,points:readonly MaskStrokePoint[]){
+  const {drawing,artwork,target}=session,head=artwork.head,root=artwork.root;
+  if(session!==historyBrush||surface!==drawing||artwork!==controller.document||drawing.busy||geometryBusy||historyPending)return;
+  if(root.isLayerLocked(target)||!root.isLayerVisible(target))return;
+  const opacity=Number(byId<HTMLInputElement>('historyBrushStrength').value)/100;
+  if(!opacity||!points.length)return;
+  geometryBusy=true;drawing.setInputBarrier(true);
+  try{
+    const pixels=(await drawing.captureDocumentLayers(new Set([target]))).get(target);
+    if(!pixels||session!==historyBrush||artwork.head!==head||drawing!==surface)return;
+    const changed=restoreHistoryPixels(pixels,session.source,points,{
+      width:root.width,height:root.height,sourceWidth:session.width,sourceHeight:session.height,
+      size:drawing.brushSize,opacity,selection:drawing.selectedRectangle,lockAlpha:root.getLayer(target).alphaLocked??false,
+    });
+    if(!changed)return;
+    const transaction=artwork.begin('履歴ブラシで復元');
+    transaction.replaceLayerRaster(target,pixels,session.revision);
+    controller.lastPersistenceHandoff=transaction.commit().persistence;
+    queueLatestCommit();
+    checkpointNeedsFullSeed=true;
+    await drawing.restoreDocumentProjection();
+    byId('status').textContent='なぞった部分を復元しました。';
+  }catch(error){
+    byId('status').textContent='履歴ブラシを反映できませんでした。'+(error instanceof Error?error.message:'');
+  }finally{
+    geometryBusy=false;if(surface===drawing)drawing.setInputBarrier(false);
+    renderLayers();updateHistoryButtons();updateQa();
+  }
+}
+byId<HTMLButtonElement>('doneHistoryBrush').onclick=()=>{
+  stopHistoryBrush();byId('status').textContent='絵を編集できます。';
+};
+
+function loadHistoryUndoLimit(artwork:CoreDocument){
+  try{
+    const key='illustro.history-undo-limit.'+artwork.root.documentId;
+    const stored=localStorage.getItem(key);
+    if(stored!==null)artwork.setHistoryUndoLimit(Number(stored));
+  }catch{}
+}
+function createHistorySettings(artwork:CoreDocument,entries:ReturnType<CoreDocument['historyEntries']>){
+  const details=document.createElement('details'),summary=document.createElement('summary');
+  const label=document.createElement('label'),limit=document.createElement('select'),status=document.createElement('output');
+  const backup=document.createElement('button'),stats=document.createElement('p');
+  summary.textContent='元に戻せる回数と保存領域';
+  label.textContent='連続して元に戻せる回数 ';
+  limit.replaceChildren(new Option('作品に残っている全履歴',''),...([50,100,200,500,1000].map(value=>new Option(value+'回',String(value)))));
+  limit.value=String(artwork.historyUndoLimit??'');
+  label.append(limit);
+  const snapshots=entries.filter(entry=>entry.snapshot).length;
+  stats.textContent='履歴 '+entries.length+'件。名前付き '+snapshots+'件。保持している画素データ '+(artwork.canonicalRasterBytes/1048576).toFixed(1)+' MiB。';
+  backup.type='button';backup.textContent='履歴を含む作品のバックアップを保存';
+  backup.onclick=()=>{if(controller.document===artwork)void saveWork(true);};
+  status.setAttribute('aria-live','polite');
+  limit.onchange=()=>{
+    if(controller.document!==artwork||historyPending||surface?.busy){limit.value=String(artwork.historyUndoLimit??'');return;}
+    const value=limit.value?Number(limit.value):null,key='illustro.history-undo-limit.'+artwork.root.documentId;
+    artwork.setHistoryUndoLimit(value);
+    try{
+      if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,String(value));
+      status.textContent='回数の設定を保存しました。名前付きの状態や履歴一覧からは引き続き復元できます。';
+    }catch{status.textContent='この設定を端末に保存できませんでした。';}
+    updateHistoryButtons();
+  };
+  details.append(summary,stats,label,status,backup);
+  return details;
+}
+
 function openArtworkHistory(){
   if(!documentReady)return;
   const artwork=controller.document,head=artwork.head;
   const entries=[...artwork.historyEntries()].sort((a,b)=>b.committedAt-a.committedAt);
+  const settings=createHistorySettings(artwork,entries);
   const dialog=document.createElement('dialog'),form=document.createElement('form');
   const title=document.createElement('h2'),status=document.createElement('output');
   const label=document.createElement('label'),list=document.createElement('select');
@@ -1599,18 +1728,56 @@ function openArtworkHistory(){
   const note=document.createElement('p');
   const partial=document.createElement('details'),partialTitle=document.createElement('summary');
   const sourceLabel=document.createElement('label'),sources=document.createElement('select');
-  const copyLayer=document.createElement('button'),copyRegion=document.createElement('button');
+  const copyLayer=document.createElement('button'),copyRegion=document.createElement('button'),brush=document.createElement('button');
   partialTitle.textContent='以前のレイヤーからコピー';
   sourceLabel.textContent='復元元のレイヤー ';
   sourceLabel.append(sources);
-  copyLayer.type=copyRegion.type='button';
+  copyLayer.type=copyRegion.type=brush.type='button';
+  brush.textContent='履歴ブラシを使う';
   copyLayer.textContent='レイヤー全体';
   copyRegion.textContent='現在選んでいる範囲だけ';
-  partial.append(partialTitle,sourceLabel,copyLayer,copyRegion);
+  partial.append(partialTitle,sourceLabel,copyLayer,copyRegion,brush);
   const previews=document.createElement('div');
-  const urls:string[]=[];
+  const pinned=document.createElement('div'),pinnedTitle=document.createElement('h3');
+  const pinnedEntries=entries.filter(entry=>entry.snapshot);
+  const morePinned=document.createElement('button');
+  pinned.className='history-pinned';
+  pinnedTitle.textContent='名前付きの状態';
+  pinnedTitle.hidden=pinned.hidden=morePinned.hidden=!pinnedEntries.length;
+  morePinned.type='button';morePinned.textContent='ほかの名前付きの状態';
+  const urls:string[]=[],pinnedUrls:string[]=[],disposePreviews:Array<()=>void>=[];
+  let shownPinned=0,thumbnailBatch=Promise.resolve();
+  function appendPinned(){
+    for(const entry of pinnedEntries.slice(shownPinned,shownPinned+6)){
+      const button=document.createElement('button'),caption=document.createElement('span');
+      button.type='button';
+      caption.textContent=entry.snapshot!.name;
+      button.append(caption);
+      button.onclick=()=>{
+        if(!Array.from(list.options).some(option=>option.value===entry.id)){
+          list.add(new Option(entry.snapshot!.name,entry.id));
+        }
+        list.value=entry.id;update();
+      };
+      pinned.append(button);
+      thumbnailBatch=thumbnailBatch.then(async()=>{
+        if(!dialog.open)return;
+        try{
+          const blob=await historyThumbnail(artwork,entry.id);
+          if(!dialog.open)return;
+          const url=URL.createObjectURL(blob);pinnedUrls.push(url);
+          const thumb=new Image();thumb.src=url;thumb.alt='';
+          button.prepend(thumb);
+        }catch{caption.title='縮小画像を作成できませんでした。';}
+      });
+      shownPinned++;
+    }
+    morePinned.hidden=shownPinned>=pinnedEntries.length;
+  }
+  morePinned.onclick=appendPinned;
   let shown=0,request=0;
   function clearPreviews(){
+    for(const dispose of disposePreviews.splice(0))dispose();
     for(const url of urls.splice(0))URL.revokeObjectURL(url);
     previews.replaceChildren();
   }
@@ -1648,7 +1815,7 @@ function openArtworkHistory(){
       const root=artwork.revision(list.value as RevisionId).root;
       for(const id of [...root.rootLayerIds].reverse())sources.add(new Option(root.getLayer(id).name,id));
     }
-    copyLayer.disabled=!sources.value;
+    copyLayer.disabled=brush.disabled=!sources.value;
     copyRegion.disabled=!sources.value||!surface?.selectedRectangle;
     status.textContent='';
   };
@@ -1659,6 +1826,11 @@ function openArtworkHistory(){
     void copyHistoricalLayer(artwork,id,source,selectedRegion);
   };
   copyLayer.onclick=()=>copy(false);
+  brush.onclick=()=>{
+    const source=sources.value as LayerId,revision=list.value as RevisionId;
+    if(!source||!revision)return;
+    dialog.close();void startHistoryBrush(artwork,revision,source);
+  };
   copyRegion.onclick=()=>copy(true);
   list.onchange=update;
   more.onclick=appendEntries;
@@ -1689,9 +1861,9 @@ function openArtworkHistory(){
         const result=await exportImage(captureExport(artwork,undefined,revision),'png');
         if(!dialog.open||request!==token)return;
         const url=URL.createObjectURL(result.blob);urls.push(url);
-        const figure=document.createElement('figure'),image=new Image(),description=document.createElement('figcaption');
-        image.src=url;image.alt=caption;description.textContent=caption;
-        figure.append(image,description);previews.append(figure);
+        const preview=createHistoryComparison(url,caption,result.width,result.height);
+        disposePreviews.push(preview.dispose);
+        previews.append(preview.figure);
       }
       status.textContent='';
     }catch(error){
@@ -1700,14 +1872,19 @@ function openArtworkHistory(){
       if(request===token&&dialog.open)compare.disabled=false;
     }
   };
-  form.append(title,label,note,more,compare,restore,pin,branch,close,partial,status,previews);
+  form.append(title,pinnedTitle,pinned,morePinned,label,note,more,compare,restore,pin,branch,close,partial,status,previews,settings);
   dialog.className='export-dialog artwork-history-dialog';
   dialog.setAttribute('aria-label','作品の履歴');
   dialog.append(form);
   document.body.append(dialog);
-  dialog.addEventListener('close',()=>{request++;clearPreviews();dialog.remove();},{once:true});
+  dialog.addEventListener('close',()=>{
+    request++;clearPreviews();
+    for(const url of pinnedUrls)URL.revokeObjectURL(url);
+    dialog.remove();
+  },{once:true});
   update();
   dialog.showModal();
+  appendPinned();
 }
 byId<HTMLButtonElement>('openArtworkHistory').onclick=openArtworkHistory;
 
@@ -1886,7 +2063,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     const canvas=byId<HTMLCanvasElement>('canvas');
     canvas.width=canvas.width;
   }
-  controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
+  controller=EditorController.restored(opened.document,opened.selectedLayerId);loadHistoryUndoLimit(opened.document);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
   if(opened.generationId==='new'){
     persistence.clearFileDestination();
     const started=performance.now();
@@ -1986,7 +2163,7 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     throw error;
   }
 }
-async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description=''):Promise<boolean>{
+async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description='',emptyDrawingLayer=false):Promise<boolean>{
   const createStarted=performance.now();
   const trigger=byId<HTMLButtonElement>('new');
   if(trigger.disabled)return false;
@@ -1998,9 +2175,9 @@ async function createDocument(width:number,height:number,name='新しい作品',
   trigger.disabled=true;byId('status').textContent='キャンバスを準備しています。';
   try{
     const documentStarted=performance.now();
-    const warm=matchedBlankWarmup(width,height,name,background,dpi,author,description);
+    const warm=emptyDrawingLayer?null:matchedBlankWarmup(width,height,name,background,dpi,author,description);
     if(!warm)discardBlankWarmup();
-    const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background,dpi,author,description);
+    const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background,dpi,author,description,emptyDrawingLayer);
     const {document,selected,whiteSurfaceKey}=blank;
     measureCanvasStage('new-document-model',documentStarted);
     if(warm)await activateFirstPrewarmedBlank(warm);

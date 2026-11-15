@@ -9,7 +9,7 @@ import {DocumentTransaction} from './transaction';
 import type {PersistenceHandoff} from './recovery';
 import {CORE_INTERNAL,type CoreInternalToken} from './internal';
 
-export type CoreOptions=Readonly<{width:number;height:number;name?:string;colorProfileId?:string;sampleEncoding?:RasterSampleEncoding;blankBackground?:'white';dpi?:number;author?:string;description?:string;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
+export type CoreOptions=Readonly<{width:number;height:number;name?:string;colorProfileId?:string;sampleEncoding?:RasterSampleEncoding;blankBackground?:'white';emptyDrawingLayer?:boolean;dpi?:number;author?:string;description?:string;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
 export type CoreRestoreOptions=Readonly<{snapshot:unknown;blockPayloads:ReadonlyMap<string,Uint8Array>;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
 export class CoreDocument{
   readonly tileSize=CANONICAL_TILE_SIZE;readonly tileBytes:number;private readonly idsValue:IdFactory;private readonly clockValue:()=>number;
@@ -22,7 +22,7 @@ export class CoreDocument{
       const first=this.root.getLayer(this.defaultRasterLayerId),sampleEncoding=first.surface.descriptor.sampleEncoding;this.tileBytes=CANONICAL_TILE_SIZE*CANONICAL_TILE_SIZE*bytesPerPixel(sampleEncoding);return;
     }
     validSize(o.width);validSize(o.height);const sampleEncoding=o.sampleEncoding??'rgba.unorm8.v1';this.tileBytes=CANONICAL_TILE_SIZE*CANONICAL_TILE_SIZE*bytesPerPixel(sampleEncoding);
-    const id=this.idsValue.layer(),plain=rasterLayer(id,this.idsValue.surface(),o.colorProfileId??'srgb',sampleEncoding,'Layer 1'),layer=o.blankBackground==='white'?Object.freeze({...plain,name:'背景',baseColor:'white' as const}):plain,e=PagedMap.empty<LayerId,typeof layer>().edit();e.set(id,layer);
+    const id=this.idsValue.layer(),plain=rasterLayer(id,this.idsValue.surface(),o.colorProfileId??'srgb',sampleEncoding,'Layer 1'),layer=o.blankBackground==='white'?Object.freeze({...plain,name:'背景',baseColor:'white' as const}):o.emptyDrawingLayer?Object.freeze({...plain,implicitRaster:true}):plain,e=PagedMap.empty<LayerId,typeof layer>().edit();e.set(id,layer);
     const now=this.clockValue(),name=o.name??'Untitled';
     const info=o.dpi!==undefined||o.author!==undefined||o.description!==undefined
       ?validateDocumentInfo({name,author:o.author??'',description:o.description??'',dpi:o.dpi??null}):null;
@@ -33,7 +33,9 @@ export class CoreDocument{
   }
   static restore(options:CoreRestoreOptions){return new CoreDocument(options);}
   get root(){return this.historyValue.current.root;}get head(){return this.historyValue.head;}get revisionCount(){return this.historyValue.count;}get currentRevision(){return this.historyValue.current;}
-  get canUndo(){return this.historyValue.canUndo;}get canRedo(){return this.historyValue.canRedo;}
+  get canUndo(){return this.historyValue.canUndo;}
+  get historyUndoLimit(){return this.historyValue.undoLimit;}
+  setHistoryUndoLimit(limit:number|null){this.historyValue.setUndoLimit(limit);}get canRedo(){return this.historyValue.canRedo;}
   get commitSequence(){return this.commitSequenceValue;}get canonicalBlockCount(){return this.storeValue.blockCount;}get canonicalRasterBytes(){return this.storeValue.allocatedBytes;}
   begin(label:string){return new DocumentTransaction(this,label);}
   addRasterLayerAbove(referenceId:LayerId){const tx=this.begin('Add raster layer'),layerId=tx.addRasterLayerAbove(referenceId),receipt=tx.commit();return Object.freeze({layerId,receipt});}
@@ -62,6 +64,23 @@ export class CoreDocument{
       current=this.historyValue.get(restore?.sourceRevisionIds[0]??current.parentIds[0]);
     }
     commands.reverse();return Object.freeze(commands.flatMap(command=>command.operations));
+  }
+  rasterReplayPlan(revisionId:RevisionId=this.head){
+    const operations=this.operationsTo(revisionId);
+    const geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
+    const visible=operations.slice(geometryIndex+1),baselines=new Map<LayerId,number>();
+    visible.forEach((operation,index)=>{
+      const layer=operation.targetEntityIds[0];
+      if(operation.kind==='layer.snapshot'&&layer)baselines.set(layer,index);
+    });
+    return {
+      followsGeometry:geometryIndex>=0,
+      seededLayers:new Set(baselines.keys()),
+      operations:visible.filter((op,index)=>{
+        const layer=op.targetEntityIds[0];
+        return op.kind!=='brush.stroke'||!layer||index>(baselines.get(layer)??-1);
+      }),
+    };
   }
   /** Geometry checkpoints contain exact base raster blocks, independent of brush history replay. */
   readBaseRasterPixels(layerId:LayerId,revisionId:RevisionId=this.head){

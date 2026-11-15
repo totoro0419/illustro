@@ -28,10 +28,8 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
   });
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
   const strokes: {surfaceId:string;record:StrokeRecord}[]=[];
-  const operations=document.operationsTo(revision),geometryIndex=operations.findLastIndex(op=>['document.crop','document.canvas-resize','document.image-resize'].includes(op.kind));
-  const visibleOperations=operations.slice(geometryIndex+1);
-  const seededLayers=new Set(visibleOperations.filter(op=>op.kind==='layer.snapshot').flatMap(op=>op.targetEntityIds));
-  const basePixels=root.rootLayerIds.filter(id=>geometryIndex>=0||seededLayers.has(id)).map(id=>({
+  const {operations:visibleOperations,followsGeometry,seededLayers}=document.rasterReplayPlan(revision);
+  const basePixels=root.rootLayerIds.filter(id=>followsGeometry||seededLayers.has(id)).map(id=>({
     surfaceId:root.getLayer(id).surface.descriptor.surfaceId,pixels:document.readBaseRasterPixels(id,revision),
   }));
   for(const op of visibleOperations){

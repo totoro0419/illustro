@@ -271,7 +271,7 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
 #maskThumbnail { padding: 2px; vertical-align: middle; }
 #maskThumbnail[aria-pressed="true"] { outline: 2px solid #43bfea; outline-offset: 2px; }
 #maskThumbnail canvas { display: block; width: 48px; height: 48px; }
-#maskEditingBar:not([hidden]) { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+#maskEditingBar:not([hidden]), #historyBrushBar:not([hidden]) { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
 #maskEditingBar button[aria-pressed="true"] { outline: 2px solid #43bfea; outline-offset: -2px; }
 
 .layer-blend-dialog { position: fixed; inset: auto auto 1rem 1rem; z-index: 30; max-width: min(90vw, 26rem); }

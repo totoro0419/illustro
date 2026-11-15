@@ -19,6 +19,7 @@ export type LayerNode=Readonly<{
   id:LayerId;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;surface:RasterSurfaceManifest;
   /** Logical opaque-white base. Its raster tiles are intentionally absent until editing requires them. */
   baseColor?:'white';
+  implicitRaster?:boolean;
   colorTag?:LayerColorTag|null;
   positionLocked?:boolean;
   alphaLocked?:boolean;

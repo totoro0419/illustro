@@ -88,7 +88,12 @@ details p{font-size:13px}
 .artwork-history-dialog select{max-width:100%}
 .artwork-history-previews{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
 .artwork-history-previews figure{margin:0;min-width:0}
-.artwork-history-previews img{display:block;width:100%;height:auto;max-height:52dvh;object-fit:contain;background:#fff}
+.history-image-viewport{position:relative;height:clamp(150px,34dvh,450px);overflow:hidden;touch-action:none;cursor:grab;background:#edf0f3}
+.history-image-viewport img{position:absolute;inset:0 auto auto 0;max-width:none;max-height:none;transform-origin:0 0;pointer-events:none}
+.history-image-controls{display:flex;flex-wrap:wrap;gap:.3rem}
+.history-pinned:not([hidden]){display:flex;gap:.4rem;overflow:auto}
+.history-pinned button{display:flex;flex-direction:column;align-items:start;justify-content:end;min-width:96px;gap:.25rem}
+.history-pinned img{width:96px;height:72px;object-fit:contain}
 
 #layerPage{overflow-y:auto}
 #layerPageList{flex:1 0 120px;min-height:120px}

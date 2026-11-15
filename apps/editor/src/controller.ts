@@ -22,7 +22,18 @@ export class EditorController{
   get layers(){const root=this.document.root;return Object.freeze(root.rootLayerIds.map(id=>root.getLayer(id)));}
   get canUndo(){return this.document.canUndo;}get canRedo(){return this.document.canRedo;}
   selectLayer(id:LayerId){const root=this.document.root;if(!root.hasLayer(id))throw new Error('レイヤーが存在しません。');const layer=root.getLayer(id);if(layer.kind!=='raster')throw new Error('このレイヤーは選択できません。');this.selectedLayerIdValue=id;}
-  addRasterLayer(){const {layerId,receipt}=this.document.addRasterLayerAbove(this.selectedLayerIdValue);this.selectedLayerIdValue=layerId;this.lastPersistenceHandoff=receipt.persistence;return layerId;}
+  addRasterLayer(){
+    if(this.selectedLayer.implicitRaster){
+      const transaction=this.document.begin('Add raster layer');
+      transaction.activateDrawingLayer(this.selectedLayerIdValue);
+      this.lastPersistenceHandoff=transaction.commit().persistence;
+      return this.selectedLayerIdValue;
+    }
+    const {layerId,receipt}=this.document.addRasterLayerAbove(this.selectedLayerIdValue);
+    this.selectedLayerIdValue=layerId;
+    this.lastPersistenceHandoff=receipt.persistence;
+    return layerId;
+  }
   strokeCountForLayer(id:LayerId){return this.committedByLayer.get(id)??0;}
   target():DrawingTarget{const port=this.ports.document;if(!port)throw new Error('Document connection unavailable');return port.target();}
   async finishStroke(target:DrawingTarget,record:StrokeRecord,additional:readonly StrokeRecord[]=[]){
