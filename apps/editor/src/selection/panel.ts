@@ -2,7 +2,7 @@
 import type {BrushSurface} from '../brushSurface';
 import {rasterizeSelection,combineSelection,invertSelection,fullSelection,translateSelection,featherMask,boundsOfSelection,
   type SelectionShape,type MaskData,type CombineMode} from './mask';
-import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection} from './store';
+import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection,storeCurrentSelection,loadCurrentSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
 import {SelectionOverlay} from './overlay';
 import type {AnalyzeOptions} from './autoSelect';
@@ -66,6 +66,20 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     drawing:{pointer:number;first:{x:number;y:number}}|null=null;
   const history:(MaskData|null)[]=[];const future:(MaskData|null)[]=[];
   const raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
+  let pendingStore:{id:string;mask:MaskData|null}|null=null;
+  let storeTimer:number|null=null,storeQueue:Promise<void>=Promise.resolve();
+  function flushStoredSelection(){
+    if(storeTimer!==null){clearTimeout(storeTimer);storeTimer=null;}
+    const record=pendingStore;pendingStore=null;
+    if(!record)return;
+    storeQueue=storeQueue.catch(()=>{}).then(()=>storeCurrentSelection(record.id,record.mask))
+      .catch(error=>{if(callbacks.getDocument()?.id===record.id)status.textContent='選択範囲の保存に失敗しました。'+String(error);});
+  }
+  function scheduleStore(id:string,mask:MaskData|null){
+    pendingStore={id,mask};
+    if(storeTimer!==null)clearTimeout(storeTimer);
+    storeTimer=window.setTimeout(flushStoredSelection,450);
+  }
   const viewport=document.querySelector<HTMLElement>('.surface');
   const visual=viewport?new SelectionOverlay(viewport,callbacks.getSurface):null;
   const box=document.createElement('div');box.className='c06-selection-notice';box.hidden=true;
@@ -79,8 +93,16 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const info=callbacks.getDocument();
     if(!info||!callbacks.getSurface())return null;
     if(info.id!==currentWork){
+      flushStoredSelection();
       currentWork=info.id;active=null;lastSelection=null;history.length=0;future.length=0;
       tool=null;points=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
+      const request=++job,loadedId=info.id;
+      void storeQueue.then(()=>loadCurrentSelection(loadedId)).then(loaded=>{
+        const doc=callbacks.getDocument();
+        if(request!==job||!doc||doc.id!==loadedId||!loaded||
+          loaded.width!==doc.width||loaded.height!==doc.height)return;
+        publish(loaded,false,false);
+      }).catch(error=>{if(callbacks.getDocument()?.id===loadedId)status.textContent='保存された範囲を復元できませんでした。'+String(error);});
     }
     return info;
   };
@@ -104,7 +126,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       })():viewPoints.map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
     path.setAttribute('d',d);preview.setAttribute('data-empty','false');
   }
-  function publish(next:MaskData|null,record=true){
+  function publish(next:MaskData|null,record=true,persist=true){
     const doc=source();if(!doc)return;
     job++;
     if(next&&(next.width!==doc.width||next.height!==doc.height))throw Error('作品と選択範囲の大きさが異なります。');
@@ -115,6 +137,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const bounds=active?boundsOfSelection(active):null;
     callbacks.getSurface()?.restoreRectangleSelection(bounds);
     callbacks.onMaskChanged(active);
+    if(persist)scheduleStore(doc.id,active);
     box.hidden=!active;
     box.textContent=bounds?'選択中：'+bounds.width+'×'+bounds.height+'px'+
       ' · 加算・減算・解除ができます。':'選択範囲はありません。';
