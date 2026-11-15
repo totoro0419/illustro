@@ -57,3 +57,15 @@ body.workspace-compact-density .box-stack{padding-top:5px}
 .c04-gesture-settings label{display:flex;align-items:center;gap:7px;min-height:39px;font-size:11px}
 .c04-gesture-settings label input{width:18px;height:18px;flex:none}
 .c04-gesture-settings output{display:block;margin-top:5px;color:var(--a-subtle,#667);font-size:11px}
+
+.c04-toolbar-settings{border-top:1px solid var(--a-border,#ddd);margin:11px 8px;padding:8px 2px;font-size:12px}
+.c04-toolbar-settings summary{font-weight:600;min-height:38px;padding:8px 0;cursor:pointer}
+.c04-toolbar-settings p{color:var(--a-subtle,#667);font-size:11px;line-height:1.45}
+.c04-toolbar-list{max-height:45dvh;overflow:auto;overscroll-behavior:contain;display:grid;gap:3px}
+.c04-toolbar-row{display:flex;gap:4px;align-items:center;border:1px solid var(--a-border,#ddd);border-radius:7px;padding:4px 5px}
+.c04-toolbar-row label{display:flex;align-items:center;flex:1;min-width:0;gap:5px;font-size:11px}
+.c04-toolbar-row label span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c04-toolbar-row input{flex:none;width:18px;height:18px}
+.c04-toolbar-row button{min-width:37px;min-height:37px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:transparent;color:inherit}
+.c04-toolbar-settings>button{min-height:38px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-accent-soft,#fff6d7);color:inherit;margin-top:8px}
+.c04-toolbar-settings output{display:block;min-height:18px;font-size:11px;color:var(--a-subtle,#667)}
