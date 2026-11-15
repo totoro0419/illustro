@@ -5,6 +5,7 @@ import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortab
 import type {DecodedPortableFile,PortableManifestSection} from './format';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
 import {cloneProjectionTiles} from './projectionTransfer';
+import type {SelectionRect} from '../strokeSelection';
 
 export class ExternalFileConflict extends Error{
   constructor(readonly changedFile:File){
@@ -27,7 +28,7 @@ export class PersistenceCoordinator{
   private destroyed=false;private navigationSequence=0;private navigationPending=0;
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
-  private preserved:PreservedPortableData|undefined;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
+  private preserved:PreservedPortableData|undefined;private selection:SelectionRect|null=null;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
     currentRevision:null,savedRevision:null,dirty:true,protectionPending:false,protectedThrough:'0',saving:false,recovered:false,storageError:null,backend:'未初期化',
     storagePersisted:null,storageUsage:null,storageQuota:null,queueLength:0,lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,reloadDurationMs:null,recoveryDurationMs:null,lastGood:false,previousGood:false,offline:!navigator.onLine,
   });
@@ -37,8 +38,8 @@ export class PersistenceCoordinator{
     addEventListener('online',this.onlineState);addEventListener('offline',this.onlineState);document.addEventListener('visibilitychange',this.visibility,{capture:true});addEventListener('pagehide',this.pagehide,{capture:true});
   }
   get state(){return this.stateValue;}get preservedData(){return this.preserved;}
-  async initialize(controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>,savedRevision:RevisionId|null=null,preserved?:PreservedPortableData,recovered=false){
-    this.cancelIdle();await this.drain();this.queue=[];this.controller=controller;this.preserved=preserved;const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
+  async initialize(controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>,savedRevision:RevisionId|null=null,preserved?:PreservedPortableData,recovered=false,selection:SelectionRect|null=null){
+    this.cancelIdle();await this.drain();this.queue=[];this.controller=controller;this.preserved=preserved;this.selection=selection;const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
     const storage=await this.storageStatus(true);const result=await this.request('init',{documentId:document.root.documentId,writerEpochId:document.writerEpochId,snapshot,blocks,savedRevisionId:savedRevision},blocks.map(x=>x.bytes.buffer as ArrayBuffer)) as any;
     this.patch({currentRevision:document.head,savedRevision,protectedThrough:String(result.protectedThrough??'0'),backend:String(result.backend??'unknown'),recovered,
       storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false,saving:false,
@@ -54,10 +55,10 @@ export class PersistenceCoordinator{
   }
   async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
   async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}
-  async bindWork(expectedEpoch:string|null=null){if(!this.controller)throw new Error('作品が開かれていません。');return this.request('library-bind',{selectedLayerId:this.controller.selectedLayerId,expectedEpoch,preserved:this.preserved});}
+  async bindWork(expectedEpoch:string|null=null){if(!this.controller)throw new Error('作品が開かれていません。');return this.request('library-bind',{selectedLayerId:this.controller.selectedLayerId,expectedEpoch,preserved:this.preserved,selection:this.selection});}
   async loadWork(documentId:string){const raw=await this.request('library-load',{documentId});
     const document=CoreDocument.restore({snapshot:raw.snapshot,blockPayloads:new Map(raw.blocks.map((b:{id:string;bytes:Uint8Array})=>[b.id,b.bytes]))});
-    const selected=raw.entry.selectedLayerId;return {opened:{document,selectedLayerId:document.root.hasLayer(selected)?selected:document.root.rootLayerIds[0]!,preserved:raw.entry.preserved??{manifestExtras:{},optionalSections:[]},generationId:'library',snapshotRevisionId:document.head,projectionCache:raw.projectionCache??undefined} as PortableOpenResult,entry:raw.entry as WorkEntry,fallback:Boolean(raw.fallback)};}
+    const selected=raw.entry.selectedLayerId;return {opened:{document,selectedLayerId:document.root.hasLayer(selected)?selected:document.root.rootLayerIds[0]!,preserved:raw.entry.preserved??{manifestExtras:{},optionalSections:[]},generationId:'library',snapshotRevisionId:document.head,selection:raw.entry.selection??null,projectionCache:raw.projectionCache??undefined} as PortableOpenResult,entry:raw.entry as WorkEntry,fallback:Boolean(raw.fallback)};}
   async readThumbnail(documentId:string,revisionId:string):Promise<Blob|null>{const result=await this.request('library-thumbnail-read',{documentId,revisionId});return result.image??null;}
   async repairThumbnail(documentId:string):Promise<{state:'pending'|'complete'|'current'|'unavailable'}>{return this.request('library-preview-step',{documentId});}
   async renameWork(documentId:string,name:string){await this.request('library-rename',{documentId,name});}
@@ -65,10 +66,14 @@ export class PersistenceCoordinator{
   async resetWorks(){
     await this.flushPrepared();
     await this.request('library-reset',{});
-    this.controller=null;this.queue=[];this.preserved=undefined;this.fileHandle=null;this.externalFingerprint=null;
+    this.controller=null;this.queue=[];this.preserved=undefined;this.selection=null;this.fileHandle=null;this.externalFingerprint=null;
     this.patch({currentRevision:null,savedRevision:null,protectedThrough:'0',queueLength:0,protectionPending:false,recovered:false,storageError:null});
   }
   async selectWorkLayer(selectedLayerId:LayerId){const controller=this.controller;await this.flushPrepared();if(controller!==this.controller||controller?.selectedLayerId!==selectedLayerId)return;await this.request('library-selection',{selectedLayerId});}
+  async updateSelection(selection:SelectionRect|null){
+    this.selection=selection;
+    if(this.controller)await this.request('library-editor-selection',{selection});
+  }
   async storeThumbnail(documentId:string,revisionId:string,thumbnail:Blob){await this.request('library-thumbnail',{documentId,revisionId,thumbnail});}
   async barrier(){await this.flushPrepared();await this.request('flush',{});if(this.stateValue.storageError)throw new Error(this.stateValue.storageError);}
   async retry(){this.cancelIdle();await this.drain();if(this.queue.length)throw new Error(this.stateValue.storageError??'保存に失敗しました。');if(this.controller){const d=this.controller.document;await this.request('set-head',{revisionId:d.head,name:d.root.name,width:d.root.width,height:d.root.height,previewLayers:previewLayersFor(d,d.head)});}this.patch({storageError:null});}
@@ -78,7 +83,7 @@ export class PersistenceCoordinator{
     const started=performance.now(),result=await this.request('load-recovery',{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}) as any,blocks=new Map<string,Uint8Array>();
     for(const item of result.blocks as {id:string;bytes:Uint8Array}[])blocks.set(item.id,item.bytes);
     const document=CoreDocument.restore({snapshot:result.snapshot,blockPayloads:blocks}),selected=document.root.rootLayerIds[0];if(!selected)throw new Error('回復した作品にレイヤーがありません。');
-    const controller={document,selectedLayerId:selected},projectionCache=isProjectionCache(result.projectionCache)?result.projectionCache:undefined;if(!preview)this.patch({recoveryDurationMs:performance.now()-started,recovered:true});return Object.freeze({document,selectedLayerId:selected,savedRevision:(candidate.savedRevisionId&&document.hasRevision(candidate.savedRevisionId as RevisionId)?candidate.savedRevisionId as RevisionId:null),projectionCache});
+    const controller={document,selectedLayerId:selected},projectionCache=isProjectionCache(result.projectionCache)?result.projectionCache:undefined;if(!preview)this.patch({recoveryDurationMs:performance.now()-started,recovered:true});return Object.freeze({document,selectedLayerId:selected,selection:result.selection??null,savedRevision:(candidate.savedRevisionId&&document.hasRevision(candidate.savedRevisionId as RevisionId)?candidate.savedRevisionId as RevisionId:null),projectionCache});
   }
   async reloadLastGood(candidate?:Pick<Candidate,'documentId'|'writerEpochId'>){const payload=candidate?{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}:{};const raw=await this.request('load-last-good',payload) as any;return this.decodePortable(raw.bytes as Uint8Array);}
   async decodePortable(bytes:Uint8Array):Promise<PortableOpenResult>{
@@ -86,7 +91,7 @@ export class PersistenceCoordinator{
     const sections=new Map<string,{descriptor:PortableManifestSection;bytes:Uint8Array}>();for(const item of raw.sections as {descriptor:PortableManifestSection;bytes:Uint8Array}[])sections.set(item.descriptor.id,item);
     const decoded:Object={manifest:raw.manifest,sections},opened=openDecodedPortableDocument(decoded as DecodedPortableFile),projectionCache=isProjectionCache(raw.projectionCache)?raw.projectionCache:undefined;this.patch({reloadDurationMs:performance.now()-started});return Object.freeze({...opened,...(projectionCache?{projectionCache}:{})});
   }
-  async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false,pending?:Promise<RevisionId>){
+  async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false,pending?:Promise<RevisionId>,selection:SelectionRect|null=null){
     if(this.stateValue.saving)throw new Error('保存中です。');
     const existingHandle=this.fileHandle,previousFingerprint=this.externalFingerprint,preserved=this.preserved;
     const suggestedName=safeFileName(document.root.name)+(forceSaveCopy?'（コピー）':'')+'.illustro',started=performance.now();
@@ -105,7 +110,7 @@ export class PersistenceCoordinator{
       const destination=picker?await picker:null;
       if(destination?.error)throw destination.error;
       const transfer=blockEntries.map(x=>x.bytes.buffer as ArrayBuffer);
-      const raw=await this.request('encode-save',{snapshot,blocks:blockEntries,selectedLayerId,generationId,createdAt,preserved},transfer) as {bytes:Uint8Array};
+      const raw=await this.request('encode-save',{snapshot,blocks:blockEntries,selectedLayerId,generationId,createdAt,preserved,selection},transfer) as {bytes:Uint8Array};
       const bytes=raw.bytes;
       let output:'picker'|'download';
       if(destination?.handle){
