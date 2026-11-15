@@ -1,13 +1,14 @@
 import type {WorkEntry} from '../persistence/workLibrary';
 import {icon} from './icons';
+import {resolveDocumentDimensions,pixelToMillimeters,listCreationTemplates,storeCreationTemplate,removeCreationTemplate,type DocumentUnit} from '../documentSetup';
 
 /** Illustro first-party Home skeleton. Artwork and storage stay owned by the editor. */
 export type RecoverySummary = Readonly<{
   documentId: string; writerEpochId: string; title: string; protectedThrough: string; updatedAt: number;
 }>;
 export type HomeActions = Readonly<{
-  createDocument: (width:number,height:number,name:string,background:'transparent'|'white')=>Promise<boolean>;
-  onBlankDraftChange?: (width:number,height:number,name:string,background:'transparent'|'white')=>void;
+  createDocument: (width:number,height:number,name:string,background:'transparent'|'white',dpi:number,author:string,description:string)=>Promise<boolean>;
+  onBlankDraftChange?: (width:number,height:number,name:string,background:'transparent'|'white',dpi:number,author:string,description:string)=>void;
   listWorks:()=>Promise<{works:WorkEntry[];lastWorkId:string|null}>;
   openWork:(id:string)=>Promise<boolean>;
   readThumbnail:(id:string,revisionId:string)=>Promise<Blob|null>;
@@ -110,9 +111,9 @@ const html = [
   '<dialog id="ihNewDialog" class="ih-new-dialog" aria-labelledby="ihNewTitle"><div class="ih-dialog-content">',
     '<div class="ih-dialog-head"><div><span class="ih-overline">START CREATING</span><h2 id="ihNewTitle">新しい作品</h2></div><button type="button" id="ihNewClose" class="ih-dialog-close" aria-label="閉じる">×</button></div>',
     '<div class="ih-start-choices"><button type="button" id="ihChoiceBlank" class="ih-choice" aria-pressed="true"><span class="ih-choice-icon">'+icon('document')+'</span><strong>空白から作成</strong><small>新しいキャンバスを準備</small></button><button type="button" id="ihChoiceFile" class="ih-choice" aria-pressed="false"><span class="ih-choice-icon">'+icon('open')+'</span><strong>ファイルから開く</strong><small>.illustro 形式の作品</small></button></div>',
-    '<form id="ihBlankForm"><label class="ih-name-field">作品名<input id="ihNewName" name="name" type="text" value="新しい作品" maxlength="120" required></label><div class="ih-size-heading"><strong>キャンバスサイズ</strong><span>px</span></div><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button><button type="button" data-ih-preset="4000x4000" aria-pressed="false">超高画質（4000×4000）</button></div>',
-      '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="numeric"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="numeric"></label></div>',
-      '<label class="ih-name-field">背景<select id="ihNewBackground"><option value="transparent">透明</option><option value="white">白い背景レイヤー</option></select></label><p class="ih-dialog-hint">作品はIllustro内に自動保存されます。ファイル保存はバックアップ用です。</p><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
+    '<form id="ihBlankForm"><label class="ih-name-field">作品名<input id="ihNewName" name="name" type="text" value="新しい作品" maxlength="120" required></label><div class="ih-size-heading"><strong>キャンバスサイズ</strong><span>px</span></div><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button><button type="button" data-ih-preset="4000x4000" aria-pressed="false">超高画質（4000×4000）</button><button type="button" id="ihA4Preset">A4（300 DPI）</button></div>',
+      '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="decimal"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="decimal"></label></div><div class="ih-dimensions"><label>単位<select id="ihNewUnit"><option value="px">px（画素）</option><option value="mm">mm（ミリメートル）</option></select></label><label>解像度（DPI）<input id="ihNewDpi" type="number" min="1" max="2400" step="1" value="72" inputmode="numeric"></label></div><p id="ihPixelPreview" class="ih-dialog-hint" aria-live="polite">512 × 384 px · 72 DPI</p><p class="ih-dialog-hint">色プロファイル：sRGB</p>',
+      '<label class="ih-name-field">背景<select id="ihNewBackground"><option value="transparent">透明</option><option value="white">白い背景レイヤー</option></select></label><details><summary>作品情報（任意）</summary><label class="ih-name-field">作者<input id="ihNewAuthor" maxlength="160" autocomplete="off"></label><label class="ih-name-field">説明<textarea id="ihNewDescription" maxlength="2000" rows="2"></textarea></label></details><div class="ih-name-field"><label>保存した設定<select id="ihTemplateSelect"><option value="">選択してください</option></select></label><label>新しいテンプレート名<input id="ihTemplateName" maxlength="80" placeholder="例：A4 300DPI"></label><div class="ih-dialog-actions"><button type="button" id="ihTemplateSave" class="ih-quiet-button">設定を保存</button><button type="button" id="ihTemplateDelete" class="ih-quiet-button">選択した設定を削除</button></div></div><p class="ih-dialog-hint">作品はIllustro内に自動保存されます。ファイル保存はバックアップ用です。</p><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
       '<div class="ih-dialog-actions"><button type="button" id="ihNewCancel" class="ih-quiet-button">キャンセル</button><button type="submit" id="ihNewCreate" class="ih-solid-button">キャンバスを作成 <span aria-hidden="true">↗</span></button></div>',
     '</form>',
     '<div id="ihFileOptions" class="ih-file-options" hidden><p>Illustroの作品ファイル（.illustro）を選択して、編集画面で開きます。</p><button type="button" id="ihSelectFile" class="ih-solid-button">ファイルを選択 <span aria-hidden="true">↗</span></button></div>',
@@ -172,7 +173,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       if(location.hash!==hash)history.pushState({illustroScreen:next},'',hash);
     }
   };
-  const showNew=(mode:'blank'|'file'='blank')=>{navigate('home');setCreationMode(mode);notify('');dialog.showModal();if(mode==='blank')prefetchDraft();};
+  const showNew=(mode:'blank'|'file'='blank')=>{navigate('home');setCreationMode(mode);refillTemplates(templatePicker.value);notify('');dialog.showModal();if(mode==='blank')prefetchDraft();};
   const setCreationMode=(mode:'blank'|'file')=>{
     const blank=mode==='blank';el('ihBlankForm').hidden=!blank;el('ihFileOptions').hidden=blank;
     el('ihChoiceBlank').setAttribute('aria-pressed',String(blank));el('ihChoiceFile').setAttribute('aria-pressed',String(!blank));
@@ -278,36 +279,140 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   setButton('ihChoiceBlank',()=>setCreationMode('blank'));setButton('ihChoiceFile',()=>setCreationMode('file'));
   setButton('ihSelectFile',()=>{dialog.close();actions.openFile();});
   let draftTimer:ReturnType<typeof setTimeout>|null=null;
+  let currentUnit:DocumentUnit='px';
+  const templateStore=(()=>{try{return localStorage;}catch{return null;}})();
+  const templatePicker=el<HTMLSelectElement>('ihTemplateSelect');
+  const refillTemplates=(selected='')=>{
+    templatePicker.replaceChildren(new Option('選択してください',''),...listCreationTemplates(templateStore).map(x=>new Option(x.name,x.name)));
+    templatePicker.value=selected;
+  };
+  const size=()=>resolveDocumentDimensions(
+    Number(el<HTMLInputElement>('ihNewWidth').value),
+    Number(el<HTMLInputElement>('ihNewHeight').value),
+    currentUnit,Number(el<HTMLInputElement>('ihNewDpi').value));
+  const background=()=>el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white';
+  const author=()=>el<HTMLInputElement>('ihNewAuthor').value.trim();
+  const description=()=>el<HTMLTextAreaElement>('ihNewDescription').value.trim();
+  const sizePreview=()=>{
+    try{
+      const d=size(),scale=d.dpi/25.4;
+      const rounded=currentUnit==='mm'&&[
+        [el<HTMLInputElement>('ihNewWidth').valueAsNumber,d.width],
+        [el<HTMLInputElement>('ihNewHeight').valueAsNumber,d.height],
+      ].some(([mm,px])=>Math.abs(mm!*scale-px!)>.0001);
+      el('ihPixelPreview').textContent=d.width+' × '+d.height+' px · '+d.dpi+' DPI'+(rounded?'（端数は最も近い画素に丸めます）':'');
+      return d;
+    }
+    catch(error){el('ihPixelPreview').textContent=error instanceof Error?error.message:String(error);return null;}
+  };
   const prefetchDraft=()=>{
     if(draftTimer!==null){clearTimeout(draftTimer);draftTimer=null;}
-    const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
-    if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)return;
-    actions.onBlankDraftChange?.(width,height,el<HTMLInputElement>('ihNewName').value,el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white');
+    const d=sizePreview();if(d)actions.onBlankDraftChange?.(d.width,d.height,el<HTMLInputElement>('ihNewName').value,background(),d.dpi,author(),description());
   };
   const schedulePrefetch=()=>{
     if(draftTimer!==null)clearTimeout(draftTimer);
     draftTimer=setTimeout(prefetchDraft,180);
   };
+  const setFromPixels=(width:number,height:number)=>{
+    const dpi=Number(el<HTMLInputElement>('ihNewDpi').value);
+    el<HTMLInputElement>('ihNewWidth').value=String(currentUnit==='mm'?pixelToMillimeters(width,dpi):width);
+    el<HTMLInputElement>('ihNewHeight').value=String(currentUnit==='mm'?pixelToMillimeters(height,dpi):height);
+    prefetchDraft();
+  };
   for(const preset of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]'))preset.addEventListener('click',()=>{
     const [width,height]=preset.dataset.ihPreset!.split('x').map(Number);
-    el<HTMLInputElement>('ihNewWidth').value=String(width);el<HTMLInputElement>('ihNewHeight').value=String(height);
+    setFromPixels(width!,height!);
     for(const item of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]'))item.setAttribute('aria-pressed',String(item===preset));
-    prefetchDraft();
   });
-  for(const input of [el<HTMLInputElement>('ihNewWidth'),el<HTMLInputElement>('ihNewHeight')])input.addEventListener('input',()=>{
+  const refreshPresetSelection=()=>{
+    const d=sizePreview();
     for(const preset of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]')){
-      const sizes=preset.dataset.ihPreset!.split('x');preset.setAttribute('aria-pressed',String(sizes[0]===el<HTMLInputElement>('ihNewWidth').value&&sizes[1]===el<HTMLInputElement>('ihNewHeight').value));
+      const [w,h]=preset.dataset.ihPreset!.split('x').map(Number);
+      preset.setAttribute('aria-pressed',String(d!==null&&d.width===w&&d.height===h));
     }
     schedulePrefetch();
+  };
+  for(const input of [el<HTMLInputElement>('ihNewWidth'),el<HTMLInputElement>('ihNewHeight')])input.addEventListener('input',refreshPresetSelection);
+  const setUnit=(unit:DocumentUnit)=>{
+    currentUnit=unit;el<HTMLSelectElement>('ihNewUnit').value=unit;
+    for(const id of ['ihNewWidth','ihNewHeight']){
+      const input=el<HTMLInputElement>(id);
+      input.step=currentUnit==='mm'?'any':'1';input.min=currentUnit==='mm'?'0.000001':'1';input.max=currentUnit==='mm'?'208077':'8192';
+    }
+  };
+  el<HTMLSelectElement>('ihNewUnit').addEventListener('change',()=>{
+    const before=sizePreview();setUnit(el<HTMLSelectElement>('ihNewUnit').value as DocumentUnit);
+    if(before)setFromPixels(before.width,before.height);else prefetchDraft();
   });
-  el<HTMLInputElement>('ihNewName').addEventListener('input',schedulePrefetch);
+  const dpiInput=el<HTMLInputElement>('ihNewDpi');
+  let lastValidDpi=dpiInput.valueAsNumber;
+  dpiInput.addEventListener('input',()=>{
+    const next=dpiInput.valueAsNumber;
+    if(!Number.isInteger(next)||next<1||next>2400){sizePreview();return;}
+    if(currentUnit==='mm'){
+      const w=el<HTMLInputElement>('ihNewWidth').valueAsNumber,h=el<HTMLInputElement>('ihNewHeight').valueAsNumber;
+      if(w>0&&h>0){
+        el<HTMLInputElement>('ihNewWidth').value=String(Number((w*lastValidDpi/next).toFixed(6)));
+        el<HTMLInputElement>('ihNewHeight').value=String(Number((h*lastValidDpi/next).toFixed(6)));
+      }
+    }
+    lastValidDpi=next;refreshPresetSelection();
+  });
+  setButton('ihA4Preset',()=>{
+    setUnit('mm');dpiInput.value=String(lastValidDpi=300);
+    el<HTMLInputElement>('ihNewWidth').value='210';el<HTMLInputElement>('ihNewHeight').value='297';
+    refreshPresetSelection();
+  });
+  for(const id of ['ihNewName','ihNewDpi','ihNewAuthor','ihNewDescription'])el(id).addEventListener('input',schedulePrefetch);
   el<HTMLSelectElement>('ihNewBackground').addEventListener('change',prefetchDraft);
+  templatePicker.addEventListener('change',()=>{
+    const template=listCreationTemplates(templateStore).find(x=>x.name===templatePicker.value);
+    if(!template)return;
+    // Stored templates retain exact pixel dimensions even if the dialog was in mm mode.
+    setUnit('px');dpiInput.value=String(lastValidDpi=template.dpi);
+    el<HTMLSelectElement>('ihNewBackground').value=template.background;
+    setFromPixels(template.width,template.height);refreshPresetSelection();
+    el('ihNewError').textContent='サイズ設定を読み込みました。作者情報はテンプレートに含めません。';
+  });
+  el<HTMLButtonElement>('ihTemplateSave').onclick=()=>{
+    try{
+      const d=size(),name=el<HTMLInputElement>('ihTemplateName').value.trim();
+      storeCreationTemplate(templateStore,{...d,name,background:background()});
+      refillTemplates(name);el('ihNewError').textContent='この端末に設定を保存しました。';
+    }catch(error){el('ihNewError').textContent=error instanceof Error?error.message:String(error);}
+  };
+  el<HTMLButtonElement>('ihTemplateDelete').onclick=()=>{
+    if(!templatePicker.value)return;
+    try{removeCreationTemplate(templateStore,templatePicker.value);refillTemplates();el('ihNewError').textContent='設定を削除しました。';}
+    catch(error){el('ihNewError').textContent=error instanceof Error?error.message:String(error);}
+  };
+  const lastSetupKey='illustro.last-canvas-setup.v1';
+  try{
+    const last=JSON.parse(templateStore?.getItem(lastSetupKey)??'null');
+    if(last){
+      const d=resolveDocumentDimensions(last.width,last.height,last.unit,last.dpi);
+      setUnit(last.unit);dpiInput.value=String(lastValidDpi=d.dpi);
+      el<HTMLInputElement>('ihNewWidth').value=String(last.width);
+      el<HTMLInputElement>('ihNewHeight').value=String(last.height);
+      if(last.background==='white')el<HTMLSelectElement>('ihNewBackground').value='white';
+      sizePreview();
+    }
+  }catch{}
+  refillTemplates();
   el<HTMLFormElement>('ihBlankForm').addEventListener('submit',event=>{event.preventDefault();void(async()=>{
-    const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
-    if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){el('ihNewError').textContent='幅と高さを1〜8192pxで指定してください。';return;}
+    const d=sizePreview();if(!d){el('ihNewError').textContent='サイズと解像度を確認してください。';return;}
     const button=el<HTMLButtonElement>('ihNewCreate');button.disabled=true;el('ihNewError').textContent='キャンバスを準備しています。';
-    try{if(await actions.createDocument(width,height,el<HTMLInputElement>('ihNewName').value,el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white'))navigate('editor');else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';}
-    catch(error){console.error('M10_CREATE_DOCUMENT_FAULT',error instanceof Error?error.stack??error.message:error);el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}finally{button.disabled=false;}
+    try{
+      const name=el<HTMLInputElement>('ihNewName').value;
+      const setup={width:el<HTMLInputElement>('ihNewWidth').valueAsNumber,height:el<HTMLInputElement>('ihNewHeight').valueAsNumber,
+        unit:currentUnit,background:background(),dpi:d.dpi};
+      if(await actions.createDocument(d.width,d.height,name,setup.background,d.dpi,author(),description())){
+        try{templateStore?.setItem(lastSetupKey,JSON.stringify(setup));}catch{}
+        navigate('editor');
+      }
+      else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';
+    }catch(error){console.error('C01_CREATE_DOCUMENT_FAULT',error instanceof Error?error.stack??error.message:error);el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}
+    finally{button.disabled=false;}
   })();});
   let swipeStart:number|null=null;
   el('ihFeatureVisual').addEventListener('touchstart',event=>{swipeStart=event.touches[0]?.clientX??null;},{passive:true});
