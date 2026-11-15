@@ -3141,7 +3141,7 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 
 // C04 command entries forward to the installed real controls; do not duplicate their logic.
 installFocusMode();
-const c04Commands=installCommandPalette(shellUi);
+const c04Commands=installCommandPalette(shellUi,foreground);
 installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
 const c04Toolbar=installToolbarSettings();
