@@ -1,5 +1,5 @@
 /** C06 bounded asynchronous mask jobs. The input thread never waits for pixel loops. */
-import {rasterizeSelection,combineSelection,featherMask,type SelectionShape,type MaskData,type CombineMode} from './mask';
+import {rasterizeSelection,combineSelection,featherMask,growOrShrink,selectionBorder,type SelectionShape,type MaskData,type CombineMode} from './mask';
 type Reply=Readonly<{id:number;ok:boolean;alpha?:Uint8Array;error?:string}>;
 export class MaskRasterWorker{
   private worker:Worker|null=null;
@@ -22,7 +22,7 @@ export class MaskRasterWorker{
       };
     }catch{this.worker=null;}
   }
-  private execute(width:number,height:number,action:'shape'|'feather',params:{
+  private execute(width:number,height:number,action:'shape'|'feather'|'grow'|'shrink'|'border',params:{
     shape?:SelectionShape;mode?:CombineMode;previous?:MaskData|null;radius?:number
   }):Promise<MaskData>{
     if(!this.worker){
@@ -31,6 +31,10 @@ export class MaskRasterWorker{
         if(action==='feather'){
           if(!old)throw Error('選択範囲がありません。');
           return featherMask(old,params.radius??0);
+        }
+        if(action==='grow'||action==='shrink'||action==='border'){
+          if(!old)throw Error('選択範囲がありません。');
+          return action==='border'?selectionBorder(old,params.radius??0):growOrShrink(old,params.radius??0,action);
         }
         if(!params.shape)throw Error('選択の形がありません。');
         return combineSelection(old,rasterizeSelection(params.shape,width,height),params.mode??'replace');
@@ -50,6 +54,9 @@ export class MaskRasterWorker{
   }
   feather(mask:MaskData,radius:number){
     return this.execute(mask.width,mask.height,'feather',{previous:mask,radius});
+  }
+  adjust(mask:MaskData,radius:number,mode:'grow'|'shrink'|'border'){
+    return this.execute(mask.width,mask.height,mode,{previous:mask,radius});
   }
   destroy(){
     this.worker?.terminate();this.worker=null;
