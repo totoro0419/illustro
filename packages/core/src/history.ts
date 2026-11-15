@@ -36,10 +36,10 @@ export class RevisionHistory<T>{
   has(id:RevisionId){return this.revisions.has(id);}get(id:RevisionId){const r=this.revisions.get(id);if(!r)throw new Error('missing revision');return r;}
   snapshot():RevisionHistoryState<T>{return Object.freeze({revisions:Object.freeze([...this.revisions.values()]),head:this.headValue,redoIds:Object.freeze([...this.redoIds])});}
   assertHead(id:RevisionId){if(id!==this.headValue)throw new Error('stale transaction');}
-  publish(base:RevisionId,tx:TransactionId,root:T,command:Command,at:number,commitStamp:CommitStamp,id=this.ids.revision()){
-    this.assertHead(base);if(this.revisions.has(id))throw Error('duplicate revision id');
+  publish(base:RevisionId,tx:TransactionId,root:T,command:Command,at:number,commitStamp:CommitStamp,id=this.ids.revision(),expected=base){
+    this.assertHead(expected);if(this.revisions.has(id))throw Error('duplicate revision id');
     const operations=Object.freeze(command.operations.map(x=>Object.freeze(x)));const cmd=Object.freeze({...command,operations});
-    const revision=Object.freeze({id,parentIds:Object.freeze([this.headValue]),transactionId:tx,root,command:cmd,commitStamp,committedAt:at}) as Revision<T>;
+    const revision=Object.freeze({id,parentIds:Object.freeze([base]),transactionId:tx,root,command:cmd,commitStamp,committedAt:at}) as Revision<T>;
     this.revisions.set(id,revision);this.headValue=id;this.redoIds.length=0;return revision;}
   undo(){const parent=this.current.parentIds[0];if(parent===undefined||!this.canUndo)return this.current;this.redoIds.push(this.headValue);this.headValue=parent;return this.current;}
   redo(){const next=this.redoIds.pop();if(next===undefined)return this.current;this.headValue=next;return this.current;}

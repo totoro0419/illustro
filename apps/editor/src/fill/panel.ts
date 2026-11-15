@@ -11,10 +11,10 @@ export const fillLayerName=(destination:Destination,color:string)=>destination==
 export type FillCapture=Readonly<{
   name:string;targetName:string;key:string;width:number;height:number;source:Uint8Array;target:Uint8Array|null;
   revision:RevisionId;sourceIds:readonly LayerId[];reference:Reference;
-  selection:MaskData|null;targetMask:MaskData|null;alphaLocked:boolean;valid:()=>boolean;referenceValid:()=>boolean;
+  selection:MaskData|null;targetMask:MaskData|null;alphaLocked:boolean;valid:()=>boolean;canAdjust:()=>boolean;referenceValid:()=>boolean;
   apply:(pixels:Uint8ClampedArray,color:string)=>Promise<void>;select:(mask:MaskData)=>void;
 }>;
-type Candidate={source:FillCapture;points:readonly Point[];asSelection:boolean;excluded:number[];included:number[]};
+type Candidate={source:FillCapture;points:readonly Point[];asSelection:boolean;excluded:number[];included:number[];adjustment?:boolean;savedGraph?:RegionGraph;workingGraph?:RegionGraph;workingGraphKey?:string;manual?:Walls};
 type Entry={id:LayerId;name:string;data:LineRegions};
 
 export function installFillPanel(host:HTMLElement,api:{
@@ -34,7 +34,7 @@ export function installFillPanel(host:HTMLElement,api:{
   preview.setAttribute('aria-label','塗り候補と線画領域のプレビュー');
   let gesture:BrushSurface|null=null,running=false,currentGraph:RegionGraph|null=null,previous:RegionGraph|null=null;
   let capture:FillCapture|null=null,previousCapture:FillCapture|null=null,graphTolerance=0,graphGap=0,confirmed=false;
-  let saved:Entry|undefined,candidate:Candidate|null=null,excludedGap=-1,inspectedRegion=0;
+  let saved:Entry|undefined,candidate:Candidate|null=null,lastFill:Candidate|null=null,excludedGap=-1,inspectedRegion=0;
   let pending:Awaited<ReturnType<typeof runFill>>|null=null;
   let displayDocument='';
   let candidateGeneration=0,pendingColor='#000000';
@@ -129,7 +129,7 @@ export function installFillPanel(host:HTMLElement,api:{
     regionLayers.replaceChildren(new Option('選択してください',''),...entries.map(entry=>new Option(entry.name,entry.id)));
     regionLayers.value=entries.some(entry=>entry.id===current)?current:'';
   }
-  function forgetAnalysis(){capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;pending=null;excludedGap=-1;inspectedRegion=0;paint();}
+  function forgetAnalysis(){capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;lastFill=null;pending=null;excludedGap=-1;inspectedRegion=0;paint();}
   function sync(){
     if(displayDocument!==api.documentId()){
       displayDocument=api.documentId();forgetAnalysis();refreshReferences(true);
@@ -146,6 +146,8 @@ export function installFillPanel(host:HTMLElement,api:{
     applyPaint.disabled=running||!pending||!candidate;
     applyPaint.textContent=candidate?.asSelection||outputLayer==='active'?'候補を適用':'レイヤーを作成して塗る';
     dropPaint.disabled=!candidate;
+    adjustPaint.disabled=running||!lastFill?.source.canAdjust();
+    finishAdjustment.disabled=!lastFill;
     rejectGap.disabled=running||!capture||excludedGap<0;
     nextGap.disabled=running||!currentGraph?.candidates.length;
     vectorCompare.disabled=running||!(capture?.reference==='vector'||capture?.reference==='vector-visible');
@@ -153,7 +155,7 @@ export function installFillPanel(host:HTMLElement,api:{
   const read=(needTarget:boolean,stored?:LineRegions)=>
     api.capture(reference.value as Reference,destination.value as Destination,activeIds(),needTarget,stored);
   function paint(){
-    const graph=compare.checked&&previous?previous:currentGraph;
+    const graph=pending&&candidate?.workingGraph?candidate.workingGraph:compare.checked&&previous?previous:currentGraph;
     const frozen=pending&&candidate?candidate.source:compare.checked&&previousCapture?previousCapture:capture;
     preview.hidden=!frozen;
     if(!frozen)return;
@@ -169,7 +171,7 @@ export function installFillPanel(host:HTMLElement,api:{
     )):null;
     for(let y=0;y<h;y++)for(let x=0;x<w;x++){
       const p=Math.floor(y*height/h)*width+Math.floor(x*width/w),at=(y*w+x)*4,id=graph?.labels[p]??0;
-      const pixels=result?.pixels??source,alpha=pixels[p*4+3]!/255;
+      const pixels=result?.pixels??(pending&&candidate?.source.target?candidate.source.target:source),alpha=pixels[p*4+3]!/255;
       let r=pixels[p*4]!*alpha+240*(1-alpha),g=pixels[p*4+1]!*alpha+240*(1-alpha),b=pixels[p*4+2]!*alpha+240*(1-alpha);
       if(result?.mask){
         const intensity=result.mask.alpha[p]!/255*.42;
@@ -234,18 +236,33 @@ export function installFillPanel(host:HTMLElement,api:{
       if(points.length)void work(()=>complete(points));
     }});
   }
+  const candidateValid=(item:Candidate)=>item.adjustment?item.source.canAdjust():item.source.valid();
   async function refreshCandidate(){
     const request=++candidateGeneration;
     pending=null;paint();
-    if(!candidate||!candidate.source.valid())throw Error('塗る対象が変わりました。');
+    if(!candidate||!candidateValid(candidate))throw Error('塗る対象が変わりました。');
     const edit=candidate,{source,asSelection,points,excluded,included}=edit,options=settings();
     if(options.erase&&destination.value!=='active'&&!asSelection)
       throw Error('透明にする場合は、既存のレイヤーを選んでください。');
     const selection=source.targetMask?combineSelection(source.selection,source.targetMask,'intersect'):source.selection;
+    let graph=usesRegions()?edit.savedGraph??currentGraph:null;
+    if(edit.adjustment&&graph){
+      const key=options.tolerance+':'+options.gap;
+      if(edit.workingGraphKey!==key){
+        if(options.tolerance!==graphTolerance||options.gap!==graphGap){
+          const result=await runFill({type:'graph',source:source.source,width:source.width,height:source.height,settings:options,manual:edit.manual??[]});
+          if(!result.graph)throw Error('調整した線画領域を作れませんでした。');
+          graph=result.graph;
+        }
+        if(edit.workingGraphKey||graph!==edit.savedGraph){edit.excluded=[];edit.included=[];}
+        edit.workingGraph=graph;edit.workingGraphKey=key;
+      }
+      graph=edit.workingGraph??graph;
+    }
     const result=await runFill({type:'fill',source:source.source,target:source.target,width:source.width,height:source.height,
-      graph:usesRegions()?currentGraph:null,selection:asSelection?null:selection,settings:{...options,excluded,included},points,
+      graph,selection:asSelection?null:selection,settings:{...options,excluded:edit.excluded,included:edit.included},points,
       output:asSelection?'selection':'pixels',alphaLocked:source.alphaLocked});
-    if(candidate!==edit||request!==candidateGeneration||!source.valid())return;
+    if(candidate!==edit||request!==candidateGeneration||!candidateValid(edit))return;
     pending=result;pendingColor=options.color;paint();
     output.textContent='塗り候補を表示しました。範囲や濃さを調整してから適用できます。';
   }
@@ -262,18 +279,31 @@ export function installFillPanel(host:HTMLElement,api:{
     const source=await read(!asSelection,usesRegions()?saved?.data:undefined);
     if(usesRegions()&&(!currentGraph||source.width!==currentGraph.width||source.height!==currentGraph.height||source.key!==capture?.key))
       throw Error('塗る作品と解析した線画の版が一致しません。');
-    candidate={source,points,asSelection,excluded:[],included:[]};
+    lastFill=null;
+    candidate={source,points,asSelection,excluded:[],included:[],
+      ...(usesRegions()&&currentGraph?{savedGraph:currentGraph,manual:manuals.get(source.key)??[]}:{} )};
     await refreshCandidate();
   }
   button('キャンバスで塗る',()=>onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',points=>fill(points,false),method.value.startsWith('lasso')));
   button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',points=>fill(points,true),method.value.startsWith('lasso')));
   const applyPaint=button('候補を適用',async()=>{
-    if(!candidate||!candidate.source.valid())throw Error('塗る対象が変わりました。');
+    if(!candidate||!candidateValid(candidate))throw Error('塗る対象が変わりました。');
     const {source,asSelection}=candidate;
     if(asSelection&&pending?.mask)source.select(pending.mask);
-    else if(pending?.pixels)await source.apply(pending.pixels,pendingColor);
-    else throw Error('変更される画素がありません。');
-    candidate=null;pending=null;paint();output.textContent=asSelection?'領域を選択しました。':'塗りを反映しました。';
+    else if(pending?.pixels){
+      await source.apply(pending.pixels,pendingColor);
+      lastFill={...candidate,adjustment:true};
+    }else throw Error('変更される画素がありません。');
+    candidate=null;pending=null;paint();output.textContent=asSelection?'領域を選択しました。':'塗りを反映しました。すぐに直すには「直前の塗りを調整」を押してください。';
+  });
+  const adjustPaint=button('直前の塗りを調整',async()=>{
+    if(!lastFill?.source.canAdjust())throw Error('別の編集を開始したため、直前の塗りを置き換えられません。');
+    candidate={...lastFill};await refreshCandidate();
+  });
+  const finishAdjustment=button('直前の調整を終える',()=>{
+    if(candidate?.adjustment){candidate=null;pending=null;paint();}
+    lastFill=null;
+    output.textContent='直前の塗りの調整を終了しました。';
   });
   const dropPaint=button('塗り候補を取り消す',()=>{candidate=null;pending=null;paint();output.textContent='塗り候補を取り消しました。';});
   button('線画を解析・更新',async()=>{await analyze();confirmed=false;});
@@ -332,14 +362,15 @@ export function installFillPanel(host:HTMLElement,api:{
   button('キャンバス操作をやめる',()=>{stopGesture();output.textContent='操作を取り消しました。';});
   reference.onchange=()=>{forgetAnalysis();refreshReferences();rememberRefs();sync();};
   referenceLayer.onchange=()=>{forgetAnalysis();rememberRefs();sync();};
-  method.onchange=()=>{candidate=null;pending=null;paint();sync();};
-  destination.onchange=()=>{candidate=null;pending=null;paint();sync();};
+  method.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
+  destination.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
   compare.onchange=()=>{inspectedRegion=0;inspectId.max=String(Math.max(1,(compare.checked?previous:currentGraph)?.count??1));paint();};
   showBefore.onchange=paint;view.onchange=paint;compare.disabled=true;
   for(const control of [opacity,edge,trace,condition,closedOnly,erase,contiguous]){
     control.addEventListener('change',()=>{if(candidate)void work(refreshCandidate);});
   }
   for(const control of [gap,tolerance])control.addEventListener('change',()=>{
+    if(candidate?.adjustment){void work(refreshCandidate);return;}
     if(usesRegions()){
       if(currentGraph){confirmed=false;candidate=null;pending=null;output.textContent='条件を変えたため、線画をもう一度解析して確定してください。';paint();sync();}
     }else if(candidate)void work(refreshCandidate);
@@ -357,7 +388,7 @@ export function installFillPanel(host:HTMLElement,api:{
     if(graph)inspect(graph,value(inspectId));
   };
   preview.onclick=event=>{
-    const inspectedGraph=compare.checked&&previous&&!pending?previous:currentGraph;
+    const inspectedGraph=candidate?.workingGraph??(compare.checked&&previous&&!pending?previous:currentGraph);
     const frozen=candidate?.source??capture;
     if(!frozen||!inspectedGraph)return;
     const rect=preview.getBoundingClientRect(),x=Math.floor((event.clientX-rect.left)*frozen.width/rect.width),y=Math.floor((event.clientY-rect.top)*frozen.height/rect.height);

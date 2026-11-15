@@ -8,7 +8,7 @@ import {CORE_INTERNAL} from './internal';
 
 export type CommitReceipt=Readonly<{revision:Revision<DocumentRoot>;changedBlockIds:readonly BlockId[];persistence:PersistenceHandoff}>;
 export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
-  const v=tx._internal(CORE_INTERNAL),s=v.doc._internal(CORE_INTERNAL);s.history.assertHead(v.base);if(!v.hasChanges())throw new Error('empty transaction');
+  const v=tx._internal(CORE_INTERNAL),s=v.doc._internal(CORE_INTERNAL);s.history.assertHead(v.expectedHead);if(!v.hasChanges())throw new Error('empty transaction');
   if(v.slots.length>1&&v.slots.some(slot=>slot.type==='document-info'))throw new Error('Document info requires its own transaction');
   const all:Array<{layerId:LayerId;key:TileKey;bytes:Uint8Array}>=[];for(const [layerId,w] of v.working)for(const m of w.mutations())all.push({layerId,key:m.key,bytes:m.bytes});
   const prepared=s.store.prepareBatch(all.map(item=>{const layer=v.updates.get(item.layerId)??v.root.getLayer(item.layerId);return {bytes:item.bytes,descriptor:Object.freeze({sampleEncoding:layer.surface.descriptor.sampleEncoding,bounds:Object.freeze({x0:0,y0:0,x1:CANONICAL_TILE_SIZE,y1:CANONICAL_TILE_SIZE})})};}));
@@ -80,7 +80,7 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
   if(v.dimensions)nextRoot=nextRoot.withDimensions(v.dimensions.width,v.dimensions.height);
   if(documentInfo)nextRoot=nextRoot.withInfo(documentInfo);
   const at=s.clock(),root=nextRoot.withModifiedAt(at),stamp=s.nextCommitStamp(),command=Object.freeze({version:2 as const,kind:'core.transaction.v2' as const,label:tx.label,operations:Object.freeze(operations)});
-  let published=false;try{s.store.publishPrepared(prepared);published=true;const revision=s.history.publish(v.base,v.id,root,command,at,stamp,v.resultId);s.acceptCommitSequence(stamp.commitSequence);v.close();
+  let published=false;try{s.store.publishPrepared(prepared);published=true;const revision=s.history.publish(v.base,v.id,root,command,at,stamp,v.resultId,v.expectedHead);s.acceptCommitSequence(stamp.commitSequence);v.close();
     const requiredResourceIds=uniqueResources(operations.flatMap(x=>x.resourceRefs)),requiredAlgorithms=Object.freeze([...new Set(operations.flatMap(x=>x.algorithmVersionRefs))]);
     const persistence:PersistenceHandoff=Object.freeze({schemaVersion:2 as const,commitStamp:stamp,transactionId:v.id,parentRevisionIds:Object.freeze([v.base]),resultRevisionId:revision.id,
       documentRootRef:Object.freeze({documentId:root.documentId,revisionId:revision.id}),semanticOperationRefs:Object.freeze(operations.map(x=>x.key)),requiredBlockIds:Object.freeze(prepared.entries.map(x=>x.id)),

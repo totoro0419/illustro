@@ -3525,6 +3525,9 @@ installFillPanel(byId('documentBoxBody'),{
       controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
     const targetMask=needTarget&&destination==='active'&&layer.vectorMask?.enabled
       ?await collectFillMask(layer.vectorMask,width,height,valid):null;
+    let applied:{revision:RevisionId;id:LayerId}|null=null;
+    const canAdjust=()=>!!applied&&surface===drawing&&controller.document===artwork&&artwork.head===applied.revision&&
+      controller.selectedLayer.id===applied.id&&!drawing.hasUncommittedInput&&!historyPending&&(c06Selection?.active()??null)===selection;
     return {
       name:mode==='merged'?'見えている絵':sourceIds.map(id=>referenceRoot.getLayer(id).name).join('、'),
       targetName:destination==='active'?layer.name:destination==='under'?'下に新規レイヤー':'上に新規レイヤー',
@@ -3533,15 +3536,16 @@ installFillPanel(byId('documentBoxBody'),{
       referenceValid:()=>surface===drawing&&controller.document===artwork&&
         (mode==='merged'?artwork.head===revision:sourceIds.every(id=>artwork.root.hasLayer(id)&&artwork.root.getLayer(id)===referenceRoot.getLayer(id)))&&
         artwork.root.width===width&&artwork.root.height===height,
-      width,height,source,target,selection,targetMask,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,
+      width,height,source,target,selection,targetMask,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,canAdjust,
       select:mask=>c06Selection?.replaceActive(mask),
       apply:async(pixels,color)=>withClipboardAccess(async()=>{
-        if(!valid())throw Error('作品が変わったため塗りを取り消しました。');
-        const tx=artwork.begin('塗りつぶす');
+        if(applied?!canAdjust():!valid())throw Error('作品が変わったため塗りを取り消しました。');
+        const tx=applied?artwork.beginAdjustment(applied.revision,'調整した塗りつぶし'):artwork.begin('塗りつぶす');
         const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,fillLayerName(destination,color),false,true,destination==='under');
         if(destination==='active')tx.replaceLayerRaster(id,pixels);
-        controller.lastPersistenceHandoff=tx.commit().persistence;
-        controller.selectLayer(id);
+        const receipt=tx.commit();
+        controller.lastPersistenceHandoff=receipt.persistence;
+        controller.selectLayer(id);applied={revision:receipt.revision.id,id};
         return 'edit';
       })
     };

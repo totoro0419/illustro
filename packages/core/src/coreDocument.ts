@@ -38,6 +38,11 @@ export class CoreDocument{
   setHistoryUndoLimit(limit:number|null){this.historyValue.setUndoLimit(limit);}get canRedo(){return this.historyValue.canRedo;}
   get commitSequence(){return this.commitSequenceValue;}get canonicalBlockCount(){return this.storeValue.blockCount;}get canonicalRasterBytes(){return this.storeValue.allocatedBytes;}
   begin(label:string){return new DocumentTransaction(this,label);}
+  beginAdjustment(replaced:RevisionId,label:string){
+    if(this.head!==replaced||!this.currentRevision.parentIds[0])
+      throw Error('直近の編集が変わったため調整できません。');
+    return new DocumentTransaction(this,label,replaced);
+  }
   addRasterLayerAbove(referenceId:LayerId){const tx=this.begin('Add raster layer'),layerId=tx.addRasterLayerAbove(referenceId),receipt=tx.commit();return Object.freeze({layerId,receipt});}
   historyCleanupCandidates(){
     const state=this.historyValue.snapshot(),keep=this.retainedHistoryIds(state);

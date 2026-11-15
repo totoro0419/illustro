@@ -70,6 +70,25 @@ describe('M05 core persistence',()=>{
     d.redo();
     expect(d.root.hasLayer(pasted)).toBe(true);
   });
+  it('recovers an adjusted edit as one undo without rolling back later commands',()=>{
+    const d=new CoreDocument({width:3,height:3,ids:createDeterministicIdFactory()}),layer=d.defaultRasterLayerId;
+    const base=d.capturePersistenceSnapshot(),before=d.head;
+    const first=d.begin('fill');
+    first.setPixel(layer,1,1,[10,20,30,255]);
+    const applied=first.commit(),firstPacket=d.captureRecoveryPacket(applied.persistence);
+    const adjusted=d.beginAdjustment(applied.revision.id,'adjust fill');
+    adjusted.setPixel(layer,1,1,[40,50,60,255]);
+    const revised=adjusted.commit(),revisedPacket=d.captureRecoveryPacket(revised.persistence);
+    const restoredSnapshot=mergeCoreRecovery(base,[firstPacket,revisedPacket]);
+    const restored=CoreDocument.restore({snapshot:restoredSnapshot,blockPayloads:d.persistenceBlockPayloads(d.capturePersistenceSnapshot())});
+    expect(restored.readPixel(layer,1,1)).toEqual([40,50,60,255]);
+    restored.undo();
+    expect(restored.head).toBe(before);
+    expect(restored.canUndo).toBe(false);
+    restored.redo();
+    expect(restored.head).toBe(revised.revision.id);
+    expect(()=>d.beginAdjustment(applied.revision.id,'stale adjustment')).toThrow();
+  });
   it('continues CommitSequence across Undo branch edits and protection never skips a gap',()=>{
     const ids=createDeterministicIdFactory(),d=new CoreDocument({width:64,height:64,ids}),l=d.defaultRasterLayerId;
     const a=d.begin('A');a.setPixel(l,1,1,[1,1,1,255]);expect(a.commit().revision.commitStamp?.commitSequence).toBe(1n);
