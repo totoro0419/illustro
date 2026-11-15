@@ -53,6 +53,8 @@ const frozenRendererResourceCode="image(mask){let key=mask?this.maskKeys.get(mas
 // are permitted in formerly frozen UI display files. We restore their original
 // code in memory and verify the previously frozen SHA-256. Any unrelated change
 // is still rejected (including the canonical brush/tiling shaders).
+const atomicBuildOld="'presentation.worker','document-presentation','index'";
+const atomicBuildNew="'presentation.worker','document-presentation','atomic-document-groups','index'";
 const atomicDocumentImport="import {publishDocumentGroupsAtomically} from '@rt/atomic-document-groups';\n";
 const atomicDocumentOldMethod=" // QA input-first presentation: yield between groups rather than submitting\n // every bitmap transfer in one uninterruptible main-thread task. The worker\n // still renders full-accuracy pixels and confirms the exact same version.\n async applyCooperatively(groups){\n  const groupCount=groups.length;\n  for(let i=0;i<groupCount;i++){\n   this.apply([groups[i]]);\n   if(i+1<groupCount){\n    // A new macrotask gives queued touchstart and pointerdown a chance to run.\n    // requestAnimationFrame can itself starve when the GPU is busy.\n    await new Promise(resolve=>setTimeout(resolve,0));\n   }\n  }\n }\n";
 const atomicDocumentNewMethod=" // Bitmap uploads yield to touch events while remaining invisible. Only\n // the final, synchronous DOM swap reveals a complete Undo/Redo revision.\n async applyCooperatively(groups,isCurrent){\n  return publishDocumentGroupsAtomically(this,groups,isCurrent);\n }\n";
@@ -67,6 +69,7 @@ function undoApprovedDisplayDiff(content,oldValue,newValue,name){
 }
 for(const e of lock.artifacts){
  let content=fs.readFileSync(e.path);
+ if(e.path==='prototypes/brush-rt/build.mjs')content=undoApprovedDisplayDiff(content,atomicBuildOld,atomicBuildNew,'build module registry');
  if(e.path==='packages/brush-rt/src/document-presentation.mjs'){
   content=undoApprovedDisplayDiff(content,atomicDocumentOldMethod,atomicDocumentNewMethod,'document atomic method');
   content=undoApprovedDisplayDiff(content,'',atomicDocumentImport,'document import');
