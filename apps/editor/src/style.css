@@ -26,6 +26,12 @@ details p{font-size:13px}
 .layer-row{width:100%;min-height:40px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;padding:7px 9px;border-left:4px solid transparent}
 .layer-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .layer-state{font-size:11px;font-weight:700;white-space:nowrap}
+.layer-row[data-color-tag="red"]{border-left-color:#cb3b47}
+.layer-row[data-color-tag="orange"]{border-left-color:#e47325}
+.layer-row[data-color-tag="yellow"]{border-left-color:#bc8a00}
+.layer-row[data-color-tag="green"]{border-left-color:#32815b}
+.layer-row[data-color-tag="blue"]{border-left-color:#3373bd}
+.layer-row[data-color-tag="purple"]{border-left-color:#8a53bc}
 .layer-row[aria-pressed=false] .layer-state:empty::after{content:' ';white-space:pre}
 .compact-only{display:none}
 #splitter{position:fixed;right:var(--workspace);top:var(--top);bottom:var(--bottom);width:8px;cursor:ew-resize;touch-action:none;z-index:9}

@@ -1,5 +1,5 @@
 import {operationKey,type LayerId,type OperationKey,type RasterSurfaceId,type TransactionId,type RevisionId} from './ids';
-import {rasterLayer,validateDocumentInfo,type DocumentInfo,type LayerNode} from './model';
+import {rasterLayer,parseLayerColorTag,validateDocumentInfo,type DocumentInfo,type LayerNode} from './model';
 import {RasterWorkingSet} from './raster/working';
 import type {CoreDocument} from './coreDocument';
 import {commitTransaction,type CommitReceipt} from './commit';
@@ -91,6 +91,12 @@ export class DocumentTransaction{
   renameLayer(id:LayerId,name:string){return this.meta(id,{name:name.trim()});}
   setLayerVisibility(id:LayerId,visible:boolean){return this.meta(id,{visible});}
   setLayerLocked(id:LayerId,locked:boolean){return this.meta(id,{locked});}
+  setLayerColorTag(id:LayerId,colorTag:LayerNode['colorTag']){
+    this.open();
+    const tag=parseLayerColorTag(colorTag),layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
+    if((layer.colorTag??null)===tag)return false;
+    return this.meta(id,{colorTag:tag});
+  }
   setLayerOpacity(id:LayerId,opacity:number){
     if(!Number.isFinite(opacity)||opacity<0||opacity>1)throw new Error('invalid layer opacity');
     return this.meta(id,{opacity});
@@ -101,7 +107,7 @@ export class DocumentTransaction{
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked)throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

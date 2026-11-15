@@ -31,7 +31,7 @@ import {captureExport,exportImage,exportFileName,type ImageFormat,type ImageExpo
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,type SemanticOperation,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type SemanticOperation,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -187,6 +187,14 @@ let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thu
 document.body.dataset.appMode=qaMode?'qa':'production';if(!qaMode){const retry=document.createElement('button');retry.type='button';retry.textContent='保存を再試行';retry.id='retryWorkSave';retry.onclick=()=>{void persistence.retry().then(()=>{byId('status').textContent='アプリ内に保存しました。';updatePersistenceDisplay();}).catch(showStorageError);};byId('saveState').after(retry);}
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
+const layerTagNames:Record<LayerColorTag,string>={
+  red:'赤',orange:'オレンジ',yellow:'黄',green:'緑',blue:'青',purple:'紫',
+};
+for(const selectId of ['layerTagFilter','selectedLayerTag']){
+  const field=byId<HTMLSelectElement>(selectId);
+  for(const tag of LAYER_COLOR_TAGS)field.add(new Option(layerTagNames[tag],tag));
+}
+
 function changeLayer(label:string, change:(tx:ReturnType<CoreDocument['begin']>)=>boolean){
   if(!documentReady||!surface)return;
   if(surface.busy||historyPending||geometryBusy){
@@ -213,6 +221,10 @@ function changeLayer(label:string, change:(tx:ReturnType<CoreDocument['begin']>)
 const renderLayers=()=>{
   const rows=[...controller.layers].reverse(),selectedLayer=controller.selectedLayer,selectedName=selectedLayer.name;
   const query=byId<HTMLInputElement>('layerSearch').value.trim().toLocaleLowerCase();
+  const tagFilter=byId<HTMLSelectElement>('layerTagFilter').value;
+  const tagField=byId<HTMLSelectElement>('selectedLayerTag');
+  tagField.value=selectedLayer.colorTag??'';
+  tagField.disabled=!documentReady;
   const opacity=byId<HTMLInputElement>('layerOpacity');
   opacity.value=String(Math.round(selectedLayer.opacity*100));
   opacity.disabled=!documentReady;
@@ -222,18 +234,29 @@ const renderLayers=()=>{
   nameField.dataset.layerId=selectedLayer.id;
   nameField.disabled=!documentReady;
   const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
-  const canMove=!!documentReady&&!query&&!selectedLayer.locked&&selectedLayer.baseColor!=='white';
+  const canMove=!!documentReady&&!query&&!tagFilter&&!selectedLayer.locked&&selectedLayer.baseColor!=='white';
   const previous=rows[selectedIndex-1],next=rows[selectedIndex+1];
   byId<HTMLButtonElement>('moveLayerUp').disabled=!canMove||!previous||previous.baseColor==='white';
   byId<HTMLButtonElement>('moveLayerDown').disabled=!canMove||!next||next.baseColor==='white';
   for(const id of ['layerList','layerPageList']){
     const list=byId<HTMLDivElement>(id);
-    const matching=id==='layerPageList'&&query?rows.filter(layer=>layer.name.toLocaleLowerCase().includes(query)):rows;
+    const matching=id==='layerPageList'?rows.filter(layer=>{
+      const tagMatches=!tagFilter||(layer.colorTag??'none')===tagFilter;
+      return tagMatches&&layer.name.toLocaleLowerCase().includes(query);
+    }):rows;
+    if(id==='layerPageList'){
+      byId('layerPageSelected').textContent=selectedName+(matching.includes(selectedLayer)?'':'（絞り込みで一覧に表示されていません）');
+    }
     list.replaceChildren(...matching.map(layer=>{
       const selected=layer.id===controller.selectedLayerId,row=document.createElement('button'),name=document.createElement('span'),state=document.createElement('span');
       row.type='button';row.className='layer-row';row.dataset.layerId=layer.id;
       row.setAttribute('aria-pressed',String(selected));row.setAttribute('aria-label',layer.name+(selected?'、選択中':''));
-      name.className='layer-name';name.textContent=layer.name;state.className='layer-state';state.textContent=[selected?'選択中':'',layer.locked?'ロック中':'',layer.visible?'':'非表示'].filter(Boolean).join('・');
+      name.className='layer-name';name.textContent=layer.name;
+      if(layer.colorTag){
+        row.dataset.colorTag=layer.colorTag;
+        row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
+      }
+      state.className='layer-state';state.textContent=[selected?'選択中':'',layer.locked?'ロック中':'',layer.visible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
       row.onclick=()=>{
         if(layer.baseColor==='white'&&layer.visible&&!layer.locked){
@@ -266,7 +289,6 @@ const renderLayers=()=>{
     }));
     if(!matching.length)list.textContent='一致するレイヤーがありません。';
   }
-  byId('layerPageSelected').textContent=selectedName;
   byId('layersBoxSummary').textContent=selectedName;
   byId('documentBoxSummary').textContent=controller.document.root.width+'×'+controller.document.root.height;
 };
@@ -313,6 +335,9 @@ const updateQa=()=>{
   byId('qaAuto').textContent=JSON.stringify(data,null,2);
 };
 byId<HTMLInputElement>('layerSearch').oninput=renderLayers;
+byId<HTMLSelectElement>('layerTagFilter').onchange=renderLayers;
+const layerTagField=byId<HTMLSelectElement>('selectedLayerTag');
+layerTagField.onchange=()=>changeLayer('レイヤーの色タグを変更しました。',tx=>tx.setLayerColorTag(controller.selectedLayerId,parseLayerColorTag(layerTagField.value||null)));
 byId<HTMLButtonElement>('moveLayerUp').onclick=()=>changeLayer('レイヤーを一つ上に移動しました。',tx=>tx.moveRasterLayer(controller.selectedLayerId,1));
 byId<HTMLButtonElement>('moveLayerDown').onclick=()=>changeLayer('レイヤーを一つ下に移動しました。',tx=>tx.moveRasterLayer(controller.selectedLayerId,-1));
 const layerNameField=byId<HTMLInputElement>('selectedLayerName');

@@ -2,10 +2,20 @@ import type {DocumentId,LayerId,RasterSurfaceId} from './ids';
 import {PagedMap} from './pagedMap';
 import {createRasterSurfaceDescriptor,RasterSurfaceManifest,type RasterSampleEncoding} from './raster/surface';
 
+export const LAYER_COLOR_TAGS=['red','orange','yellow','green','blue','purple'] as const;
+export type LayerColorTag=(typeof LAYER_COLOR_TAGS)[number];
+export function parseLayerColorTag(value:unknown):LayerColorTag|null{
+  if(value===undefined||value===null)return null;
+  const tag=LAYER_COLOR_TAGS.find(candidate=>candidate===value);
+  if(!tag)throw new Error('invalid layer color tag');
+  return tag;
+}
+
 export type LayerNode=Readonly<{
   id:LayerId;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;surface:RasterSurfaceManifest;
   /** Logical opaque-white base. Its raster tiles are intentionally absent until editing requires them. */
   baseColor?:'white';
+  colorTag?:LayerColorTag|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;author?:string;description?:string;dpi?:number}>;
