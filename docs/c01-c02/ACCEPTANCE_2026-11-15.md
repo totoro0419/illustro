@@ -92,5 +92,6 @@
 - **開発マネージャーPR [#70](https://github.com/totoro0419/illustro/pull/70)**：同日、受入済み35件の管理台帳・C03引継ぎを同じintegrationへ **merged**。統合コミット `5976983b495fc1dd93598034e94b39b8512f7363`。
 - 最終的な管理台帳は `docs/management/FEATURE_STATUS.json`。固有ID247件を保存し、受入済みC01の17件・C02の18件のみ `chunk_owner_acceptance.accepted=true` とする。C02へ仮割当されていた `PIX-001` はこの35件に含めない。
 - 統合後の Core CI [#43688890869](https://github.com/totoro0419/illustro/actions/runs/43688890869)：**success**（`5976983b...`）。
+- **追加の旧Production Preparation検証**：[run #43688885780](https://github.com/totoro0419/illustro/actions/runs/43688885780) は **failure**。従来の `scripts/editor-smoke.mjs` が現行Home画面に存在しない「新規キャンバス」ボタンを待ち続け、30秒でタイムアウトした。**この検査をPASSと扱わない**。最新のC01/C02専用検査・Core CIの成功とは別に、旧スモーク検査の画面変更追従を後続の管理課題として残す。失敗から実機不具合の有無まで断定しない。
 - **C03の開始位置**：上記の受入済みコードと管理資料を含む、`integration/production-prep-2026-10-05` の開始時点の**最新コミット**。旧2026-11-12の `47c560...` を新たな作業の起点にしない。
 - C01/C02の工程は今回の統合で終了した。改善項目は次工程やC17へ引き継ぎ、35件の受入記録と過去のQAを保持する。
