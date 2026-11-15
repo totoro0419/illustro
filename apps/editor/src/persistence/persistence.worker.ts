@@ -4,7 +4,7 @@ import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,update
 import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
 import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
 import {makeEditorState,readEditorState} from './editorState';
-import type {SelectionRect} from '../strokeSelection';
+import {clampSelectionRect,type SelectionRect} from '../strokeSelection';
 
 type RequestMessage={id:number;type:string;[key:string]:unknown};
 type Session={documentId:string;writerEpochId:string;path:string};
@@ -607,7 +607,13 @@ function idbEntries(db:IDBDatabase,path:string){return new Promise<Entry[]>((res
 
 function requestedSelection(value:unknown,width:number,height:number):SelectionRect|null{
   if(value===undefined||value===null)return null;
-  return readEditorState({version:2,selectedLayerId:'',selection:{kind:'rectangle',rect:value}},width,height).selection;
+  if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('選択範囲の形式が正しくありません。');
+  const fields=value as Record<string,unknown>;
+  if(['x','y','width','height'].some(key=>typeof fields[key]!=='number'||!Number.isFinite(fields[key]))||
+    (fields.width as number)<=0||(fields.height as number)<=0)throw new Error('選択範囲の数値が正しくありません。');
+  const rect=clampSelectionRect(value as SelectionRect,width,height);
+  return rect.width>0&&rect.height>0
+    ?readEditorState({version:2,selectedLayerId:'',selection:{kind:'rectangle',rect}},width,height).selection:null;
 }
 async function publishCurrent(patch:Partial<WorkEntry>){if(!libraryWork)return;const old=libraryWork,current=await getWork(old.documentId);if(!current)throw new Error('この作品は作品一覧から削除されています。');const entry={...current,...patch,writerEpochId:old.writerEpochId,...(patch.revisionId&&patch.revisionId!==current.revisionId?{previous:{writerEpochId:current.writerEpochId,revisionId:current.revisionId,protectedThrough:current.protectedThrough}}:{})};await publishWork(entry,old.writerEpochId);libraryWork=entry;}
 
