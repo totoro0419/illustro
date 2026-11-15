@@ -212,14 +212,22 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
       if(!result.ok)status.textContent=result.reason??'現在は使えません。';
     }
   },{capture:true});
+  const restoreAfterStroke=(id:string,restore:()=>void)=>{
+    const check=()=>{
+      if(active.has(id))return; // a new hold superseded the release
+      if(!canSwitchTools()){window.setTimeout(check,32);return;}
+      restore();
+    };
+    check();
+  };
   const release=(event:KeyboardEvent)=>{
     for(const b of bindings)if(b.mode==='hold'&&
       (b.physical?b.code===event.code:b.key===normalizedKey(event))){
       const state=active.get(b.commandId);if(!state)continue;
-      active.delete(b.commandId);state.restore();
+      active.delete(b.commandId);restoreAfterStroke(b.commandId,state.restore);
     }
   };
   document.addEventListener('keyup',release,{capture:true});
-  window.addEventListener('blur',()=>{for(const {restore} of active.values())restore();active.clear();stopCapture();});
+  window.addEventListener('blur',()=>{const pending=[...active.entries()];active.clear();for(const [id,{restore}] of pending)restoreAfterStroke(id,restore);stopCapture();});
   render();
 }
