@@ -7,7 +7,7 @@ import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
-import {CANONICAL_TILE_SIZE,type LayerBlend,type LayerMask,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,type LayerBlend,type LayerMask,type MaskPoint,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import drawingWorkerUrl from '../../../packages/brush-rt/dist/rt/drawing.worker.mjs?worker&url';
 import presentationWorkerUrl from '../../../packages/brush-rt/dist/rt/presentation.worker.mjs?worker&url';
@@ -25,11 +25,13 @@ import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from
 
 type CanvasEditGesture=Readonly<{
   path:boolean;width:number;color:string;complete:(points:readonly MaskStrokePoint[])=>void;
+  pointEdit?:Readonly<{points:readonly MaskPoint[];commit:(index:number,point:MaskPoint)=>void}>;
 }>;
 
 export class BrushSurface{
   private editGesture:CanvasEditGesture|null=null;
   private editPointer:number|null=null;
+  private editPointIndex:number|null=null;
   private editPointerType='';
   private editPoints:MaskStrokePoint[]=[];
   private editStrokeOutline:SVGSVGElement|null=null;
@@ -133,7 +135,7 @@ export class BrushSurface{
     if(!this.navigation)return;
     e.preventDefault();this.navigation.wheelZoom(e.deltaY,this.pointerLocation(e));
   };
-  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.editPointer!==null)this.updateEditStrokeOutline();if(this.maskInspection)this.positionDocumentOverlay(this.maskInspection);if(this.layerOutline)this.positionDocumentOverlay(this.layerOutline);if(immediate)this.onStateChanged('view-command');}}
+  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.editPointer!==null||this.editGesture?.pointEdit)this.updateEditStrokeOutline();if(this.maskInspection)this.positionDocumentOverlay(this.maskInspection);if(this.layerOutline)this.positionDocumentOverlay(this.layerOutline);if(immediate)this.onStateChanged('view-command');}}
   get viewState(){return this.view?.state??null;}
   restoreView(state:SavedCanvasView){this.view?.restore(state);this.updateView(true);}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
@@ -303,9 +305,11 @@ export class BrushSurface{
   setCanvasEditGesture(gesture:CanvasEditGesture|null){
     this.clearCanvasEditGestureStroke();
     this.editGesture=gesture;
+    if(gesture?.pointEdit)this.updateEditStrokeOutline();
   }
   private clearCanvasEditGestureStroke(){
     this.editPointer=null;
+    this.editPointIndex=null;
     this.editPointerType='';
     this.editPoints=[];
     this.editStrokeOutline?.remove();
@@ -321,7 +325,7 @@ export class BrushSurface{
   }
   private updateEditStrokeOutline(){
     const gesture=this.editGesture,v=this.view;
-    if(!gesture||!v||!this.editPoints.length)return;
+    if(!gesture||!v||(!this.editPoints.length&&!gesture.pointEdit))return;
     const svg='http://www.w3.org/2000/svg';
     if(!this.editStrokeOutline){
       const outline=document.createElementNS(svg,'svg');
@@ -332,6 +336,30 @@ export class BrushSurface{
       this.editStrokeOutline=outline;
     }
     const path=this.editStrokeOutline.firstElementChild!;
+    if(gesture.pointEdit){
+      const points=gesture.pointEdit.points.map((p,i)=>v.screen(i===this.editPointIndex?(this.editPoints.at(-1)??p):p));
+      if(this.editStrokeOutline.childElementCount!==points.length+1){
+        const svg='http://www.w3.org/2000/svg';
+        this.editStrokeOutline.replaceChildren(path,...points.map(()=>{
+          const dot=document.createElementNS(svg,'circle');
+          dot.setAttribute('fill','#fff');dot.setAttribute('stroke','#137e9b');
+          dot.setAttribute('stroke-width','2');dot.setAttribute('r','6');
+          return dot;
+        }));
+      }
+      path.setAttribute('d',points.map(({x,y},i)=>(i?'L':'M')+x+' '+y).join(' ')+' Z');
+      path.setAttribute('fill','rgba(60,180,220,.12)');
+      path.setAttribute('stroke','#43bfea');
+      path.setAttribute('stroke-width','2');
+      path.setAttribute('stroke-dasharray','5 3');
+      for(let i=0;i<points.length;i++){
+        const dot=this.editStrokeOutline.children[i+1]!;
+        dot.setAttribute('cx',String(points[i]!.x));
+        dot.setAttribute('cy',String(points[i]!.y));
+        dot.setAttribute('r',i===this.editPointIndex?'8':'6');
+      }
+      return;
+    }
     const points=this.editPoints.map(p=>v.screen(p));
     if(points.length===1)points.push({x:points[0]!.x+.01,y:points[0]!.y});
     path.setAttribute('d',points.map(({x,y},i)=>(i?'L':'M')+x+' '+y).join(' ')+(gesture.path?' Z':''));
@@ -344,8 +372,14 @@ export class BrushSurface{
   }
   private finishCanvasEditGesture(event:PointerEvent){
     this.appendEditPoint(event);
-    const gesture=this.editGesture,points=this.editPoints;
+    const gesture=this.editGesture,points=this.editPoints,index=this.editPointIndex;
     this.clearCanvasEditGestureStroke();
+    if(gesture?.pointEdit){
+      const finalPoint=points.at(-1);
+      if(index!==null&&finalPoint)gesture.pointEdit.commit(index,{x:finalPoint.x,y:finalPoint.y});
+      if(this.editGesture?.pointEdit)this.updateEditStrokeOutline();
+      return;
+    }
     gesture?.complete(points);
   }
   private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset)return;
@@ -356,6 +390,21 @@ export class BrushSurface{
     // stroke / document layer becomes the hit target during formal painting.
     // Interactive editor controls inside the viewport must remain interactive.
     if(e.target instanceof Element&&e.target.closest('button,input,select,textarea,[contenteditable="true"],.crop-overlay,[data-canvas-no-input]'))return;
+    if(this.editGesture?.pointEdit){
+      if(e.button!==0||this.busy||this.inputBarrier||this.editPointer!==null)return;
+      const location=this.pointerLocation(e),v=this.view;
+      let index=-1,distance=22;
+      this.editGesture.pointEdit.points.forEach((point,i)=>{
+        const screen=v.screen(point),d=Math.hypot(location.x-screen.x,location.y-screen.y);
+        if(d<distance){index=i;distance=d;}
+      });
+      if(index>=0){
+        e.preventDefault();this.editPointIndex=index;this.editPointer=e.pointerId;
+        this.editPointerType=e.pointerType;this.appendEditPoint(e);
+        this.inputViewport.setPointerCapture(e.pointerId);this.updateEditStrokeOutline();return;
+      }
+      if(e.pointerType!=='touch')return;
+    }
     if(this.layerPick&&e.button===0){
       e.preventDefault();
       this.pickLayerAt(this.screenToDocument(this.pointerLocation(e)));
@@ -402,6 +451,7 @@ export class BrushSurface{
       this.inputViewport.setPointerCapture(e.pointerId);return;
     }
     if(this.editGesture){
+      if(this.editGesture.pointEdit)return;
       if(e.button!==0||this.busy||this.inputBarrier||this.inspectedLayer||this.layerCompPreview||this.layerBlendPreview)return;
       e.preventDefault();
       this.editPointer=e.pointerId;
