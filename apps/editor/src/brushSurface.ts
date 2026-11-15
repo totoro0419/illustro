@@ -430,7 +430,7 @@ export class BrushSurface{
     }
     if(!this.editGesture&&!this.selectionMode&&!this.eyedropper&&e.button===0&&
       (e.pointerType==='mouse'||e.pointerType==='pen')){
-      const chosen=this.pointerRoles[e.pointerType];
+      const chosen=e.pointerType==='pen'?this.pointerRoles.pen:this.pointerRoles.mouse;
       if(chosen==='pan'){
         e.preventDefault();this.navigation?.mouseDown(e.pointerId,this.pointerLocation(e));
         this.inputViewport.setPointerCapture(e.pointerId);return;
