@@ -9,8 +9,13 @@ import {ViewportScene} from '@rt/viewport-scene';
 export class DrawingHost {
  static async create(canvas,width,height,backend,options,workerUrl,canonicalUrl,diagnostics=false,presentationUrl){
   const host=new DrawingHost(canvas,workerUrl,presentationUrl);host.documentPresentation=new DocumentPresentation(canvas,width,height);host.documentVersion=0;try{
-   host.update(await host.call('init',{width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend,options,canonicalUrl,diagnostics,timeOrigin:performance.timeOrigin}));
-   host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend:host.info.selection.selected});await host.presentationReady;return host;
+   // Both workers own separate GPU resources. They can initialize in parallel:
+   // presenting a raster does not require the drawing worker's GPU selection.
+   // The previous sequential startup waited for two pipeline compilations.
+   const drawingInit=host.call('init',{width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend,options,canonicalUrl,diagnostics,timeOrigin:performance.timeOrigin});
+   host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend});
+   const [state]=await Promise.all([drawingInit,host.presentationReady]);
+   host.update(state);return host;
   }catch(error){host.destroy();throw error;}
  }
  constructor(canvas,url,presentationUrl){this.remote=true;
