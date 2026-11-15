@@ -24,7 +24,7 @@ export function installRulerPanel(host:HTMLElement,api:ArtworkActions,apply:(gui
   try{const data=JSON.parse(localStorage.getItem(STORAGE)??'{}');if(data&&typeof data==='object')saved=data;}catch{}
   const settings=()=>normalizeGuideSettings({
     enabled:enabled.checked,angle:angle.valueAsNumber,strength:strength.valueAsNumber/100,applyEraser:erase.checked,
-    kind:family.value as GuideSettings['kind'],x:x.valueAsNumber,y:y.valueAsNumber,rx:rx.valueAsNumber,
+    kind:family.value as NonNullable<GuideSettings['kind']>,x:x.valueAsNumber,y:y.valueAsNumber,rx:rx.valueAsNumber,
     ry:ry.valueAsNumber,step:step.valueAsNumber
   });
   const reflect=(guide:GuideSettings)=>{

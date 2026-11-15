@@ -17,9 +17,11 @@ export function tracePath(ctx:Context,path:EditablePath){
   ctx.moveTo(first.x,first.y);
   for(let i=1;i<path.points.length;i++){
     const a=path.points[i-1]!,b=path.points[i]!;
+    if(b.move){ctx.moveTo(b.x,b.y);continue;}
     if(a.outX!==undefined||b.inX!==undefined)
       ctx.bezierCurveTo(a.outX??a.x,a.outY??a.y,b.inX??b.x,b.inY??b.y,b.x,b.y);
     else ctx.lineTo(b.x,b.y);
+    if(b.close)ctx.closePath();
   }
   if(path.closed)ctx.closePath();
 }
@@ -56,7 +58,8 @@ function gradientPixels(gradient:EditableGradient,size:RenderSize){
 
 function drawText(ctx:Context,text:EditableText){
   const family=text.family.replace(/["\\\n\r]/g,'');
-  ctx.font=`${text.size}px "${family}", sans-serif`;
+  const font=['serif','sans-serif','monospace'].includes(family)?family:`"${family}", sans-serif`;
+  ctx.font=`${text.size}px ${font}`;
   ctx.fillStyle=text.color;ctx.textBaseline='top';
   const lines=text.text.split('\n');
   if(text.vertical){
@@ -109,6 +112,6 @@ export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTM
 
 export function movePoint(point:ArtPoint,x:number,y:number):ArtPoint{
   const dx=x-point.x,dy=y-point.y;
-  return {x,y,...(point.inX===undefined||point.inY===undefined?{}:{inX:point.inX+dx,inY:point.inY+dy}),
+  return {...point,x,y,...(point.inX===undefined||point.inY===undefined?{}:{inX:point.inX+dx,inY:point.inY+dy}),
     ...(point.outX===undefined||point.outY===undefined?{}:{outX:point.outX+dx,outY:point.outY+dy})};
 }

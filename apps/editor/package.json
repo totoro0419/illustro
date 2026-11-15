@@ -8,6 +8,13 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1"
   },
-  "dependencies": {"@illustro/core": "*", "@illustro/brush-rt": "*"},
-  "devDependencies": {"typescript": "7.0.2", "vite": "8.3.1"}
+  "dependencies": {
+    "@illustro/brush-rt": "*",
+    "@illustro/core": "*",
+    "opentype.js": "1.3.4"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.3.1"
+  }
 }

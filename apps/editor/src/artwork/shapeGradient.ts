@@ -35,7 +35,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     .map(label=>numberField(controls,label,0,-8192,16384,.5));
   let points:ArtPoint[]=[];
   let stops:GradientStop[]=[{at:0,color:'#23252d',opacity:1,midpoint:.5},{at:1,color:'#f5a950',opacity:1,midpoint:.5}];
-  let editing:LayerId|undefined,previewId=0;
+  let editing:LayerId|undefined,previewId=0,lineStyle:NonNullable<EditablePath['lineStyle']>='solid';
   function setPoints(next:readonly ArtPoint[]){
     points=[...next];
     if(!points.length)return;
@@ -54,7 +54,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       result=[start,{x:start.x+Math.sign(end.x-start.x||1)*length,y:start.y+Math.sign(end.y-start.y||1)*length}];
     }
     return validateEditableArtwork({kind:'path',shape:shape.value,points:result,
-      closed:closed.checked,stroke:stroke.value,fill:filled.checked?fill.value:null,width:width.valueAsNumber}) as EditablePath;
+      closed:closed.checked,lineStyle,stroke:stroke.value,fill:filled.checked?fill.value:null,width:width.valueAsNumber}) as EditablePath;
   }
   function redrawStops(){
     stopsArea.replaceChildren();
@@ -90,7 +90,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   function reset(){
     const current=api.context();
     if(!current)throw Error('作品を開いてください。');
-    editing=undefined;stroke.value=current.color;
+    editing=undefined;stroke.value=current.color;lineStyle='solid';
     setPoints([{x:current.width*.22,y:current.height*.25},{x:current.width*.78,y:current.height*.75}]);
     status.textContent='新しいレイヤーに作ります。';void refresh();
   }
@@ -119,7 +119,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         type.value='gradient';mode.value=selected.mode;stops=[...selected.stops];setPoints([selected.start,selected.end]);
       }else{
         type.value='shape';shape.value=selected.shape==='freehand'?'polyline':selected.shape;
-        stroke.value=selected.stroke;filled.checked=!!selected.fill;
+        stroke.value=selected.stroke;filled.checked=!!selected.fill;lineStyle=selected.lineStyle??'solid';
         if(selected.fill)fill.value=selected.fill;
         closed.checked=selected.closed;width.value=String(selected.width);square.checked=false;
         setPoints(selected.points);

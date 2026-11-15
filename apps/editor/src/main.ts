@@ -15,6 +15,8 @@ import {installEyedropperSettings} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
+import {installTextPanel} from './artwork/textPanel';
+import {installVectorPanel} from './artwork/vectorPanel';
 import {installRulerPanel} from './artwork/ruler';
 import {installShapeGradientPanel} from './artwork/shapeGradient';
 import {runArtwork} from './artwork/run';
@@ -3349,21 +3351,26 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
 installFillPanel(byId('documentBoxBody'),{
   drawing:()=>documentReady?surface:null,
   color:()=>hex(foreground.current),
-  references:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name})),
+  references:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name,vector:layer.editable?.kind==='path'})),
   capture:async(reference,destination,specifiedId,needTarget)=>{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
     const drawing=surface,selection=c06Selection?.active()??null;
     if(!drawing)throw Error('作品を開いてください。');
-    const referenced=reference==='layer'?controller.layers.find(item=>item.id===specifiedId):layer;
+    const referenced=reference==='layer'||reference==='vector'?controller.layers.find(item=>item.id===specifiedId):layer;
     if(!referenced)throw Error('参照するレイヤーを選んでください。');
-    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||root.isLayerContentLocked(layer.id)))
+    if(reference==='vector'&&referenced.editable?.kind!=='path')throw Error('ベクターの線画レイヤーを指定してください。');
+    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||root.isLayerContentLocked(layer.id)))
       throw Error('塗れるレイヤーを選ぶか、新しいレイヤーに塗ってください。');
     let source:Uint8Array|undefined,target:Uint8Array|null=null;
     await withClipboardAccess(async active=>{
       const wanted=new Set([referenced.id]);
       if(needTarget&&destination==='active')wanted.add(layer.id);
       const layers=await active.captureDocumentLayers(wanted);
-      source=reference==='merged'?new Uint8Array(await renderFrozenArtwork(captureExport(artwork))):layers.get(referenced.id);
+      if(reference==='merged')source=new Uint8Array(await renderFrozenArtwork(captureExport(artwork)));
+      else if(reference==='vector'&&referenced.editable?.kind==='path'){
+        const {width,height}=root;
+        source=new Uint8Array(await runArtwork({content:referenced.editable,width,height,outputWidth:width,outputHeight:height}));
+      }else source=layers.get(referenced.id);
       if(needTarget&&destination==='active')target=layers.get(layer.id)??null;
       return 'read';
     });
@@ -3396,7 +3403,8 @@ const artworkActions:ArtworkActions={
     if(!drawing||!documentReady)return null;
     const {width,height}=controller.document.root;
     return {width,height,color:hex(foreground.current),drawing,
-      selected:{id:layer.id,name:layer.name,content:layer.editable??null}};
+      selected:{id:layer.id,name:layer.name,content:layer.editable??null},
+      paths:controller.layers.flatMap(item=>item.editable?.kind==='path'?[{id:item.id,name:item.name,content:item.editable}]:[])};
   },
   save:async(content,name,editing)=>{
     const artwork=controller.document,head=artwork.head,drawing=surface,selection=c06Selection?.active();
@@ -3429,6 +3437,8 @@ const artworkActions:ArtworkActions={
   })
 };
 installShapeGradientPanel(byId('documentBoxBody'),artworkActions);
+installVectorPanel(byId('documentBoxBody'),artworkActions);
+installTextPanel(byId('documentBoxBody'),artworkActions);
 installRulerPanel(byId('documentBoxBody'),artworkActions,settings=>{
   guidePreferences=settings;
   surface?.setGuideSettings(settings);

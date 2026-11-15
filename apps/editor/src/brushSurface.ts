@@ -30,7 +30,7 @@ export type InputPointerRole='draw'|'pan'|'sample';
 export type PointerRoleSettings=Readonly<{pen:InputPointerRole;mouse:InputPointerRole}>;
 type CanvasEditGesture=Readonly<{
   path:boolean;width:number;color:string;complete:(points:readonly MaskStrokePoint[])=>void;
-  pointEdit?:Readonly<{points:readonly MaskPoint[];commit:(index:number,point:MaskPoint)=>void}>;
+  pointEdit?:Readonly<{points:readonly MaskPoint[];closed?:boolean;commit:(index:number,point:MaskPoint)=>void}>;
 }>;
 
 export class BrushSurface{
@@ -380,8 +380,8 @@ export class BrushSurface{
           return dot;
         }));
       }
-      path.setAttribute('d',points.map(({x,y},i)=>(i?'L':'M')+x+' '+y).join(' ')+' Z');
-      path.setAttribute('fill','rgba(60,180,220,.12)');
+      path.setAttribute('d',points.map(({x,y},i)=>(i?'L':'M')+x+' '+y).join(' ')+(gesture.pointEdit.closed===false?'':' Z'));
+      path.setAttribute('fill',gesture.pointEdit.closed===false?'none':'rgba(60,180,220,.12)');
       path.setAttribute('stroke','#43bfea');
       path.setAttribute('stroke-width','2');
       path.setAttribute('stroke-dasharray','5 3');

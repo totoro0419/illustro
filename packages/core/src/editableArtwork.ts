@@ -1,4 +1,4 @@
-export type ArtPoint=Readonly<{x:number;y:number;inX?:number;inY?:number;outX?:number;outY?:number}>;
+export type ArtPoint=Readonly<{x:number;y:number;inX?:number;inY?:number;outX?:number;outY?:number;move?:boolean;close?:boolean}>;
 export type GradientStop=Readonly<{at:number;color:string;opacity:number;midpoint:number}>;
 export type EditableGradient=Readonly<{
   kind:'gradient';mode:'linear'|'radial'|'reflected'|'angular';start:ArtPoint;end:ArtPoint;
@@ -23,10 +23,11 @@ const invalid=()=>new Error('編集できるレイヤーのデータが正しく
 const known=new WeakSet<object>();
 function point(value:unknown):ArtPoint{
   if(!field(value)||!coordinate(value.x)||!coordinate(value.y))throw invalid();
-  const {x,y,inX,inY,outX,outY}=value;
+  const {x,y,inX,inY,outX,outY,move,close}=value;
+  if((move!==undefined&&typeof move!=='boolean')||(close!==undefined&&typeof close!=='boolean'))throw invalid();
   if((inX!==undefined||inY!==undefined)&&(!coordinate(inX)||!coordinate(inY)))throw invalid();
   if((outX!==undefined||outY!==undefined)&&(!coordinate(outX)||!coordinate(outY)))throw invalid();
-  return Object.freeze({x,y,...(coordinate(inX)&&coordinate(inY)?{inX,inY}:{}),...(coordinate(outX)&&coordinate(outY)?{outX,outY}:{})});
+  return Object.freeze({x,y,...(move?{move:true}:{}),...(close?{close:true}:{}),...(coordinate(inX)&&coordinate(inY)?{inX,inY}:{}),...(coordinate(outX)&&coordinate(outY)?{outX,outY}:{})});
 }
 export function validateEditableArtwork(value:unknown):EditableArtwork|null{
   if(value===undefined||value===null)return null;
@@ -65,7 +66,7 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
 
 export function moveEditableArtwork(content:EditableArtwork,dx:number,dy:number):EditableArtwork{
   const move=(point:ArtPoint):ArtPoint=>({
-    x:point.x+dx,y:point.y+dy,
+    x:point.x+dx,y:point.y+dy,...(point.move?{move:true}:{}),...(point.close?{close:true}:{}),
     ...(point.inX!==undefined&&point.inY!==undefined?{inX:point.inX+dx,inY:point.inY+dy}:{}),
     ...(point.outX!==undefined&&point.outY!==undefined?{outX:point.outX+dx,outY:point.outY+dy}:{})
   });

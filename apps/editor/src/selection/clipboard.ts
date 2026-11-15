@@ -144,8 +144,10 @@ export class ArtworkClipboard {
         throw Error('編集できるレイヤーを保つには、元作品と同じ大きさ以上のキャンバスに貼り付けてください。');
       const ids=new Set(record.editable.layers.map(entry=>entry.layer.id));
       const clipLoss=record.editable.layers.some(({layer})=>layer.clipSourceId&&!ids.has(layer.clipSourceId));
+      const fontNotice=record.editable.layers.some(({layer})=>layer.editable?.kind==='text'&&layer.editable.fontAsset)
+        ?'フォントはこの端末の素材庫を参照します。':'';
       const detached=clipLoss?'別のレイヤーへのクリッピングは、元になるレイヤーがコピーに含まれないため引き継げません。':'';
-      if(!window.confirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤーの設定とマスクを保持します。元作品の編集履歴は含みません。${detached}`))
+      if(!window.confirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤーの設定・マスク・文字・パスなどの編集情報を保持します。元作品の編集履歴は含みません。${detached}${fontNotice}`))
         throw Error('貼り付けを取り消しました。');
       const entries=record.editable.layers.map(({layer,pixels})=>{
         if(x===0&&y===0&&record.width===root.width&&record.height===root.height){

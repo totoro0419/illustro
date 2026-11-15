@@ -1,0 +1,160 @@
+import {validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} from '@illustro/core';
+import type {BrushSurface} from '../brushSurface';
+import {runArtwork} from './run';
+import {movePoint} from './render';
+import {eraseSegment,intersectPolygons,polygonOf,simplifyPath,smoothPath} from './pathOperations';
+import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
+
+export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const title=document.createElement('summary');title.textContent='ベクター線・点の編集';
+  const appearance=document.createElement('div'),coordinates=document.createElement('div'),tools=document.createElement('div');
+  for(const area of [appearance,coordinates,tools])area.className='c06-clipboard-grid';
+  const status=document.createElement('output');status.setAttribute('role','status');
+  const preview=document.createElement('canvas');preview.hidden=true;preview.style.maxWidth='100%';
+  const color=document.createElement('input');color.type='color';labelledField(appearance,'線の色',color);
+  const fill=document.createElement('input');fill.type='color';fill.value='#ffb742';labelledField(appearance,'内側の色',fill);
+  const filled=document.createElement('input');filled.type='checkbox';labelledField(appearance,'内側を塗る',filled);
+  const closed=document.createElement('input');closed.type='checkbox';labelledField(appearance,'線を閉じる',closed);
+  const thickness=numberField(appearance,'線幅（px）',5,0,4096,.1);
+  const lineStyle=selectField(appearance,'線の見た目',[
+    ['solid','実線'],['dashed','破線'],['dotted','点線']
+  ] as const);
+  const pointIndex=numberField(coordinates,'編集する点の番号',1,1,4096);
+  const pointX=numberField(coordinates,'点の X',0,-8192,16384,.1),pointY=numberField(coordinates,'点の Y',0,-8192,16384,.1);
+  const inX=numberField(coordinates,'前の曲線ハンドル X',0,-8192,16384,.1),inY=numberField(coordinates,'前の曲線ハンドル Y',0,-8192,16384,.1);
+  const outX=numberField(coordinates,'次の曲線ハンドル X',0,-8192,16384,.1),outY=numberField(coordinates,'次の曲線ハンドル Y',0,-8192,16384,.1);
+  const tolerance=numberField(coordinates,'点を減らす許容幅（px）',2,.1,80,.1);
+  const secondary=selectField(coordinates,'重なりを調べるレイヤー',[]);
+  let path:EditablePath|null=null,editing:LayerId|undefined,previewId=0,pointDrawing:BrushSurface|null=null;
+  function draft(){
+    if(!path)throw Error('線を描くか、ベクターレイヤーを選んでください。');
+    return validateEditableArtwork({...path,stroke:color.value,fill:filled.checked?fill.value:null,
+      closed:closed.checked,width:thickness.valueAsNumber,lineStyle:lineStyle.value}) as EditablePath;
+  }
+  const pointNumber=()=>Math.round(pointIndex.valueAsNumber)-1;
+  function syncPoint(){
+    const index=Math.max(0,Math.min((path?.points.length??1)-1,pointNumber()||0));
+    pointIndex.max=String(path?.points.length??1);pointIndex.value=String(index+1);
+    const p=path?.points[index];
+    if(!p)return;
+    for(const [input,value] of [[pointX,p.x],[pointY,p.y],[inX,p.inX??p.x],[inY,p.inY??p.y],[outX,p.outX??p.x],[outY,p.outY??p.y]] as const)
+      input.value=String(Math.round(value*100)/100);
+    status.textContent=`${path?.points.length} 点・編集中の点 ${index+1}`;
+  }
+  function readPath(next:EditablePath,id?:LayerId){
+    path=next;editing=id;
+    color.value=next.stroke;filled.checked=!!next.fill;if(next.fill)fill.value=next.fill;
+    closed.checked=next.closed;thickness.value=String(next.width);lineStyle.value=next.lineStyle??'solid';
+    const options=api.context()?.paths.filter(p=>p.id!==editing)??[];
+    secondary.replaceChildren(...options.map(p=>new Option(p.name,p.id)));
+    syncPoint();void refresh();
+  }
+  function changePoint(index:number,point:ArtPoint){
+    const current=draft(),points=[...current.points];points[index]=point;
+    path={...current,points};pointIndex.value=String(index+1);syncPoint();void refresh();
+  }
+  async function refresh(){
+    const context=api.context(),request=++previewId;
+    if(!context||!path)return;
+    try{
+      const scale=Math.min(1,260/Math.max(context.width,context.height));
+      const w=Math.max(1,Math.round(context.width*scale)),h=Math.max(1,Math.round(context.height*scale));
+      const pixels=await runArtwork({content:draft(),width:context.width,height:context.height,outputWidth:w,outputHeight:h});
+      if(request===previewId)paintPreview(preview,pixels,w,h);
+    }catch(error){if(request===previewId)status.textContent=error instanceof Error?error.message:String(error);}
+  }
+  const stopPoints=()=>{pointDrawing?.setCanvasEditGesture(null);pointDrawing=null;};
+  const closePath=(current:EditablePath)=>current.points.some(p=>p.move||p.close);
+  tools.append(
+    button('新しいベクター線を描く',()=>{
+      const context=api.context();
+      if(!context)throw Error('作品を開いてください。');
+      stopPoints();status.textContent='キャンバスに線を描いてください。';
+      locate(context.drawing,points=>{
+        if(points.length<2)return;
+        pointIndex.value='1';
+        readPath({kind:'path',shape:'freehand',points:simplifyPath(points,.65),closed:false,
+          stroke:context.color,fill:null,width:5});
+      });
+    },status),
+    button('選んだベクターを編集',()=>{
+      const context=api.context(),layer=context?.selected;
+      if(layer?.content?.kind!=='path')throw Error('ベクター線や図形のレイヤーを選んでください。');
+      stopPoints();pointIndex.value='1';readPath(layer.content,layer.id);
+    },status),
+    button('絵の上で点を動かす',()=>{
+      const context=api.context(),current=draft();
+      if(!context)throw Error('作品を開いてください。');
+      if(current.points.length>180)throw Error('点が多いので、「点を減らす」か番号指定で編集してください。');
+      stopPoints();pointDrawing=context.drawing;status.textContent='動かしたい点をドラッグしてください。';
+      pointDrawing.setCanvasEditGesture({path:false,width:2,color:'#ffb742',complete:()=>{},
+        pointEdit:{points:current.points,closed:current.closed,commit:(index,point)=>{
+          stopPoints();changePoint(index,movePoint(current.points[index]!,point.x,point.y));
+        }}});
+    },status),
+    button('点と曲線ハンドルを更新',()=>{
+      const current=draft(),index=pointNumber(),previous=current.points[index];
+      if(!previous)throw Error('編集する点の番号を確認してください。');
+      const next={...previous,x:pointX.valueAsNumber,y:pointY.valueAsNumber,
+        inX:inX.valueAsNumber,inY:inY.valueAsNumber,outX:outX.valueAsNumber,outY:outY.valueAsNumber};
+      validateEditableArtwork({...current,points:[next,next]});
+      changePoint(index,next);
+    },status),
+    button('選んだ点を角にする',()=>{
+      const current=draft(),index=pointNumber(),p=current.points[index];
+      if(!p)throw Error('編集する点を選んでください。');
+      changePoint(index,{x:p.x,y:p.y,...(p.move?{move:true}:{}),...(p.close?{close:true}:{})});
+    },status),
+    button('次の点との間に点を足す',()=>{
+      const current=draft(),index=pointNumber(),a=current.points[index],b=current.points[index+1];
+      if(!a||!b||closePath(current))throw Error('最後の点の手前を選んでください。');
+      const points=[...current.points];points.splice(index+1,0,{x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+      readPath({...current,points},editing);
+    },status),
+    button('選んだ点を外す',()=>{
+      const current=draft();
+      if(current.points.length<=2||closePath(current))throw Error('この線の点はこれ以上外せません。');
+      readPath({...current,points:current.points.filter((_,i)=>i!==pointNumber())},editing);
+    },status),
+    button('線の区間を消す',()=>{
+      const current=draft(),context=api.context();
+      if(!context)throw Error('作品を開いてください。');
+      status.textContent='消したい区間を絵の上でタップしてください。';
+      locate(context.drawing,points=>{
+        try{readPath(eraseSegment(current,points[0]!),editing);}
+        catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+      });
+    },status),
+    button('点を減らす',()=>{
+      const current=draft();
+      if(closePath(current)||current.shape==='bezier')throw Error('複雑な輪郭や曲線は点番号で編集してください。');
+      const points=simplifyPath(current.points,Math.max(.1,tolerance.valueAsNumber));
+      if(current.closed&&points.length<3)throw Error('閉じた形を保つには許容幅を下げてください。');
+      readPath({...current,points},editing);
+    },status),
+    button('曲線をなめらかにする',()=>{
+      const current=draft();
+      if(closePath(current)||current.shape==='rectangle'||current.shape==='ellipse')throw Error('通常の線または折れ線を選んでください。');
+      readPath({...current,shape:'bezier',points:smoothPath(current.points,current.closed,1)},editing);
+    },status),
+    button('2つの形の重なる部分を作る',()=>{
+      const current=draft(),other=api.context()?.paths.find(layer=>layer.id===secondary.value)?.content;
+      if(other?.kind!=='path')throw Error('もう一つの図形レイヤーを選んでください。');
+      const points=intersectPolygons(polygonOf(current),polygonOf(other));
+      if(points.length<3)throw Error('共通する面がありません。');
+      readPath({...current,shape:'polyline',points,closed:true,fill:current.fill??current.stroke});
+      status.textContent='重なりを新しいベクターレイヤーに作ります。';
+    },status),
+    button('作品に反映',async()=>{
+      stopPoints();await api.save(draft(),'ベクター線',editing);status.textContent='ベクター線を保存しました。';
+    },status),
+    button('候補を取り消す',()=>{
+      stopPoints();path=null;editing=undefined;previewId++;preview.hidden=true;status.textContent='候補を取り消しました。';
+    },status)
+  );
+  pointIndex.onchange=syncPoint;
+  appearance.onchange=()=>void refresh();
+  panel.ontoggle=()=>{if(!panel.open)stopPoints();};
+  panel.append(title,appearance,coordinates,tools,preview,status);host.append(panel);
+}

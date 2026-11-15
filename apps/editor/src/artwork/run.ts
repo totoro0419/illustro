@@ -1,7 +1,9 @@
 import type {ArtworkJob} from './worker';
 import {renderArtwork} from './render';
+import {ensureFont} from './fonts';
 
-export function runArtwork(job:ArtworkJob){
+export async function runArtwork(job:ArtworkJob){
+  if(job.content.kind==='text'&&job.content.fontAsset)await ensureFont(job.content.fontAsset);
   if(job.content.kind==='text'||typeof OffscreenCanvas==='undefined')
     return Promise.resolve(renderArtwork(job.content,job,document.createElement('canvas')));
   return new Promise<Uint8ClampedArray<ArrayBuffer>>((resolve,reject)=>{

@@ -4,7 +4,7 @@ import type {Point} from '../transform/geometry';
 import type {FillSettings,RegionGraph,Walls} from './pixels';
 import {runFill} from './run';
 
-type Reference='active'|'merged'|'layer';
+type Reference='active'|'merged'|'layer'|'vector';
 type Destination='active'|'new';
 export type FillCapture=Readonly<{
   name:string;key:string;width:number;height:number;source:Uint8Array;target:Uint8Array|null;
@@ -13,7 +13,7 @@ export type FillCapture=Readonly<{
 }>;
 
 export function installFillPanel(host:HTMLElement,api:{
-  drawing:()=>BrushSurface|null;color:()=>string;references:()=>readonly {id:string;name:string}[];
+  drawing:()=>BrushSurface|null;color:()=>string;references:()=>readonly {id:string;name:string;vector:boolean}[];
   capture:(reference:Reference,destination:Destination,layerId:string,needTarget:boolean)=>Promise<FillCapture>;
 }){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
@@ -45,7 +45,7 @@ export function installFillPanel(host:HTMLElement,api:{
     return control;
   };
   const method=select('塗る範囲',[['color','同じ色'],['line','線で囲まれた領域'],['lasso','手描きで囲んだ範囲']]);
-  const reference=select('参照する絵',[['active','選んだレイヤー'],['merged','見えている絵の全体'],['layer','指定するレイヤー']]);
+  const reference=select('参照する絵',[['active','選んだレイヤー'],['merged','見えている絵の全体'],['layer','指定するレイヤー'],['vector','ベクター線画']]);
   const referenceLayer=select('参照するレイヤー',[]);
   const destination=select('塗る場所',[['active','選んだレイヤー'],['new','新しいレイヤー']]);
   const tolerance=number('色の許容範囲・線の濃さ（%）',15,100);
@@ -73,9 +73,9 @@ export function installFillPanel(host:HTMLElement,api:{
   }
   function updateReferenceOptions(){
     const before=referenceLayer.value;
-    referenceLayer.replaceChildren(...api.references().map(({id,name})=>new Option(name,id)));
+    referenceLayer.replaceChildren(...api.references().filter(item=>reference.value!=='vector'||item.vector).map(({id,name})=>new Option(name,id)));
     if([...referenceLayer.options].some(option=>option.value===before))referenceLayer.value=before;
-    referenceLayer.disabled=reference.value!=='layer';
+    referenceLayer.disabled=reference.value!=='layer'&&reference.value!=='vector';
   }
   const read=(needTarget:boolean)=>api.capture(reference.value as Reference,destination.value as Destination,referenceLayer.value,needTarget);
   function paintGraph(){
@@ -145,7 +145,7 @@ export function installFillPanel(host:HTMLElement,api:{
     await analyze();
   });
   button('キャンバス操作をやめる',()=>{stopGesture();output.textContent='操作を取り消しました。';});
-  reference.onchange=updateReferenceOptions;
+  reference.onchange=()=>{if(reference.value==='vector')method.value='line';updateReferenceOptions();};
   compare.onchange=paintGraph;compare.disabled=true;
   panel.ontoggle=()=>{if(panel.open)updateReferenceOptions();else stopGesture();};
   panel.append(summary,options,actions,preview,output);host.append(panel);

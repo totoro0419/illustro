@@ -2,12 +2,12 @@
  * C05 personal offline asset store. It never writes raster artwork or history.
  * Data are content blobs in IndexedDB; metadata edits preserve immutable identity.
  */
-export const ASSET_KINDS=['brush','tip','paper','texture','pattern','gradient','palette','macro','workspace','reference','shape'] as const;
+export const ASSET_KINDS=['brush','tip','paper','texture','pattern','gradient','palette','macro','workspace','reference','shape','font'] as const;
 export type AssetKind=(typeof ASSET_KINDS)[number];
 export const ASSET_LABELS:Readonly<Record<AssetKind,string>>={
   brush:'ブラシ',tip:'ブラシ先端',paper:'紙',texture:'質感',pattern:'模様',
   gradient:'グラデーション',palette:'色セット',macro:'自動操作',workspace:'作業場',
-  reference:'参考画像',shape:'図形'
+  reference:'参考画像',shape:'図形',font:'フォント'
 };
 export type AssetEntry=Readonly<{
   id:string;kind:AssetKind;name:string;folder:string;tags:readonly string[];

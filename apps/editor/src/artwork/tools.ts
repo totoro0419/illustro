@@ -4,6 +4,7 @@ import type {BrushSurface} from '../brushSurface';
 export type ArtworkContext=Readonly<{
   width:number;height:number;color:string;drawing:BrushSurface;
   selected:Readonly<{id:LayerId;name:string;content:EditableArtwork|null}>;
+  paths:readonly Readonly<{id:LayerId;name:string;content:EditableArtwork}>[];
 }>;
 export type ArtworkActions=Readonly<{
   context:()=>ArtworkContext|null;
