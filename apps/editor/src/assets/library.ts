@@ -12,7 +12,7 @@ export const ASSET_LABELS:Readonly<Record<AssetKind,string>>={
 export type AssetEntry=Readonly<{
   id:string;kind:AssetKind;name:string;folder:string;tags:readonly string[];
   favorite:boolean;hidden:boolean;deleted:boolean;
-  version:number;createdAt:number;updatedAt:number;lastUsedAt:number|null;
+  version:number;parentId?:string;createdAt:number;updatedAt:number;lastUsedAt:number|null;
   mime:string;bytes:number;license:string;origin:string;notes:string;
   data:Blob;
 }>;
@@ -65,7 +65,7 @@ export async function getAsset(assetId:string):Promise<AssetEntry|null>{
 }
 export async function addAsset(spec:Readonly<{
   kind:AssetKind;name:string;data:Blob;folder?:string;tags?:readonly string[];
-  license?:string;origin?:string;notes?:string;id?:string;
+  license?:string;origin?:string;notes?:string;id?:string;parentId?:string;version?:number;
 }>):Promise<AssetInfo>{
   if(!ASSET_KINDS.includes(spec.kind)||!spec.name.trim())throw Error('素材の種類と名前が必要です。');
   if(spec.data.size<1||spec.data.size>MAX_SINGLE)throw Error('素材は1件32MB以下にしてください。');
@@ -75,7 +75,8 @@ export async function addAsset(spec:Readonly<{
   const entry:AssetEntry={
     id:key,kind:spec.kind,name,folder:clean(spec.folder??'',80),
     tags:normalTags(spec.tags??[]),favorite:false,hidden:false,deleted:false,
-    version:1,createdAt:now,updatedAt:now,lastUsedAt:null,mime:spec.data.type||'application/octet-stream',
+    version:spec.version&&Number.isSafeInteger(spec.version)&&spec.version>0?spec.version:1,
+    ...(spec.parentId?{parentId:spec.parentId}:{}),createdAt:now,updatedAt:now,lastUsedAt:null,mime:spec.data.type||'application/octet-stream',
     bytes:spec.data.size,license:clean(spec.license??'',200),origin:clean(spec.origin??'',600),
     notes:clean(spec.notes??'',1200),data:spec.data
   };
@@ -86,7 +87,7 @@ export async function addAsset(spec:Readonly<{
     };
   });
   const check=await getAsset(key);
-  if(!check||check.bytes!==entry.bytes||check.version!==1)throw Error('保存した素材を読み戻せませんでした。');
+  if(!check||check.bytes!==entry.bytes||check.version!==entry.version)throw Error('保存した素材を読み戻せませんでした。');
   return assetMetadata(check);
 }
 export async function updateAsset(assetId:string,change:Readonly<{
@@ -118,20 +119,24 @@ export async function updateAsset(assetId:string,change:Readonly<{
   const result=await getAsset(assetId);if(!result)throw Error('素材の更新内容を読み戻せませんでした。');
   return assetMetadata(result);
 }
-export async function replaceAssetData(assetId:string,data:Blob,expectedVersion:number):Promise<AssetInfo>{
+/** New versions get a separate stable ID so old artwork dependencies stay intact. */
+export async function createAssetVersion(assetId:string,data:Blob):Promise<AssetInfo>{
+  const prior=await getAsset(assetId);
+  if(!prior||prior.deleted)throw Error('更新元の素材が見つかりません。');
   if(data.size<1||data.size>MAX_SINGLE)throw Error('素材は1件32MB以下にしてください。');
-  await transact<void>('readwrite',(store,done)=>{
-    const request=store.get(assetId);
-    request.onsuccess=()=>{
-      const prior=request.result as AssetEntry|undefined;
-      if(!prior||prior.deleted)throw Error('素材がありません。');
-      if(prior.version!==expectedVersion)throw Error('ほかの画面で素材が更新されました。最新の一覧を開いてください。');
-      store.put({...prior,data,mime:data.type||prior.mime,bytes:data.size,version:prior.version+1,updatedAt:Date.now()});
-      done(undefined);
-    };
+  return addAsset({
+    kind:prior.kind,name:prior.name,data,folder:prior.folder,tags:prior.tags,
+    license:prior.license,origin:prior.origin,notes:prior.notes,
+    parentId:prior.id,version:prior.version+1,
   });
-  const result=await getAsset(assetId);if(!result)throw Error('更新後の素材が見つかりません。');
-  return assetMetadata(result);
+}
+export async function duplicateAsset(assetId:string):Promise<AssetInfo>{
+  const prior=await getAsset(assetId);
+  if(!prior||prior.deleted)throw Error('複製元の素材が見つかりません。');
+  return addAsset({
+    kind:prior.kind,name:prior.name+' のコピー',data:prior.data,
+    folder:prior.folder,tags:prior.tags,license:prior.license,origin:prior.origin,notes:prior.notes
+  });
 }
 export async function markAssetUsed(assetId:string):Promise<void>{
   await transact<void>('readwrite',(store,done)=>{
