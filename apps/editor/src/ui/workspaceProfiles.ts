@@ -1,8 +1,9 @@
 import type {FloatPlacement,FloatingPanelService} from './floatingPanels';
+import type {ToolLayout,ToolbarSettingsService} from './toolbarSettings';
 /** C04 UI-002 / UI-006: personal layout state only; artwork undo is untouched. */
 type WorkspaceLayout=Readonly<{
   width:number;leftHanded:boolean;compact:boolean;
-  boxes:readonly string[];expanded:Readonly<Record<string,boolean>>;floats:readonly FloatPlacement[];
+  boxes:readonly string[];expanded:Readonly<Record<string,boolean>>;floats:readonly FloatPlacement[];tools:ToolLayout;
 }>;
 type Profile=Readonly<{name:string;layout:WorkspaceLayout}>;
 type ProfileFile=Readonly<{schema:'illustro.workspace.profiles';version:1;profiles:readonly Profile[]}>;
@@ -27,7 +28,10 @@ function normalLayout(value:unknown,existing:readonly string[]):WorkspaceLayout{
   }
   return {width:Math.min(440,Math.max(288,Math.round(value.width))),
     leftHanded:value.leftHanded,compact:value.compact,boxes,expanded,
-    floats:Array.isArray(value.floats)?value.floats.filter((p):p is FloatPlacement=>!!p&&typeof p==='object'&&typeof p.id==='string'&&['x','y','width','height'].every(k=>Number.isFinite(p[k]))):[]};
+    floats:Array.isArray(value.floats)?value.floats.filter((p):p is FloatPlacement=>!!p&&typeof p==='object'&&typeof p.id==='string'&&['x','y','width','height'].every(k=>Number.isFinite(p[k]))):[],
+    tools:own(value.tools)&&Array.isArray(value.tools.order)&&Array.isArray(value.tools.hidden)?
+      {order:value.tools.order.filter((id):id is string=>typeof id==='string'),
+       hidden:value.tools.hidden.filter((id):id is string=>typeof id==='string')}:{order:[],hidden:[]}};
 }
 function parseFile(value:unknown,existing:readonly string[]):Profile[]{
   if(!own(value)||value.schema!=='illustro.workspace.profiles'||value.version!==1||
@@ -47,7 +51,7 @@ function download(name:string,text:string){
   window.setTimeout(()=>URL.revokeObjectURL(url),0);
 }
 
-export function installWorkspaceProfiles(floating:FloatingPanelService){
+export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:ToolbarSettingsService){
   const panel=document.getElementById('workspaceBoxBody');
   const stack=document.getElementById('boxStack');
   const width=document.getElementById('width') as HTMLInputElement|null;
@@ -102,7 +106,7 @@ export function installWorkspaceProfiles(floating:FloatingPanelService){
   function snapshot():WorkspaceLayout{
     const expanded:Record<string,boolean>={};
     for(const box of knownBoxes())expanded[box.dataset.boxId!]=box.querySelector<HTMLButtonElement>('.box-toggle')?.getAttribute('aria-expanded')==='true';
-    return {width:Number(width.value),leftHanded:handed.checked,compact:density.checked,boxes:boxIds(),expanded,floats:floating.snapshot()};
+    return {width:Number(width.value),leftHanded:handed.checked,compact:density.checked,boxes:boxIds(),expanded,floats:floating.snapshot(),tools:toolbar.snapshot()};
   }
   function setHanded(left:boolean){
     document.body.classList.toggle('workspace-left-handed',left);
@@ -115,7 +119,7 @@ export function installWorkspaceProfiles(floating:FloatingPanelService){
   function applyLayout(layout:WorkspaceLayout){
     setHanded(layout.leftHanded);setDensity(layout.compact);
     floating.reset();rearrange(layout.boxes);
-    floating.restore(layout.floats);
+    floating.restore(layout.floats);toolbar.restore(layout.tools);
     width.value=String(layout.width);width.dispatchEvent(new Event('input',{bubbles:true}));
     for(const box of knownBoxes()){
       const desired=layout.expanded[box.dataset.boxId!];
@@ -201,7 +205,7 @@ export function installWorkspaceProfiles(floating:FloatingPanelService){
   };
   reset.onclick=()=>{
     if(!window.confirm('作業欄の表示と並び順を初期状態に戻しますか？ 作品の内容は変更されません。'))return;
-    setHanded(false);setDensity(false);floating.reset();
+    setHanded(false);setDensity(false);floating.reset();toolbar.reset();
     const original=[...stack.querySelectorAll<HTMLElement>('.workspace-box[data-box-id]')]
       .sort((a,b)=>DEFAULT_ORDER.indexOf(a.dataset.boxId!)-DEFAULT_ORDER.indexOf(b.dataset.boxId!));
     for(const box of original)stack.append(box);
