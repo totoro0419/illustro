@@ -26,7 +26,7 @@ function retireOldCanvases(items){
 export async function publishDocumentGroupsAtomically(presentation,groups,isCurrent=()=>true){
   if(!Array.isArray(groups))throw Error('Invalid document display groups');
   const staged=[],seen=new Set;
-  let consumed=0;
+  let consumed=0,stagingBatchStarted=performance.now(),yieldCount=0;
   try{
     for(let i=0;i<groups.length;i++){
       const data=groups[i];
@@ -50,8 +50,17 @@ export async function publishDocumentGroupsAtomically(presentation,groups,isCurr
       context.transferFromImageBitmap(data.bitmap);
       consumed=i+1;
       staged.push({key:data.key,w:data.w,h:data.h,element,context});
-      // This yield never exposes new pixels: every element above is detached.
-      if(i+1<groups.length)await yieldInput();
+      // Yield only when the current task actually consumes a useful amount
+      // of input time, or after eight uploads. A timer after EVERY 512px
+      // group added dozens of task-turn delays to large Undo/Redo operations.
+      // These canvases are detached; yielding here never reveals half a frame.
+      if(i+1<groups.length&&(performance.now()-stagingBatchStarted>=7||(i+1)%8===0)){
+        yieldCount++;await yieldInput();stagingBatchStarted=performance.now();
+        if(!isCurrent()){
+          retireOldCanvases(staged.map(item=>item.element));
+          return false;
+        }
+      }
     }
     // A history packet may become obsolete while the input thread yields.
     // Discard its prepared images rather than revealing an old revision.
@@ -69,6 +78,7 @@ export async function publishDocumentGroupsAtomically(presentation,groups,isCurr
       presentation.tiles.set(item.key,{element:item.element,context:item.context});
     }
     presentation.peakBytes=Math.max(presentation.peakBytes,presentation.bytes);
+    presentation.lastAtomicDisplay={groups:staged.length,yields:yieldCount};
     retireOldCanvases(oldCanvases);
     return true;
   }catch(error){
