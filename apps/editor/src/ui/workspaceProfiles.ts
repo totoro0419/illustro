@@ -72,6 +72,14 @@ export function installWorkspaceProfiles(floating:FloatingPanelService){
   const status=document.createElement('output');status.setAttribute('role','status');
   const row=document.createElement('div');row.className='c04-workspace-actions';
   row.append(save,apply,remove,reset,exportButton,importButton);
+  const preview=document.createElement('dialog');preview.className='c04-layout-preview';
+  const previewTitle=document.createElement('h3');previewTitle.textContent='この作業場を使いますか？';
+  const previewText=document.createElement('p');previewText.textContent='背景の配置を確認してください。キャンセルすると以前の配置へ戻ります。';
+  const previewAccept=document.createElement('button');previewAccept.type='button';previewAccept.textContent='この配置を使う';
+  const previewReject=document.createElement('button');previewReject.type='button';previewReject.textContent='元の配置に戻す';
+  const previewActions=document.createElement('div');previewActions.className='c04-workspace-actions';
+  previewActions.append(previewAccept,previewReject);preview.append(previewTitle,previewText,previewActions);
+  document.body.append(preview);
   settings.append(title,name,select,row,handedLabel,densityLabel,file,status);
   panel.append(settings);
   const orderSaved=()=>{
@@ -149,9 +157,21 @@ export function installWorkspaceProfiles(floating:FloatingPanelService){
     if(found>=0)profiles[found]=profile;else profiles.push(profile);
     persist();choices(label);status.textContent='現在の配置を「'+label+'」として保存しました。';
   };
+  let rollback:WorkspaceLayout|null=null;
+  const revert=()=>{if(rollback)applyLayout(rollback);rollback=null;};
+  previewAccept.onclick=()=>{rollback=null;preview.close();status.textContent='この作業場を使います。';};
+  previewReject.onclick=()=>{revert();preview.close();status.textContent='元の配置に戻しました。';};
+  preview.addEventListener('cancel',revert);
+  function tryLayout(layout:WorkspaceLayout,label:string){
+    if(preview.open)return;
+    rollback=snapshot();applyLayout(layout);
+    previewTitle.textContent='「'+label+'」の配置を使いますか？';
+    preview.showModal();
+  }
   apply.onclick=()=>{
     const profile=profiles.find(p=>p.name===select.value);if(!profile)return;
-    applyLayout(profile.layout);name.value=profile.name;status.textContent='「'+profile.name+'」の配置に戻しました。';
+    tryLayout(profile.layout,profile.name);
+    name.value=profile.name;
   };
   remove.onclick=()=>{
     const label=select.value,profile=profiles.find(p=>p.name===label);if(!profile)return;
