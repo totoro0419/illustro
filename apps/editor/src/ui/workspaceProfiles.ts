@@ -80,7 +80,14 @@ export function installWorkspaceProfiles(floating:FloatingPanelService){
   const previewActions=document.createElement('div');previewActions.className='c04-workspace-actions';
   previewActions.append(previewAccept,previewReject);preview.append(previewTitle,previewText,previewActions);
   document.body.append(preview);
-  settings.append(title,name,select,row,handedLabel,densityLabel,file,status);
+  const presetLabel=document.createElement('label');presetLabel.textContent='標準の配置';
+  const presetSelect=document.createElement('select');presetSelect.setAttribute('aria-label','用途に合わせた標準の配置');
+  for(const [key,label] of [
+    ['drawing','線画'],['painting','塗り'],['coloring','色塗り'],['photo','写真・資料'],
+    ['pixel','ドット絵'],['minimal','最小限']
+  ] as const)presetSelect.add(new Option(label,key));
+  const presetApply=document.createElement('button');presetApply.type='button';presetApply.textContent='標準の配置を試す';
+  presetLabel.append(presetSelect);settings.append(title,presetLabel,presetApply,name,select,row,handedLabel,densityLabel,file,status);
   panel.append(settings);
   const orderSaved=()=>{
     try{const order=JSON.parse(read(ORDER_KEY)||'null');return Array.isArray(order)?order.filter((v):v is string=>typeof v==='string'):[]}catch{return [];}
@@ -172,6 +179,20 @@ export function installWorkspaceProfiles(floating:FloatingPanelService){
     const profile=profiles.find(p=>p.name===select.value);if(!profile)return;
     tryLayout(profile.layout,profile.name);
     name.value=profile.name;
+  };
+  presetApply.onclick=()=>{
+    const choices:Readonly<Record<string,readonly string[]>>={
+      drawing:['right.layers','right.brush','right.navigator'],
+      painting:['right.layers','right.brush','right.color','right.reference'],
+      coloring:['right.color','right.layers','right.brush','right.navigator'],
+      photo:['right.reference','right.assets','right.effects','right.layers'],
+      pixel:['right.color','right.layers','right.navigator'],
+      minimal:['right.brush'],
+    };
+    const original=snapshot(),open=choices[presetSelect.value]??[];
+    const expanded=Object.fromEntries(boxIds().map(id=>[id,open.includes(id)]));
+    const layout:WorkspaceLayout={...original,expanded,compact:presetSelect.value==='minimal',floats:[]};
+    tryLayout(layout,presetSelect.selectedOptions[0]?.textContent??'標準');
   };
   remove.onclick=()=>{
     const label=select.value,profile=profiles.find(p=>p.name===label);if(!profile)return;
