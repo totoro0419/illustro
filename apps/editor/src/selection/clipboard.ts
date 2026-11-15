@@ -108,6 +108,42 @@ export class ArtworkClipboard {
     controller.selectLayer(id);
     return {revision:document.head,layerId:id,x,y};
   }
+  async importImage(source:Blob,name='画像'):Promise<ClipboardItem>{
+    if(source.size>64*1024*1024||source.size<1)throw Error('画像ファイルのサイズは64MB以下にしてください。');
+    const bitmap=await createImageBitmap(source);
+    try{
+      if(bitmap.width<1||bitmap.height<1||bitmap.width>8192||bitmap.height>8192||
+        bitmap.width*bitmap.height>16_777_216)throw Error('画像が大きすぎます。最大1677万画素まで対応します。');
+      const canvas=document.createElement('canvas');
+      canvas.width=bitmap.width;canvas.height=bitmap.height;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      if(!ctx)throw Error('読み込み用の画像画面を作成できません。');
+      ctx.drawImage(bitmap,0,0);
+      const data=ctx.getImageData(0,0,bitmap.width,bitmap.height);
+      const item:ClipboardItem={
+        sourceDocumentId:'external-image',sourceColorProfile:'srgb',
+        sourceName:name.slice(0,100),originX:0,originY:0,
+        width:bitmap.width,height:bitmap.height,selected:false,merged:true,
+        pixels:data.data.slice()
+      };
+      this.item=item;return item;
+    }finally{bitmap.close();}
+  }
+  async writeSystemClipboard():Promise<void>{
+    const blob=await this.makePng();
+    if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')throw Error('このブラウザーは画像のコピーに対応していません。PNGを書き出してください。');
+    await navigator.clipboard.write([new globalThis.ClipboardItem({'image/png':blob})]);
+  }
+  async readSystemClipboard():Promise<ClipboardItem>{
+    if(!navigator.clipboard?.read)throw Error('端末のクリップボードを読めません。画像ファイルから読み込んでください。');
+    const values=await navigator.clipboard.read();
+    for(const clip of values){
+      const supported=clip.types.find(type=>['image/png','image/webp','image/jpeg'].includes(type));
+      if(!supported)continue;
+      return this.importImage(await clip.getType(supported),'端末からコピーした画像');
+    }
+    throw Error('端末のクリップボードに対応画像がありません。');
+  }
   async makePng():Promise<Blob>{
     const item=this.item;
     if(!item)throw Error('コピーした内容がありません。');
