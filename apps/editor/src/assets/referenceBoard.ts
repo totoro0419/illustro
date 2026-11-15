@@ -65,7 +65,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   const canvasLayer=document.createElement('div');canvasLayer.id='c05ReferenceLayer';canvasLayer.className='c05-reference-layer';
   document.body.append(canvasLayer);
   let currentDoc:string|null=null,board:BoardSnapshot|null=null;
-  let saving:Promise<void>=Promise.resolve(),transition=0;
+  let saving:Promise<void>=Promise.resolve(),transition=0,renderEpoch=0;
   let back:BoardSnapshot[]=[],forward:BoardSnapshot[]=[];
   const urls=new Map<string,string>();
   const error=(reason:unknown)=>status.textContent=reason instanceof Error?reason.message:String(reason);
@@ -261,16 +261,19 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     }
   }
   async function render(){
-    const snapshotBoard=board;if(!snapshotBoard)return;
+    const epoch=++renderEpoch,snapshotBoard=board;
+    if(!snapshotBoard)return;
     const update=transition;
     // Rebuild only as a user requests a board operation, not per stroke.
     canvasLayer.replaceChildren();
+    const needed=new Set(snapshotBoard.items.map(i=>i.assetId));
+    for(const [id,url] of urls)if(!needed.has(id)){URL.revokeObjectURL(url);urls.delete(id);}
     canvasLayer.hidden=snapshotBoard.hidden;
     for(const item of snapshotBoard.items){
-      if(update!==transition||board?.documentId!==snapshotBoard.documentId)return;
+      if(epoch!==renderEpoch||update!==transition||board?.documentId!==snapshotBoard.documentId)return;
       if(item.hidden)continue;
       const asset=await getAsset(item.assetId);
-      if(update!==transition||board?.documentId!==snapshotBoard.documentId)return;
+      if(epoch!==renderEpoch||update!==transition||board?.documentId!==snapshotBoard.documentId)return;
       const frame=document.createElement('section');frame.className='c05-reference-frame';
       frame.style.left=item.x+'px';frame.style.top=item.y+'px';
       frame.style.width=item.width+'px';frame.style.height=item.height+'px';
