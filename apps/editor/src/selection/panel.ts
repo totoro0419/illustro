@@ -14,12 +14,14 @@ export type SelectionWorkbench=Readonly<{
   updateView:()=>void;
   applyRectangle:(rect:Readonly<{x:number;y:number;width:number;height:number}>)=>void;
   clear:()=>void;
+  shiftActive:(dx:number,dy:number)=>void;
 }>;
 type SelectionCallbacks=Readonly<{
   getSurface:()=>BrushSurface|null;
   getDocument:()=>{id:string;width:number;height:number}|null;
   onMaskChanged:(mask:MaskData|null)=>void;
   capturePixels:(source:'layer'|'merged')=>Promise<Uint8ClampedArray>;
+  moveContent:(dx:number,dy:number)=>Promise<void>;
 }>;
 type Tool='rectangle'|'ellipse'|'lasso'|'polygon'|'autoColor'|'autoBrightness';
 const asButton=(label:string,fn:()=>void)=>{
@@ -28,7 +30,7 @@ const asButton=(label:string,fn:()=>void)=>{
 };
 export function installSelectionWorkbench(callbacks:SelectionCallbacks):SelectionWorkbench{
   const host=document.getElementById('documentBoxBody');
-  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{}};
+  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{},shiftActive:()=>{}};
   const panel=document.createElement('details');panel.className='c06-selection-panel';
   const summary=document.createElement('summary');summary.textContent='選択範囲を編集';
   const intro=document.createElement('p');
@@ -39,6 +41,15 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const autoTools=document.createElement('div');autoTools.className='c06-auto-selection';
   const saveArea=document.createElement('div');saveArea.className='c06-selection-save';
   const status=document.createElement('output');status.setAttribute('role','status');
+  const showSelection=document.createElement('input');showSelection.type='checkbox';showSelection.checked=true;
+  const showSelectionLabel=document.createElement('label');showSelectionLabel.className='c06-visibility';
+  showSelectionLabel.append(showSelection,document.createTextNode('選択の境界を表示する（隠しても選択は有効）'));
+  showSelection.onchange=()=>{
+    callbacks.getSurface()?.setSelectionVisible(showSelection.checked);
+    visual?.setVisible(showSelection.checked);
+    preview.hidden=!showSelection.checked;
+    status.textContent=showSelection.checked?'選択範囲の表示を戻しました。':'選択範囲は有効なまま、境界を隠しました。';
+  };
   const mode=document.createElement('select');mode.setAttribute('aria-label','選択範囲を組み合わせる方法');
   for(const [key,label] of [
     ['replace','新しい範囲に置き換える'],['add','範囲を足す'],
@@ -208,6 +219,25 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!Number.isFinite(Number(dx))||!Number.isFinite(Number(dy)))return;
     publish(translateSelection(active,Number(dx),Number(dy)));
   });
+  const movePixels=asButton('選んだ絵そのものを移動',()=>void moveSelectedArtwork());
+  const moveSelectedArtwork=async()=>{
+    if(!active)return;
+    const x=window.prompt('絵を横に何px移動しますか？（負の数も使用可）','0');
+    if(x===null)return;
+    const y=window.prompt('絵を縦に何px移動しますか？（負の数も使用可）','0');
+    if(y===null)return;
+    const dx=Number(x),dy=Number(y);
+    if(!Number.isInteger(dx)||!Number.isInteger(dy)||Math.abs(dx)>16384||Math.abs(dy)>16384||(dx===0&&dy===0)){
+      status.textContent='移動距離を正しく入力してください。';return;
+    }
+    if(!window.confirm('選択した絵を移動します。選択枠だけの移動とは異なり、作品の画素も変わります。実行しますか？'))return;
+    status.textContent='絵を移動しています。';
+    try{
+      await callbacks.moveContent(dx,dy);
+      if(active)publish(translateSelection(active,dx,dy));
+      status.textContent='絵を移動しました。元に戻すで取り消せます。';
+    }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+  };
   const feather=asButton('選択の縁をぼかす',()=>{
     if(!active)return;
     const value=window.prompt('ぼかし幅 0〜32px','3');if(value===null)return;
@@ -245,7 +275,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     history.push(active);
     publish(future.pop()??null,false);
   });
-  actions.append(all,clear,reselect,invert,shift,grow,shrink,feather,border,undo,redo);
+  actions.append(all,clear,reselect,invert,shift,movePixels,grow,shrink,feather,border,undo,redo);
   const named=document.createElement('select');named.setAttribute('aria-label','保存した選択範囲');
   const save=asButton('名前を付けて保存',()=>void saveCurrent());
   const load=asButton('保存した範囲を使う',()=>void loadCurrent());
@@ -280,7 +310,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!window.confirm('保存した選択範囲を削除しますか？ 現在の選択は維持します。'))return;
     await deleteNamedSelection(named.value);await updateNamed();
   }
-  panel.append(summary,intro,modes,tools,autoTools,actions,saveArea,status);host.append(panel);
+  panel.append(summary,intro,modes,showSelectionLabel,tools,autoTools,actions,saveArea,status);host.append(panel);
   panel.addEventListener('toggle',()=>{if(panel.open)void updateNamed();});
   function refresh(){
     for(const [name,button] of shapeButtons){button.setAttribute('aria-pressed',String(tool===name));}
@@ -289,7 +319,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     undoPoint.disabled=tool!=='polygon'||points.length===0;
     finishPolygon.disabled=tool!=='polygon'||points.length<3;
     const enabled=!!active;
-    for(const button of [clear,invert,shift,grow,shrink,feather,border])button.disabled=!enabled;
+    for(const button of [clear,invert,shift,movePixels,grow,shrink,feather,border])button.disabled=!enabled;
     reselect.disabled=!lastSelection;undo.disabled=!history.length;redo.disabled=!future.length;
     save.disabled=!enabled;
   }
@@ -345,6 +375,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     updateView:()=>visual?.updateView(),
     refresh,
     clear:()=>{job++;publish(null);},
+    shiftActive:(dx,dy)=>{if(active)publish(translateSelection(active,dx,dy));},
     applyRectangle:rect=>{
       const doc=source();if(!doc)return;
       publish(combineSelection(active,
