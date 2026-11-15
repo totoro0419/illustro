@@ -1,4 +1,5 @@
 import type {CorePersistenceSnapshotV1} from '@illustro/core';
+import type {SelectionRect} from '../strokeSelection';
 
 /** Catalog publication is one IndexedDB transaction. Its journal dependencies are
  * written and read-verified first by the M05 worker. The catalog is not a scan
@@ -6,7 +7,7 @@ import type {CorePersistenceSnapshotV1} from '@illustro/core';
 export type WorkEntry=Readonly<{
   documentId:string;writerEpochId:string;revisionId:string;protectedThrough:string;
   name:string;width:number;height:number;createdAt:number;updatedAt:number;openedAt:number;
-  selectedLayerId:string;thumbnail:Blob|null;thumbnailRevision:string|null;
+  selectedLayerId:string;selection?:SelectionRect|null;thumbnail:Blob|null;thumbnailRevision:string|null;
   /** Layer order and styles are small metadata for regenerating thumbnails without opening an editor. */
   previewLayers?:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white'}>[];
   previous:Readonly<{writerEpochId:string;revisionId:string;protectedThrough:string}>|null;
