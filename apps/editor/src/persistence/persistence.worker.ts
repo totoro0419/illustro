@@ -57,7 +57,8 @@ async function handle(message:RequestMessage){
       catch(error){if(!entry.previous)throw error;fallback=true;const previous=entry.previous;
         projectionSession={documentId:entry.documentId,writerEpochId:previous.writerEpochId,path:sessionPath(entry.documentId,previous.writerEpochId)};
         loaded=await loadRecovery(store,projectionSession,previous.revisionId,previous.protectedThrough);}
-      const snapshot=namedSnapshot(loaded.snapshot,entry.name);
+      const currentName=loaded.snapshot.revisions.find(revision=>revision.id===loaded.snapshot.snapshotRevisionId)?.root.name;
+      const snapshot=currentName===entry.name||fallback?loaded.snapshot:namedSnapshot(loaded.snapshot,entry.name);
       // Main thread restores and validates this exact snapshot once. Avoid a duplicate full restoration in the worker.
       const projectionCache=await loadProjectionCheckpointRaw(store,projectionSession,new Set(snapshot.revisions.map(r=>r.id)));
       const transfers:Transferable[]=loaded.blocks.map(block=>block.bytes.buffer as ArrayBuffer);
@@ -126,13 +127,13 @@ async function handle(message:RequestMessage){
       else await putVerified(store,finalPath,bytes);
       let proof=protectionProofs.get(session.path);if(!proof){proof=new ContiguousProtection<VerifiedHead>(seq===1n?0n:await scanProtected(store,session));protectionProofs.set(session.path,proof);}
       const root=packet.replacementRoot??libraryWork;proof.verified(seq,{revisionId:packet.revision.id,selectedLayerId:uuid(message.selectedLayerId,'selected layer'),width:root?.width??0,height:root?.height??0});const protectedThrough=proof.through;
-      if(proof.value){await writeHead(store,session,proof.value.revisionId);if(libraryWork)await publishCurrent({...proof.value,protectedThrough:protectedThrough.toString(),updatedAt:Date.now(),...(packet.revision.id===proof.value.revisionId?{previewLayers:parsePreviewLayers(message.previewLayers)}:{})});}
+      if(proof.value){await writeHead(store,session,proof.value.revisionId);if(libraryWork)await publishCurrent({...proof.value,protectedThrough:protectedThrough.toString(),updatedAt:Date.now(),...(packet.revision.id===proof.value.revisionId?{previewLayers:parsePreviewLayers(message.previewLayers),...(typeof message.name==='string'?{name:message.name}:{})}:{})});}
       await touchMeta(store,session);
       reply(message.id,true,{protectedThrough:protectedThrough.toString(),backend:store.mode,storage:await storageInfo()});break;
     }
     case 'set-head':{
       const session=requireSession(message),revisionId=uuid(message.revisionId,'revision id');await writeHead(store,session,revisionId);await touchMeta(store,session);
-      if(libraryWork)await publishCurrent({revisionId,selectedLayerId:typeof message.selectedLayerId==='string'?uuid(message.selectedLayerId,'selected layer'):libraryWork.selectedLayerId,width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,previewLayers:parsePreviewLayers(message.previewLayers),updatedAt:Date.now()});
+      if(libraryWork)await publishCurrent({revisionId,selectedLayerId:typeof message.selectedLayerId==='string'?uuid(message.selectedLayerId,'selected layer'):libraryWork.selectedLayerId,...(typeof message.name==='string'?{name:message.name}:{}),width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,previewLayers:parsePreviewLayers(message.previewLayers),updatedAt:Date.now()});
       reply(message.id,true,{backend:store.mode});break;
     }
     case 'flush':{

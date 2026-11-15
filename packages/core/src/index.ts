@@ -3,7 +3,7 @@ export {DocumentTransaction,type RasterSemanticMutation} from './transaction';
 export type {CommitReceipt} from './commit';
 export {cryptoIdFactory} from './ids';
 export type {BlockId,DocumentId,IdFactory,LayerId,OperationKey,RasterSurfaceId,ResourceId,RevisionId,TransactionId,WriterEpochId} from './ids';
-export {DocumentRoot,type LayerNode,type DocumentMetadata} from './model';
+export {DocumentRoot,type DocumentInfo,type LayerNode,type DocumentMetadata} from './model';
 export type {Revision,Command,SemanticOperation,CommitStamp,RevisionHistoryState} from './history';
 export type {OwnershipTransfer,RasterBlockDescriptor} from './raster/store';
 export type {PersistenceHandoff} from './recovery';

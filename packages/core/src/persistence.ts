@@ -1,20 +1,20 @@
 import type {BlockId,DocumentId,IdFactory,LayerId,OperationKey,RasterSurfaceId,ResourceId,RevisionId,TransactionId,WriterEpochId} from './ids';
 import type {Command,CommitStamp,Revision,RevisionHistoryState,SemanticOperation} from './history';
 import type {PersistenceHandoff} from './recovery';
-import {DocumentRoot,type LayerNode} from './model';
+import {DocumentRoot,validateDocumentInfo,type DocumentInfo,type LayerNode} from './model';
 import {PagedMap} from './pagedMap';
 import {RasterSurfaceManifest,parseTileKey,type DirtyTileHint,type RasterSampleEncoding,type RasterSurfaceDescriptor,type RasterTileValue,type RasterMutationRef,type TileKey} from './raster/surface';
 import type {CanonicalTileStore,RasterBlockDescriptor} from './raster/store';
 
 export const CORE_PERSISTENCE_SCHEMA_VERSION=1 as const;
 const UUID_V4=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','document.crop','document.canvas-resize','document.image-resize']);
+const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','document.crop','document.canvas-resize','document.image-resize','document.info']);
 const SAMPLE_ENCODINGS=new Set<RasterSampleEncoding>(['rgba.unorm8.v1','rgba.unorm16.v1','rgba.float32.v1']);
 const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES_PER_ROOT=2_000_000,MAX_OPERATIONS_PER_REVISION=100_000;
 
 export type PersistedRoot=Readonly<{
   documentId:string;width:number;height:number;name:string;colorProfileId:string;createdAt:number;modifiedAt:number;
-  rootLayerIds:readonly string[];layers:readonly PersistedLayer[];
+  rootLayerIds:readonly string[];layers:readonly PersistedLayer[];author?:string;description?:string;dpi?:number;
 }>;
 export type PersistedLayer=Readonly<{
   id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;baseColor?:'white';
@@ -88,7 +88,7 @@ function serializeRoot(root:DocumentRoot,blockIds:Set<BlockId>):PersistedRoot{
     const tiles=layer.surface.tiles.entries().map(([key,value])=>{if(value.baseBlockId)blockIds.add(value.baseBlockId);return Object.freeze({key,value});});
     if(tiles.length>MAX_TILES_PER_ROOT)throw new Error('too many raster tiles');layers.push(Object.freeze({id,kind:'raster' as const,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,...(layer.baseColor?{baseColor:layer.baseColor}:{}),
       surface:Object.freeze({descriptor:layer.surface.descriptor,tiles:Object.freeze(tiles)})}));}
-  return Object.freeze({documentId:root.documentId,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,createdAt:root.metadata.createdAt,modifiedAt:root.metadata.modifiedAt,
+  return Object.freeze({documentId:root.documentId,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,...root.metadata,
     rootLayerIds:Object.freeze([...root.rootLayerIds]),layers:Object.freeze(layers)});
 }
 
@@ -110,7 +110,12 @@ function parseRoot(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescripto
   if(!Array.isArray(r.layers)||r.layers.length===0||r.layers.length>MAX_LAYERS)throw new Error('invalid layers');const edit=PagedMap.empty<LayerId,LayerNode>().edit(),layerIds=new Set<LayerId>(),surfaceIds=new Set<RasterSurfaceId>();
   for(const item of r.layers){const layer=parseLayer(item,blocks);if(layerIds.has(layer.id))throw new Error('duplicate layer id');if(surfaceIds.has(layer.surface.descriptor.surfaceId))throw new Error('duplicate surface id');layerIds.add(layer.id);surfaceIds.add(layer.surface.descriptor.surfaceId);edit.set(layer.id,layer);}
   const rootLayerIds=uuidArray(r.rootLayerIds,'root layer') as LayerId[];if(rootLayerIds.length!==layerIds.size||new Set(rootLayerIds).size!==rootLayerIds.length)throw new Error('root layer order mismatch');for(const id of rootLayerIds)if(!layerIds.has(id))throw new Error('root layer missing');
-  return new DocumentRoot(documentId,width,height,name,colorProfileId,edit.commit(),rootLayerIds,{createdAt,modifiedAt});
+  const root=new DocumentRoot(documentId,width,height,name,colorProfileId,edit.commit(),rootLayerIds,{createdAt,modifiedAt});
+  if(r.author===undefined&&r.description===undefined&&r.dpi===undefined)return root;
+  const info=parseDocumentInfo({name,author:r.author??'',description:r.description??'',dpi:r.dpi??null});
+  const {author,description,dpi}=info;
+  return new DocumentRoot(documentId,width,height,name,colorProfileId,root.layers,rootLayerIds,
+    {createdAt,modifiedAt,...(author?{author}:{}),...(description?{description}:{}),...(dpi===null?{}:{dpi})});
 }
 function parseLayer(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescriptor>):LayerNode{
   const r=record(value,'layer'),id=uuid(r.id,'layer id') as LayerId;if(r.kind!=='raster')throw new Error('unsupported layer kind');const name=text(r.name,'layer name',1,4096);
@@ -187,6 +192,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
     if(operation.kind==='document.crop'||operation.kind==='document.canvas-resize'||operation.kind==='document.image-resize'){
       geometry=true;continue;
     }
+    if(operation.kind==='document.info')continue;
     const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
     if(operation.kind==='layer.metadata'||operation.kind==='layer.add-raster'){
       if(!layerStateIds.has(layerId)){layerStateIds.add(layerId);layerStates.push(Object.freeze({id:layer.id,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,surfaceDescriptor:layer.surface.descriptor}));}
@@ -263,10 +269,25 @@ function parseRecoveryPacket(value:unknown):CoreRecoveryPacketV1{
   return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff,revision:Object.freeze({id:resultRevisionId,parentIds:Object.freeze(revisionParentIds),transactionId,command,commitStamp:Object.freeze({writerEpochId,commitSequence}),committedAt}),modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds,tileChanges:Object.freeze(tileChanges),blocks:Object.freeze(packetBlocks),replacementRoot});
 }
 
+function parseDocumentInfo(value:unknown):DocumentInfo{
+  const info=record(value,'document information');
+  if(typeof info.name!=='string'||typeof info.author!=='string'||typeof info.description!=='string'||
+     (info.dpi!==null&&typeof info.dpi!=='number'))throw new Error('invalid document information');
+  return validateDocumentInfo({name:info.name,author:info.author,description:info.description,dpi:info.dpi});
+}
+
 function applyRootDelta(parent:PersistedRoot,packet:CoreRecoveryPacketV1):PersistedRoot{
   if(packet.replacementRoot){
     if(packet.replacementRoot.documentId!==parent.documentId)throw new Error('geometry recovery document identity mismatch');
     return packet.replacementRoot;
+  }
+  const infoOperation=packet.revision.command.operations.find(operation=>operation.kind==='document.info');
+  if(infoOperation){
+    if(packet.revision.command.operations.length!==1)throw new Error('invalid document information recovery transaction');
+    const {name,author,description,dpi}=parseDocumentInfo(infoOperation.parameters);
+    const {author:_author,description:_description,dpi:_dpi,...rest}=parent;
+    return Object.freeze({...rest,name,modifiedAt:packet.modifiedAt,...(author?{author}:{}),
+      ...(description?{description}:{}),...(dpi===null?{}:{dpi})});
   }
   const layers=parent.layers.map(layer=>({...layer,surface:{descriptor:layer.surface.descriptor,tiles:[...layer.surface.tiles]}})) as Array<{id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;surface:{descriptor:RasterSurfaceDescriptor;tiles:Array<{key:string;value:RasterTileValue}>}}>;
   for(const state of packet.layerStates){let layer=layers.find(x=>x.id===state.id);if(!layer){layer={id:state.id,kind:'raster',name:state.name,visible:state.visible,opacity:state.opacity,locked:state.locked,surface:{descriptor:state.surfaceDescriptor,tiles:[]}};layers.push(layer);}

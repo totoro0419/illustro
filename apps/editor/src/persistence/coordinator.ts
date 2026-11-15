@@ -15,7 +15,7 @@ export type PersistenceState=Readonly<{
   lastGood:boolean;previousGood:boolean;offline:boolean;
 }>;
 type PreviewLayer=Readonly<{surfaceId:string;visible:boolean;opacity:number}>;
-type Pending=Readonly<{selectedLayerId:LayerId;packet:CoreRecoveryPacketV1;blocks:readonly {id:string;bytes:Uint8Array}[];supportedAlgorithms:readonly string[];previewLayers:readonly PreviewLayer[]}>;
+type Pending=Readonly<{selectedLayerId:LayerId;name:string;packet:CoreRecoveryPacketV1;blocks:readonly {id:string;bytes:Uint8Array}[];supportedAlgorithms:readonly string[];previewLayers:readonly PreviewLayer[]}>;
 type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=>Promise<unknown>};
 
 export class PersistenceCoordinator{
@@ -41,11 +41,11 @@ export class PersistenceCoordinator{
   }
   noteCommit(document:CoreDocument,handoff:PersistenceHandoff){
     try{const packet=document.captureRecoveryPacket(handoff),blockMap=document.recoveryBlockPayloads(packet),blocks=[...blockMap].map(([id,bytes])=>({id,bytes})),algorithms=runtimeSupportedAlgorithms(packet);
-      this.queue.push(Object.freeze({selectedLayerId:this.controller?.selectedLayerId??document.root.rootLayerIds[0]!,packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms,previewLayers:previewLayersFor(document,handoff.resultRevisionId)}));this.patch({currentRevision:document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
+      this.queue.push(Object.freeze({selectedLayerId:this.controller?.selectedLayerId??document.root.rootLayerIds[0]!,name:document.revision(handoff.resultRevisionId).root.name,packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms,previewLayers:previewLayersFor(document,handoff.resultRevisionId)}));this.patch({currentRevision:document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
-    const sequence=++this.navigationSequence,revisionId=document.head;this.navigationPending++;this.patch({currentRevision:revisionId,protectionPending:true});void this.flushPrepared().then(()=>{if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;return this.request('set-head',{revisionId,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId,previewLayers:previewLayersFor(document,revisionId)});}).catch(error=>this.patch({storageError:message(error)})).finally(()=>{this.navigationPending--;this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});});
+    const sequence=++this.navigationSequence,revisionId=document.head;this.navigationPending++;this.patch({currentRevision:revisionId,protectionPending:true});void this.flushPrepared().then(()=>{if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;return this.request('set-head',{revisionId,name:document.root.name,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId,previewLayers:previewLayersFor(document,revisionId)});}).catch(error=>this.patch({storageError:message(error)})).finally(()=>{this.navigationPending--;this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});});
   }
   async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
   async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}
@@ -66,7 +66,7 @@ export class PersistenceCoordinator{
   async selectWorkLayer(selectedLayerId:LayerId){const controller=this.controller;await this.flushPrepared();if(controller!==this.controller||controller?.selectedLayerId!==selectedLayerId)return;await this.request('library-selection',{selectedLayerId});}
   async storeThumbnail(documentId:string,revisionId:string,thumbnail:Blob){await this.request('library-thumbnail',{documentId,revisionId,thumbnail});}
   async barrier(){await this.flushPrepared();await this.request('flush',{});if(this.stateValue.storageError)throw new Error(this.stateValue.storageError);}
-  async retry(){this.cancelIdle();await this.drain();if(this.queue.length)throw new Error(this.stateValue.storageError??'保存に失敗しました。');if(this.controller){const d=this.controller.document;await this.request('set-head',{revisionId:d.head,width:d.root.width,height:d.root.height,previewLayers:previewLayersFor(d,d.head)});}this.patch({storageError:null});}
+  async retry(){this.cancelIdle();await this.drain();if(this.queue.length)throw new Error(this.stateValue.storageError??'保存に失敗しました。');if(this.controller){const d=this.controller.document;await this.request('set-head',{revisionId:d.head,name:d.root.name,width:d.root.width,height:d.root.height,previewLayers:previewLayersFor(d,d.head)});}this.patch({storageError:null});}
   clearFileDestination(){this.fileHandle=null;this.externalFingerprint=null;}
   async listRecoveryCandidates():Promise<readonly Candidate[]>{const result=await this.request('list-recovery',{}) as any;this.applyStorage(result.storage);if(result.backend)this.patch({backend:String(result.backend)});return Object.freeze((Array.isArray(result.candidates)?result.candidates:[]) as Candidate[]);}
   async recover(candidate:Candidate){
@@ -81,20 +81,40 @@ export class PersistenceCoordinator{
     const sections=new Map<string,{descriptor:PortableManifestSection;bytes:Uint8Array}>();for(const item of raw.sections as {descriptor:PortableManifestSection;bytes:Uint8Array}[])sections.set(item.descriptor.id,item);
     const decoded:Object={manifest:raw.manifest,sections},opened=openDecodedPortableDocument(decoded as DecodedPortableFile),projectionCache=isProjectionCache(raw.projectionCache)?raw.projectionCache:undefined;this.patch({reloadDurationMs:performance.now()-started});return Object.freeze({...opened,...(projectionCache?{projectionCache}:{})});
   }
-  async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false){
-    if(this.stateValue.saving)throw new Error('保存中です。');this.patch({saving:true});const started=performance.now();
+  async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false,pending?:Promise<RevisionId>){
+    if(this.stateValue.saving)throw new Error('保存中です。');
+    const existingHandle=this.fileHandle,previousFingerprint=this.externalFingerprint,preserved=this.preserved;
+    const suggestedName=safeFileName(document.root.name)+'.illustro',started=performance.now();
+    this.patch({saving:true});
     try{
-      let handlePromise:Promise<unknown>|null=null;const w=window as AnyWindow;if(!this.fileHandle||forceSaveCopy){if(w.showSaveFilePicker)handlePromise=w.showSaveFilePicker({suggestedName:safeFileName(document.root.name)+'.illustro',types:[{description:'Illustro作品',accept:{'application/octet-stream':['.illustro']}}]});}
-      const saveRevision=document.head,captureStart=performance.now(),snapshot=document.capturePersistenceSnapshot(saveRevision),snapshotCaptureMs=performance.now()-captureStart,blockEntries=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes})),generationId=crypto.randomUUID(),createdAt=Date.now();
-      const transfer=blockEntries.map(x=>x.bytes.buffer as ArrayBuffer),raw=await this.request('encode-save',{snapshot,blocks:blockEntries,selectedLayerId,generationId,createdAt,preserved:this.preserved},transfer) as any,bytes=raw.bytes as Uint8Array;
-      let output:'picker'|'download';if(handlePromise){const handle=await handlePromise;const fingerprint=await this.writeExternal(handle,bytes,false);this.fileHandle=handle;this.externalFingerprint=fingerprint;output='picker';}
-      else if(this.fileHandle&&!forceSaveCopy){this.externalFingerprint=await this.writeExternal(this.fileHandle,bytes,true);output='picker';}
-      else{downloadBlob(bytes,safeFileName(document.root.name)+'.illustro');output='download';}
-      this.patch({currentRevision:document.head,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
+      const w=window as AnyWindow;
+      // Open the picker in the user's click, even when an accepted line is still finalizing.
+      const picker=(!existingHandle||forceSaveCopy)&&w.showSaveFilePicker
+        ? w.showSaveFilePicker({suggestedName,types:[{description:'Illustro作品',accept:{'application/octet-stream':['.illustro']}}]})
+          .then(handle=>({handle,error:null}),error=>({handle:null,error}))
+        : null;
+      const saveRevision=pending?await pending:document.head;
+      const captureStart=performance.now(),snapshot=document.capturePersistenceSnapshot(saveRevision),
+        snapshotCaptureMs=performance.now()-captureStart,blockEntries=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes})),
+        generationId=crypto.randomUUID(),createdAt=Date.now();
+      const destination=picker?await picker:null;
+      if(destination?.error)throw destination.error;
+      const transfer=blockEntries.map(x=>x.bytes.buffer as ArrayBuffer);
+      const raw=await this.request('encode-save',{snapshot,blocks:blockEntries,selectedLayerId,generationId,createdAt,preserved},transfer) as {bytes:Uint8Array};
+      const bytes=raw.bytes;
+      let output:'picker'|'download';
+      if(destination?.handle){
+        const same=existingHandle as {isSameEntry?:(other:unknown)=>Promise<boolean>}|null;
+        const reuse=existingHandle===destination.handle||await same?.isSameEntry?.(destination.handle)===true;
+        const fingerprint=await this.writeExternal(destination.handle,bytes,reuse?previousFingerprint:null);
+        this.fileHandle=destination.handle;this.externalFingerprint=fingerprint;output='picker';
+      }else if(existingHandle&&!forceSaveCopy){
+        this.externalFingerprint=await this.writeExternal(existingHandle,bytes,previousFingerprint);output='picker';
+      }else{downloadBlob(bytes,suggestedName);output='download';}
+      this.patch({lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
       return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId});
     }catch(error){this.patch({saving:false,saveDurationMs:performance.now()-started});throw error;}
   }
-  async saveCopy(document:CoreDocument,selectedLayerId:LayerId){return this.save(document,selectedLayerId,true);}
   async storeProjectionCheckpoint(cache:ProjectionCacheV1){
     if(!this.controller||this.controller.document.head!==cache.revisionId)return false;
     await this.flushPrepared();if(!this.controller||this.controller.document.head!==cache.revisionId)return false;
@@ -119,7 +139,7 @@ export class PersistenceCoordinator{
   private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
   private async drain(){
     if(this.activeDrain)return this.activeDrain;
-    const run=(async()=>{try{while(this.queue.length){const item=this.queue.shift()!,blocks=item.blocks.map(b=>({id:b.id,bytes:b.bytes.slice()})),transfers=blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{selectedLayerId:item.selectedLayerId,packet:item.packet,blocks,supportedAlgorithms:item.supportedAlgorithms,previewLayers:item.previewLayers},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
+    const run=(async()=>{try{while(this.queue.length){const item=this.queue.shift()!,blocks=item.blocks.map(b=>({id:b.id,bytes:b.bytes.slice()})),transfers=blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{selectedLayerId:item.selectedLayerId,name:item.name,packet:item.packet,blocks,supportedAlgorithms:item.supportedAlgorithms,previewLayers:item.previewLayers},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
       catch(error){this.queue.unshift(item);this.patch({storageError:message(error),protectionPending:true});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}})();
     this.activeDrain=run;try{await run;}finally{if(this.activeDrain===run)this.activeDrain=null;if(this.queue.length&&!this.stateValue.storageError)this.schedule();}
   }
@@ -130,10 +150,10 @@ export class PersistenceCoordinator{
     this.stateValue=Object.freeze(next);this.onChange(this.stateValue);
   }
   private applyStorage(value:unknown){if(!value||typeof value!=='object')return;const x=value as {persisted?:unknown;usage?:unknown;quota?:unknown};this.patch({storagePersisted:typeof x.persisted==='boolean'?x.persisted:null,storageUsage:typeof x.usage==='number'?x.usage:null,storageQuota:typeof x.quota==='number'?x.quota:null});}
-  private async writeExternal(handle:unknown,bytes:Uint8Array,checkConflict:boolean){
+  private async writeExternal(handle:unknown,bytes:Uint8Array,expectedFingerprint:string|null){
     type Writable={write:(b:Blob|BufferSource|string)=>Promise<void>;truncate?:(size:number)=>Promise<void>;close:()=>Promise<void>;abort?:()=>Promise<void>};
     const h=handle as {getFile:()=>Promise<File>;createWritable:(options?:{keepExistingData?:boolean})=>Promise<Writable>};if(!h?.getFile||!h?.createWritable)throw new Error('保存先を使用できません。');
-    if(checkConflict&&this.externalFingerprint){const current=await fingerprintHandle(handle);if(current!==this.externalFingerprint&&!confirm('保存先のファイルが外部で変更されています。上書きしますか？\nキャンセルした場合は「別名保存」を使えます。'))throw new Error('外部変更を検出したため上書きを中止しました。');}
+    if(expectedFingerprint){const current=await fingerprintHandle(handle);if(current!==expectedFingerprint&&!confirm('保存先のファイルが外部で変更されています。上書きしますか？\nキャンセルした場合は「別名保存」を使えます。'))throw new Error('外部変更を検出したため上書きを中止しました。');}
     const stable=bytes.slice(),writable=await h.createWritable({keepExistingData:false});
     try{
       await writable.truncate?.(0);

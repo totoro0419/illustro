@@ -7,11 +7,22 @@ import {ViewportScene} from '@rt/viewport-scene';
 // One current view transforms all immutable pictures, including old pictures
 // arriving after a more recent pan/zoom/rotation. Worker messages never own it.
 export class DrawingHost {
- static async create(canvas,width,height,backend,options,workerUrl,canonicalUrl,diagnostics=false,presentationUrl){
-  const host=new DrawingHost(canvas,workerUrl,presentationUrl);host.documentPresentation=new DocumentPresentation(canvas,width,height);host.documentVersion=0;try{
-   host.update(await host.call('init',{width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend,options,canonicalUrl,diagnostics,timeOrigin:performance.timeOrigin}));
-   host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend:host.info.selection.selected});await host.presentationReady;return host;
+ static async create(canvas,width,height,backend,options,workerUrl,canonicalUrl,diagnostics=false,presentationUrl,abortSignal=null){
+  if(abortSignal?.aborted)throw Error('Cancelled canvas initialization');
+  const host=new DrawingHost(canvas,workerUrl,presentationUrl);host.documentPresentation=new DocumentPresentation(canvas,width,height);host.documentVersion=0;
+  const abort=()=>host.destroy();
+  abortSignal?.addEventListener('abort',abort,{once:true});
+  try{
+   // Both workers own separate GPU resources. They can initialize in parallel:
+   // presenting a raster does not require the drawing worker's GPU selection.
+   // The previous sequential startup waited for two pipeline compilations.
+   const drawingInit=host.call('init',{width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend,options,canonicalUrl,diagnostics,timeOrigin:performance.timeOrigin});
+   host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend});
+   const [state]=await Promise.all([drawingInit,host.presentationReady]);
+   if(abortSignal?.aborted||host.disposed)throw Error('Cancelled canvas initialization');
+   host.update(state);return host;
   }catch(error){host.destroy();throw error;}
+  finally{abortSignal?.removeEventListener('abort',abort);}
  }
  constructor(canvas,url,presentationUrl){this.remote=true;
   // Split retained document uploads into browser tasks in the real editor.
@@ -31,8 +42,9 @@ export class DrawingHost {
    if(m.type==='fault'){this.presentationReject(Error(m.error));this.fault(m.error);return;}
    if(m.type==='document'){
     const accepted=m.epoch===this.epoch&&m.version>=this.documentVersion;
-    const complete=()=>{
-     if(accepted&&!this.disposed){
+    const complete=(applied=accepted)=>{
+     const current=applied&&!this.disposed&&m.epoch===this.epoch&&m.version>=this.documentVersion;
+     if(current){
       this.documentVersion=m.version;
       const coverage=this.pendingCoverage.get(m.version);
       if(!coverage?.covered)this.uncoveredVersion=Math.max(this.uncoveredVersion,m.version);
@@ -42,7 +54,7 @@ export class DrawingHost {
      }
      const request=this.presentationRequests.get(m.request);
      this.presentationRequests.delete(m.request);
-     request?.resolve({accepted:accepted&&!this.disposed});
+     request?.resolve({accepted:current});
     };
     if(!accepted){for(const t of m.tiles)t.bitmap.close();complete();return;}
     if(this.inputFirstProbe){
@@ -55,8 +67,8 @@ export class DrawingHost {
        this.presentationRequests.delete(m.request);request?.resolve({accepted:false});
        return;
       }
-      await this.documentPresentation.applyCooperatively(m.tiles);
-      complete();
+      const applied=await this.documentPresentation.applyCooperatively(m.tiles,()=>!this.disposed&&m.epoch===this.epoch&&m.version>=this.documentVersion);
+      complete(applied);
      }).catch(error=>{
       const request=this.presentationRequests.get(m.request);
       this.presentationRequests.delete(m.request);request?.reject(error);

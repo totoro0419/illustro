@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {CanvasView} from './canvasView';
+import {CanvasView,parseSavedCanvasView} from './canvasView';
 describe('M08 Canvas View',()=>{
  it('keeps document pixels independent of screen density',()=>{const v=new CanvasView(3000,2000);v.resize(900,600);expect(v.zoom).toBeCloseTo(.3);expect(v.documentWidth).toBe(3000);expect(v.uniform(2250,1500)[0]).toBe(2250);});
  it('round trips non-integer zoom, rotation, pan and dual flip',()=>{const v=new CanvasView(2560,1440);v.resize(789,531);v.pan(17.25,-33.5);v.setZoom(1.37);v.rotateAt(Math.PI/7,{x:90,y:247});v.toggleFlip('x');v.toggleFlip('y');const p={x:1321.25,y:735.75},q=v.document(v.screen(p));expect(q.x).toBeCloseTo(p.x,8);expect(q.y).toBeCloseTo(p.y,8);});
@@ -11,4 +11,14 @@ describe('M08 Canvas View',()=>{
   v.setZoom(1.37);expect(v.uniform(1600,1200)[13]).toBe(0);
   v.setZoom(1);v.setRotation(Math.PI/6);expect(v.uniform(1600,1200)[13]).toBe(0);
  });
+});
+
+it('restores a document view after the viewport size becomes available',()=>{
+ const saved={zoom:1.25,rotation:.5,panX:21,panY:-8,flipX:true,flipY:false,seamless:true};
+ const state=parseSavedCanvasView(saved);
+ expect(state).toEqual(saved);
+ const view=new CanvasView(320,240);
+ view.restore(state!);view.resize(800,600);
+ expect(view.state).toMatchObject(saved);
+ expect(parseSavedCanvasView({...saved,zoom:Infinity})).toBeNull();
 });

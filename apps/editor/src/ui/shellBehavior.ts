@@ -8,8 +8,9 @@ const WIDTH_KEY='illustro.m07.rightWidth',BOX_KEY='illustro.m07.boxExpansion';
 const actionLabels:Readonly<Record<string,readonly [string,string][]>>={
   drawing:[['ブラシ','paint'],['消しゴム','erase']],
   'layers-compositing':[['レイヤー画面','layer'],['レイヤー追加','addLayer']],
+  'canvas-view':[['画面を移動する','panView'],['全体表示','fitView'],['回転を戻す','resetRotation']],
   'history-automation':[['元に戻す','undo'],['やり直す','redo']],
-  'document-output':[['新規キャンバス','new'],['作品を開く','open'],['作品を保存','save'],['別名保存','saveCopy'],['自動保存から戻す','recover'],['PNG / JPEG / WebP','exportImage']],
+  'document-output':[['新規キャンバス','new'],['作品を開く','open'],['作品情報','documentInfoOpen'],['作品を保存','save'],['別名保存','saveCopy'],['自動保存から戻す','recover'],['PNG / JPEG / WebP','exportImage']],
   'workspace-settings':[['右側の表示を切り替え','workspaceToggle']],
 };
 export function installShellUi():ShellControl{
