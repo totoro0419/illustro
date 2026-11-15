@@ -6,6 +6,9 @@ import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSel
 import {MaskRasterWorker} from './maskWorker';
 import {SelectionOverlay} from './overlay';
 import type {AnalyzeOptions} from './autoSelect';
+import type {PreservedPortableData} from '../persistence/portable';
+import type {PortableSectionInput} from '../persistence/format';
+import {exportSelectionSections,importSelectionSections} from './native';
 
 export type SelectionWorkbench=Readonly<{
   active:()=>MaskData|null;
@@ -15,6 +18,8 @@ export type SelectionWorkbench=Readonly<{
   applyRectangle:(rect:Readonly<{x:number;y:number;width:number;height:number}>)=>void;
   clear:()=>void;
   shiftActive:(dx:number,dy:number)=>void;
+  exportNative:()=>Promise<readonly PortableSectionInput[]>;
+  importNative:(preserved:PreservedPortableData|undefined)=>Promise<void>;
 }>;
 type SelectionCallbacks=Readonly<{
   getSurface:()=>BrushSurface|null;
@@ -30,7 +35,7 @@ const asButton=(label:string,fn:()=>void)=>{
 };
 export function installSelectionWorkbench(callbacks:SelectionCallbacks):SelectionWorkbench{
   const host=document.getElementById('documentBoxBody');
-  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{},shiftActive:()=>{}};
+  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{},shiftActive:()=>{},exportNative:async()=>[],importNative:async()=>{}};
   const panel=document.createElement('details');panel.className='c06-selection-panel';
   const summary=document.createElement('summary');summary.textContent='選択範囲を編集';
   const intro=document.createElement('p');
@@ -376,6 +381,18 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     refresh,
     clear:()=>{job++;publish(null);},
     shiftActive:(dx,dy)=>{if(active)publish(translateSelection(active,dx,dy));},
+    exportNative:async()=>{
+      const doc=source();if(!doc)return [];
+      return exportSelectionSections(doc.id,doc.width,doc.height,active);
+    },
+    importNative:async preserved=>{
+      const doc=source();if(!doc)return;
+      const request=++job;
+      const imported=await importSelectionSections(preserved,doc.id,doc.width,doc.height);
+      if(request!==job||callbacks.getDocument()?.id!==doc.id||imported===undefined)return;
+      publish(imported,false);
+      await updateNamed();
+    },
     applyRectangle:rect=>{
       const doc=source();if(!doc)return;
       publish(combineSelection(active,
