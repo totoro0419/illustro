@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {roundedRectanglePoints,regularPolygonPoints} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops} from './shapeGradient';
 
 describe('C09 editable shape geometry',()=>{
   it('generates a closed eight-anchor rounded rectangle with tangent handles',()=>{
@@ -30,5 +30,18 @@ describe('C09 editable shape geometry',()=>{
   it('clamps the number of vertices to the supported editing limit',()=>{
     expect(regularPolygonPoints({x:0,y:0},{x:100,y:100},2)).toHaveLength(3);
     expect(regularPolygonPoints({x:0,y:0},{x:100,y:100},500)).toHaveLength(64);
+  });
+  it('reverses color-stop positions and interval midpoints without changing original data',()=>{
+    const original=[
+      {at:0,color:'#112233',opacity:0.25,midpoint:0.2},
+      {at:0.3,color:'#223344',opacity:0.7,midpoint:0.8},
+      {at:1,color:'#334455',opacity:1,midpoint:0.5}
+    ];
+    const reverse=reverseGradientStops(original);
+    expect(reverse.map(stop=>stop.at)).toEqual([0,0.7,1]);
+    expect(reverse.map(stop=>stop.color)).toEqual(['#334455','#223344','#112233']);
+    expect(reverse.map(stop=>stop.midpoint)).toEqual([0.2,0.8,0.2]);
+    expect(reverseGradientStops(reverse).map(stop=>stop.midpoint).slice(0,2)).toEqual([0.2,0.8]);
+    expect(original[0]!.at).toBe(0);
   });
 });
