@@ -30,6 +30,13 @@ export function regularPolygonPoints(a:ArtPoint,b:ArtPoint,count:number):ArtPoin
     return {x:cx+rx*Math.cos(angle),y:cy+ry*Math.sin(angle)};
   });
 }
+/** Reverse the actual color interpolation, including each interval's midpoint.
+ * The midpoint belongs to the interval starting at the preceding stop. */
+export function reverseGradientStops(current:readonly GradientStop[]):GradientStop[]{
+  const ordered=[...current].sort((a,b)=>a.at-b.at);
+  return ordered.reverse().map((stop,index)=>({...stop,at:1-stop.at,
+    midpoint:index<ordered.length-1?1-ordered[index+1]!.midpoint:stop.midpoint}));
+}
 export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const heading=document.createElement('summary');heading.textContent='図形・グラデーション';
@@ -57,7 +64,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const closed=document.createElement('input');closed.type='checkbox';labelledField(shapeFields,'道筋を閉じる',closed);
   const square=document.createElement('input');square.type='checkbox';labelledField(shapeFields,'縦と横の長さをそろえる',square);
   gradientFields.append(button('色の並びを反転',()=>{
-    stops=stops.map(stop=>({...stop,at:1-stop.at})).reverse();
+    stops=reverseGradientStops(stops);
     redrawStops();void refresh();
   },status));
   const mode=selectField(gradientFields,'広がり方',[
