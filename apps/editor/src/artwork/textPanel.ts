@@ -1,5 +1,5 @@
 import {validateEditableArtwork,type EditableText,type LayerId} from '@illustro/core';
-import {fontAssets,fontFamily,importFont,outlineText} from './fonts';
+import {fontAssets,fontFamily,fontOutlineCapability,importFont,outlineText} from './fonts';
 import {runArtwork} from './run';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
@@ -10,6 +10,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   controls.className=actions.className='c06-clipboard-grid';
   const status=document.createElement('output');status.setAttribute('role','status');
   const preview=document.createElement('canvas');preview.hidden=true;preview.style.maxWidth='100%';
+  const originalPreview=document.createElement('canvas');originalPreview.hidden=true;originalPreview.style.maxWidth='100%';
+  const previewCaption=document.createElement('output');previewCaption.setAttribute('role','status');
   const text=document.createElement('textarea');text.rows=4;text.maxLength=8192;labelledField(controls,'文字を入力',text);
   const x=numberField(controls,'配置 X',0,-8192,16384,.5),y=numberField(controls,'配置 Y',0,-8192,16384,.5);
   const size=numberField(controls,'文字サイズ（px）',48,1,4096,.5);
@@ -25,7 +27,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   const embed=document.createElement('input');embed.type='checkbox';labelledField(controls,'共有が許可されたフォントを作品ファイルに同梱',embed);
   const missing=document.createElement('output');missing.setAttribute('role','status');
   const file=document.createElement('input');file.type='file';file.hidden=true;file.accept='.ttf,.otf,.woff,.woff2';
-  let fontId='',editing:LayerId|undefined,previewRequest=0,initialized=false,composing=false;
+  let fontId='',editing:LayerId|undefined,previewRequest=0,initialized=false,composing=false,previewScheduled=false;
+  const compatibility=document.createElement('output');compatibility.setAttribute('role','status');
 
   async function refreshFonts(){
     const assets=await fontAssets();
@@ -48,19 +51,37 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       ...(fontId?{fontAsset:fontId,...(embed.checked?{embedFont:true}:{})}:{})
     }) as EditableText;
   }
-  async function show(content:EditableText|Awaited<ReturnType<typeof outlineText>>){
+  async function show(content:EditableText|Awaited<ReturnType<typeof outlineText>>,target=preview){
     const context=api.context(),request=++previewRequest;
     if(!context)return;
     const ratio=Math.min(1,280/Math.max(context.width,context.height));
     const width=Math.max(1,Math.round(context.width*ratio)),height=Math.max(1,Math.round(context.height*ratio));
     try{
       const pixels=await runArtwork({content,width:context.width,height:context.height,outputWidth:width,outputHeight:height});
-      if(request===previewRequest)paintPreview(preview,pixels,width,height);
-    }catch(error){if(request===previewRequest){preview.hidden=true;throw error;}}
+      if(request===previewRequest)paintPreview(target,pixels,width,height);
+    }catch(error){if(request===previewRequest){target.hidden=true;throw error;}}
   }
   async function refresh(){
-    if(composing||!text.value.trim()){preview.hidden=true;return;}
+    originalPreview.hidden=true;previewCaption.textContent='';
+    if(composing||!text.value.trim()){previewRequest++;preview.hidden=true;return;}
     try{await show(draft());}catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+  }
+  // Group rapid keystrokes into one preview per animation frame.
+  function schedulePreview(){
+    previewRequest++;
+    if(previewScheduled)return;
+    previewScheduled=true;
+    requestAnimationFrame(()=>{
+      previewScheduled=false;
+      void refresh();
+    });
+  }
+  async function inspectFont(){
+    const requested=fontId;
+    compatibility.textContent='';
+    if(!requested)return;
+    const warning=await fontOutlineCapability(requested);
+    if(requested===fontId)compatibility.textContent=warning??'このフォントは文字の輪郭化に対応しています。';
   }
   function reset(){
     const context=api.context();
@@ -68,7 +89,9 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     editing=undefined;initialized=true;fontId='';embed.checked=false;text.value='';
     x.value=String(Math.round(context.width/4));y.value=String(Math.round(context.height/4));
     color.value=context.color;direction.value='horizontal';align.value='left';
-    preview.hidden=true;status.textContent='新しい文字を入力してください。';
+    size.value='48';spacing.value='0';lineHeight.value='1.25';systemFont.value='sans-serif';
+    compatibility.textContent='';previewRequest++;preview.hidden=true;originalPreview.hidden=true;previewCaption.textContent='';
+    status.textContent='新しい文字を入力してください。';
   }
   function selectedText(){
     const layer=api.context()?.selected;
@@ -82,24 +105,29 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     color.value=content.color;fontId=content.fontAsset??'';embed.checked=content.embedFont===true;
     if(!fontId)systemFont.value=content.family;
   }
-  family.onchange=()=>{fontId=family.value;systemFont.disabled=!!fontId;embed.disabled=!fontId;embed.checked=false;void refresh();};
-  controls.addEventListener('change',()=>void refresh());
-  text.addEventListener('compositionstart',()=>{composing=true;});
-  text.addEventListener('compositionend',()=>{composing=false;void refresh();});
-  text.oninput=()=>void refresh();
+  family.onchange=()=>{
+    fontId=family.value;systemFont.disabled=!!fontId;embed.disabled=!fontId;embed.checked=false;
+    schedulePreview();void inspectFont().catch(error=>{compatibility.textContent=error instanceof Error?error.message:String(error);});
+  };
+  controls.addEventListener('change',schedulePreview);
+  text.addEventListener('compositionstart',()=>{composing=true;previewRequest++;});
+  text.addEventListener('compositionend',()=>{composing=false;schedulePreview();});
+  text.oninput=schedulePreview;
   file.onchange=async()=>{
     const selected=file.files?.[0];file.value='';
     if(!selected)return;
     try{
       const asset=await importFont(selected);
-      fontId=asset.id;embed.checked=false;await refreshFonts();await refresh();status.textContent='フォントをこの端末の素材庫へ読み込みました。';
+      fontId=asset.id;embed.checked=false;await refreshFonts();schedulePreview();
+      status.textContent='フォントをこの端末の素材庫へ読み込みました。';
+      await inspectFont();
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   };
   actions.append(
     button('新しい文字',async()=>{reset();await refreshFonts();text.focus();},status),
     button('選んだ文字を編集',async()=>{
       const current=selectedText();editing=current.id;initialized=true;write(current.content);
-      status.textContent=current.name+'を編集します。';await refreshFonts();await refresh();
+      status.textContent=current.name+'を編集します。';await refreshFonts();await inspectFont();schedulePreview();
     },status),
     button('キャンバスで配置を指定',()=>{
       const context=api.context();
@@ -116,12 +144,16 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     },status),
     button('文字の輪郭をパスへ変換',async()=>{
       const current=selectedText(),outline=await outlineText(current.content);
+      await show(current.content,originalPreview);
       await show(outline);
-      if(confirm('文字レイヤーを残し、文字の輪郭を新しいパスにしますか？ パス上では文章や書体を変更できなくなります。')){
+      previewCaption.textContent='上：変換前の文字　下：変換後の輪郭。位置・濃さが変わらないか確認してください。';
+      if(confirm('選択中の文字レイヤーを輪郭のパスに置き換えます。文章や書体は編集できなくなりますが、Undoで元の文字に戻せます。変換しますか？')){
         const context=api.context();
         if(context?.selected.id!==current.id)throw Error('文字レイヤーを選び直してください。');
-        await api.save(outline,current.name+'（輪郭）');
-        status.textContent='元の文字を残して輪郭のレイヤーを追加しました。';
+        // Updating the same layer prevents duplicate text/path pixels and keeps the original in Undo history.
+        await api.save(outline,current.name,current.id);
+        editing=undefined;
+        status.textContent='同じレイヤーの文字を輪郭に置き換えました。Undoで元の文字に戻せます。';
       }
     },status),
     button('描画用レイヤーへ変換',async()=>{
@@ -136,5 +168,5 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     if(!initialized&&api.context())reset();
     void refreshFonts().catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});
   };
-  panel.append(title,controls,actions,file,preview,missing,status);host.append(panel);
+  panel.append(title,controls,compatibility,actions,file,originalPreview,preview,previewCaption,missing,status);host.append(panel);
 }
