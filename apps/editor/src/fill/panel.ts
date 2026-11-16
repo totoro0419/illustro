@@ -42,6 +42,7 @@ export function installFillPanel(host:HTMLElement,api:{
   let pending:Awaited<ReturnType<typeof runFill>>|null=null;
   let displayDocument='';
   let candidateGeneration=0,pendingColor='#000000';
+  let previewAbort:AbortController|null=null;
   let hints:readonly ColorHint[]=[];
   let manualDraft=false,inspectPoint:Point|undefined;
   let localGaps:readonly GapCandidate[]|null=null;
@@ -122,7 +123,9 @@ export function installFillPanel(host:HTMLElement,api:{
   async function work(handler:()=>void|Promise<void>){
     if(running)return;
     running=true;
-    try{await handler();}catch(error){output.textContent=error instanceof Error?error.message:String(error);}
+    try{await handler();}catch(error){
+      if(!(error instanceof Error&&error.name==='AbortError'))output.textContent=error instanceof Error?error.message:String(error);
+    }
     finally{running=false;sync();}
   }
   function refreshReferences(replace=false){
@@ -150,7 +153,7 @@ export function installFillPanel(host:HTMLElement,api:{
     regionLayers.replaceChildren(new Option('選択してください',''),...entries.map(entry=>new Option(entry.name,entry.id)));
     regionLayers.value=entries.some(entry=>entry.id===current)?current:'';
   }
-  function forgetAnalysis(){capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;lastFill=null;pending=null;hints=[];refreshHintList();manualDraft=false;analysisError=null;excludedAreas=[];issue.replaceChildren();excludedGap=-1;localGaps=null;inspectedRegion=0;mergeTarget.replaceChildren();paint();}
+  function forgetAnalysis(){previewAbort?.abort();previewAbort=null;candidateGeneration++;capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;lastFill=null;pending=null;hints=[];refreshHintList();manualDraft=false;analysisError=null;excludedAreas=[];issue.replaceChildren();excludedGap=-1;localGaps=null;inspectedRegion=0;mergeTarget.replaceChildren();paint();}
   const gapCandidates=()=>localGaps??currentGraph?.candidates??[];
   const sourceAvailable=()=>!saved||api.regionLayers().some(entry=>entry.id===saved?.id&&entry.data===saved.data);
   const graphUsable=()=>!!currentGraph?.hasInk&&currentGraph.count>0;
@@ -338,6 +341,9 @@ export function installFillPanel(host:HTMLElement,api:{
   const candidateValid=(item:Candidate)=>item.adjustment?item.source.canAdjust():item.source.valid();
   async function refreshCandidate(){
     const request=++candidateGeneration;
+    previewAbort?.abort();
+    const abort=new AbortController();
+    previewAbort=abort;
     pending=null;paint();
     if(!candidate||!candidateValid(candidate))throw Error('塗る対象が変わりました。');
     const edit=candidate,{source,asSelection,points}=edit,options=settings();
@@ -349,7 +355,7 @@ export function installFillPanel(host:HTMLElement,api:{
       const key=options.tolerance+':'+options.gap;
       if(edit.workingGraphKey!==key){
         if(options.tolerance!==graphTolerance||options.gap!==graphGap){
-          const result=await runFill({type:'graph',source:source.source,width:source.width,height:source.height,settings:options,manual:edit.manual??[]});
+          const result=await runFill({type:'graph',source:source.source,width:source.width,height:source.height,settings:options,manual:edit.manual??[]},abort.signal);
           if(!result.graph)throw Error('調整した線画領域を作れませんでした。');
           graph=result.graph;
         }
@@ -361,12 +367,12 @@ export function installFillPanel(host:HTMLElement,api:{
     const excluded=graph?[...edit.excluded,...excludedAreas.map(point=>regionAt(graph!,point)).filter(Boolean)]:edit.excluded;
     const input={source:source.source,target:source.target,width:source.width,height:source.height,settings:{...options,excluded},alphaLocked:source.alphaLocked};
     if(edit.hints&&!graph)throw Error('色指示に使う線画領域が見つかりません。');
-    const result=await (edit.hints&&graph?runFill({...input,type:'hints',graph,hints:edit.hints,selection}):
+    const result=await (edit.hints&&graph?runFill({...input,type:'hints',graph,hints:edit.hints,selection},abort.signal):
       runFill({...input,type:'fill',graph,selection:asSelection?null:selection,
         settings:{...input.settings,included:edit.included},points,
-        output:asSelection?'selection':'pixels',diagnostics:diagnostic.checked}));
+        output:asSelection?'selection':'pixels',diagnostics:diagnostic.checked},abort.signal));
     if(candidate!==edit||request!==candidateGeneration||!candidateValid(edit))return;
-    pending=result;pendingColor=options.color;paint();
+    pending=result;pendingColor=options.color;if(previewAbort===abort)previewAbort=null;paint();
     output.textContent=diagnostic.checked
       ?'オレンジは補った隙間、ピンクは縁の未塗り候補です。範囲と角を調整して適用できます。'
       :'塗り候補を表示しました。範囲や濃さを調整してから適用できます。';
@@ -419,7 +425,7 @@ export function installFillPanel(host:HTMLElement,api:{
     lastFill=null;
     output.textContent='直前の塗りの調整を終了しました。';
   });
-  const dropPaint=button('塗り候補を取り消す',()=>{candidate=null;pending=null;paint();output.textContent='塗り候補を取り消しました。';});
+  const dropPaint=button('塗り候補を取り消す',()=>{previewAbort?.abort();candidateGeneration++;candidate=null;pending=null;paint();output.textContent='塗り候補を取り消しました。';});
   button('線画を解析・更新',async()=>{await analyze();confirmed=false;});
   const vectorCompare=button('ベクターのパスと見た目を比較',async()=>{
     const original=capture;
@@ -615,14 +621,21 @@ export function installFillPanel(host:HTMLElement,api:{
     matchColor.parentElement!.hidden=condition.value!=='color';
     if(condition.value==='color'&&/^#[0-9a-f]{6}$/i.test(api.color()))matchColor.value=api.color();
   });
+  const updatePreview=()=>{
+    if(!candidate)return;
+    void refreshCandidate().catch(error=>{
+      if(!(error instanceof Error&&error.name==='AbortError'))
+        output.textContent=error instanceof Error?error.message:String(error);
+    }).finally(sync);
+  };
   for(const control of [opacity,edge,edgeShape,diagnostic,trace,condition,closedOnly,erase,contiguous,matchColor,alphaTolerance]){
-    control.addEventListener('change',()=>{if(candidate)void work(refreshCandidate);});
+    control.addEventListener('change',updatePreview);
   }
   for(const control of [gap,tolerance])control.addEventListener('change',()=>{
-    if(candidate?.adjustment){void work(refreshCandidate);return;}
+    if(candidate?.adjustment){updatePreview();return;}
     if(usesRegions()){
       if(currentGraph){confirmed=false;candidate=null;pending=null;output.textContent='条件を変えたため、線画をもう一度解析して確定してください。';paint();sync();}
-    }else if(candidate)void work(refreshCandidate);
+    }else if(candidate)updatePreview();
   });
   function inspect(graph:RegionGraph,id:number){
     if(id<1||id>graph.count)return;
