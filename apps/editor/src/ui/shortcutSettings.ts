@@ -89,7 +89,8 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
   updateCommands();
   commandSelect.onchange=()=>{if(!isHoldable(commandSelect.value)&&mode.value==='hold')mode.value='press';};
   mode.onchange=()=>{if(mode.value==='hold'&&!isHoldable(commandSelect.value)){mode.value='press';status.textContent='押している間だけ使えるのは、スポイト・消しゴム・表示移動です。';}};
-  const active=new Map<string,{restore:()=>void}>();
+  const active=new Map<string,{restore:()=>void;epoch:number}>();
+  let holdEpoch=0;
   function render(){
     list.replaceChildren();
     const names=new Map(commands.list().map(c=>[c.id,c.label]));
@@ -199,13 +200,23 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
   };
   function startHold(binding:Binding){
     if(binding.commandId!=='quickControllerOpen'&&!canSwitchTools()){status.textContent='線を描いている間は道具を切り替えられません。';return;}
+    if(active.size&&!active.has(binding.commandId)&&binding.commandId!=='quickControllerOpen'){
+      status.textContent='押している間の操作を終了してから切り替えてください。';return;
+    }
     const id=binding.commandId;
     const on=(el<HTMLButtonElement>(id)?.getAttribute(id==='quickControllerOpen'?'aria-expanded':'aria-pressed')==='true');
-    if(on){active.set(id,{restore:()=>{}});return;}
-    const wasEraser=el<HTMLButtonElement>('erase')?.getAttribute('aria-pressed')==='true';
-    const restore=id==='quickControllerOpen'?'quickControllerOpen':id==='panView'?'panView':wasEraser?'erase':'paint';
+    const epoch=++holdEpoch;
+    if(on){active.set(id,{restore:()=>{},epoch});return;}
+    const previous=['paint','erase','eyedropper','panView'].find(
+      key=>el<HTMLButtonElement>(key)?.getAttribute('aria-pressed')==='true')??'paint';
     const result=commands.invoke(id);
-    if(result.ok)active.set(id,{restore:()=>{if(restore)el<HTMLButtonElement>(restore)?.click();}});
+    if(result.ok)active.set(id,{epoch,restore:()=>{
+      // Respect later manual tool changes during the hold.
+      const attribute=id==='quickControllerOpen'?'aria-expanded':'aria-pressed';
+      if(el<HTMLButtonElement>(id)?.getAttribute(attribute)==='true'){
+        el<HTMLButtonElement>(id==='quickControllerOpen'?id:previous)?.click();
+      }
+    }});
     else status.textContent=result.reason??'ショートカットを使えませんでした。';
   }
   document.addEventListener('keydown',event=>{
@@ -223,9 +234,9 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
       if(!result.ok)status.textContent=result.reason??'現在は使えません。';
     }
   },{capture:true});
-  const restoreAfterStroke=(id:string,restore:()=>void)=>{
+  const restoreAfterStroke=(id:string,restore:()=>void,epoch:number)=>{
     const check=()=>{
-      if(active.has(id))return; // a new hold superseded the release
+      if(active.has(id)||epoch!==holdEpoch)return; // another hold superseded release
       if(!canSwitchTools()){window.setTimeout(check,32);return;}
       restore();
     };
@@ -235,10 +246,16 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     for(const b of bindings)if(b.mode==='hold'&&
       (b.physical?b.code===event.code:b.key===normalizedKey(event))){
       const state=active.get(b.commandId);if(!state)continue;
-      active.delete(b.commandId);restoreAfterStroke(b.commandId,state.restore);
+      active.delete(b.commandId);restoreAfterStroke(b.commandId,state.restore,state.epoch);
     }
   };
   document.addEventListener('keyup',release,{capture:true});
-  window.addEventListener('blur',()=>{const pending=[...active.entries()];active.clear();for(const [id,{restore}] of pending)restoreAfterStroke(id,restore);stopCapture();});
+  const releaseAll=()=>{
+    const pending=[...active.entries()];active.clear();
+    for(const [id,{restore,epoch}] of pending)restoreAfterStroke(id,restore,epoch);
+    stopCapture();
+  };
+  window.addEventListener('blur',releaseAll);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseAll();});
   render();
 }
