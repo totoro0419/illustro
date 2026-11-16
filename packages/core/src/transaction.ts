@@ -135,6 +135,18 @@ export class DocumentTransaction{
   setEditableArtwork(id:LayerId,artwork:EditableArtwork|null){
     return this.meta(id,{editable:validateEditableArtwork(artwork)});
   }
+  placeRasterLayers(entries:readonly {id:LayerId;pixels:Uint8Array|Uint8ClampedArray;editable:EditableArtwork|null;mask:LayerMask|null}[]){
+    this.open();
+    if(this.slotsValue.length||!entries.length)throw Error('整列するレイヤーを指定してください。');
+    for(const {id,pixels,editable,mask} of entries){
+      const layer=this.editableRaster(id);
+      if(layer.baseColor==='white'||layer.deformation||layer.lineRegions||this.rootValue.isLayerPositionLocked(id))
+        throw Error('このレイヤーは整列で移動できません。');
+      this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
+      this.seedRasterPixels(id,pixels,true);
+      this.meta(id,{editable:validateEditableArtwork(editable),vectorMask:validateLayerMask(mask)});
+    }
+  }
   replaceLayerRaster(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,source?:RevisionId,editable?:EditableArtwork|null,deformation?:LayerDeformation|null){
     this.open();
     if(this.slotsValue.length)throw new Error('Replace layer pixels as a standalone operation');

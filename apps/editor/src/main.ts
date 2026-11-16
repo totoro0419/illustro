@@ -28,6 +28,9 @@ import type {ArtworkActions} from './artwork/tools';
 import {fillLayerName,installFillPanel} from './fill/panel';
 import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
+import {installLayoutPanel} from './transform/layoutPanel';
+import type {SnapMark} from './transform/layout';
+import {runTransform} from './transform/run';
 import {digestLayerMask,readSelectionMask,transformLinkedMask} from './transform/mask';
 import {cornerMode,initialTransform,meshMode} from './transform/geometry';
 import {alphaBounds} from './transform/quadrilateral';
@@ -78,7 +81,7 @@ import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type Persiste
 import type {PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -3369,6 +3372,47 @@ persistence.setSaveAttachmentProvider(()=>{
     return [...(reference?[reference]:[]),...selections,...fonts,symmetry];
   };
 });
+installLayoutPanel(byId('documentBoxBody'),async()=>{
+  const artwork=controller.document,head=artwork.head,root=artwork.root,referenceId=controller.selectedLayer.id,drawing=surface;
+  const ids=root.rootLayerIds.filter(id=>layerBatchIds.has(id));
+  if(ids.length<2)throw Error('レイヤー画面で複数選択を開き、整列するレイヤーを2枚以上選んでください。');
+  const captureIds=new Set([...ids,referenceId]);
+  const pixels=new Map<LayerId,Uint8Array>();
+  await withClipboardAccess(async viewport=>{
+    for(const [id,rgba] of await viewport.captureDocumentLayers(captureIds))pixels.set(id,rgba);
+    return 'read';
+  });
+  const {width,height}=root;
+  const item=(id:LayerId)=>{
+    const layer=root.getLayer(id),rgba=pixels.get(id);
+    const bounds=rgba&&alphaBounds(rgba,width,height);
+    if(!bounds)throw Error('「'+layer.name+'」には位置合わせできる絵がありません。');
+    const fixed=root.isLayerContentLocked(id)||root.isLayerPositionLocked(id)||!!(layer.baseColor||layer.deformation||layer.lineRegions);
+    return {id,name:layer.name,bounds,fixed};
+  };
+  const items=ids.map(item),reference=item(referenceId);
+  const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&controller.selectedLayer.id===referenceId&&
+    ids.length===layerBatchIds.size&&ids.every(id=>layerBatchIds.has(id));
+  return {items,reference,width,height,valid,apply:async moves=>{
+    const updates=await Promise.all(moves.filter(move=>Math.abs(move.dx)+Math.abs(move.dy)>.01).map(async move=>{
+      const {id}=move.item,layer=root.getLayer(id);
+      if(move.item.fixed)throw Error('「'+layer.name+'」は移動できません。このレイヤーを基準にするかロックを解除してください。');
+      const settings={...initialTransform,dx:move.dx,dy:move.dy};
+      const rgba=await runTransform({pixels:pixels.get(id)!,width,height,settings,selection:null,outputWidth:width,outputHeight:height});
+      const editable=layer.editable?moveEditableArtwork(layer.editable,move.dx,move.dy):null;
+      const mask=layer.vectorMask&&layer.vectorMask.linked!==false
+        ?transformLayerMask(layer.vectorMask,1,1,move.dx,move.dy):layer.vectorMask??null;
+      return {id,pixels:rgba,editable,mask};
+    }));
+    await withClipboardAccess(async()=>{
+      if(!valid())throw Error('計算中に作品が変わりました。');
+      const tx=artwork.begin('レイヤーの整列・均等配置');
+      tx.placeRasterLayers(updates);
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      return 'edit';
+    });
+  }};
+});
 installTransformPanel(byId('documentBoxBody'),async target=>{
   const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
   const {width,height}=artwork.root;
@@ -3383,6 +3427,7 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
   const original=artwork.revision(sourceRevision).root.getLayer(saved?.sourceLayerId??layer.id);
   const selection=saved?.selection?readSelectionMask(saved.selection,width,height):target==='layer'?null:activeSelection;
   let pixels:Uint8Array|undefined;
+  const marks={x:[] as SnapMark[],y:[] as SnapMark[]};
   await withClipboardAccess(async viewport=>{
     if(target==='boundary'&&activeSelection){
       pixels=new Uint8Array(width*height*4);
@@ -3395,6 +3440,16 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
         basePixels:frozen.basePixels?.filter(item=>item.surfaceId===surfaceId)??[]
       }));
     }else pixels=(await viewport.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
+    const otherLayers=artwork.root.rootLayerIds.filter(id=>id!==layer.id&&layerBatchIds.has(id));
+    if(otherLayers.length){
+      const frames=await viewport.captureDocumentLayers(new Set(otherLayers));
+      for(const [id,rgba] of frames){
+        const outline=alphaBounds(rgba,width,height),name=artwork.root.getLayer(id).name;
+        if(!outline)continue;
+        for(const value of [outline.x,outline.x+outline.width/2,outline.x+outline.width])marks.x.push({value,name});
+        for(const value of [outline.y,outline.y+outline.height/2,outline.y+outline.height])marks.y.push({value,name});
+      }
+    }
     return 'read';
   });
   if(!pixels)throw Error('変形する絵を読み込めません。');
@@ -3404,7 +3459,10 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
     controller.selectedLayer.id===layer.id&&(target==='layer'||c06Selection?.active()===activeSelection);
   return {
     width,height,bounds,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
-    pixels,selection:target==='boundary'?null:selection,drawing,valid,...(layer.vectorMask?{maskLink:linkedMask}:{}),
+    pixels,selection:target==='boundary'?null:selection,drawing,valid,objectSnap:marks,...(layer.vectorMask?{maskLink:linkedMask}:{}),
+    guides:guidePreferences.enabled?{
+      x:[{value:guidePreferences.x??0,name:'定規の基準 X'}],y:[{value:guidePreferences.y??0,name:'定規の基準 Y'}]
+    }:null,
     ...(saved?{initial:{...initialTransform,mode:saved.mode,interpolation:saved.interpolation,
       ...('strokes' in saved?{liquify:saved.strokes}:'mesh' in saved?{mesh:{bounds:saved.bounds,controls:saved.mesh}}:{quadrilateral:{bounds:saved.bounds,corners:saved.corners}})}}:{}),
     apply:async(settings,result)=>{

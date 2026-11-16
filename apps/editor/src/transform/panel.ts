@@ -3,6 +3,7 @@ import type {BrushSurface} from '../brushSurface';
 import type {MaskData} from '../selection/mask';
 import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} from './geometry';
 import {runTransform} from './run';
+import {snapLayout,type SnapTargets} from './layout';
 import {makeLiquifyStroke} from './liquify';
 import {cornersTowardVanishingPoint,rectCorners} from './quadrilateral';
 import {addCagePoint,cageMesh,changeGrid,gridMesh,meshEdges} from './mesh';
@@ -10,6 +11,7 @@ import {addCagePoint,cageMesh,changeGrid,gridMesh,meshEdges} from './mesh';
 export type TransformSource={
   width:number;height:number;name:string;pixels:Uint8Array;selection:MaskData|null;
   drawing:BrushSurface;valid:()=>boolean;bounds:TransformBounds;initial?:Transform;maskLink?:boolean;
+  objectSnap:SnapTargets;guides:SnapTargets|null;
   apply:(settings:Transform,pixels:Uint8ClampedArray)=>Promise<void>;
 };
 type Target='layer'|'selected'|'boundary';
@@ -34,6 +36,43 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   let source:TransformSource|null=null,settings=initialTransform,undo:Transform[]=[],redo:Transform[]=[],previewId=0,busy=false;
   let ownedGesture:BrushSurface|null=null,editingHandles=false,placingPoints=false,previewAbort:AbortController|null=null;
   const inputs=new Map<keyof Omit<Transform,'quadrilateral'|'mesh'|'liquify'>,HTMLSelectElement|HTMLInputElement>();
+  const snapFields=document.createElement('fieldset'),snapLegend=document.createElement('legend');
+  snapLegend.textContent='吸着';snapFields.append(snapLegend);
+  const checkbox=(text:string,checked:boolean)=>{
+    const label=document.createElement('label'),input=document.createElement('input');
+    input.type='checkbox';input.checked=checked;label.append(input,' '+text);snapFields.append(label);
+    return input;
+  };
+  const snapPixels=checkbox('画素',false),snapEdges=checkbox('キャンバスの端・中央',false);
+  const snapObjects=checkbox('複数選択した他のレイヤー',false),snapGuides=checkbox('定規の基準位置',false);
+  const snapRange=document.createElement('input');snapRange.type='number';snapRange.min='0';snapRange.max='64';snapRange.value='8';
+  const rangeLabel=document.createElement('label');rangeLabel.append('吸着する距離（px）',snapRange);snapFields.append(rangeLabel);
+  const snapStatus=document.createElement('output');snapStatus.setAttribute('role','status');snapFields.append(snapStatus);
+  let skipSnap=false,marks:ReturnType<typeof snapLayout>|null=null;
+  snapFields.append(button('次の操作だけ吸着を解除',()=>{
+    skipSnap=true;snapStatus.textContent='次の位置指定だけ吸着を解除します。';
+  }));
+  function snapPoint(point:TransformPoint,bounds:TransformBounds|null){
+    const current=source;
+    if(!current)return point;
+    marks=null;
+    if(skipSnap){skipSnap=false;snapStatus.textContent='この操作は吸着を解除しました。';return point;}
+    const canvas=(axis:'x'|'y')=>(axis==='x'?[0,current.width/2,current.width]:[0,current.height/2,current.height])
+      .map((value,index)=>({value,name:index===1?'キャンバスの中央':'キャンバスの端'}));
+    const lists=(axis:'x'|'y')=>[
+      ...(snapEdges.checked?canvas(axis):[]),
+      ...(snapObjects.checked?current.objectSnap[axis]:[]),
+      ...(snapGuides.checked?(current.guides?.[axis]??[]):[])
+    ];
+    marks=snapLayout(point,bounds,{x:lists('x'),y:lists('y')},Math.max(0,Math.min(64,snapRange.valueAsNumber||0)),snapPixels.checked);
+    const show=(axis:'x'|'y')=>{
+      const result=marks?.[axis];
+      return result?.label?(axis==='x'?'横 ':'縦 ')+result.label+' '+Math.abs(result.delta).toFixed(1)+' px':'';
+    };
+    snapStatus.textContent=[show('x'),show('y')].filter(Boolean).join(' ／ ')||'吸着先なし';
+    return {x:marks.x.value,y:marks.y.value};
+  }
+
 
   function button(label:string,handler:()=>void|Promise<void>){
     const button=document.createElement('button');button.type='button';button.textContent=label;
@@ -175,8 +214,8 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     if(!points)return;
     ownedGesture=source.drawing;
     ownedGesture.setCanvasEditGesture({path:true,width:2,color:'#ffb742',complete:()=>{},pointEdit:mesh?
-      {points,edges:meshEdges(mesh),fixed:mesh.points.map(point=>placingPoints||point.fixed),closed:false,commit:moveMeshPoint}
-      :{points,commit:moveCorner}});
+      {points,edges:meshEdges(mesh),fixed:mesh.points.map(point=>placingPoints||point.fixed),closed:false,commit:(index,point)=>moveMeshPoint(index,snapPoint(point,null))}
+      :{points,commit:(index,point)=>moveCorner(index,snapPoint(point,null))}});
   }
   function stopGesture(){
     ownedGesture?.setCanvasEditGesture(null);ownedGesture=null;editingHandles=false;
@@ -211,7 +250,10 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       const dx=last.x-first.x,dy=last.y-first.y;
       if(settings.mode==='mesh'||settings.mode==='push')change({...settings,cx:first.x,cy:first.y,warpX:dx,warpY:dy});
       else if(Math.hypot(dx,dy)<1||settings.mode!=='affine')change({...settings,cx:first.x,cy:first.y});
-      else change({...settings,dx:settings.dx+dx,dy:settings.dy+dy});
+      else {
+        const point=snapPoint({x:settings.dx+dx,y:settings.dy+dy},source.bounds);
+        change({...settings,dx:point.x,dy:point.y});
+      }
     }});
   });
   const liquifyFields=document.createElement('fieldset');
@@ -276,7 +318,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }finally{busy=false;sync();}
   });
   function reset(message:string){
-    stopGesture();source=null;previewId++;previewAbort?.abort();
+    stopGesture();source=null;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();
     preview.hidden=true;status.textContent=message;sync();
   }
   function change(next:Transform){
@@ -335,7 +377,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     flipX.disabled=flipY.disabled=!source||busy;
     vanishing.hidden=settings.mode!=='projective'||!source;vanishing.disabled=busy;
     bakeButton.disabled=!!source||busy;
-    comparison.hidden=!source;
+    comparison.hidden=!source;snapFields.hidden=!source;
   }
   async function refreshPreview(){
     const current=source,id=++previewId;
@@ -349,13 +391,21 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         selection:current.selection,outputWidth,outputHeight,showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
       if(id!==previewId)return;
       preview.width=outputWidth;preview.height=outputHeight;
-      preview.getContext('2d')?.putImageData(new ImageData(pixels,outputWidth,outputHeight),0,0);
+      const context=preview.getContext('2d');
+      context?.putImageData(new ImageData(pixels,outputWidth,outputHeight),0,0);
+      if(context&&marks&&!compare.checked){
+        context.strokeStyle='#45c8ef';context.lineWidth=1;context.setLineDash([4,4]);
+        context.beginPath();
+        if(marks.x.mark!==undefined){const x=marks.x.mark*outputWidth/current.width;context.moveTo(x,0);context.lineTo(x,outputHeight);}
+        if(marks.y.mark!==undefined){const y=marks.y.mark*outputHeight/current.height;context.moveTo(0,y);context.lineTo(outputWidth,y);}
+        context.stroke();
+      }
       preview.hidden=false;
     }catch(error){if(id===previewId&&!controller.signal.aborted){preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
   }
   compare.onchange=()=>void refreshPreview();
   tools.append(start,direct,vanishing,flipX,flipY,back,forward,apply,cancel,bakeButton);
-  panel.append(summary,target,status,tools,controls,cornerFields,meshFields,liquifyFields,comparison,preview);host.append(panel);
+  panel.append(summary,target,status,tools,controls,snapFields,cornerFields,meshFields,liquifyFields,comparison,preview);host.append(panel);
   panel.ontoggle=()=>{if(!panel.open&&!busy&&source)reset('候補を取り消しました。');};
   sync();
 }
