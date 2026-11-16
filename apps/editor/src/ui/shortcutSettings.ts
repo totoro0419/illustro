@@ -101,12 +101,19 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
       label.title=(entry.mode==='hold'?'押している間だけ':entry.mode==='toggle'?'切替':'単発')+(entry.physical?'（物理キー）':'（文字キー）');
       const remove=document.createElement('button');remove.type='button';remove.textContent='解除';
       remove.setAttribute('aria-label',human(entry)+' の割当を削除');
-      remove.onclick=()=>{bindings.splice(i,1);persist();render();};
+      remove.onclick=()=>{if(persist(bindings.filter((_,index)=>index!==i)))render();};
       row.append(label,remove);list.append(row);
     }
     if(!bindings.length){const empty=document.createElement('p');empty.textContent='追加した割当はまだありません。既定のキーは引き続き利用できます。';list.append(empty);}
   }
-  function persist(){if(!write(bindings))status.textContent='設定を端末に保存できませんでした。書き出しで控えてください。';}
+  function persist(next:Binding[]):boolean{
+    if(!write(next)){
+      status.textContent='設定を端末に保存できませんでした。書き出しで控えてください。';
+      return false;
+    }
+    bindings=next;
+    return true;
+  }
   const same=(e:KeyboardEvent,b:Binding)=>
     b.ctrl===e.ctrlKey&&b.alt===e.altKey&&b.shift===e.shiftKey&&b.meta===e.metaKey&&
     (b.physical?b.code===e.code:b.key===normalizedKey(e));
@@ -133,9 +140,11 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     if(proposed.mode==='hold'&&!isHoldable(proposed.commandId)){status.textContent='この操作は押している間だけの割当に対応していません。';return;}
     const duplicates=bindings.filter(b=>signature(b)===key||(b.code===proposed.code&&b.physical&&proposed.physical&&b.ctrl===proposed.ctrl&&b.shift===proposed.shift&&b.alt===proposed.alt&&b.meta===proposed.meta));
     if(duplicates.length&&!window.confirm(human(proposed)+' は登録済みです。元の割当を置き換えますか？'))return;
-    bindings=bindings.filter(b=>!duplicates.includes(b));
-    if(bindings.length>=MAX_BINDINGS){status.textContent='割当をこれ以上追加できません。';return;}
-    bindings.push(proposed);persist();render();status.textContent=human(proposed)+' を登録しました。';
+    const next=bindings.filter(b=>!duplicates.includes(b));
+    if(next.length>=MAX_BINDINGS){status.textContent='割当をこれ以上追加できません。';return;}
+    next.push(proposed);
+    if(!persist(next))return;
+    render();status.textContent=human(proposed)+' を登録しました。';
   };
   capture.onclick=()=>{
     if(capturing){stopCapture();status.textContent='登録をキャンセルしました。';return;}
@@ -147,7 +156,8 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
   cancel.onclick=()=>{
     if(!bindings.length)return;
     if(!window.confirm('追加したキー割当をすべて解除しますか？ 既定のキーは変わりません。'))return;
-    bindings=[];persist();render();status.textContent='追加した割当を解除しました。';
+    if(!persist([]))return;
+    render();status.textContent='追加した割当を解除しました。';
   };
   exportButton.onclick=()=>{
     const blob=new Blob([JSON.stringify({schema:'illustro.user.shortcuts',version:1,bindings},null,2)],{type:'application/json'});
@@ -181,7 +191,8 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
         '', '現在の設定と入れ替えますか？'
       ];
       if(!window.confirm(details.join('\n')))return;
-      bindings=imported;persist();render();
+      if(!persist(imported))return;
+      render();
       status.textContent='キー設定を読み込みました。追加・変更'+added.length+'件、解除'+removed.length+
         '件、未対応'+unsupported.length+'件。元の未対応情報も保持しています。';
     }catch(error){status.textContent=error instanceof Error?error.message:'読み込みに失敗しました。';}
