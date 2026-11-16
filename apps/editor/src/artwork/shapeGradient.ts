@@ -146,15 +146,57 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   function redrawStops(){
     stopsArea.replaceChildren();
     if(type.value!=='gradient')return;
+    // Color bar with draggable stop markers, including touch / pen input.
+    const bar=document.createElement('div');
+    bar.style.cssText='position:relative;height:32px;border:1px solid #8c929b;border-radius:6px;touch-action:none;margin:6px 12px 18px';
+    bar.setAttribute('aria-label','グラデーションの色帯');
+    const updateBar=()=>{
+      const sorted=[...stops].sort((a,b)=>a.at-b.at);
+      bar.style.background='linear-gradient(to right,'+sorted.map(s=>s.color+' '+(s.at*100)+'%').join(',')+')';
+    };
+    updateBar();
+    const markers:HTMLButtonElement[]=[];
+    const updateMarkers=()=>markers.forEach((marker,i)=>{marker.style.left=(stops[i]!.at*100)+'%';});
+    for(const [index,stop] of stops.entries()){
+      const marker=document.createElement('button');
+      marker.type='button';marker.title='色 '+(index+1)+' をドラッグして位置を調整';
+      marker.setAttribute('aria-label',marker.title);
+      marker.style.cssText='position:absolute;top:4px;transform:translateX(-50%);width:17px;height:24px;border:2px solid white;border-radius:5px;background:'+stop.color+';box-shadow:0 0 0 1px #252525;cursor:ew-resize;touch-action:none;padding:0';
+      let dragging:number|null=null;
+      const move=(clientX:number)=>{
+        const rect=bar.getBoundingClientRect();
+        if(rect.width<=0)return;
+        stops[index]={...stops[index]!,at:Math.round(Math.max(0,Math.min(1,(clientX-rect.left)/rect.width))*1000)/1000};
+        const field=stopsArea.querySelectorAll<HTMLInputElement>('input[data-stop-position]')[index];
+        if(field)field.value=String(Math.round(stops[index]!.at*1000)/10);
+        updateMarkers();updateBar();
+      };
+      marker.onpointerdown=event=>{
+        if(event.button!==0)return;
+        event.preventDefault();dragging=event.pointerId;marker.setPointerCapture(event.pointerId);move(event.clientX);
+      };
+      marker.onpointermove=event=>{if(dragging===event.pointerId)move(event.clientX);};
+      const finish=(event:PointerEvent)=>{
+        if(dragging!==event.pointerId)return;
+        move(event.clientX);dragging=null;
+        if(marker.hasPointerCapture(event.pointerId))marker.releasePointerCapture(event.pointerId);
+        void refresh();
+      };
+      marker.onpointerup=finish;marker.onpointercancel=finish;
+      markers.push(marker);bar.append(marker);
+    }
+    updateMarkers();stopsArea.append(bar);
     for(const [index,stop] of stops.entries()){
       const row=document.createElement('div');row.className='c06-clipboard-grid';
       const position=numberField(row,'位置（%）',stop.at*100,0,100,.1);
+      position.dataset.stopPosition=String(index);
       const color=document.createElement('input');color.type='color';color.value=stop.color;labelledField(row,'色',color);
       const opacity=numberField(row,'不透明度（%）',stop.opacity*100,0,100,.1);
       const midpoint=numberField(row,'次の色との中間（%）',stop.midpoint*100,1,99,.1);
       row.onchange=()=>{
         stops[index]={at:Math.max(0,Math.min(1,position.valueAsNumber/100)),color:color.value,
           opacity:Math.max(0,Math.min(1,opacity.valueAsNumber/100)),midpoint:Math.max(.01,Math.min(.99,midpoint.valueAsNumber/100))};
+        markers[index]!.style.background=color.value;updateMarkers();updateBar();
         void refresh();
       };
       if(stops.length>2)row.append(button('色を外す',()=>{stops.splice(index,1);redrawStops();void refresh();},status));
