@@ -357,9 +357,11 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   actions.append(all,clear,reselect,invert,shift,movePixels,grow,shrink,feather,border,undo,redo);
   const named=document.createElement('select');named.setAttribute('aria-label','保存した選択範囲');
   const save=asButton('名前を付けて保存',()=>void saveCurrent());
+  const overwrite=asButton('選んだ保存を上書き',()=>void overwriteCurrent());
   const load=asButton('保存した範囲を使う',()=>void loadCurrent());
   const remove=asButton('保存した範囲を削除',()=>void deleteCurrent());
-  saveArea.append(named,save,load,remove);
+  named.onchange=()=>refresh();
+  saveArea.append(named,save,overwrite,load,remove);
   async function updateNamed(){
     const doc=source();if(!doc)return;
     const previousName=named.value;
@@ -371,8 +373,23 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   async function saveCurrent(){
     const doc=source();if(!doc||!active)return;
     const name=window.prompt('選択範囲の名前','選択範囲');if(!name)return;
-    try{await saveNamedSelection(doc.id,name,active);await updateNamed();status.textContent='選択範囲を保存しました。';}
-    catch(error){status.textContent=String(error);}
+    try{
+      const saved=await saveNamedSelection(doc.id,name,active);
+      await updateNamed();named.value=saved.id;refresh();
+      status.textContent='選択範囲を保存しました。';
+    }catch(error){status.textContent=String(error);}
+  }
+  async function overwriteCurrent(){
+    const doc=source(),selectedId=named.value;
+    if(!doc||!active||!selectedId)return;
+    try{
+      const entry=(await listSavedSelections(doc.id)).find(item=>item.id===selectedId);
+      if(!entry)throw Error('上書きする保存済み範囲が見つかりません。');
+      if(!window.confirm('「'+entry.name+'」の保存内容を現在の選択範囲に置き換えますか？'))return;
+      await saveNamedSelection(doc.id,entry.name,active,entry.id);
+      await updateNamed();named.value=entry.id;refresh();
+      status.textContent='「'+entry.name+'」を上書きしました。';
+    }catch(error){status.textContent=String(error);}
   }
   async function loadCurrent(){
     const doc=source();if(!doc)return;
@@ -403,7 +420,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const enabled=!!active;
     for(const button of [clear,invert,shift,movePixels,grow,shrink,feather,border])button.disabled=!enabled;
     reselect.disabled=!lastSelection;undo.disabled=!history.length;redo.disabled=!future.length;
-    save.disabled=!enabled;
+    save.disabled=!enabled;overwrite.disabled=!enabled||!named.value;
   }
   // Intercept only while intentionally entering a selection gesture. In all other
   // cases brush, pen, touch navigation and pointer capture remain untouched.
