@@ -124,12 +124,13 @@ export async function importAssetPack(
 ):Promise<PackImportResult>{
   // Validate again at the application boundary; old v1 packs without version fields still work.
   const input=parse(manifest),imported:AssetInfo[]=[],failures:string[]=[],failedIds:string[]=[];
-  const renamedIds:Record<string,string>={};
+  // IDs come from pack files and may match built-in object property names.
+  const renamedIds:Record<string,string>=Object.create(null);
   const selected=options?.onlyIds?new Set(options.onlyIds):null;
   if(selected&&[...selected].some(id=>!input.items.some(item=>item.id===id)))
     throw Error('再試行する素材がパック内に見つかりません。');
   const occupied=new Set((await listAssets(true)).map(item=>item.id));
-  const resolvedIds:Record<string,string>={...options?.resolvedIds};
+  const resolvedIds:Record<string,string>=Object.assign(Object.create(null),options?.resolvedIds);
   const usedTargets=new Set(Object.values(resolvedIds));
   for(const item of input.items){
     if(resolvedIds[item.id])continue;
