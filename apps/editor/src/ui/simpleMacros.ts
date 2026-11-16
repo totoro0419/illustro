@@ -26,7 +26,15 @@ export async function invokeMacroSequence(
     if(!permitted(id))return {ok:false,reason:'対応していない操作が含まれています。',failedStep:i+1,unfinished};
     const result=await invoke(id);
     if(!result.ok)return {ok:false,reason:result.reason??'現在は使えません。',failedStep:i+1,unfinished};
-    if(!result.settled)unfinished=true;
+    if(!result.settled){
+      unfinished=true;
+      // A dispatched DOM click is not a completed asynchronous history
+      // operation. Never race the next macro step against unknown work.
+      if(i<steps.length-1)return {
+        ok:false,reason:'処理完了を確認できないため、残りの操作を実行せず停止しました。',
+        failedStep:i+1,unfinished
+      };
+    }
   }
   return {ok:true,reason:null,failedStep:null,unfinished};
 }
