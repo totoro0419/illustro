@@ -47,6 +47,8 @@ function parseFile(value:unknown,existing:readonly string[]):Profile[]{
   }
   return profiles;
 }
+/** Verify an imported workspace profile file without changing saved settings. */
+export function validateWorkspaceProfiles(value:unknown,existing:readonly string[]):void{parseFile(value,existing);}
 const toFile=(profiles:readonly Profile[]):ProfileFile=>({schema:'illustro.workspace.profiles',version:1,profiles});
 function download(name:string,text:string){
   const blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob);
