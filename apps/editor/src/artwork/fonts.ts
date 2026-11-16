@@ -1,5 +1,5 @@
 import type {ArtPoint,EditablePath,EditableText} from '@illustro/core';
-import {addAsset,getAsset,listAssets,type AssetInfo} from '../assets/library';
+import {addAsset,getAsset,listAssets,type AssetInfo,type AssetEntry} from '../assets/library';
 import type {Font,PathCommand} from 'opentype.js';
 
 const familyName=(id:string)=>'IllustroFont-'+id;
@@ -12,9 +12,14 @@ export async function importFont(file:File):Promise<AssetInfo>{
   const buffer=await file.arrayBuffer(),id=crypto.randomUUID();
   const face=await new FontFace(familyName(id),buffer).load();
   const asset=await addAsset({id,kind:'font',name:file.name,data:file,origin:file.name});
-  document.fonts.add(face);liveFonts.set(id,Promise.resolve(face));
+  registerLoadedFont(id,face);
   return asset;
 }
+export function registerLoadedFont(id:string,face:FontFace){
+  document.fonts.add(face);
+  liveFonts.set(id,Promise.resolve(face));
+}
+
 export async function ensureFont(id:string){
   const existing=liveFonts.get(id);
   if(existing)return existing;
@@ -28,6 +33,28 @@ export async function ensureFont(id:string){
   try{return await loading;}catch(error){liveFonts.delete(id);throw error;}
 }
 export function fontFamily(id:string){return familyName(id);}
+
+// A browser can display WOFF2 through FontFace even though opentype.js cannot trace it.
+// Check the file signature, not only the filename: extensions can be renamed.
+async function outlineFont(asset:AssetEntry):Promise<Font>{
+  const head=new Uint8Array(await asset.data.slice(0,4).arrayBuffer());
+  if(String.fromCharCode(...head)==='wOF2')
+    throw Error('WOFF2は表示できますが、輪郭化には未対応です。輪郭化する場合はTTF・OTF・WOFF版のフォントを読み込んでください。');
+  try{
+    const {parse}=await import('opentype.js');
+    return parse(await asset.data.arrayBuffer());
+  }catch{
+    throw Error('このフォントは表示できますが、輪郭化のための形状を読み取れません。TTF・OTF・WOFF形式をお試しください。');
+  }
+}
+
+export async function fontOutlineCapability(id:string):Promise<string|null>{
+  const asset=await getAsset(id);
+  if(!asset||asset.deleted||asset.kind!=='font')
+    return '元のフォントがありません。フォントを読み込み直してください。';
+  try{await outlineFont(asset);return null;}
+  catch(error){return error instanceof Error?error.message:String(error);}
+}
 
 function appendCommands(points:ArtPoint[],commands:readonly PathCommand[]){
   for(const command of commands){
@@ -87,10 +114,7 @@ export async function outlineText(text:EditableText):Promise<EditablePath>{
   if(!text.fontAsset)throw Error('パスへ変換するには、読み込んだフォントを文字レイヤーに適用してください。');
   const font=await getAsset(text.fontAsset);
   if(!font||font.deleted||font.kind!=='font')throw Error('輪郭を取得するフォントが見つかりません。');
-  const {parse}=await import('opentype.js');
-  let parsed:Font;
-  try{parsed=parse(await font.data.arrayBuffer());}
-  catch{throw Error('このファイル形式では輪郭を読み出せません。TTFまたはOTFのフォントを使ってください。');}
+  const parsed=await outlineFont(font);
   if(Array.from(text.text).some(character=>!/^\s$/u.test(character)&&!parsed.charToGlyphIndex(character)))
     throw Error('このフォントには一部の文字がありません。文字を含むフォントを選んでください。');
   const points=vectorize(text,parsed);

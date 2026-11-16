@@ -2,7 +2,7 @@ import type {DocumentRoot} from '@illustro/core';
 import {addAsset,getAsset} from '../assets/library';
 import type {PreservedPortableData} from '../persistence/portable';
 import type {PortableSectionInput} from '../persistence/format';
-import {fontFamily} from './fonts';
+import {fontFamily,registerLoadedFont} from './fonts';
 
 const PREFIX='c10.font.',TYPE='font.asset.v1',LIMIT=48*1024*1024;
 const validId=(id:string)=>/^[a-f0-9-]{36}$/i.test(id);
@@ -63,6 +63,6 @@ export async function importFonts(root:DocumentRoot,preserved:PreservedPortableD
     }
     const font=await new FontFace(fontFamily(id),fontBytes).load();
     await addAsset({id,kind:'font',name:fontName,data:new Blob([fontBytes]),origin:'Illustro作品ファイル'});
-    document.fonts.add(font);
+    registerLoadedFont(id,font);
   }
 }
