@@ -38,11 +38,21 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   const originalCanvas=document.createElement('canvas');
   originalCanvas.hidden=true;originalCanvas.style.cssText='max-width:100%;touch-action:none;border:1px solid currentColor';
   originalCanvas.setAttribute('aria-label','変形前の絵に描くキャンバス');
-  let originalDraft:Uint8Array|undefined,originalUndo:Uint8Array|undefined,editingOriginal=false;
+  let originalDraft:Uint8Array|undefined,editingOriginal=false;
+  const originalUndo:Uint8Array[]=[],originalRedo:Uint8Array[]=[];
+  // A source-image undo step may be tens of MB; enforce both step and memory budgets.
+  function saveOriginalStep(stack:Uint8Array[],pixels:Uint8Array){
+    stack.push(pixels);
+    let bytes=stack.reduce((total,item)=>total+item.byteLength,0);
+    while(stack.length>1&&(stack.length>12||bytes>96*1024*1024))
+      bytes-=stack.shift()!.byteLength;
+  }
   let originalPointer:number|null=null,originalInput:Sample[]=[];
   let source:TransformSource|null=null,settings=initialTransform,undo:Transform[]=[],redo:Transform[]=[],previewId=0,busy=false;
   let ownedGesture:BrushSurface|null=null,editingHandles=false,placingPoints=false,previewAbort:AbortController|null=null;
   const inputs=new Map<keyof Omit<Transform,'quadrilateral'|'mesh'|'liquify'>,HTMLSelectElement|HTMLInputElement>();
+  const keepRatio=document.createElement('input');keepRatio.type='checkbox';keepRatio.checked=true;
+  const ratioLabel=document.createElement('label');ratioLabel.append(keepRatio,' 縦横比を保つ');controls.append(ratioLabel);
   const snapFields=document.createElement('fieldset'),snapLegend=document.createElement('legend');
   snapLegend.textContent='吸着';snapFields.append(snapLegend);
   const checkbox=(text:string,checked:boolean)=>{
@@ -92,7 +102,11 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     control.onchange=()=>{
       const value=control instanceof HTMLInputElement?control.valueAsNumber:control.value;
       if(typeof value==='number'&&!Number.isFinite(value)){sync();return;}
-      change({...settings,[key]:value});
+      if(keepRatio.checked&&key==='sx'&&typeof value==='number'&&settings.sx!==0)
+        change({...settings,sx:value,sy:settings.sy*value/settings.sx});
+      else if(keepRatio.checked&&key==='sy'&&typeof value==='number'&&settings.sy!==0)
+        change({...settings,sy:value,sx:settings.sx*value/settings.sy});
+      else change({...settings,[key]:value});
     };
   }
   function options<K extends 'mode'|'interpolation'>(key:K,label:string,items:readonly [Transform[K],string][]){
@@ -144,7 +158,17 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   function setCorners(corners:TransformQuad){
     if(settings.quadrilateral)change({...settings,quadrilateral:{...settings.quadrilateral,corners}});
   }
-  const usesHandles=(mode:Transform['mode'])=>cornerMode(mode)||meshMode(mode);
+  const usesHandles=(mode:Transform['mode'])=>mode==='affine'||cornerMode(mode)||meshMode(mode);
+  function affineHandles(t:Transform,bounds:TransformBounds){
+    const rad=t.angle*Math.PI/180,cos=Math.cos(rad),sin=Math.sin(rad);
+    const corners=rectCorners(bounds).map(p=>{
+      const x=p.x-t.cx,y=p.y-t.cy,u=t.sx*x+t.shear*y,v=t.sy*y;
+      return {x:t.cx+t.dx+u*cos-v*sin,y:t.cy+t.dy+u*sin+v*cos};
+    });
+    const radius=Math.max(30,Math.min(120,Math.max(bounds.width,bounds.height)*.5+30));
+    const center={x:t.cx+t.dx,y:t.cy+t.dy};
+    return {center,points:[...corners,{x:center.x+radius*Math.sin(rad),y:center.y-radius*Math.cos(rad)}]};
+  }
   const pointSelect=document.createElement('select');
   const pointLabel=document.createElement('label');pointLabel.append('制御点',pointSelect);
   const lockPoint=document.createElement('input');lockPoint.type='checkbox';
@@ -216,6 +240,40 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   function refreshHandles(){
     if(!usesHandles(settings.mode)){if(editingHandles)stopGesture();return;}
     if(!source||!editingHandles)return;
+    if(settings.mode==='affine'){
+      const handles=affineHandles(settings,source.bounds),{center,points}=handles;
+      ownedGesture=source.drawing;
+      ownedGesture.setCanvasEditGesture({path:false,width:2,color:'#ffb742',complete:()=>{},
+        pointEdit:{points,edges:[[0,1],[1,2],[2,3],[3,0]],closed:false,commit:(index,point)=>{
+          if(index===4){
+            const old=points[4]!;
+            const oldAngle=Math.atan2(old.y-center.y,old.x-center.x);
+            const newAngle=Math.atan2(point.y-center.y,point.x-center.x);
+            const delta=Math.atan2(Math.sin(newAngle-oldAngle),Math.cos(newAngle-oldAngle));
+            change({...settings,angle:(settings.angle+delta*180/Math.PI+540)%360-180});
+            return;
+          }
+          const old=points[index];
+          if(!old)return;
+          if(keepRatio.checked){
+            const ox=old.x-center.x,oy=old.y-center.y,denom=ox*ox+oy*oy;
+            const ratio=denom>1e-8?((point.x-center.x)*ox+(point.y-center.y)*oy)/denom:1;
+            if(Math.abs(ratio)<.001){status.textContent='倍率が0に近すぎます。';return;}
+            change({...settings,sx:settings.sx*ratio,sy:settings.sy*ratio});
+          }else{
+            const start=rectCorners(source!.bounds)[index]!;
+            const x=start.x-settings.cx,y=start.y-settings.cy;
+            const rad=settings.angle*Math.PI/180,cos=Math.cos(rad),sin=Math.sin(rad);
+            const dx=point.x-center.x,dy=point.y-center.y;
+            const u=dx*cos+dy*sin,v=-dx*sin+dy*cos;
+            const sy=Math.abs(y)>1e-6?v/y:settings.sy;
+            const sx=Math.abs(x)>1e-6?(u-settings.shear*y)/x:settings.sx;
+            if(!Number.isFinite(sx*sy)||Math.abs(sx*sy)<1e-6){status.textContent='倍率を0以外にしてください。';return;}
+            change({...settings,sx,sy});
+          }
+        }}});
+      return;
+    }
     const mesh=meshMode(settings.mode)?settings.mesh?.controls:null;
     const points=mesh?.points??settings.quadrilateral?.corners;
     if(!points)return;
@@ -282,7 +340,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       const record=builder.record(),prior=originalDraft??current.pixels;
       const edited=await replayBrushPasses([{selection:null,records:[record]}],current.width,current.height,prior.slice());
       if(!current.valid()||source!==current||!editingOriginal)throw Error('編集する作品が変わりました。');
-      originalUndo=prior;originalDraft=edited;paintOriginal();
+      saveOriginalStep(originalUndo,prior);originalRedo.length=0;originalDraft=edited;paintOriginal();
       status.textContent='元の絵に反映しました。「変形後の確認」で戻ります。';
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);paintOriginal();}
     finally{busy=false;sync();}
@@ -293,15 +351,22 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       if(originalPointer!==null)throw Error('ペンを離してから候補を確かめてください。');
       editingOriginal=false;originalCanvas.hidden=true;status.textContent='変形後の候補を確認できます。';void refreshPreview();
     }else{
-      stopGesture();editingOriginal=true;previewAbort?.abort();preview.hidden=true;
+      stopGesture();editingOriginal=true;previewAbort?.abort();source.drawing.showArtworkPreview(null);preview.hidden=true;
       status.textContent='下の絵は変形前の座標です。現在のブラシか消しゴムで編集できます。';paintOriginal();
     }
     sync();
   });
-  const undoOriginal=button('元の絵の一筆を戻す',()=>{
-    if(!originalUndo||!source)return;
-    originalDraft=originalUndo===source.pixels?undefined:originalUndo;
-    originalUndo=undefined;paintOriginal();sync();
+  const undoOriginal=button('元の絵の編集を戻す',()=>{
+    const previous=originalUndo.pop();
+    if(!previous||!source)return;
+    saveOriginalStep(originalRedo,originalDraft??source.pixels);
+    originalDraft=previous===source.pixels?undefined:previous;paintOriginal();sync();
+  });
+  const redoOriginal=button('元の絵の編集をやり直す',()=>{
+    const next=originalRedo.pop();
+    if(!next||!source)return;
+    saveOriginalStep(originalUndo,originalDraft??source.pixels);
+    originalDraft=next===source.pixels?undefined:next;paintOriginal();sync();
   });
   const newAbove=button('変形の上に描画用レイヤーを追加',async()=>{
     await addAbove();status.textContent='新しい描画用レイヤーを選びました。';
@@ -309,10 +374,11 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   const start=button('変形を始める',async()=>{
     busy=true;sync();
     try{
-      source=await capture(target.value as Target);undo=[];redo=[];originalDraft=originalUndo=undefined;editingOriginal=false;
+      source=await capture(target.value as Target);undo=[];redo=[];originalDraft=undefined;originalUndo.length=originalRedo.length=0;editingOriginal=false;
       settings=source.initial??{...initialTransform,cx:source.width/2,cy:source.height/2};
       status.textContent=source.name+'を変形します。'+(source.maskLink===undefined?'':source.maskLink?' マスクも一緒に変形します。':' マスクは現在の位置に残ります。')+
         (source.initial?' 仮表示は原本の変形です。上に描いた筆は適用時に同じ位置へ重ねます。':'');
+      status.textContent+=' キャンバス上の半透明の変形表示は目安です。正確なレイヤー画素は下の候補欄で確認してください。';
       editingHandles=usesHandles(settings.mode);placingPoints=false;refreshHandles();compare.checked=false;
     }finally{busy=false;sync();}
     void refreshPreview();
@@ -326,7 +392,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     stopGesture();
     if(settings.mode==='liquify'){armLiquify();return;}
     if(usesHandles(settings.mode)){
-      editingHandles=true;placingPoints=false;sync();refreshHandles();status.textContent='キャンバス上の点をドラッグできます。';return;
+      editingHandles=true;placingPoints=false;sync();refreshHandles();status.textContent=settings.mode==='affine'?'四隅を動かして拡縮、上の点を動かして回転できます。':'キャンバス上の点をドラッグできます。';return;
     }
     ownedGesture=source.drawing;
     status.textContent='絵をタップして中心を指定するか、ドラッグして移動します。';
@@ -411,7 +477,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }finally{busy=false;sync();}
   });
   function reset(message:string){
-    stopGesture();source=null;originalPointer=null;originalInput=[];originalDraft=originalUndo=undefined;editingOriginal=false;originalCanvas.hidden=true;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();
+    stopGesture();source?.drawing.showArtworkPreview(null);source=null;originalPointer=null;originalInput=[];originalDraft=undefined;originalUndo.length=originalRedo.length=0;editingOriginal=false;originalCanvas.hidden=true;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();
     preview.hidden=true;status.textContent=message;sync();
   }
   function change(next:Transform){
@@ -429,7 +495,11 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       }
       editingHandles=usesHandles(next.mode);placingPoints=false;
     }
-    undo.push(prior);redo=[];settings=next;sync();refreshHandles();
+    undo.push(prior);
+    // Limit the retained transform snapshots including liquify stroke points.
+    while(undo.length>48||undo.reduce((total,step)=>total+(step.liquify?.reduce((sum,stroke)=>sum+stroke.points.length,0)??0),0)>196608)
+      undo.shift();
+    redo=[];settings=next;sync();refreshHandles();
     if(next.mode==='liquify'&&ownedGesture&&prior.radius!==next.radius)armLiquify();
     void refreshPreview();
   }
@@ -473,7 +543,8 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     toggleEffect.disabled=removeEffect.disabled=!!source||busy;
     openOriginal.disabled=!source?.initial||busy;
     openOriginal.textContent=editingOriginal?'変形後の確認':'元の絵に描く';
-    undoOriginal.hidden=!editingOriginal;undoOriginal.disabled=busy||!originalUndo;
+    undoOriginal.hidden=redoOriginal.hidden=!editingOriginal;undoOriginal.disabled=busy||!originalUndo.length;redoOriginal.disabled=busy||!originalRedo.length;
+    ratioLabel.hidden=!source||usingCorners||!!mesh||liquify;keepRatio.disabled=busy;
     comparison.hidden=!source||editingOriginal;snapFields.hidden=!source||editingOriginal;
   }
   async function refreshPreview(){
@@ -488,8 +559,11 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         selection:current.selection,outputWidth,outputHeight,showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
       if(id!==previewId)return;
       preview.width=outputWidth;preview.height=outputHeight;
-      const context=preview.getContext('2d');
-      context?.putImageData(new ImageData(pixels,outputWidth,outputHeight),0,0);
+      const context=preview.getContext('2d'),image=new ImageData(pixels,outputWidth,outputHeight);
+      context?.putImageData(image,0,0);
+      // This responsive canvas overlay is approximate: the original layer remains below it.
+      // The isolated panel preview continues to show the exact prospective layer pixels.
+      current.drawing.showArtworkPreview(compare.checked?null:image);
       if(context&&marks&&!compare.checked){
         context.strokeStyle='#45c8ef';context.lineWidth=1;context.setLineDash([4,4]);
         context.beginPath();
@@ -498,10 +572,10 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         context.stroke();
       }
       preview.hidden=false;
-    }catch(error){if(id===previewId&&!controller.signal.aborted){preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
+    }catch(error){if(id===previewId&&!controller.signal.aborted){current.drawing.showArtworkPreview(null);preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
   }
   compare.onchange=()=>void refreshPreview();
-  tools.append(start,direct,vanishing,flipX,flipY,back,forward,openOriginal,undoOriginal,apply,cancel,newAbove,toggleEffect,removeEffect,bakeButton);
+  tools.append(start,direct,vanishing,flipX,flipY,back,forward,openOriginal,undoOriginal,redoOriginal,apply,cancel,newAbove,toggleEffect,removeEffect,bakeButton);
   panel.append(summary,target,status,tools,controls,snapFields,cornerFields,meshFields,liquifyFields,comparison,preview,originalCanvas);host.append(panel);
   panel.ontoggle=()=>{if(!panel.open&&!busy&&source)reset('候補を取り消しました。');};
   sync();
