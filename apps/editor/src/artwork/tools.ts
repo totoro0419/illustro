@@ -31,7 +31,7 @@ export function numberField(parent:HTMLElement,label:string,value:number,min:num
 export function labelledField(parent:HTMLElement,label:string,element:HTMLElement){
   const wrapper=document.createElement('label');wrapper.append(label,element);parent.append(wrapper);
 }
-export function selectField<T extends string>(parent:HTMLElement,label:string,entries:readonly [T,string][]){
+export function selectField<T extends string>(parent:HTMLElement,label:string,entries:readonly (readonly [T,string])[]){
   const control=document.createElement('select');
   for(const [id,name] of entries)control.add(new Option(name,id));
   labelledField(parent,label,control);

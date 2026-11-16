@@ -8,6 +8,7 @@ export type EditablePath=Readonly<{
   kind:'path';shape:'rectangle'|'ellipse'|'polyline'|'bezier'|'freehand';
   points:readonly ArtPoint[];closed:boolean;stroke:string;fill:string|null;width:number;
   lineStyle?:'solid'|'dashed'|'dotted'|'pressure';
+  opacity?:number; originalStrokeLayer?:string;
 }>;
 export type EditableText=Readonly<{
   kind:'text';text:string;origin:ArtPoint;vertical:boolean;size:number;family:string;color:string;
@@ -46,12 +47,15 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
     stops.sort((a,b)=>a.at-b.at);
     checked=Object.freeze({kind:'gradient',mode,start:point(value.start),end:point(value.end),stops:Object.freeze(stops)});
   }else if(value.kind==='path'){
-    const {shape,points,closed,stroke,fill,width,lineStyle}=value;
+    const {shape,points,closed,stroke,fill,width,lineStyle,opacity,originalStrokeLayer}=value;
     if(shape!=='rectangle'&&shape!=='ellipse'&&shape!=='polyline'&&shape!=='bezier'&&shape!=='freehand')throw invalid();
     if(!Array.isArray(points)||points.length<2||points.length>4096||typeof closed!=='boolean'||!color(stroke)||
+      (opacity!==undefined&&!numeric(opacity,0,1))||
+      (originalStrokeLayer!==undefined&&(typeof originalStrokeLayer!=='string'||!originalStrokeLayer||originalStrokeLayer.length>128))||
       (fill!==null&&!color(fill))||!numeric(width,0,4096)||
       (lineStyle!==undefined&&lineStyle!=='solid'&&lineStyle!=='dashed'&&lineStyle!=='dotted'&&lineStyle!=='pressure'))throw invalid();
-    checked=Object.freeze({kind:'path',shape,points:Object.freeze(points.map(point)),closed,stroke,fill,width,...(lineStyle?{lineStyle}:{})});
+    checked=Object.freeze({kind:'path',shape,points:Object.freeze(points.map(point)),closed,stroke,fill,width,...(lineStyle?{lineStyle}:{}),
+      ...(typeof opacity==='number'?{opacity}:{}),...(typeof originalStrokeLayer==='string'?{originalStrokeLayer}:{})});
   }else if(value.kind==='text'){
     const {text,origin,vertical,size,family,align,spacing,lineHeight,fontAsset,embedFont}=value;
     if(typeof text!=='string'||!text.trim()||text.length>8192||typeof vertical!=='boolean'||!numeric(size,1,4096)||

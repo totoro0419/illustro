@@ -23,6 +23,8 @@ import {installRulerPanel} from './artwork/ruler';
 import {installSymmetryPanel} from './artwork/symmetryPanel';
 import {DEFAULT_SYMMETRY,normalizeSymmetry,SYMMETRY_SECTION,SYMMETRY_TYPE,type SymmetrySettings} from './strokeSymmetry';
 import {installShapeGradientPanel} from './artwork/shapeGradient';
+import {installStrokeCorrection} from './artwork/strokeCorrection';
+import {layerMaskCoverage} from '@illustro/brush-rt';
 import {runArtwork} from './artwork/run';
 import {selectionAsLayerMask} from './artwork/selectionMask';
 import type {ArtworkActions} from './artwork/tools';
@@ -147,6 +149,7 @@ try{
 }catch{/* Drawing remains usable when preferences are unavailable. */}
 let symmetrySettings:SymmetrySettings=DEFAULT_SYMMETRY;
 let rulerPanel:ReturnType<typeof installRulerPanel>|undefined;
+let strokeCorrection:ReturnType<typeof installStrokeCorrection>|undefined;
 let symmetryPanel:ReturnType<typeof installSymmetryPanel>|undefined;
 let c05ReferenceBoard:ReferenceBoardService|undefined;
 let c06ClipboardUI:ClipboardUI|undefined;
@@ -1574,6 +1577,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
  }
  else{byId('colorSampleLoupe').hidden=true;foreground.begin();foreground.commit(color);byId('status').textContent='キャンバスから '+hex(foreground.current)+' を取得しました。';if(!holdingColorKey&&selectedTool==='eyedropper')restoreDrawingTool();}
  });
+ drawing.correctionHold=()=>strokeCorrection?.hold()??null;
  drawing.eraserPreset=()=>{
   const active=drawing.preset;if(active?.blend==='erase')return active;
   const eraser=brushDrafts.get(lastEraserPresetId)??drawing.brushes.find(brush=>brush.id===lastEraserPresetId);
@@ -3955,6 +3959,9 @@ const artworkActions:ArtworkActions={
     if(!drawing||!documentReady)throw Error('作品を開いてください。');
     const {width,height}=artwork.root,reference=controller.selectedLayer.id;
     if(editing&&reference!==editing)throw Error('編集するレイヤーを選び直してください。');
+    const previous=editing?artwork.root.getLayer(editing).editable:null;
+    if(content.kind==='path'&&previous?.kind==='path'&&previous.originalStrokeLayer)
+      content={...content,opacity:previous.opacity??1,originalStrokeLayer:previous.originalStrokeLayer};
     const pixels=await runArtwork({content,width,height,outputWidth:width,outputHeight:height});
     await withClipboardAccess(async()=>{
       if(surface!==drawing||controller.document!==artwork||artwork.head!==head||controller.selectedLayer.id!==reference)
@@ -3980,6 +3987,52 @@ const artworkActions:ArtworkActions={
     return 'edit';
   })
 };
+strokeCorrection=installStrokeCorrection(byId('documentBoxBody'),{
+  latest:()=>surface?.correctionStroke??null,
+  size:()=>controller.document.root,
+  apply:async(source,path)=>withClipboardAccess(async drawing=>{
+    const artwork=controller.document,{width,height}=artwork.root;
+    if(drawing.correctionStroke!==source)throw Error('直前の線が変わりました。補正候補を開き直してください。');
+    const selection=source.selection?selectionAsLayerMask(source.selection):null;
+    const layer=artwork.root.getLayer(source.layer),mask=layer.vectorMask??null;
+    const [corrected,original]=await Promise.all([
+      runArtwork({content:path,width,height,outputWidth:width,outputHeight:height}),
+      replayBrushPasses([{selection,records:[source.record]}],width,height,new Uint8Array(width*height*4))
+    ]);
+    if(surface!==drawing||controller.document!==artwork||artwork.head!==source.revision)
+      throw Error('作品が変わったため中止しました。');
+    const tx=artwork.beginAdjustment(source.revision,'手描き線の形状補正');
+    const originalId=tx.addRasterSnapshotAbove(source.layer,original,'補正前の手描き線',true);
+    const id=tx.addRasterSnapshotAbove(source.layer,corrected,'補正した形状',true);
+    tx.setLayerVisibility(originalId,false);
+    tx.setEditableArtwork(id,{...path,originalStrokeLayer:originalId});
+    if(source.selection){
+      const alpha=mask?Uint8Array.from(source.selection.alpha,(value,index)=>
+        Math.round(value*layerMaskCoverage(mask,index%width,Math.floor(index/width)))):source.selection.alpha;
+      tx.setVectorLayerMask(id,selectionAsLayerMask({width,height,alpha}));
+    }
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    controller.selectLayer(id);
+    return 'edit';
+  }),
+  restore:async()=>withClipboardAccess(async()=>{
+    const artwork=controller.document,layer=controller.selectedLayer,editable=layer.editable;
+    const original=editable?.kind==='path'?editable.originalStrokeLayer as LayerId|undefined:undefined;
+    if(!original||!artwork.root.hasLayer(original)||!layer.visible)
+      throw Error('表示中の補正した形状レイヤーを選んでください。');
+    const tx=artwork.begin('元の手描き線に戻す');
+    tx.setLayerVisibility(layer.id,false);
+    tx.setLayerVisibility(original,true);
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    controller.selectLayer(original);
+    return 'edit';
+  })
+});
+c04Commands.registerProvider(()=>[{
+  id:'strokeCorrection',label:'直前の手描き線を補正',category:'描画',aliases:'図形 形状補正',
+  availability:()=>surface?.correctionStroke?null:'補正できる手描き線を描いてください。',
+  execute:()=>{shellUi.openBox('documentBox');strokeCorrection?.show();}
+}]);
 installShapeGradientPanel(byId('documentBoxBody'),artworkActions);
 installVectorPanel(byId('documentBoxBody'),artworkActions);
 installTextPanel(byId('documentBoxBody'),artworkActions);

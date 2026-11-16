@@ -102,6 +102,7 @@ export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTM
   ctx.scale(size.outputWidth/size.width,size.outputHeight/size.height);
   if(content.kind==='text')drawText(ctx,content);
   else{
+    ctx.globalAlpha=content.opacity??1;
     tracePath(ctx,content);
     if(content.fill){ctx.fillStyle=content.fill;ctx.fill('evenodd');}
     if(content.width){
