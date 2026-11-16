@@ -1,4 +1,5 @@
 import {validateEditableArtwork,type ArtPoint,type EditableGradient,type EditablePath,type GradientStop,type LayerId,type LayerMask} from '@illustro/core';
+import {layerMaskCoverage} from '@illustro/brush-rt';
 import {runArtwork} from './run';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
@@ -47,6 +48,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   let stops:GradientStop[]=[{at:0,color:'#23252d',opacity:1,midpoint:.5},{at:1,color:'#f5a950',opacity:1,midpoint:.5}];
   let editing:LayerId|undefined,previewId=0,lineStyle:NonNullable<EditablePath['lineStyle']>='solid';
   let previewRunning=false,previewPending=false,editingHandles=false;
+  let editedOpacity:number|undefined,originalStrokeLayer:string|undefined;
   let draftDrawing:NonNullable<ReturnType<ArtworkActions['context']>>['drawing']|undefined;
   let draftMask:LayerMask|null=null,savedBoundary:EditablePath|undefined;
   const getMask=()=>{
@@ -87,7 +89,9 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       result=[start,{x:start.x+Math.sign(end.x-start.x||1)*length,y:start.y+Math.sign(end.y-start.y||1)*length}];
     }
     return validateEditableArtwork({kind:'path',shape:shape.value,points:result,
-      closed:closed.checked,lineStyle,stroke:stroke.value,fill:filled.checked?fill.value:null,width:width.valueAsNumber}) as EditablePath;
+      closed:closed.checked,lineStyle,stroke:stroke.value,fill:filled.checked?fill.value:null,width:width.valueAsNumber,
+      ...(editedOpacity===undefined?{}:{opacity:editedOpacity}),
+      ...(originalStrokeLayer?{originalStrokeLayer}:{})}) as EditablePath;
   }
   function stopHandles(){
     if(editingHandles)draftDrawing?.setCanvasEditGesture(null);
@@ -182,7 +186,8 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         if(marker.hasPointerCapture(event.pointerId))marker.releasePointerCapture(event.pointerId);
         void refresh();
       };
-      marker.onpointerup=finish;marker.onpointercancel=finish;
+      marker.onpointerup=finish;
+      marker.onpointercancel=event=>{if(dragging!==event.pointerId)return;dragging=null;void refresh();};
       markers.push(marker);bar.append(marker);
     }
     updateMarkers();stopsArea.append(bar);
@@ -225,6 +230,12 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
           compare==='normal'?null:runArtwork({...size,content:data(true)})
         ]);
         const pixels=base??followed!;
+        // The shared renderer does not mask editable paths at preview size.
+        // Apply the same layer-mask coverage here to avoid showing paint outside the selection.
+        if(type.value==='shape'&&size.mask?.enabled)for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
+          const at=(y*outputWidth+x)*4,coverage=layerMaskCoverage(size.mask,(x+.5)*current.width/outputWidth,(y+.5)*current.height/outputHeight);
+          pixels[at+3]=Math.round(pixels[at+3]!*coverage);
+        }
         if(base&&followed)for(let y=0;y<outputHeight;y++){
           const start=(y*outputWidth+Math.floor(outputWidth/2))*4;
           base.set(followed.subarray(start,(y+1)*outputWidth*4),start);
@@ -240,7 +251,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     stopHandles();
     const current=api.context();
     if(!current)throw Error('作品を開いてください。');
-    editing=undefined;stroke.value=current.color;lineStyle='solid';
+    editing=undefined;editedOpacity=undefined;originalStrokeLayer=undefined;stroke.value=current.color;lineStyle='solid';
     draftDrawing=current.drawing;draftMask=current.selectionMask();savedBoundary=undefined;loadBoundaries();
     applied.checked=false;view.value='normal';
     setPoints([{x:current.width*.22,y:current.height*.25},{x:current.width*.78,y:current.height*.75}]);
@@ -274,6 +285,8 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       const current=api.context(),selected=current?.selected.content;
       if(!current||!selected||selected.kind==='text')throw Error('図形かグラデーションのレイヤーを選んでください。');
       editing=current.selected.id;draftDrawing=current.drawing;
+      editedOpacity=selected.kind==='path'?selected.opacity:undefined;
+      originalStrokeLayer=selected.kind==='path'?selected.originalStrokeLayer:undefined;
       if(selected.kind==='gradient'){
         type.value='gradient';mode.value=selected.mode;stops=[...selected.stops];setPoints([selected.start,selected.end]);
         savedBoundary=typeof selected.follow==='object'?selected.follow:undefined;loadBoundaries();
