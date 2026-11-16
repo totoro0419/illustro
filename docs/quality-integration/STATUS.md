@@ -1,19 +1,31 @@
 # Illustro C03〜C10 — 品質改善統合台帳
 
-## 最新確認（2026-11-17 07:36 JST、統合HEAD `e56c36420f81`）
+## 最新確認（2026-11-17 JST、12実装PRを一時統合）
 
-**実装PR統合：4/12件**。#76 → #80 → #77 → #82 の順で `quality/C03-C10-integration` へマージ済み。残り8件はDraft・未統合。**129件の独立解決確認済み：0件**。以下はコード取り込み記録であり、機能・実機の完成判定ではない。
+**12/12実装担当PRを `quality/C03-C10-integration` にマージ済み。** これはユーザーの「未完成でも一度統合」指示によるコード集約であり、製品の完成・修正内容の独立検証合格・Android実機合格ではない。**129件の独立解決確認済みは0件のまま**。統合管理PR #75はDraft・未マージ、調査PR #73は調査原本として維持し、mainへのマージは禁止。
 
-| 順序 | PR・領域 | 統合コミット | PR最終HEADの統合CI | 統合コミットのCore CI |
-|---|---|---|---|---|
-| 1 | #76 C03 保存/履歴 | [ec6e29d8](https://github.com/totoro0419/illustro/commit/ec6e29d821a8a6b56065a887e2e8b799daa4c14e) | [43970643618](https://github.com/totoro0419/illustro/actions/runs/43970643618) success | [43970901248](https://github.com/totoro0419/illustro/actions/runs/43970901248) success |
-| 2 | #80 共通描画 | [d1ffd845](https://github.com/totoro0419/illustro/commit/d1ffd845ab1442d00911555a0fe924fc472dad40) | [43889547783](https://github.com/totoro0419/illustro/actions/runs/43889547783) success | [43971183920](https://github.com/totoro0419/illustro/actions/runs/43971183920) success |
-| 3 | #77 C05 素材 | [852c2ca7](https://github.com/totoro0419/illustro/commit/852c2ca70c7d48513c7f5eed2a2d0861fc4fdc91) | [43971042284](https://github.com/totoro0419/illustro/actions/runs/43971042284) success | [43971372499](https://github.com/totoro0419/illustro/actions/runs/43971372499) success |
-| 4 | #82 C05 参考資料 | [e56c3642](https://github.com/totoro0419/illustro/commit/e56c36420f8120ed535df0a5495eaac7d6ebe8e4) | [43890670333](https://github.com/totoro0419/illustro/actions/runs/43890670333) success | [43971569104](https://github.com/totoro0419/illustro/actions/runs/43971569104) success |
+| 統合順 | PR | 領域 | マージコミット |
+|---:|---|---|---|
+| 1 | #76 | C03 レイヤー・保存・履歴 | [ec6e29d8](https://github.com/totoro0419/illustro/commit/ec6e29d821a8a6b56065a887e2e8b799daa4c14e) |
+| 2 | #80 | 共通描画・応答 | [d1ffd845](https://github.com/totoro0419/illustro/commit/d1ffd845ab1442d00911555a0fe924fc472dad40) |
+| 3 | #77 | C05 素材管理 | [852c2ca7](https://github.com/totoro0419/illustro/commit/852c2ca70c7d48513c7f5eed2a2d0861fc4fdc91) |
+| 4 | #82 | C05 参考資料・作品管理 | [e56c3642](https://github.com/totoro0419/illustro/commit/e56c36420f8120ed535df0a5495eaac7d6ebe8e4) |
+| 5 | #83 | C04 色選択・スポイト | [9cc816aa](https://github.com/totoro0419/illustro/commit/9cc816aa6dd0f32f85d91db7ac83c7e8347f67e8) |
+| 6 | #81 | C08 塗り・線画 | [5597186d](https://github.com/totoro0419/illustro/commit/5597186dd9aaa3f7014836a925a6240d7be28dd3) |
+| 7 | #89 | C09 定規・図形・グラデーション | [de877062](https://github.com/totoro0419/illustro/commit/de877062b873b5f136cbd58e5b92cd50b77af7f0) |
+| 8 | #84 | C10 文字・フォント | [1a5b453a](https://github.com/totoro0419/illustro/commit/1a5b453a93264b4ce73196fbcb2edf681c190211) |
+| 9 | #86 | C07 変形・非破壊編集 | [df0d8301](https://github.com/totoro0419/illustro/commit/df0d83015c724d233b48338cdd92f9fa343891b7) |
+| 10 | #88 | C10 ベクター | [14f29aba](https://github.com/totoro0419/illustro/commit/14f29aba105c7cc616f02ea15b650f45311705e3) |
+| 11 | #90 | C06 選択・コピー | [0f2db9d4](https://github.com/totoro0419/illustro/commit/0f2db9d4d5d3d5ad044483569b5d13cb77c2101a) |
+| 12 | #97 | C04 操作・設定 | [0e2f3451](https://github.com/totoro0419/illustro/commit/0e2f34510d192e2bbea261cda42398e199e8b80c) |
 
-**未確認の検査**：各マージ後のCore CIは `core:typecheck` と `core:test` の成功。**統合後の最新HEADでBrush/Editor全回帰・Editor本番ビルドが成功した記録は、この照合では取得できていない**。PR単独の成功と統合後の成功を混同しない。旧 `prep:check` は既存の未分類 `docs/development/PROTOTYPE_PROGRESS.md` により失敗する診断扱いで、PASSではない。
+**GitHub上の再確認:** 上記12PRはすべて `merged=true`、対象baseは統合ブランチ、各マージコミットをGitHubで確認。全12PRの変更ファイル名を照合した時点で同一パスの直接衝突0件、各担当PRの `apps/editor/src/main.ts` 変更0件。これだけで機能間の整合性を保証するものではない。
 
-**未解決**：#76の `main.ts` 接続と旧作品/Undo/Redo、#82の作品複製・切替時の `copyReferenceBoard` / `flush()` 接続、#77のIndexedDB移行実データ、#80の仮線/画素一致、Androidペン/指・4000×4000実機検証。次の統合前に現在の統合HEADの全回帰を確認する。調査PR #73の原本9件、129 ID、A/B/Cの確度は変更せず、`main` も固定HEAD `bdc7135b` から不変を確認。
+**統合後の検査:** 最終コードHEAD `0e2f34510d19` の [C03-C10 quality integration checks #43974271793](https://github.com/totoro0419/illustro/actions/runs/43974271793) がsuccess。ジョブ内で依存導入、brush生成、Core型・テスト、Brush回帰、Editor単体テスト、Editor型確認・本番ビルドがsuccess。[Core CI #43974279923](https://github.com/totoro0419/illustro/actions/runs/43974279923) もsuccess。**旧`prep:check`には既知の未分類文書による診断失敗が残る**（continue-on-error）。高速連続マージのため、途中コミットの統合CIは後続pushでキャンセルされたものがある。**最終の全体CI成功を正本とする。** Android実機と4000×4000、旧作品の画素一致・保存・復元は未検証。
+
+**未完成として次工程へ引き継ぐ事項:** `main.ts`（統合担当所有）の作品保存、Undo/Redo、参考資料複製と切替、作品固有パレット、マクロ完了通知、図形/塗りのライブ仮表示、ベクターとレイヤー操作の結線。共有描画と保存形式の横断確認、旧DB移行、異常終了からの復旧、高解像度/ペン/指の実機確認。これらの問題IDを解決確認済みに移さない。
+
+**保護の確認:** `main` のHEADは `bdc7135b51033982d90ea5dad104bb04fc107df2` のまま。PR #73の9調査ファイル・129 ID・元分類は改稿せず、その別PRを未マージで維持。問題の追跡はIssue #92、共有調整はIssue #74で継続。
 
 ---
 
