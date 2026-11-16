@@ -42,7 +42,7 @@
 - 自動回帰は `apps/editor/src/ui/c04Quality.test.ts` に登録し、GitHub Actions `C04 Operation UI Quality` で型検査・編集アプリのビルドと併せて確認する。
 - 初回実装コミット `a660e484e788eae3189eb9fe5d7ee0c31a1ba5ae` のGitHub Actionsで `C04 Operation UI Quality` [43889839217](https://github.com/totoro0419/illustro/actions/runs/43889839217) と `C03-C10 quality integration checks` [43889839213](https://github.com/totoro0419/illustro/actions/runs/43889839213) が成功（型検査、アプリビルド、C04テスト、コア・描画・全Editorテスト）。
 - マクロ安全化とテスト更新後のコードコミット `3d14a29b1cc57faf600b6e662c0dbc2b6a727465` でもC04専用CI [43890316184](https://github.com/totoro0419/illustro/actions/runs/43890316184) が成功（型検査・アプリビルド・C04テスト）。それ以降の変更は記録文書のみ。
-- 統合CI [43890289452](https://github.com/totoro0419/illustro/actions/runs/43890289452) は**更新途中の古いコミット `a411e626` で失敗**。原因はマクロ安全化後の期待値を古いテストがまだ保持していたため。現行テストは更新されC04専用CI成功済み。ただし統合CIの**現行コードでの再実行は未確認**であり、古い失敗を最新コードの成功と読み替えない。
+- **現行コードの統合CIが成功**。文書更新時のコミット `4b04bc265040de0dcb0c171c51d78015668643e4` で [C03-C10 quality integration checks #43890743425](https://github.com/totoro0419/illustro/actions/runs/43890743425) と [C04 Operation UI Quality #43890743793](https://github.com/totoro0419/illustro/actions/runs/43890743793) の両方が成功。旧コミット `a411e626` の一時的な失敗 [#43890289452](https://github.com/totoro0419/illustro/actions/runs/43890289452) は、修正後のマクロ仕様に対して更新前のテストが残っていたことによるもので、後続のテスト更新と再実行で解消。
 - **Android端末での実操作は未検証のため「全件完全解決」「実機合格」は主張しない。**
 - 必須実機検査: 6枠満杯→入替先選択、FocusでQuick表示、タッチドラッグで一回選択、レイヤー絞り込み中検索、キー離上げを描画中/描画後/画面切替時に実施、localStorage拒否時に設定破損しないこと、統合インポート、Undoを含む連続マクロ。
 - ストロークや作品保存の本体処理は変更していないが、操作経由で呼ぶため、描画・履歴・保存の回帰検査は統合時に必須。
