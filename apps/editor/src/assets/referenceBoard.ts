@@ -157,45 +157,85 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const id=options.getDocumentId();
     if(!id)return null;
     const current=board?.documentId===id?clone(board):await readBoard(id);
-    // Include each original file only once, even if the same reference is shown
-    // in several windows. The corresponding document pixels remain untouched.
+    // Reference files are optional. Missing or oversized images must not block
+    // saving the user's artwork. Keep ALL placements, including missing items,
+    // so that the original reference can be reattached later.
     const ids=[...new Set(current.items.map(item=>item.assetId))];
-    const packageBlob=await exportAssetPack(ids);
-    const packageInfo=JSON.parse(await packageBlob.text()) as unknown;
-    const data={schema:'illustro.reference-bundle',version:1,board:current,pack:packageInfo};
+    let pack:PackManifest;
+    const omitted:string[]=[];
+    try{
+      pack=await readAssetPack(await exportAssetPack(ids));
+    }catch{
+      const items:PackManifest['items'][number][]=[];
+      let bytes=0;
+      for(const assetId of ids){
+        try{
+          const part=await readAssetPack(await exportAssetPack([assetId]));
+          const item=part.items[0];
+          if(!item||bytes+item.bytes>48*1024*1024){omitted.push(assetId);continue;}
+          items.push(item);bytes+=item.bytes;
+        }catch{omitted.push(assetId);}
+      }
+      pack={schema:'illustro.asset-pack',version:1,createdAt:Date.now(),items};
+    }
+    if(omitted.length){
+      const warning=omitted.length+'件の参考画像を作品ファイルに含められませんでした。絵と資料の配置は保存されます。元の画像を確認してください。';
+      status.textContent=warning;
+      window.dispatchEvent(new CustomEvent('illustro:reference-save-warning',{detail:{message:warning,documentId:id,omittedAssetIds:omitted}}));
+    }
+    const data={schema:'illustro.reference-bundle',version:1,board:{...current,hidden:false},pack,omittedAssetIds:omitted};
     return {id:NATIVE_ID,type:NATIVE_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(data))};
   }
   async function importNative(preserved:PreservedPortableData|undefined):Promise<void>{
     const section=preserved?.optionalSections.find(item=>item.id===NATIVE_ID&&item.type===NATIVE_TYPE);
     if(!section)return;
     await refreshIfChanged();
-    const doc=options.getDocumentId();
-    if(!doc||!board)return;
-    // Do not erase the user's current local board when opening an older file.
-    if(board.items.length>0){status.textContent='端末に保存した資料配置を維持しました。';return;}
-    if(section.bytes.byteLength>70*1024*1024)throw Error('作品内の資料が大きすぎます。');
+    const doc=options.getDocumentId(),epoch=transition;
+    if(!doc||board?.documentId!==doc)return;
+    if(section.bytes.byteLength>70*1024*1024)throw Error('作品内の参考資料が大きすぎます。');
     const raw=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(section.bytes)) as unknown;
-    if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('作品内の資料情報が正しくありません。');
+    if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('作品内の参考資料が正しくありません。');
     const data=raw as Record<string,unknown>;
     if(data.schema!=='illustro.reference-bundle'||data.version!==1||!data.board||!data.pack)
-      throw Error('対応していない資料データです。');
-    const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
-    const result=await importAssetPack(embedded);
-    if(result.failures.length)throw Error('資料の一部を復元できませんでした：'+result.failures.slice(0,2).join('、'));
+      throw Error('対応していない参考資料データです。');
     const input=data.board as Partial<BoardSnapshot>;
-    if(!Array.isArray(input.items)||input.items.length>80)throw Error('資料の配置情報が正しくありません。');
-    const newItems:BoardItem[]=input.items.map((item,index)=>{
-      if(!item||typeof item.assetId!=='string'||!result.renamedIds[item.assetId])
-        throw Error('資料の参照先を復元できませんでした。');
-      return {
-        ...newBoardItem(result.renamedIds[item.assetId]!,index),
-        ...item,assetId:result.renamedIds[item.assetId]!,
-        id:crypto.randomUUID()
-      };
-    });
-    const imported:BoardSnapshot={version:1,documentId:doc,items:newItems,hidden:!!input.hidden};
+    if(!Array.isArray(input.items)||input.items.length>80||
+      input.items.some(item=>!item||typeof item.assetId!=='string'||!item.assetId||
+        typeof item.id!=='string'||!item.id||
+        ![item.x,item.y,item.width,item.height,item.zoom,item.rotation].every(Number.isFinite)||
+        item.width<=0||item.height<=0||item.zoom<=0))
+      throw Error('参考資料の配置情報が正しくありません。既存の資料は保護されました。');
+
+    // Never silently prefer a stale local layout over the file being opened.
+    // Keep the old layout intact when the user declines replacement.
+    if(board.items.length){
+      const local=JSON.stringify(board.items.map(item=>({...item,id:null})));
+      const incoming=JSON.stringify(input.items.map(item=>({...item,id:null})));
+      if(local===incoming){status.textContent='参考資料はすでに読み込まれています。';return;}
+      if(!window.confirm('この端末には同じ作品の参考資料が残っています。開いた作品ファイルの資料配置で置き換えますか？\n「キャンセル」で端末側の配置を残します。')){
+        status.textContent='端末に保存してある資料配置を残しました。';return;
+      }
+    }
+    const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
+    if(epoch!==transition||options.getDocumentId()!==doc)return;
+    const result=await importAssetPack(embedded);
+    if(epoch!==transition||options.getDocumentId()!==doc)return;
+    // A failed individual image must not remove its placement. Its original ID
+    // is retained and rendered with a visible missing-image explanation.
+    const newItems:BoardItem[]=input.items.map((item,index)=>({
+      ...newBoardItem(result.renamedIds[item.assetId]??item.assetId,index),
+      ...item,assetId:result.renamedIds[item.assetId]??item.assetId,
+      id:crypto.randomUUID()
+    }));
+    const imported:BoardSnapshot={version:1,documentId:doc,items:newItems,hidden:false};
     syncAfter(imported,false);
-    status.textContent=newItems.length+'枚の資料を作品ファイルから読み込みました。';
+    temporaryHidden=false;
+    const missing=new Set([
+      ...input.items.filter(item=>!result.renamedIds[item.assetId]).map(item=>item.assetId),
+      ...(Array.isArray(data.omittedAssetIds)?data.omittedAssetIds.filter((id):id is string=>typeof id==='string'):[])
+    ]);
+    status.textContent=newItems.length+'枚の資料配置を読み込みました。'+(missing.size||result.failures.length?
+      '元画像が不足している項目があります（'+Math.max(missing.size,result.failures.length)+'件）。配置は保持しました。':'');
   }
   function toggleGroup(){
     if(!board||!groupSelect.value)return;
