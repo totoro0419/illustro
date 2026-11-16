@@ -89,6 +89,26 @@ describe('M05 core persistence',()=>{
     expect(restored.head).toBe(revised.revision.id);
     expect(()=>d.beginAdjustment(applied.revision.id,'stale adjustment')).toThrow();
   });
+  it('previews and recovers isolated group structure without changing layer content',()=>{
+    const doc=new CoreDocument({width:6,height:6,ids:createDeterministicIdFactory()}),first=doc.defaultRasterLayerId;
+    const second=doc.addRasterLayerAbove(first).layerId;
+    const grouped=doc.begin('group layers');
+    grouped.createLayerGroup(new Set([first,second]),'group');
+    grouped.commit();
+    const id=doc.root.groupsForLayer(first)[0]!.id;
+    const comparison=doc.begin('isolate group');
+    comparison.updateLayerGroup(id,{compositing:'isolated'});
+    expect(comparison.previewLayerStructure().groupsForLayer(first)[0]?.compositing).toBe('isolated');
+    expect(doc.root.groupsForLayer(first)[0]?.compositing).toBeUndefined();
+    const result=comparison.commit();
+    const saved=doc.capturePersistenceSnapshot(),blocks=doc.persistenceBlockPayloads(saved);
+    const restored=CoreDocument.restore({snapshot:saved,blockPayloads:blocks});
+    expect(restored.root.groupsForLayer(first)[0]?.compositing).toBe('isolated');
+    restored.undo();
+    expect(restored.root.groupsForLayer(first)[0]?.compositing).toBeUndefined();
+    restored.redo();
+    expect(restored.head).toBe(result.revision.id);
+  });
   it('continues CommitSequence across Undo branch edits and protection never skips a gap',()=>{
     const ids=createDeterministicIdFactory(),d=new CoreDocument({width:64,height:64,ids}),l=d.defaultRasterLayerId;
     const a=d.begin('A');a.setPixel(l,1,1,[1,1,1,255]);expect(a.commit().revision.commitStamp?.commitSequence).toBe(1n);

@@ -775,6 +775,7 @@ function groupLayerRow(group:LayerGroup,depth:number){
     const name=window.prompt('グループ名',group.name)?.trim();
     if(name&&name!==group.name)changeLayer('グループ名を変更しました。',tx=>tx.updateLayerGroup(group.id,{name}));
   });
+  button('合成範囲',group.name+'の合成範囲を見比べる',()=>editGroupStructure(group));
   button('上へ',group.name+'を一段上へ移動する',()=>{
     changeLayer('グループを上へ移動しました。',tx=>tx.moveLayerGroup(group.id,1));
   });
@@ -782,7 +783,7 @@ function groupLayerRow(group:LayerGroup,depth:number){
     changeLayer('グループを下へ移動しました。',tx=>tx.moveLayerGroup(group.id,-1));
   });
   button('移動先',group.name+'の移動先を指定する',()=>{
-    chooseLayerGroupDestination(destination=>changeLayer('グループを移動しました。',tx=>tx.moveGroupIntoGroup(group.id,destination)));
+    chooseLayerGroupDestination(destination=>previewStructuralEdit('グループを移動',tx=>tx.moveGroupIntoGroup(group.id,destination)));
   });
   row.ondragover=event=>{
     if(draggedLayer?.document!==controller.document||group.members.includes(draggedLayer.id))return;
@@ -799,14 +800,131 @@ function groupLayerRow(group:LayerGroup,depth:number){
     draggedLayer=null;
     if(source?.document!==controller.document||group.members.includes(source.id))return;
     event.preventDefault();
-    changeLayer('レイヤーをグループに移動しました。',tx=>tx.moveLayersIntoGroup(new Set([source.id]),group.id));
+    previewStructuralEdit('レイヤーをグループに移動',tx=>tx.moveLayersIntoGroup(new Set([source.id]),group.id));
   };
   button('解除',group.name+'をグループ解除する',()=>{
-    changeLayer('グループを解除しました。',tx=>tx.dissolveLayerGroup(group.id));
+    previewStructuralEdit('グループを解除',tx=>tx.dissolveLayerGroup(group.id));
   });
   return row;
 }
 
+let groupStructurePreview:HTMLDialogElement|null=null;
+function previewStructuralEdit(label:string,edit:(tx:ReturnType<CoreDocument['begin']>)=>boolean){
+  const artwork=controller.document,head=artwork.head,drawing=surface;
+  if(!drawing||drawing.busy||geometryBusy||historyPending)return;
+  let future:CoreDocument['root'];
+  try{
+    const trial=artwork.begin(label);
+    if(!edit(trial)){trial.cancel();return;}
+    future=trial.previewLayerStructure();trial.cancel();
+  }catch(error){byId('status').textContent=error instanceof Error?error.message:String(error);return;}
+  groupStructurePreview?.close('cancel');
+  const dialog=document.createElement('dialog'),form=document.createElement('form');
+  dialog.className='layer-blend-dialog';dialog.setAttribute('aria-label','変更前後のレイヤー構造を見比べる');
+  form.method='dialog';
+  const title=document.createElement('strong');title.textContent=label;
+  const changes=document.createElement('ul');
+  for(const id of artwork.root.rootLayerIds){
+    if(!future.hasLayer(id))continue;
+    const past=artwork.root.getLayer(id),next=future.getLayer(id);
+    const beforeClip=artwork.root.clippingSource(id)?.name,afterClip=future.clippingSource(id)?.name;
+    const beforePath=artwork.root.groupsForLayer(id).map(group=>group.name).join('／');
+    const afterPath=future.groupsForLayer(id).map(group=>group.name).join('／');
+    if(beforeClip===afterClip&&beforePath===afterPath&&artwork.root.rootLayerIds.indexOf(id)===future.rootLayerIds.indexOf(id))continue;
+    const item=document.createElement('li');
+    item.textContent=past.name+(beforePath!==afterPath?'　所属 '+(beforePath||'外')+' → '+(afterPath||'外'):'')+
+      (beforeClip!==afterClip?'　クリップ元 '+(beforeClip||'なし')+' → '+(afterClip||'なし'):'')+
+      (next.blend?.effect?'　色の効果を保持':'')+(next.vectorMask?'　マスクを保持':'');
+    changes.append(item);
+  }
+  const compare=document.createElement('button');compare.type='button';compare.textContent='変更前を見る';
+  const cancel=document.createElement('button');cancel.type='submit';cancel.value='cancel';cancel.textContent='取り消す';
+  const apply=document.createElement('button');apply.type='submit';apply.value='apply';apply.textContent='この構造に変更';
+  let before=false;
+  compare.onclick=()=>{
+    before=!before;drawing.setStructurePreview(before?null:future);
+    compare.textContent=before?'変更後を見る':'変更前を見る';
+    compare.setAttribute('aria-pressed',String(before));
+  };
+  const buttons=document.createElement('menu');buttons.append(compare,cancel,apply);
+  form.append(title,changes,buttons);dialog.append(form);document.body.append(dialog);
+  groupStructurePreview=dialog;
+  dialog.addEventListener('close',()=>{
+    if(groupStructurePreview===dialog)groupStructurePreview=null;
+    if(surface===drawing)drawing.setStructurePreview(null);dialog.remove();
+    if(dialog.returnValue!=='apply')return;
+    if(artwork!==controller.document||artwork.head!==head||drawing!==surface){
+      byId('status').textContent='作品が変わったため構造を確定できませんでした。';return;
+    }
+    changeLayer(label,edit);
+  },{once:true});
+  shellUi.setLayerPage(false);dialog.show();drawing.setStructurePreview(future);compare.focus();
+}
+
+function editGroupStructure(group:LayerGroup){
+  const drawing=surface,artwork=controller.document,head=artwork.head;
+  if(!drawing||drawing.busy||geometryBusy||historyPending)return;
+  groupStructurePreview?.close('cancel');
+  const dialog=document.createElement('dialog'),body=document.createElement('form');
+  dialog.className='layer-blend-dialog';dialog.setAttribute('aria-label','グループ構造を見比べる');
+  const title=document.createElement('strong');title.textContent=group.name+'の合成範囲';
+  body.method='dialog';
+  const mode=document.createElement('select');
+  mode.add(new Option('下のレイヤーまで合成する','pass-through'));mode.add(new Option('グループの中で合成する','isolated'));
+  mode.value=group.compositing??'pass-through';
+  const choose=document.createElement('label');choose.append('合成する範囲',mode);
+  const detail=document.createElement('output');detail.setAttribute('role','status');
+  const stages=document.createElement('details'),stageName=document.createElement('summary');
+  stageName.textContent='変化が出るレイヤーと処理の順番';stages.append(stageName);
+  const rows=document.createElement('ul');
+  for(const id of group.members){
+    const layer=artwork.root.getLayer(id),clip=artwork.root.clippingSource(id);
+    const sequence=[
+      layer.deformation?'保持した変形を適用':'元の絵',
+      ...(layer.blend?.effect?.enabled?['効果用マスクで色を調整']:[]),
+      ...(layer.vectorMask?.enabled?['レイヤーマスク']:[]),
+      ...(clip?['「'+clip.name+'」でクリップ']:[]),
+      layer.blend?.tone?'色の範囲に応じて合成':'合成'
+    ];
+    const row=document.createElement('li');
+    row.textContent=layer.name+'  '+sequence.join(' → ');
+    rows.append(row);
+  }
+  stages.append(rows);
+  const compare=document.createElement('button');compare.type='button';
+  const cancel=document.createElement('button');cancel.type='submit';cancel.value='cancel';cancel.textContent='取り消す';
+  const apply=document.createElement('button');apply.type='submit';apply.value='apply';apply.textContent='構造を確定';
+  let before=false;
+  const reflect=()=>{
+    drawing.setIsolationPreview(before?null:{id:group.id,isolated:mode.value==='isolated'});
+    compare.textContent=before?'変更後を見る':'変更前を見る';
+    compare.setAttribute('aria-pressed',String(before));
+    const count=group.members.filter(id=>{
+      const blend=artwork.root.getLayer(id).blend;
+      return blend&&(blend.mode!=='normal'||blend.tone?.source==='backdrop');
+    }).length;
+    detail.textContent=(before?'変更前。':'変更後の仮表示。')+
+      (count?count+'枚で下の色との混ざり方が変わる可能性があります。':'現在の処理順で、元のレイヤーと関連を保持します。');
+    apply.disabled=mode.value===(group.compositing??'pass-through');
+  };
+  compare.onclick=()=>{before=!before;reflect();};
+  mode.onchange=()=>{before=false;reflect();};
+  const actions=document.createElement('menu');actions.append(compare,cancel,apply);
+  body.append(title,choose,detail,stages,actions);dialog.append(body);document.body.append(dialog);
+  groupStructurePreview=dialog;
+  dialog.addEventListener('close',()=>{
+    if(groupStructurePreview===dialog)groupStructurePreview=null;
+    if(surface===drawing)drawing.setIsolationPreview(null);dialog.remove();
+    if(dialog.returnValue!=='apply')return;
+    if(controller.document!==artwork||artwork.head!==head||surface!==drawing){
+      byId('status').textContent='作品が変更されたため構造を確定できませんでした。開き直してください。';return;
+    }
+    changeLayer('グループの合成範囲を変更しました。',tx=>tx.updateLayerGroup(group.id,{
+      compositing:mode.value==='isolated'?'isolated':'pass-through'
+    }));
+  },{once:true});
+  shellUi.setLayerPage(false);dialog.show();reflect();mode.focus();
+}
 let activeBlend:{dialog:HTMLDialogElement;drawing:BrushSurface;id:LayerId}|null=null;
 function editLayerBlend(){
   const drawing=surface,artwork=controller.document,layer=controller.selectedLayer;

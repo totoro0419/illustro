@@ -4,7 +4,7 @@ import {blendArtworkPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type Str
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
   revision:RevisionId;width:number;height:number;name:string;colorProfileId:string;
-  layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white';clipSurfaceId?:string;referenceOnly?:boolean;mask?:LayerMask;blend?:LayerBlend}>[];
+  layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white';clipSurfaceId?:string;referenceOnly?:boolean;isolation?:readonly string[];mask?:LayerMask;blend?:LayerBlend}>[];
   basePixels?:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[];
   strokes:readonly Readonly<{surfaceId:string;record:StrokeRecord}>[];
 }>;
@@ -24,7 +24,8 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
     const layer=root.getLayer(id);
     if(layer.kind!=='raster'||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1'||layer.surface.descriptor.workingColorSpaceRef!=='srgb')throw new Error('このレイヤーの色形式はM06に未対応です。');
     const clip=soloLayerId?null:root.clippingSource(id);
-    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{}),...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),...(layer.blend&&!soloLayerId?{blend:layer.blend}:{}),visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
+    const isolation=soloLayerId?[]:root.groupsForLayer(id).filter(group=>group.compositing==='isolated').map(group=>group.id);
+    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,...(isolation.length?{isolation}:{}),...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{}),...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),...(layer.blend&&!soloLayerId?{blend:layer.blend}:{}),visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
   });
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
   const strokes: {surfaceId:string;record:StrokeRecord}[]=[];
@@ -122,15 +123,26 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
       if(clippingSources.has(layer.surfaceId))sourcePixels.set(layer.surfaceId,image);
       return image;
     };
+    const groups:Array<{id:string;pixels:Uint8ClampedArray}>=[];
+    const closeGroup=()=>{
+      const group=groups.pop()!;
+      compositeLayer(groups.at(-1)?.pixels??composite,group.pixels);
+    };
     for(const layer of layers){
       if(layer.referenceOnly||!layer.visible||layer.opacity<=0)continue;
+      const isolation=layer.isolation??[];
+      let common=0;
+      while(common<groups.length&&isolation[common]===groups[common]?.id)common++;
+      while(groups.length>common)closeGroup();
+      for(const id of isolation.slice(common))groups.push({id,pixels:new Uint8ClampedArray(width*height*4)});
       const clip=layer.clipSurfaceId?layerBySurface.get(layer.clipSurfaceId):undefined;
       if(clip&&(!clip.visible||clip.opacity<=0))continue;
       const pixels=await readLayer(layer);
-      compositeLayer(composite,pixels,layer.opacity,clip?{pixels:await readLayer(clip),opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,{width,...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
+      compositeLayer(groups.at(-1)?.pixels??composite,pixels,layer.opacity,clip?{pixels:await readLayer(clip),opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,{width,...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
       // Let pointer input and normal drawing frames execute between layers.
       await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
     }
+    while(groups.length)closeGroup();
     return composite;
   }finally{renderer?.destroy();canvas.width=1;canvas.height=1;}
 }

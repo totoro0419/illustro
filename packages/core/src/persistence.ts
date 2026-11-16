@@ -190,9 +190,10 @@ function parseLayerGroups(value:unknown):readonly LayerGroup[]{
   if(!Array.isArray(value)||value.length>MAX_LAYERS)throw new Error('invalid layer groups');
   return Object.freeze(value.map(item=>{
     const group=record(item,'layer group');
+    if(group.compositing!==undefined&&group.compositing!=='pass-through'&&group.compositing!=='isolated')throw Error('invalid layer group compositing');
     if(typeof group.visible!=='boolean'||typeof group.locked!=='boolean')throw new Error('invalid layer group state');
     return Object.freeze({id:uuid(group.id,'layer group id') as LayerId,name:text(group.name,'group name',1,4096),
-      members:Object.freeze(uuidArray(group.members,'group layer') as LayerId[]),visible:group.visible,locked:group.locked});
+      members:Object.freeze(uuidArray(group.members,'group layer') as LayerId[]),visible:group.visible,locked:group.locked,...(group.compositing?{compositing:group.compositing}:{})});
   }));
 }
 function parseLayer(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescriptor>):LayerNode{

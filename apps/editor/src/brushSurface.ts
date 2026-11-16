@@ -981,6 +981,17 @@ export class BrushSurface{
     this.syncLayerStyles();
   }
   private layerCompPreview:LayerComp|null=null;
+  private isolationPreview:{id:LayerId;isolated:boolean}|null=null;
+  private structurePreview:EditorController['document']['root']|null=null;
+  setStructurePreview(root:EditorController['document']['root']|null){
+    this.structurePreview=root;
+    const current=root??this.controller.document.root;
+    this.renderer?.setSurfaceStack(current.rootLayerIds.map(id=>current.getLayer(id).surface.descriptor.surfaceId));
+    this.syncLayerStyles();
+  }
+  setIsolationPreview(preview:{id:LayerId;isolated:boolean}|null){
+    this.isolationPreview=preview;this.syncLayerStyles();
+  }
   private layerBlendPreview:{layerId:LayerId;blend:LayerBlend;opacity:number;tonePreview?:boolean}|null=null;
   setLayerBlendPreview(preview:{layerId:LayerId;blend:LayerBlend;opacity:number;tonePreview?:boolean}|null){
     this.layerBlendPreview=preview;
@@ -994,15 +1005,17 @@ export class BrushSurface{
     this.syncLayerStyles(preview);
   }
   private syncLayerStyles(preview?:{layerId:LayerId;opacity:number}){
-    const solo=this.inspectedLayer,root=this.controller.document.root;
+    const solo=this.inspectedLayer,root=this.structurePreview??this.controller.document.root;
     const layers=this.layerCompPreview?new Map(this.layerCompPreview.layers.map(layer=>[layer.id,layer])):null;
     const groups=this.layerCompPreview?new Map(this.layerCompPreview.groups.map(group=>[group.id,group.visible])):null;
-    this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>{
-      const candidate=layers?.get(layer.id);
+    this.renderer?.setSurfaceStyles(root.rootLayerIds.map(id=>{
+      const layer=root.getLayer(id),candidate=layers?.get(layer.id);
       const visible=this.layerCompPreview
         ?(candidate?.visible??layer.visible)&&root.groupsForLayer(layer.id).every(group=>groups?.get(group.id)??group.visible)
         :root.isLayerVisible(layer.id);
       const clip=root.clippingSource(layer.id);
+      const isolation=solo?[]:root.groupsForLayer(layer.id).filter(group=>
+        this.isolationPreview?.id===group.id?this.isolationPreview.isolated:group.compositing==='isolated').map(group=>group.id);
       const blendPreview=this.layerBlendPreview?.layerId===layer.id?this.layerBlendPreview:null;
       const blend=blendPreview?(blendPreview.tonePreview?{...blendPreview.blend,tonePreview:true}:blendPreview.blend)
         :candidate?.blend!==undefined?candidate.blend:layer.blend;
@@ -1010,6 +1023,7 @@ export class BrushSurface{
         surfaceKey:layer.surface.descriptor.surfaceId,
         visible:solo?layer.id===solo.id:visible,
         ...(!solo&&clip?{clipKey:clip.surface.descriptor.surfaceId}:{}),
+        ...(isolation.length?{isolation}:{}),
         ...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),
         ...(!solo&&blend?{blend}:{}),
         ...(layer.baseColor==='white'?{white:true}:{}),

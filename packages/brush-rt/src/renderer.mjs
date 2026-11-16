@@ -304,17 +304,18 @@ export class GpuRenderer {
   if(!b.sparsePreview)throw Error('Surface styles require the layered renderer');
   const next=new Map(),previous=b.surfaceStyles??new Map();
   let changed=previous.size!==styles.length;
-  for(const {surfaceKey,visible,opacity,clipKey,mask,blend,white} of styles){
+  for(const {surfaceKey,visible,opacity,clipKey,mask,blend,white,isolation} of styles){
    if(typeof surfaceKey!=='string'||next.has(surfaceKey)||typeof visible!=='boolean'||!Number.isFinite(opacity)||opacity<0||opacity>1)throw Error('Invalid surface style');
    if(clipKey!==undefined&&typeof clipKey!=='string')throw Error('Invalid clipping source');
    const before=previous.get(surfaceKey),blendTone=blend?.tone||blend?.effect?JSON.stringify([blend.tone,!!blend.tonePreview,blend.effect]):null,maskSignature=mask?.enabled?JSON.stringify(mask):null;
    const activeMask=maskSignature===before?.maskSignature?before.mask:maskSignature?mask:null;
    changed||=!before||before.visible!==visible||before.opacity!==opacity||before.clipKey!==clipKey||before.mask!==activeMask||
-    before.blend?.mode!==blend?.mode||before.blend?.space!==blend?.space||before.blend?.seed!==blend?.seed||before.blendTone!==blendTone||before.white!==white;
-   next.set(surfaceKey,{visible,opacity,clipKey,mask:activeMask,maskSignature,blend,blendTone,white});
+    before.blend?.mode!==blend?.mode||before.blend?.space!==blend?.space||before.blend?.seed!==blend?.seed||before.blendTone!==blendTone||before.white!==white||before.isolationKey!==(isolation?.join(',')??'');
+   next.set(surfaceKey,{visible,opacity,clipKey,mask:activeMask,maskSignature,blend,blendTone,white,isolation,isolationKey:isolation?.join(',')??''});
   }
   if(!changed)return;
   b.surfaceStyles=next;
+  b.hasIsolation=[...next.values()].some(style=>style.isolation?.length);
   b.paperOpacity=[...next.values()].find(style=>style.white&&style.visible)?.opacity??0;
   const active=new Set([...next.values()].flatMap(style=>[style.mask,style.blend?.effect?.mask]));
   for(const mask of b.layerMaskTextures?.keys()??[])if(!active.has(mask))releaseLayerMaskTextures(b,mask);
@@ -704,7 +705,13 @@ function acquirePreviewTile(b,depth){
  t.bytes=bytes;t.hasDepth=depth;t.fresh=true;t.depthFresh=true;b.previewBytes+=bytes;b.peakPreviewBytes=Math.max(b.peakPreviewBytes,b.previewBytes+b.previewPoolBytes);return t;
 }
 function retireSparsePreview(b,v){if(v.replacement){const next=v.replacement;v.replacement=null;retireSparsePreview(b,next);}for(const key of v.keys)b.dirtyConfirmed.add(key);for(const t of v.tiles.values()){b.previewBytes-=t.bytes;if(b.previewPoolBytes+t.bytes<=PREVIEW_POOL_BUDGET){b.previewPool.push(t);b.previewPoolBytes+=t.bytes;}else dropPreviewTile(b,t);}b.previews.delete(v.id);}
-function destroySparse(b){for(const mask of b.layerMaskTextures?.keys()??[])releaseLayerMaskTextures(b,mask);for(const v of [...b.previews.values()])if(v.tiles)retireSparsePreview(b,v);clearPreviewPool(b);for(const t of [...(b.feedbackScratch??[]),...(b.clipScratch??[]),...(b.layerBackdrop?[b.layerBackdrop]:[])])b.gl?b.release(t):t.destroy();}
+function destroySparse(b){
+ for(const scratch of [...b.isolationScratch??[],...(b.isolationOutput?[b.isolationOutput]:[])]){
+  if(b.gl){b.gl.deleteFramebuffer(scratch.f);b.gl.deleteTexture(scratch.t);}else scratch.destroy();
+ }
+ if(b.gl&&b.isolationPaste?.p)b.gl.deleteProgram(b.isolationPaste.p);
+ b.isolationScratch=[];b.isolationOutput=null;b.isolationPaste=null;
+for(const mask of b.layerMaskTextures?.keys()??[])releaseLayerMaskTextures(b,mask);for(const v of [...b.previews.values()])if(v.tiles)retireSparsePreview(b,v);clearPreviewPool(b);for(const t of [...(b.feedbackScratch??[]),...(b.clipScratch??[]),...(b.layerBackdrop?[b.layerBackdrop]:[])])b.gl?b.release(t):t.destroy();}
 // Preflight all allocations before consuming any published cursor. When the
 // bounded preview cannot fit, retain the last complete image and drain formal
 // work. Accepted samples and canonical jobs are never discarded or acknowledged
@@ -754,9 +761,79 @@ function sparseLayers(b,key){
   const style=b.surfaceStyles?.get(surfaceKey);
   if(style?.visible===false||(style?.opacity??1)===0)continue;
   const data=sparseLayer(b,key,surfaceKey);
-  if(data.t||data.overlays.length)layers.push({...data,opacity:style?.opacity??1,clipKey:style?.clipKey,mask:style?.mask,blend:style?.blend});
+  if(data.t||data.overlays.length)layers.push({...data,opacity:style?.opacity??1,clipKey:style?.clipKey,mask:style?.mask,blend:style?.blend,isolation:style?.isolation});
  }
  return layers;
+}
+function isolationTransitions(layers){
+ const result=[],path=[];
+ for(const layer of layers){
+  const next=layer.isolation??[];
+  let common=0;
+  while(common<path.length&&path[common]===next[common])common++;
+  while(path.length>common){path.pop();result.push({group:'close',depth:path.length});}
+  for(const id of next.slice(common)){result.push({group:'open',depth:path.length});path.push(id);}
+  result.push(layer);
+ }
+ while(path.length){path.pop();result.push({group:'close',depth:path.length});}
+ return result;
+}
+function writeIsolationGl(b,key,action,depth){
+ const g=b.gl,[x,y,w,h]=tileViewport(key,b.width,b.height,b.width,b.height),top=b.height-y-h;
+ if(!w||!h)return;
+ const scratch=b.isolationScratch??=[];
+ const under=scratch[depth]??=(b.surface(TILE,TILE,g.RGBA8,g.UNSIGNED_BYTE));
+ g.bindFramebuffer(g.FRAMEBUFFER,b.liveTarget.f);g.viewport(0,0,b.width,b.height);g.disable(g.BLEND);
+ const copy=target=>{
+  g.bindTexture(g.TEXTURE_2D,target.t);
+  g.copyTexSubImage2D(g.TEXTURE_2D,0,0,0,x,top,w,h);
+ };
+ if(action==='open'){
+  copy(under);
+  g.enable(g.SCISSOR_TEST);g.scissor(x,top,w,h);g.clearColor(0,0,0,0);g.clear(g.COLOR_BUFFER_BIT);g.disable(g.SCISSOR_TEST);
+  return;
+ }
+ const rendered=b.isolationOutput??=(b.surface(TILE,TILE,g.RGBA8,g.UNSIGNED_BYTE));copy(rendered);
+ g.bindFramebuffer(g.READ_FRAMEBUFFER,under.f);g.bindFramebuffer(g.DRAW_FRAMEBUFFER,b.liveTarget.f);
+ g.blitFramebuffer(0,0,w,h,x,top,x+w,top+h,g.COLOR_BUFFER_BIT,g.NEAREST);
+ g.bindFramebuffer(g.FRAMEBUFFER,b.liveTarget.f);
+ const program=b.isolationPaste??=b.program(S.glDisplayVertex,S.glFeedbackTile
+  .replace('ivec2(q.x,127-q.y)','ivec2(q.x,int(min(128.,params[4].y-params[0].y))-1-q.y)')
+  .replace('result=vec4(color.rgb*color.a,color.a);','result=color;'));
+ const params=compositionParams(b,key,null,[]);
+ g.enable(g.BLEND);g.blendEquation(g.FUNC_ADD);g.blendFunc(g.ONE,g.ONE_MINUS_SRC_ALPHA);
+ b.use(program,params,{layer:rendered});g.drawArrays(g.TRIANGLES,0,6);g.disable(g.BLEND);
+}
+function openOrCloseIsolationGpu(b,e,key,action,depth){
+ const [x,y,w,h]=tileViewport(key,b.width,b.height,b.width,b.height);
+ if(!w||!h)return null;
+ const d=b.device,create=()=>d.createTexture({size:[TILE,TILE],format:b.format,
+  usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_SRC|GPUTextureUsage.COPY_DST});
+ const scratch=b.isolationScratch??=[],under=scratch[depth]??=create();
+ const live={texture:b.liveTarget,origin:[x,y]};
+ if(action==='open'){
+  e.copyTextureToTexture(live,{texture:under},[w,h]);
+  e.copyTextureToTexture({texture:b.zeroPresentTile},live,[w,h]);
+  return null;
+ }
+ const group=b.isolationOutput??=create();
+ e.copyTextureToTexture(live,{texture:group},[w,h]);
+ e.copyTextureToTexture({texture:under},live,[w,h]);
+ return group;
+}
+function pasteIsolationGpu(b,rp,key,output){
+ const d=b.device;
+ if(!b.isolationPaste){
+  const module=d.createShaderModule({code:S.wgFeedbackTile.replace('return vec4f(color.rgb*color.a,color.a);','return color;')});
+  const over={srcFactor:'one',dstFactor:'one-minus-src-alpha',operation:'add'};
+  b.isolationPaste=d.createRenderPipeline({layout:d.createPipelineLayout({bindGroupLayouts:[b.feedbackLayout]}),
+   vertex:{module,entryPoint:'vertex'},fragment:{module,entryPoint:'fragment',targets:[{format:b.format,blend:{color:over,alpha:over}}]},
+   primitive:{topology:'triangle-list'}});
+ }
+ rp.setPipeline(b.isolationPaste);
+ rp.setBindGroup(0,b.group(b.feedbackLayout,[b.buffer(compositionParams(b,key,null,[]),GPUBufferUsage.UNIFORM),
+  output,b.zeroStroke,...Array(8).fill(b.zeroLive),b.archiveTarget,b.zeroLayer]));
+ rp.draw(6);
 }
 function getClipInput(b,key,clipKey){
  if(clipKey===undefined)return null;
@@ -802,12 +879,12 @@ function maskTexture(b,key,mask,params,base=22){
 function needsBackdrop(blend){
  return blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone||blend.effect?.enabled);
 }
-function artworkBlendParams(b,params,blend){
+function artworkBlendParams(b,params,blend,insideIsolation){
  params[18]=blend.seed>>>16;
  params[19]=blend.seed&65535;
  params[20]=layerBlendIndex(blend.mode);
  params[21]=blend.space==='linear'?1:0;
- params[27]=b.paperOpacity??0;
+ params[27]=insideIsolation?0:b.paperOpacity??0;
  const tone=blend.tone;
  params[2]=tone?(tone.source==='backdrop'?2:1):0;
  if(tone){
@@ -921,7 +998,14 @@ function renderSparseGl(b,states,dirty,diag){
  for(const key of dirty){const [x,y,w,h]=tileViewport(key,b.width,b.height,b.width,b.height);if(!w||!h)continue;g.scissor(x,b.height-y-h,w,h);g.clear(g.COLOR_BUFFER_BIT);diag.compositedTiles++;}
  g.disable(g.SCISSOR_TEST);
  for(const key of dirty){
-  for(const {t,overlays,opacity,clipKey,mask,blend}of sparseLayers(b,key)){
+  let depth=0;
+  const layers=sparseLayers(b,key);
+  for(const entry of b.hasIsolation?isolationTransitions(layers):layers){
+   if(entry.group){
+    depth=entry.depth+(entry.group==='open'?1:0);
+    writeIsolationGl(b,key,entry.group,entry.depth);continue;
+   }
+   const {t,overlays,opacity,clipKey,mask,blend}=entry;
    const input=getClipInput(b,key,clipKey);
    if(input?.factor===0)continue;
    const clip=input?clipTextureGl(b,key,input):null;
@@ -929,7 +1013,7 @@ function renderSparseGl(b,states,dirty,diag){
    const direct=b.feedbackDirect&&overlays.length<=8;
    const params=clipParameters(compositionParams(b,key,direct?t:null,direct?overlays:[],false,opacity),input,b.clipScratch?.includes(clip));
    const layerMaskImage=maskTexture(b,key,mask,params),advanced=needsBackdrop(blend);
-   if(advanced)artworkBlendParams(b,params,blend);
+   if(advanced)artworkBlendParams(b,params,blend,depth>0);
    const effectMaskImage=advanced?effectTexture(b,key,params,blend.effect):null;
    if(direct){
     if(!advanced)g.enable(g.BLEND);g.blendEquation(g.FUNC_ADD);g.blendFunc(g.ONE,g.ONE_MINUS_SRC_ALPHA);
@@ -991,7 +1075,16 @@ function renderSparseGpu(b,e,states,dirty,diag){
  for(const key of dirty){const [tx,ty]=key.split(',').map(Number),x=tx*TILE,y=ty*TILE,w=Math.min(TILE,b.width-x),h=Math.min(TILE,b.height-y);if(w<=0||h<=0)continue;e.copyTextureToTexture({texture:b.zeroPresentTile},{texture:b.liveTarget,origin:[x,y]},[w,h]);diag.compositedTiles++;}
  let scenePass=null;const scene=()=>scenePass??=(e.beginRenderPass({colorAttachments:[{view:b.liveTarget.createView(),loadOp:'load',storeOp:'store'}]}));
  for(const key of dirty){
-  for(const {t,overlays,opacity,clipKey,mask,blend}of sparseLayers(b,key)){
+  let depth=0;
+  const layers=sparseLayers(b,key);
+  for(const entry of b.hasIsolation?isolationTransitions(layers):layers){
+   if(entry.group){
+    scenePass?.end();scenePass=null;depth=entry.depth+(entry.group==='open'?1:0);
+    const output=openOrCloseIsolationGpu(b,e,key,entry.group,entry.depth);
+    if(output)pasteIsolationGpu(b,scene(),key,output);
+    continue;
+   }
+   const {t,overlays,opacity,clipKey,mask,blend}=entry;
    const input=getClipInput(b,key,clipKey);
    if(input?.factor===0)continue;
    if(input?.layer&&(input.layer.overlays.length||input.layer.t?.stroke||input.mask)){scenePass?.end();scenePass=null;}
@@ -999,7 +1092,7 @@ function renderSparseGpu(b,e,states,dirty,diag){
    const direct=b.feedbackDirect&&overlays.length<=8;
    const params=clipParameters(compositionParams(b,key,direct?t:null,direct?overlays:[],false,opacity),input,false);
    const layerMaskImage=maskTexture(b,key,mask,params),advanced=needsBackdrop(blend);
-   if(advanced)artworkBlendParams(b,params,blend);
+   if(advanced)artworkBlendParams(b,params,blend,depth>0);
    const effectMaskImage=advanced?effectTexture(b,key,params,blend.effect):null;
    if(direct){
     if(advanced){scenePass?.end();scenePass=null;}

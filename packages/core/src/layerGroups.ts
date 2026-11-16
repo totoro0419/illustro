@@ -6,6 +6,7 @@ export type LayerGroup = Readonly<{
   members: readonly LayerId[];
   visible: boolean;
   locked: boolean;
+  compositing?:'pass-through'|'isolated';
 }>;
 
 export const EMPTY_LAYER_GROUPS:readonly LayerGroup[]=Object.freeze([]);
@@ -15,7 +16,7 @@ export function validateLayerGroups(groups:readonly LayerGroup[],order:readonly 
   const positions=new Map(order.map((id,index)=>[id,index]));
   const seen=new Set<LayerId>();
   const ranges=groups.map(group=>{
-    if(seen.has(group.id)||positions.has(group.id)||!group.name.trim()||group.name.length>4096||!group.members.length)throw new Error('invalid layer group');
+    if(seen.has(group.id)||positions.has(group.id)||!group.name.trim()||group.name.length>4096||!group.members.length||group.compositing!==undefined&&group.compositing!=='pass-through'&&group.compositing!=='isolated')throw new Error('invalid layer group');
     seen.add(group.id);
     const members=new Set(group.members);
     let low=order.length,high=-1;

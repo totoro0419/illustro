@@ -372,7 +372,7 @@ export class DocumentTransaction{
       throw error;
     }
   }
-  updateLayerGroup(id:LayerId,patch:Partial<Pick<LayerGroup,'name'|'visible'|'locked'>>){
+  updateLayerGroup(id:LayerId,patch:Partial<Pick<LayerGroup,'name'|'visible'|'locked'|'compositing'>>){
     const groups=this.rootValue.layerGroups;
     if(!groups.some(group=>group.id===id))throw new Error('グループが見つかりません。');
     return this.editGroups('update',id,groups.map(group=>group.id===id?{...group,...patch}:group));
@@ -608,6 +608,13 @@ export class DocumentTransaction{
   setLayerOpacity(id:LayerId,opacity:number){
     if(!Number.isFinite(opacity)||opacity<0||opacity>1)throw new Error('invalid layer opacity');
     return this.meta(id,{opacity});
+  }
+  previewLayerStructure(){
+    this.open();
+    if(this.doc.head!==this.expectedHead||this.slotsValue.some(slot=>slot.type!=='groups'&&slot.type!=='reorder'&&slot.type!=='metadata'))
+      throw Error('この操作の構造をプレビューできません。');
+    const root=this.rootValue.withLayerState(this.updatesValue,this.rootOrderValue??this.rootValue.rootLayerIds,this.deletedValue);
+    return this.groupsValue?root.withLayerGroups(this.groupsValue):root;
   }
   commit():CommitReceipt{this.open();try{return commitTransaction(this);}catch(e){this.failed=true;throw e;}}
   cancel(){if(this.closed)throw new Error('transaction closed');this.workingValue.clear();this.updatesValue.clear();this.slotsValue.length=0;this.rootOrderValue=null;this.dimensionUpdate=null;this.closed=true;}
