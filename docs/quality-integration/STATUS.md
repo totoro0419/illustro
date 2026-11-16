@@ -97,3 +97,28 @@ PR [#97](https://github.com/totoro0419/illustro/pull/97) を新たに確認。C0
 - Android実機のペン・指、保存の実ファイル試験、実際の12担当PR統合後の動作は**未確認**。
 
 最新CIの結果はGitHub Actionsで確認すること。上記の成功記録は、その後のコミットまで無条件に合格とするものではない。
+
+## 2026-11-17 00時台 JST — 12担当の最新HEAD・CI・差分再監査
+
+GitHubの各PRメタデータ、全12件の変更ファイル、各HEADに結びつくActions実行、統合CI定義を個別に再取得した。**全12件はbase=`quality/C03-C10-integration`、Draft、未統合**。PR #73はDraft・未マージ、#75もDraft・未マージ。実装PR間の**変更パス完全一致は0件**。ただし、保存・Undo/Redo・描画・main.tsへの結線という機能的依存は残る。
+
+| 担当 | PR | 照合したHEAD | 統合CI（当該HEAD） |
+|---|---|---|---|
+| 01 C03 | #76 | `5aa5d79e` | [43891002825](https://github.com/totoro0419/illustro/actions/runs/43891002825) success（Core CI [43891002935](https://github.com/totoro0419/illustro/actions/runs/43891002935)もsuccess） |
+| 02 C04操作 | #97 | `f02aebcb` | [43891226096](https://github.com/totoro0419/illustro/actions/runs/43891226096) success（専用 [43891226353](https://github.com/totoro0419/illustro/actions/runs/43891226353) success） |
+| 03 C04色 | #83 | `565871e7` | [43889333899](https://github.com/totoro0419/illustro/actions/runs/43889333899) success |
+| 04 C05素材 | #77 | `f246fd6f` | [43889164943](https://github.com/totoro0419/illustro/actions/runs/43889164943) success |
+| 05 C05資料 | #82 | `c1a8a21a` | [43890670333](https://github.com/totoro0419/illustro/actions/runs/43890670333) success |
+| 06 C06 | #90 | `d762bec2` | [43891183451](https://github.com/totoro0419/illustro/actions/runs/43891183451) success |
+| 07 C07 | #86 | `c6025f52` | [43892152213](https://github.com/totoro0419/illustro/actions/runs/43892152213) success |
+| 08 C08 | #81 | `2ad34b56` | [43891331270](https://github.com/totoro0419/illustro/actions/runs/43891331270) success |
+| 09 C09 | #89 | `9786b2ba` | [43890453702](https://github.com/totoro0419/illustro/actions/runs/43890453702) success |
+| 10 C10ベクター | #88 | `93691591` | [43890054556](https://github.com/totoro0419/illustro/actions/runs/43890054556) success（Core CI [43890054545](https://github.com/totoro0419/illustro/actions/runs/43890054545) success） |
+| 11 C10文字 | #84 | `c57d6007` | [43889205565](https://github.com/totoro0419/illustro/actions/runs/43889205565) success |
+| 12 共通描画 | #80 | `9b0a048c` | [43889547783](https://github.com/totoro0419/illustro/actions/runs/43889547783) success |
+
+**注意**：上記successは指定コミットのCIワークフロー結果であり、旧`prep:check`は既存の未分類`docs/development/PROTOTYPE_PROGRESS.md`により失敗し、`continue-on-error`で診断扱い。**prep:check自体は不合格**。また12件をまとめた統合後のCI、保存実データ、Androidペン/指、4000×4000画素の性能・画素一致は**未検証**。
+
+最新PR差分で、実装担当による`apps/editor/src/main.ts`、`docs/quality-integration/`、`docs/quality-audit/`の変更は**0件**。過去に懸念した#86の統合専用CIファイル変更も最新PR差分には存在しない。統合CIはmerge-baseの3点比較を使用し、#86の最新HEADで成功したため、Issue #98の過去の誤検出を現行実装の失敗とみなさない。
+
+**受入保留・統合0件**：全件Draftで、#76の旧作品/保存/Undo、#77のIndexedDB v1→v2実データ移行、#82の作品切替・複製時の保存接続、#83の作品固有パレット接続、#81のライブ仮表示、#88のベクターと通常描画・同一Undo、#97のマクロ非同期完了通知など未解決の横断依存がある。成功したPR単独CIを、統合後の完成や129件の独立解決確認と混同しない。次回もHEAD変更を検知したら再照合し、必要な回帰条件が満たされたPRだけを**1件ずつ**統合する。PR #73の9原本・129 ID・A/B/C（81/29/19）は不変更。
