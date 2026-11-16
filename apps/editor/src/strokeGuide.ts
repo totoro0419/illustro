@@ -57,13 +57,32 @@ export function snapToStraightGuide(point:Point,guide:LockedGuide|null):Point{
  return {x:point.x+(snappedX-point.x)*guide.strength,y:point.y+(snappedY-point.y)*guide.strength};
 }
 
-export function lockArtworkGuide(origin:Point,guides:readonly ArtworkGuide[],eraser:boolean,preferred:string|null){
- const ordered=preferred?[...guides.filter(guide=>guide.id===preferred),...guides.filter(guide=>guide.id!==preferred)]:guides;
- let best:Readonly<{guide:LockedGuide;distance:number;name:string}>|null=null;
- for(const item of ordered){
-   if(!item.enabled||!item.strength||eraser&&!item.applyEraser)continue;
+/** The heading is optional: existing pen-down callers may omit it until the first move.
+ * A heading can select a perspective axis without changing saved guide settings. */
+export function perspectiveAxisForHeading(origin:Point,item:ArtworkGuide,heading:Point):number{
+ const candidates=[item.origin,...item.vanishing].slice(0,item.kind==='perspective3'?3:item.kind==='perspective2'?2:1);
+ const length=Math.hypot(heading.x,heading.y);
+ if(length<2||!Number.isFinite(length))return item.activeAxis;
+ let best=item.activeAxis,score=-Infinity;
+ for(let index=0;index<candidates.length;index++){
+   const center=candidates[index]!,dx=center.x-origin.x,dy=center.y-origin.y,d=Math.hypot(dx,dy);
+   if(d<.001)continue;
+   // Compare undirected line orientations so movement either way uses the same axis.
+   const alignment=Math.abs((dx*heading.x+dy*heading.y)/(d*length));
+   if(alignment>score+1e-6){score=alignment;best=index;}
+ }
+ return best;
+}
+
+/** Select one guide per stroke; perspective geometry always passes through pen-down,
+ * so do not let its zero projection error hide a nearby ordinary ruler. */
+export function lockArtworkGuide(origin:Point,guides:readonly ArtworkGuide[],eraser:boolean,preferred:string|null,heading?:Point){
+ let best:Readonly<{guide:LockedGuide;distance:number;name:string;priority:number}>|null=null;
+ for(const item of guides){
+   if(!item.enabled||!item.strength||(eraser&&!item.applyEraser))continue;
    const perspective=item.kind.startsWith('perspective');
-   const center=perspective?([item.origin,...item.vanishing][item.activeAxis]??item.origin):item.origin;
+   const axis=perspective&&heading?perspectiveAxisForHeading(origin,item,heading):item.activeAxis;
+   const center=perspective?([item.origin,...item.vanishing][axis]??item.origin):item.origin;
    const kind=perspective?'perspective':item.kind as RulerKind;
    const guide=lockStraightGuide(origin,{
      enabled:item.enabled,angle:item.angle,strength:1,applyEraser:item.applyEraser,kind,
@@ -72,8 +91,10 @@ export function lockArtworkGuide(origin:Point,guides:readonly ArtworkGuide[],era
    if(!guide)continue;
    const snapped=snapToStraightGuide(origin,guide);
    const distance=Math.hypot(snapped.x-origin.x,snapped.y-origin.y);
-   if(!perspective&&item.range&&distance>item.range)continue;
-   if(!best||distance+.05<best.distance)best={guide:{...guide,strength:item.strength},name:item.name,distance};
+   if(!perspective&&item.range>0&&distance>item.range)continue;
+   const priority=item.id===preferred?0:perspective?2:1;
+   if(!best||priority<best.priority||(priority===best.priority&&distance+0.05<best.distance))
+     best={guide:{...guide,strength:item.strength},name:item.name,distance,priority};
  }
- return best;
+ return best&&{guide:best.guide,name:best.name,distance:best.distance};
 }
