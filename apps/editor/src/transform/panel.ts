@@ -4,7 +4,7 @@ import type {LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,Transfor
 import type {BrushSurface} from '../brushSurface';
 import type {MaskData} from '../selection/mask';
 import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} from './geometry';
-import {runTransform} from './run';
+import {createTransformPreviewRunner,runTransform} from './run';
 import {snapLayout,type SnapTargets} from './layout';
 import {makeLiquifyStroke} from './liquify';
 import {cornersTowardVanishingPoint,rectCorners} from './quadrilateral';
@@ -50,6 +50,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   let originalPointer:number|null=null,originalInput:Sample[]=[];
   let source:TransformSource|null=null,settings=initialTransform,undo:Transform[]=[],redo:Transform[]=[],previewId=0,busy=false;
   let ownedGesture:BrushSurface|null=null,editingHandles=false,placingPoints=false,previewAbort:AbortController|null=null;
+  let previewRunner:ReturnType<typeof createTransformPreviewRunner>|null=null;
   const inputs=new Map<keyof Omit<Transform,'quadrilateral'|'mesh'|'liquify'>,HTMLSelectElement|HTMLInputElement>();
   const keepRatio=document.createElement('input');keepRatio.type='checkbox';keepRatio.checked=true;
   const ratioLabel=document.createElement('label');ratioLabel.append(keepRatio,' 縦横比を保つ');controls.append(ratioLabel);
@@ -374,7 +375,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   const start=button('変形を始める',async()=>{
     busy=true;sync();
     try{
-      source=await capture(target.value as Target);undo=[];redo=[];originalDraft=undefined;originalUndo.length=originalRedo.length=0;editingOriginal=false;
+      source=await capture(target.value as Target);previewRunner?.dispose();previewRunner=createTransformPreviewRunner();undo=[];redo=[];originalDraft=undefined;originalUndo.length=originalRedo.length=0;editingOriginal=false;
       settings=source.initial??{...initialTransform,cx:source.width/2,cy:source.height/2};
       status.textContent=source.name+'を変形します。'+(source.maskLink===undefined?'':source.maskLink?' マスクも一緒に変形します。':' マスクは現在の位置に残ります。')+
         (source.initial?' 仮表示は原本の変形です。上に描いた筆は適用時に同じ位置へ重ねます。':'');
@@ -477,7 +478,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }finally{busy=false;sync();}
   });
   function reset(message:string){
-    stopGesture();source?.drawing.showArtworkPreview(null);source=null;originalPointer=null;originalInput=[];originalDraft=undefined;originalUndo.length=originalRedo.length=0;editingOriginal=false;originalCanvas.hidden=true;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();
+    stopGesture();source?.drawing.showArtworkPreview(null);source=null;originalPointer=null;originalInput=[];originalDraft=undefined;originalUndo.length=originalRedo.length=0;editingOriginal=false;originalCanvas.hidden=true;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();previewRunner?.dispose();previewRunner=null;
     preview.hidden=true;status.textContent=message;sync();
   }
   function change(next:Transform){
@@ -548,13 +549,13 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     comparison.hidden=!source||editingOriginal;snapFields.hidden=!source||editingOriginal;
   }
   async function refreshPreview(){
-    const current=source,id=++previewId;
-    if(!current||editingOriginal)return;
+    const current=source,id=++previewId,runner=previewRunner;
+    if(!current||editingOriginal||!runner)return;
     previewAbort?.abort();const controller=new AbortController();previewAbort=controller;
     try{
       const scale=Math.min(1,280/Math.max(current.width,current.height));
       const outputWidth=Math.max(1,Math.round(current.width*scale)),outputHeight=Math.max(1,Math.round(current.height*scale));
-      const pixels=await runTransform({pixels:compare.checked?current.pixels:originalDraft??current.pixels,width:current.width,height:current.height,
+      const pixels=await runner.run({pixels:compare.checked?current.pixels:originalDraft??current.pixels,width:current.width,height:current.height,
         settings:compare.checked?{...initialTransform,cx:settings.cx,cy:settings.cy}:settings,
         selection:current.selection,outputWidth,outputHeight,showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
       if(id!==previewId)return;
