@@ -1,5 +1,5 @@
 import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId} from '@illustro/core';
-import {blendArtworkPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
+import {blendArtworkPixel,gradientMapTable,mapGradientPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
@@ -96,6 +96,7 @@ function createRenderCanvas(width:number,height:number):HTMLCanvasElement{
 
 export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8ClampedArray>{
   const {width,height,layers,strokes}=frozen;
+  if(!layers.length)return new Uint8ClampedArray(width*height*4);
   const canvas=createRenderCanvas(width,height);
   let renderer:GpuRenderer|null=null;
   try{
@@ -137,8 +138,24 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
       for(const id of isolation.slice(common))groups.push({id,pixels:new Uint8ClampedArray(width*height*4)});
       const clip=layer.clipSurfaceId?layerBySurface.get(layer.clipSurfaceId):undefined;
       if(clip&&(!clip.visible||clip.opacity<=0))continue;
+      const destination=groups.at(-1)?.pixels??composite;
+      const map=layer.blend?.gradientMap;
+      if(map){
+        const table=gradientMapTable(map);
+        const clipPixels=clip?await readLayer(clip):null;
+        for(let ty=0;ty<Math.ceil(height/TILE);ty++)for(let tx=0;tx<Math.ceil(width/TILE);tx++){
+          const key=tx+','+ty,mask=layerMaskTile(layer.mask,key),clipMask=layerMaskTile(clip?.mask,key);
+          for(let y=ty*TILE;y<Math.min(height,(ty+1)*TILE);y++)for(let x=tx*TILE;x<Math.min(width,(tx+1)*TILE);x++){
+            const offset=(y*width+x)*4,local=(y%TILE)*TILE+x%TILE;
+            const coverage=layer.opacity*(typeof mask==='number'?mask:mask[local]!)/255*
+              (clipPixels&&clip?clipPixels[offset+3]!*clip.opacity*(typeof clipMask==='number'?clipMask:clipMask[local]!)/65025:1);
+            mapGradientPixel(destination,offset,table,map,x,y,coverage);
+          }
+        }
+        continue;
+      }
       const pixels=await readLayer(layer);
-      compositeLayer(groups.at(-1)?.pixels??composite,pixels,layer.opacity,clip?{pixels:await readLayer(clip),opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,{width,...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
+      compositeLayer(destination,pixels,layer.opacity,clip?{pixels:await readLayer(clip),opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,{width,...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
       // Let pointer input and normal drawing frames execute between layers.
       await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
     }

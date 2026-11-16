@@ -49,6 +49,36 @@ const ease=(value,a,b)=>{
  const t=clamp((value-a)/(b-a));
  return t*t*(3-2*t);
 };
+// One 8-bit lookup table is shared by both renderers, comparison and export.
+export function gradientMapTable(map){
+ const stops=map.stops.map(stop=>({...stop,rgb:[1,3,5].map(i=>parseInt(stop.color.slice(i,i+2),16))}));
+ const table=new Uint8Array(256*4);
+ for(let i=0,high=1;i<256;i++){
+  const t=i/255;
+  while(high<stops.length-1&&stops[high].at<t)high++;
+  const a=stops[high-1],b=stops[high];
+  const u=b.at===a.at?Number(t>=b.at):clamp((t-a.at)/(b.at-a.at));
+  const v=u<=a.midpoint?u/(2*a.midpoint):.5+(u-a.midpoint)/(2*(1-a.midpoint));
+  for(let c=0;c<3;c++)table[i*4+c]=Math.round(a.rgb[c]+v*(b.rgb[c]-a.rgb[c]));
+  table[i*4+3]=Math.round(255*(a.opacity+v*(b.opacity-a.opacity)));
+ }
+ return table;
+}
+function mapThreshold(x,y){
+ const bayer=(x,y)=>2*((x+y)%2)+y;
+ return (4*bayer(x%2,y%2)+bayer(Math.floor(x/2)%2,Math.floor(y/2)%2)+.5)/16;
+}
+export function gradientMapIndex(map,brightness,x,y){
+ const steps=map.levels-1;
+ return Math.round(255*Math.floor(clamp(brightness)*steps+(map.dither?mapThreshold(x,y):.5))/steps);
+}
+export function mapGradientPixel(pixels,offset,table,map,x,y,coverage=1){
+ if(!pixels[offset+3]||coverage<=0)return;
+ const light=(.2126*pixels[offset]+.7152*pixels[offset+1]+.0722*pixels[offset+2])/255;
+ const index=gradientMapIndex(map,light,x,y)*4;
+ const amount=coverage*table[index+3]/255;
+ for(let c=0;c<3;c++)pixels[offset+c]=Math.round(pixels[offset+c]+(table[index+c]-pixels[offset+c])*amount);
+}
 export function artworkToneWeight(tone,channels){
  const value=toneColor(channels,layerToneChannel(tone.channel));
  const upper=tone.lightStart===tone.lightEnd?Number(value<=tone.lightEnd):1-ease(value,tone.lightStart,tone.lightEnd);
@@ -196,6 +226,23 @@ export function makeLayerBlendShader(source,wg,tile){
 @group(0)@binding(14)var effectMaskImage:texture_2d<f32>;
 fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
  let dst=textureLoad(layerBackdrop,q,0);
+ if(p.v[3].w>0.){
+  if(coverage<=0.){return dst;}
+  let paper=(1.-dst.a)*p.v[6].w;
+  let alpha=dst.a+paper;
+  if(alpha<=0.){return dst;}
+  let color=(dst.rgb+vec3f(paper))/alpha;
+  let xy=vec2i(p.v[0].xy)+q;
+  let low=xy%vec2i(2);
+  let high=(xy/vec2i(2))%vec2i(2);
+  let threshold=(4.*f32(2*((low.x+low.y)%2)+low.y)+f32(2*((high.x+high.y)%2)+high.y)+.5)/16.;
+  let bias=select(.5,threshold,p.v[2].y>0.);
+  let steps=p.v[3].w-1.;
+  let index=i32(floor(255.*floor(clamp(toneChannel(color,0.),0.,1.)*steps+bias)/steps+.5));
+  let mapped=textureLoad(effectMaskImage,vec2i(index,0),0);
+  if(mapped.a<=0.){return dst;}
+  return vec4f(mix(color,mapped.rgb,coverage*mapped.a)*alpha,alpha);
+ }
  var a=src.a*coverage;
  var paint=src.rgb;
  if(p.v[2].y>0.){
@@ -243,6 +290,21 @@ fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
 vec4 compositeArtwork(ivec2 q,vec4 src,float coverage){
  int bottom=int(min(128.,params[4].y-params[0].y))-1-q.y;
  vec4 dst=texelFetch(layerBackdrop,ivec2(q.x,bottom),0);
+ if(params[3].w>0.){
+  if(coverage<=0.)return dst;
+  float paper=(1.-dst.a)*params[6].w;
+  float alpha=dst.a+paper;
+  if(alpha<=0.)return dst;
+  vec3 color=(dst.rgb+paper)/alpha;
+  ivec2 xy=ivec2(params[0].xy)+q;
+  ivec2 low=xy%2,high=(xy/2)%2;
+  float threshold=(4.*float(2*((low.x+low.y)%2)+low.y)+float(2*((high.x+high.y)%2)+high.y)+.5)/16.;
+  float bias=params[2].y>0.?threshold:.5,steps=params[3].w-1.;
+  int index=int(floor(255.*floor(clamp(toneChannel(color,0.),0.,1.)*steps+bias)/steps+.5));
+  vec4 mapped=texelFetch(effectMaskImage,ivec2(index,0),0);
+  if(mapped.a<=0.)return dst;
+  return vec4(mix(color,mapped.rgb,coverage*mapped.a)*alpha,alpha);
+ }
  float a=src.a*coverage;
  vec3 paint=src.rgb;
  if(params[2].y>0.){

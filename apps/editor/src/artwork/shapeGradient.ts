@@ -48,7 +48,10 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   let editing:LayerId|undefined,previewId=0,lineStyle:NonNullable<EditablePath['lineStyle']>='solid';
   let draftDrawing:NonNullable<ReturnType<ArtworkActions['context']>>['drawing']|undefined;
   let draftMask:LayerMask|null=null,savedBoundary:EditablePath|undefined;
-  const getMask=()=>editing?api.context()?.selected.mask??null:draftMask;
+  const getMask=()=>{
+    const selected=api.context()?.selected;
+    return editing?(selected?.id===editing?selected.mask:null):draftMask;
+  };
   const closedPaths=()=>api.context()?.paths.filter(item=>item.content.kind==='path'&&
     (item.content.closed||item.content.shape==='rectangle'||item.content.shape==='ellipse'))??[];
   function loadBoundaries(){

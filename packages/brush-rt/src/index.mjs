@@ -6,4 +6,4 @@ export {FOUNDATION,createPreset,validateFoundation,compilePreset,evaluateDynamic
 
 export {decodeMaskTile,layerMaskTile,layerMaskCoverage,samplePixelMask,traceMaskPath} from '@rt/layer-mask-coverage';
 
-export {blendArtworkPixel} from '@rt/layer-blending';
+export {blendArtworkPixel,gradientMapTable,gradientMapIndex,mapGradientPixel} from '@rt/layer-blending';

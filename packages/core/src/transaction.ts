@@ -101,6 +101,7 @@ export class DocumentTransaction{
     }
     if(originals.size||regionSources.size)this.resultId=this.doc._internal(CORE_INTERNAL).ids.revision();
     const ids=new Map<LayerId,LayerId>(),links=new Map<LayerId,LayerImageLink>();
+    const corrections=new Map<LayerId,Extract<EditableArtwork,{kind:'path'}>>();
     for(const {layer,pixels,mask,editable,source,strokes,regionSource} of entries){
       const id=this.addRasterSnapshotAbove(referenceId,pixels,layer.name,false,false);
       const clipSourceId=layer.clipSourceId?ids.get(layer.clipSourceId):undefined;
@@ -120,7 +121,12 @@ export class DocumentTransaction{
       });
       ids.set(layer.id,id);
       if(layer.imageLink)links.set(id,layer.imageLink);
+      if(editable?.kind==='path'&&editable.originalStrokeLayer)corrections.set(id,editable);
       referenceId=id;
+    }
+    for(const [id,{originalStrokeLayer,...path}] of corrections){
+      const newOriginal=ids.get(originalStrokeLayer as LayerId);
+      this.setEditableArtwork(id,newOriginal?{...path,originalStrokeLayer:newOriginal}:path);
     }
     for(const [layerId,link] of links){
       if(link.kind!=='instance'){this.meta(layerId,{imageLink:link});continue;}
@@ -575,13 +581,15 @@ export class DocumentTransaction{
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(layer.baseColor==='white'&&value)throw new Error('白背景の合成モードは通常に固定されています。');
     const blend=validateLayerBlend(value),before=layer.blend??null;
-    if(blend===before||(blend&&before&&blend.mode===before.mode&&blend.space===before.space&&blend.seed===before.seed&&JSON.stringify(blend.tone)===JSON.stringify(before.tone)&&JSON.stringify(blend.effect)===JSON.stringify(before.effect)))return false;
+    if(blend===before||(blend&&before&&blend.mode===before.mode&&blend.space===before.space&&blend.seed===before.seed&&JSON.stringify(blend.tone)===JSON.stringify(before.tone)&&JSON.stringify(blend.effect)===JSON.stringify(before.effect)&&JSON.stringify(blend.gradientMap)===JSON.stringify(before.gradientMap)))return false;
     return this.meta(id,{blend});
   }
   setVectorLayerMask(id:LayerId,mask:LayerMask|null){
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(layer.baseColor==='white')throw new Error('白背景は描画できるレイヤーに変えてからマスクを設定してください。');
-    if(this.rootValue.isLayerContentLocked(id))throw new Error('マスクを変える前にロックを解除してください。');
+    const groups=this.groupsValue??this.rootValue.layerGroups;
+    if(layer.locked||layer.contentLocked||groups.some(group=>group.locked&&group.members.includes(id)))
+      throw new Error('マスクを変える前にロックを解除してください。');
     const value=validateLayerMask(mask);
     if(value===(layer.vectorMask??null))return false;
     return this.meta(id,{vectorMask:value});

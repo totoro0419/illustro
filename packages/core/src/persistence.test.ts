@@ -89,6 +89,33 @@ describe('M05 core persistence',()=>{
     expect(restored.head).toBe(revised.revision.id);
     expect(()=>d.beginAdjustment(applied.revision.id,'stale adjustment')).toThrow();
   });
+  it('keeps a masked gradient map editable across restore and undo without touching the original',()=>{
+    const d=new CoreDocument({width:4,height:4,ids:createDeterministicIdFactory()}),original=d.defaultRasterLayerId;
+    const before=d.begin('original');
+    before.setPixel(original,1,1,[100,100,100,255]);before.commit();
+    const edit=d.begin('gradient map'),adjustment=edit.addRasterLayerAbove(original);
+    const mask={shape:'rectangle' as const,x:0,y:0,width:2,height:2,enabled:true,inverted:false,density:1};
+    const gradientMap={levels:4,dither:true,stops:[
+      {at:0,color:'#000000',opacity:1,midpoint:.5},{at:1,color:'#ffccaa',opacity:1,midpoint:.5}
+    ]};
+    edit.setVectorLayerMask(adjustment,mask);
+    edit.setLayerBlend(adjustment,{mode:'normal',space:'encoded',seed:0,gradientMap});edit.commit();
+    const snapshot=d.capturePersistenceSnapshot();
+    const restored=CoreDocument.restore({snapshot:JSON.parse(JSON.stringify(snapshot)),blockPayloads:d.persistenceBlockPayloads(snapshot)});
+    expect(restored.root.getLayer(adjustment).blend?.gradientMap).toEqual(gradientMap);
+    expect(restored.root.getLayer(adjustment).vectorMask).toEqual(mask);
+    const change=restored.begin('change levels');
+    change.setLayerBlend(adjustment,{mode:'normal',space:'encoded',seed:0,gradientMap:{...gradientMap,levels:8}});
+    change.commit();
+    expect(restored.root.getLayer(adjustment).blend?.gradientMap?.levels).toBe(8);
+    restored.undo();
+    expect(restored.root.getLayer(adjustment).blend?.gradientMap).toEqual(gradientMap);
+    restored.undo();
+    expect(restored.root.hasLayer(adjustment)).toBe(false);
+    restored.redo();
+    expect(restored.root.getLayer(adjustment).blend?.gradientMap).toEqual(gradientMap);
+    expect(restored.readPixel(original,1,1)).toEqual([100,100,100,255]);
+  });
   it('previews and recovers isolated group structure without changing layer content',()=>{
     const doc=new CoreDocument({width:6,height:6,ids:createDeterministicIdFactory()}),first=doc.defaultRasterLayerId;
     const second=doc.addRasterLayerAbove(first).layerId;

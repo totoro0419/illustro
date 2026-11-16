@@ -1,0 +1,130 @@
+import {validateGradientMap,type GradientMap,type GradientStop} from '@illustro/core';
+import {gradientMapIndex,gradientMapTable,mapGradientPixel} from '@illustro/brush-rt';
+import {button,labelledField,numberField,paintPreview,selectField} from './tools';
+
+export type GradientMapDraft=Readonly<{
+  map:GradientMap|null;
+  source:ImageData;
+  coverage:Uint8Array;
+  pixelsAt:(x:number,y:number)=>readonly [number,number];
+  apply:(map:GradientMap)=>Promise<void>;
+}>;
+const defaults:readonly GradientStop[]=[
+  {at:0,color:'#232037',opacity:1,midpoint:.5},
+  {at:1,color:'#f5ba72',opacity:1,midpoint:.5}
+];
+
+export function installGradientMapPanel(host:HTMLElement,api:{
+  capture:(edit:boolean)=>Promise<GradientMapDraft>;
+  storeColors:(colors:readonly string[])=>void;
+}){
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const heading=document.createElement('summary');heading.textContent='グラデーションマップ・階調';
+  const actions=document.createElement('div');actions.className='c06-clipboard-grid';
+  const editor=document.createElement('div');editor.hidden=true;
+  const fields=document.createElement('div');fields.className='c06-clipboard-grid';
+  const status=document.createElement('output');status.setAttribute('role','status');
+  const levels=numberField(fields,'階調数',256,2,256);
+  const dither=document.createElement('input');dither.type='checkbox';
+  labelledField(fields,'色の段差を目立ちにくくする',dither);
+  const view=selectField(fields,'見比べる',[
+    ['after','反映後'],['before','反映前'],['split','左が反映前・右が反映後']
+  ] as const);
+  const stopFields=document.createElement('div');stopFields.className='c06-clipboard-grid';
+  const comparison=document.createElement('canvas');
+  comparison.style.maxWidth='100%';comparison.setAttribute('aria-label','作品の加工前後のプレビュー');
+  const mappingLabel=document.createElement('p');mappingLabel.textContent='上が元の明るさ、下が置き換わる色';
+  const mapping=document.createElement('canvas');
+  mapping.style.maxWidth='100%';mapping.setAttribute('aria-label',mappingLabel.textContent);
+  let draft:GradientMapDraft|null=null,sequence=0;
+  let stops=[...defaults];
+
+  function data(){
+    return validateGradientMap({stops,levels:levels.valueAsNumber,dither:dither.checked});
+  }
+
+  function refresh(){
+    if(!draft)return;
+    try{
+      const map=data(),table=gradientMapTable(map);
+      const {source,coverage,pixelsAt}=draft,{width,height}=source;
+      const pixels=new Uint8ClampedArray(source.data);
+      if(view.value!=='before')for(let y=0;y<height;y++)for(let x=view.value==='split'?Math.floor(width/2):0;x<width;x++){
+        const i=y*width+x,[originalX,originalY]=pixelsAt(x,y);
+        mapGradientPixel(pixels,i*4,table,map,originalX,originalY,coverage[i]!/255);
+      }
+      paintPreview(comparison,pixels,width,height);
+      const band=new Uint8ClampedArray(256*28*4);
+      for(let y=0;y<28;y++)for(let x=0;x<256;x++){
+        const offset=(y*256+x)*4;
+        if(y<14){band.set([x,x,x,255],offset);continue;}
+        const index=gradientMapIndex(map,x/255,x,y-14)*4;
+        band.set(table.subarray(index,index+4),offset);
+      }
+      paintPreview(mapping,band,256,28);
+      status.textContent='';
+    }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+  }
+
+  function renderStops(){
+    stopFields.replaceChildren();
+    for(const [index,stop] of stops.entries()){
+      const row=document.createElement('div');row.className='c06-clipboard-grid';
+      const position=numberField(row,'明るさ（%）',stop.at*100,0,100,.1);
+      const color=document.createElement('input');color.type='color';color.value=stop.color;
+      labelledField(row,'出力色',color);
+      const midpoint=numberField(row,'次の色までの中間（%）',stop.midpoint*100,1,99,.1);
+      const opacity=numberField(row,'置き換える強さ（%）',stop.opacity*100,0,100,.1);
+      row.onchange=()=>{
+        stops[index]={at:position.valueAsNumber/100,color:color.value,midpoint:midpoint.valueAsNumber/100,opacity:opacity.valueAsNumber/100};
+        refresh();
+      };
+      if(stops.length>2)row.append(button('この色を外す',()=>{
+        stops.splice(index,1);renderStops();refresh();
+      },status));
+      stopFields.append(row);
+    }
+    if(stops.length<64)stopFields.append(button('色を追加',()=>{
+      stops.push({at:.5,color:'#a46870',opacity:1,midpoint:.5});renderStops();refresh();
+    },status));
+  }
+  fields.onchange=refresh;
+
+  async function start(edit:boolean){
+    panel.open=true;
+    const id=++sequence;
+    status.textContent='元の絵を読み込んでいます。';
+    editor.hidden=true;draft=null;
+    const next=await api.capture(edit);
+    if(id!==sequence)return;
+    draft=next;
+    stops=[...(next.map?.stops??defaults)];levels.value=String(next.map?.levels??256);
+    dither.checked=next.map?.dither??false;view.value='after';
+    renderStops();editor.hidden=false;refresh();
+  }
+  const close=()=>{
+    sequence++;draft=null;editor.hidden=true;
+  };
+  actions.append(
+    button('調整レイヤーを作る',()=>start(false),status),
+    button('選んだ調整レイヤーを編集',()=>start(true),status)
+  );
+  const finish=document.createElement('div');finish.className='c06-clipboard-grid';
+  finish.append(
+    button('確定',async()=>{
+      if(!draft)throw Error('調整を開き直してください。');
+      const current=draft;
+      await current.apply(data());
+      if(draft===current){close();status.textContent='色の調整を作品に反映しました。';}
+    },status),
+    button('取り消す',()=>{close();status.textContent='色の調整を取り消しました。';},status),
+    button('停止点の色をパレットへ追加',()=>{
+      api.storeColors(data().stops.map(stop=>stop.color));
+      status.textContent='停止点の色をパレットへ追加しました。';
+    },status)
+  );
+  panel.addEventListener('toggle',()=>{if(!panel.open)close();});
+  editor.append(fields,mappingLabel,mapping,comparison,stopFields,finish);
+  panel.append(heading,actions,editor,status);host.append(panel);
+  return {show:(edit:boolean)=>{void start(edit).catch(error=>{status.textContent=String(error);});}};
+}

@@ -98,7 +98,11 @@ export class ForegroundColor {
    item.tags=[...new Set(tags.map(t=>t.trim().slice(0,32)).filter(Boolean))].slice(0,12);
    this.save();this.notify();
  }
- addSwatch(){if(this.palette.swatches.length>=MAX_SWATCHES)throw new Error('1パレットは256色までです。');this.palette.swatches.push({id:ident(),color:this.current});this.save();this.notify();}
+ addSwatch(){this.addSwatches([this.current]);}
+ addSwatches(colors:readonly RGB[]){
+   if(this.palette.swatches.length+colors.length>MAX_SWATCHES)throw new Error('1パレットは256色までです。');
+   this.palette.swatches.push(...colors.map(color=>({id:ident(),color})));this.save();this.notify();
+ }
  removeSwatch(id:string){this.palette.swatches=this.palette.swatches.filter(s=>s.id!==id);this.save();this.notify();}
  moveSwatch(id:string,delta:number){const a=this.palette.swatches,i=a.findIndex(s=>s.id===id),j=i+delta;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j]!,a[i]!];this.save();this.notify();}
  importPalette(text:string){const p=parsePalette(text);if(this.palettes.length>=MAX_PALETTES)throw new Error('パレットは32個までです。');this.palettes.push(p);this.paletteId=p.id;this.save();this.notify();}

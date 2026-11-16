@@ -9,7 +9,7 @@ import './ui/home.css';
 import {installHomeShell,type HomeShell} from './ui/homeShell';
 import './color/color.css';
 import './color/harmony.css';
-import {ForegroundColor,rgb,hex} from './color/model';
+import {ForegroundColor,rgb,hex,fromHex} from './color/model';
 import {installColorPanel} from './color/panel';
 import {installEyedropperSettings} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
@@ -23,6 +23,7 @@ import {installRulerPanel} from './artwork/ruler';
 import {installSymmetryPanel} from './artwork/symmetryPanel';
 import {DEFAULT_SYMMETRY,normalizeSymmetry,SYMMETRY_SECTION,SYMMETRY_TYPE,type SymmetrySettings} from './strokeSymmetry';
 import {installShapeGradientPanel} from './artwork/shapeGradient';
+import {installGradientMapPanel} from './artwork/gradientMap';
 import {installStrokeCorrection} from './artwork/strokeCorrection';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {runArtwork} from './artwork/run';
@@ -991,7 +992,7 @@ function editLayerBlend(){
       }
       changeLayer('レイヤーの合成設定を変更しました。',tx=>{
         const {blend,opacity}=choice;
-        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'&&!blend.tone&&!blend.effect?null:blend);
+        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'&&!blend.tone&&!blend.effect&&!blend.gradientMap?null:blend);
         return tx.setLayerOpacity(layer.id,opacity)||changed;
       });
     },
@@ -3890,7 +3891,7 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
     const drawing=surface,selection=c06Selection?.active()??null;
     if(!drawing)throw Error('作品を開いてください。');
-    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||root.isLayerContentLocked(layer.id)))
+    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||layer.blend?.gradientMap||root.isLayerContentLocked(layer.id)))
       throw Error('塗れるレイヤーを選ぶか、新しいレイヤーに塗ってください。');
     if(needTarget&&destination==='under'&&layer.baseColor==='white')throw Error('白い背景より上に塗りレイヤーを作ってください。');
     if(needTarget&&destination!=='active'&&root.groupsForLayer(layer.id).some(group=>group.locked))
@@ -4038,6 +4039,69 @@ c04Commands.registerProvider(()=>[{
   execute:()=>{shellUi.openBox('documentBox');strokeCorrection?.show();}
 }]);
 installShapeGradientPanel(byId('documentBoxBody'),artworkActions);
+const gradientMapPanel=installGradientMapPanel(byId('documentBoxBody'),{
+  storeColors:colors=>foreground.addSwatches(colors.map(color=>fromHex(color)!)),
+  capture:async edit=>{
+    const artwork=controller.document,revision=artwork.head,root=artwork.root,layer=controller.selectedLayer,drawing=surface;
+    if(!drawing||!documentReady)throw Error('作品を開いてください。');
+    const map=edit?layer.blend?.gradientMap??null:null;
+    if(edit&&!map)throw Error('グラデーションマップのレイヤーを選んでください。');
+    if(edit&&root.isLayerContentLocked(layer.id)||!edit&&root.groupsForLayer(layer.id).some(group=>group.locked))
+      throw Error('レイヤーまたはグループのロックを解除してください。');
+    const {width,height}=root;
+    const selection=c06Selection?.active();
+    const mask=edit?layer.vectorMask??null:selection?selectionAsLayerMask(selection):null;
+    const frozen=captureExport(artwork,undefined,revision);
+    const at=frozen.layers.findIndex(item=>item.surfaceId===layer.surface.descriptor.surfaceId);
+    const groups=frozen.layers[at]?.isolation??[];
+    const layers=frozen.layers.slice(0,at+(edit?0:1))
+      .filter(item=>groups.every((id,index)=>id===item.isolation?.[index]))
+      .map(item=>item.isolation?{...item,isolation:item.isolation.slice(groups.length)}:item);
+    const ids=new Set(layers.map(item=>item.surfaceId));
+    await withClipboardAccess(async()=>'read');
+    const input=await renderFrozenArtwork({...frozen,layers,
+      ...(frozen.basePixels?{basePixels:frozen.basePixels.filter(item=>ids.has(item.surfaceId))}:{}),
+      strokes:frozen.strokes.filter(item=>ids.has(item.surfaceId))
+    });
+    const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===revision&&controller.selectedLayer.id===layer.id;
+    if(!valid())throw Error('作品が変わったため、調整を開き直してください。');
+    const scale=Math.min(1,320/Math.max(width,height)),w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
+    const sourcePixels=new Uint8ClampedArray(w*h*4),coverage=new Uint8Array(w*h);
+    const pixelsAt=(x:number,y:number)=>[Math.floor(x*width/w),Math.floor(y*height/h)] as const;
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      const [px,py]=pixelsAt(x,y),from=(py*width+px)*4,to=y*w+x;
+      sourcePixels.set(input.subarray(from,from+4),to*4);
+      coverage[to]=Math.round(255*layerMaskCoverage(mask,px,py)*(edit?layer.opacity:1));
+    }
+    return {
+      map,source:new ImageData(sourcePixels,w,h),coverage,pixelsAt,
+      apply:async gradientMap=>withClipboardAccess(async()=>{
+        if(!valid())throw Error('作品が変わったため、調整を開き直してください。');
+        const tx=artwork.begin(edit?'グラデーションマップを編集':'グラデーションマップを追加');
+        const id=edit?layer.id:tx.addRasterLayerAbove(layer.id);
+        const blend=edit?layer.blend!:{mode:'normal' as const,space:'encoded' as const,seed:0};
+        const changed=tx.setLayerBlend(id,{...blend,gradientMap});
+        if(edit&&!changed)return 'read';
+        if(!edit){
+          tx.renameLayer(id,'グラデーションマップ');
+          if(mask)tx.setVectorLayerMask(id,mask);
+        }
+        controller.lastPersistenceHandoff=tx.commit().persistence;
+        controller.selectLayer(id);
+        return 'edit';
+      })
+    };
+  }
+});
+c04Commands.registerProvider(()=>[{
+  id:'gradientMap',label:'グラデーションマップを開く',category:'色',aliases:'色調整 明るさ 階調',
+  availability:()=>documentReady?null:'作品を開いてください。',
+  execute:()=>{
+    shellUi.openBox('documentBox');
+    gradientMapPanel.show(!!controller.selectedLayer.blend?.gradientMap);
+  }
+}]);
+
 installVectorPanel(byId('documentBoxBody'),artworkActions);
 installTextPanel(byId('documentBoxBody'),artworkActions);
 const artworkGuideStore:Parameters<typeof installRulerPanel>[2]={
