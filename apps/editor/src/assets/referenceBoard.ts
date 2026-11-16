@@ -108,7 +108,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     try{
       const current=transition,data=await readBoard(id);
       if(current!==transition||id!==currentDoc)return;
-      board=data;temporaryHidden=data.hidden;
+      board=data;temporaryHidden=false;
       const fitted=fitWithinWindow(data);
       if(fitted!==data)syncAfter(fitted,false);
       else {await render();drawList();}
@@ -245,11 +245,15 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     if(epoch!==transition||options.getDocumentId()!==doc)return;
     const result=await importAssetPack(embedded);
     if(epoch!==transition||options.getDocumentId()!==doc)return;
-    // A failed individual image must not remove its placement. Its original ID
-    // is retained and rendered with a visible missing-image explanation.
+    // If an image that WAS embedded fails to import, never accidentally display
+    // an unrelated local image which happens to use the same asset identifier.
+    // The missing: prefix retains the original ID for a later repair.
+    const packagedIds=new Set(embedded.items.map(item=>item.id));
+    const resolveId=(id:string)=>result.renamedIds[id]??
+      (packagedIds.has(id)?'missing:'+id:id);
     const newItems:BoardItem[]=input.items.map((item,index)=>({
-      ...newBoardItem(result.renamedIds[item.assetId]??item.assetId,index),
-      ...item,assetId:result.renamedIds[item.assetId]??item.assetId,
+      ...newBoardItem(resolveId(item.assetId),index),
+      ...item,assetId:resolveId(item.assetId),
       id:crypto.randomUUID()
     }));
     const imported:BoardSnapshot={version:1,documentId:doc,items:newItems,hidden:false};
