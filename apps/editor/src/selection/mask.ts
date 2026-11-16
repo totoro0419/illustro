@@ -46,7 +46,9 @@ export function rasterizeSelection(shape:SelectionShape,width:number,height:numb
   return {width,height,alpha:output};
 }
 export function combineSelection(previous:MaskData|null,next:MaskData,mode:CombineMode):MaskData{
-  if(!previous||mode==='replace')return next;
+  if(mode==='replace')return next;
+  // Subtraction/intersection against an empty selection must remain empty.
+  if(!previous)return mode==='add'?next:{width:next.width,height:next.height,alpha:new Uint8Array(next.alpha.length)};
   if(previous.width!==next.width||previous.height!==next.height)throw Error('範囲の大きさが異なります。');
   const data=new Uint8Array(next.alpha.length);
   for(let i=0;i<data.length;i++){
