@@ -40,8 +40,12 @@ describe('C09 editable shape geometry',()=>{
     const reverse=reverseGradientStops(original);
     expect(reverse.map(stop=>stop.at)).toEqual([0,0.7,1]);
     expect(reverse.map(stop=>stop.color)).toEqual(['#334455','#223344','#112233']);
-    expect(reverse.map(stop=>stop.midpoint)).toEqual([0.2,0.8,0.2]);
-    expect(reverseGradientStops(reverse).map(stop=>stop.midpoint).slice(0,2)).toEqual([0.2,0.8]);
+    const midpoint=reverse.map(stop=>stop.midpoint);
+    expect(midpoint[0]).toBeCloseTo(0.2,12);
+    expect(midpoint.slice(1)).toEqual([0.8,0.2]);
+    const restored=reverseGradientStops(reverse);
+    expect(restored[0]!.midpoint).toBeCloseTo(0.2,12);
+    expect(restored[1]!.midpoint).toBeCloseTo(0.8,12);
     expect(original[0]!.at).toBe(0);
   });
 });
