@@ -120,27 +120,38 @@ export function installSimpleMacros(commands:CommandService){
     const duplicate=macros.find(x=>x.name===title&&x.id!==selectedId);
     if(duplicate){status.textContent='別の操作セットと同じ名前は使えません。';return;}
     const id=selectedId??uid(),item:SimpleMacro={id,name:title,steps:[...steps]};
-    macros=macros.filter(m=>m.id!==id).concat(item);selectedId=id;
-    if(!persist(macros)){status.textContent='端末に保存できませんでした。';return;}
+    const next=macros.filter(m=>m.id!==id).concat(item);
+    if(!persist(next)){status.textContent='端末に保存できませんでした。';return;}
+    macros=next;selectedId=id;
     refreshSelect();refreshSteps();commands.refresh();
     status.textContent='操作セットを保存しました。機能検索やQuickにも表示されます。';
   };
   remove.onclick=()=>{
     if(!selectedId)return;
     if(!window.confirm('「'+name.value+'」を削除しますか？'))return;
-    macros=macros.filter(m=>m.id!==selectedId);persist(macros);
-    newMacro();commands.refresh();status.textContent='操作セットを削除しました。';
+    const next=macros.filter(m=>m.id!==selectedId);
+    if(!persist(next)){status.textContent='端末に保存できませんでした。';return;}
+    macros=next;newMacro();commands.refresh();status.textContent='操作セットを削除しました。';
   };
-  function play(macro:SimpleMacro){
+  async function play(macro:SimpleMacro):Promise<void>{
     if(playing){status.textContent='ほかの操作セットが実行中です。';return;}
     playing=true;run.disabled=true;
     try{
+      let unfinished=false;
       for(const [i,id] of macro.steps.entries()){
         if(!permitted(id)){status.textContent='対応していない操作が含まれています。';return;}
-        const result=commands.invoke(id);
-        if(!result.ok){status.textContent=(i+1)+'番目の操作で停止しました。'+(result.reason??'現在は使えません。');return;}
+        const result=await commands.invokeAsync(id);
+        if(!result.ok){
+          status.textContent=(i+1)+'番目の操作で停止しました。'+(result.reason??'現在は使えません。');
+          return;
+        }
+        if(!result.settled)unfinished=true;
       }
-      status.textContent='「'+macro.name+'」の操作を実行しました。';
+      status.textContent=unfinished
+        ?'「'+macro.name+'」の操作を送りました。履歴や描画の完了はまだ確認できていません。'
+        :'「'+macro.name+'」の操作を実行しました。';
+    }catch(error){
+      status.textContent=error instanceof Error?error.message:'操作セットの実行に失敗しました。';
     }finally{playing=false;refreshSteps();}
   }
   run.onclick=()=>{
