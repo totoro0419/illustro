@@ -18,7 +18,7 @@ export async function historyThumbnail(artwork:CoreDocument,revision:RevisionId)
     const width=Math.max(1,Math.round(frozen.width*scale)),height=Math.max(1,Math.round(frozen.height*scale));
     // renderFrozenArtwork already returns Uint8ClampedArray. Never duplicate
     // the full-resolution buffer merely to pass it into ImageData.
-    const bitmap=await createImageBitmap(new ImageData(pixels,frozen.width,frozen.height),{
+    const bitmap=await createImageBitmap(new ImageData(pixels as Uint8ClampedArray<ArrayBuffer>,frozen.width,frozen.height),{
       resizeWidth:width,resizeHeight:height,resizeQuality:'medium',
     });
     try{
