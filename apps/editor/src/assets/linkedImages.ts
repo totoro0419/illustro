@@ -27,7 +27,7 @@ export async function chooseLinkedImage(){
   });
   return {file,handle:null};
 }
-export async function rememberImageHandle(key:string,handle:LinkedHandle){
+export async function rememberImageHandle(key:string,handle:LinkedHandle):Promise<boolean>{
   handles.set(key,handle);
   try{
     const db=await database();
@@ -35,7 +35,29 @@ export async function rememberImageHandle(key:string,handle:LinkedHandle){
       const tx=db.transaction('handles','readwrite');
       tx.objectStore('handles').put(handle,key);tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error);
     });
-  }catch{/* The current tab can still update via the live handle. */}
+    return true;
+  }catch{
+    // The live tab may work, but reloading will require re-selection.
+    return false;
+  }
+}
+// Call before committing a re-selection that no longer grants access to the old file.
+// Removing the persisted handle prevents a later "check updates" from reverting the image.
+export async function forgetImageHandle(key:string):Promise<void>{
+  const previous=handles.get(key);handles.delete(key);
+  try{
+    const db=await database();
+    await new Promise<void>((resolve,reject)=>{
+      const tx=db.transaction('handles','readwrite');
+      tx.objectStore('handles').delete(key);
+      tx.oncomplete=()=>resolve();
+      tx.onabort=()=>reject(tx.error??Error('元画像の参照情報を解除できません。'));
+      tx.onerror=()=>reject(tx.error??Error('元画像の参照情報を解除できません。'));
+    });
+  }catch(error){
+    if(previous)handles.set(key,previous);
+    throw new Error('以前のファイル参照を解除できません。再選択をやり直してください。',{cause:error});
+  }
 }
 export async function readLinkedFile(key:string){
   let handle=handles.get(key);
@@ -47,7 +69,7 @@ export async function readLinkedFile(key:string){
       request.onerror=()=>reject(request.error);
     });
   }catch{/* The user can identify the source again. */}
-  if(!handle)throw Error('この端末で元の画像にアクセスできません。「元ファイルを選び直す」を使ってください。');
+  if(!handle)throw Error('元画像の自動更新はこの端末で利用できません。「元ファイルを選び直す」から手動で更新してください。');
   try{return await handle.getFile();}
   catch{throw Error('元ファイルを開けませんでした。保存済みの見た目は残っています。元ファイルを選び直してください。');}
 }
