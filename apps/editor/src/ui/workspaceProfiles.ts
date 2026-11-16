@@ -135,8 +135,13 @@ export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:T
     const available=profiles.length>0;
     apply.disabled=remove.disabled=!available;
   }
-  function persist(){
-    if(!write(KEY,JSON.stringify(toFile(profiles))))status.textContent='端末の保存領域を使用できません。設定を書き出してください。';
+  function persist(next:Profile[]):boolean{
+    if(!write(KEY,JSON.stringify(toFile(next)))){
+      status.textContent='端末の保存領域を使用できません。設定を書き出してください。';
+      return false;
+    }
+    profiles=next;
+    return true;
   }
   function bindMoving(){
     for(const box of knownBoxes()){
@@ -166,8 +171,10 @@ export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:T
     const found=profiles.findIndex(p=>p.name===label);
     if(found<0&&profiles.length>=32){status.textContent='保存できる配置は32件までです。';return;}
     const profile={name:label,layout:snapshot()};
-    if(found>=0)profiles[found]=profile;else profiles.push(profile);
-    persist();choices(label);status.textContent='現在の配置を「'+label+'」として保存しました。';
+    const next=[...profiles];
+    if(found>=0)next[found]=profile;else next.push(profile);
+    if(!persist(next))return;
+    choices(label);status.textContent='現在の配置を「'+label+'」として保存しました。';
   };
   let rollback:WorkspaceLayout|null=null;
   const revert=()=>{if(rollback)applyLayout(rollback);rollback=null;};
@@ -202,7 +209,8 @@ export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:T
   remove.onclick=()=>{
     const label=select.value,profile=profiles.find(p=>p.name===label);if(!profile)return;
     if(!window.confirm('「'+label+'」の保存済み配置を削除しますか？'))return;
-    profiles=profiles.filter(p=>p!==profile);persist();choices();status.textContent='保存済み配置を削除しました。';
+    if(!persist(profiles.filter(p=>p!==profile)))return;
+    choices();status.textContent='保存済み配置を削除しました。';
   };
   reset.onclick=()=>{
     if(!window.confirm('作業欄の表示と並び順を初期状態に戻しますか？ 作品の内容は変更されません。'))return;
@@ -225,7 +233,8 @@ export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:T
       if(duplicate.length&&!window.confirm('同名の設定 '+duplicate.join('、')+' を置き換えますか？'))return;
       const merged=profiles.filter(x=>!imported.some(y=>y.name===x.name)).concat(imported);
       if(merged.length>32)throw new Error('保存できる配置は32件までです。');
-      profiles=merged;persist();choices(imported[0]?.name);
+      if(!persist(merged))return;
+      choices(imported[0]?.name);
       status.textContent=imported.length+'件の配置を読み込みました。対応しないパネルは元のまま残します。';
     }catch(e){status.textContent=e instanceof Error?e.message:'設定を読み込めませんでした。';}
   };
