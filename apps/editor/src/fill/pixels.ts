@@ -84,15 +84,25 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
   // Transparent art: every sufficiently visible stroke can be a boundary, including white.
   // Opaque art: use the consistent canvas-corner background instead of assuming black ink.
   const corners=[0,width-1,(height-1)*width,count-1].map(index=>index*4);
-  const reference=corners.find(at=>source[at+3]!>=240);
-  const agrees=reference===undefined?[]:corners.filter(at=>source[at+3]!>=240&&
-    Math.max(...[0,1,2].map(channel=>Math.abs(source[at+channel]!-source[reference+channel]!)))<=24);
-  const opaqueBackground=agrees.length>=3?reference:undefined;
+  const visibleCorners=corners.filter(at=>source[at+3]!>=240);
+  const matching=(a:number,b:number)=>[0,1,2].every(channel=>Math.abs(source[a+channel]!-source[b+channel]!)<=24);
+  // An isolated stroke may touch one corner. Choose the majority, not simply the first.
+  const reference=visibleCorners.reduce<{at:number;matches:number}|null>((best,at)=>{
+    const matches=visibleCorners.filter(other=>matching(at,other)).length;
+    return !best||matches>best.matches?{at,matches}:best;
+  },null);
+  const opaqueBackground=reference&&reference.matches>=3?reference.at:undefined;
+  const uncertainOpaqueBackground=visibleCorners.length>=3&&opaqueBackground===undefined;
   for(let i=0;i<count;i++){
     const p=i*4,alpha=source[p+3]!;
     if(!alpha)continue;
     if(opaqueBackground===undefined){
-      if(alpha>=threshold)walls[i]=1;
+      // On an ambiguous opaque canvas, fall back conservatively to the old
+      // darkness detector instead of marking the entire picture as a wall.
+      const ink=uncertainOpaqueBackground
+        ?(255-(source[p]!*.2126+source[p+1]!*.7152+source[p+2]!*.0722))*alpha/255
+        :alpha;
+      if(ink>=threshold)walls[i]=1;
     }else{
       const colorDifference=Math.max(...[0,1,2].map(channel=>Math.abs(source[p+channel]!-source[opaqueBackground+channel]!)));
       if(colorDifference*alpha/255>=threshold||alpha<240&&240-alpha>=threshold)walls[i]=1;
