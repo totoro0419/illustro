@@ -59,6 +59,8 @@ export function exportPalette(p:Palette):string{
 export class ForegroundColor {
  current:RGB=rgb(.12,.15,.2);previous:RGB=rgb(.12,.15,.2);background:RGB=rgb(1,1,1);opacity=1;history:RGB[]=[];
  palettes:Palette[]=[{id:ident(),name:'マイパレット',swatches:[]}];paletteId=this.palettes[0]!.id;
+ /** Increments only when the palette list, swatches, or history change. */
+ collectionsVersion=0;
  private origin:RGB|null=null;private listeners=new Set<()=>void>();
  constructor(storage=true){if(!storage)return;try{const stored=localStorage.getItem(key);if(!stored)return;const d=JSON.parse(stored) as Record<string,unknown>;
   if(d?.version!==1)return;if(validRGB(d.current))this.current=rgb(d.current.r,d.current.g,d.current.b);
@@ -76,7 +78,7 @@ export class ForegroundColor {
  begin(){if(!this.origin)this.origin=this.current;}
  preview(c:RGB){if(!validRGB(c))return;this.current=rgb(c.r,c.g,c.b);this.notify();}
  commit(c?:RGB){if(c)this.preview(c);const prior=this.origin??this.current;this.origin=null;
-  if(!same(prior,this.current)){this.previous=prior;this.history=[this.current,...this.history.filter(x=>!same(x,this.current))].slice(0,MAX_HISTORY);}
+  if(!same(prior,this.current)){this.previous=prior;this.history=[this.current,...this.history.filter(x=>!same(x,this.current))].slice(0,MAX_HISTORY);this.collectionsVersion++;}
   this.save();this.notify();
  }
  cancel(){if(this.origin){this.current=this.origin;this.origin=null;this.notify();}}
@@ -87,23 +89,23 @@ export class ForegroundColor {
    const old=this.current,newForeground=this.background;
    this.background=old;this.choose(newForeground);this.save();this.notify();
  }
- clearHistory(){this.history=[];this.save();this.notify();}
+ clearHistory(){this.history=[];this.collectionsVersion++;this.save();this.notify();}
  get palette(){return this.palettes.find(p=>p.id===this.paletteId)??this.palettes[0]!;}
- selectPalette(id:string){if(this.palettes.some(p=>p.id===id)){this.paletteId=id;this.save();this.notify();}}
- createPalette(name:string){if(this.palettes.length>=MAX_PALETTES)throw new Error('パレットは32個までです。');const n=cleanName(name);if(!n)throw new Error('名前を入力してください。');const p={id:ident(),name:n,swatches:[]};this.palettes.push(p);this.paletteId=p.id;this.save();this.notify();}
- renamePalette(name:string){const n=cleanName(name);if(!n)throw new Error('名前を入力してください。');this.palette.name=n;this.save();this.notify();}
- setPaletteFolder(folder:string){this.palette.folder=cleanName(folder);this.save();this.notify();}
+ selectPalette(id:string){if(this.paletteId!==id&&this.palettes.some(p=>p.id===id)){this.paletteId=id;this.collectionsVersion++;this.save();this.notify();}}
+ createPalette(name:string){if(this.palettes.length>=MAX_PALETTES)throw new Error('パレットは32個までです。');const n=cleanName(name);if(!n)throw new Error('名前を入力してください。');const p={id:ident(),name:n,swatches:[]};this.palettes.push(p);this.paletteId=p.id;this.collectionsVersion++;this.save();this.notify();}
+ renamePalette(name:string){const n=cleanName(name);if(!n)throw new Error('名前を入力してください。');this.palette.name=n;this.collectionsVersion++;this.save();this.notify();}
+ setPaletteFolder(folder:string){this.palette.folder=cleanName(folder);this.collectionsVersion++;this.save();this.notify();}
  setSwatchTags(id:string,tags:readonly string[]){
    const item=this.palette.swatches.find(s=>s.id===id);if(!item)return;
    item.tags=[...new Set(tags.map(t=>t.trim().slice(0,32)).filter(Boolean))].slice(0,12);
-   this.save();this.notify();
+   this.collectionsVersion++;this.save();this.notify();
  }
  addSwatch(){this.addSwatches([this.current]);}
  addSwatches(colors:readonly RGB[]){
    if(this.palette.swatches.length+colors.length>MAX_SWATCHES)throw new Error('1パレットは256色までです。');
-   this.palette.swatches.push(...colors.map(color=>({id:ident(),color})));this.save();this.notify();
+   this.palette.swatches.push(...colors.map(color=>({id:ident(),color})));this.collectionsVersion++;this.save();this.notify();
  }
- removeSwatch(id:string){this.palette.swatches=this.palette.swatches.filter(s=>s.id!==id);this.save();this.notify();}
- moveSwatch(id:string,delta:number){const a=this.palette.swatches,i=a.findIndex(s=>s.id===id),j=i+delta;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j]!,a[i]!];this.save();this.notify();}
- importPalette(text:string){const p=parsePalette(text);if(this.palettes.length>=MAX_PALETTES)throw new Error('パレットは32個までです。');this.palettes.push(p);this.paletteId=p.id;this.save();this.notify();}
+ removeSwatch(id:string){const count=this.palette.swatches.length;this.palette.swatches=this.palette.swatches.filter(s=>s.id!==id);if(count===this.palette.swatches.length)return;this.collectionsVersion++;this.save();this.notify();}
+ moveSwatch(id:string,delta:number){const a=this.palette.swatches,i=a.findIndex(s=>s.id===id),j=i+delta;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j]!,a[i]!];this.collectionsVersion++;this.save();this.notify();}
+ importPalette(text:string){const p=parsePalette(text);if(this.palettes.length>=MAX_PALETTES)throw new Error('パレットは32個までです。');this.palettes.push(p);this.paletteId=p.id;this.collectionsVersion++;this.save();this.notify();}
 }
