@@ -38,6 +38,10 @@ export function installReferenceColorPicker(
   document.body.append(dialog);
   const originalColor=()=>foreground.current;
   let pointer:number|null=null,ready=false,sourceSize={width:0,height:0};
+  // Display a reduced preview but sample the original pixels, not the preview.
+  const sampleCanvas=document.createElement('canvas');sampleCanvas.width=5;sampleCanvas.height=5;
+  const sampleContext=sampleCanvas.getContext('2d',{willReadFrequently:true});
+  let sourceBitmap:ImageBitmap|null=null;
   let baseColor:RGB=originalColor();
   const swatch=(node:HTMLElement,name:string,color:RGB)=>{
     node.replaceChildren();
@@ -46,18 +50,21 @@ export function installReferenceColorPicker(
     node.append(colorChip,caption);
   };
   function average(event:PointerEvent):RGB|null{
-    if(!ready||!context)return null;
+    if(!ready||!sampleContext||!sourceBitmap)return null;
     const rect=canvas.getBoundingClientRect();
     if(rect.width<=0||rect.height<=0)return null;
     const tx=(event.clientX-rect.left)/rect.width;
     const ty=(event.clientY-rect.top)/rect.height;
     if(tx<0||ty<0||tx>1||ty>1)return null;
-    const cx=Math.min(canvas.width-1,Math.floor(tx*canvas.width));
-    const cy=Math.min(canvas.height-1,Math.floor(ty*canvas.height));
+    const cx=Math.min(sourceBitmap.width-1,Math.floor(tx*sourceBitmap.width));
+    const cy=Math.min(sourceBitmap.height-1,Math.floor(ty*sourceBitmap.height));
     const radius=(getDiameter()-1)/2,transparency=getTransparency();
-    const minX=Math.max(0,cx-radius),maxX=Math.min(canvas.width-1,cx+radius);
-    const minY=Math.max(0,cy-radius),maxY=Math.min(canvas.height-1,cy+radius);
-    const values=context.getImageData(minX,minY,maxX-minX+1,maxY-minY+1).data;
+    const minX=Math.max(0,cx-radius),maxX=Math.min(sourceBitmap.width-1,cx+radius);
+    const minY=Math.max(0,cy-radius),maxY=Math.min(sourceBitmap.height-1,cy+radius);
+    const width=maxX-minX+1,height=maxY-minY+1;
+    sampleContext.clearRect(0,0,5,5);
+    sampleContext.drawImage(sourceBitmap,minX,minY,width,height,0,0,width,height);
+    const values=sampleContext.getImageData(0,0,width,height).data;
     let red=0,green=0,blue=0,weight=0;
     for(let i=0;i<values.length;i+=4){
       const alpha=(values[i+3]??0)/255;
@@ -111,11 +118,13 @@ export function installReferenceColorPicker(
   });
   dialog.addEventListener('close',()=>{
     if(pointer!==null){pointer=null;foreground.cancel();}
+    sourceBitmap?.close();sourceBitmap=null;ready=false;
   });
   async function openBlob(image:Blob){
     if(image.size>32*1024*1024){feedback.textContent='32MB以下の画像を選んでください。';return;}
     try{
       const bitmap=await createImageBitmap(image);
+      let retained=false;
       try{
         if(bitmap.width<1||bitmap.height<1)throw Error('画像サイズを確認できませんでした。');
         const scale=Math.min(1,2048/Math.max(bitmap.width,bitmap.height));
@@ -123,14 +132,15 @@ export function installReferenceColorPicker(
         canvas.height=Math.max(1,Math.round(bitmap.height*scale));
         context?.clearRect(0,0,canvas.width,canvas.height);
         context?.drawImage(bitmap,0,0,canvas.width,canvas.height);
+        sourceBitmap?.close();sourceBitmap=bitmap;retained=true;
         sourceSize={width:bitmap.width,height:bitmap.height};
         ready=true;
         baseColor=foreground.current;
         swatch(previous,'変更前',baseColor);swatch(current,'現在の色',baseColor);
         feedback.textContent='画像 '+sourceSize.width+'×'+sourceSize.height+' を読み込みました。'+
-          (scale<1?'容量を抑えるため表示用画像を縮小して色を取得します。':'');
+          (scale<1?'表示は縮小していますが、色は元画像から取得します。':'');
         if(!dialog.open)dialog.showModal();
-      }finally{bitmap.close();}
+      }finally{if(!retained)bitmap.close();}
     }catch(error){feedback.textContent='画像を開けませんでした。'+(error instanceof Error?error.message:String(error));}
   }
   file.onchange=async()=>{

@@ -4,7 +4,7 @@
  */
 import {readBoard,writeBoard,newBoardItem,type BoardSnapshot,type BoardItem} from './referenceBoardStore';
 import {getAsset} from './library';
-import {exportAssetPack,importAssetPack,readAssetPack} from './packs';
+import {exportAssetPack,importAssetPack,readAssetPack,type PackManifest} from './packs';
 import type {PortableSectionInput} from '../persistence/format';
 import type {PreservedPortableData} from '../persistence/portable';
 import type {ForegroundColor} from '../color/model';
@@ -12,6 +12,7 @@ export type ReferenceBoardService=Readonly<{
   add:(assetId:string)=>Promise<void>;
   refresh:()=>Promise<void>;
   refreshIfChanged:()=>Promise<void>;
+  flush:()=>Promise<void>;
   exportLayout:()=>Promise<Blob>;
   undo:()=>Promise<void>;
   redo:()=>Promise<void>;
@@ -30,7 +31,7 @@ const safePos=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,va
 export function installReferenceBoard(options:Options):ReferenceBoardService{
   const panel=document.getElementById('referenceBoxBody');
   if(!panel)return {
-    add:async()=>{},refresh:async()=>{},refreshIfChanged:async()=>{},
+    add:async()=>{},refresh:async()=>{},refreshIfChanged:async()=>{},flush:async()=>{},
     exportLayout:async()=>new Blob(),undo:async()=>{},redo:async()=>{},
     exportNative:async()=>null,importNative:async()=>{}
   };
@@ -66,6 +67,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   document.body.append(canvasLayer);
   let currentDoc:string|null=null,board:BoardSnapshot|null=null;
   let saving:Promise<void>=Promise.resolve(),transition=0,renderEpoch=0;
+  let saveError:unknown=null,temporaryHidden=false;
   let back:BoardSnapshot[]=[],forward:BoardSnapshot[]=[];
   const urls=new Map<string,string>();
   const error=(reason:unknown)=>{status.textContent=reason instanceof Error?reason.message:String(reason);};
@@ -77,27 +79,39 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   const clone=(value:BoardSnapshot):BoardSnapshot=>({
     ...value,items:value.items.map(item=>({...item}))
   });
+  const fitWithinWindow=(source:BoardSnapshot):BoardSnapshot=>{
+    let changed=false;
+    const items=source.items.map(item=>{
+      const x=safePos(item.x,0,Math.max(0,innerWidth-100));
+      const y=safePos(item.y,0,Math.max(0,innerHeight-70));
+      if(x===item.x&&y===item.y)return item;
+      changed=true;return {...item,x,y};
+    });
+    return changed?{...source,items}:source;
+  };
   function syncAfter(change:BoardSnapshot,history=true){
     if(!board||board.documentId!==change.documentId)return;
     if(history){back.push(clone(board));if(back.length>60)back.shift();forward=[];}
     board=change;
-    const expectedDocument=change.documentId;
-    saving=saving.catch(()=>{}).then(async()=>{
-      if(options.getDocumentId()!==expectedDocument)return;
-      await writeBoard(change);
-    }).catch(error);
-    void render();drawList();
+    // A queued write belongs to its captured document, even if the user switches works.
+    // Do not discard it after getDocumentId() changes.
+    saving=saving.then(()=>writeBoard(clone(change)),()=>writeBoard(clone(change)))
+      .then(()=>{saveError=null;},reason=>{saveError=reason;error(reason);});
+    void render().catch(error);drawList();
   }
   async function refreshIfChanged(){
     const id=options.getDocumentId();
     if(id===currentDoc)return;
-    currentDoc=id;transition++;back=[];forward=[];board=null;
+    currentDoc=id;transition++;back=[];forward=[];board=null;temporaryHidden=false;
     for(const url of urls.values())URL.revokeObjectURL(url);urls.clear();canvasLayer.replaceChildren();list.replaceChildren();
     if(!id){status.textContent='作品を開くと、資料を並べられます。';return;}
     try{
       const current=transition,data=await readBoard(id);
       if(current!==transition||id!==currentDoc)return;
-      board=data;await render();drawList();
+      board=data;temporaryHidden=false;
+      const fitted=fitWithinWindow(data);
+      if(fitted!==data)syncAfter(fitted,false);
+      else {await render();drawList();}
     }catch(e){error(e);}
   }
   async function refresh(){
@@ -106,7 +120,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   async function add(assetId:string){
     await refreshIfChanged();
     if(!board)throw Error('作品を開いてから資料を追加してください。');
+    const targetDocument=board.documentId;
     const asset=await getAsset(assetId);
+    if(board?.documentId!==targetDocument||options.getDocumentId()!==targetDocument)
+      throw Error('作品を切り替えたため、参考資料の追加を中止しました。');
     if(!asset||asset.deleted||asset.kind!=='reference'||!asset.mime.startsWith('image/'))
       throw Error('この素材は参考画像として開けません。');
     if(board.items.length>=80)throw Error('資料は1作品80枚までです。');
@@ -127,7 +144,9 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   }
   async function toggleVisibility(){
     await refreshIfChanged();if(!board)return;
-    syncAfter({...board,hidden:!board.hidden});
+    temporaryHidden=!temporaryHidden;
+    canvasLayer.hidden=temporaryHidden;
+    drawList();
   }
   async function undo(){
     if(!board||!back.length)return;
@@ -139,8 +158,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     back.push(clone(board));board=forward.pop()!;
     syncAfter(board,false);
   }
+  async function flush(){await saving;if(saveError)throw saveError;}
   async function exportLayout(){
     await refreshIfChanged();if(!board)throw Error('作品がありません。');
+    await flush();
     return new Blob([JSON.stringify(board,null,2)],{type:'application/json'});
   }
   const NATIVE_ID='c05.reference-board';
@@ -148,46 +169,102 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   async function exportNative():Promise<PortableSectionInput|null>{
     const id=options.getDocumentId();
     if(!id)return null;
-    const current=board?.documentId===id?clone(board):await readBoard(id);
-    // Include each original file only once, even if the same reference is shown
-    // in several windows. The corresponding document pixels remain untouched.
+    let current:BoardSnapshot;
+    try{current=board?.documentId===id?clone(board):await readBoard(id);}
+    catch{
+      // A damaged local reference record must never stop the artwork save. An
+      // explicit marker replaces any stale optional section in the saved file.
+      const warning='参考資料の配置を読み取れませんでした。作品本体は保存しますが、資料はこのファイルに含まれません。端末側の元データは変更していません。';
+      status.textContent=warning;
+      window.dispatchEvent(new CustomEvent('illustro:reference-save-warning',{detail:{message:warning,documentId:id,omittedAssetIds:[]}}));
+      const unavailable={schema:'illustro.reference-unavailable',version:1,documentId:id};
+      return {id:NATIVE_ID,type:NATIVE_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(unavailable))};
+    }
+    // Reference files are optional. Missing or oversized images must not block
+    // saving the user's artwork. Keep ALL placements, including missing items,
+    // so that the original reference can be reattached later.
     const ids=[...new Set(current.items.map(item=>item.assetId))];
-    const packageBlob=await exportAssetPack(ids);
-    const packageInfo=JSON.parse(await packageBlob.text()) as unknown;
-    const data={schema:'illustro.reference-bundle',version:1,board:current,pack:packageInfo};
+    let pack:PackManifest;
+    const omitted:string[]=[];
+    try{
+      pack=await readAssetPack(await exportAssetPack(ids));
+    }catch{
+      const items:PackManifest['items'][number][]=[];
+      let bytes=0;
+      for(const assetId of ids){
+        try{
+          const part=await readAssetPack(await exportAssetPack([assetId]));
+          const item=part.items[0];
+          if(!item||bytes+item.bytes>48*1024*1024){omitted.push(assetId);continue;}
+          items.push(item);bytes+=item.bytes;
+        }catch{omitted.push(assetId);}
+      }
+      pack={schema:'illustro.asset-pack',version:1,createdAt:Date.now(),items};
+    }
+    if(omitted.length){
+      const warning=omitted.length+'件の参考画像を作品ファイルに含められませんでした。絵と資料の配置は保存されます。元の画像を確認してください。';
+      status.textContent=warning;
+      window.dispatchEvent(new CustomEvent('illustro:reference-save-warning',{detail:{message:warning,documentId:id,omittedAssetIds:omitted}}));
+    }
+    const data={schema:'illustro.reference-bundle',version:1,board:{...current,hidden:false},pack,omittedAssetIds:omitted};
     return {id:NATIVE_ID,type:NATIVE_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(data))};
   }
   async function importNative(preserved:PreservedPortableData|undefined):Promise<void>{
     const section=preserved?.optionalSections.find(item=>item.id===NATIVE_ID&&item.type===NATIVE_TYPE);
     if(!section)return;
     await refreshIfChanged();
-    const doc=options.getDocumentId();
-    if(!doc||!board)return;
-    // Do not erase the user's current local board when opening an older file.
-    if(board.items.length>0){status.textContent='端末に保存した資料配置を維持しました。';return;}
-    if(section.bytes.byteLength>70*1024*1024)throw Error('作品内の資料が大きすぎます。');
+    const doc=options.getDocumentId(),epoch=transition;
+    if(!doc||board?.documentId!==doc)return;
+    if(section.bytes.byteLength>70*1024*1024)throw Error('作品内の参考資料が大きすぎます。');
     const raw=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(section.bytes)) as unknown;
-    if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('作品内の資料情報が正しくありません。');
+    if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('作品内の参考資料が正しくありません。');
     const data=raw as Record<string,unknown>;
+    if(data.schema==='illustro.reference-unavailable')
+      throw Error('参考資料が不完全な状態で保存された作品です。絵は開けますが、端末に残る資料を確認してください。');
     if(data.schema!=='illustro.reference-bundle'||data.version!==1||!data.board||!data.pack)
-      throw Error('対応していない資料データです。');
-    const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
-    const result=await importAssetPack(embedded);
-    if(result.failures.length)throw Error('資料の一部を復元できませんでした：'+result.failures.slice(0,2).join('、'));
+      throw Error('対応していない参考資料データです。');
     const input=data.board as Partial<BoardSnapshot>;
-    if(!Array.isArray(input.items)||input.items.length>80)throw Error('資料の配置情報が正しくありません。');
-    const newItems:BoardItem[]=input.items.map((item,index)=>{
-      if(!item||typeof item.assetId!=='string'||!result.renamedIds[item.assetId])
-        throw Error('資料の参照先を復元できませんでした。');
-      return {
-        ...newBoardItem(result.renamedIds[item.assetId]!,index),
-        ...item,assetId:result.renamedIds[item.assetId]!,
-        id:crypto.randomUUID()
-      };
-    });
-    const imported:BoardSnapshot={version:1,documentId:doc,items:newItems,hidden:!!input.hidden};
+    if(!Array.isArray(input.items)||input.items.length>80||
+      input.items.some(item=>!item||typeof item.assetId!=='string'||!item.assetId||
+        typeof item.id!=='string'||!item.id||
+        ![item.x,item.y,item.width,item.height,item.zoom,item.rotation].every(Number.isFinite)||
+        item.width<=0||item.height<=0||item.zoom<=0))
+      throw Error('参考資料の配置情報が正しくありません。既存の資料は保護されました。');
+
+    // Never silently prefer a stale local layout over the file being opened.
+    // Keep the old layout intact when the user declines replacement.
+    if(board.items.length){
+      const local=JSON.stringify(board.items.map(item=>({...item,id:null})));
+      const incoming=JSON.stringify(input.items.map(item=>({...item,id:null})));
+      if(local===incoming){status.textContent='参考資料はすでに読み込まれています。';return;}
+      if(!window.confirm('この端末には同じ作品の参考資料が残っています。開いた作品ファイルの資料配置で置き換えますか？\n「キャンセル」で端末側の配置を残します。')){
+        status.textContent='端末に保存してある資料配置を残しました。';return;
+      }
+    }
+    const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
+    if(epoch!==transition||options.getDocumentId()!==doc)return;
+    const result=await importAssetPack(embedded);
+    if(epoch!==transition||options.getDocumentId()!==doc)return;
+    // If an image that WAS embedded fails to import, never accidentally display
+    // an unrelated local image which happens to use the same asset identifier.
+    // The missing: prefix retains the original ID for a later repair.
+    const packagedIds=new Set(embedded.items.map(item=>item.id));
+    const resolveId=(id:string)=>result.renamedIds[id]??
+      (packagedIds.has(id)?'missing:'+id:id);
+    const newItems:BoardItem[]=input.items.map((item,index)=>({
+      ...newBoardItem(resolveId(item.assetId),index),
+      ...item,assetId:resolveId(item.assetId),
+      id:crypto.randomUUID()
+    }));
+    const imported:BoardSnapshot={version:1,documentId:doc,items:newItems,hidden:false};
     syncAfter(imported,false);
-    status.textContent=newItems.length+'枚の資料を作品ファイルから読み込みました。';
+    temporaryHidden=false;
+    const missing=new Set([
+      ...input.items.filter(item=>!result.renamedIds[item.assetId]).map(item=>item.assetId),
+      ...(Array.isArray(data.omittedAssetIds)?data.omittedAssetIds.filter((id):id is string=>typeof id==='string'):[])
+    ]);
+    status.textContent=newItems.length+'枚の資料配置を読み込みました。'+(missing.size||result.failures.length?
+      '元画像が不足している項目があります（'+Math.max(missing.size,result.failures.length)+'件）。配置は保持しました。':'');
   }
   function toggleGroup(){
     if(!board||!groupSelect.value)return;
@@ -239,7 +316,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     groupToggle.disabled=!groupSelect.value;
     const members=current.items.filter(i=>i.group===groupSelect.value);
     groupToggle.textContent=members.length&&members.every(i=>i.hidden)?'グループを再表示':'グループを隠す';
-    show.textContent=current.hidden?'資料をすべて再表示':'資料を一時的に隠す';
+    show.textContent=temporaryHidden?'資料をすべて再表示':'資料を一時的に隠す';
     for(const item of current.items){
       const row=document.createElement('div');row.className='c05-reference-row';
       const name=document.createElement('span');name.textContent='資料 '+item.assetId.slice(0,8);
@@ -263,16 +340,16 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const epoch=++renderEpoch,snapshotBoard=board;
     if(!snapshotBoard)return;
     const update=transition;
-    // Rebuild only as a user requests a board operation, not per stroke.
-    canvasLayer.replaceChildren();
+    // Read assets concurrently and swap the complete view only once. Previous
+    // windows stay visible while an IndexedDB lookup is in progress.
+    const visible=snapshotBoard.items.filter(item=>!item.hidden);
+    const resolved=await Promise.all(visible.map(async item=>({item,asset:await getAsset(item.assetId)})));
+    if(epoch!==renderEpoch||update!==transition||board?.documentId!==snapshotBoard.documentId)return;
     const needed=new Set(snapshotBoard.items.map(i=>i.assetId));
     for(const [id,url] of urls)if(!needed.has(id)){URL.revokeObjectURL(url);urls.delete(id);}
-    canvasLayer.hidden=snapshotBoard.hidden;
-    for(const item of snapshotBoard.items){
-      if(epoch!==renderEpoch||update!==transition||board?.documentId!==snapshotBoard.documentId)return;
-      if(item.hidden)continue;
-      const asset=await getAsset(item.assetId);
-      if(epoch!==renderEpoch||update!==transition||board?.documentId!==snapshotBoard.documentId)return;
+    const replacement=document.createDocumentFragment();
+    canvasLayer.hidden=temporaryHidden;
+    for(const {item,asset} of resolved){
       const frame=document.createElement('section');frame.className='c05-reference-frame';
       frame.style.left=item.x+'px';frame.style.top=item.y+'px';
       frame.style.width=item.width+'px';frame.style.height=item.height+'px';
@@ -321,8 +398,8 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
           if(!start||event.pointerId!==start.id)return;
           const dx=event.clientX-start.x,dy=event.clientY-start.y;
           if(mode==='frame'){
-            frame.style.left=safePos(start.item.x+dx,0,innerWidth-100)+'px';
-            frame.style.top=safePos(start.item.y+dy,0,innerHeight-70)+'px';
+            frame.style.left=safePos(start.item.x+dx,0,Math.max(0,innerWidth-100))+'px';
+            frame.style.top=safePos(start.item.y+dy,0,Math.max(0,innerHeight-70))+'px';
           }else if(mode==='size'){
             frame.style.width=safePos(start.item.width+dx,160,Math.max(180,innerWidth-20))+'px';
             frame.style.height=safePos(start.item.height+dy,120,Math.max(140,innerHeight-30))+'px';
@@ -338,7 +415,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
           const dx=event.clientX-from.x,dy=event.clientY-from.y;
           if(Math.hypot(dx,dy)<1)return;
           changeItem(item.id,mode==='frame'?{
-            x:safePos(item.x+dx,0,innerWidth-100),y:safePos(item.y+dy,0,innerHeight-70)
+            x:safePos(item.x+dx,0,Math.max(0,innerWidth-100)),y:safePos(item.y+dy,0,Math.max(0,innerHeight-70))
           }:mode==='size'?{
             width:safePos(item.width+dx,160,Math.max(180,innerWidth-20)),
             height:safePos(item.height+dy,120,Math.max(140,innerHeight-30))
@@ -347,11 +424,25 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
         handle.addEventListener('pointerup',event=>finish(event,false));
         handle.addEventListener('pointercancel',event=>finish(event,true));
       };
-      frame.append(heading,imageArea,footer,resize);canvasLayer.append(frame);
+      frame.append(heading,imageArea,footer,resize);replacement.append(frame);
       attachDrag(heading,'frame');attachDrag(resize,'size');attachDrag(imageArea,'image');
     }
+    if(epoch===renderEpoch&&update===transition&&board?.documentId===snapshotBoard.documentId)
+      canvasLayer.replaceChildren(replacement);
   }
+  // Keep the reference title/drag handle reachable after orientation or window
+  // size changes. This also protects the corrected position across restarts.
+  let resizeTimer:ReturnType<typeof setTimeout>|null=null;
+  window.addEventListener('resize',()=>{
+    if(resizeTimer!==null)clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(()=>{
+      resizeTimer=null;
+      if(!board)return;
+      const fitted=fitWithinWindow(board);
+      if(fitted!==board)syncAfter(fitted,false);
+    },140);
+  });
   groupSelect.onchange=()=>drawList();
   void refreshIfChanged();
-  return {add,refresh,refreshIfChanged,exportLayout,undo,redo,exportNative,importNative};
+  return {add,refresh,refreshIfChanged,flush,exportLayout,undo,redo,exportNative,importNative};
 }

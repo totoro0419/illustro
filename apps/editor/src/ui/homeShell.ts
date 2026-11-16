@@ -93,7 +93,7 @@ const html = [
     '<section class="ih-screen ih-inner-screen" data-ih-screen="works" hidden aria-labelledby="ihWorksTitle">',
       '<div class="ih-page-top"><span class="ih-overline">YOUR WORKSPACE</span><h1 id="ihWorksTitle">マイ作品<span class="ih-period">.</span></h1><p>作品を選び、続きを描くための場所。</p></div>',
       '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><div class="ih-works-controls"><span class="ih-works-count">作品を確認しています</span><button id="ihWorksReset" type="button" class="ih-debug-reset" hidden>初期化（全作品を削除）</button></div></div>',
-      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名・タグ・フォルダーで検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option><option value="favorite">お気に入り優先</option></select></label><label>フォルダー<select id="ihWorkFolder"><option value="">すべてのフォルダー</option></select></label><label>表示<select id="ihWorkFavorites"><option value="all">すべて</option><option value="only">お気に入りだけ</option></select></label></div><details id="ihWorkTrash" class="ih-work-trash"><summary>ゴミ箱（復元・完全削除）</summary><div id="ihWorkTrashGrid" class="ih-work-trash-list"></div></details><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
+      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名・タグ・フォルダーで検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option><option value="favorite">お気に入り優先</option></select></label><label>フォルダー<select id="ihWorkFolder"><option value="">すべてのフォルダー</option></select></label><label>表示<select id="ihWorkFavorites"><option value="all">すべて</option><option value="only">お気に入りだけ</option></select></label></div><div id="ihWorkBatch" class="ih-work-batch" hidden><strong id="ihWorkSelectionCount">0件選択</strong><button type="button" id="ihWorkSelectAll">表示中をすべて選ぶ</button><button type="button" id="ihWorkMoveSelected">フォルダーへ</button><button type="button" id="ihWorkFavoriteSelected">お気に入りにする</button><button type="button" id="ihWorkTrashSelected">ゴミ箱へ移動</button><button type="button" id="ihWorkClearSelected">選択解除</button></div><details id="ihWorkTrash" class="ih-work-trash"><summary>ゴミ箱（復元・完全削除）</summary><div id="ihWorkTrashGrid" class="ih-work-trash-list"></div></details><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
       '<div class="ih-empty-works"><div class="ih-empty-art" aria-hidden="true"><span class="ih-empty-sheet ih-sheet-one"></span><span class="ih-empty-sheet ih-sheet-two"></span><span class="ih-empty-spark">'+icon('effects')+'</span></div>',
         '<h2>最初の作品を、ここから。</h2><p>新しく作った作品は自動保存され、ここからいつでも続きを描けます。</p>',
         '<button id="ihWorksStart" type="button" class="ih-solid-button">新しい作品を作る <span aria-hidden="true">↗</span></button>',
@@ -135,6 +135,8 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const dialog=el<HTMLDialogElement>('ihNewDialog');
   let screen:Screen='home',featureIndex=0,recovery:readonly RecoverySummary[]=[],works:readonly WorkEntry[]=[],lastWorkId:string|null=null,workUrls=new Map<string,{revision:string|null;url:string}>();
   const previewPending=new Set<string>();
+  const selectedWorkIds=new Set<string>();
+  let visibleWorkIds:string[]=[];
   const fetchVisiblePreview=async(work:WorkEntry)=>{
     if(!work.thumbnailRevision||work.thumbnailRevision!==work.revisionId)return;
     const id=work.documentId,revision=work.thumbnailRevision,key=id+':'+revision;
@@ -195,6 +197,13 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     el('ihDetailDescription').textContent=card.details;const steps=el<HTMLOListElement>('ihDetailSteps');steps.replaceChildren(...card.steps.map(step=>{const li=document.createElement('li');li.textContent=step;return li;}));navigate('feature');
   };
   const run=async(action:()=>Promise<unknown>,button?:HTMLButtonElement)=>{if(button)button.disabled=true;try{await action();}catch(error){notify(error instanceof Error?error.message:String(error));}finally{if(button)button.disabled=false;}};
+  const updateBatch=()=>{
+    const valid=new Set(works.map(work=>work.documentId));
+    for(const id of selectedWorkIds)if(!valid.has(id))selectedWorkIds.delete(id);
+    el('ihWorkBatch').hidden=selectedWorkIds.size===0;
+    el('ihWorkSelectionCount').textContent=selectedWorkIds.size+'件を選択中';
+    el<HTMLButtonElement>('ihWorkSelectAll').disabled=visibleWorkIds.length===0;
+  };
   const renderWorks=()=>{
     const validIds=new Set(works.map(work=>work.documentId));
     for(const [id,cached] of workUrls){if(!validIds.has(id)){URL.revokeObjectURL(cached.url);workUrls.delete(id);}}
@@ -210,6 +219,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       (!folder||work.catalogFolder===folder)&&(!favoriteOnly||work.favorite)
     ).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ja-JP'):
       sort==='created'?b.createdAt-a.createdAt:sort==='favorite'?(Number(!!b.favorite)-Number(!!a.favorite)||b.updatedAt-a.updatedAt):b.updatedAt-a.updatedAt);
+    visibleWorkIds=filtered.map(work=>work.documentId);updateBatch();
     root.querySelector('.ih-works-count')!.textContent=works.length+'作品';(root.querySelector('.ih-empty-works') as HTMLElement).hidden=works.length>0;
     el('ihWorkNoResults').hidden=works.length===0||filtered.length>0;
     previewObserver?.disconnect();
@@ -243,7 +253,17 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
         const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.workAction=label;button.onclick=()=>void run(action,button);details.append(button);
       }
       const id=document.createElement('small');id.textContent='識別番号 '+work.documentId;details.append(id);
-      info.append(title,meta,details);card.append(open,info);return card;
+      const select=document.createElement('label');select.className='ih-work-pick';
+      const checkbox=document.createElement('input');checkbox.type='checkbox';
+      checkbox.checked=selectedWorkIds.has(work.documentId);
+      checkbox.setAttribute('aria-label',work.name+'をまとめて操作する対象に選ぶ');
+      checkbox.onchange=()=>{
+        if(checkbox.checked)selectedWorkIds.add(work.documentId);
+        else selectedWorkIds.delete(work.documentId);
+        updateBatch();
+      };
+      select.append(checkbox,' 選択');
+      info.append(title,meta,details);card.append(select,open,info);return card;
     }));
     for(const element of el('ihWorkGrid').querySelectorAll<HTMLElement>('.ih-work-card')){
       const work=filtered.find(w=>w.documentId===element.dataset.workId);
@@ -252,6 +272,49 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       else void fetchVisiblePreview(work);
     }
   };
+  const selectedWorks=()=>works.filter(work=>selectedWorkIds.has(work.documentId));
+  const batchAction=(id:string,action:()=>Promise<void>)=>{
+    const button=el<HTMLButtonElement>(id);
+    button.onclick=()=>void run(async()=>{
+      try{await action();}
+      finally{await loadWorks();updateBatch();}
+    },button);
+  };
+  el<HTMLButtonElement>('ihWorkSelectAll').onclick=()=>{
+    for(const id of visibleWorkIds)selectedWorkIds.add(id);
+    renderWorks();
+  };
+  el<HTMLButtonElement>('ihWorkClearSelected').onclick=()=>{
+    selectedWorkIds.clear();renderWorks();
+  };
+  batchAction('ihWorkMoveSelected',async()=>{
+    const selected=selectedWorks();if(!selected.length)return;
+    const folder=prompt(selected.length+'件の作品を移動するフォルダー名（空欄なら未分類）');
+    if(folder===null)return;
+    for(const work of selected){
+      await actions.updateWorkCatalog(work.documentId,{folder});
+      selectedWorkIds.delete(work.documentId);
+    }
+    notify(selected.length+'件のフォルダーを変更しました。');
+  });
+  batchAction('ihWorkFavoriteSelected',async()=>{
+    const selected=selectedWorks();if(!selected.length)return;
+    for(const work of selected){
+      await actions.updateWorkCatalog(work.documentId,{favorite:true});
+      selectedWorkIds.delete(work.documentId);
+    }
+    notify(selected.length+'件をお気に入りにしました。');
+  });
+  batchAction('ihWorkTrashSelected',async()=>{
+    const selected=selectedWorks();if(!selected.length)return;
+    if(!confirm(selected.length+'件の作品をゴミ箱へ移動しますか？後から復元できます。'))return;
+    for(const work of selected){
+      await actions.deleteWork(work.documentId);
+      selectedWorkIds.delete(work.documentId);
+    }
+    await loadTrash();
+    notify(selected.length+'件をゴミ箱へ移動しました。');
+  });
   const updateContinue=()=>{
     const last=works.find(x=>x.documentId===lastWorkId);
     el('ihContinueDescription').textContent=last?last.name+' · '+new Date(last.updatedAt).toLocaleString('ja-JP'):recovery.length?'保存された作業を選んで再開':'まだ作業した作品はありません';
