@@ -85,6 +85,7 @@ export function installFillPanel(host:HTMLElement,api:{
   const issue=select('確認する箇所',[]);
   const edgeShape=select('拡張・縮小の角',[['square','角を保つ'],['round','角を丸める']]);
   const diagnostic=checkbox('補完と塗り残しの候補を表示');
+  const smooth=checkbox('輪郭を滑らかにする（1pxの薄い縁を追加）');
   const trace=number('なぞりの幅（px）',1,1,25);
   const showHints=checkbox('色指示の線を表示',true);
   const clearHint=checkbox('透明にする指示');
@@ -106,7 +107,7 @@ export function installFillPanel(host:HTMLElement,api:{
     method:method.value as FillSettings['method'],tolerance:value(tolerance),alphaTolerance:value(alphaTolerance),
     matchColor:matchColor.value,gap:value(gap),opacity:value(opacity)/100,
     edge:Math.round(value(edge)),edgeShape:edgeShape.value as 'square'|'round',traceWidth:value(trace),condition:condition.value as 'all'|'transparent'|'color',
-    color:api.color(),erase:erase.checked,contiguous:contiguous.checked,closedOnly:closedOnly.checked
+    color:api.color(),erase:erase.checked,contiguous:contiguous.checked,closedOnly:closedOnly.checked,antialias:smooth.checked
   });
   const activeIds=()=>reference.value==='layers'
     ?[...selectedRefs.querySelectorAll<HTMLInputElement>('input:checked')].map(input=>input.value)
@@ -628,7 +629,7 @@ export function installFillPanel(host:HTMLElement,api:{
         output.textContent=error instanceof Error?error.message:String(error);
     }).finally(sync);
   };
-  for(const control of [opacity,edge,edgeShape,diagnostic,trace,condition,closedOnly,erase,contiguous,matchColor,alphaTolerance]){
+  for(const control of [opacity,edge,edgeShape,diagnostic,smooth,trace,condition,closedOnly,erase,contiguous,matchColor,alphaTolerance]){
     control.addEventListener('change',updatePreview);
   }
   for(const control of [gap,tolerance])control.addEventListener('change',()=>{
