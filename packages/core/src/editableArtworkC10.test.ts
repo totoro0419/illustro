@@ -44,7 +44,7 @@ describe('C10 backwards-compatible vector data',()=>{
     const committed=doc.head;
     expect(doc.root.getLayer(layer).editable).toEqual(validateEditableArtwork(content));
     doc.undo();expect(doc.head).toBe(base);
-    expect(doc.root.getLayer(layer).editable).toBeNull();
+    expect(doc.root.getLayer(layer).editable).toBeUndefined();
     doc.redo();expect(doc.head).toBe(committed);
     const snapshot=doc.capturePersistenceSnapshot();
     const restored=CoreDocument.restore({snapshot:JSON.parse(JSON.stringify(snapshot)),blockPayloads:doc.persistenceBlockPayloads(snapshot)});
