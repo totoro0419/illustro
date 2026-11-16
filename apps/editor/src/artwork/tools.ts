@@ -1,16 +1,17 @@
-import type {EditableArtwork,LayerId} from '@illustro/core';
+import type {EditableArtwork,LayerId,LayerMask} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import type {MaskStrokePoint} from '../layerMaskEditing';
 
 export type ArtworkContext=Readonly<{
   width:number;height:number;color:string;drawing:BrushSurface;
-  selected:Readonly<{id:LayerId;name:string;content:EditableArtwork|null}>;
+  selected:Readonly<{id:LayerId;name:string;content:EditableArtwork|null;mask:LayerMask|null}>;
+  selectionMask:()=>LayerMask|null;
   paths:readonly Readonly<{id:LayerId;name:string;content:EditableArtwork}>[];
   missingFontCandidates:readonly Readonly<{name:string;assetId:string}>[];
 }>;
 export type ArtworkActions=Readonly<{
   context:()=>ArtworkContext|null;
-  save:(content:EditableArtwork,name:string,id?:LayerId)=>Promise<void>;
+  save:(content:EditableArtwork,name:string,id?:LayerId,initialMask?:LayerMask|null)=>Promise<void>;
   rasterize:(id:LayerId)=>Promise<void>;
 }>;
 export function button(text:string,run:()=>void|Promise<void>,output:HTMLOutputElement){

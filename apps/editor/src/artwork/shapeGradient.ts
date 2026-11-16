@@ -1,4 +1,4 @@
-import {validateEditableArtwork,type ArtPoint,type EditableGradient,type EditablePath,type GradientStop,type LayerId} from '@illustro/core';
+import {validateEditableArtwork,type ArtPoint,type EditableGradient,type EditablePath,type GradientStop,type LayerId,type LayerMask} from '@illustro/core';
 import {runArtwork} from './run';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
@@ -31,21 +31,50 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const mode=selectField(gradientFields,'広がり方',[
     ['linear','直線'],['radial','放射'],['reflected','反射'],['angular','角度']
   ] as const);
+  const followFields=document.createElement('div');followFields.className='c06-clipboard-grid';
+  gradientFields.append(followFields);
+  const boundary=selectField(followFields,'形状追従に使う範囲',[
+    ['mask','レイヤーのマスク']
+  ] as const);
+  const view=selectField(followFields,'見比べる',[
+    ['normal','通常'],['follow','形状に沿う候補'],['split','左右で比較']
+  ] as const);
+  const applied=document.createElement('input');applied.type='checkbox';
+  labelledField(followFields,'形状に沿う候補を採用する',applied);
   const coords=(['始点 X','始点 Y','終点 X','終点 Y'] as const)
     .map(label=>numberField(controls,label,0,-8192,16384,.5));
   let points:ArtPoint[]=[];
   let stops:GradientStop[]=[{at:0,color:'#23252d',opacity:1,midpoint:.5},{at:1,color:'#f5a950',opacity:1,midpoint:.5}];
   let editing:LayerId|undefined,previewId=0,lineStyle:NonNullable<EditablePath['lineStyle']>='solid';
+  let draftDrawing:NonNullable<ReturnType<ArtworkActions['context']>>['drawing']|undefined;
+  let draftMask:LayerMask|null=null,savedBoundary:EditablePath|undefined;
+  const getMask=()=>editing?api.context()?.selected.mask??null:draftMask;
+  const closedPaths=()=>api.context()?.paths.filter(item=>item.content.kind==='path'&&
+    (item.content.closed||item.content.shape==='rectangle'||item.content.shape==='ellipse'))??[];
+  function loadBoundaries(){
+    boundary.replaceChildren(new Option('レイヤーのマスク','mask'));
+    if(savedBoundary)boundary.add(new Option('保存した形状','saved'));
+    for(const item of closedPaths())boundary.add(new Option(item.name,item.id));
+  }
+  function getBoundary():NonNullable<EditableGradient['follow']>{
+    if(boundary.value==='mask'){
+      if(!getMask()?.enabled)throw Error('マスクを使うには、範囲を選んで新しく作るか、レイヤーにマスクを付けてください。');
+      return 'mask';
+    }
+    const path=boundary.value==='saved'?savedBoundary:closedPaths().find(item=>item.id===boundary.value)?.content;
+    if(path?.kind!=='path')throw Error('内側が閉じた図形を選んでください。');
+    return {kind:'path',shape:path.shape,points:path.points,closed:path.closed,stroke:path.stroke,fill:path.fill,width:path.width};
+  }
   function setPoints(next:readonly ArtPoint[]){
     points=[...next];
     if(!points.length)return;
     const [a,b]=[points[0]!,points.at(-1)!];
     [a.x,a.y,b.x,b.y].forEach((value,index)=>{coords[index]!.value=String(Math.round(value*10)/10);});
   }
-  function data(){
+  function data(follow=applied.checked){
     const [x,y,endX,endY]=coords.map(i=>i.valueAsNumber);
     const start={x:x??0,y:y??0},end={x:endX??0,y:endY??0};
-    if(type.value==='gradient')return validateEditableArtwork({kind:'gradient',mode:mode.value,start,end,stops}) as EditableGradient;
+    if(type.value==='gradient')return validateEditableArtwork({kind:'gradient',mode:mode.value,start,end,stops,...(follow?{follow:getBoundary()}:{})}) as EditableGradient;
     let result=points.length>=2?[...points]:[start,end];
     result[0]={...result[0],...start};
     result[result.length-1]={...result.at(-1),...end};
@@ -81,21 +110,37 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     const current=api.context(),id=++previewId;
     if(!current)return;
     try{
-      const content=data(),scale=Math.min(1,260/Math.max(current.width,current.height));
+      const scale=Math.min(1,260/Math.max(current.width,current.height));
       const outputWidth=Math.max(1,Math.round(current.width*scale)),outputHeight=Math.max(1,Math.round(current.height*scale));
-      const pixels=await runArtwork({content,width:current.width,height:current.height,outputWidth,outputHeight});
+      const size={width:current.width,height:current.height,outputWidth,outputHeight,mask:getMask(),previewMask:true};
+      const compare=type.value==='gradient'?view.value:'normal';
+      const [base,followed]=await Promise.all([
+        compare==='follow'?null:runArtwork({...size,content:data(false)}),
+        compare==='normal'?null:runArtwork({...size,content:data(true)})
+      ]);
+      const pixels=base??followed!;
+      if(base&&followed)for(let y=0;y<outputHeight;y++){
+        const start=(y*outputWidth+Math.floor(outputWidth/2))*4;
+        base.set(followed.subarray(start,(y+1)*outputWidth*4),start);
+      }
       if(id===previewId)paintPreview(preview,pixels,outputWidth,outputHeight);
-    }catch(error){if(id===previewId)status.textContent=error instanceof Error?error.message:String(error);}
+    }catch(error){if(id===previewId){
+      preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);
+    }}
   }
   function reset(){
     const current=api.context();
     if(!current)throw Error('作品を開いてください。');
     editing=undefined;stroke.value=current.color;lineStyle='solid';
+    draftDrawing=current.drawing;draftMask=current.selectionMask();savedBoundary=undefined;loadBoundaries();
+    applied.checked=false;view.value='normal';
     setPoints([{x:current.width*.22,y:current.height*.25},{x:current.width*.78,y:current.height*.75}]);
     status.textContent='新しいレイヤーに作ります。';void refresh();
   }
   function updateFields(){shapeFields.hidden=type.value!=='shape';gradientFields.hidden=type.value!=='gradient';redrawStops();}
-  type.onchange=()=>{editing=undefined;updateFields();void refresh();};
+  type.onchange=()=>{reset();updateFields();};
+  boundary.onchange=()=>{applied.checked=false;view.value='follow';};
+  applied.onchange=()=>{view.value=applied.checked?'follow':'normal';};
   controls.addEventListener('change',()=>void refresh());
   tools.append(
     button('新しく作る',reset,status),
@@ -114,9 +159,12 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     button('選んだレイヤーを編集',()=>{
       const current=api.context(),selected=current?.selected.content;
       if(!current||!selected||selected.kind==='text')throw Error('図形かグラデーションのレイヤーを選んでください。');
-      editing=current.selected.id;
+      editing=current.selected.id;draftDrawing=current.drawing;
       if(selected.kind==='gradient'){
         type.value='gradient';mode.value=selected.mode;stops=[...selected.stops];setPoints([selected.start,selected.end]);
+        savedBoundary=typeof selected.follow==='object'?selected.follow:undefined;loadBoundaries();
+        boundary.value=savedBoundary?'saved':'mask';applied.checked=!!selected.follow;
+        view.value=applied.checked?'follow':'normal';
       }else{
         type.value='shape';shape.value=selected.shape==='freehand'?'polyline':selected.shape;
         stroke.value=selected.stroke;filled.checked=!!selected.fill;lineStyle=selected.lineStyle??'solid';
@@ -127,12 +175,18 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       status.textContent=current.selected.name+'を編集します。';updateFields();void refresh();
     },status),
     button('適用',async()=>{
+      if(api.context()?.drawing!==draftDrawing)throw Error('作品を開き直したため、「新しく作る」か「選んだレイヤーを編集」を選んでください。');
       const content=data();
-      await api.save(content,content.kind==='gradient'?'グラデーション':'図形',editing);
+      await api.save(content,content.kind==='gradient'?'グラデーション':'図形',editing,
+        content.kind==='gradient'?draftMask:undefined);
       status.textContent='作品に反映しました。';
+    },status),
+    button('変更を取り消す',()=>{
+      ++previewId;editing=undefined;points=[];draftDrawing=undefined;draftMask=null;
+      preview.hidden=true;panel.open=false;status.textContent='変更を取り消しました。';
     },status)
   );
-  panel.ontoggle=()=>{if(panel.open&&!points.length&&api.context())reset();};
+  panel.ontoggle=()=>{if(panel.open&&api.context()&&(!points.length||draftDrawing!==api.context()?.drawing))reset();};
   updateFields();
   panel.append(heading,controls,tools,stopsArea,preview,status);host.append(panel);
 }

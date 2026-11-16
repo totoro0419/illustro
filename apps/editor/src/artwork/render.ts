@@ -1,8 +1,9 @@
-import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText} from '@illustro/core';
+import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText,LayerMask} from '@illustro/core';
+import {layerMaskCoverage} from '@illustro/brush-rt';
 import {sampledPath} from './pathOperations';
 
 type Context=CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D;
-type RenderSize={width:number;height:number;outputWidth:number;outputHeight:number};
+type RenderSize={width:number;height:number;outputWidth:number;outputHeight:number;mask?:LayerMask|null;previewMask?:boolean};
 
 export function tracePath(ctx:Context,path:EditablePath){
   const [first,last]=[path.points[0]!,path.points.at(-1)!];
@@ -42,12 +43,62 @@ function gradientPosition(gradient:EditableGradient,x:number,y:number){
   const t=(u*dx+v*dy)/den;
   return gradient.mode==='reflected'?Math.abs(t):t;
 }
-function gradientPixels(gradient:EditableGradient,size:RenderSize){
+function boundaryDistance(alpha:Uint8Array,width:number,height:number){
+  const distances=new Float32Array(alpha.length);
+  const diagonal=Math.SQRT2;
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const i=y*width+x;
+    if(!alpha[i])continue;
+    distances[i]=Math.min(
+      x?distances[i-1]!+1:1,y?distances[i-width]!+1:1,
+      x&&y?distances[i-width-1]!+diagonal:Infinity,
+      x+1<width&&y?distances[i-width+1]!+diagonal:Infinity
+    );
+  }
+  for(let y=height-1;y>=0;y--)for(let x=width-1;x>=0;x--){
+    const i=y*width+x;
+    if(!alpha[i])continue;
+    distances[i]=Math.min(distances[i]!,
+      x+1<width?distances[i+1]!+1:1,y+1<height?distances[i+width]!+1:1,
+      x+1<width&&y+1<height?distances[i+width+1]!+diagonal:Infinity,
+      x&&y+1<height?distances[i+width-1]!+diagonal:Infinity
+    );
+  }
+  return distances;
+}
+
+function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCanvasElement|OffscreenCanvas){
   const {width,height,outputWidth,outputHeight}=size;
   const output=new Uint8ClampedArray(outputWidth*outputHeight*4);
   const stops=gradient.stops.map(stop=>({...stop,channels:rgba(stop.color)}));
+  const factorX=width/outputWidth,factorY=height/outputHeight;
+  const {follow}=gradient;
+  let alpha:Uint8Array|undefined;
+  if(follow){
+    alpha=new Uint8Array(outputWidth*outputHeight);
+    if(follow==='mask'){
+      if(!size.mask?.enabled)throw Error('形状に沿わせるには、有効なレイヤーマスクが必要です。');
+      for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++)
+        alpha[y*outputWidth+x]=layerMaskCoverage(size.mask,(x+.5)*factorX,(y+.5)*factorY)*255;
+    }else{
+      canvas.width=outputWidth;canvas.height=outputHeight;
+      const ctx=canvas.getContext('2d') as Context|null;
+      if(!ctx)throw Error('図形の内側を取得できません。');
+      ctx.scale(1/factorX,1/factorY);
+      tracePath(ctx,follow);ctx.fill('evenodd');
+      const pixels=ctx.getImageData(0,0,outputWidth,outputHeight).data;
+      for(let i=0;i<alpha.length;i++)alpha[i]=pixels[i*4+3]!;
+    }
+  }
+  const shapeCoverage=alpha;
+  const distance=alpha?boundaryDistance(alpha,outputWidth,outputHeight):null;
+  const spread=Math.max(1,Math.hypot(gradient.end.x-gradient.start.x,gradient.end.y-gradient.start.y));
+  const distanceScale=Math.sqrt(factorX*factorY)/spread;
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
-    const t=gradientPosition(gradient,(x+.5)*width/outputWidth,(y+.5)*height/outputHeight);
+    const index=y*outputWidth+x;
+    if(shapeCoverage&&!shapeCoverage[index])continue;
+    const sx=(x+.5)*factorX,sy=(y+.5)*factorY;
+    const t=distance?Math.max(0,distance[index]!-1)*distanceScale:gradientPosition(gradient,sx,sy);
     let high=1;
     while(high<stops.length-1&&stops[high]!.at<t)high++;
     const a=stops[high-1]!,b=stops[high]!;
@@ -56,7 +107,9 @@ function gradientPixels(gradient:EditableGradient,size:RenderSize){
     const left=(1-weight)*a.opacity,right=weight*b.opacity,alpha=left+right,p=(y*outputWidth+x)*4;
     if(alpha===0)continue;
     for(let i=0;i<3;i++)output[p+i]=(left*a.channels[i]!+right*b.channels[i]!)/alpha;
-    output[p+3]=alpha*255;
+    const shapeAlpha=follow&&follow!=='mask'?shapeCoverage![index]!/255:1;
+    const maskAlpha=size.previewMask?layerMaskCoverage(size.mask,sx,sy):1;
+    output[p+3]=alpha*shapeAlpha*maskAlpha*255;
   }
   return output;
 }
@@ -95,7 +148,7 @@ function drawText(ctx:Context,text:EditableText){
 }
 
 export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTMLCanvasElement|OffscreenCanvas){
-  if(content.kind==='gradient')return gradientPixels(content,size);
+  if(content.kind==='gradient')return gradientPixels(content,size,canvas);
   canvas.width=size.outputWidth;canvas.height=size.outputHeight;
   const ctx=canvas.getContext('2d') as Context|null;
   if(!ctx)throw Error('表示用画像を作れません。');

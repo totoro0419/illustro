@@ -1,7 +1,7 @@
-import type {EditableArtwork} from '@illustro/core';
+import type {EditableArtwork,LayerMask} from '@illustro/core';
 import {renderArtwork} from './render';
 
-export type ArtworkJob={content:EditableArtwork;width:number;height:number;outputWidth:number;outputHeight:number};
+export type ArtworkJob={content:EditableArtwork;width:number;height:number;outputWidth:number;outputHeight:number;mask?:LayerMask|null;previewMask?:boolean};
 self.onmessage=({data}:MessageEvent<ArtworkJob>)=>{
   try{
     const pixels=renderArtwork(data.content,data,new OffscreenCanvas(1,1));

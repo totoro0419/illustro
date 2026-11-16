@@ -3,6 +3,7 @@ export type GradientStop=Readonly<{at:number;color:string;opacity:number;midpoin
 export type EditableGradient=Readonly<{
   kind:'gradient';mode:'linear'|'radial'|'reflected'|'angular';start:ArtPoint;end:ArtPoint;
   stops:readonly GradientStop[];
+  follow?:'mask'|EditablePath;
 }>;
 export type EditablePath=Readonly<{
   kind:'path';shape:'rectangle'|'ellipse'|'polyline'|'bezier'|'freehand';
@@ -45,7 +46,16 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
       return Object.freeze({at:stop.at,color:stop.color,opacity:stop.opacity,midpoint:stop.midpoint});
     });
     stops.sort((a,b)=>a.at-b.at);
-    checked=Object.freeze({kind:'gradient',mode,start:point(value.start),end:point(value.end),stops:Object.freeze(stops)});
+    let follow:EditableGradient['follow'];
+    if(value.follow==='mask')follow='mask';
+    else if(value.follow!==undefined){
+      if(!field(value.follow)||value.follow.kind!=='path')throw invalid();
+      const boundary=validateEditableArtwork(value.follow);
+      if(boundary?.kind!=='path'||!(boundary.closed||boundary.shape==='ellipse'||boundary.shape==='rectangle'))throw invalid();
+      follow=boundary;
+    }
+    checked=Object.freeze({kind:'gradient',mode,start:point(value.start),end:point(value.end),stops:Object.freeze(stops),
+      ...(follow?{follow}:{})});
   }else if(value.kind==='path'){
     const {shape,points,closed,stroke,fill,width,lineStyle,opacity,originalStrokeLayer}=value;
     if(shape!=='rectangle'&&shape!=='ellipse'&&shape!=='polyline'&&shape!=='bezier'&&shape!=='freehand')throw invalid();
@@ -76,7 +86,11 @@ export function moveEditableArtwork(content:EditableArtwork,dx:number,dy:number)
     ...(point.inX!==undefined&&point.inY!==undefined?{inX:point.inX+dx,inY:point.inY+dy}:{}),
     ...(point.outX!==undefined&&point.outY!==undefined?{outX:point.outX+dx,outY:point.outY+dy}:{})
   });
-  if(content.kind==='gradient')return {...content,start:move(content.start),end:move(content.end)};
+  if(content.kind==='gradient'){
+    const follow=content.follow;
+    return {...content,start:move(content.start),end:move(content.end),
+      ...(follow&&follow!=='mask'?{follow:{...follow,points:follow.points.map(move)}}:{})};
+  }
   if(content.kind==='text')return {...content,origin:move(content.origin)};
   return {...content,points:content.points.map(move)};
 }

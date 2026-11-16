@@ -3949,20 +3949,24 @@ const artworkActions:ArtworkActions={
     if(!drawing||!documentReady)return null;
     const {width,height}=controller.document.root;
     return {width,height,color:hex(foreground.current),drawing,
-      selected:{id:layer.id,name:layer.name,content:layer.editable??null},
+      selected:{id:layer.id,name:layer.name,content:layer.editable??null,mask:layer.vectorMask??null},
+      selectionMask:()=>{const selection=c06Selection?.active();return selection?selectionAsLayerMask(selection):null;},
       paths:controller.layers.flatMap(item=>item.editable?.kind==='path'?[{id:item.id,name:item.name,content:item.editable}]:[]),
       missingFontCandidates:controller.layers.flatMap(item=>item.editable?.kind==='text'&&item.editable.fontAsset
         ?[{name:item.name,assetId:item.editable.fontAsset}]:[])};
   },
-  save:async(content,name,editing)=>{
+  save:async(content,name,editing,initialMask)=>{
     const artwork=controller.document,head=artwork.head,drawing=surface,selection=c06Selection?.active();
     if(!drawing||!documentReady)throw Error('作品を開いてください。');
     const {width,height}=artwork.root,reference=controller.selectedLayer.id;
     if(editing&&reference!==editing)throw Error('編集するレイヤーを選び直してください。');
-    const previous=editing?artwork.root.getLayer(editing).editable:null;
+    const selected=editing?artwork.root.getLayer(editing):null;
+    const previous=selected?.editable??null;
+    const mask=selected?selected.vectorMask??null:
+      initialMask!==undefined?initialMask:selection?selectionAsLayerMask(selection):null;
     if(content.kind==='path'&&previous?.kind==='path'&&previous.originalStrokeLayer)
       content={...content,opacity:previous.opacity??1,originalStrokeLayer:previous.originalStrokeLayer};
-    const pixels=await runArtwork({content,width,height,outputWidth:width,outputHeight:height});
+    const pixels=await runArtwork({content,width,height,outputWidth:width,outputHeight:height,mask});
     await withClipboardAccess(async()=>{
       if(surface!==drawing||controller.document!==artwork||artwork.head!==head||controller.selectedLayer.id!==reference)
         throw Error('作品が変更されたため中止しました。');
@@ -3971,7 +3975,7 @@ const artworkActions:ArtworkActions={
       if(editing)tx.replaceLayerRaster(id,pixels,undefined,content);
       else{
         tx.setEditableArtwork(id,content);
-        if(selection)tx.setVectorLayerMask(id,selectionAsLayerMask(selection));
+        if(mask)tx.setVectorLayerMask(id,mask);
       }
       controller.lastPersistenceHandoff=tx.commit().persistence;
       controller.selectLayer(id);
