@@ -41,6 +41,8 @@ export function decodeBoardRecord(documentId:string,value:unknown):BoardSnapshot
       typeof item.assetId!=='string'||!item.assetId||
       !Number.isFinite(item.x)||!Number.isFinite(item.y)||!Number.isFinite(item.width)||!Number.isFinite(item.height)||
       !Number.isFinite(item.zoom)||!Number.isFinite(item.rotation)||
+      (item.panX!==undefined&&!Number.isFinite(item.panX))||
+      (item.panY!==undefined&&!Number.isFinite(item.panY))||
       item.width<=0||item.height<=0||item.zoom<=0)
       throw Error('参考資料の配置の一部が壊れています。元のデータは上書きしていません。');
     if((item.group!==undefined&&typeof item.group!=='string')||(item.notes!==undefined&&typeof item.notes!=='string'))
@@ -61,7 +63,9 @@ export async function writeBoard(input:BoardSnapshot):Promise<void>{
     throw Error('資料の数か作品IDが正しくありません。');
   const ids=new Set<string>();
   for(const item of input.items){
-    if(!item.id||ids.has(item.id)||!item.assetId||
+    if(typeof item.id!=='string'||!item.id||ids.has(item.id)||
+      typeof item.assetId!=='string'||!item.assetId||
+      typeof item.group!=='string'||typeof item.notes!=='string'||
       ![item.x,item.y,item.width,item.height,item.zoom,item.panX,item.panY,item.rotation].every(Number.isFinite)||
       item.width<=0||item.height<=0||item.zoom<=0)
       throw Error('資料の配置が正しくありません。保存前の情報を保護しました。');
