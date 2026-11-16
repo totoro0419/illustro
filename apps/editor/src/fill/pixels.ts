@@ -5,7 +5,8 @@ import type {Point} from '../transform/geometry';
 export type FillSettings=Readonly<{
   method:'color'|'line'|'lasso'|'lasso-closed';tolerance:number;gap:number;opacity:number;color:string;
   erase:boolean;contiguous:boolean;closedOnly:boolean;
-  edge?:number;edgeShape?:'square'|'round';traceWidth?:number;condition?:'all'|'transparent'|'color';excluded?:readonly number[];included?:readonly number[];
+  edge?:number;edgeShape?:'square'|'round';traceWidth?:number;condition?:'all'|'transparent'|'color';
+  alphaTolerance?:number;matchColor?:string;excluded?:readonly number[];included?:readonly number[];
 }>;
 export type Walls=RegionWalls;
 export type GapCandidate=Readonly<{from:Point;to:Point;length:number;kind?:'tips'|'edge'|'junction'|'near'}>;
@@ -41,13 +42,18 @@ function regionTopology(labels:Uint32Array,width:number,height:number,external:U
     first.add(b);second.add(a);contacts.set(a,first);contacts.set(b,second);
   };
   const scan=(start:number,skip:number,length:number)=>{
-    let previous=0;
+    // Only regions actually touching the canvas edge contact region 0.
+    // A wall-separated interior region must not be treated as outside.
+    let previous=0,betweenWalls=false;
     for(let i=0;i<length;i++){
       const current=labels[start+i*skip]!;
-      if(!current||current===previous)continue;
-      link(previous,current);previous=current;
+      if(!current){betweenWalls=true;continue;}
+      if(i===0)link(0,current);
+      if(previous&&current!==previous&&betweenWalls)link(previous,current);
+      previous=current;betweenWalls=false;
     }
-    link(previous,0);
+    const last=labels[start+(length-1)*skip]!;
+    if(last)link(last,0);
   };
   for(let y=0;y<height;y++)scan(y*width,1,width);
   for(let x=0;x<width;x++)scan(x,width,height);
@@ -72,12 +78,35 @@ function regionTopology(labels:Uint32Array,width:number,height:number,external:U
 
 export function fillBoundaries(source:Uint8Array,width:number,height:number,tolerance:number,gap:number,manual:Walls=[]){
   const count=width*height,walls=new Uint8Array(count);
-  const threshold=Math.max(1,tolerance*2.55);
+  if(!Number.isSafeInteger(count)||width<1||height<1||source.length<count*4)
+    throw Error('線画の画像サイズが正しくありません。');
+  const threshold=Math.max(12,tolerance*2.55);
+  // Transparent art: every sufficiently visible stroke can be a boundary, including white.
+  // Opaque art: use the consistent canvas-corner background instead of assuming black ink.
+  const corners=[0,width-1,(height-1)*width,count-1].map(index=>index*4);
+  const reference=corners.find(at=>source[at+3]!>=240);
+  const agrees=reference===undefined?[]:corners.filter(at=>source[at+3]!>=240&&
+    Math.max(...[0,1,2].map(channel=>Math.abs(source[at+channel]!-source[reference+channel]!)))<=24);
+  const opaqueBackground=agrees.length>=3?reference:undefined;
   for(let i=0;i<count;i++){
-    const p=i*4,ink=(255-(source[p]!*.2126+source[p+1]!*.7152+source[p+2]!*.0722))*source[p+3]!/255;
-    if(ink>=threshold)walls[i]=1;
+    const p=i*4,alpha=source[p+3]!;
+    if(!alpha)continue;
+    if(opaqueBackground===undefined){
+      if(alpha>=threshold)walls[i]=1;
+    }else{
+      const colorDifference=Math.max(...[0,1,2].map(channel=>Math.abs(source[p+channel]!-source[opaqueBackground+channel]!)));
+      if(colorDifference*alpha/255>=threshold||alpha<240&&240-alpha>=threshold)walls[i]=1;
+    }
   }
   const radius=Math.round(limit(gap,0,12)),original=walls.slice(),bridges=new Uint8Array(count),candidates:GapCandidate[]=[];
+  const directions=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]] as const;
+  const tipDirection=(at:Point)=>{
+    const neighbors=directions.filter(([dx,dy])=>{
+      const x=at.x+dx,y=at.y+dy;
+      return x>=0&&y>=0&&x<width&&y<height&&original[y*width+x];
+    });
+    return neighbors.length===1?neighbors[0]:null;
+  };
   const connect=(x:number,y:number,dx:number,dy:number)=>{
     let from:Point|null=null,steps=0;
     while(x>=0&&y>=0&&x<width&&y<height){
@@ -85,9 +114,15 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
         if(from&&steps>1&&steps<=radius+1){
           const distance=Math.hypot(x-from.x,y-from.y);
           // Diagonal scanning must find a real gap, not bridge a corner around an existing line.
-          if(distance<=radius+1&&(!dx||!dy||
+          const first=tipDirection(from),last=tipDirection({x,y});
+          const alignment=first&&last&&
+            ((x-from.x)*first[0]+(y-from.y)*first[1])/distance<=-.7&&
+            ((from.x-x)*last[0]+(from.y-y)*last[1])/distance<=-.7;
+          // Automatic repairs are restricted to two opposing, unambiguous tips.
+          // Parallel strokes, corners and junctions remain open unless manually accepted.
+          if(alignment&&distance<=radius+1&&(!dx||!dy||
             (!original[from.y*width+from.x+dx]&&!original[(from.y+dy)*width+from.x]))){
-            if(candidates.length<4096)candidates.push({from,to:{x,y},length:distance-1});
+            if(candidates.length<4096)candidates.push({from,to:{x,y},length:distance-1,kind:'tips'});
             for(let step=1;step<steps;step++){
               const i=(from.y+dy*step)*width+from.x+dx*step;
               walls[i]=bridges[i]=1;
@@ -187,7 +222,7 @@ function* sampledPath(points:readonly Point[]){
 }
 
 export function fillMask(source:Uint8Array,width:number,height:number,settings:FillSettings,points:readonly Point[],
-  graph:RegionGraph|null,selection:MaskData|null,bridges?:Uint8Array):MaskData{
+  graph:RegionGraph|null,selection:MaskData|null,bridges?:Uint8Array,destination?:Uint8Array|null):MaskData{
   const length=width*height;
   let alpha:Uint8Array=new Uint8Array(length);
   const seed=(point:Point)=>{
@@ -227,13 +262,13 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
   }else{
     const target=seed(points[0]??{x:-1,y:-1});
     if(target<0)throw Error('キャンバスの中を指定してください。');
-    const p=target*4,tolerance=settings.tolerance*2.55;
+    const p=target*4,tolerance=settings.tolerance*2.55,alphaTolerance=(settings.alphaTolerance??settings.tolerance)*2.55;
     const equalColor=(i:number)=>{
       const a=i*4,sa=source[a+3]!,ta=source[p+3]!;
       if(!sa&&!ta)return true;
-      if(!sa||!ta)return Math.abs(sa-ta)<=tolerance;
+      if(!sa||!ta)return Math.abs(sa-ta)<=alphaTolerance;
       const rgb=Math.hypot(source[a]!-source[p]!,source[a+1]!-source[p+1]!,source[a+2]!-source[p+2]!)/Math.sqrt(3);
-      return Math.max(rgb,Math.abs(sa-ta))<=tolerance;
+      return rgb<=tolerance&&Math.abs(sa-ta)<=alphaTolerance;
     };
     if(settings.contiguous){
       const queue=new Uint32Array(length);
@@ -249,15 +284,11 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
     const radius=Math.min(24,Math.abs(edge)),mask={width,height,alpha};
     alpha=settings.edgeShape==='round'?roundedEdge(mask,radius,edge>0):growOrShrink(mask,radius,edge>0?'grow':'shrink').alpha;
   }
-  const rgb=[1,3,5].map(offset=>parseInt(settings.color.slice(offset,offset+2),16));
   for(let i=0;i<length;i++){
     if(!alpha[i])continue;
     if(selection)alpha[i]=Math.round(alpha[i]!*selection.alpha[i]!/255);
-    if(settings.condition==='transparent'&&source[i*4+3])alpha[i]=0;
-    if(settings.condition==='color'){
-      const p=i*4;
-      if(!source[p+3]||Math.hypot(source[p]!-rgb[0]!,source[p+1]!-rgb[1]!,source[p+2]!-rgb[2]!)>settings.tolerance*4.42)alpha[i]=0;
-    }
+    // The reference controls geometry; the destination controls pixel conditions.
+    if(!destinationEligible(destination,i,settings))alpha[i]=0;
   }
   return {width,height,alpha};
 }
@@ -279,6 +310,15 @@ function applyColor(result:Uint8ClampedArray,p:number,rgb:readonly number[],a:nu
   result[p+3]=total*255;
 }
 const colorChannels=(color:string)=>[1,3,5].map(offset=>parseInt(color.slice(offset,offset+2),16));
+function destinationEligible(destination:Uint8Array|null|undefined,index:number,settings:FillSettings){
+  if(settings.condition==='transparent')return !(destination?.[index*4+3]??0);
+  if(settings.condition==='color'){
+    const p=index*4,rgb=colorChannels(settings.matchColor??settings.color);
+    return !!destination?.[p+3]&&
+      Math.hypot(destination[p]!-rgb[0]!,destination[p+1]!-rgb[1]!,destination[p+2]!-rgb[2]!)<=settings.tolerance*4.42;
+  }
+  return true;
+}
 
 export function colorMask(target:Uint8Array|null,mask:MaskData,settings:FillSettings,alphaLocked:boolean){
   const result=target?new Uint8ClampedArray(target):new Uint8ClampedArray(mask.alpha.length*4);
@@ -313,7 +353,7 @@ export function paintColorHints(graph:RegionGraph,hints:readonly ColorHint[],tar
     const id=assignments.get(labels[i]!);
     if(id===undefined)continue;
     const color=colors[id]!,selected=selection?.alpha[i]??255,value=selected*settings.opacity/255;
-    if(!value)continue;
+    if(!value||!destinationEligible(target,i,settings))continue;
     alpha[i]=selected;
     applyColor(pixels,i*4,color.channels,value,color.erase,alphaLocked);
   }
