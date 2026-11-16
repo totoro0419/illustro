@@ -5,6 +5,7 @@ import {rasterizeSelection,combineSelection,invertSelection,fullSelection,transl
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection,storeCurrentSelection,loadCurrentSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
 import {SelectionOverlay} from './overlay';
+import {snapMagneticPoint} from './magnetic';
 import type {AnalyzeOptions} from './autoSelect';
 import type {PreservedPortableData} from '../persistence/portable';
 import type {PortableSectionInput} from '../persistence/format';
@@ -29,7 +30,7 @@ type SelectionCallbacks=Readonly<{
   capturePixels:(source:'layer'|'merged')=>Promise<Uint8ClampedArray>;
   moveContent:(dx:number,dy:number)=>Promise<void>;
 }>;
-type Tool='rectangle'|'ellipse'|'lasso'|'polygon'|'autoColor'|'autoBrightness'|'autoInk'|'brushAdd'|'brushSubtract';
+type Tool='rectangle'|'ellipse'|'lasso'|'magnetic'|'polygon'|'autoColor'|'autoBrightness'|'autoInk'|'brushAdd'|'brushSubtract';
 const asButton=(label:string,fn:()=>void)=>{
   const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=fn;
   return button;
@@ -55,9 +56,11 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const showSelectionLabel=document.createElement('label');showSelectionLabel.className='c06-visibility';
   showSelectionLabel.append(showSelection,document.createTextNode('選択の境界を表示する（隠しても選択は有効）'));
   showSelection.onchange=()=>{
-    callbacks.getSurface()?.setSelectionVisible(showSelection.checked);
+    // The true mask overlay is more precise than a rectangular bounds frame.
+    callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     visual?.setVisible(showSelection.checked);
     preview.hidden=!showSelection.checked;
+    updateQuickPosition();
     status.textContent=showSelection.checked?'選択範囲の表示を戻しました。':'選択範囲は有効なまま、境界を隠しました。';
   };
   const mode=document.createElement('select');mode.setAttribute('aria-label','選択範囲を組み合わせる方法');
@@ -68,7 +71,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   modes.append(mode);
   const shapeButtons=new Map<Tool,HTMLButtonElement>();
   let tool:Tool|null=null,active:MaskData|null=null,points:{x:number;y:number}[]=[],
-    brushPoints:SelectionBrushPoint[]=[],
+    brushPoints:SelectionBrushPoint[]=[],magneticPixels:Uint8ClampedArray|null=null,
     drawing:{pointer:number;first:{x:number;y:number}}|null=null;
   const history:(MaskData|null)[]=[];const future:(MaskData|null)[]=[];
   const MAX_MASK_UNDO_BYTES=64*1024*1024;
@@ -81,6 +84,8 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     while(stack.length>30)stack.shift();
   }
   let raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
+  // A pen stroke must not start against a stale mask while a new one is pending.
+  let pendingSelectionJob=0;
   let pendingStore:{id:string;mask:MaskData|null}|null=null;
   let storeTimer:number|null=null,storeQueue:Promise<void>=Promise.resolve();
   function flushStoredSelection(){
@@ -97,22 +102,31 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   }
   const viewport=document.querySelector<HTMLElement>('.surface');
   const visual=viewport?new SelectionOverlay(viewport,callbacks.getSurface):null;
+  let previewDialog:HTMLDialogElement|null=null;
   const box=document.createElement('div');box.className='c06-selection-notice';box.hidden=true;
   const preview=document.createElement('svg');
   preview.classList.add('c06-selection-preview');preview.setAttribute('aria-hidden','true');
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-  preview.append(path);
+  const brushTrace=document.createElementNS('http://www.w3.org/2000/svg','path');
+  brushTrace.setAttribute('fill','none');
+  brushTrace.setAttribute('stroke-linecap','round');
+  brushTrace.setAttribute('stroke-linejoin','round');
+  brushTrace.style.strokeDasharray='none';
+  preview.append(path,brushTrace);
   viewport?.append(preview,box);
   let currentWork:null|string=null;
+  let selectionBounds:ReturnType<typeof boundsOfSelection>=null;
   const source=()=>{
     const info=callbacks.getDocument();
     if(!info||!callbacks.getSurface())return null;
     const identity=info.id+':'+info.width+'x'+info.height;
     if(identity!==currentWork){
       raster.destroy();raster=new MaskRasterWorker();
+      if(previewDialog?.open)previewDialog.close();
       flushStoredSelection();
-      currentWork=identity;active=null;lastSelection=null;history.length=0;future.length=0;
-      tool=null;points=[];brushPoints=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
+      currentWork=identity;active=null;lastSelection=null;selectionBounds=null;history.length=0;future.length=0;
+      pendingSelectionJob=0;
+      tool=null;points=[];brushPoints=[];magneticPixels=null;drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
       const request=++job,loadedId=info.id;
       void storeQueue.then(()=>loadCurrentSelection(loadedId)).then(loaded=>{
         const doc=callbacks.getDocument();
@@ -131,7 +145,8 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   function overlayPath(){
     const drawingSurface=callbacks.getSurface();
     if(!viewport||!drawingSurface||!tool||points.length===0){
-      preview?.setAttribute('data-empty','true');return;
+      path.setAttribute('d','');
+      preview.setAttribute('data-empty',brushPoints.length?'false':'true');return;
     }
     const viewPoints=points.map(p=>drawingSurface.documentToScreen(p));
     const d=(tool==='rectangle'||tool==='ellipse')&&viewPoints.length>=2?
@@ -143,16 +158,41 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       })():viewPoints.map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
     path.setAttribute('d',d);preview.setAttribute('data-empty','false');
   }
+  function brushOverlayPath(){
+    const drawingSurface=callbacks.getSurface();
+    if(!drawingSurface||!brushPoints.length||
+      !(tool==='brushAdd'||tool==='brushSubtract')){
+      brushTrace.setAttribute('d','');
+      if(!points.length)preview.setAttribute('data-empty','true');
+      return;
+    }
+    // Keep preview rendering bounded even for a long, pressure-sensitive stroke.
+    const visible=brushPoints.slice(-2048);
+    const viewPoints=visible.map(point=>drawingSurface.documentToScreen(point));
+    brushTrace.setAttribute('d',viewPoints.map((point,index)=>
+      (index?'L ':'M ')+point.x+' '+point.y).join(' '));
+    const left=drawingSurface.documentToScreen({x:0,y:0});
+    const right=drawingSurface.documentToScreen({x:Number(brushSize.value),y:0});
+    const zoom=Math.hypot(right.x-left.x,right.y-left.y);
+    const pressure=visible.at(-1)?.pressure??1;
+    brushTrace.style.strokeWidth=String(Math.max(1,zoom*(.25+.75*Math.min(1,Math.max(0,pressure)))));
+    brushTrace.style.stroke=tool==='brushAdd'?'#18bad9':'#e77845';
+    brushTrace.style.opacity=String(Math.min(.9,Math.max(.2,Number(brushDensity.value)/100)));
+    preview.setAttribute('data-empty','false');
+  }
   function publish(next:MaskData|null,record=true,persist=true){
     const doc=source();if(!doc)return;
-    job++;
+    job++;pendingSelectionJob=0;
     if(next&&(next.width!==doc.width||next.height!==doc.height))throw Error('作品と選択範囲の大きさが異なります。');
     if(record){history.push(active);boundUndo(history);future.length=0;}
     if(active)lastSelection=active;
     active=next;
     visual?.set(active);
     const bounds=active?boundsOfSelection(active):null;
+    selectionBounds=bounds;
+    updateQuickPosition();
     callbacks.getSurface()?.restoreRectangleSelection(bounds);
+    callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     callbacks.onMaskChanged(active);
     if(persist)scheduleStore(doc.id,active);
     box.hidden=!active;
@@ -164,13 +204,15 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   function applyShape(shape:SelectionShape){
     const doc=source();if(!doc)return;
     const current=++job,currentMode=mode.value as CombineMode,previous=active;
-    points=[];drawing=null;overlayPath();tool=null;refresh();
+    pendingSelectionJob=current;
+    points=[];drawing=null;overlayPath();tool=null;magneticPixels=null;refresh();
     status.textContent='選択の形を反映しています。キャンバス操作は続けられます。';
     void raster.shape(shape,previous,currentMode,doc.width,doc.height)
       .then(next=>{
         if(current!==job||callbacks.getDocument()?.id!==doc.id)return;
         publish(next);
-      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});
+      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);})
+      .finally(()=>{if(pendingSelectionJob===current)pendingSelectionJob=0;});
   }
   function endStroke(){
     if(!drawing||!tool)return;
@@ -178,17 +220,37 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(tool==='rectangle'||tool==='ellipse'){
       const a=points[0]!,b=points.at(-1)!;
       applyShape({type:tool,x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),width:Math.abs(b.x-a.x),height:Math.abs(b.y-a.y)});
-    }else if(tool==='lasso'&&points.length>=3)applyShape({type:'lasso',points});
+    }else if((tool==='lasso'||tool==='magnetic')&&points.length>=3)applyShape({type:'lasso',points});
     else{points=[];drawing=null;overlayPath();}
   }
   function arm(shape:Tool){
     const doc=source();if(!doc)return;
-    tool=tool===shape?null:shape;points=[];drawing=null;
+    if(shape==='magnetic'){
+      if(tool==='magnetic'){
+        ++job;tool=null;magneticPixels=null;refresh();overlayPath();return;
+      }
+      const request=++job;
+      tool=null;magneticPixels=null;points=[];drawing=null;
+      pendingSelectionJob=request;
+      callbacks.getSurface()?.setSelectionMode(false);
+      refresh();overlayPath();
+      status.textContent='磁気選択のため、画像の輪郭を準備しています。';
+      void callbacks.capturePixels('layer').then(pixels=>{
+        if(request!==job||callbacks.getDocument()?.id!==doc.id)return;
+        magneticPixels=pixels;
+        tool='magnetic';refresh();
+        status.textContent='輪郭に沿ってペンを動かしてください。輪郭のない場所では通常の投げ縄になります。';
+      }).catch(error=>{
+        if(request===job)status.textContent='磁気選択を開始できませんでした。'+String(error);
+      }).finally(()=>{if(pendingSelectionJob===request)pendingSelectionJob=0;});
+      return;
+    }
+    tool=tool===shape?null:shape;magneticPixels=null;points=[];brushPoints=[];drawing=null;brushOverlayPath();
     callbacks.getSurface()?.setSelectionMode(false);
     refresh();overlayPath();
   }
   for(const [name,label] of [
-    ['rectangle','四角形'],['ellipse','楕円'],['lasso','投げ縄'],['polygon','多角形']
+    ['rectangle','四角形'],['ellipse','楕円'],['lasso','投げ縄'],['magnetic','輪郭に吸い付く投げ縄'],['polygon','多角形']
   ] as const){
     const button=asButton(label,()=>arm(name));shapeButtons.set(name,button);tools.append(button);
   }
@@ -237,6 +299,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       status.textContent='明るさの範囲は0〜255の正しい順序で入力してください。';return;
     }
     tool=null;points=[];overlayPath();refresh();
+    pendingSelectionJob=request;
     status.textContent='画像から選択範囲を調べています。';
     try{
       const pixels=await callbacks.capturePixels(target);
@@ -251,6 +314,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       publish(next);
       if(!boundsOfSelection(next))status.textContent='一致する色の範囲がありませんでした。';
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+    finally{if(pendingSelectionJob===request)pendingSelectionJob=0;}
   }
   const addByBrush=asButton('選択を筆で足す',()=>arm('brushAdd'));
   const eraseByBrush=asButton('選択を筆で消す',()=>arm('brushSubtract'));
@@ -270,20 +334,23 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(brushPoints.length>=10000)return;
     if(last&&Math.hypot(last.x-point.x,last.y-point.y)<Math.max(.8,size*.075))return;
     brushPoints.push({...point,pressure:event.pressure>0?event.pressure:.5});
+    brushOverlayPath();
   }
   function finishBrushStroke(){
     const doc=source(),input=brushPoints.slice(),initial=active;
-    brushPoints=[];drawing=null;
+    brushPoints=[];drawing=null;brushOverlayPath();
     if(!doc||!input.length||!(tool==='brushAdd'||tool==='brushSubtract'))return;
     const operation=tool==='brushAdd'?'add' as const:'subtract' as const;
     const size=Number(brushSize.value),opacity=Number(brushDensity.value)/100,
       hardness=Number(brushHardness.value)/100;
     if(!Number.isFinite(size)||size<1||size>800){status.textContent='ブラシの太さを1〜800pxにしてください。';return;}
-    const current=++job;status.textContent='選択ブラシを反映しています。';
+    const current=++job;pendingSelectionJob=current;
+    status.textContent='選択ブラシを反映しています。';
     void raster.brush(initial,doc.width,doc.height,input,{size,opacity,hardness,mode:operation})
       .then(next=>{
         if(current===job&&callbacks.getDocument()?.id===doc.id)publish(next);
-      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});
+      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);})
+      .finally(()=>{if(pendingSelectionJob===current)pendingSelectionJob=0;});
   }
   const all=asButton('すべて選ぶ',()=>{const d=source();if(d)publish(fullSelection(d.width,d.height));});
   const clear=asButton('選択を解除',()=>publish(null));
@@ -317,15 +384,49 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       status.textContent='絵を移動しました。元に戻すで取り消せます。';
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   };
+  function previewAdjustment(before:MaskData,after:MaskData,label:string):Promise<boolean>{
+    if(!visual)return Promise.resolve(window.confirm(label+'の変更を適用しますか？'));
+    visual.set(after);
+    return new Promise(resolve=>{
+      const dialog=document.createElement('dialog');
+      previewDialog=dialog;
+      dialog.style.cssText='position:fixed;top:12px;right:12px;left:auto;bottom:auto;margin:0;max-width:min(340px,90vw);padding:14px;border:1px solid #75bacb;border-radius:12px;background:var(--a-surface,#fff);color:inherit;box-shadow:0 12px 40px #1115;';
+      const info=document.createElement('p');
+      info.textContent=label+'の変更案をキャンバスに表示しています。変更前と比較して決められます。';
+      const compare=asButton('変更前を見る',()=>{
+        if(compare.textContent==='変更前を見る'){
+          visual.set(before);compare.textContent='変更後を見る';
+        }else{visual.set(after);compare.textContent='変更前を見る';}
+      });
+      const apply=asButton('この変更を適用',()=>{accepted=true;dialog.close();});
+      const cancel=asButton('変更せず戻る',()=>dialog.close());
+      for(const button of [compare,apply,cancel])button.style.cssText='min-height:40px;margin:3px;padding:7px;border:1px solid #aaa;border-radius:7px;';
+      dialog.append(info,compare,apply,cancel);
+      let accepted=false;
+      dialog.addEventListener('close',()=>{
+        if(previewDialog===dialog)previewDialog=null;
+        dialog.remove();
+        if(!accepted)visual.set(active);
+        resolve(accepted);
+      },{once:true});
+      document.body.append(dialog);
+      try{dialog.showModal();}
+      catch{dialog.remove();previewDialog=null;visual.set(active);resolve(false);}
+    });
+  }
   const feather=asButton('選択の縁をぼかす',()=>{
     if(!active)return;
     const value=window.prompt('ぼかし幅 0〜32px','3');if(value===null)return;
     const amount=Number(value);if(!Number.isInteger(amount)||amount<0||amount>32){status.textContent='0〜32pxで指定してください。';return;}
     const original=active,doc=source(),current=++job;if(!doc)return;
+    pendingSelectionJob=current;
     status.textContent='選択の縁を整えています。';
-    void raster.feather(original,amount).then(next=>{
-      if(current===job&&callbacks.getDocument()?.id===doc.id)publish(next);
-    }).catch(error=>{status.textContent=String(error);});
+    void raster.feather(original,amount).then(async next=>{
+      if(current!==job||callbacks.getDocument()?.id!==doc.id)return;
+      if(await previewAdjustment(original,next,'選択のぼかし')&&current===job&&callbacks.getDocument()?.id===doc.id)
+        publish(next);
+    }).catch(error=>{status.textContent=String(error);})
+      .finally(()=>{if(pendingSelectionJob===current)pendingSelectionJob=0;});
   });
   const grow=asButton('範囲を広げる',()=>void adjust('grow'));
   const shrink=asButton('範囲を縮める',()=>void adjust('shrink'));
@@ -338,11 +439,15 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const radius=Number(response);
     if(!Number.isInteger(radius)||radius<0||radius>128){status.textContent='0〜128pxで指定してください。';return;}
     const initial=active,doc=source(),current=++job;if(!doc)return;
+    pendingSelectionJob=current;
     status.textContent=question+'を計算しています。';
     try{
       const next=await raster.adjust(initial,radius,operation);
-      if(job===current&&callbacks.getDocument()?.id===doc.id)publish(next);
+      if(job!==current||callbacks.getDocument()?.id!==doc.id)return;
+      if(await previewAdjustment(initial,next,question)&&job===current&&callbacks.getDocument()?.id===doc.id)
+        publish(next);
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+    finally{if(pendingSelectionJob===current)pendingSelectionJob=0;}
   }
   const undo=asButton('選択だけ元に戻す',()=>{
     if(!history.length)return;
@@ -355,11 +460,75 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     publish(future.pop()??null,false);
   });
   actions.append(all,clear,reselect,invert,shift,movePixels,grow,shrink,feather,border,undo,redo);
+  // Collapsed, position-aware edit tools save a round-trip to the side panel.
+  // The user can ignore or close these without losing the active selection.
+  const quick=document.createElement('details');quick.className='c06-selection-quick';quick.hidden=true;
+  quick.style.cssText='position:absolute;z-index:13;min-width:128px;max-width:200px;border:1px solid #66aec7;border-radius:8px;background:var(--a-surface,#fff);box-shadow:0 4px 14px #0003;color:inherit;font-size:12px;';
+  const quickTitle=document.createElement('summary');
+  quickTitle.textContent='選択の操作';quickTitle.style.cssText='min-height:34px;padding:8px;cursor:pointer;';
+  const quickButtons=document.createElement('div');
+  quickButtons.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:5px;';
+  const quickCopy=asButton('コピー',()=>document.getElementById('c06CopySelection')?.click());
+  const quickCut=asButton('切り取る',()=>document.getElementById('c06CutSelection')?.click());
+  const quickInvert=asButton('反転',()=>invert.click());
+  const quickFeather=asButton('ぼかす',()=>feather.click());
+  for(const button of [quickCopy,quickCut,quickInvert,quickFeather])
+    button.style.cssText='min-height:40px;padding:5px;border:1px solid #aab9c1;border-radius:5px;background:var(--a-accent-soft,#fff5e7);color:inherit;';
+  quickButtons.append(quickCopy,quickCut,quickInvert,quickFeather);
+  quick.append(quickTitle,quickButtons);viewport?.append(quick);
+  function updateQuickPosition(){
+    const bounds=selectionBounds,drawingSurface=callbacks.getSurface();
+    if(!viewport||!bounds||!drawingSurface||!showSelection.checked){
+      quick.hidden=true;quick.open=false;return;
+    }
+    const at=drawingSurface.documentToScreen({x:bounds.x,y:bounds.y});
+    quick.style.left=Math.max(4,Math.min(viewport.clientWidth-138,at.x))+'px';
+    quick.style.top=Math.max(4,Math.min(viewport.clientHeight-50,at.y-46))+'px';
+    quick.hidden=false;
+  }
   const named=document.createElement('select');named.setAttribute('aria-label','保存した選択範囲');
   const save=asButton('名前を付けて保存',()=>void saveCurrent());
+  const overwrite=asButton('選んだ保存を上書き',()=>void overwriteCurrent());
   const load=asButton('保存した範囲を使う',()=>void loadCurrent());
   const remove=asButton('保存した範囲を削除',()=>void deleteCurrent());
-  saveArea.append(named,save,load,remove);
+  const savedPreview=document.createElement('canvas');
+  savedPreview.width=112;savedPreview.height=80;
+  savedPreview.hidden=true;savedPreview.setAttribute('role','img');
+  savedPreview.setAttribute('aria-label','保存した選択範囲の形');
+  savedPreview.style.cssText='grid-column:1/-1;width:112px;height:80px;max-width:100%;image-rendering:pixelated;border:1px solid var(--a-border,#aaa);border-radius:6px;';
+  let previewRequest=0;
+  async function updateNamedPreview(){
+    const id=named.value,doc=source(),current=++previewRequest;
+    savedPreview.hidden=true;
+    if(!id||!doc)return;
+    try{
+      const entry=(await listSavedSelections(doc.id)).find(item=>item.id===id);
+      if(!entry)return;
+      const mask=await loadNamedSelection(entry);
+      if(current!==previewRequest||source()?.id!==doc.id||named.value!==id)return;
+      const ctx=savedPreview.getContext('2d');
+      if(!ctx)return;
+      const image=ctx.createImageData(savedPreview.width,savedPreview.height);
+      const pixels=image.data;
+      for(let y=0;y<savedPreview.height;y++)for(let x=0;x<savedPreview.width;x++){
+        const sx=Math.min(mask.width-1,Math.floor((x+.5)*mask.width/savedPreview.width));
+        const sy=Math.min(mask.height-1,Math.floor((y+.5)*mask.height/savedPreview.height));
+        const value=mask.alpha[sy*mask.width+sx]!;
+        const i=(y*savedPreview.width+x)*4;
+        const base=(x+y)%2?242:223;
+        pixels[i]=Math.round(base*(255-value)/255+49*value/255);
+        pixels[i+1]=Math.round(base*(255-value)/255+154*value/255);
+        pixels[i+2]=Math.round(base*(255-value)/255+207*value/255);
+        pixels[i+3]=255;
+      }
+      ctx.putImageData(image,0,0);
+      savedPreview.hidden=false;
+    }catch{
+      savedPreview.hidden=true;
+    }
+  }
+  named.onchange=()=>{refresh();void updateNamedPreview();};
+  saveArea.append(named,savedPreview,save,overwrite,load,remove);
   async function updateNamed(){
     const doc=source();if(!doc)return;
     const previousName=named.value;
@@ -367,12 +536,28 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(source()?.id!==doc.id)return;
     named.replaceChildren(new Option('保存した範囲を選ぶ',''),...list.map(x=>new Option(x.name,x.id)));
     if(list.some(item=>item.id===previousName))named.value=previousName;
+    refresh();void updateNamedPreview();
   }
   async function saveCurrent(){
     const doc=source();if(!doc||!active)return;
     const name=window.prompt('選択範囲の名前','選択範囲');if(!name)return;
-    try{await saveNamedSelection(doc.id,name,active);await updateNamed();status.textContent='選択範囲を保存しました。';}
-    catch(error){status.textContent=String(error);}
+    try{
+      const saved=await saveNamedSelection(doc.id,name,active);
+      await updateNamed();named.value=saved.id;refresh();void updateNamedPreview();
+      status.textContent='選択範囲を保存しました。';
+    }catch(error){status.textContent=String(error);}
+  }
+  async function overwriteCurrent(){
+    const doc=source(),selectedId=named.value;
+    if(!doc||!active||!selectedId)return;
+    try{
+      const entry=(await listSavedSelections(doc.id)).find(item=>item.id===selectedId);
+      if(!entry)throw Error('上書きする保存済み範囲が見つかりません。');
+      if(!window.confirm('「'+entry.name+'」の保存内容を現在の選択範囲に置き換えますか？'))return;
+      await saveNamedSelection(doc.id,entry.name,active,entry.id);
+      await updateNamed();named.value=entry.id;refresh();void updateNamedPreview();
+      status.textContent='「'+entry.name+'」を上書きしました。';
+    }catch(error){status.textContent=String(error);}
   }
   async function loadCurrent(){
     const doc=source();if(!doc)return;
@@ -403,15 +588,22 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const enabled=!!active;
     for(const button of [clear,invert,shift,movePixels,grow,shrink,feather,border])button.disabled=!enabled;
     reselect.disabled=!lastSelection;undo.disabled=!history.length;redo.disabled=!future.length;
-    save.disabled=!enabled;
+    save.disabled=!enabled;overwrite.disabled=!enabled||!named.value;
   }
   // Intercept only while intentionally entering a selection gesture. In all other
   // cases brush, pen, touch navigation and pointer capture remain untouched.
   document.addEventListener('pointerdown',event=>{
+    if(pendingSelectionJob&&pendingSelectionJob===job&&
+      event.target instanceof Element&&event.target.closest('.surface')&&
+      !event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame,.c06-selection-quick')){
+      event.preventDefault();event.stopImmediatePropagation();
+      status.textContent='選択範囲を反映中です。完了後に描画してください。';
+      return;
+    }
     if(!tool||(!allowFinger.checked&&event.pointerType==='touch')||
       (drawing!==null&&event.pointerId!==drawing.pointer)||!source()||!viewport||
       !(event.target instanceof Element)||!event.target.closest('.surface')||
-      event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame')||
+      event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame,.c06-selection-quick')||
       event.button!==0)return;
     event.preventDefault();event.stopImmediatePropagation();
     const point=toDoc(event);
@@ -432,7 +624,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(drawing)return;
     drawing={pointer:event.pointerId,first:point};
     try{viewport.setPointerCapture(event.pointerId);}catch{}
-    points=[point,point];overlayPath();
+    const first=tool==='magnetic'&&magneticPixels?
+      snapMagneticPoint(magneticPixels,source()!.width,source()!.height,point,null):point;
+    points=[first,first];overlayPath();
   },true);
   document.addEventListener('pointermove',event=>{
     if(!drawing||event.pointerId!==drawing.pointer||!tool)return;
@@ -441,9 +635,11 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       addBrushPoint(event);return;
     }
     const point=toDoc(event);
-    if(tool==='lasso'){
+    if(tool==='lasso'||tool==='magnetic'){
       const last=points.at(-1)!;
-      if(Math.hypot(point.x-last.x,point.y-last.y)>2&&points.length<4096)points.push(point);
+      const current=tool==='magnetic'&&magneticPixels&&source()?
+        snapMagneticPoint(magneticPixels,source()!.width,source()!.height,point,last):point;
+      if(Math.hypot(current.x-last.x,current.y-last.y)>2&&points.length<4096)points.push(current);
     }else points[1]=point;
     overlayPath();
   },true);
@@ -456,23 +652,29 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       return;
     }
     const point=toDoc(event);
-    if(tool==='lasso'){if(points.length<4096)points.push(point);}
-    else points[1]=point;
+    if(tool==='lasso'||tool==='magnetic'){
+      const last=points.at(-1)??point;
+      const current=tool==='magnetic'&&magneticPixels&&source()?
+        snapMagneticPoint(magneticPixels,source()!.width,source()!.height,point,last):point;
+      if(points.length<4096)points.push(current);
+    }else points[1]=point;
     endStroke();
     try{viewport?.releasePointerCapture(event.pointerId);}catch{}
   },true);
   document.addEventListener('pointercancel',event=>{
     if(!drawing||event.pointerId!==drawing.pointer)return;
-    drawing=null;points=[];brushPoints=[];overlayPath();
+    drawing=null;points=[];brushPoints=[];overlayPath();brushOverlayPath();
   },true);
-  const documentChanged=()=>{job++;currentWork=null;source();
-    callbacks.getSurface()?.setSelectionVisible(showSelection.checked);
+  const documentChanged=()=>{
+    if(previewDialog?.open)previewDialog.close();
+    job++;pendingSelectionJob=0;currentWork=null;source();
+    callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     void updateNamed();};
   refresh();documentChanged();
   return {
     active:()=>active,
     documentChanged,
-    updateView:()=>{visual?.updateView();overlayPath();},
+    updateView:()=>{visual?.updateView();overlayPath();brushOverlayPath();updateQuickPosition();},
     refresh,
     clear:()=>{job++;publish(null);},
     replaceActive:mask=>{job++;publish(mask);},

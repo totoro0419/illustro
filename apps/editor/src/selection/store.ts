@@ -2,6 +2,8 @@
 import {type MaskData} from './mask';
 export type SavedSelection=Readonly<{id:string;documentId:string;name:string;width:number;height:number;createdAt:number;modifiedAt:number;alpha:Blob}>;
 const DB='illustro-c06-selections-v1',STORE='selections',MAX_PER_WORK=32;
+// Portable artwork stores all named masks plus the current selection (160 MiB max).
+const MAX_PORTABLE_MASK_BYTES=160*1024*1024;
 let task:Promise<IDBDatabase>|null=null;
 const db=()=>task??=new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(DB,1);
@@ -32,7 +34,13 @@ export async function saveNamedSelection(documentId:string,name:string,mask:Mask
   if(mask.width*mask.height!==mask.alpha.length)throw Error('選択範囲の画像サイズが正しくありません。');
   const existing=await listSavedSelections(documentId);
   const prior=currentId?existing.find(x=>x.id===currentId):null;
+  if(currentId&&!prior)throw Error('上書き先の選択範囲が見つかりません。');
   if(!prior&&existing.length>=MAX_PER_WORK)throw Error('保存できる範囲は32件までです。');
+  // Reserve one mask for the current selection; never allow a named save
+  // that makes a subsequent portable artwork export fail due to its size.
+  const usedBytes=existing.reduce((sum,item)=>sum+(item.id===prior?.id?0:item.alpha.size),0);
+  if(usedBytes+mask.alpha.byteLength*2>MAX_PORTABLE_MASK_BYTES)
+    throw Error('この作品の選択範囲は保存容量の上限です。不要な保存済み範囲を削除してください。');
   if(existing.some(x=>x.name===title&&x.id!==currentId))throw Error('同じ名前の選択範囲があります。');
   const now=Date.now();
   const entry:SavedSelection={

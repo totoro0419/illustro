@@ -29,7 +29,7 @@ export function installImageDropRouting(options:Destination){
   ] as const){
     const button=document.createElement('button');button.type='button';button.textContent=label;
     button.onclick=async()=>{
-      if(!current||busy)return;
+      if(!current||busy||!options.canEdit())return;
       busy=true;
       for(const control of actions.querySelectorAll<HTMLButtonElement>('button'))control.disabled=true;
       info.textContent='画像を確認しています。';
@@ -51,19 +51,26 @@ export function installImageDropRouting(options:Destination){
   dialog.addEventListener('close',()=>{current=null;info.textContent='';});
   const isFile=(event:DragEvent)=>event.dataTransfer?.types.includes('Files')??false;
   surface.addEventListener('dragenter',event=>{
-    if(!options.canEdit()||!isFile(event))return;
-    event.preventDefault();hover++;overlay.hidden=false;
+    if(!isFile(event))return;
+    event.preventDefault();
+    if(!options.canEdit())return;
+    hover++;overlay.hidden=false;
   });
   surface.addEventListener('dragover',event=>{
-    if(!options.canEdit()||!isFile(event))return;
-    event.preventDefault();if(event.dataTransfer)event.dataTransfer.dropEffect='copy';
+    if(!isFile(event))return;
+    event.preventDefault();
+    if(event.dataTransfer)event.dataTransfer.dropEffect=options.canEdit()?'copy':'none';
   });
   surface.addEventListener('dragleave',()=>{if(--hover<=0){hover=0;overlay.hidden=true;}});
   surface.addEventListener('drop',event=>{
     hover=0;overlay.hidden=true;
-    if(!options.canEdit())return;
     if(!isFile(event))return;
+    // Always suppress the browser's default file navigation, even when locked.
     event.preventDefault();event.stopPropagation();
+    if(!options.canEdit()){
+      info.textContent='編集中ではないため画像を取り込めません。';
+      dialog.showModal();return;
+    }
     const candidates=[...(event.dataTransfer?.files??[])].filter(supported);
     if(!candidates.length){
       info.textContent='PNG・JPEG・WebP・AVIF・GIF画像を選んでください。';dialog.showModal();return;
