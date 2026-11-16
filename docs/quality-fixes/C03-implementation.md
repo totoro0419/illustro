@@ -36,7 +36,7 @@
 - GitHub上のコードを読み、7ファイル（`transaction.ts`、`layerDeformationDuplicate.test.ts`、`historyBrush.ts`、`historyBrush.test.ts`、`persistence/coordinator.ts`、`persistence/persistence.worker.ts`、`ui/artworkHistoryView.ts`）へ変更を作成。
 - C03-001の新規テストは変形保持コピー、保存→読込、別レイヤーのみの編集、Undo/Redoを確認する1ケース。
 - C03-003の新規テストは3ケース：自由形状の外側へのはみ出し防止・半透明の選択濃度・サイズ不一致の拒否。
-- **この記録を書いた時点ではテスト成功・ビルド成功・端末確認は未確認。**
+- **最新の自動検査：成功を確認**（コミット `365fe6f3e1c6ab3ef7f45c9a1e7f70af87ec1044`）：[C03-C10 quality integration checks](https://github.com/totoro0419/illustro/actions/runs/43889838107) は Coreテスト・型検査、ブラシ回帰、エディタ単体テスト、型検査、ビルドを完了して成功。[Core CI](https://github.com/totoro0419/illustro/actions/runs/43889838069) も成功。**端末・保存と復元の操作・4000px速度は未確認。**
 - 最初のPR自動検査は統合管理者が並行追加した管理文書を誤って所有権違反と判定して中断。統合担当が検査範囲を修正した（こちらの所有ファイルには変更なし）。続く検査で履歴画像の型にエラーが判明し、追加修正した。以降の合否は最新CIで確認する。
 - 統合担当への `main.ts` 修正依頼は [Issue #96](https://github.com/totoro0419/illustro/issues/96) に記録。
-- PR #76をDraftで維持。後続のCI結果・実機検証を確認するまでは完了としない。
+- PR #76をDraftで維持。CI成功と実機での安全性確認は別であり、実機検証と統合担当の接続が済むまでは完了としない。
