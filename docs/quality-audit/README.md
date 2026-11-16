@@ -20,7 +20,7 @@
 - 正式リポジトリ：<https://github.com/totoro0419/illustro>
 - 過去の調査で使った実装ブランチ：`prototype/C03-C10-completion`
 - 固定対象コミット：[`dc28d2d0380352b8d07bcff570def7be8a3db2d4`](https://github.com/totoro0419/illustro/commit/dc28d2d0380352b8d07bcff570def7be8a3db2d4)
-- [正式採用機能一覧](https://github.com/totoro0419/illustro/blob/dc28d2d0380352b8d07bcff570def7be8a3db2d4/docs/product-planning/FINAL_PRODUCT_SCOPE.json)／[機能別設計書](https://github.com/totoro0419/illustro/blob/dc28d2d0380352b8d07bcff570def7be8a3db2d4/docs/product-planning/features/)／[実装進捗](https://github.com/totoro0419/illustro/blob/dc28d2d0380352b8d07bcff570def7be8a3db2d4/docs/development/PROTOTYPE_PROGRESS.md)
+- [正式採用機能一覧](https://github.com/totoro0419/illustro/blob/dc28d2d0380352b8d07bcff570def7be8a3db2d4/docs/product-planning/FINAL_PRODUCT_SCOPE.json)／[機能別設計書](https://github.com/totoro0419/illustro/tree/dc28d2d0380352b8d07bcff570def7be8a3db2d4/docs/product-planning/features/)／[実装進捗](https://github.com/totoro0419/illustro/blob/dc28d2d0380352b8d07bcff570def7be8a3db2d4/docs/development/PROTOTYPE_PROGRESS.md)
 - 記録の元：**このチャット内で行われたC03〜C10の調査報告だけ**。他チャットや別PRの指摘を混入させない。
 - **C10のVEC-008は保留中**なので対象数に入れない。C03にSAV-003〜008、C05にSAV-001〜002を割当て、同じ機能を重複計上しない。
 - **「調査済み」**＝各Cの全対象機能について、過去の静的検査の主要経路・仕様の照合報告があること。**コード全分岐の網羅・ブラウザー操作・実機テスト・品質合格を意味しない**。
