@@ -22,7 +22,7 @@ self.onmessage=({data}:MessageEvent<TransformJob|CachedTransformJob>)=>{
     const pixels=cached?cachedPixels:data.pixels;
     if(!pixels)throw Error('変形する元画像がありません。');
     const {width,height,settings,outputWidth,outputHeight}=data;
-    const selection=cached?cachedSelection:data.selection;
+    const selection=cached?cachedSelection:(data.selection??null);
     const result=transformRaster(pixels,width,height,settings,selection,outputWidth,outputHeight,data.showProtection);
     (self as unknown as Worker).postMessage({pixels:result},[result.buffer]);
   }catch(error){self.postMessage({error:error instanceof Error?error.message:String(error)});}
