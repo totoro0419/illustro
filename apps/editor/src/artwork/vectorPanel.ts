@@ -59,7 +59,8 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
   }
   function changePoint(index:number,point:ArtPoint){
     const current=draft(),points=[...current.points];points[index]=point;
-    path={...current,points,...(sourceEdit?{}:{booleanOperands:undefined})};
+    const {booleanOperands:_oldOperands,...editable}=current;
+    path={...editable,points};
     pointIndex.value=String(index+1);syncPoint();void refresh();
   }
   async function refresh(){
@@ -100,7 +101,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       locate(context.drawing,points=>{
         if(points.length<2){status.textContent='2点以上の線を描いてください。';return;}
         try{
-          const stroke:EditablePath={...base,booleanOperands:undefined,points:simplifyPath(points,.65),closed:false};
+          const stroke:EditablePath={...base,points:simplifyPath(points,.65),closed:false};
           readPath(appendPathStroke(base,stroke),layer.id);
           status.textContent='線を追加しました。「作品に反映」でまとめて保存できます。';
         }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
