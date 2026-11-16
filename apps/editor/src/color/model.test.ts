@@ -21,6 +21,26 @@ describe('M09 RGB, HSV, HSL and exact input',()=>{
 });
 
 describe('M09 one foreground state and workspace palette',()=>{
+ it('does not mark palette controls dirty while scrubbing color or changing opacity',()=>{
+  const s=new ForegroundColor(false);
+  const before=s.collectionsVersion;
+  s.begin();
+  for(let i=0;i<30;i++)s.preview(hsvToRgb(i,1,1));
+  expect(s.collectionsVersion).toBe(before);
+  s.commit();
+  expect(s.collectionsVersion).toBe(before+1);
+  s.setOpacity(.5);
+  expect(s.collectionsVersion).toBe(before+1);
+  s.addSwatch();
+  expect(s.collectionsVersion).toBe(before+2);
+  s.renamePalette('変更後');
+  expect(s.collectionsVersion).toBe(before+3);
+  const id=s.palette.swatches[0]!.id;
+  s.setSwatchTags(id,['背景','青']);
+  expect(s.collectionsVersion).toBe(before+4);
+  s.clearHistory();
+  expect(s.collectionsVersion).toBe(before+5);
+ });
  it('previews then commits once, previous and history do not enter artwork revision',()=>{
   const s=new ForegroundColor(false),initial=s.current;
   s.begin();for(let n=0;n<100;n++)s.preview(hsvToRgb(n,1,1));
