@@ -4,7 +4,7 @@ import type {GapCandidate,RegionGraph} from './pixels';
 import type {MaskData} from '../selection/mask';
 
 type Response={graph?:RegionGraph;boundary?:readonly Point[];gaps?:readonly GapCandidate[];mask?:MaskData;diagnostics?:Readonly<{remaining:Uint8Array;bridges:Uint8Array}>;pixels?:Uint8ClampedArray<ArrayBuffer>|null;error?:string};
-type Task={job:FillJob;resolve:(value:Response)=>void;reject:(error:Error)=>void;signal?:AbortSignal;abort?:()=>void;timeout?:ReturnType<typeof setTimeout>};
+type Task={job:FillJob;resolve:(value:Response)=>void;reject:(error:Error)=>void;signal?:AbortSignal|undefined;abort?:()=>void;timeout?:ReturnType<typeof setTimeout>};
 
 // A single reusable worker avoids repeated startup and prevents simultaneous
 // 4000x4000 fill jobs from exhausting memory. Jobs are executed in input order.
