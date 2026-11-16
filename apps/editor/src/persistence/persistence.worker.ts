@@ -567,7 +567,8 @@ async function listRecoveryCandidates(store:WorkingStore){
       const session={documentId:doc.name,writerEpochId:epoch.name,path:root+'/'+doc.name+'/'+epoch.name};try{const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)continue;const base=await unframeJson(baseBytes) as CorePersistenceSnapshotV1,protectedThrough=await scanProtected(store,session);
         const target=base.revisions.find(x=>x.id===base.snapshotRevisionId),metaBytes=await store.get(session.path+'/meta.frame'),meta=metaBytes?await unframeJson(metaBytes) as Record<string,unknown>:{};
         const saves=await documentSaveState(store,session.documentId),lastGood=saves.lastGood,previousGood=saves.previousGood;
-        const work=await getWork(session.documentId);
+        // The gallery title is optional. A gallery DB failure must not hide a recoverable session.
+        const work=await getWork(session.documentId).catch(()=>null);
         const title=(work?.writerEpochId===session.writerEpochId&&work.name)||
           (typeof meta.title==='string'&&meta.title.trim())||target?.root.name||'作品';
         out.push({documentId:session.documentId,writerEpochId:session.writerEpochId,title,protectedThrough:protectedThrough.toString(),updatedAt:typeof meta.updatedAt==='number'?meta.updatedAt:0,savedRevisionId:typeof meta.savedRevisionId==='string'?meta.savedRevisionId:null,lastGood,previousGood});}catch{} }}
