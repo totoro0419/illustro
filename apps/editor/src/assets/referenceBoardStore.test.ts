@@ -23,6 +23,8 @@ describe('C05 reference-board data safety',()=>{
     expect(()=>decodeBoardRecord(doc,{...record,items:[first,{...first}]})).toThrow();
     expect(()=>decodeBoardRecord(doc,{...record,items:[{...first,assetId:''}]})).toThrow();
     expect(()=>decodeBoardRecord(doc,{...record,items:[{...first,zoom:NaN}]})).toThrow();
+    expect(()=>decodeBoardRecord(doc,{...record,items:[{...first,panX:Infinity}]})).toThrow();
+    expect(()=>decodeBoardRecord(doc,{...record,items:[{...first,group:{unexpected:true}}]})).toThrow();
     expect(()=>decodeBoardRecord(doc,{...record,items:[{...first,width:0}]})).toThrow();
     expect(()=>decodeBoardRecord(doc,{...record,items:[{...first,x:undefined}]})).toThrow();
     expect(()=>decodeBoardRecord(doc,{...record,items:Array.from({length:81},(_,n)=>({...first,id:String(n)}))})).toThrow();
