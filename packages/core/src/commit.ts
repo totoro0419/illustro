@@ -1,3 +1,4 @@
+import type {ArtworkGuide} from './artworkGuides';
 import type {BlockId,LayerId,ResourceId,RevisionId} from './ids';
 import {finalizeOperation,type Revision,type SemanticOperation,type SemanticOperationDraft} from './history';
 import type {DocumentRoot,LayerNode} from './model';
@@ -15,10 +16,19 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
   const byLayer=new Map<LayerId,Map<TileKey,BlockId>>();all.forEach((m,i)=>{const entry=prepared.entries[i];if(!entry)throw new Error('block mismatch');let changes=byLayer.get(m.layerId);if(!changes){changes=new Map();byLayer.set(m.layerId,changes);}changes.set(m.key,entry.id);});
   const updates=new Map<LayerId,LayerNode>(v.updates);for(const [layerId,blocks] of byLayer){const layer=updates.get(layerId)??v.root.getLayer(layerId);updates.set(layerId,Object.freeze({...layer,surface:layer.surface.withBlocks(blocks)}));}
   const operations:SemanticOperation[]=[];
-  let documentInfo:DocumentRoot['info']|undefined,restoreRevision:RevisionId|undefined;
+  let documentInfo:DocumentRoot['info']|undefined,restoreRevision:RevisionId|undefined,guides:readonly ArtworkGuide[]|undefined;
   for(let ordinal=0;ordinal<v.slots.length;ordinal++){const slot=v.slots[ordinal];if(!slot)throw new Error('operation slot mismatch');
     if(slot.type==='working'){const working=v.working.get(slot.layerId);if(!working||(!working.changedTileCount&&!slot.replace))throw new Error('empty raster delta');const footprint=working.mutations().map(m=>{const [tileX,tileY]=parseTileKey(m.key);return Object.freeze({layerId:slot.layerId,tileX,tileY,bounds:Object.freeze({x0:0,y0:0,x1:CANONICAL_TILE_SIZE,y1:CANONICAL_TILE_SIZE})});});
       const resultValueRefs=[...(byLayer.get(slot.layerId)?.values()??[])];const draft:SemanticOperationDraft=Object.freeze({kind:slot.initial?'layer.snapshot':'raster.strict-delta',schemaVersion:1,targetEntityIds:Object.freeze([slot.layerId]),parameters:Object.freeze({tileCount:working.changedTileCount,...(slot.replace?{replacesRaster:true}:{})}),algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze(slot.source?[v.base,slot.source]:[v.base]),selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze(resultValueRefs),dirtyFootprint:Object.freeze(footprint)});operations.push(finalizeOperation(v.id,ordinal,draft));
+    }else if(slot.type==='artwork-guides'){
+      if(v.slots.length!==1)throw Error('Artwork guides require a standalone transaction');
+      guides=slot.guides;
+      const draft:SemanticOperationDraft=Object.freeze({
+        kind:'document.guides',schemaVersion:1,targetEntityIds:Object.freeze([]),parameters:Object.freeze({guides}),
+        algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze([v.base]),
+        selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([])
+      });
+      operations.push(finalizeOperation(v.id,ordinal,draft));
     }else if(slot.type==='dimensions'||slot.type==='document-info'){
       const draft:SemanticOperationDraft=Object.freeze({kind:slot.type==='dimensions'?slot.kind:'document.info',schemaVersion:1,targetEntityIds:Object.freeze([]),parameters:slot.type==='dimensions'?slot.parameters:slot.info,algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze([v.base]),selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([])});
       operations.push(finalizeOperation(v.id,ordinal,draft));
@@ -79,6 +89,7 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
   if(v.comps)nextRoot=nextRoot.withLayerComps(v.comps);
   if(v.dimensions)nextRoot=nextRoot.withDimensions(v.dimensions.width,v.dimensions.height);
   if(documentInfo)nextRoot=nextRoot.withInfo(documentInfo);
+  if(guides)nextRoot=nextRoot.withArtworkGuides(guides);
   const at=s.clock(),root=nextRoot.withModifiedAt(at),stamp=s.nextCommitStamp(),command=Object.freeze({version:2 as const,kind:'core.transaction.v2' as const,label:tx.label,operations:Object.freeze(operations)});
   let published=false;try{s.store.publishPrepared(prepared);published=true;const revision=s.history.publish(v.base,v.id,root,command,at,stamp,v.resultId,v.expectedHead);s.acceptCommitSequence(stamp.commitSequence);v.close();
     const requiredResourceIds=uniqueResources(operations.flatMap(x=>x.resourceRefs)),requiredAlgorithms=Object.freeze([...new Set(operations.flatMap(x=>x.algorithmVersionRefs))]);

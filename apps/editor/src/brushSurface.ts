@@ -1,3 +1,4 @@
+import type {ArtworkGuide} from '@illustro/core';
 import {StrokeHandoff,type StrokeReservation} from './strokeHandoff';
 import {nativeBrushSensors} from './brushInput';
 import {drawMaskPreview,type MaskStrokePoint} from './layerMaskEditing';
@@ -21,7 +22,7 @@ import {CanvasNavigation} from './canvasNavigation';
 import {wrappedCopies} from './seamlessStroke';
 import {DEFAULT_SYMMETRY,symmetryCopies,symmetryPoint,type SymmetrySettings} from './strokeSymmetry';
 import {buildSymmetricStrokes} from './runSymmetry';
-import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,lockStraightGuide,snapToStraightGuide,type GuideSettings,type LockedGuide} from './strokeGuide';
+import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,lockStraightGuide,lockArtworkGuide,snapToStraightGuide,type GuideSettings,type LockedGuide} from './strokeGuide';
 import {rectangleFromPoints,clampSelectionRect,type SelectionRect} from './strokeSelection';
 import {selectionAsLayerMask} from './artwork/selectionMask';
 import {applySelectedStroke} from './selection/brush';
@@ -75,6 +76,77 @@ export class BrushSurface{
   private strokeMask:MaskData|null=null;
   onSelectionChanged:()=>void=()=>{};
   private guideSettings:GuideSettings=DEFAULT_GUIDE_SETTINGS;
+  private artworkGuides:readonly ArtworkGuide[]=[];
+  private guidePreview:readonly ArtworkGuide[]|null=null;
+  private artworkGuideOverlay:SVGSVGElement|null=null;
+  private showArtworkGuides=true;
+  private skipNextArtworkGuide=false;
+  private preferredGuide:string|null=null;
+  onArtworkGuideTarget:(label:string)=>void=()=>{};
+  setArtworkGuides(guides:readonly ArtworkGuide[]){
+    if(this.artworkGuides===guides)return;
+    this.artworkGuides=guides;this.paintArtworkGuides();
+  }
+  previewArtworkGuides(guides:readonly ArtworkGuide[]|null){this.guidePreview=guides;this.paintArtworkGuides();}
+  showArtworkGuideLines(visible:boolean){this.showArtworkGuides=visible;this.paintArtworkGuides();}
+  setPreferredGuide(id:string|null){this.preferredGuide=id;}
+  bypassNextGuide(){this.skipNextArtworkGuide=true;}
+  private guideGeometry:Readonly<{items:readonly ArtworkGuide[];width:number;height:number;preview:boolean}>|null=null;
+  private paintArtworkGuides(){
+    const view=this.view,root=this.controller.document.root,items=this.guidePreview??this.artworkGuides;
+    if(!view||!items.length||!this.showArtworkGuides){
+      this.artworkGuideOverlay?.remove();this.artworkGuideOverlay=null;this.guideGeometry=null;return;
+    }
+    const ns='http://www.w3.org/2000/svg';
+    if(!this.artworkGuideOverlay){
+      const svg=document.createElementNS(ns,'svg');svg.setAttribute('aria-hidden','true');
+      svg.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2';
+      this.inputViewport.append(svg);this.artworkGuideOverlay=svg;
+    }
+    const origin=view.screen({x:0,y:0}),xUnit=view.screen({x:1,y:0}),yUnit=view.screen({x:0,y:1});
+    const transform=`matrix(${xUnit.x-origin.x} ${xUnit.y-origin.y} ${yUnit.x-origin.x} ${yUnit.y-origin.y} ${origin.x} ${origin.y})`;
+    const preview=!!this.guidePreview,geometry=this.guideGeometry;
+    if(geometry?.items===items&&geometry.width===root.width&&geometry.height===root.height&&geometry.preview===preview){
+      this.artworkGuideOverlay.firstElementChild?.setAttribute('transform',transform);
+      return;
+    }
+    this.guideGeometry={items,width:root.width,height:root.height,preview};
+    const lines=document.createElementNS(ns,'g');lines.setAttribute('transform',transform);
+    const appendLine=(a:Point,b:Point,color:string)=>{
+      const start=a,end=b,line=document.createElementNS(ns,'line');
+      line.setAttribute('vector-effect','non-scaling-stroke');
+      line.setAttribute('x1',String(start.x));line.setAttribute('y1',String(start.y));
+      line.setAttribute('x2',String(end.x));line.setAttribute('y2',String(end.y));
+      line.setAttribute('stroke',color);line.setAttribute('opacity','.48');line.setAttribute('stroke-dasharray','4 5');
+      lines.append(line);
+    };
+    for(const item of items){
+      const {x,y}=item.origin,angle=item.angle*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+      const color=this.guidePreview?'#f59b36':item.enabled?'#5baad5':'#a1abb3';
+      if(item.kind==='circle'||item.kind==='ellipse'){
+        const curve=document.createElementNS(ns,'polyline'),ry=item.kind==='circle'?item.rx:item.ry;
+        curve.setAttribute('points',Array.from({length:73},(_,index)=>{
+          const a=index*Math.PI/36,dx=Math.cos(a)*item.rx,dy=Math.sin(a)*ry,point={x:x+dx*c-dy*s,y:y+dx*s+dy*c};
+          return point.x+','+point.y;
+        }).join(' '));
+        curve.setAttribute('vector-effect','non-scaling-stroke');curve.setAttribute('fill','none');curve.setAttribute('stroke',color);curve.setAttribute('opacity','.5');lines.append(curve);continue;
+      }
+      if(item.kind.startsWith('perspective')){
+        const count=item.kind==='perspective3'?3:item.kind==='perspective2'?2:1;
+        for(const point of [item.origin,...item.vanishing].slice(0,count))
+          for(const end of [{x:0,y:0},{x:root.width,y:0},{x:root.width,y:root.height},{x:0,y:root.height}])appendLine(point,end,color);
+        continue;
+      }
+      const angles=item.kind==='grid'?[angle,angle+Math.PI/2]:item.kind==='isometric'?[angle,angle-Math.PI/3,angle+Math.PI/3]:[angle];
+      const length=Math.hypot(root.width,root.height)+Math.hypot(x,y);
+      const offsets=item.kind==='straight'?[0]:Array.from({length:9},(_,index)=>(index-4)*item.spacing);
+      for(const axis of angles)for(const offset of offsets){
+        const cx=x-Math.sin(axis)*offset,cy=y+Math.cos(axis)*offset,dx=Math.cos(axis)*length,dy=Math.sin(axis)*length;
+        appendLine({x:cx-dx,y:cy-dy},{x:cx+dx,y:cy+dy},color);
+      }
+    }
+    this.artworkGuideOverlay.replaceChildren(lines);
+  }
   private symmetry:SymmetrySettings=DEFAULT_SYMMETRY;
   private strokeSymmetry:SymmetrySettings|null=null;
   private symmetryOverlay:SVGSVGElement|null=null;
@@ -153,7 +225,7 @@ export class BrushSurface{
     if(!this.navigation)return;
     e.preventDefault();this.navigation.wheelZoom(e.deltaY,this.pointerLocation(e));
   };
-  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.symmetry.mode!=='off'||this.symmetryOverlay)this.updateSymmetryOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.editPointer!==null||this.editGesture?.pointEdit)this.updateEditStrokeOutline();if(this.maskInspection)this.positionDocumentOverlay(this.maskInspection);if(this.layerOutline)this.positionDocumentOverlay(this.layerOutline);if(immediate)this.onStateChanged('view-command');}}
+  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.artworkGuideOverlay||this.artworkGuides.length||this.guidePreview)this.paintArtworkGuides();if(this.symmetry.mode!=='off'||this.symmetryOverlay)this.updateSymmetryOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.editPointer!==null||this.editGesture?.pointEdit)this.updateEditStrokeOutline();if(this.maskInspection)this.positionDocumentOverlay(this.maskInspection);if(this.layerOutline)this.positionDocumentOverlay(this.layerOutline);if(immediate)this.onStateChanged('view-command');}}
   get viewState(){return this.view?.state??null;}
   restoreView(state:SavedCanvasView){this.view?.restore(state);this.updateView(true);}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
@@ -614,7 +686,12 @@ export class BrushSurface{
     try{this.target=this.controller.target();this.pendingBranch=this.controller.canRedo;this.strokeMask=mask;this.reservation=mask?null:this.handoff!.reserve(this.target);
       const origin=this.view.document(this.pointerLocation(e)),w=this.target.width,h=this.target.height;
       this.wrapOrigin=this.view.seamless?{x:Math.floor(origin.x/w)*w,y:Math.floor(origin.y/h)*h}:null;
-      this.activeGuide=lockStraightGuide({x:origin.x-(this.wrapOrigin?.x??0),y:origin.y-(this.wrapOrigin?.y??0)},this.guideSettings,preset.blend==='erase',e.shiftKey);
+      const guideOrigin={x:origin.x-(this.wrapOrigin?.x??0),y:origin.y-(this.wrapOrigin?.y??0)};
+      const bypass=e.shiftKey||this.skipNextArtworkGuide;
+      this.skipNextArtworkGuide=false;
+      const picked=!bypass&&this.artworkGuides.length?lockArtworkGuide(guideOrigin,this.artworkGuides,preset.blend==='erase',this.preferredGuide):null;
+      this.activeGuide=picked?.guide??lockStraightGuide(guideOrigin,this.guideSettings,preset.blend==='erase',bypass);
+      if(this.artworkGuides.length||bypass)this.onArtworkGuideTarget(picked?picked.name+'へ吸着（'+picked.distance.toFixed(1)+' px）':bypass?'この一筆は吸着を解除':'作品の定規への吸着なし');
       this.updateGuideOverlay();
       this.renderer?.setSeamlessPreview(this.view.seamless);
       const context={...(layer.alphaLocked?{alphaLocked:true}:{}),...(this.pressureCalibrationMidpoint===0.5?{}:{deviceCurve:[[0,0],[0.5,this.pressureCalibrationMidpoint],[1,1]] as const}),...(preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{})};
@@ -1140,5 +1217,5 @@ export class BrushSurface{
   get performanceDiagnostics(){const r=this.renderer as any;return {...this.renderer?.performanceSummary(),handoff:{inputAttempts:this.traceHandoff?this.inputAttempts:[],accepted:this.handoffAccepted,rejected:this.handoffRejected,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,pendingEntries:this.handoff?.diagnostics,historyVisibility:this.historyTraces,protectionQueue:this.protectionQueueLength,fault:this.handoffFault,traces:this.traceHandoff?this.handoffTraces:[]},frameState:{lastFrameAt:this.lastFrameAt,disposed:this.disposed,operationMode:this.operationMode,pointer:this.pointer,finishing:this.finishing,historySyncing:this.historySyncing,inputBarrier:this.inputBarrier,pendingRawCount:this.session?.pendingRawCount??0,formalCommands:r?.document.count??0,inflight:r?.inflight,viewPending:r?.viewPending,navigationActive:r?.navigationActive,navigationUntil:r?.navigationUntil,guardPreparing:r?.guardPreparing,overlayViewPending:!!r?.overlayViewPending,overlayPending:r?.proxy?.pending.size,overlayFinalizations:r?.proxy?.finalizations.size,viewFence:!!r?.backend.viewFence,viewSubmission:!!r?.backend.viewSubmission,cancellingStroke:!!r?.cancellingStroke,needsFrame:r?.needsFrame,jobs:r?.document.jobs.length,presentationHeld:r?.backend.presentationHeld,glFence:!!r?.backend.fence,pending:!!r?.backend.pending,errors:r?.errors,sessionErrors:this.session?.errors},checkpoint:{...this.checkpointMetrics},strokeReplayFallbacks:this.historyReplayFallbacks,fullDocumentRebuilds:this.session?.fullDocumentRebuilds??0,fullReplayStrokes:this.session?.fullReplayStrokes??0,cancelledStrokeCount:this.session?.cancelledStrokeCount??0,projectionRestoreMode:this._projectionRestoreMode};}
   get interacting(){return !!this.navigation?.touching||this.busy;}
   get initializationError(){return this._initializationError;}get backendSelection(){return this.renderer?.info.selection??null;}get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get rendererArtworkAlpha(){return Boolean(this.renderer?.info.artworkAlpha);}get presentationOpaque(){return Boolean(this.renderer?.info.presentationOpaque);}get presentationMode(){return 'worker-images';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get projectionRestoreMs(){return this._projectionRestoreMs;}get projectionRestoreMode(){return this._projectionRestoreMode;}get projectionCacheRevision(){return this._projectionCacheRevision;}get browserPredictionSamples(){return this.session?.browserPredictions??0;}get brushName(){return this.preset?.name??'未選択';}get brushId(){return this.preset?.id??'未選択';}get blendMode(){return this.preset?.blend??'normal';}get eraserType(){return this.preset?.id==='foundation-hard-eraser'?'hard':this.preset?.id==='foundation-soft-eraser'?'soft':this.preset?.blend==='erase'?'erase':null;}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.inputActive||this.hasPendingStrokes;}
-  destroy(){cancelAnimationFrame(this.symmetryFrame);this.symmetryOverlay?.remove();this.cancelLayerPickHold();void this.showLayerOutline(null);this.setCanvasEditGesture(null);this.setMaskInspection();this.activeGuide=null;this.selectionRect=null;this.updateSelectionOverlay();this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
+  destroy(){this.artworkGuideOverlay?.remove();cancelAnimationFrame(this.symmetryFrame);this.symmetryOverlay?.remove();this.cancelLayerPickHold();void this.showLayerOutline(null);this.setCanvasEditGesture(null);this.setMaskInspection();this.activeGuide=null;this.selectionRect=null;this.updateSelectionOverlay();this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
 }

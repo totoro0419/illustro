@@ -1,3 +1,4 @@
+import type {ArtworkGuide} from '@illustro/core';
 import type {Point} from './canvasView';
 
 /** BRU-010: guide locking is captured at pen-down, never changed mid-stroke. */
@@ -54,4 +55,25 @@ export function snapToStraightGuide(point:Point,guide:LockedGuide|null):Point{
    snappedX=guide.origin.x+ex*c-ey*s;snappedY=guide.origin.y+ex*s+ey*c;
  }
  return {x:point.x+(snappedX-point.x)*guide.strength,y:point.y+(snappedY-point.y)*guide.strength};
+}
+
+export function lockArtworkGuide(origin:Point,guides:readonly ArtworkGuide[],eraser:boolean,preferred:string|null){
+ const ordered=preferred?[...guides.filter(guide=>guide.id===preferred),...guides.filter(guide=>guide.id!==preferred)]:guides;
+ let best:Readonly<{guide:LockedGuide;distance:number;name:string}>|null=null;
+ for(const item of ordered){
+   if(!item.enabled||!item.strength||eraser&&!item.applyEraser)continue;
+   const perspective=item.kind.startsWith('perspective');
+   const center=perspective?([item.origin,...item.vanishing][item.activeAxis]??item.origin):item.origin;
+   const kind=perspective?'perspective':item.kind as RulerKind;
+   const guide=lockStraightGuide(origin,{
+     enabled:item.enabled,angle:item.angle,strength:1,applyEraser:item.applyEraser,kind,
+     x:center.x,y:center.y,rx:item.rx,ry:item.ry,step:item.spacing
+   },eraser);
+   if(!guide)continue;
+   const snapped=snapToStraightGuide(origin,guide);
+   const distance=Math.hypot(snapped.x-origin.x,snapped.y-origin.y);
+   if(!perspective&&item.range&&distance>item.range)continue;
+   if(!best||distance+.05<best.distance)best={guide:{...guide,strength:item.strength},name:item.name,distance};
+ }
+ return best;
 }

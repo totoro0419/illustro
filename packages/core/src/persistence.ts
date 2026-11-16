@@ -1,4 +1,5 @@
 import {validateLayerImageLink,type LayerImageLink} from './layerImageLink';
+import {validateArtworkGuides,type ArtworkGuide} from './artworkGuides';
 import {validateLineRegions,type LineRegions} from './lineRegions';
 import {validateLayerDeformation,type LayerDeformation} from './layerDeformation';
 import {validateEditableArtwork,type EditableArtwork} from './editableArtwork';
@@ -16,13 +17,13 @@ import type {CanonicalTileStore,RasterBlockDescriptor} from './raster/store';
 
 export const CORE_PERSISTENCE_SCHEMA_VERSION=1 as const;
 const UUID_V4=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','layer.comps','layer.delete','layer.snapshot','document.crop','document.canvas-resize','document.image-resize','document.info','document.pin-revision','document.history-restore']);
+const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','layer.comps','layer.delete','layer.snapshot','document.guides','document.crop','document.canvas-resize','document.image-resize','document.info','document.pin-revision','document.history-restore']);
 const SAMPLE_ENCODINGS=new Set<RasterSampleEncoding>(['rgba.unorm8.v1','rgba.unorm16.v1','rgba.float32.v1']);
 const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES_PER_ROOT=2_000_000,MAX_OPERATIONS_PER_REVISION=100_000;
 
 export type PersistedRoot=Readonly<{
   documentId:string;width:number;height:number;name:string;colorProfileId:string;createdAt:number;modifiedAt:number;
-  rootLayerIds:readonly string[];layers:readonly PersistedLayer[];layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number;
+  rootLayerIds:readonly string[];layers:readonly PersistedLayer[];layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];artworkGuides?:readonly ArtworkGuide[];author?:string;description?:string;dpi?:number;
 }>;
 export type PersistedLayer=Readonly<{
   id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;baseColor?:'white';implicitRaster?:boolean;colorTag?:LayerNode['colorTag'];positionLocked?:boolean;contentLocked?:boolean;alphaLocked?:boolean;clipSourceId?:LayerId|null;vectorMask?:LayerMask|null;blend?:LayerBlend|null;editable?:EditableArtwork|null;deformation?:LayerDeformation|null;lineRegions?:LineRegions|null;imageLink?:LayerImageLink|null;
@@ -147,7 +148,8 @@ function parseRoot(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescripto
   const rootLayerIds=uuidArray(r.rootLayerIds,'root layer') as LayerId[];if(rootLayerIds.length!==layerIds.size||new Set(rootLayerIds).size!==rootLayerIds.length)throw new Error('root layer order mismatch');for(const id of rootLayerIds)if(!layerIds.has(id))throw new Error('root layer missing');
   const base=new DocumentRoot(documentId,width,height,name,colorProfileId,edit.commit(),rootLayerIds,{createdAt,modifiedAt});
   const grouped=r.layerGroups===undefined?base:base.withLayerGroups(parseLayerGroups(r.layerGroups));
-  const root=r.layerComps===undefined?grouped:grouped.withLayerComps(parseLayerComps(r.layerComps));
+  const composed=r.layerComps===undefined?grouped:grouped.withLayerComps(parseLayerComps(r.layerComps));
+  const root=r.artworkGuides===undefined?composed:composed.withArtworkGuides(validateArtworkGuides(r.artworkGuides));
   if(r.author===undefined&&r.description===undefined&&r.dpi===undefined)return root;
   const info=parseDocumentInfo({name,author:r.author??'',description:r.description??'',dpi:r.dpi??null});
   const {author,description,dpi}=info;
@@ -273,7 +275,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
     if(operation.kind==='document.crop'||operation.kind==='document.canvas-resize'||operation.kind==='document.image-resize'){
       geometry=true;continue;
     }
-    if(operation.kind==='document.info'||operation.kind==='layer.comps'||operation.kind==='document.pin-revision'||operation.kind==='document.history-restore')continue;
+    if(operation.kind==='document.info'||operation.kind==='document.guides'||operation.kind==='layer.comps'||operation.kind==='document.pin-revision'||operation.kind==='document.history-restore')continue;
     if(operation.kind==='layer.groups'||operation.kind==='layer.delete'){structural=true;continue;}
     if(operation.kind==='layer.reorder'){structural=true;continue;}
     const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
@@ -367,6 +369,12 @@ function applyRootDelta(parent:PersistedRoot,packet:CoreRecoveryPacketV1):Persis
   if(packet.replacementRoot){
     if(packet.replacementRoot.documentId!==parent.documentId)throw new Error('geometry recovery document identity mismatch');
     return packet.replacementRoot;
+  }
+  const guideOperation=packet.revision.command.operations.find(operation=>operation.kind==='document.guides');
+  if(guideOperation){
+    if(packet.revision.command.operations.length!==1)throw Error('invalid guide recovery transaction');
+    const artworkGuides=validateArtworkGuides(guideOperation.parameters.guides);
+    return Object.freeze({...parent,modifiedAt:packet.modifiedAt,artworkGuides});
   }
   const infoOperation=packet.revision.command.operations.find(operation=>operation.kind==='document.info');
   if(infoOperation){

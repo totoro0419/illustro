@@ -145,6 +145,7 @@ try{
  if(saved&&typeof saved==='object')guidePreferences=normalizeGuideSettings(saved);
 }catch{/* Drawing remains usable when preferences are unavailable. */}
 let symmetrySettings:SymmetrySettings=DEFAULT_SYMMETRY;
+let rulerPanel:ReturnType<typeof installRulerPanel>|undefined;
 let symmetryPanel:ReturnType<typeof installSymmetryPanel>|undefined;
 let c05ReferenceBoard:ReferenceBoardService|undefined;
 let c06ClipboardUI:ClipboardUI|undefined;
@@ -1074,7 +1075,8 @@ function scheduleLayerDrawingThumbnail(open=documentReady&&shellUi.layerPageOpen
 }
 
 const renderLayers=()=>{
-  fillPanel?.refresh();imageLinkPanel?.refresh();
+  fillPanel?.refresh();imageLinkPanel?.refresh();rulerPanel?.refresh();
+  if(surface)surface.setArtworkGuides(controller.document.root.artworkGuides);
   syncHistoryBrush();
   renderLayerComps();
   updateVectorMaskControls();
@@ -1586,6 +1588,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
     });
   }};
  drawing.setGuideSettings(guidePreferences);
+ drawing.setArtworkGuides(documentController.document.root.artworkGuides);
  drawing.setSymmetry(symmetrySettings);
  drawing.setCommonStabilization(commonStabilization);
  drawing.setPressureCalibration(devicePressureSensitivity);
@@ -3979,10 +3982,14 @@ const artworkActions:ArtworkActions={
 installShapeGradientPanel(byId('documentBoxBody'),artworkActions);
 installVectorPanel(byId('documentBoxBody'),artworkActions);
 installTextPanel(byId('documentBoxBody'),artworkActions);
-installRulerPanel(byId('documentBoxBody'),artworkActions,settings=>{
-  guidePreferences=settings;
-  surface?.setGuideSettings(settings);
-  try{localStorage.setItem('illustro.guide-settings.v1',JSON.stringify(settings));}catch{}
+rulerPanel=installRulerPanel(byId('documentBoxBody'),artworkActions,{
+  read:()=>controller.document.root.artworkGuides,
+  save:(guides,label)=>withClipboardAccess(async()=>{
+    const tx=controller.document.begin(label);
+    if(!tx.setArtworkGuides(guides)){tx.cancel();return 'read';}
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    return 'edit';
+  })
 });
 symmetryPanel=installSymmetryPanel(byId('documentBoxBody'),artworkActions,settings=>{
   if(!documentReady)return;

@@ -24,3 +24,4 @@ export {type LayerDeformation,type DeformationBrushPass,type LiquifyStroke,type 
 export type {LineRegions,RegionWalls,ColorHint} from './lineRegions';
 
 export {validateLayerImageLink,type LayerImageLink} from './layerImageLink';
+export {validateArtworkGuides,type ArtworkGuide,type GuidePoint} from './artworkGuides';

@@ -1,4 +1,5 @@
 import type {LayerImageLink} from './layerImageLink';
+import type {ArtworkGuide} from './artworkGuides';
 import type {LineRegions} from './lineRegions';
 import type {LayerDeformation} from './layerDeformation';
 import type {EditableArtwork} from './editableArtwork';
@@ -37,7 +38,7 @@ export type LayerNode=Readonly<{
   imageLink?:LayerImageLink|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
-export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number}>;
+export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];artworkGuides?:readonly ArtworkGuide[];author?:string;description?:string;dpi?:number}>;
 export function validateDocumentInfo(info:DocumentInfo):DocumentInfo{
   const name=info.name.trim(),author=info.author.trim(),description=info.description.trim();
   if(!name||name.length>4096||author.length>160||description.length>2000||
@@ -47,8 +48,13 @@ export function validateDocumentInfo(info:DocumentInfo):DocumentInfo{
     throw new Error('解像度を1〜2400 DPIで指定してください。');
   return Object.freeze({name,author,description,dpi:info.dpi});
 }
+const EMPTY_ARTWORK_GUIDES:readonly ArtworkGuide[]=Object.freeze([]);
 export class DocumentRoot{
   readonly metadata:DocumentMetadata;
+  get artworkGuides(){return this.metadata.artworkGuides??EMPTY_ARTWORK_GUIDES;}
+  withArtworkGuides(artworkGuides:readonly ArtworkGuide[]){
+    return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,{...this.metadata,artworkGuides});
+  }
   get layerComps(){return this.metadata.layerComps??[];}
   withLayerComps(layerComps:readonly LayerComp[]){
     return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,{...this.metadata,layerComps});
@@ -109,7 +115,8 @@ export class DocumentRoot{
     const {name,author,description,dpi}=validateDocumentInfo(info);
     return new DocumentRoot(this.documentId,this.width,this.height,name,this.colorProfileId,this.layers,this.rootLayerIds,
       {createdAt:this.metadata.createdAt,modifiedAt:this.metadata.modifiedAt,...(author?{author}:{}),
-       ...(description?{description}:{}),...(dpi===null?{}:{dpi}),...(this.layerGroups.length?{layerGroups:this.layerGroups}:{})});
+       ...(description?{description}:{}),...(dpi===null?{}:{dpi}),...(this.layerGroups.length?{layerGroups:this.layerGroups}:{}),...(this.layerComps.length?{layerComps:this.layerComps}:{}),
+       ...(this.artworkGuides.length?{artworkGuides:this.artworkGuides}:{})});
   }
   withModifiedAt(modifiedAt:number){if(!Number.isSafeInteger(modifiedAt)||modifiedAt<this.metadata.createdAt)throw new Error('invalid modifiedAt');
     if(modifiedAt===this.metadata.modifiedAt)return this;return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,{...this.metadata,modifiedAt});}
