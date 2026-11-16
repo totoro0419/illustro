@@ -1,5 +1,6 @@
 import type {FloatPlacement,FloatingPanelService} from './floatingPanels';
 import type {ToolLayout,ToolbarSettingsService} from './toolbarSettings';
+import {validateShortcutSettings} from './shortcutSettings';
 /** C04 UI-002 / UI-006: personal layout state only; artwork undo is untouched. */
 type WorkspaceLayout=Readonly<{
   width:number;leftHanded:boolean;compact:boolean;
@@ -11,6 +12,8 @@ const KEY='illustro.c04.workspace.profiles.v1';
 const ORDER_KEY='illustro.c04.workspace.box-order';
 const HANDED_KEY='illustro.c04.workspace.left-handed';
 const DENSITY_KEY='illustro.c04.workspace.compact-density';
+const SHORTCUT_KEY='illustro.c04.shortcut-settings.v1';
+const BUNDLE_SCHEMA='illustro.c04.workspace-shortcuts';
 const own=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const read=(k:string)=>{try{return localStorage.getItem(k)}catch{return null;}};
 const write=(k:string,v:string)=>{try{localStorage.setItem(k,v);return true;}catch{return false;}};
@@ -67,16 +70,20 @@ export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:T
   const name=document.createElement('input');name.type='text';name.maxLength=80;name.placeholder='作業場の名前';
   const save=document.createElement('button'),apply=document.createElement('button'),remove=document.createElement('button');
   const reset=document.createElement('button'),exportButton=document.createElement('button'),importButton=document.createElement('button');
+  const bundleExport=document.createElement('button'),bundleImport=document.createElement('button');
   save.textContent='今の配置を保存';apply.textContent='この配置に戻す';remove.textContent='削除';
   reset.textContent='初期配置に戻す';exportButton.textContent='設定を書き出す';importButton.textContent='設定を読み込む';
+  bundleExport.textContent='作業場とキー設定をまとめて書き出す';
+  bundleImport.textContent='作業場とキー設定をまとめて読み込む';
   const file=document.createElement('input');file.type='file';file.accept='application/json,.json';file.hidden=true;
+  const bundleFile=document.createElement('input');bundleFile.type='file';bundleFile.accept='application/json,.json';bundleFile.hidden=true;
   const handed=document.createElement('input');handed.type='checkbox';
   const density=document.createElement('input');density.type='checkbox';
   const handedLabel=document.createElement('label');handedLabel.append(handed,document.createTextNode(' 左利き用に左右を入れ替える'));
   const densityLabel=document.createElement('label');densityLabel.append(density,document.createTextNode(' 画面の表示をコンパクトにする'));
   const status=document.createElement('output');status.setAttribute('role','status');
   const row=document.createElement('div');row.className='c04-workspace-actions';
-  row.append(save,apply,remove,reset,exportButton,importButton);
+  row.append(save,apply,remove,reset,exportButton,importButton,bundleExport,bundleImport);
   const preview=document.createElement('dialog');preview.className='c04-layout-preview';
   const previewTitle=document.createElement('h3');previewTitle.textContent='この作業場を使いますか？';
   const previewText=document.createElement('p');previewText.textContent='背景の配置を確認してください。キャンセルすると以前の配置へ戻ります。';
@@ -92,7 +99,7 @@ export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:T
     ['pixel','ドット絵'],['minimal','最小限']
   ] as const)presetSelect.add(new Option(label,key));
   const presetApply=document.createElement('button');presetApply.type='button';presetApply.textContent='標準の配置を試す';
-  presetLabel.append(presetSelect);settings.append(title,presetLabel,presetApply,name,select,row,handedLabel,densityLabel,file,status);
+  presetLabel.append(presetSelect);settings.append(title,presetLabel,presetApply,name,select,row,handedLabel,densityLabel,file,bundleFile,status);
   panel.append(settings);
   const orderSaved=()=>{
     try{const order=JSON.parse(read(ORDER_KEY)||'null');return Array.isArray(order)?order.filter((v):v is string=>typeof v==='string'):[]}catch{return [];}
@@ -224,6 +231,48 @@ export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:T
   };
   exportButton.onclick=()=>download('illustro-workspaces.json',JSON.stringify(toFile(profiles),null,2));
   importButton.onclick=()=>file.click();
+  bundleExport.onclick=()=>{
+    try{
+      const savedShortcuts=read(SHORTCUT_KEY);
+      const shortcutValue=savedShortcuts
+        ?JSON.parse(savedShortcuts) as unknown
+        :{schema:'illustro.user.shortcuts',version:1,bindings:[]};
+      validateShortcutSettings(shortcutValue);
+      // Both sections keep their original independent versioned storage.
+      download('illustro-workspace-shortcuts.json',JSON.stringify({
+        schema:BUNDLE_SCHEMA,version:1,workspace:toFile(profiles),shortcuts:shortcutValue
+      },null,2));
+      status.textContent='作業場とキー設定を一つのファイルに書き出しました。';
+    }catch{status.textContent='キー設定に問題があるため、まとめて書き出せませんでした。';}
+  };
+  bundleImport.onclick=()=>bundleFile.click();
+  bundleFile.onchange=async()=>{
+    const source=bundleFile.files?.[0];bundleFile.value='';if(!source)return;
+    try{
+      if(source.size>1048576)throw Error('ファイルが大きすぎます。');
+      const value=JSON.parse(await source.text()) as unknown;
+      if(!own(value)||value.schema!==BUNDLE_SCHEMA||value.version!==1)
+        throw Error('対応していない一括設定ファイルです。');
+      const importedProfiles=parseFile(value.workspace,boxIds());
+      validateShortcutSettings(value.shortcuts);
+      if(!window.confirm('保存済みの作業場とキー設定を、このファイルの内容で置き換えますか？ 現在の作品は変更しません。'))return;
+      const oldWorkspace=read(KEY),oldShortcuts=read(SHORTCUT_KEY);
+      try{
+        localStorage.setItem(KEY,JSON.stringify(value.workspace));
+        localStorage.setItem(SHORTCUT_KEY,JSON.stringify(value.shortcuts));
+      }catch{
+        let reverted=true;
+        try{
+          if(oldWorkspace===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,oldWorkspace);
+          if(oldShortcuts===null)localStorage.removeItem(SHORTCUT_KEY);else localStorage.setItem(SHORTCUT_KEY,oldShortcuts);
+        }catch{reverted=false;}
+        throw Error(reverted?'設定を保存できませんでした。以前の設定を維持しました。'
+          :'保存に失敗し、一部の設定を元に戻せない可能性があります。書き出した設定を保管してください。');
+      }
+      profiles=importedProfiles;choices(importedProfiles[0]?.name);
+      status.textContent='一括設定を保存しました。キー設定を反映するには、作品を保存したあとで画面を再読み込みしてください。';
+    }catch(error){status.textContent=error instanceof Error?error.message:'一括設定を読み込めませんでした。';}
+  };
   file.onchange=async()=>{
     const source=file.files?.[0];file.value='';if(!source)return;
     try{
