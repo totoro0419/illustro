@@ -44,7 +44,7 @@ describe('C10 vector editing geometry',()=>{
     let error=0;
     for(let i=0;i<=1000;i++){
       const p=actual(i/1000);
-      error=Math.max(error,...sampled.slice(1).map((q,j)=>distance(p,sampled[j]!,q)));
+      error=Math.max(error,Math.min(...sampled.slice(1).map((q,j)=>distance(p,sampled[j]!,q))));
     }
     expect(error).toBeLessThan(.6);
     expect(()=>sampledPath(bezier,.1,3)).toThrow();
