@@ -45,6 +45,7 @@ export class BrushSurface{
   private editPointerType='';
   private editPoints:MaskStrokePoint[]=[];
   private editStrokeOutline:SVGSVGElement|null=null;
+  private editOutlineFrame=0;
   private artworkPreview:HTMLCanvasElement|null=null;
   private maskInspection:HTMLCanvasElement|null=null;
   private layerOutline:HTMLCanvasElement|null=null;
@@ -91,7 +92,7 @@ export class BrushSurface{
   private handoffAccepted=0;private handoffRejected=0;private handoffTraces:Array<{id:number;upAt:number;readyMs:number;recordMs?:number;logicalMs?:number;parkedMs?:number;gpuMs?:number;savePrepareMs?:number;uiStateMs?:number}>=[];
   private readonly traceHandoff=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
   private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private previewPressureShown=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private presentedFrames=0;private lastPresentedAt=0;private _initializationError:string|null=null;private _projectionRestoreMs=0;private _projectionRestoreMode:'none'|'cache'|'replay-fallback'='none';private _projectionCacheRevision:string|null=null;
-  private lastFrameAt=0;private viewNotificationPending=false;private checkpointMetrics={captures:0,tiles:0,batches:0,bytes:0,lastMs:0};private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private navigation:CanvasNavigation|null=null;
+  private lastFrameAt=0;private reportedFrameErrors={renderer:0,session:0};private viewNotificationPending=false;private checkpointMetrics={captures:0,tiles:0,batches:0,bytes:0,lastMs:0};private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private navigation:CanvasNavigation|null=null;
   private pointerRoles:PointerRoleSettings={pen:'draw',mouse:'draw'};
   setPointerRoles(roles:PointerRoleSettings){this.pointerRoles={...roles};}
   private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'|'specific'='composite';private sampleLayerId:LayerId|null=null;private sampleDiameter:1|3|5=1;private sampleTransparency:'skip'|'keep'|'white'='skip';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private colorOpacity=1;private foreground:readonly [number,number,number]=[.12,.15,.2];
@@ -487,7 +488,9 @@ export class BrushSurface{
     if(!image){this.artworkPreview?.remove();this.artworkPreview=null;return;}
     const {width,height}=this.controller.document.root;
     const canvas=this.artworkPreview??document.createElement('canvas');
-    canvas.width=image.width;canvas.height=image.height;
+    // Do not discard a live preview's backing store on every pointer update.
+    if(canvas.width!==image.width)canvas.width=image.width;
+    if(canvas.height!==image.height)canvas.height=image.height;
     canvas.setAttribute('aria-hidden','true');
     canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:3;transform-origin:0 0;opacity:.78';
     canvas.style.width=width+'px';canvas.style.height=height+'px';
@@ -537,6 +540,7 @@ export class BrushSurface{
     if(gesture?.pointEdit)this.updateEditStrokeOutline();
   }
   private clearCanvasEditGestureStroke(){
+    if(this.editOutlineFrame){cancelAnimationFrame(this.editOutlineFrame);this.editOutlineFrame=0;}
     this.editPointer=null;
     this.editPointIndex=null;
     this.editPointerType='';
@@ -551,6 +555,14 @@ export class BrushSurface{
     const last=this.editPoints.at(-1);
     if(!last||Math.hypot(x-last.x,y-last.y)>=.5)this.editPoints.push({x,y,pressure});
     if(this.editPoints.length>4096)this.editPoints=this.editPoints.filter((_,i)=>i%2===0);
+  }
+  private requestEditStrokeOutline(){
+    // Coalesce high-frequency pen/touch events into one SVG update per frame.
+    if(this.editOutlineFrame)return;
+    this.editOutlineFrame=requestAnimationFrame(()=>{
+      this.editOutlineFrame=0;
+      if(!this.disposed)this.updateEditStrokeOutline();
+    });
   }
   private updateEditStrokeOutline(){
     const gesture=this.editGesture,v=this.view;
@@ -766,7 +778,7 @@ export class BrushSurface{
       e.preventDefault();
       const samples=e.getCoalescedEvents?.()??[];
       for(const sample of samples.length?samples:[e])this.appendEditPoint(sample);
-      this.updateEditStrokeOutline();
+      this.requestEditStrokeOutline();
       return;
     }
     if(e.pointerId===this.selectionPointer){
@@ -909,7 +921,14 @@ export class BrushSurface{
     if(this.pointer!==null){void this.cancelStroke();this.status('入力が中断されたため、この線を取り消しました。');}
   };
   private async cancelStroke(){this.endCorrectionHold();const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.strokeSymmetry=null;if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
-  private frame=(now:number)=>{if(this.disposed)return;this.lastFrameAt=performance.now();this.session?.frame(now);if(this.viewNotificationPending){this.viewNotificationPending=false;this.onStateChanged('view');}const pressure=!!(this.renderer as any)?.backend.previewPressure;if(pressure!==this.previewPressureShown){this.previewPressureShown=pressure;if(pressure)this.status('表示処理が混み合っています。入力を保持して線の確定を優先しています。');else if(!this.handoffFault&&!this.historySyncing)this.status('描画を続けられます。');this.onStateChanged();}if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
+  private frame=(now:number)=>{if(this.disposed)return;this.lastFrameAt=now;this.session?.frame(now);if(this.viewNotificationPending){this.viewNotificationPending=false;this.onStateChanged('view');}const pressure=!!(this.renderer as any)?.backend.previewPressure;if(pressure!==this.previewPressureShown){this.previewPressureShown=pressure;if(pressure)this.status('表示処理が混み合っています。入力を保持して線の確定を優先しています。');else if(!this.handoffFault&&!this.historySyncing)this.status('描画を続けられます。');this.onStateChanged();}
+    const rendererErrors=this.renderer?.errors.length??0,sessionErrors=this.session?.errors.length??0;
+    if(rendererErrors!==this.reportedFrameErrors.renderer||sessionErrors!==this.reportedFrameErrors.session){
+      const increased=rendererErrors>this.reportedFrameErrors.renderer||sessionErrors>this.reportedFrameErrors.session;
+      this.reportedFrameErrors={renderer:rendererErrors,session:sessionErrors};
+      if(increased)this.status('描画中に問題が起きました。');
+    }
+    this.frameId=requestAnimationFrame(this.frame);};
   private markPresented(){this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;}
   async inspectRendering(){
     const backend=(this.renderer as unknown as {backend?:{

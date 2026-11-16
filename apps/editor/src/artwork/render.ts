@@ -178,8 +178,11 @@ export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTM
       }else ctx.stroke();
     }
   }
+  // getImageData already owns a dedicated byte buffer. Returning it directly
+  // avoids a second full-canvas allocation and copy (64 MB / about 61 MiB at 4000×4000).
   const pixels=ctx.getImageData(0,0,size.outputWidth,size.outputHeight).data;
-  return new Uint8ClampedArray(pixels);
+  // A new typed-array view shares the ImageData buffer without copying its bytes.
+  return new Uint8ClampedArray(pixels.buffer as ArrayBuffer,pixels.byteOffset,pixels.byteLength);
 }
 
 export function movePoint(point:ArtPoint,x:number,y:number):ArtPoint{
