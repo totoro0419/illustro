@@ -1,0 +1,63 @@
+name: C03-C10 quality integration checks
+
+on:
+  push:
+    branches: ['quality/C03-C10-integration']
+  pull_request:
+    branches: ['quality/C03-C10-integration']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-c03-c10-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Build and core regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Enforce integration ownership of shared entry and tracking files
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # An implementation PR may not overwrite the shared editor entry point,
+          # integration ledger or independent audit evidence.
+          violations="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -E '^(apps/editor/src/main\.ts|docs/quality-integration/(README|STATUS)\.md|docs/quality-audit/)' || true)"
+          if [[ -n "$violations" ]]; then
+            echo "::error::Integration-owned files changed by implementation PR:"
+            echo "$violations"
+            exit 1
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Legacy document inventory check (diagnostic)
+        id: legacy_inventory
+        continue-on-error: true
+        run: npm run prep:check
+      - name: Flag pre-existing inventory mismatch for review
+        if: steps.legacy_inventory.outcome == 'failure'
+        run: echo "::warning::Legacy prep:check failed; the untouched prototype baseline already has an unclassified docs/development/PROTOTYPE_PROGRESS.md. This check is NOT a verified pass. Continue independent code tests."
+      - name: Generate brush build artifacts
+        run: npm run brush:build
+      - name: Core tests and type validation
+        run: npm run core:check
+      - name: Brush regression
+        run: npm run brush:regression
+      - name: Editor unit tests
+        run: npm --workspace @illustro/editor exec -- vitest run
+      - name: Editor TypeScript and production build
+        run: npm run editor:build
