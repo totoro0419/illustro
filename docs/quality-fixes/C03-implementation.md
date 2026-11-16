@@ -10,7 +10,7 @@
 
 | ID | 判定と作業 | 追加で必要な確認・変更 |
 |---|---|---|
-| C03-001 | **未修正（A）**：変形保持中の複製が `transaction.ts` で拒否されるのは再確認。 | 変形元の独立複製・参照先の履歴を安全に作成する設計とテストが必要。見た目だけの画像コピーに黙って置換しない。UI入口は統合担当。 |
+| C03-001 | **実装修正あり／検証未完（A）**：変形を持つ元レイヤーの複製時、元の履歴を保持し、暗黙だった元レイヤー参照を明示してコピーする。元画像・変形設定の保存→読込、独立した再編集、Undo/Redoのテストを追加。 | テスト成功、実機描画、既存作品との互換性は確認待ち。`main.ts` の操作入口は統合担当。 |
 | C03-002 | **未修正（B）**：選択→マスクのボタンは `selectedRectangle` を要求。自由形選択と矩形の関係は実機未確認。 | `main.ts` 側でC06選択マスクとボタンの有効判定を統一。 |
 | C03-003 | **部分実装（A）**：`historyBrush.ts` が自由形状・ぼかしの画素ごとの選択濃度を受け取れるよう変更。3つの単体テストを追加。 | `main.ts` の `applyHistoryBrush` から `selectionMask:c06Selection?.active()??null` を渡す。結合後に実機で境界とUndo/Redoを検証。 |
 | C03-004 | **部分実装（B）**：保存先を読み戻して確認した場合とブラウザのダウンロード開始を分離。未確認ダウンロードで保存確認時刻を進めない。 | `main.ts` の `saveWork` で `result.output==='download'` を「ダウンロードを開始しました。保存先をご確認ください」と表示、確認済みpickerの場合のみ「保存済み」。 |
@@ -33,8 +33,10 @@
 
 ## 検査の記録
 
-- GitHub上のコードを読み、5ファイル（`historyBrush.ts`、`historyBrush.test.ts`、`persistence/coordinator.ts`、`persistence/persistence.worker.ts`、`ui/artworkHistoryView.ts`）へ変更を作成。
+- GitHub上のコードを読み、7ファイル（`transaction.ts`、`layerDeformationDuplicate.test.ts`、`historyBrush.ts`、`historyBrush.test.ts`、`persistence/coordinator.ts`、`persistence/persistence.worker.ts`、`ui/artworkHistoryView.ts`）へ変更を作成。
+- C03-001の新規テストは変形保持コピー、保存→読込、別レイヤーのみの編集、Undo/Redoを確認する1ケース。
 - C03-003の新規テストは3ケース：自由形状の外側へのはみ出し防止・半透明の選択濃度・サイズ不一致の拒否。
 - **この記録を書いた時点ではテスト成功・ビルド成功・端末確認は未確認。**
-- 最初のPR自動検査は、統合管理者が並行追加した `docs/quality-integration/` の2ファイルがベースにだけあり、誤った所有権検出で失敗。テスト本体は開始していない。作業ブランチへ統合先を取り込んで再実行する。
+- 最初のPR自動検査は統合管理者が並行追加した管理文書を誤って所有権違反と判定して中断。統合担当が検査範囲を修正した（こちらの所有ファイルには変更なし）。続く検査で履歴画像の型にエラーが判明し、追加修正した。以降の合否は最新CIで確認する。
+- 統合担当への `main.ts` 修正依頼は [Issue #96](https://github.com/totoro0419/illustro/issues/96) に記録。
 - PR #76をDraftで維持。後続のCI結果・実機検証を確認するまでは完了としない。
