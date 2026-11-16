@@ -51,6 +51,8 @@ function parse(value:unknown):Binding[]{
   }
   return entries;
 }
+/** Validate a portable shortcut file without applying it to the current session. */
+export function validateShortcutSettings(value:unknown):void{parse(value);}
 const read=()=>{try{return localStorage.getItem(KEY)}catch{return null;}};
 const write=(bindings:readonly Binding[])=>{try{localStorage.setItem(KEY,JSON.stringify({schema:'illustro.user.shortcuts',version:1,bindings} satisfies Settings));return true;}catch{return false;}};
 const normalizedKey=(event:KeyboardEvent)=>event.key===' '?'space':event.key.toLowerCase();
@@ -89,7 +91,8 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
   updateCommands();
   commandSelect.onchange=()=>{if(!isHoldable(commandSelect.value)&&mode.value==='hold')mode.value='press';};
   mode.onchange=()=>{if(mode.value==='hold'&&!isHoldable(commandSelect.value)){mode.value='press';status.textContent='押している間だけ使えるのは、スポイト・消しゴム・表示移動です。';}};
-  const active=new Map<string,{restore:()=>void}>();
+  const active=new Map<string,{restore:()=>void;epoch:number}>();
+  let holdEpoch=0;
   function render(){
     list.replaceChildren();
     const names=new Map(commands.list().map(c=>[c.id,c.label]));
@@ -101,12 +104,19 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
       label.title=(entry.mode==='hold'?'押している間だけ':entry.mode==='toggle'?'切替':'単発')+(entry.physical?'（物理キー）':'（文字キー）');
       const remove=document.createElement('button');remove.type='button';remove.textContent='解除';
       remove.setAttribute('aria-label',human(entry)+' の割当を削除');
-      remove.onclick=()=>{bindings.splice(i,1);persist();render();};
+      remove.onclick=()=>{if(persist(bindings.filter((_,index)=>index!==i)))render();};
       row.append(label,remove);list.append(row);
     }
     if(!bindings.length){const empty=document.createElement('p');empty.textContent='追加した割当はまだありません。既定のキーは引き続き利用できます。';list.append(empty);}
   }
-  function persist(){if(!write(bindings))status.textContent='設定を端末に保存できませんでした。書き出しで控えてください。';}
+  function persist(next:Binding[]):boolean{
+    if(!write(next)){
+      status.textContent='設定を端末に保存できませんでした。書き出しで控えてください。';
+      return false;
+    }
+    bindings=next;
+    return true;
+  }
   const same=(e:KeyboardEvent,b:Binding)=>
     b.ctrl===e.ctrlKey&&b.alt===e.altKey&&b.shift===e.shiftKey&&b.meta===e.metaKey&&
     (b.physical?b.code===e.code:b.key===normalizedKey(e));
@@ -133,9 +143,11 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     if(proposed.mode==='hold'&&!isHoldable(proposed.commandId)){status.textContent='この操作は押している間だけの割当に対応していません。';return;}
     const duplicates=bindings.filter(b=>signature(b)===key||(b.code===proposed.code&&b.physical&&proposed.physical&&b.ctrl===proposed.ctrl&&b.shift===proposed.shift&&b.alt===proposed.alt&&b.meta===proposed.meta));
     if(duplicates.length&&!window.confirm(human(proposed)+' は登録済みです。元の割当を置き換えますか？'))return;
-    bindings=bindings.filter(b=>!duplicates.includes(b));
-    if(bindings.length>=MAX_BINDINGS){status.textContent='割当をこれ以上追加できません。';return;}
-    bindings.push(proposed);persist();render();status.textContent=human(proposed)+' を登録しました。';
+    const next=bindings.filter(b=>!duplicates.includes(b));
+    if(next.length>=MAX_BINDINGS){status.textContent='割当をこれ以上追加できません。';return;}
+    next.push(proposed);
+    if(!persist(next))return;
+    render();status.textContent=human(proposed)+' を登録しました。';
   };
   capture.onclick=()=>{
     if(capturing){stopCapture();status.textContent='登録をキャンセルしました。';return;}
@@ -147,7 +159,8 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
   cancel.onclick=()=>{
     if(!bindings.length)return;
     if(!window.confirm('追加したキー割当をすべて解除しますか？ 既定のキーは変わりません。'))return;
-    bindings=[];persist();render();status.textContent='追加した割当を解除しました。';
+    if(!persist([]))return;
+    render();status.textContent='追加した割当を解除しました。';
   };
   exportButton.onclick=()=>{
     const blob=new Blob([JSON.stringify({schema:'illustro.user.shortcuts',version:1,bindings},null,2)],{type:'application/json'});
@@ -181,20 +194,31 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
         '', '現在の設定と入れ替えますか？'
       ];
       if(!window.confirm(details.join('\n')))return;
-      bindings=imported;persist();render();
+      if(!persist(imported))return;
+      render();
       status.textContent='キー設定を読み込みました。追加・変更'+added.length+'件、解除'+removed.length+
         '件、未対応'+unsupported.length+'件。元の未対応情報も保持しています。';
     }catch(error){status.textContent=error instanceof Error?error.message:'読み込みに失敗しました。';}
   };
   function startHold(binding:Binding){
     if(binding.commandId!=='quickControllerOpen'&&!canSwitchTools()){status.textContent='線を描いている間は道具を切り替えられません。';return;}
+    if(active.size&&!active.has(binding.commandId)&&binding.commandId!=='quickControllerOpen'){
+      status.textContent='押している間の操作を終了してから切り替えてください。';return;
+    }
     const id=binding.commandId;
     const on=(el<HTMLButtonElement>(id)?.getAttribute(id==='quickControllerOpen'?'aria-expanded':'aria-pressed')==='true');
-    if(on){active.set(id,{restore:()=>{}});return;}
-    const wasEraser=el<HTMLButtonElement>('erase')?.getAttribute('aria-pressed')==='true';
-    const restore=id==='quickControllerOpen'?'quickControllerOpen':id==='panView'?'panView':wasEraser?'erase':'paint';
+    const epoch=++holdEpoch;
+    if(on){active.set(id,{restore:()=>{},epoch});return;}
+    const previous=['paint','erase','eyedropper','panView'].find(
+      key=>el<HTMLButtonElement>(key)?.getAttribute('aria-pressed')==='true')??'paint';
     const result=commands.invoke(id);
-    if(result.ok)active.set(id,{restore:()=>{if(restore)el<HTMLButtonElement>(restore)?.click();}});
+    if(result.ok)active.set(id,{epoch,restore:()=>{
+      // Respect later manual tool changes during the hold.
+      const attribute=id==='quickControllerOpen'?'aria-expanded':'aria-pressed';
+      if(el<HTMLButtonElement>(id)?.getAttribute(attribute)==='true'){
+        el<HTMLButtonElement>(id==='quickControllerOpen'?id:previous)?.click();
+      }
+    }});
     else status.textContent=result.reason??'ショートカットを使えませんでした。';
   }
   document.addEventListener('keydown',event=>{
@@ -212,9 +236,9 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
       if(!result.ok)status.textContent=result.reason??'現在は使えません。';
     }
   },{capture:true});
-  const restoreAfterStroke=(id:string,restore:()=>void)=>{
+  const restoreAfterStroke=(id:string,restore:()=>void,epoch:number)=>{
     const check=()=>{
-      if(active.has(id))return; // a new hold superseded the release
+      if(active.has(id)||epoch!==holdEpoch)return; // another hold superseded release
       if(!canSwitchTools()){window.setTimeout(check,32);return;}
       restore();
     };
@@ -224,10 +248,16 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     for(const b of bindings)if(b.mode==='hold'&&
       (b.physical?b.code===event.code:b.key===normalizedKey(event))){
       const state=active.get(b.commandId);if(!state)continue;
-      active.delete(b.commandId);restoreAfterStroke(b.commandId,state.restore);
+      active.delete(b.commandId);restoreAfterStroke(b.commandId,state.restore,state.epoch);
     }
   };
   document.addEventListener('keyup',release,{capture:true});
-  window.addEventListener('blur',()=>{const pending=[...active.entries()];active.clear();for(const [id,{restore}] of pending)restoreAfterStroke(id,restore);stopCapture();});
+  const releaseAll=()=>{
+    const pending=[...active.entries()];active.clear();
+    for(const [id,{restore,epoch}] of pending)restoreAfterStroke(id,restore,epoch);
+    stopCapture();
+  };
+  window.addEventListener('blur',releaseAll);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseAll();});
   render();
 }

@@ -8,11 +8,12 @@ import {icon,type IconName} from './icons';
 
 export type CommandDefinition=Readonly<{
   id:string;label:string;category:string;aliases:string;
-  availability:()=>string|null;execute:()=>void;
+  availability:()=>string|null;execute:()=>void|Promise<void>;
 }>;
 export type CommandService=Readonly<{
   list:()=>readonly Readonly<{id:string;label:string;category:string}>[];
   invoke:(id:string)=>Readonly<{ok:boolean;reason:string|null}>;
+  invokeAsync:(id:string)=>Promise<Readonly<{ok:boolean;reason:string|null;settled:boolean}>>;
   registerProvider:(provider:()=>readonly CommandDefinition[])=>()=>void;
   refresh:()=>void;
 }>;
@@ -21,6 +22,14 @@ const PIN_KEY='illustro.c04.quick-controller.v1';
 const RECENTS_KEY='illustro.c04.command-history.v1';
 const SLOT_COUNT=6;
 const DEFAULT_SLOTS=['undo','redo','paint','erase','layer','save'];
+/** Returns null when all Quick slots are occupied and the user must choose one. */
+export function quickPinTarget(slots:readonly string[],id:string,editingSlot:number|null):number|null{
+  if(editingSlot!==null)return editingSlot>=0&&editingSlot<SLOT_COUNT?editingSlot:null;
+  const existing=slots.indexOf(id);
+  if(existing>=0)return existing;
+  const empty=slots.findIndex(slot=>!slot);
+  return empty>=0?empty:null;
+}
 const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T|null;
 const disabledReason=(id:string)=>{
   const element=el<HTMLButtonElement>(id);
@@ -139,7 +148,8 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
         execute:()=>{shell.openBox('brushBox');brush.value=option.value;brush.dispatchEvent(new Event('change',{bubbles:true}));},
       });
     }
-    const layerRows=document.querySelectorAll<HTMLButtonElement>('#layerPageList button[data-layer-id]');
+    // Search all layers rather than the filtered/collapsed layer page.
+    const layerRows=document.querySelectorAll<HTMLButtonElement>('#layerList button[data-layer-id]');
     for(const row of layerRows){
       const id='layer:'+row.dataset.layerId;
       if(!row.dataset.layerId)continue;
@@ -195,7 +205,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   const quickLabel=document.createElement('strong');quickLabel.textContent='Quick';
   const configure=document.createElement('button');configure.type='button';configure.textContent='編集';
   const closeQuick=document.createElement('button');closeQuick.type='button';closeQuick.textContent='閉じる';
-  closeQuick.onclick=()=>{quick.hidden=true;quickButton.setAttribute('aria-expanded','false');};
+  closeQuick.onclick=()=>{pendingPinId=null;quick.hidden=true;quickButton.setAttribute('aria-expanded','false');};
   quickTitle.append(quickLabel,configure,closeQuick);
   const quickSlots=document.createElement('div');quickSlots.className='c04-quick-slots';
   const note=document.createElement('p');note.className='c04-quick-note';note.hidden=true;
@@ -217,12 +227,19 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     write('illustro.c04.quick.pen-barrel',String(penButton.checked));
   };
   let isConfiguring=false;
+  let pendingPinId:string|null=null;
 
   function execute(command:CommandDefinition){
     const reason=command.availability();
     if(reason){status.textContent=reason;return;}
     dialog.close();quick.hidden=true;quickButton.setAttribute('aria-expanded','false');
-    command.execute();remember(command.id);renderQuick();
+    try{
+      const outcome=command.execute();
+      if(outcome instanceof Promise)void outcome.catch(error=>{
+        status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
+      });
+      remember(command.id);renderQuick();
+    }catch(error){status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';}
   }
   function renderQuick(){
     quickSlots.replaceChildren();
@@ -249,7 +266,10 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       }
       button.onclick=()=>{
         if(isConfiguring){
-          editingSlot=i;quick.hidden=true;openSearch('',true);
+          if(pendingPinId){
+             const pending=pendingPinId;pendingPinId=null;editingSlot=i;
+             pinIntoSlot(pending);isConfiguring=false;renderQuick();
+           }else{editingSlot=i;quick.hidden=true;openSearch('',true);}
         }else if(command){
           execute(command);
         }
@@ -272,15 +292,51 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       quickSlots.append(wrapper);
     }
     note.hidden=!isConfiguring;
-    note.textContent='変更する場所を押して機能を選びます。もう一度「完了」で確定します。';
+    note.textContent=pendingPinId
+      ?'6枠とも登録済みです。入れ替える場所を選んでください。キャンセルする場合は「完了」か「閉じる」を押してください。'
+      :'変更する場所を押して機能を選びます。もう一度「完了」で確定します。';
     configure.textContent=isConfiguring?'完了':'編集';
   }
-  configure.onclick=()=>{isConfiguring=!isConfiguring;renderQuick();};
+  configure.onclick=()=>{pendingPinId=null;isConfiguring=!isConfiguring;renderQuick();};
   function toggleQuick(){
     quick.hidden=!quick.hidden;quickButton.setAttribute('aria-expanded',String(!quick.hidden));
     if(!quick.hidden){dialog.close();renderQuick();}
   }
-  quickButton.onclick=toggleQuick;
+  let quickGesture:{pointerId:number;x:number;y:number;moved:boolean}|null=null;
+  let suppressOpenClick=false;
+  quickButton.onclick=()=>{
+    if(suppressOpenClick){suppressOpenClick=false;return;}
+    toggleQuick();
+  };
+  // Touch or pen: open on press, then slide directly to a Quick slot.
+  // Ordinary taps and keyboard clicks keep the original behavior.
+  quickButton.addEventListener('pointerdown',event=>{
+    if(event.pointerType!=='touch'&&event.pointerType!=='pen')return;
+    if(!quick.hidden)return;
+    suppressOpenClick=true;
+    quickGesture={pointerId:event.pointerId,x:event.clientX,y:event.clientY,moved:false};
+    toggleQuick();
+  });
+  document.addEventListener('pointermove',event=>{
+    if(!quickGesture||event.pointerId!==quickGesture.pointerId)return;
+    if(Math.hypot(event.clientX-quickGesture.x,event.clientY-quickGesture.y)>12)quickGesture.moved=true;
+  },{passive:true});
+  document.addEventListener('pointerup',event=>{
+    const gesture=quickGesture;
+    if(!gesture||gesture.pointerId!==event.pointerId)return;
+    quickGesture=null;
+    if(gesture.moved&&!quick.hidden&&!isConfiguring){
+      const target=document.elementFromPoint(event.clientX,event.clientY);
+      const item=target instanceof Element?target.closest<HTMLButtonElement>('.c04-quick-slot'):null;
+      if(item&&!item.disabled&&quick.contains(item))item.click();
+    }
+    window.setTimeout(()=>{suppressOpenClick=false;},0);
+  },{capture:true});
+  document.addEventListener('pointercancel',event=>{
+    if(quickGesture?.pointerId===event.pointerId){
+      quickGesture=null;window.setTimeout(()=>{suppressOpenClick=false;},0);
+    }
+  },{capture:true});
   document.addEventListener('pointerdown',event=>{
     if(!penButton.checked||event.pointerType!=='pen'||event.button!==2)return;
     if(!(event.target instanceof Element&&event.target.closest('.surface')))return;
@@ -289,8 +345,14 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     toggleQuick();
   },{capture:true});
   const pinIntoSlot=(id:string)=>{
-    const target=editingSlot===null?slots.findIndex(x=>!x):editingSlot;
-    const index=target>=0?target:SLOT_COUNT-1;
+    if(editingSlot===null&&slots.includes(id))return;
+    const target=quickPinTarget(slots,id,editingSlot);
+    if(target===null){
+      pendingPinId=id;isConfiguring=true;
+      quick.hidden=false;quickButton.setAttribute('aria-expanded','true');
+      renderQuick();return;
+    }
+    const index=target;
     const duplicate=slots.indexOf(id);
     if(duplicate>=0&&duplicate!==index)slots[duplicate]='';
     if(slots[index]!==id){pinMeta.names[index]='';pinMeta.groups[index]='';}
@@ -393,8 +455,31 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       if(!command)return {ok:false,reason:'この機能はまだ利用できません。'};
       const reason=command.availability();
       if(reason)return {ok:false,reason};
-      command.execute();remember(id);renderQuick();
-      return {ok:true,reason:null};
+      try{
+        const outcome=command.execute();
+        if(outcome instanceof Promise)void outcome.catch(error=>{
+          status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
+        });
+        remember(id);renderQuick();
+        return {ok:true,reason:null};
+      }catch(error){return {ok:false,reason:error instanceof Error?error.message:'実行できませんでした。'};}
+    },
+    invokeAsync:async(id:string)=>{
+      const command=find(id);
+      if(!command)return {ok:false,reason:'この機能はまだ利用できません。',settled:false};
+      const reason=command.availability();
+      if(reason)return {ok:false,reason,settled:false};
+      try{
+        const outcome=command.execute();
+        if(outcome instanceof Promise)await outcome;
+        remember(id);renderQuick();
+        // DOM click handlers may start work in the background. Only explicit
+        // completion promises and local UI state count as observed completion.
+        const settled=outcome instanceof Promise||id.startsWith('workspace:')||id.startsWith('color:')||
+          id.startsWith('brush:')||['paint','erase','eyedropper','colorPage','brushPage',
+            'workspaceToggle','c04FocusToggle'].includes(id);
+        return {ok:true,reason:null,settled};
+      }catch(error){return {ok:false,reason:error instanceof Error?error.message:'実行できませんでした。',settled:false};}
     },
   };
 }

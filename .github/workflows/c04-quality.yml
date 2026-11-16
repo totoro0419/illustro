@@ -1,0 +1,36 @@
+name: C04 Operation UI Quality
+
+on:
+  push:
+    branches:
+      - quality/C04-operation-ui-2026-11-16
+    paths:
+      - apps/editor/src/ui/**
+      - .github/workflows/c04-quality.yml
+  pull_request:
+    branches:
+      - quality/C03-C10-integration
+    paths:
+      - apps/editor/src/ui/**
+      - .github/workflows/c04-quality.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install repository dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build brush runtime
+        run: npm run brush:build
+      - name: Editor typecheck and production build
+        run: npm run editor:build
+      - name: C04 UI logic regression
+        run: npx vitest run apps/editor/src/ui/c04Quality.test.ts
