@@ -36,7 +36,7 @@ self.onmessage=({data}:MessageEvent<FillJob>)=>{
     }
     const repairs=data.graph??(settings.method==='color'&&settings.contiguous&&settings.gap
       ?fillBoundaries(source,width,height,settings.tolerance,settings.gap):null);
-    const mask=fillMask(source,width,height,settings,data.points,data.graph,data.selection,repairs?.bridges);
+    const mask=fillMask(source,width,height,settings,data.points,data.graph,data.selection,repairs?.bridges,data.target);
     if(data.output==='selection'){
       post.postMessage({mask},[mask.alpha.buffer as ArrayBuffer]);return;
     }
