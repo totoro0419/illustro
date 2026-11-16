@@ -100,6 +100,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   }
   const viewport=document.querySelector<HTMLElement>('.surface');
   const visual=viewport?new SelectionOverlay(viewport,callbacks.getSurface):null;
+  let previewDialog:HTMLDialogElement|null=null;
   const box=document.createElement('div');box.className='c06-selection-notice';box.hidden=true;
   const preview=document.createElement('svg');
   preview.classList.add('c06-selection-preview');preview.setAttribute('aria-hidden','true');
@@ -118,6 +119,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const identity=info.id+':'+info.width+'x'+info.height;
     if(identity!==currentWork){
       raster.destroy();raster=new MaskRasterWorker();
+      if(previewDialog?.open)previewDialog.close();
       flushStoredSelection();
       currentWork=identity;active=null;lastSelection=null;history.length=0;future.length=0;
       pendingSelectionJob=0;
@@ -357,6 +359,36 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       status.textContent='絵を移動しました。元に戻すで取り消せます。';
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   };
+  function previewAdjustment(before:MaskData,after:MaskData,label:string):Promise<boolean>{
+    if(!visual)return Promise.resolve(window.confirm(label+'の変更を適用しますか？'));
+    visual.set(after);
+    return new Promise(resolve=>{
+      const dialog=document.createElement('dialog');
+      previewDialog=dialog;
+      dialog.style.cssText='position:fixed;top:12px;right:12px;left:auto;bottom:auto;margin:0;max-width:min(340px,90vw);padding:14px;border:1px solid #75bacb;border-radius:12px;background:var(--a-surface,#fff);color:inherit;box-shadow:0 12px 40px #1115;';
+      const info=document.createElement('p');
+      info.textContent=label+'の変更案をキャンバスに表示しています。変更前と比較して決められます。';
+      const compare=asButton('変更前を見る',()=>{
+        if(compare.textContent==='変更前を見る'){
+          visual.set(before);compare.textContent='変更後を見る';
+        }else{visual.set(after);compare.textContent='変更前を見る';}
+      });
+      const apply=asButton('この変更を適用',()=>{accepted=true;dialog.close();});
+      const cancel=asButton('変更せず戻る',()=>dialog.close());
+      for(const button of [compare,apply,cancel])button.style.cssText='min-height:40px;margin:3px;padding:7px;border:1px solid #aaa;border-radius:7px;';
+      dialog.append(info,compare,apply,cancel);
+      let accepted=false;
+      dialog.addEventListener('close',()=>{
+        if(previewDialog===dialog)previewDialog=null;
+        dialog.remove();
+        if(!accepted)visual.set(active);
+        resolve(accepted);
+      },{once:true});
+      document.body.append(dialog);
+      try{dialog.showModal();}
+      catch{dialog.remove();previewDialog=null;visual.set(active);resolve(false);}
+    });
+  }
   const feather=asButton('選択の縁をぼかす',()=>{
     if(!active)return;
     const value=window.prompt('ぼかし幅 0〜32px','3');if(value===null)return;
@@ -364,8 +396,10 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const original=active,doc=source(),current=++job;if(!doc)return;
     pendingSelectionJob=current;
     status.textContent='選択の縁を整えています。';
-    void raster.feather(original,amount).then(next=>{
-      if(current===job&&callbacks.getDocument()?.id===doc.id)publish(next);
+    void raster.feather(original,amount).then(async next=>{
+      if(current!==job||callbacks.getDocument()?.id!==doc.id)return;
+      if(await previewAdjustment(original,next,'選択のぼかし')&&current===job&&callbacks.getDocument()?.id===doc.id)
+        publish(next);
     }).catch(error=>{status.textContent=String(error);})
       .finally(()=>{if(pendingSelectionJob===current)pendingSelectionJob=0;});
   });
@@ -384,7 +418,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     status.textContent=question+'を計算しています。';
     try{
       const next=await raster.adjust(initial,radius,operation);
-      if(job===current&&callbacks.getDocument()?.id===doc.id)publish(next);
+      if(job!==current||callbacks.getDocument()?.id!==doc.id)return;
+      if(await previewAdjustment(initial,next,question)&&job===current&&callbacks.getDocument()?.id===doc.id)
+        publish(next);
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
     finally{if(pendingSelectionJob===current)pendingSelectionJob=0;}
   }
@@ -533,7 +569,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!drawing||event.pointerId!==drawing.pointer)return;
     drawing=null;points=[];brushPoints=[];overlayPath();brushOverlayPath();
   },true);
-  const documentChanged=()=>{job++;pendingSelectionJob=0;currentWork=null;source();
+  const documentChanged=()=>{
+    if(previewDialog?.open)previewDialog.close();
+    job++;pendingSelectionJob=0;currentWork=null;source();
     callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     void updateNamed();};
   refresh();documentChanged();
