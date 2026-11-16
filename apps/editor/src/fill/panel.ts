@@ -31,7 +31,7 @@ export function installFillPanel(host:HTMLElement,api:{
   const output=document.createElement('output');output.setAttribute('role','status');
   const targets=document.createElement('output');
   const analysisState=document.createElement('output');analysisState.setAttribute('role','status');
-  const preview=document.createElement('canvas');preview.hidden=true;preview.style.cssText='max-width:100%;border:1px solid currentColor';
+  const preview=document.createElement('canvas');preview.hidden=true;preview.style.cssText='max-width:100%;border:1px solid currentColor;image-rendering:auto';
   preview.setAttribute('aria-label','塗り候補と線画領域のプレビュー');
   const gapZoom=document.createElement('canvas');
   gapZoom.hidden=true;gapZoom.width=144;gapZoom.height=144;gapZoom.style.cssText='max-width:100%;border:1px solid currentColor';
@@ -75,7 +75,8 @@ export function installFillPanel(host:HTMLElement,api:{
   const destination=select('塗る場所',[['active','選んだレイヤー'],['new','上の新しいレイヤー'],['under','下の新しいレイヤー'],['color-layer','色の名前でレイヤーを作る']]);
   const regionLayers=select('作品に保存した線画領域',[]);
   const view=select('解析の表示',[['regions','色分け'],['walls','境界と補完候補'],['outside','外側と閉領域'],['holes','囲まれた穴'],['original','元の線画']]);
-  const tolerance=number('色の許容範囲・線の濃さ（%）',15,0,100);
+  const tolerance=number('色の近さ・線の濃さ（%）',15,0,100);
+  const alphaTolerance=number('透明度の違いの許容範囲（%）',15,0,100);
   const gap=number('埋める隙間（px）',0,0,12);
   const edge=number('塗りの拡張・縮小（px）',0,-24,24);
   const inspectId=number('調べる領域の番号',1,1,1);
@@ -88,7 +89,11 @@ export function installFillPanel(host:HTMLElement,api:{
   const clearHint=checkbox('透明にする指示');
   const hintList=select('取り消す色指示',[]);
   const opacity=number('塗りの濃さ（%）',100,0,100);
-  const condition=select('画素の条件',[['all','すべて'],['transparent','透明な画素だけ'],['color','設定色に近い画素だけ']]);
+  const condition=select('塗る先の画素の条件',[['all','すべて'],['transparent','透明な画素だけ'],['color','指定した元の色に近い画素だけ']]);
+  const matchColor=document.createElement('input');matchColor.type='color';
+  matchColor.value=/^#[0-9a-f]{6}$/i.test(api.color())?api.color():'#000000';
+  makeLabel('塗り替えたい元の色',matchColor);
+  matchColor.parentElement!.hidden=true;
   const contiguous=checkbox('続いている部分だけ',true);
   const closedOnly=checkbox('閉じた領域だけ',true);
   const erase=checkbox('指定部分を透明にする');
@@ -97,7 +102,8 @@ export function installFillPanel(host:HTMLElement,api:{
   const value=(input:HTMLInputElement)=>Math.max(Number(input.min),Math.min(Number(input.max),input.valueAsNumber||0));
   const usesRegions=()=>method.value==='line'||method.value==='lasso-closed';
   const settings=():FillSettings=>({
-    method:method.value as FillSettings['method'],tolerance:value(tolerance),gap:value(gap),opacity:value(opacity)/100,
+    method:method.value as FillSettings['method'],tolerance:value(tolerance),alphaTolerance:value(alphaTolerance),
+    matchColor:matchColor.value,gap:value(gap),opacity:value(opacity)/100,
     edge:Math.round(value(edge)),edgeShape:edgeShape.value as 'square'|'round',traceWidth:value(trace),condition:condition.value as 'all'|'transparent'|'color',
     color:api.color(),erase:erase.checked,contiguous:contiguous.checked,closedOnly:closedOnly.checked
   });
@@ -209,7 +215,8 @@ export function installFillPanel(host:HTMLElement,api:{
     const frozen=pending&&candidate?candidate.source:compare.checked&&previousCapture?previousCapture:capture;
     preview.hidden=!frozen;gapZoom.hidden=true;
     if(!frozen)return;
-    const {width,height,source}=frozen,scale=Math.min(1,420/Math.max(width,height));
+    // A higher preview resolution keeps thin line details visible without full-size allocation.
+    const {width,height,source}=frozen,scale=Math.min(1,1024/Math.max(width,height));
     const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
     preview.width=w;preview.height=h;
     const context=preview.getContext('2d');
@@ -465,6 +472,32 @@ export function installFillPanel(host:HTMLElement,api:{
       output.textContent='指示を追加しました。重なった面は後の指示を使います。';
     },false,color??'#ed51bf');
   });
+  const changeHintColor=button('選んだ色指示の色を変更',()=>{
+    const index=Number(hintList.value);
+    if(!Number.isInteger(index)||index<0||index>=hints.length)throw Error('変更する色指示を選んでください。');
+    const color=clearHint.checked?null:api.color();
+    hints=hints.map((hint,i)=>i===index?{...hint,color}:hint);
+    candidate=null;pending=null;refreshHintList();hintList.value=String(index);paint();
+    output.textContent='色指示を変更しました。「色指示だけを保存」で作品に反映できます。';
+  });
+  const moveHint=button('選んだ色指示を移動',()=>{
+    const index=Number(hintList.value),graph=currentGraph;
+    if(!Number.isInteger(index)||index<0||index>=hints.length||!graph)throw Error('移動する色指示と線画領域を選んでください。');
+    onCanvas('色指示を置きたい中心をタップしてください。',async points=>{
+      const current=hints[index];
+      if(!current||!points.length)return;
+      const cx=current.points.reduce((sum,point)=>sum+point.x,0)/current.points.length;
+      const cy=current.points.reduce((sum,point)=>sum+point.y,0)/current.points.length;
+      const dx=points[0]!.x-cx,dy=points[0]!.y-cy;
+      const next=current.points.map(point=>({
+        x:Math.min(graph.width-1,Math.max(0,point.x+dx)),
+        y:Math.min(graph.height-1,Math.max(0,point.y+dy))
+      }));
+      hints=hints.map((hint,i)=>i===index?{...hint,points:next}:hint);
+      candidate=null;pending=null;paint();
+      output.textContent='色指示を移動しました。「色指示だけを保存」で作品に反映できます。';
+    });
+  });
   const removeHint=button('選んだ色指示を取り消す',()=>{
     hints=hints.filter((_hint,index)=>index!==Number(hintList.value));
     candidate=null;pending=null;refreshHintList();paint();
@@ -578,7 +611,11 @@ export function installFillPanel(host:HTMLElement,api:{
   destination.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
   compare.onchange=()=>{inspectedRegion=0;mergeTarget.replaceChildren();inspectId.max=String(Math.max(1,(compare.checked?previous:currentGraph)?.count??1));paint();sync();};
   showBefore.onchange=paint;showHints.onchange=paint;view.onchange=paint;compare.disabled=true;
-  for(const control of [opacity,edge,edgeShape,diagnostic,trace,condition,closedOnly,erase,contiguous]){
+  condition.addEventListener('change',()=>{
+    matchColor.parentElement!.hidden=condition.value!=='color';
+    if(condition.value==='color'&&/^#[0-9a-f]{6}$/i.test(api.color()))matchColor.value=api.color();
+  });
+  for(const control of [opacity,edge,edgeShape,diagnostic,trace,condition,closedOnly,erase,contiguous,matchColor,alphaTolerance]){
     control.addEventListener('change',()=>{if(candidate)void work(refreshCandidate);});
   }
   for(const control of [gap,tolerance])control.addEventListener('change',()=>{
@@ -620,7 +657,24 @@ export function installFillPanel(host:HTMLElement,api:{
     }else if(region){inspectPoint={x,y};inspect(inspectedGraph,region);}
     else output.textContent='線画境界です。';
   };
+  // Keep common fill actions visible, with advanced line-art tools in one panel.
+  const advanced=document.createElement('details');
+  const advancedTitle=document.createElement('summary');
+  advancedTitle.textContent='線画の解析・細かい調整';
+  const advancedOptions=document.createElement('div');advancedOptions.className='c06-clipboard-grid';
+  for(const input of [regionLayers,view,inspectId,mergeTarget,issue,edgeShape,diagnostic,trace,showHints,
+    clearHint,hintList,closedOnly,compare,showBefore]){
+    const parent=input.parentElement;
+    if(parent)advancedOptions.append(parent);
+  }
+  const advancedActions=document.createElement('div');advancedActions.className='c06-clipboard-grid';
+  const basic=new Set(['キャンバスで塗る','領域を選択範囲にする','候補を適用','塗り候補を取り消す',
+    '直前の塗りを調整','キャンバス操作をやめる']);
+  for(const control of Array.from(actions.querySelectorAll('button'))){
+    if(!basic.has(control.textContent??''))advancedActions.append(control);
+  }
+  advanced.append(advancedTitle,advancedOptions,advancedActions);
   panel.ontoggle=()=>{if(panel.open){sync();refreshReferences();refreshRegionList();}else stopGesture();};
-  panel.append(summary,options,targets,analysisState,actions,preview,gapZoom,output);host.append(panel);sync();
+  panel.append(summary,options,targets,analysisState,actions,advanced,preview,gapZoom,output);host.append(panel);sync();
   return {refresh:()=>{if(panel.open)sync();}};
 }
