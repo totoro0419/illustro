@@ -2,15 +2,16 @@ import {decodeMaskTile} from '@illustro/brush-rt';
 import {MASK_TILE_SIZE} from '@illustro/core';
 import {paintPixelMask,type MaskStrokePoint} from './layerMaskEditing';
 import type {SelectionRect} from './strokeSelection';
+import type {MaskData} from './selection/mask';
 
 export function restoreHistoryPixels(target:Uint8Array,source:Uint8ClampedArray,points:readonly MaskStrokePoint[],options:{
   width:number;height:number;sourceWidth:number;sourceHeight:number;
-  size:number;opacity:number;selection:SelectionRect|null;lockAlpha:boolean;
+  size:number;opacity:number;selection:SelectionRect|null;selectionMask?:MaskData|null;lockAlpha:boolean;
 }){
   const {width,height,sourceWidth,sourceHeight}=options;
   const overlay=paintPixelMask({
     shape:'pixels',x:0,y:0,scaleX:1,scaleY:1,enabled:true,inverted:false,density:1,tiles:{},
-  },points,{...options,reveal:false,width:Math.min(width,sourceWidth),height:Math.min(height,sourceHeight)});
+  },points,{...options,reveal:false,width,height});
   const size=MASK_TILE_SIZE;
   let changed=false;
   for(const key of Object.keys(overlay.tiles)){

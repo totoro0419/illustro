@@ -26,7 +26,7 @@ type SaveAttachments=()=>((root:CoreDocument['root'])=>Promise<readonly Portable
 type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=>Promise<unknown>};
 
 export class PersistenceCoordinator{
-  private destroyed=false;private navigationSequence=0;private navigationPending=0;
+  private destroyed=false;private workerFailure:Error|null=null;private navigationSequence=0;private navigationPending=0;
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
   private saveAttachmentProvider:SaveAttachments|null=null;
@@ -37,7 +37,8 @@ export class PersistenceCoordinator{
   });
   constructor(private readonly onChange:(state:PersistenceState)=>void=()=>{}){
     this.worker.onmessage=(event:MessageEvent<WorkerReply>)=>{const pending=this.pendingRequests.get(event.data.id);if(!pending)return;this.pendingRequests.delete(event.data.id);event.data.ok?pending.resolve(event.data.result):pending.reject(new Error(event.data.error??'Persistence Worker error'));};
-    this.worker.onerror=event=>this.patch({storageError:event.message||'Persistence Worker error'});
+    this.worker.onerror=event=>this.failWorker(new Error(event.message||'作品の保護処理が停止しました。'));
+    this.worker.onmessageerror=()=>this.failWorker(new Error('作品の保護処理との通信に失敗しました。'));
     addEventListener('online',this.onlineState);addEventListener('offline',this.onlineState);document.addEventListener('visibilitychange',this.visibility,{capture:true});addEventListener('pagehide',this.pagehide,{capture:true});
   }
   get state(){return this.stateValue;}get preservedData(){return this.preserved;}
@@ -144,8 +145,11 @@ export class PersistenceCoordinator{
       }else if(existingHandle&&!forceSaveCopy){
         this.externalFingerprint=await this.writeExternal(existingHandle,bytes,previousFingerprint);output='picker';
       }else{downloadBlob(bytes,suggestedName);output='download';}
-      this.patch({lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
-      return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId});
+      // A browser download click cannot confirm that the file was retained by the OS.
+      // Only the file-picker path performs read-back verification.
+      this.patch({lastExplicitSaveTime:output==='picker'?Date.now():this.stateValue.lastExplicitSaveTime,
+        saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
+      return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId,verified:output==='picker'});
     }catch(error){this.patch({saving:false,saveDurationMs:performance.now()-started});throw error;}
   }
   async storeProjectionCheckpoint(cache:ProjectionCacheV1){
@@ -167,8 +171,8 @@ export class PersistenceCoordinator{
     try{const estimate=storage?.estimate?await storage.estimate():null;usage=estimate?.usage??null;quota=estimate?.quota??null;}catch{}
     this.patch({storagePersisted:persisted,storageUsage:usage,storageQuota:quota});return {persisted,usage,quota};
   }
-  destroy(){this.destroyed=true;this.cancelIdle();this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
-  private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:250});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},60);}
+  destroy(){this.destroyed=true;this.cancelIdle();this.failWorker(new Error('作品の保護処理が終了しました。'));this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
+  private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:120});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},60);}
   private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
   private async drain(){
     if(this.activeDrain)return this.activeDrain;
@@ -176,7 +180,22 @@ export class PersistenceCoordinator{
       catch(error){this.queue.unshift(item);this.patch({storageError:message(error),protectionPending:true});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}})();
     this.activeDrain=run;try{await run;}finally{if(this.activeDrain===run)this.activeDrain=null;if(this.queue.length&&!this.stateValue.storageError)this.schedule();}
   }
-  private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){const id=this.nextId++;return new Promise<any>((resolve,reject)=>{this.pendingRequests.set(id,{resolve,reject});this.worker.postMessage({id,type,...payload},transfer);});}
+  private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){
+    if(this.workerFailure||this.destroyed)return Promise.reject(this.workerFailure??new Error('作品の保護処理が終了しました。'));
+    const id=this.nextId++;
+    return new Promise<any>((resolve,reject)=>{
+      this.pendingRequests.set(id,{resolve,reject});
+      try{this.worker.postMessage({id,type,...payload},transfer);}
+      catch(error){this.pendingRequests.delete(id);reject(error);}
+    });
+  }
+  private failWorker(error:Error){
+    if(this.workerFailure)return;
+    this.workerFailure=error;
+    for(const pending of this.pendingRequests.values())pending.reject(error);
+    this.pendingRequests.clear();
+    this.patch({storageError:error.message});
+  }
   private patch(patch:Partial<PersistenceState>){
     const next={...this.stateValue,...patch,offline:!navigator.onLine};if(this.navigationPending>0)next.protectionPending=true;
     next.dirty=next.savedRevision===null?true:next.currentRevision!==next.savedRevision;
@@ -196,7 +215,7 @@ export class PersistenceCoordinator{
     }catch(error){try{await writable.abort?.();}catch{}throw error;}
     return await verifyExternalWrite(h,stable);
   }
-  private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared().catch(()=>{});};private pagehide=()=>{void this.flushPrepared().catch(()=>{});};private onlineState=()=>this.patch({offline:!navigator.onLine});
+  private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared().catch(error=>this.patch({storageError:message(error)}));};private pagehide=()=>{void this.flushPrepared().catch(error=>this.patch({storageError:message(error)}));};private onlineState=()=>this.patch({offline:!navigator.onLine});
 }
 
 function previewLayersFor(document:CoreDocument,revisionId:RevisionId):readonly PreviewLayer[]{

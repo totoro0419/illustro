@@ -58,7 +58,19 @@ export class DocumentTransaction{
     this.renameLayer(id,name);
     if(copyStyle){
       const source=this.updatesValue.get(referenceId)??root.getLayer(referenceId);
-      if(source.deformation)throw new Error('変形を保持したレイヤーの複製は未対応です。見た目を複製する場合は画像に焼き込んでください。');
+      // The captured pixels already represent the transformed appearance.
+      // A deformation can be copied safely because the original revision is
+      // immutable. Resolve the implicit source-layer reference explicitly:
+      // without this, the clone would incorrectly refer to its own new ID.
+      if(source.deformation){
+        const deformation=validateLayerDeformation({
+          ...source.deformation,sourceLayerId:source.deformation.sourceLayerId??source.id
+        });
+        if(!deformation||!this.doc.hasRevision(deformation.sourceRevision)||
+          !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId!))
+          throw new Error('複製元の変形原本が見つかりません。');
+        this.meta(id,{deformation});
+      }
       this.setLayerOpacity(id,source.opacity);
       this.setLayerVisibility(id,source.visible);
       if(source.colorTag)this.setLayerColorTag(id,source.colorTag);

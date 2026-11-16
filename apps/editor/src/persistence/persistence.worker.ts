@@ -141,7 +141,7 @@ async function handle(message:RequestMessage){
       const current=snapshot.revisions.find(revision=>revision.id===snapshot.snapshotRevisionId);
       if(!current||current.root.documentId!==documentId||!current.root.rootLayerIds.length)throw new Error('invalid work root');
       await writeBlocks(store,path,blocks);await putVerified(store,path+'/base.frame',await frameJson(snapshot));
-      const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId};
+      const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId,title:current.root.name};
       await putVerified(store,path+'/meta.frame',await frameJson(meta));
       justInitializedRoot={documentId,writerEpochId,revisionId:snapshot.snapshotRevisionId,root:current.root};
       const saves=await documentSaveState(store,documentId),storage=await storageInfo();reply(message.id,true,{backend:store.mode,protectedThrough:'0',storage,...saves});break;
@@ -155,11 +155,11 @@ async function handle(message:RequestMessage){
       let proof=protectionProofs.get(session.path);if(!proof){proof=new ContiguousProtection<VerifiedHead>(seq===1n?0n:await scanProtected(store,session));protectionProofs.set(session.path,proof);}
       const root=packet.replacementRoot??libraryWork;proof.verified(seq,{revisionId:packet.revision.id,selectedLayerId:uuid(message.selectedLayerId,'selected layer'),width:root?.width??0,height:root?.height??0});const protectedThrough=proof.through;
       if(proof.value){await writeHead(store,session,proof.value.revisionId);if(libraryWork)await publishCurrent({...proof.value,protectedThrough:protectedThrough.toString(),updatedAt:Date.now(),...(packet.revision.id===proof.value.revisionId?{previewLayers:parsePreviewLayers(message.previewLayers),...(typeof message.name==='string'?{name:message.name}:{})}:{})});}
-      await touchMeta(store,session);
+      await touchMeta(store,session,undefined,packet.revision.id===proof.value?.revisionId&&typeof message.name==='string'?message.name:undefined);
       reply(message.id,true,{protectedThrough:protectedThrough.toString(),backend:store.mode,storage:await storageInfo()});break;
     }
     case 'set-head':{
-      const session=requireSession(message),revisionId=uuid(message.revisionId,'revision id');await writeHead(store,session,revisionId);await touchMeta(store,session);
+      const session=requireSession(message),revisionId=uuid(message.revisionId,'revision id');await writeHead(store,session,revisionId);await touchMeta(store,session,undefined,typeof message.name==='string'?message.name:undefined);
       if(libraryWork)await publishCurrent({revisionId,selectedLayerId:typeof message.selectedLayerId==='string'?uuid(message.selectedLayerId,'selected layer'):libraryWork.selectedLayerId,...(typeof message.name==='string'?{name:message.name}:{}),width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,previewLayers:parsePreviewLayers(message.previewLayers),updatedAt:Date.now()});
       reply(message.id,true,{backend:store.mode});break;
     }
@@ -567,13 +567,17 @@ async function listRecoveryCandidates(store:WorkingStore){
       const session={documentId:doc.name,writerEpochId:epoch.name,path:root+'/'+doc.name+'/'+epoch.name};try{const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)continue;const base=await unframeJson(baseBytes) as CorePersistenceSnapshotV1,protectedThrough=await scanProtected(store,session);
         const target=base.revisions.find(x=>x.id===base.snapshotRevisionId),metaBytes=await store.get(session.path+'/meta.frame'),meta=metaBytes?await unframeJson(metaBytes) as Record<string,unknown>:{};
         const saves=await documentSaveState(store,session.documentId),lastGood=saves.lastGood,previousGood=saves.previousGood;
-        out.push({documentId:session.documentId,writerEpochId:session.writerEpochId,title:target?.root.name??'作品',protectedThrough:protectedThrough.toString(),updatedAt:typeof meta.updatedAt==='number'?meta.updatedAt:0,savedRevisionId:typeof meta.savedRevisionId==='string'?meta.savedRevisionId:null,lastGood,previousGood});}catch{} }}
+        // The gallery title is optional. A gallery DB failure must not hide a recoverable session.
+        const work=await getWork(session.documentId).catch(()=>null);
+        const title=(work?.writerEpochId===session.writerEpochId&&work.name)||
+          (typeof meta.title==='string'&&meta.title.trim())||target?.root.name||'作品';
+        out.push({documentId:session.documentId,writerEpochId:session.writerEpochId,title,protectedThrough:protectedThrough.toString(),updatedAt:typeof meta.updatedAt==='number'?meta.updatedAt:0,savedRevisionId:typeof meta.savedRevisionId==='string'?meta.savedRevisionId:null,lastGood,previousGood});}catch{} }}
   return out.sort((a,b)=>(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0));
 }
 async function writeHead(store:WorkingStore,session:Session,revisionId:string){await putVerified(store,session.path+'/head.frame',await frameJson({version:1,revisionId:uuid(revisionId,'revision id')}));}
-async function touchMeta(store:WorkingStore,session:Session,savedRevisionId?:string){
+async function touchMeta(store:WorkingStore,session:Session,savedRevisionId?:string,title?:string){
   const path=session.path+'/meta.frame',old=await store.get(path);let meta:Record<string,unknown>={version:1,documentId:session.documentId,writerEpochId:session.writerEpochId,createdAt:Date.now()};
-  if(old)try{meta=await unframeJson(old) as Record<string,unknown>;}catch{}meta={...meta,updatedAt:Date.now(),...(savedRevisionId?{savedRevisionId}:{})};await putVerified(store,path,await frameJson(meta));
+  if(old)try{meta=await unframeJson(old) as Record<string,unknown>;}catch{}meta={...meta,updatedAt:Date.now(),...(savedRevisionId?{savedRevisionId}:{}),...(title?.trim()?{title:title.trim().slice(0,4096)}:{})};await putVerified(store,path,await frameJson(meta));
 }
 function sessionPath(documentId:string,writerEpochId:string){return 'm05/sessions/'+documentId+'/'+writerEpochId;}
 function documentSavePath(documentId:string){return 'm05/documents/'+documentId+'/saves';}

@@ -3,28 +3,35 @@ import {CanvasNavigation} from '../canvasNavigation';
 import {CanvasView} from '../canvasView';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 
-const cachedThumbnails=new WeakMap<CoreDocument,Map<RevisionId,Blob>>();
+// Reuse both completed and in-flight thumbnails. A 4000px preview can otherwise
+// allocate several full-resolution pixel buffers for duplicate concurrent calls.
+const cachedThumbnails=new WeakMap<CoreDocument,Map<RevisionId,Promise<Blob>>>();
 export async function historyThumbnail(artwork:CoreDocument,revision:RevisionId){
   let cache=cachedThumbnails.get(artwork);
   if(!cache){cache=new Map();cachedThumbnails.set(artwork,cache);}
   const cached=cache.get(revision);
   if(cached)return cached;
-  const frozen=captureExport(artwork,undefined,revision);
-  const pixels=await renderFrozenArtwork(frozen);
-  const scale=Math.min(1,160/frozen.width,120/frozen.height);
-  const width=Math.max(1,Math.round(frozen.width*scale)),height=Math.max(1,Math.round(frozen.height*scale));
-  const bitmap=await createImageBitmap(new ImageData(new Uint8ClampedArray(pixels),frozen.width,frozen.height),{
-    resizeWidth:width,resizeHeight:height,resizeQuality:'medium',
-  });
-  try{
-    const canvas=new OffscreenCanvas(width,height),context=canvas.getContext('2d');
-    if(!context)throw new Error('画像を縮小できません。');
-    context.drawImage(bitmap,0,0);
-    const image=await canvas.convertToBlob({type:'image/png'});
-    if(cache.size>=24)cache.delete(cache.keys().next().value!);
-    cache.set(revision,image);
-    return image;
-  }finally{bitmap.close();}
+  const thumbnail=(async()=>{
+    const frozen=captureExport(artwork,undefined,revision);
+    const pixels=await renderFrozenArtwork(frozen);
+    const scale=Math.min(1,160/frozen.width,120/frozen.height);
+    const width=Math.max(1,Math.round(frozen.width*scale)),height=Math.max(1,Math.round(frozen.height*scale));
+    // renderFrozenArtwork already returns Uint8ClampedArray. Never duplicate
+    // the full-resolution buffer merely to pass it into ImageData.
+    const bitmap=await createImageBitmap(new ImageData(pixels as Uint8ClampedArray<ArrayBuffer>,frozen.width,frozen.height),{
+      resizeWidth:width,resizeHeight:height,resizeQuality:'medium',
+    });
+    try{
+      const canvas=new OffscreenCanvas(width,height),context=canvas.getContext('2d');
+      if(!context)throw new Error('画像を縮小できません。');
+      context.drawImage(bitmap,0,0);
+      return await canvas.convertToBlob({type:'image/png'});
+    }finally{bitmap.close();}
+  })();
+  if(cache.size>=24)cache.delete(cache.keys().next().value!);
+  cache.set(revision,thumbnail);
+  try{return await thumbnail;}
+  catch(error){if(cache.get(revision)===thumbnail)cache.delete(revision);throw error;}
 }
 
 export function createHistoryComparison(url:string,caption:string,width:number,height:number){
