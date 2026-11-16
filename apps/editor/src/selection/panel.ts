@@ -55,7 +55,8 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const showSelectionLabel=document.createElement('label');showSelectionLabel.className='c06-visibility';
   showSelectionLabel.append(showSelection,document.createTextNode('選択の境界を表示する（隠しても選択は有効）'));
   showSelection.onchange=()=>{
-    callbacks.getSurface()?.setSelectionVisible(showSelection.checked);
+    // The true mask overlay is more precise than a rectangular bounds frame.
+    callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     visual?.setVisible(showSelection.checked);
     preview.hidden=!showSelection.checked;
     status.textContent=showSelection.checked?'選択範囲の表示を戻しました。':'選択範囲は有効なまま、境界を隠しました。';
@@ -184,6 +185,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     visual?.set(active);
     const bounds=active?boundsOfSelection(active):null;
     callbacks.getSurface()?.restoreRectangleSelection(bounds);
+    callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     callbacks.onMaskChanged(active);
     if(persist)scheduleStore(doc.id,active);
     box.hidden=!active;
@@ -532,7 +534,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     drawing=null;points=[];brushPoints=[];overlayPath();brushOverlayPath();
   },true);
   const documentChanged=()=>{job++;pendingSelectionJob=0;currentWork=null;source();
-    callbacks.getSurface()?.setSelectionVisible(showSelection.checked);
+    callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     void updateNamed();};
   refresh();documentChanged();
   return {
