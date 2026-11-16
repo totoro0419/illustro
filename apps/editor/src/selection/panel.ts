@@ -232,6 +232,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       const request=++job;
       tool=null;magneticPixels=null;points=[];drawing=null;
       pendingSelectionJob=request;
+      callbacks.getSurface()?.setSelectionMode(false);
       refresh();overlayPath();
       status.textContent='磁気選択のため、画像の輪郭を準備しています。';
       void callbacks.capturePixels('layer').then(pixels=>{
