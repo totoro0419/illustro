@@ -22,6 +22,14 @@ const PIN_KEY='illustro.c04.quick-controller.v1';
 const RECENTS_KEY='illustro.c04.command-history.v1';
 const SLOT_COUNT=6;
 const DEFAULT_SLOTS=['undo','redo','paint','erase','layer','save'];
+/** Returns null when all Quick slots are occupied and the user must choose one. */
+export function quickPinTarget(slots:readonly string[],id:string,editingSlot:number|null):number|null{
+  if(editingSlot!==null)return editingSlot>=0&&editingSlot<SLOT_COUNT?editingSlot:null;
+  const existing=slots.indexOf(id);
+  if(existing>=0)return existing;
+  const empty=slots.findIndex(slot=>!slot);
+  return empty>=0?empty:null;
+}
 const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T|null;
 const disabledReason=(id:string)=>{
   const element=el<HTMLButtonElement>(id);
@@ -338,8 +346,8 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   },{capture:true});
   const pinIntoSlot=(id:string)=>{
     if(editingSlot===null&&slots.includes(id))return;
-    const target=editingSlot===null?slots.findIndex(x=>!x):editingSlot;
-    if(target<0){
+    const target=quickPinTarget(slots,id,editingSlot);
+    if(target===null){
       pendingPinId=id;isConfiguring=true;
       quick.hidden=false;quickButton.setAttribute('aria-expanded','true');
       renderQuick();return;
