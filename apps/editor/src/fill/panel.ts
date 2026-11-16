@@ -328,7 +328,11 @@ export function installFillPanel(host:HTMLElement,api:{
       paint();
       const outside=currentGraph.external.reduce((sum,x)=>sum+x,0);
       output.textContent=(confirmed?'保存済み':'確認待ち')+' '+source.name+'。閉領域 '+(currentGraph.count-outside)+' 件、外側 '+outside+' 件。';
-    }catch(error){analysisError=error instanceof Error?error.message:String(error);throw error;}
+    }catch(error){
+      if(!(error instanceof Error&&error.name==='AbortError'))
+        analysisError=error instanceof Error?error.message:String(error);
+      throw error;
+    }
     finally{analyzing=false;if(analysisAbort===abort)analysisAbort=null;sync();}
   }
   function stopGesture(){gesture?.setCanvasEditGesture(null);gesture=null;}
