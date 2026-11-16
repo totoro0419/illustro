@@ -69,15 +69,36 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
   const editing=(target:EventTarget|null)=>target instanceof HTMLElement&&!!target.closest(
     'input,textarea,select,[contenteditable="true"],dialog[open]'
   );
+  // Native paste events carry OS images without an extra clipboard permission
+  // prompt. The editor's own copied pixels remain a fallback when no file
+  // is present. Text inputs and dialogs keep their normal browser behavior.
+  document.addEventListener('paste',event=>{
+    if(!panel.isConnected||!actions.canEdit()||editing(event.target)||
+      document.querySelector('dialog[open]'))return;
+    const file=Array.from(event.clipboardData?.items??[])
+      .filter(item=>item.kind==='file'&&item.type.startsWith('image/'))
+      .map(item=>item.getAsFile()).find((item):item is File=>item!==null);
+    if(file){
+      event.preventDefault();
+      message.textContent='端末から画像を読み込んでいます。';
+      void actions.importFile(file).then(()=>actions.paste('center'))
+        .then(()=>{message.textContent='端末の画像を新しいレイヤーへ貼り付けました。';})
+        .catch(error=>{message.textContent=error instanceof Error?error.message:String(error);})
+        .finally(refresh);
+    }else if(clipboard.hasContent){
+      event.preventDefault();buttons.get('c06Paste')?.click();
+    }
+  },{capture:true});
   // Keep standard text editing intact, including on Home and in dialogs.
   document.addEventListener('keydown',event=>{
     if(!panel.isConnected||!actions.canEdit()||editing(event.target)||event.altKey||!(event.ctrlKey||event.metaKey)||
       document.querySelector('dialog[open]'))return;
     const code=event.key.toLowerCase();
-    if(code==='c'||code==='x'||code==='v'){
+    // Ctrl/⌘+V must reach the native paste event to see OS clipboard images.
+    if(code==='v')return;
+    if(code==='c'||code==='x'){
       event.preventDefault();
-      const target=code==='c'?(actions.hasSelection()?'c06CopySelection':'c06CopyLayer'):
-        code==='x'?'c06CutSelection':'c06Paste';
+      const target=code==='c'?(actions.hasSelection()?'c06CopySelection':'c06CopyLayer'):'c06CutSelection';
       buttons.get(target)?.click();
     }
   },{capture:true});
