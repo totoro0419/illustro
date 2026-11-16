@@ -169,7 +169,17 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   async function exportNative():Promise<PortableSectionInput|null>{
     const id=options.getDocumentId();
     if(!id)return null;
-    const current=board?.documentId===id?clone(board):await readBoard(id);
+    let current:BoardSnapshot;
+    try{current=board?.documentId===id?clone(board):await readBoard(id);}
+    catch{
+      // A damaged local reference record must never stop the artwork save. An
+      // explicit marker replaces any stale optional section in the saved file.
+      const warning='参考資料の配置を読み取れませんでした。作品本体は保存しますが、資料はこのファイルに含まれません。端末側の元データは変更していません。';
+      status.textContent=warning;
+      window.dispatchEvent(new CustomEvent('illustro:reference-save-warning',{detail:{message:warning,documentId:id,omittedAssetIds:[]}}));
+      const unavailable={schema:'illustro.reference-unavailable',version:1,documentId:id};
+      return {id:NATIVE_ID,type:NATIVE_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(unavailable))};
+    }
     // Reference files are optional. Missing or oversized images must not block
     // saving the user's artwork. Keep ALL placements, including missing items,
     // so that the original reference can be reattached later.
@@ -209,6 +219,8 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const raw=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(section.bytes)) as unknown;
     if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('作品内の参考資料が正しくありません。');
     const data=raw as Record<string,unknown>;
+    if(data.schema==='illustro.reference-unavailable')
+      throw Error('参考資料が不完全な状態で保存された作品です。絵は開けますが、端末に残る資料を確認してください。');
     if(data.schema!=='illustro.reference-bundle'||data.version!==1||!data.board||!data.pack)
       throw Error('対応していない参考資料データです。');
     const input=data.board as Partial<BoardSnapshot>;
