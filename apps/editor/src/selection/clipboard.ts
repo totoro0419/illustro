@@ -88,6 +88,8 @@ export class ArtworkClipboard {
         for(const id of ids){
           const base=root.clippingSource(id);
           if(base)ids.add(base.id);
+          const link=root.getLayer(id).imageLink;
+          if(link?.kind==='instance'&&root.layers.get(link.sourceId)?.imageLink)ids.add(link.sourceId);
         }
       }
       const captured=await drawing.captureDocumentLayers(ids);
@@ -215,9 +217,10 @@ export class ArtworkClipboard {
       const hasRegions=record.editable.layers.some(entry=>entry.regionSource);
       if(hasRegions&&(root.width!==record.width||root.height!==record.height))
         throw Error('元と同じ大きさの作品に貼り付けると、線画領域の判定と参照元を保持できます。');
+      const missingLinks=record.editable.layers.some(({layer})=>layer.imageLink?.kind==='instance'&&!ids.has(layer.imageLink.sourceId));
       const detached=clipLoss?'別のレイヤーへのクリッピングは、元になるレイヤーがコピーに含まれないため引き継げません。':'';
       const originals=record.editable.layers.some(entry=>entry.transform)?'変形を再編集できるように、非表示の原本も一緒に置きます。':'';
-      if(!window.confirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤー設定・マスク・文字・パスを保持します。元作品のUndo履歴は含みません。${originals}${hasRegions?'確認した線画の版も保持します。':''}${detached}${fontNotice}`))
+      if(!window.confirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤー設定・マスク・文字・パスを保持します。元作品のUndo履歴は含みません。${originals}${hasRegions?'確認した線画の版も保持します。':''}${detached}${fontNotice}${missingLinks?'元が見つからない複製は現在の画像を埋め込みます。':''}`))
         throw Error('貼り付けを取り消しました。');
       const place=(pixels:Uint8Array)=>{
         if(!x&&!y&&record.width===root.width&&record.height===root.height)return pixels;
@@ -230,7 +233,10 @@ export class ArtworkClipboard {
       };
       const entries=await Promise.all(record.editable.layers.map(async({layer,pixels,transform,regionSource})=>{
         const mask=moveMask(layer.vectorMask,x,y),effect=layer.blend?.effect;
-        const placedLayer=effect&&layer.blend?{...layer,blend:{...layer.blend,effect:{...effect,mask:moveMask(effect.mask,x,y)}}}:layer;
+        const placedLayer={...layer,
+          ...(effect&&layer.blend?{blend:{...layer.blend,effect:{...effect,mask:moveMask(effect.mask,x,y)}}}:{}),
+          ...(layer.imageLink?{imageLink:{...layer.imageLink,x:layer.imageLink.x+x,y:layer.imageLink.y+y}}:{})
+        };
         const entry={layer:placedLayer,pixels:place(pixels),mask,editable:layer.editable?moveEditableArtwork(layer.editable,x,y):null};
         if(!transform)return {...entry,...(regionSource?{regionSource}:{})};
         let deformation=moveDeformation(transform.deformation,x,y);

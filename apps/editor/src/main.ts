@@ -29,6 +29,8 @@ import {fillLayerName,installFillPanel} from './fill/panel';
 import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
 import {installLayoutPanel} from './transform/layoutPanel';
+import {installImageLinkPanel} from './transform/imageLinkPanel';
+import {chooseLinkedImage,decodeLinkedImage,placedImage,readLinkedFile,rememberImageHandle} from './assets/linkedImages';
 import type {SnapMark} from './transform/layout';
 import {runTransform} from './transform/run';
 import {replayBrushPasses} from './selection/brush';
@@ -82,7 +84,7 @@ import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type Persiste
 import type {PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerImageLink,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -148,6 +150,7 @@ let c05ReferenceBoard:ReferenceBoardService|undefined;
 let c06ClipboardUI:ClipboardUI|undefined;
 let c06Selection:SelectionWorkbench|undefined;
 let fillPanel:ReturnType<typeof installFillPanel>|undefined;
+let imageLinkPanel:ReturnType<typeof installImageLinkPanel>|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
@@ -953,7 +956,7 @@ function scheduleLayerDrawingThumbnail(open=documentReady&&shellUi.layerPageOpen
 }
 
 const renderLayers=()=>{
-  fillPanel?.refresh();
+  fillPanel?.refresh();imageLinkPanel?.refresh();
   syncHistoryBrush();
   renderLayerComps();
   updateVectorMaskControls();
@@ -3399,6 +3402,127 @@ persistence.setSaveAttachmentProvider(()=>{
     return [...(reference?[reference]:[]),...selections,...fonts,symmetry];
   };
 });
+const unavailableImageLinks=new Set<string>();
+function linkPreview(pixels:Uint8Array,width:number,height:number){
+  const scale=Math.min(1,210/Math.max(width,height));
+  const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
+  const view=new Uint8ClampedArray(w*h*4);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const at=(Math.floor(height*y/h)*width+Math.floor(width*x/w))*4;
+    view.set(pixels.subarray(at,at+4),(y*w+x)*4);
+  }
+  return new ImageData(view,w,h);
+}
+function pixelsInPlacement(artwork:CoreDocument,id:LayerId,link:LayerImageLink){
+  const full=artwork.readBaseRasterPixels(id),{width:canvasWidth}=artwork.root;
+  const {x,y,width,height}=link,local=new Uint8ClampedArray(width*height*4);
+  for(let row=0;row<height;row++){
+    const offset=((y+row)*canvasWidth+x)*4;
+    local.set(full.subarray(offset,offset+width*4),row*width*4);
+  }
+  return new ImageData(local,width,height);
+}
+imageLinkPanel=installImageLinkPanel(byId('documentBoxBody'),{
+  current:()=>{
+    const layer=controller.selectedLayer,link=layer.imageLink??null;
+    const missing=!!(link?.kind==='instance'&&!controller.document.root.layers.get(link.sourceId)?.imageLink||
+      link?.kind==='linked'&&unavailableImageLinks.has(link.fileKey));
+    return {name:layer.name,link,missing};
+  },
+  sources:()=>controller.layers.flatMap(layer=>layer.imageLink&&layer.imageLink.kind!=='instance'?[{id:layer.id,name:layer.name}]:[]),
+  prepare:async(action,source,position)=>{
+    if(!documentReady)throw Error('作品を開いてください。');
+    const artwork=controller.document,head=artwork.head,root=artwork.root,selected=controller.selectedLayer;
+    const {width,height}=root,existing=selected.imageLink;
+    const fit=(w:number,h:number,x?:number,y?:number)=>{
+      if(position&&(!Number.isSafeInteger(position.x)||!Number.isSafeInteger(position.y)))throw Error('配置座標は整数で指定してください。');
+      const px=position?.x??x??Math.round((width-w)/2),py=position?.y??y??Math.round((height-h)/2);
+      if(px<0||py<0||px+w>width||py+h>height)throw Error('画像がすべてキャンバスに収まる座標を指定してください。');
+      return {x:px,y:py,width:w,height:h};
+    };
+    const placed=(image:ImageBitmap|ImageData,link:LayerImageLink)=>placedImage(width,height,image,link);
+    const original=source&&root.layers.get(source);
+    const create=action==='link'||action==='embed'||action==='instance';
+    let edits:Array<{id:LayerId;pixels:Uint8Array;link:LayerImageLink}>=[];
+    let fileToRemember:Parameters<typeof rememberImageHandle>|undefined;
+    if(action==='instance'||action==='rebind'){
+      const ref=original?.imageLink;
+      if(!original||!ref||ref.kind==='instance'||original.id===selected.id&&action==='rebind')
+        throw Error('リンクまたは埋め込みの元画像を選んでください。同じ画像を参照する複製は元にできません。');
+      if(action==='rebind'&&existing?.kind!=='instance')throw Error('元を選び直す複製を選んでください。');
+      const placement=fit(existing&&action==='rebind'?existing.width:ref.width,existing&&action==='rebind'?existing.height:ref.height,
+        existing&&action==='rebind'?existing.x:ref.x,existing&&action==='rebind'?existing.y:ref.y);
+      const link:LayerImageLink={kind:'instance',sourceId:original.id,name:ref.name,digest:ref.digest,...placement};
+      edits=[{id:selected.id,pixels:placed(pixelsInPlacement(artwork,original.id,ref),link),link}];
+    }else if(action==='move'){
+      if(!existing||!position)throw Error('画像を選び、「配置する座標を指定」を有効にしてください。');
+      const link={...existing,...fit(existing.width,existing.height)};
+      edits=[{id:selected.id,pixels:placed(pixelsInPlacement(artwork,selected.id,existing),link),link}];
+    }else{
+      if(!create&&existing?.kind!=='linked')throw Error('外部リンクしている元画像のレイヤーを選んでください。');
+      const update=existing?.kind==='linked'&&!create?existing:null;
+      let opened;
+      try{
+        opened=action==='update'&&update?{file:await readLinkedFile(update.fileKey),handle:null}:await chooseLinkedImage();
+      }catch(error){
+        if(action==='update'&&update){unavailableImageLinks.add(update.fileKey);imageLinkPanel?.refresh();}
+        throw error;
+      }
+      const loaded=await decodeLinkedImage(opened.file);
+      try{
+        if(action==='update'&&update?.digest===loaded.digest){unavailableImageLinks.delete(update.fileKey);imageLinkPanel?.refresh();return null;}
+        const fileKey=update?.fileKey??crypto.randomUUID(),natural=Math.min(1,width/loaded.bitmap.width,height/loaded.bitmap.height);
+        const placement=update?{x:update.x,y:update.y,width:update.width,height:update.height}:
+          fit(Math.max(1,Math.round(natural*loaded.bitmap.width)),Math.max(1,Math.round(natural*loaded.bitmap.height)));
+        const common={name:loaded.name,digest:loaded.digest,...placement};
+        const link:LayerImageLink=action==='embed'?{...common,kind:'embedded'}:{...common,kind:'linked',fileKey};
+        if(opened.handle&&link.kind==='linked')fileToRemember=[fileKey,opened.handle];
+        edits.push({id:selected.id,pixels:placed(loaded.bitmap,link),link});
+        if(update){
+          for(const layer of controller.layers){
+            const related=layer.imageLink;
+            if(related?.kind!=='instance'||related.sourceId!==selected.id)continue;
+            const link:LayerImageLink={...related,name:loaded.name,digest:loaded.digest};
+            edits.push({id:layer.id,pixels:placed(loaded.bitmap,link),link});
+          }
+        }
+      }finally{loaded.bitmap.close();}
+    }
+    const first=edits[0]!;
+    const old=create?null:linkPreview(artwork.readBaseRasterPixels(selected.id),width,height);
+    const after=linkPreview(first.pixels,width,height);
+    const description=(create?'画像を新しいレイヤーに配置します。':`${edits.length}枚の画像を更新します。`)+
+      ' 元画像 '+first.link.name+'　版 '+first.link.digest.slice(0,10)+'。';
+    return {before:old,after,description,apply:async()=>{
+      await withClipboardAccess(async()=>{
+        if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==selected.id)
+          throw Error('作品が変わりました。候補を作り直してください。');
+        const tx=artwork.begin(create?'参照画像を配置':'参照画像を更新');
+        if(create){
+          const id=tx.addRasterSnapshotAbove(selected.id,first.pixels,first.link.name);
+          tx.setLayerImageLink(id,first.link);
+          controller.lastPersistenceHandoff=tx.commit().persistence;
+          controller.selectLayer(id);
+        }else{
+          for(const entry of edits)tx.updateLayerImagePixels(entry.id,entry.pixels,entry.link);
+          controller.lastPersistenceHandoff=tx.commit().persistence;
+        }
+        if(first.link.kind==='linked')unavailableImageLinks.delete(first.link.fileKey);
+        return 'edit';
+      });
+      if(fileToRemember)await rememberImageHandle(...fileToRemember);
+    }};
+  },
+  finish:async action=>{
+    const layer=controller.selectedLayer,link=layer.imageLink;
+    if(!link)throw Error('リンク・埋め込み・複製の画像レイヤーを選んでください。');
+    if(action==='embed'&&link.kind==='embedded')throw Error('この画像はすでに埋め込まれています。');
+    if(action==='independent'&&!confirm('現在の見た目を残し、元画像の更新から切り離しますか？'))return;
+    const embedded:LayerImageLink={kind:'embedded',name:link.name,digest:link.digest,x:link.x,y:link.y,width:link.width,height:link.height};
+    changeLayer(action==='embed'?'現在の画像を埋め込みました。':'独立した描画レイヤーに変換しました。',
+      tx=>tx.setLayerImageLink(layer.id,action==='embed'?embedded:null));
+  }
+});
 installLayoutPanel(byId('documentBoxBody'),async()=>{
   const artwork=controller.document,head=artwork.head,root=artwork.root,referenceId=controller.selectedLayer.id,drawing=surface;
   const ids=root.rootLayerIds.filter(id=>layerBatchIds.has(id));
@@ -3414,7 +3538,7 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
     const layer=root.getLayer(id),rgba=pixels.get(id);
     const bounds=rgba&&alphaBounds(rgba,width,height);
     if(!bounds)throw Error('「'+layer.name+'」には位置合わせできる絵がありません。');
-    const fixed=root.isLayerContentLocked(id)||root.isLayerPositionLocked(id)||!!(layer.baseColor||layer.deformation||layer.lineRegions);
+    const fixed=root.isLayerContentLocked(id)||root.isLayerPositionLocked(id)||!!(layer.baseColor||layer.deformation||layer.lineRegions||layer.imageLink);
     return {id,name:layer.name,bounds,fixed};
   };
   const items=ids.map(item),reference=item(referenceId);
@@ -3460,7 +3584,7 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
   const saved=target==='boundary'?null:layer.deformation;
   if(saved&&target==='selected')throw Error('保存済みの変形を編集するには「レイヤー全体」を選んでください。');
   if(target!=='layer'&&!activeSelection)throw Error('先に範囲を選択してください。');
-  if(target!=='boundary'&&(layer.baseColor==='white'||layer.editable||artwork.root.isLayerContentLocked(layer.id)||artwork.root.isLayerPositionLocked(layer.id)))
+  if(target!=='boundary'&&(layer.baseColor==='white'||layer.editable||layer.imageLink||artwork.root.isLayerContentLocked(layer.id)||artwork.root.isLayerPositionLocked(layer.id)))
     throw Error('変形できる描画用レイヤーを選び、位置と内容のロックを解除してください。');
   const sourceRevision=saved?.sourceRevision??head;
   const original=artwork.revision(sourceRevision).root.getLayer(saved?.sourceLayerId??layer.id);
@@ -3640,7 +3764,7 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
     const drawing=surface,selection=c06Selection?.active()??null;
     if(!drawing)throw Error('作品を開いてください。');
-    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||root.isLayerContentLocked(layer.id)))
+    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||root.isLayerContentLocked(layer.id)))
       throw Error('塗れるレイヤーを選ぶか、新しいレイヤーに塗ってください。');
     if(needTarget&&destination==='under'&&layer.baseColor==='white')throw Error('白い背景より上に塗りレイヤーを作ってください。');
     if(needTarget&&destination!=='active'&&root.groupsForLayer(layer.id).some(group=>group.locked))

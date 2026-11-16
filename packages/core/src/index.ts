@@ -22,3 +22,5 @@ export {validateEditableArtwork,moveEditableArtwork,type ArtPoint,type GradientS
 export {type LayerDeformation,type DeformationBrushPass,type LiquifyStroke,type TransformBounds,type TransformHandle,type TransformMesh,type TransformPoint,type TransformQuad} from './layerDeformation';
 
 export type {LineRegions,RegionWalls,ColorHint} from './lineRegions';
+
+export {validateLayerImageLink,type LayerImageLink} from './layerImageLink';

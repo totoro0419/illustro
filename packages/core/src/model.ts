@@ -1,3 +1,4 @@
+import type {LayerImageLink} from './layerImageLink';
 import type {LineRegions} from './lineRegions';
 import type {LayerDeformation} from './layerDeformation';
 import type {EditableArtwork} from './editableArtwork';
@@ -33,6 +34,7 @@ export type LayerNode=Readonly<{
   editable?:EditableArtwork|null;
   deformation?:LayerDeformation|null;
   lineRegions?:LineRegions|null;
+  imageLink?:LayerImageLink|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number}>;
