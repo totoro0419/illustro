@@ -19,7 +19,7 @@
 | C03-007 | **一部性能改善（A）**：同時プレビュー生成を1回にまとめ、全画像の不要な複製を削減。 | 作品全体を描き直す経路は残る。4000px作品で計測後、縮小表示専用の段階生成を検討。比較ダイアログの巨大なPNG生成は別途統合担当。 |
 | C03-008 | **一部信頼性改善（B）**：保護待ちを前倒しし、Workerの異常終了や通信失敗時の待機を解除してエラーを通知。 | 画面終了直前の書込み完了はブラウザ仕様上保証不能。通常操作中の保存確認、未保護の状態表示、障害復帰を実機で検証。 |
 | C03-009 | **追加検証待ち（B）**：保存時の全データ取得・照合の負担は静的にあり得るが速度不明。 | 4000px作品の保存時間・メモリを測り、確認読戻しの安全性を維持して高速化を判断。 |
-| C03-010 | **追加検証待ち（B）**：旧形式の移行後チェックは描線数一致を確認。 | 旧版と移行後の画素・透明度・描画順比較と旧作品保持の検証が必要。 |
+| C03-010 | **部分実装修正（B）**：移行した全描線について、保存→再読込後も描線の順序・筆圧・ブラシ設定などの全データが一致することを照合。欠落や違いがあればエラーにする。2つの単体テストを追加。 | 旧版と移行後の画像の画素・透明度を直接比較する検証はまだない。旧作品を保持し、実機の比較表示で確認が必要。 |
 | C03-011 | **提案段階（C）**：離れたレイヤーのグループ化には位置変更が必要。 | 見た目や重なり順が変わる場合、確定前プレビューを `main.ts` に追加する案を評価。 |
 | C03-012 | **提案段階（C）**：履歴比較は制作画面を遮る確認画面。 | 本体キャンバスへの一時表示など非破壊・非同期な比較を統合担当と検討。 |
 | C03-013 | **提案段階（C）**：レイヤー一覧を都度再構築している可能性。 | 100レイヤー等で計測し、必要なら差分だけ再描画。 `main.ts` は統合担当の所有。 |
@@ -33,10 +33,11 @@
 
 ## 検査の記録
 
-- GitHub上のコードを読み、7ファイル（`transaction.ts`、`layerDeformationDuplicate.test.ts`、`historyBrush.ts`、`historyBrush.test.ts`、`persistence/coordinator.ts`、`persistence/persistence.worker.ts`、`ui/artworkHistoryView.ts`）へ変更を作成。
+- GitHub上のコードを読み、10ファイル（`transaction.ts`、`layerDeformationDuplicate.test.ts`、`historyBrush.ts`、`historyBrush.test.ts`、`persistence/coordinator.ts`、`persistence/persistence.worker.ts`、`ui/artworkHistoryView.ts`、`persistence/legacyMigration.worker.ts`、`persistence/legacyStrokeIntegrity.ts`、`persistence/legacyStrokeIntegrity.test.ts`）へ変更を作成。
 - C03-001の新規テストは変形保持コピー、保存→読込、別レイヤーのみの編集、Undo/Redoを確認する1ケース。
+- C03-010の新規テストは、元データの保持と、設定の違い・欠落・順序違いの検出を確認する2ケース。
 - C03-003の新規テストは3ケース：自由形状の外側へのはみ出し防止・半透明の選択濃度・サイズ不一致の拒否。
-- **最新の自動検査：成功を確認**（コミット `365fe6f3e1c6ab3ef7f45c9a1e7f70af87ec1044`）：[C03-C10 quality integration checks](https://github.com/totoro0419/illustro/actions/runs/43889838107) は Coreテスト・型検査、ブラシ回帰、エディタ単体テスト、型検査、ビルドを完了して成功。[Core CI](https://github.com/totoro0419/illustro/actions/runs/43889838069) も成功。**端末・保存と復元の操作・4000px速度は未確認。**
+- **直前の自動検査：成功を確認**（コミット `365fe6f3e1c6ab3ef7f45c9a1e7f70af87ec1044`）：[C03-C10 quality integration checks](https://github.com/totoro0419/illustro/actions/runs/43889838107) は Coreテスト・型検査、ブラシ回帰、エディタ単体テスト、型検査、ビルドを完了して成功。[Core CI](https://github.com/totoro0419/illustro/actions/runs/43889838069) も成功。**C03-010の追加変更後のCI、および端末・保存と復元の操作・4000px速度は未確認。**
 - 最初のPR自動検査は統合管理者が並行追加した管理文書を誤って所有権違反と判定して中断。統合担当が検査範囲を修正した（こちらの所有ファイルには変更なし）。続く検査で履歴画像の型にエラーが判明し、追加修正した。以降の合否は最新CIで確認する。
 - 統合担当への `main.ts` 修正依頼は [Issue #96](https://github.com/totoro0419/illustro/issues/96) に記録。
 - PR #76をDraftで維持。CI成功と実機での安全性確認は別であり、実機検証と統合担当の接続が済むまでは完了としない。
