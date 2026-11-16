@@ -14,6 +14,16 @@ export type EyedropperOptions=Readonly<{
   diameter:1|3|5;
   transparency:'skip'|'keep'|'white';
 }>;
+/** Keep the status text consistent with the actual sampling mode. */
+export function sampleSourceLabel(
+  selected:Pick<EyedropperOptions,'source'|'layerId'>,
+  layers:readonly {id:LayerId;name:string}[]
+):string{
+  if(selected.source==='composite')return '見えている作品全体';
+  if(selected.source==='layer')return '選んでいるレイヤー';
+  const found=layers.find(layer=>layer.id===selected.layerId);
+  return found?'指定したレイヤー: '+found.name:'指定したレイヤーが見つかりません';
+}
 const KEY='illustro.c04.eyedropper-options.v1';
 const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const read=():Partial<Omit<EyedropperOptions,'layerId'>>&{layerId?:string}=>{
@@ -39,18 +49,20 @@ export function installEyedropperSettings(args:{
   const diameter=el<HTMLSelectElement>('colorSampleDiameter');
   const transparency=el<HTMLSelectElement>('colorSampleTransparency');
   const stored=read();
+  // Never silently use the first layer when a saved, explicitly specified
+  // layer no longer exists (e.g. after switching to another artwork).
+  let requestedLayerId:LayerId|null=stored.layerId as LayerId??null;
+  const status=el<HTMLOutputElement>('colorSampleActiveSummary');
   source.value=stored.source??'composite';
   diameter.value=String(stored.diameter??1);
   transparency.value=stored.transparency??'skip';
   function refreshLayers(){
-    const last=layer.value||stored.layerId||'';
     const known=args.getLayers();
-    layer.replaceChildren(...known.map(x=>new Option(x.name,x.id)));
-    const match=known.find(x=>x.id===last);
-    if(match)layer.value=match.id;
+    layer.replaceChildren(new Option('レイヤーを選んでください',''),...known.map(x=>new Option(x.name,x.id)));
+    layer.value=requestedLayerId&&known.some(item=>item.id===requestedLayerId)?requestedLayerId:'';
     const explicit=source.value==='specific';
     label.hidden=!explicit;
-    if(explicit&&!known.length)layer.add(new Option('作品を開いてください',''));
+    if(status)status.textContent='現在の採色元: '+sampleSourceLabel(options(),known);
   }
   function options():EyedropperOptions{
     const selected:SampleSource=source.value==='specific'?'specific':source.value==='layer'?'layer':'composite';
@@ -62,12 +74,17 @@ export function installEyedropperSettings(args:{
     };
   }
   function apply(){
+    if(layer.value)requestedLayerId=layer.value as LayerId;
     refreshLayers();
     const value=options();
     args.getSurface()?.configureSample(value);
     try{localStorage.setItem(KEY,JSON.stringify({version:1,...value}));}catch{/* allow session-only settings */}
   }
-  for(const control of [source,layer,diameter,transparency])control.addEventListener('change',apply);
+  for(const control of [source,diameter,transparency])control.addEventListener('change',apply);
+  layer.addEventListener('change',()=>{
+    requestedLayerId=layer.value?layer.value as LayerId:null;
+    apply();
+  });
   source.addEventListener('focus',refreshLayers);
   layer.addEventListener('focus',refreshLayers);
   const reference=installReferenceColorPicker(args.foreground,el<HTMLButtonElement>('referenceSampleOpen'),
