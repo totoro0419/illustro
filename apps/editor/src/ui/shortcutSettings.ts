@@ -51,6 +51,8 @@ function parse(value:unknown):Binding[]{
   }
   return entries;
 }
+/** Validate a portable shortcut file without applying it to the current session. */
+export function validateShortcutSettings(value:unknown):void{parse(value);}
 const read=()=>{try{return localStorage.getItem(KEY)}catch{return null;}};
 const write=(bindings:readonly Binding[])=>{try{localStorage.setItem(KEY,JSON.stringify({schema:'illustro.user.shortcuts',version:1,bindings} satisfies Settings));return true;}catch{return false;}};
 const normalizedKey=(event:KeyboardEvent)=>event.key===' '?'space':event.key.toLowerCase();
