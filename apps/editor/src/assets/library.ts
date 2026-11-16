@@ -17,28 +17,38 @@ export type AssetEntry=Readonly<{
   data:Blob;
 }>;
 export type AssetInfo=Omit<AssetEntry,'data'>;
-const STORE='assets',DB='illustro-c05-assets-v1',MAX_SINGLE=32*1024*1024;
+const STORE='assets',META_STORE='asset-metadata',DB='illustro-c05-assets-v1',MAX_SINGLE=32*1024*1024;
 let databasePromise:Promise<IDBDatabase>|null=null;
 function database():Promise<IDBDatabase>{
   if(databasePromise)return databasePromise;
   databasePromise=new Promise((resolve,reject)=>{
-    const request=indexedDB.open(DB,1);
+    const request=indexedDB.open(DB,2);
     request.onupgradeneeded=()=>{
       const db=request.result;
       if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:'id'});
+      if(!db.objectStoreNames.contains(META_STORE)){
+        const metadata=db.createObjectStore(META_STORE,{keyPath:'id'});
+        // Upgrade existing users without moving or deleting a single asset blob.
+        const cursorRequest=request.transaction!.objectStore(STORE).openCursor();
+        cursorRequest.onsuccess=()=>{
+          const cursor=cursorRequest.result;
+          if(cursor){metadata.put(assetMetadata(cursor.value as AssetEntry));cursor.continue();}
+        };
+      }
     };
     request.onsuccess=()=>resolve(request.result);
     request.onerror=()=>{databasePromise=null;reject(request.error??Error('素材庫を開けませんでした。'));};
   });
   return databasePromise;
 }
-async function transact<T>(mode:IDBTransactionMode,operate:(store:IDBObjectStore,done:(v:T)=>void)=>void):Promise<T>{
+async function transact<T>(mode:IDBTransactionMode,operate:(store:IDBObjectStore,metadata:IDBObjectStore,done:(v:T)=>void)=>void):Promise<T>{
   const db=await database();
   return new Promise((resolve,reject)=>{
-    const tx=db.transaction(STORE,mode),store=tx.objectStore(STORE);
+    // Blob and searchable metadata always commit atomically.
+    const tx=db.transaction([STORE,META_STORE],mode),store=tx.objectStore(STORE),metadata=tx.objectStore(META_STORE);
     let result:T|undefined,done=false,reason:Error|null=null;
     const finish=(v:T)=>{result=v;done=true;};
-    try{operate(store,finish);}catch(error){reason=error instanceof Error?error:Error(String(error));tx.abort();}
+    try{operate(store,metadata,finish);}catch(error){reason=error instanceof Error?error:Error(String(error));tx.abort();}
     tx.oncomplete=()=>{if(done)resolve(result as T);else reject(Error('素材庫の処理が完了しませんでした。'));};
     tx.onabort=()=>reject(reason??tx.error??Error('素材庫への保存が中断されました。'));
     tx.onerror=()=>{ /* onabort receives the final failure */ };
@@ -51,14 +61,15 @@ export function assetMetadata(entry:AssetEntry):AssetInfo{
   const {data,...metadata}=entry;return metadata;
 }
 export async function listAssets(includeDeleted=false):Promise<AssetInfo[]>{
-  const results=await transact<AssetEntry[]>('readonly',(store,done)=>{
-    const values:AssetEntry[]=[];const req=store.openCursor();
-    req.onsuccess=()=>{const cursor=req.result;if(cursor){values.push(cursor.value as AssetEntry);cursor.continue();}else done(values);};
+  // Read metadata only: a list of thousands of assets must not deserialize thousands of Blob objects.
+  const results=await transact<AssetInfo[]>('readonly',(_store,metadata,done)=>{
+    const values:AssetInfo[]=[];const req=metadata.openCursor();
+    req.onsuccess=()=>{const cursor=req.result;if(cursor){values.push(cursor.value as AssetInfo);cursor.continue();}else done(values);};
   });
-  return results.filter(entry=>includeDeleted||!entry.deleted).map(assetMetadata);
+  return results.filter(entry=>includeDeleted||!entry.deleted);
 }
 export async function getAsset(assetId:string):Promise<AssetEntry|null>{
-  return transact<AssetEntry|null>('readonly',(store,done)=>{
+  return transact<AssetEntry|null>('readonly',(store,_metadata,done)=>{
     const req=store.get(assetId);
     req.onsuccess=()=>done((req.result as AssetEntry|undefined)??null);
   });
@@ -80,10 +91,10 @@ export async function addAsset(spec:Readonly<{
     bytes:spec.data.size,license:clean(spec.license??'',200),origin:clean(spec.origin??'',600),
     notes:clean(spec.notes??'',1200),data:spec.data
   };
-  await transact<void>('readwrite',(store,done)=>{
+  await transact<void>('readwrite',(store,metadata,done)=>{
     const check=store.get(key);
     check.onsuccess=()=>{if(check.result!==undefined){throw Error('同じIDの素材は上書きできません。');}
-      store.add(entry);done(undefined);
+      store.add(entry);metadata.add(assetMetadata(entry));done(undefined);
     };
   });
   const check=await getAsset(key);
@@ -94,7 +105,7 @@ export async function updateAsset(assetId:string,change:Readonly<{
   name?:string;folder?:string;tags?:readonly string[];favorite?:boolean;hidden?:boolean;
   license?:string;origin?:string;notes?:string;deleted?:boolean;
 }>):Promise<AssetInfo>{
-  await transact<void>('readwrite',(store,done)=>{
+  await transact<void>('readwrite',(store,metadata,done)=>{
     const req=store.get(assetId);
     req.onsuccess=()=>{
       const current=req.result as AssetEntry|undefined;
@@ -110,10 +121,11 @@ export async function updateAsset(assetId:string,change:Readonly<{
         ...(change.license!==undefined?{license:clean(change.license,200)}:{}),
         ...(change.origin!==undefined?{origin:clean(change.origin,600)}:{}),
         ...(change.notes!==undefined?{notes:clean(change.notes,1200)}:{}),
-        version:current.version+1,updatedAt:Date.now()
+        // Metadata edits (including favorites and trash) do not create a new content version.
+        version:current.version,updatedAt:Date.now()
       };
       if(!next.name)throw Error('素材の名前は空にできません。');
-      store.put(next);done(undefined);
+      store.put(next);metadata.put(assetMetadata(next));done(undefined);
     };
   });
   const result=await getAsset(assetId);if(!result)throw Error('素材の更新内容を読み戻せませんでした。');
@@ -139,10 +151,13 @@ export async function duplicateAsset(assetId:string):Promise<AssetInfo>{
   });
 }
 export async function markAssetUsed(assetId:string):Promise<void>{
-  await transact<void>('readwrite',(store,done)=>{
+  await transact<void>('readwrite',(store,metadata,done)=>{
     const req=store.get(assetId);req.onsuccess=()=>{
       const current=req.result as AssetEntry|undefined;
-      if(current&&!current.deleted)store.put({...current,lastUsedAt:Date.now()});
+      if(current&&!current.deleted){
+        const next={...current,lastUsedAt:Date.now()};
+        store.put(next);metadata.put(assetMetadata(next));
+      }
       done(undefined);
     };
   });
