@@ -6,6 +6,30 @@ import {button,labelledField,locate,numberField,paintPreview,selectField,type Ar
 function curve(a:ArtPoint,b:ArtPoint,c:ArtPoint):ArtPoint[]{
   return [{...a,outX:b.x,outY:b.y},{...c,inX:b.x,inY:b.y}];
 }
+/** Round corners as editable cubic segments; no new file format is needed. */
+export function roundedRectanglePoints(a:ArtPoint,b:ArtPoint,radius:number):ArtPoint[]{
+  const l=Math.min(a.x,b.x),r=Math.max(a.x,b.x),t=Math.min(a.y,b.y),bottom=Math.max(a.y,b.y);
+  const d=Math.max(0,Math.min(radius,(r-l)/2,(bottom-t)/2)),k=4*(Math.SQRT2-1)/3*d;
+  if(!d)return [{x:l,y:t},{x:r,y:t},{x:r,y:bottom},{x:l,y:bottom}];
+  return [
+    {x:l+d,y:t,inX:l+d-k,inY:t},
+    {x:r-d,y:t,outX:r-d+k,outY:t},
+    {x:r,y:t+d,inX:r,inY:t+d-k},
+    {x:r,y:bottom-d,outX:r,outY:bottom-d+k},
+    {x:r-d,y:bottom,inX:r-d+k,inY:bottom},
+    {x:l+d,y:bottom,outX:l+d-k,outY:bottom},
+    {x:l,y:bottom-d,inX:l,inY:bottom-d+k},
+    {x:l,y:t+d,outX:l,outY:t+d-k}
+  ];
+}
+export function regularPolygonPoints(a:ArtPoint,b:ArtPoint,count:number):ArtPoint[]{
+  const sides=Math.max(3,Math.min(64,Math.round(count)));
+  const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,rx=Math.abs(a.x-b.x)/2,ry=Math.abs(a.y-b.y)/2;
+  return Array.from({length:sides},(_,i)=>{
+    const angle=-Math.PI/2+2*Math.PI*i/sides;
+    return {x:cx+rx*Math.cos(angle),y:cy+ry*Math.sin(angle)};
+  });
+}
 export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const heading=document.createElement('summary');heading.textContent='図形・グラデーション';
@@ -21,14 +45,21 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const gradientFields=document.createElement('div');gradientFields.className='c06-clipboard-grid';
   controls.append(shapeFields,gradientFields);
   const shape=selectField(shapeFields,'形',[
-    ['rectangle','長方形'],['ellipse','楕円'],['polyline','直線・折れ線'],['bezier','ベジェ曲線']
+    ['rectangle','長方形'],['rounded','角丸長方形'],['polygon','多角形'],
+    ['ellipse','楕円'],['polyline','直線・折れ線'],['bezier','ベジェ曲線']
   ] as const);
   const width=numberField(shapeFields,'線幅（px）',8,0,4096);
+  const radius=numberField(shapeFields,'角の丸み（px）',24,0,4096,.5);
+  const sides=numberField(shapeFields,'角の数',6,3,64);
   const stroke=document.createElement('input');stroke.type='color';labelledField(shapeFields,'線の色',stroke);
   const fill=document.createElement('input');fill.type='color';fill.value='#faac49';labelledField(shapeFields,'内側の色',fill);
   const filled=document.createElement('input');filled.type='checkbox';labelledField(shapeFields,'内側を塗る',filled);
   const closed=document.createElement('input');closed.type='checkbox';labelledField(shapeFields,'道筋を閉じる',closed);
   const square=document.createElement('input');square.type='checkbox';labelledField(shapeFields,'縦と横の長さをそろえる',square);
+  gradientFields.append(button('色の並びを反転',()=>{
+    stops=stops.map(stop=>({...stop,at:1-stop.at})).reverse();
+    redrawStops();void refresh();
+  },status));
   const mode=selectField(gradientFields,'広がり方',[
     ['linear','直線'],['radial','放射'],['reflected','反射'],['angular','角度']
   ] as const);
@@ -88,8 +119,11 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       const length=Math.max(Math.abs(end.x-start.x),Math.abs(end.y-start.y));
       result=[start,{x:start.x+Math.sign(end.x-start.x||1)*length,y:start.y+Math.sign(end.y-start.y||1)*length}];
     }
-    return validateEditableArtwork({kind:'path',shape:shape.value,points:result,
-      closed:closed.checked,lineStyle,stroke:stroke.value,fill:filled.checked?fill.value:null,width:width.valueAsNumber,
+    const shapeKind=shape.value==='rounded'?'bezier':shape.value==='polygon'?'polyline':shape.value;
+    if(shape.value==='rounded')result=roundedRectanglePoints(start,result.at(-1)!,radius.valueAsNumber);
+    if(shape.value==='polygon')result=regularPolygonPoints(start,result.at(-1)!,sides.valueAsNumber);
+    return validateEditableArtwork({kind:'path',shape:shapeKind,points:result,
+      closed:shape.value==='rounded'||shape.value==='polygon'||closed.checked,lineStyle,stroke:stroke.value,fill:filled.checked?fill.value:null,width:width.valueAsNumber,
       ...(editedOpacity===undefined?{}:{opacity:editedOpacity}),
       ...(originalStrokeLayer?{originalStrokeLayer}:{})}) as EditablePath;
   }
@@ -257,7 +291,12 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     setPoints([{x:current.width*.22,y:current.height*.25},{x:current.width*.78,y:current.height*.75}]);
     status.textContent='新しいレイヤーに作ります。';void refresh();
   }
-  function updateFields(){shapeFields.hidden=type.value!=='shape';gradientFields.hidden=type.value!=='gradient';redrawStops();}
+  function updateFields(){shapeFields.hidden=type.value!=='shape';gradientFields.hidden=type.value!=='gradient';shape.onchange?.(new Event('change'));redrawStops();}
+  shape.onchange=()=>{
+    radius.parentElement!.hidden=shape.value!=='rounded';
+    sides.parentElement!.hidden=shape.value!=='polygon';
+    if(shape.value==='rounded'||shape.value==='polygon')closed.checked=true;
+  };
   type.onchange=()=>{reset();updateFields();};
   boundary.onchange=()=>{applied.checked=false;view.value='follow';};
   applied.onchange=()=>{view.value=applied.checked?'follow':'normal';};
@@ -275,7 +314,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       locate(current.drawing,path=>{
         const a=path[0]!,b=path.at(-1)!;
         if(path.length===1)return;
-        setPoints(type.value==='gradient'||shape.value==='rectangle'||shape.value==='ellipse'?[a,b]:
+        setPoints(type.value==='gradient'||['rectangle','rounded','polygon','ellipse'].includes(shape.value)?[a,b]:
           shape.value==='bezier'?curve(a,path[Math.floor(path.length/2)]!,b):path);
         void refresh();
       });
