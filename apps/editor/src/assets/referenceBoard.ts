@@ -79,6 +79,16 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   const clone=(value:BoardSnapshot):BoardSnapshot=>({
     ...value,items:value.items.map(item=>({...item}))
   });
+  const fitWithinWindow=(source:BoardSnapshot):BoardSnapshot=>{
+    let changed=false;
+    const items=source.items.map(item=>{
+      const x=safePos(item.x,0,Math.max(0,innerWidth-100));
+      const y=safePos(item.y,0,Math.max(0,innerHeight-70));
+      if(x===item.x&&y===item.y)return item;
+      changed=true;return {...item,x,y};
+    });
+    return changed?{...source,items}:source;
+  };
   function syncAfter(change:BoardSnapshot,history=true){
     if(!board||board.documentId!==change.documentId)return;
     if(history){back.push(clone(board));if(back.length>60)back.shift();forward=[];}
@@ -87,7 +97,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     // Do not discard it after getDocumentId() changes.
     saving=saving.then(()=>writeBoard(clone(change)),()=>writeBoard(clone(change)))
       .then(()=>{saveError=null;},reason=>{saveError=reason;error(reason);});
-    void render();drawList();
+    void render().catch(error);drawList();
   }
   async function refreshIfChanged(){
     const id=options.getDocumentId();
@@ -98,7 +108,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     try{
       const current=transition,data=await readBoard(id);
       if(current!==transition||id!==currentDoc)return;
-      board=data;temporaryHidden=data.hidden;await render();drawList();
+      board=data;temporaryHidden=data.hidden;
+      const fitted=fitWithinWindow(data);
+      if(fitted!==data)syncAfter(fitted,false);
+      else {await render();drawList();}
     }catch(e){error(e);}
   }
   async function refresh(){
@@ -409,14 +422,8 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     resizeTimer=setTimeout(()=>{
       resizeTimer=null;
       if(!board)return;
-      let changed=false;
-      const items=board.items.map(item=>{
-        const x=safePos(item.x,0,Math.max(0,innerWidth-100));
-        const y=safePos(item.y,0,Math.max(0,innerHeight-70));
-        if(x===item.x&&y===item.y)return item;
-        changed=true;return {...item,x,y};
-      });
-      if(changed)syncAfter({...board,items},false);
+      const fitted=fitWithinWindow(board);
+      if(fitted!==board)syncAfter(fitted,false);
     },140);
   });
   groupSelect.onchange=()=>drawList();
