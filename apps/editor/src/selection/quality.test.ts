@@ -1,5 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {combineSelection,brushSelection,boundsOfSelection,rasterizeSelection,type MaskData} from './mask';
+import {snapMagneticPoint} from './magnetic';
 
 const mask=(width:number,height:number,values:number[]):MaskData=>({
   width,height,alpha:Uint8Array.from(values)
@@ -76,5 +77,23 @@ describe('C06 off-canvas move is non-destructive',()=>{
     selection[0]=255;
     worker.onmessage?.({data:{id:2,type:'move',width:4,height:4,image:source,mask:selection,dx:-1,dy:0}});
     expect(replies[0]?.ok).toBe(true);
+  });
+});
+
+describe('C06 magnetic selection',()=>{
+  it('follows a nearby high-contrast edge (C06-010)',()=>{
+    const width=32,height=32,pixels=new Uint8ClampedArray(width*height*4);
+    // Transparent paper with one vertical, opaque black line.
+    for(let y=0;y<height;y++)pixels[(y*width+15)*4+3]=255;
+    const point=snapMagneticPoint(pixels,width,height,{x:12,y:17},null,8);
+    expect(point.x).toBeGreaterThan(12);
+    expect(point.x).toBeLessThan(18);
+    expect(point.y).toBeGreaterThan(10);
+    expect(point.y).toBeLessThan(24);
+  });
+  it('retains the input position when no contrasting edge is present',()=>{
+    const pixels=new Uint8ClampedArray(20*20*4);
+    const original={x:8.3,y:9.6};
+    expect(snapMagneticPoint(pixels,20,20,original,null,8)).toEqual(original);
   });
 });
