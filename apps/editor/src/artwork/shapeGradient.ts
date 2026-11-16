@@ -142,6 +142,17 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   function editOnCanvas(){
     const current=api.context();
     if(!current||current.drawing!==draftDrawing)throw Error('作品を開き直したため、編集をやり直してください。');
+    // A generated preset must become editable path points before the first handle drag;
+    // otherwise each preview would regenerate the preset and discard edited vertices.
+    if(type.value==='shape'&&(shape.value==='rounded'||shape.value==='polygon')){
+      const generated=data();
+      if(generated.kind==='path'){
+        shape.value=generated.shape;
+        closed.checked=generated.closed;
+        setPoints(generated.points);
+        shape.onchange?.(new Event('change'));
+      }
+    }
     const content=data();
     const edits:Array<{point:ArtPoint;change:(point:ArtPoint)=>void}>=[];
     const edges:Array<[number,number]>=[];
