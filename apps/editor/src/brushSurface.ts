@@ -980,8 +980,8 @@ export class BrushSurface{
     this.syncLayerStyles();
   }
   private layerCompPreview:LayerComp|null=null;
-  private layerBlendPreview:{layerId:LayerId;blend:LayerBlend;opacity:number}|null=null;
-  setLayerBlendPreview(preview:{layerId:LayerId;blend:LayerBlend;opacity:number}|null){
+  private layerBlendPreview:{layerId:LayerId;blend:LayerBlend;opacity:number;tonePreview?:boolean}|null=null;
+  setLayerBlendPreview(preview:{layerId:LayerId;blend:LayerBlend;opacity:number;tonePreview?:boolean}|null){
     this.layerBlendPreview=preview;
     this.syncLayerStyles();
   }
@@ -1003,7 +1003,7 @@ export class BrushSurface{
         :root.isLayerVisible(layer.id);
       const clip=root.clippingSource(layer.id);
       const blendPreview=this.layerBlendPreview?.layerId===layer.id?this.layerBlendPreview:null;
-      const blend=blendPreview?blendPreview.blend
+      const blend=blendPreview?(blendPreview.tonePreview?{...blendPreview.blend,tonePreview:true}:blendPreview.blend)
         :candidate?.blend!==undefined?candidate.blend:layer.blend;
       return {
         surfaceKey:layer.surface.descriptor.surfaceId,

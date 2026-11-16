@@ -50,7 +50,7 @@ export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|U
   if(!Number.isFinite(opacity)||opacity<0||opacity>1)throw new Error('不正なレイヤー不透明度です。');
   const tileSize=TILE;
   const blend=shape?.blend;
-  const advanced=blend&&(blend.mode!=='normal'||blend.space==='linear');
+  const advanced=blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone);
   const hasMask=shape&&(shape.mask?.enabled||clip?.mask?.enabled);
   const maskRows=new Map<number,readonly [number|Uint8Array,number|Uint8Array]>();
   let tileY=-1;

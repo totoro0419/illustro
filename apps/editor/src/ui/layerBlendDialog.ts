@@ -1,4 +1,4 @@
-import {LAYER_BLEND_MODES,type LayerBlend,type LayerBlendMode} from '@illustro/core';
+import {LAYER_BLEND_MODES,type LayerBlend,type LayerBlendMode,type LayerTone} from '@illustro/core';
 
 export const layerBlendNames:Record<LayerBlendMode,string>={
   normal:'通常',darken:'比較（暗）',lighten:'比較（明）',multiply:'乗算',screen:'スクリーン',
@@ -9,9 +9,10 @@ export const layerBlendNames:Record<LayerBlendMode,string>={
   luminosity:'輝度',dissolve:'ディザ合成',
 };
 
-export type LayerBlendChoice=Readonly<{blend:LayerBlend;opacity:number}>;
+export type LayerBlendChoice=Readonly<{blend:LayerBlend;opacity:number;tonePreview?:boolean}>;
 export function openLayerBlendDialog(options:{
   title:string;current:LayerBlendChoice;stages:readonly string[];
+  sampleTone:(source:LayerTone['source'])=>Promise<ImageData>;
   preview:(choice:LayerBlendChoice|null)=>void;complete:(choice?:LayerBlendChoice)=>void;
 }){
   const dialog=document.createElement('dialog'),form=document.createElement('form');
@@ -30,16 +31,47 @@ export function openLayerBlendDialog(options:{
   const percentage=document.createElement('output');
   let opacity=options.current.opacity;
   const comparison=document.createElement('button');comparison.type='button';
-  const selected=():LayerBlendChoice=>({
-    blend:{mode:mode.value as LayerBlendMode,space:space.value==='linear'?'linear':'encoded',seed:options.current.blend.seed},
-    opacity,
+  const tonePanel=document.createElement('details'),toneTitle=document.createElement('summary');
+  toneTitle.textContent='明るさで合成範囲を指定';
+  tonePanel.open=!!options.current.blend.tone;
+  const toneEnabled=document.createElement('input');toneEnabled.type='checkbox';toneEnabled.checked=!!options.current.blend.tone;
+  const toneSource=document.createElement('select');toneSource.add(new Option('このレイヤー','self'));toneSource.add(new Option('下の絵','backdrop'));
+  toneSource.value=options.current.blend.tone?.source??'self';
+  const toneChannel=document.createElement('select');
+  for(const [id,label] of [['luminosity','輝度'],['red','赤'],['green','緑'],['blue','青']] as const)toneChannel.add(new Option(label,id));
+  toneChannel.value=options.current.blend.tone?.channel??'luminosity';
+  const bounds=['darkStart','darkEnd','lightStart','lightEnd'] as const;
+  const names=['暗部の境界','暗部のなじみ','明部のなじみ','明部の境界'];
+  const controls=bounds.map((key,index)=>{
+    const input=document.createElement('input');input.type='range';input.min='0';input.max='255';input.step='1';
+    input.value=String(Math.round((options.current.blend.tone?.[key]??(index>=2?1:0))*255));
+    return input;
+  });
+  const tone=():LayerTone=>({
+    source:toneSource.value==='backdrop'?'backdrop':'self',channel:toneChannel.value as LayerTone['channel'],
+    darkStart:controls[0]!.valueAsNumber/255,darkEnd:controls[1]!.valueAsNumber/255,
+    lightStart:controls[2]!.valueAsNumber/255,lightEnd:controls[3]!.valueAsNumber/255
+  });
+  const highlight=document.createElement('input');highlight.type='checkbox';
+  const histogram=document.createElement('canvas');histogram.width=256;histogram.height=52;
+  histogram.setAttribute('aria-label','選んだ色成分の分布');
+  const image=document.createElement('canvas');image.hidden=true;image.style.maxWidth='100%';
+  image.setAttribute('aria-label','明るさを拾う画像');
+  const pickBound=document.createElement('select');
+  names.forEach((name,index)=>pickBound.add(new Option(name,String(index))));
+  const message=document.createElement('output');message.setAttribute('role','status');
+  let sampled:ImageData|null=null,epoch=0;
+  const selected=(preview=false):LayerBlendChoice=>({
+    blend:{mode:mode.value as LayerBlendMode,space:space.value==='linear'?'linear':'encoded',seed:options.current.blend.seed,
+      ...(toneEnabled.checked?{tone:tone()}:{})},
+    opacity,...(preview&&toneEnabled.checked&&highlight.checked?{tonePreview:true}:{})
   });
   let before=false;
   const update=()=>{
     comparison.setAttribute('aria-pressed',String(before));
     percentage.value=Math.round(opacity*1000)/10+'%';
     comparison.textContent=before?'変更後を見る':'変更前を見る';
-    options.preview(before?null:selected());
+    options.preview(before?null:selected(true));
   };
   mode.onchange=space.onchange=()=>{before=false;update();};
   amount.oninput=()=>{opacity=amount.valueAsNumber/100;before=false;update();};
@@ -49,6 +81,63 @@ export function openLayerBlendDialog(options:{
     label.append(name,input);
     return label;
   };
+  const toneAt=(data:Uint8ClampedArray,index:number)=>{
+    const channel=toneChannel.value,r=data[index]!,g=data[index+1]!,b=data[index+2]!;
+    return channel==='red'?r:channel==='green'?g:channel==='blue'?b:Math.round(.2126*r+.7152*g+.0722*b);
+  };
+  function drawHistogram(){
+    const context=histogram.getContext('2d');
+    if(!context)return;
+    context.clearRect(0,0,256,52);
+    context.fillStyle='#232934';context.fillRect(0,0,256,52);
+    if(sampled){
+      const bins=new Uint32Array(256);
+      for(let at=0;at<sampled.data.length;at+=4)if(sampled.data[at+3])bins[toneAt(sampled.data,at)]!++;
+      const max=Math.max(1,...bins);
+      context.fillStyle='#a4b9d5';
+      bins.forEach((count,index)=>{const size=Math.sqrt(count/max)*46;context.fillRect(index,52-size,1,size);});
+    }
+    controls.forEach((slider,index)=>{
+      context.fillStyle=index%2?'#ef91ba':'#ffce7d';
+      context.fillRect(slider.valueAsNumber,0,1,52);
+    });
+  }
+  async function loadToneImage(){
+    const turn=++epoch;toneEnabled.checked&&tonePanel.open&&(message.textContent='色の分布を読み込み中…');
+    if(!toneEnabled.checked||!tonePanel.open)return;
+    try{
+      const value=await options.sampleTone(tone().source);
+      if(turn!==epoch)return;
+      sampled=value;image.width=value.width;image.height=value.height;
+      image.getContext('2d')?.putImageData(value,0,0);image.hidden=false;
+      message.textContent='下の画像を押すと、選んだ境界にその場所の値が入ります。';
+      drawHistogram();
+    }catch(error){if(turn===epoch)message.textContent=error instanceof Error?error.message:String(error);}
+  }
+  function changeBound(index:number,value:number){
+    const min=controls[index-1]?.valueAsNumber??0,max=controls[index+1]?.valueAsNumber??255;
+    controls[index]!.value=String(Math.max(min,Math.min(max,value)));
+    before=false;update();drawHistogram();
+  }
+  controls.forEach((slider,index)=>slider.oninput=()=>changeBound(index,slider.valueAsNumber));
+  toneEnabled.onchange=()=>{before=false;update();void loadToneImage();};
+  toneSource.onchange=()=>{before=false;update();void loadToneImage();};
+  toneChannel.onchange=()=>{before=false;update();drawHistogram();};
+  highlight.onchange=()=>{before=false;update();};
+  tonePanel.ontoggle=()=>{if(tonePanel.open)void loadToneImage();};
+  histogram.onclick=(event)=>{
+    const rect=histogram.getBoundingClientRect();
+    changeBound(Number(pickBound.value),Math.round(255*(event.clientX-rect.left)/rect.width));
+  };
+  image.onclick=(event)=>{
+    if(!sampled)return;
+    const rect=image.getBoundingClientRect(),x=Math.floor((event.clientX-rect.left)*image.width/rect.width);
+    const y=Math.floor((event.clientY-rect.top)*image.height/rect.height);
+    if(x>=0&&y>=0&&x<image.width&&y<image.height)changeBound(Number(pickBound.value),toneAt(sampled.data,(y*image.width+x)*4));
+  };
+  tonePanel.append(toneTitle,field('明るさで範囲を絞る',toneEnabled),field('調べる絵',toneSource),
+    field('色の成分',toneChannel),...controls.map((control,index)=>field(names[index]!,control)),
+    field('影響する場所をピンクで表示',highlight),field('画像で調整する境界',pickBound),histogram,image,message);
   const actions=document.createElement('menu');
   const cancel=document.createElement('button');cancel.type='submit';cancel.value='cancel';cancel.textContent='取り消す';
   const apply=document.createElement('button');apply.type='submit';apply.value='apply';apply.textContent='確定';
@@ -63,7 +152,7 @@ export function openLayerBlendDialog(options:{
   const transparency=document.createElement('p');
   transparency.textContent='透明部分は透明度の分だけ合成が弱まります。透明度が0の部分は下の絵に影響しません。';
   stages.append(stageTitle,order,transparency);
-  form.append(title,field('モード',mode),field('色の混ぜ方',space),strength,actions,stages);
+  form.append(title,field('モード',mode),field('色の混ぜ方',space),strength,tonePanel,actions,stages);
   dialog.append(form);document.body.append(dialog);
   const key=(event:KeyboardEvent)=>{
     if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close('cancel');}
@@ -76,6 +165,6 @@ export function openLayerBlendDialog(options:{
   },{once:true});
   dialog.show();
   mode.focus();
-  update();
+  update();if(tonePanel.open)void loadToneImage();
   return dialog;
 }

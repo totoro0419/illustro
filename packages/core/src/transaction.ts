@@ -533,7 +533,7 @@ export class DocumentTransaction{
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(layer.baseColor==='white'&&value)throw new Error('白背景の合成モードは通常に固定されています。');
     const blend=validateLayerBlend(value),before=layer.blend??null;
-    if(blend===before||(blend&&before&&blend.mode===before.mode&&blend.space===before.space&&blend.seed===before.seed))return false;
+    if(blend===before||(blend&&before&&blend.mode===before.mode&&blend.space===before.space&&blend.seed===before.seed&&JSON.stringify(blend.tone)===JSON.stringify(before.tone)))return false;
     return this.meta(id,{blend});
   }
   setVectorLayerMask(id:LayerId,mask:LayerMask|null){

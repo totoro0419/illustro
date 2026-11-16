@@ -11,6 +11,7 @@ const modeNames=[
  'difference','exclusion','linear-burn','linear-dodge','vivid-light','linear-light','pin-light','hard-mix','subtract','divide',
  'hue','saturation','color','luminosity','dissolve',
 ];
+export const layerToneChannel=channel=>Math.max(0,['luminosity','red','green','blue'].indexOf(channel));
 export const layerBlendIndex=mode=>Math.max(0,modeNames.indexOf(mode));
 const clamp=(x,lo=0,hi=1)=>Math.max(lo,Math.min(hi,x));
 const burn=(b,s)=>b===1?1:s===0?0:1-Math.min(1,(1-b)/s);
@@ -42,7 +43,24 @@ function setSat(c,saturation){
 const linear=c=>c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);
 const encoded=c=>c<=.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-.055;
 
+const toneColor=(channels,channel)=>channel?channels[channel-1]:.2126*channels[0]+.7152*channels[1]+.0722*channels[2];
+const ease=(value,a,b)=>{
+ if(a===b)return Number(value>=a);
+ const t=clamp((value-a)/(b-a));
+ return t*t*(3-2*t);
+};
+export function artworkToneWeight(tone,channels){
+ const value=toneColor(channels,layerToneChannel(tone.channel));
+ const upper=tone.lightStart===tone.lightEnd?Number(value<=tone.lightEnd):1-ease(value,tone.lightStart,tone.lightEnd);
+ return ease(value,tone.darkStart,tone.darkEnd)*upper;
+}
 export function blendArtworkPixel(destination,offset,source,alpha,blend,x,y){
+ if(blend.tone){
+  const selected=blend.tone.source==='backdrop'?destination:source;
+  if(blend.tone.source==='backdrop'&&!destination[offset+3])return;
+  alpha*=artworkToneWeight(blend.tone,[selected[offset]/255,selected[offset+1]/255,selected[offset+2]/255]);
+  if(alpha<=0)return;
+ }
  const mode=layerBlendIndex(blend.mode);
  if(mode===24&&alpha<1){
   if(hashPixel(blend.seed,x,y)>=alpha)return;
@@ -125,6 +143,12 @@ function shaderFunctions(wg){
    branch('mode==21','blendSetLum(blendSetSat(b,blendSat(s)),blendLum(b))')+
    branch('mode==22','blendSetLum(s,blendLum(b))')+branch('mode==23','blendSetLum(b,blendLum(s))')+
    'return '+vec+'(blendChannel(b.r,s.r,mode),blendChannel(b.g,s.g,mode),blendChannel(b.b,s.b,mode));'),
+  fn('toneChannel',[[vec,'rgb'],[sc,'mode']],sc,
+   branch('mode==1.','rgb.r')+branch('mode==2.','rgb.g')+branch('mode==3.','rgb.b')+
+   'return dot(rgb,'+vec+'(.2126,.7152,.0722));'),
+  fn('toneWeight',args(sc,'value','low','lowSoft','highSoft','high'),sc,
+   dec('rise','step(low,value)')+dec('fall','step(value,high)')+
+   'if(lowSoft>low){rise=smoothstep(low,lowSoft,value);}if(high>highSoft){fall=1.-smoothstep(highSoft,high,value);}return rise*fall;'),
   fn('toLinear',args(sc,'c'),sc,branch('c<=.04045','c/12.92')+'return pow((c+.055)/1.055,2.4);'),
   fn('toEncoded',args(sc,'c'),sc,branch('c<=.0031308','12.92*c')+'return 1.055*pow(c,1./2.4)-.055;'),
  ].join('\n');
@@ -160,6 +184,17 @@ export function makeLayerBlendShader(source,wg,tile){
 fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
  let dst=textureLoad(layerBackdrop,q,0);
  var a=src.a*coverage;
+ let paper=(1.-dst.a)*p.v[6].w;
+ if(p.v[0].z>0.){
+  var measured=src.rgb;
+  if(p.v[0].z>1.){
+   if(dst.a+paper<=0.){return dst;}
+   measured=(dst.rgb+vec3f(paper))/max(dst.a+paper,.000001);
+  }
+  let value=toneChannel(measured,p.v[0].w);
+  a*=toneWeight(value,p.v[1].x,p.v[1].y,p.v[1].z,p.v[1].w);
+  if(p.v[2].x>0.&&a>0.){return vec4f(mix(dst.rgb,vec3f(1.,.26,.54),a*.65),max(dst.a,a));}
+ }
  if(a<=0.){return dst;}
  let mode=i32(p.v[5].x);
  if(mode==24){
@@ -168,7 +203,6 @@ fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
   if(a<1.&&blendHash(seed,xy.x,xy.y)>=a){return dst;}
   return vec4f(src.rgb,1.);
  }
- let paper=(1.-dst.a)*p.v[6].w;
  let ba=dst.a+paper;
  var b=(dst.rgb+vec3f(paper))/max(ba,.000001);
  var s=src.rgb;
@@ -191,6 +225,17 @@ vec4 compositeArtwork(ivec2 q,vec4 src,float coverage){
  int bottom=int(min(128.,params[4].y-params[0].y))-1-q.y;
  vec4 dst=texelFetch(layerBackdrop,ivec2(q.x,bottom),0);
  float a=src.a*coverage;
+ float paper=(1.-dst.a)*params[6].w;
+ if(params[0].z>0.){
+  vec3 measured=src.rgb;
+  if(params[0].z>1.){
+   if(dst.a+paper<=0.)return dst;
+   measured=(dst.rgb+paper)/max(dst.a+paper,.000001);
+  }
+  float value=toneChannel(measured,params[0].w);
+  a*=toneWeight(value,params[1].x,params[1].y,params[1].z,params[1].w);
+  if(params[2].x>0.&&a>0.)return vec4(mix(dst.rgb,vec3(1.,.26,.54),a*.65),max(dst.a,a));
+ }
  if(a<=0.)return dst;
  int mode=int(params[5].x);
  if(mode==24){
@@ -199,7 +244,6 @@ vec4 compositeArtwork(ivec2 q,vec4 src,float coverage){
   if(a<1.&&blendHash(seed,xy.x,xy.y)>=a)return dst;
   return vec4(src.rgb,1.);
  }
- float paper=(1.-dst.a)*params[6].w;
  float ba=dst.a+paper;
  vec3 b=(dst.rgb+paper)/max(ba,.000001);
  vec3 s=src.rgb;

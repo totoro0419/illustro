@@ -1,4 +1,4 @@
-import {layerBlendIndex,makeLayerBlendShader} from '@rt/layer-blending';
+import {layerBlendIndex,layerToneChannel,makeLayerBlendShader} from '@rt/layer-blending';
 import {layerMaskTile} from '@rt/layer-mask-coverage';
 import {TileHistory} from '@rt/tile-history';
 import {historyYield,releaseHistoryImage} from '@rt/history-io';
@@ -307,11 +307,11 @@ export class GpuRenderer {
   for(const {surfaceKey,visible,opacity,clipKey,mask,blend,white} of styles){
    if(typeof surfaceKey!=='string'||next.has(surfaceKey)||typeof visible!=='boolean'||!Number.isFinite(opacity)||opacity<0||opacity>1)throw Error('Invalid surface style');
    if(clipKey!==undefined&&typeof clipKey!=='string')throw Error('Invalid clipping source');
-   const before=previous.get(surfaceKey),maskSignature=mask?.enabled?JSON.stringify(mask):null;
+   const before=previous.get(surfaceKey),blendTone=blend?.tone?JSON.stringify([blend.tone,!!blend.tonePreview]):null,maskSignature=mask?.enabled?JSON.stringify(mask):null;
    const activeMask=maskSignature===before?.maskSignature?before.mask:maskSignature?mask:null;
    changed||=!before||before.visible!==visible||before.opacity!==opacity||before.clipKey!==clipKey||before.mask!==activeMask||
-    before.blend?.mode!==blend?.mode||before.blend?.space!==blend?.space||before.blend?.seed!==blend?.seed||before.white!==white;
-   next.set(surfaceKey,{visible,opacity,clipKey,mask:activeMask,maskSignature,blend,white});
+    before.blend?.mode!==blend?.mode||before.blend?.space!==blend?.space||before.blend?.seed!==blend?.seed||before.blendTone!==blendTone||before.white!==white;
+   next.set(surfaceKey,{visible,opacity,clipKey,mask:activeMask,maskSignature,blend,blendTone,white});
   }
   if(!changed)return;
   b.surfaceStyles=next;
@@ -800,7 +800,7 @@ function maskTexture(b,key,mask,params){
  return texture;
 }
 function needsBackdrop(blend){
- return blend&&(blend.mode!=='normal'||blend.space==='linear');
+ return blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone);
 }
 function artworkBlendParams(b,params,blend){
  params[18]=blend.seed>>>16;
@@ -808,6 +808,16 @@ function artworkBlendParams(b,params,blend){
  params[20]=layerBlendIndex(blend.mode);
  params[21]=blend.space==='linear'?1:0;
  params[27]=b.paperOpacity??0;
+ const tone=blend.tone;
+ params[2]=tone?(tone.source==='backdrop'?2:1):0;
+ if(tone){
+  params[3]=layerToneChannel(tone.channel);
+  params[4]=tone.darkStart;
+  params[5]=tone.darkEnd;
+  params[6]=tone.lightStart;
+  params[7]=tone.lightEnd;
+  params[8]=blend.tonePreview?1:0;
+ }
 }
 function backdropGl(b,key,direct){
  const g=b.gl;

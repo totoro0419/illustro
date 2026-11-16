@@ -823,8 +823,31 @@ function editLayerBlend(){
     ...(clip?['「'+clip.name+'」で切り抜く']:[]),
     'レイヤーの不透明度と、選んだモードで下の絵に重ねる'
   ];
+  const revision=artwork.head,cache=new Map<string,Promise<ImageData>>();
+  const sampleTone=(kind:'self'|'backdrop')=>{
+    const existing=cache.get(kind);
+    if(existing)return existing;
+    const loading=(async()=>{
+      const frozen=captureExport(artwork,undefined,revision),id=layer.surface.descriptor.surfaceId;
+      const index=frozen.layers.findIndex(item=>item.surfaceId===id);
+      const layers=kind==='self'?[{surfaceId:id,visible:true,opacity:1}]:frozen.layers.slice(0,index);
+      const surfaceIds=new Set(layers.map(item=>item.surfaceId));
+      const image=await renderFrozenArtwork({...frozen,layers,
+        basePixels:frozen.basePixels?.filter(item=>surfaceIds.has(item.surfaceId))??[],
+        strokes:frozen.strokes.filter(item=>surfaceIds.has(item.surfaceId))});
+      const scale=Math.min(1,256/Math.max(root.width,root.height));
+      const w=Math.max(1,Math.round(root.width*scale)),h=Math.max(1,Math.round(root.height*scale));
+      const output=new Uint8ClampedArray(w*h*4);
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+        const at=(Math.floor(y*root.height/h)*root.width+Math.floor(x*root.width/w))*4;
+        output.set(image.subarray(at,at+4),(y*w+x)*4);
+      }
+      return new ImageData(output,w,h);
+    })();
+    cache.set(kind,loading);return loading;
+  };
   const dialog=openLayerBlendDialog({
-    title:layer.name,stages,
+    title:layer.name,stages,sampleTone,
     current:{blend:layer.blend??{mode:'normal',space:'encoded',seed:parseInt(layer.id.slice(-8),16)>>>0},opacity:layer.opacity},
     preview:choice=>drawing.setLayerBlendPreview(choice?{layerId:layer.id,...choice}:null),
     complete:choice=>{
@@ -839,7 +862,7 @@ function editLayerBlend(){
       }
       changeLayer('レイヤーの合成設定を変更しました。',tx=>{
         const {blend,opacity}=choice;
-        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'?null:blend);
+        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'&&!blend.tone?null:blend);
         return tx.setLayerOpacity(layer.id,opacity)||changed;
       });
     },
