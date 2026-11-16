@@ -35,7 +35,7 @@ export async function exportAssetPack(
   let total=0;const items:PackItem[]=[];
   for(let index=0;index<queue.length;index++){
     if(queue.length>80)throw Error('旧版を含めると80件を超えます。書き出し対象を減らしてください。');
-    const entry=await getAsset(queue[index]);
+    const entry=await getAsset(queue[index]!);
     if(!entry||(!options?.includeAncestors&&entry.deleted))
       throw Error('選んだ素材または旧版が見つかりません。');
     total+=entry.bytes;
@@ -143,7 +143,7 @@ export async function importAssetPack(
     try{
       const payload=decode(item.dataBase64);
       if(payload.byteLength!==item.bytes)throw Error('素材の中身が欠けています。');
-      const id=resolvedIds[item.id];
+      const id=resolvedIds[item.id]!;
       // Every parent in the same pack uses its mapped identity, even when IDs conflict.
       const parentId=item.parentId?(resolvedIds[item.parentId]??item.parentId):undefined;
       const result=await addAsset({
