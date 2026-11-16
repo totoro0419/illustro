@@ -37,7 +37,7 @@
 - C03-001の新規テストは変形保持コピー、保存→読込、別レイヤーのみの編集、Undo/Redoを確認する1ケース。
 - C03-010の新規テストは、元データの保持と、設定の違い・欠落・順序違いの検出を確認する2ケース。
 - C03-003の新規テストは3ケース：自由形状の外側へのはみ出し防止・半透明の選択濃度・サイズ不一致の拒否。
-- **直前の自動検査：成功を確認**（コミット `365fe6f3e1c6ab3ef7f45c9a1e7f70af87ec1044`）：[C03-C10 quality integration checks](https://github.com/totoro0419/illustro/actions/runs/43889838107) は Coreテスト・型検査、ブラシ回帰、エディタ単体テスト、型検査、ビルドを完了して成功。[Core CI](https://github.com/totoro0419/illustro/actions/runs/43889838069) も成功。**C03-010の追加変更後のCI、および端末・保存と復元の操作・4000px速度は未確認。**
+- **直前の自動検査：成功を確認**（コミット `365fe6f3e1c6ab3ef7f45c9a1e7f70af87ec1044`）：[C03-C10 quality integration checks](https://github.com/totoro0419/illustro/actions/runs/43889838107) は Coreテスト・型検査、ブラシ回帰、エディタ単体テスト、型検査、ビルドを完了して成功。[Core CI](https://github.com/totoro0419/illustro/actions/runs/43889838069) も成功。**C03-010のコード・テストを含むコミット `5266a0b6508d7e836377b0ba2731be80602a5984` でも [統合自動検査](https://github.com/totoro0419/illustro/actions/runs/43890774021) と [Core CI](https://github.com/totoro0419/illustro/actions/runs/43890773796) の成功を確認。端末・保存と復元の操作・4000px速度は未確認。**
 - 最初のPR自動検査は統合管理者が並行追加した管理文書を誤って所有権違反と判定して中断。統合担当が検査範囲を修正した（こちらの所有ファイルには変更なし）。続く検査で履歴画像の型にエラーが判明し、追加修正した。以降の合否は最新CIで確認する。
 - 統合担当への `main.ts` 修正依頼は [Issue #96](https://github.com/totoro0419/illustro/issues/96) に記録。
 - PR #76をDraftで維持。CI成功と実機での安全性確認は別であり、実機検証と統合担当の接続が済むまでは完了としない。
