@@ -12,7 +12,7 @@
 | 調査問題ID | **129件すべて一意** | PR #73のREADMEを読み、129 ID・重複0を確認 |
 | 調査分類 | A81 / B29 / C19 | 調査時の分類。現在の欠陥確定率ではない |
 | 優先度 | P1 55 / P2 74 | 調査時の値 |
-| 実装担当PR | **確認時点で新規の品質改善PRは見つからず** | オープンPR検索。既存の過去PRを対象に数えない |
+| 実装担当PR | **11件提出（すべてDraft）** | PR #76/#77/#80/#81/#82/#83/#84/#86/#88/#89/#90。C04操作担当PRは未確認 |
 | 取り込み済み実装PR | **0** | 統合作業開始時点 |
 | ビルド・回帰検査 | **独立したコード検査成功（1回）** | [Actions #43888071455](https://github.com/totoro0419/illustro/actions/runs/43888071455)、コミット `363d49e`。旧文書分類チェックのみ不合格・診断扱い |
 | Androidペン/指実機検査 | **未実施** | CIと別に判定 |
@@ -22,20 +22,29 @@
 
 担当の具体的な割当・PR番号はGitHubで確認できてから記載する。**便宜的な番号に機能を勝手に割り当てない**。
 
-| 担当枠 | PR | 対応問題ID | 審査 | 統合コミット | 未解決 |
+| 担当枠 | PR | 対応領域と状況 | 審査・最新確認 | 統合コミット | 未解決 |
 |---|---|---|---|---|---|
-| 01 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 02 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 03 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 04 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 05 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 06 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 07 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 08 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 09 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 10 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 11 | 未提出・未確認 | 未確認 | 未開始 | — | — |
-| 12 | 未提出・未確認 | 未確認 | 未開始 | — | — |
+| 01 C03 | [#76](https://github.com/totoro0419/illustro/pull/76) | 履歴・保存・復元、**Draft** | CI再確認中。統合側の旧CI比較方法で誤判定した記録あり | — | `main.ts`接続等、部分対応 |
+| 02 C04 操作 | 未提出・未確認 | UIと操作設定 | PR待ち | — | — |
+| 03 C04 色 | [#83](https://github.com/totoro0419/illustro/pull/83) | 色選択、**Draft** | [CI成功 #43889333899](https://github.com/totoro0419/illustro/actions/runs/43889333899) | — | パレット保存経路と採色高速化は未結線 |
+| 04 C05 素材 | [#77](https://github.com/totoro0419/illustro/pull/77) | 素材庫、**Draft** | [CI成功 #43889164943](https://github.com/totoro0419/illustro/actions/runs/43889164943) | — | DB旧版移行の実データ検証、依存先の確認 |
+| 05 C05 参考資料 | [#82](https://github.com/totoro0419/illustro/pull/82) | 資料・作品管理、**Draft** | CI進行中（取得時点） | — | `main.ts`で複製・切替・通知の接続が必要 |
+| 06 C06 | [#90](https://github.com/totoro0419/illustro/pull/90) | 選択・貼付、**Draft** | 最新ヘッドのCI未確認 | — | 描画側の共通改修が必要 |
+| 07 C07 | [#86](https://github.com/totoro0419/illustro/pull/86) | 変形、**Draft** | [CI成功 #43889360689](https://github.com/totoro0419/illustro/actions/runs/43889360689) | — | 統合時の共有接続、画素の一致は未確認 |
+| 08 C08 | [#81](https://github.com/totoro0419/illustro/pull/81) | 塗り・線画、**Draft** | [CI成功 #43889318585](https://github.com/totoro0419/illustro/actions/runs/43889318585) | — | 塗りのライブ表示・レイヤー除外等未完成 |
+| 09 C09 | [#89](https://github.com/totoro0419/illustro/pull/89) | 定規・図形・グラデーション、**Draft** | [CI成功 #43889203199](https://github.com/totoro0419/illustro/actions/runs/43889203199) | — | 担当12の描画経路・`main.ts`接続が必要 |
+| 10 C10 ベクター | [#88](https://github.com/totoro0419/illustro/pull/88) | ベクター、**Draft** | [CI成功 #43889466534](https://github.com/totoro0419/illustro/actions/runs/43889466534)（別のCIは進行中） | — | `main.ts`で既存層利用・同一Undo・元図形非表示が必要 |
+| 11 C10 文字 | [#84](https://github.com/totoro0419/illustro/pull/84) | 文字・フォント、**Draft** | [CI成功 #43889205565](https://github.com/totoro0419/illustro/actions/runs/43889205565) | — | Issue #78/#79の描画・共通データとの連携 |
+| 12 共通描画 | [#80](https://github.com/totoro0419/illustro/pull/80) | Worker/仮線・軽量化、**Draft** | CI再確認中。統合側の旧CI比較方法で誤判定した記録あり | — | 実機速度・競合動作の検査 |
+
+## 2026-11-16 JST — 11件の実装PR受付・初回レビュー
+
+- **12担当のうち11件**の実装PRを実際のGitHubで確認。いずれも `quality/C03-C10-integration` がbase、初回確認ではDraft。Draftを最終承認の意味として扱わず、**製品コードの取り込みは0件**。
+- PR #76, #80, #81の最初のCI失敗は、統合管理側の拒否ルールがPR自身の変更でなく両tipの差分を判定していたための誤判定。**3点（merge-base）差分に修正：`2387a4f6f8e9c1bd333b728b9778ccfeb43e0d4c`**。修正前CIの失敗は実装不具合とみなさない。修正後にPRヘッドを更新して再検査する。
+- 更新後のPR #81ほかでCI成功例あり。ただしCI成功だけで作画・保存・4000px画質・Android実機の合格とは断定しない。
+- 現在の統合HEAD `2387a4f6` は [CI #43889067281](https://github.com/totoro0419/illustro/actions/runs/43889067281) 成功。旧 `prep:check` の既存問題は診断のままで成功扱いしない。
+- #86の古い差分表示にはCI設定ファイルが見えるが、最新統合HEADとのGitHub比較では`apps/editor/src/assets/linkedImages.ts`と`transform/*`のみが差分。引き続き最新コミットで再照合する。
+- 共通作業の衝突は **PRの変更ファイルだけでなく、連携箇所**（`main.ts`、共通描画、保存形式、ブラシの表示）も見て解消する。C10文字の依存Issue #78/#79、C07の #85 も追跡する。
 
 ## 更新ルール
 
