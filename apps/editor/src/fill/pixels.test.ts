@@ -85,6 +85,16 @@ describe('C08 fill boundaries and destination gating',()=>{
       graph.neighborOffsets[center],graph.neighborOffsets[center+1]));
     expect(innerNeighbors).not.toContain(0);
   });
+  it('adds a soft border only when the optional smooth-boundary mode is requested',()=>{
+    const w=9,h=9,source=image(w,h,[255,255,255,255]);
+    const points=[{x:2,y:2},{x:6,y:2},{x:6,y:6},{x:2,y:6}];
+    const base=fillMask(source,w,h,{...settings,method:'lasso'},points,null,null);
+    const smooth=fillMask(source,w,h,{...settings,method:'lasso',antialias:true},points,null,null);
+    const fades=Array.from(base.alpha).filter((value,i)=>value===0&&
+      smooth.alpha[i]!>0&&smooth.alpha[i]!<255);
+    expect(fades.length).toBeGreaterThan(0);
+    expect(smooth.alpha[4*w+4]).toBe(255);
+  });
   it('checks transparent-only against the destination, not the opaque reference',()=>{
     const w=7,h=7,source=image(w,h,[255,255,255,255]),target=image(w,h);
     setPixel(target,w,3,3,[40,40,40,255]);
