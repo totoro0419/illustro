@@ -18,6 +18,7 @@ import {installReferenceBoard,type ReferenceBoardService} from './assets/referen
 import {exportFonts,importFonts} from './artwork/fontAttachments';
 import {installTextPanel} from './artwork/textPanel';
 import {installVectorPanel} from './artwork/vectorPanel';
+import {installArtworkPresets} from './artwork/presets';
 import {installRulerPanel} from './artwork/ruler';
 import {installSymmetryPanel} from './artwork/symmetryPanel';
 import {DEFAULT_SYMMETRY,normalizeSymmetry,SYMMETRY_SECTION,SYMMETRY_TYPE,type SymmetrySettings} from './strokeSymmetry';
@@ -3982,7 +3983,7 @@ const artworkActions:ArtworkActions={
 installShapeGradientPanel(byId('documentBoxBody'),artworkActions);
 installVectorPanel(byId('documentBoxBody'),artworkActions);
 installTextPanel(byId('documentBoxBody'),artworkActions);
-rulerPanel=installRulerPanel(byId('documentBoxBody'),artworkActions,{
+const artworkGuideStore:Parameters<typeof installRulerPanel>[2]={
   read:()=>controller.document.root.artworkGuides,
   save:(guides,label)=>withClipboardAccess(async()=>{
     const tx=controller.document.begin(label);
@@ -3990,7 +3991,9 @@ rulerPanel=installRulerPanel(byId('documentBoxBody'),artworkActions,{
     controller.lastPersistenceHandoff=tx.commit().persistence;
     return 'edit';
   })
-});
+};
+rulerPanel=installRulerPanel(byId('documentBoxBody'),artworkActions,artworkGuideStore);
+installArtworkPresets(byId('documentBoxBody'),artworkActions,artworkGuideStore);
 symmetryPanel=installSymmetryPanel(byId('documentBoxBody'),artworkActions,settings=>{
   if(!documentReady)return;
   symmetrySettings=settings;
