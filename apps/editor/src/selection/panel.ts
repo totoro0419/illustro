@@ -81,6 +81,8 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     while(stack.length>30)stack.shift();
   }
   let raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
+  // A pen stroke must not start against a stale mask while a new one is pending.
+  let pendingSelectionJob=0;
   let pendingStore:{id:string;mask:MaskData|null}|null=null;
   let storeTimer:number|null=null,storeQueue:Promise<void>=Promise.resolve();
   function flushStoredSelection(){
@@ -101,7 +103,12 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const preview=document.createElement('svg');
   preview.classList.add('c06-selection-preview');preview.setAttribute('aria-hidden','true');
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-  preview.append(path);
+  const brushTrace=document.createElementNS('http://www.w3.org/2000/svg','path');
+  brushTrace.setAttribute('fill','none');
+  brushTrace.setAttribute('stroke-linecap','round');
+  brushTrace.setAttribute('stroke-linejoin','round');
+  brushTrace.style.strokeDasharray='none';
+  preview.append(path,brushTrace);
   viewport?.append(preview,box);
   let currentWork:null|string=null;
   const source=()=>{
@@ -112,6 +119,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       raster.destroy();raster=new MaskRasterWorker();
       flushStoredSelection();
       currentWork=identity;active=null;lastSelection=null;history.length=0;future.length=0;
+      pendingSelectionJob=0;
       tool=null;points=[];brushPoints=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
       const request=++job,loadedId=info.id;
       void storeQueue.then(()=>loadCurrentSelection(loadedId)).then(loaded=>{
@@ -131,7 +139,8 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   function overlayPath(){
     const drawingSurface=callbacks.getSurface();
     if(!viewport||!drawingSurface||!tool||points.length===0){
-      preview?.setAttribute('data-empty','true');return;
+      path.setAttribute('d','');
+      preview.setAttribute('data-empty',brushPoints.length?'false':'true');return;
     }
     const viewPoints=points.map(p=>drawingSurface.documentToScreen(p));
     const d=(tool==='rectangle'||tool==='ellipse')&&viewPoints.length>=2?
@@ -143,9 +152,31 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       })():viewPoints.map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
     path.setAttribute('d',d);preview.setAttribute('data-empty','false');
   }
+  function brushOverlayPath(){
+    const drawingSurface=callbacks.getSurface();
+    if(!drawingSurface||!brushPoints.length||
+      !(tool==='brushAdd'||tool==='brushSubtract')){
+      brushTrace.setAttribute('d','');
+      if(!points.length)preview.setAttribute('data-empty','true');
+      return;
+    }
+    // Keep preview rendering bounded even for a long, pressure-sensitive stroke.
+    const visible=brushPoints.slice(-2048);
+    const viewPoints=visible.map(point=>drawingSurface.documentToScreen(point));
+    brushTrace.setAttribute('d',viewPoints.map((point,index)=>
+      (index?'L ':'M ')+point.x+' '+point.y).join(' '));
+    const left=drawingSurface.documentToScreen({x:0,y:0});
+    const right=drawingSurface.documentToScreen({x:Number(brushSize.value),y:0});
+    const zoom=Math.hypot(right.x-left.x,right.y-left.y);
+    const pressure=visible.at(-1)?.pressure??1;
+    brushTrace.style.strokeWidth=String(Math.max(1,zoom*(.25+.75*Math.min(1,Math.max(0,pressure)))));
+    brushTrace.style.stroke=tool==='brushAdd'?'#18bad9':'#e77845';
+    brushTrace.style.opacity=String(Math.min(.9,Math.max(.2,Number(brushDensity.value)/100)));
+    preview.setAttribute('data-empty','false');
+  }
   function publish(next:MaskData|null,record=true,persist=true){
     const doc=source();if(!doc)return;
-    job++;
+    job++;pendingSelectionJob=0;
     if(next&&(next.width!==doc.width||next.height!==doc.height))throw Error('作品と選択範囲の大きさが異なります。');
     if(record){history.push(active);boundUndo(history);future.length=0;}
     if(active)lastSelection=active;
@@ -164,13 +195,15 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   function applyShape(shape:SelectionShape){
     const doc=source();if(!doc)return;
     const current=++job,currentMode=mode.value as CombineMode,previous=active;
+    pendingSelectionJob=current;
     points=[];drawing=null;overlayPath();tool=null;refresh();
     status.textContent='選択の形を反映しています。キャンバス操作は続けられます。';
     void raster.shape(shape,previous,currentMode,doc.width,doc.height)
       .then(next=>{
         if(current!==job||callbacks.getDocument()?.id!==doc.id)return;
         publish(next);
-      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});
+      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);})
+      .finally(()=>{if(pendingSelectionJob===current)pendingSelectionJob=0;});
   }
   function endStroke(){
     if(!drawing||!tool)return;
@@ -183,7 +216,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   }
   function arm(shape:Tool){
     const doc=source();if(!doc)return;
-    tool=tool===shape?null:shape;points=[];drawing=null;
+    tool=tool===shape?null:shape;points=[];brushPoints=[];drawing=null;brushOverlayPath();
     callbacks.getSurface()?.setSelectionMode(false);
     refresh();overlayPath();
   }
@@ -237,6 +270,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       status.textContent='明るさの範囲は0〜255の正しい順序で入力してください。';return;
     }
     tool=null;points=[];overlayPath();refresh();
+    pendingSelectionJob=request;
     status.textContent='画像から選択範囲を調べています。';
     try{
       const pixels=await callbacks.capturePixels(target);
@@ -251,6 +285,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       publish(next);
       if(!boundsOfSelection(next))status.textContent='一致する色の範囲がありませんでした。';
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+    finally{if(pendingSelectionJob===request)pendingSelectionJob=0;}
   }
   const addByBrush=asButton('選択を筆で足す',()=>arm('brushAdd'));
   const eraseByBrush=asButton('選択を筆で消す',()=>arm('brushSubtract'));
@@ -270,20 +305,23 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(brushPoints.length>=10000)return;
     if(last&&Math.hypot(last.x-point.x,last.y-point.y)<Math.max(.8,size*.075))return;
     brushPoints.push({...point,pressure:event.pressure>0?event.pressure:.5});
+    brushOverlayPath();
   }
   function finishBrushStroke(){
     const doc=source(),input=brushPoints.slice(),initial=active;
-    brushPoints=[];drawing=null;
+    brushPoints=[];drawing=null;brushOverlayPath();
     if(!doc||!input.length||!(tool==='brushAdd'||tool==='brushSubtract'))return;
     const operation=tool==='brushAdd'?'add' as const:'subtract' as const;
     const size=Number(brushSize.value),opacity=Number(brushDensity.value)/100,
       hardness=Number(brushHardness.value)/100;
     if(!Number.isFinite(size)||size<1||size>800){status.textContent='ブラシの太さを1〜800pxにしてください。';return;}
-    const current=++job;status.textContent='選択ブラシを反映しています。';
+    const current=++job;pendingSelectionJob=current;
+    status.textContent='選択ブラシを反映しています。';
     void raster.brush(initial,doc.width,doc.height,input,{size,opacity,hardness,mode:operation})
       .then(next=>{
         if(current===job&&callbacks.getDocument()?.id===doc.id)publish(next);
-      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});
+      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);})
+      .finally(()=>{if(pendingSelectionJob===current)pendingSelectionJob=0;});
   }
   const all=asButton('すべて選ぶ',()=>{const d=source();if(d)publish(fullSelection(d.width,d.height));});
   const clear=asButton('選択を解除',()=>publish(null));
@@ -322,10 +360,12 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const value=window.prompt('ぼかし幅 0〜32px','3');if(value===null)return;
     const amount=Number(value);if(!Number.isInteger(amount)||amount<0||amount>32){status.textContent='0〜32pxで指定してください。';return;}
     const original=active,doc=source(),current=++job;if(!doc)return;
+    pendingSelectionJob=current;
     status.textContent='選択の縁を整えています。';
     void raster.feather(original,amount).then(next=>{
       if(current===job&&callbacks.getDocument()?.id===doc.id)publish(next);
-    }).catch(error=>{status.textContent=String(error);});
+    }).catch(error=>{status.textContent=String(error);})
+      .finally(()=>{if(pendingSelectionJob===current)pendingSelectionJob=0;});
   });
   const grow=asButton('範囲を広げる',()=>void adjust('grow'));
   const shrink=asButton('範囲を縮める',()=>void adjust('shrink'));
@@ -338,11 +378,13 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const radius=Number(response);
     if(!Number.isInteger(radius)||radius<0||radius>128){status.textContent='0〜128pxで指定してください。';return;}
     const initial=active,doc=source(),current=++job;if(!doc)return;
+    pendingSelectionJob=current;
     status.textContent=question+'を計算しています。';
     try{
       const next=await raster.adjust(initial,radius,operation);
       if(job===current&&callbacks.getDocument()?.id===doc.id)publish(next);
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+    finally{if(pendingSelectionJob===current)pendingSelectionJob=0;}
   }
   const undo=asButton('選択だけ元に戻す',()=>{
     if(!history.length)return;
@@ -425,6 +467,13 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   // Intercept only while intentionally entering a selection gesture. In all other
   // cases brush, pen, touch navigation and pointer capture remain untouched.
   document.addEventListener('pointerdown',event=>{
+    if(pendingSelectionJob&&pendingSelectionJob===job&&
+      event.target instanceof Element&&event.target.closest('.surface')&&
+      !event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame')){
+      event.preventDefault();event.stopImmediatePropagation();
+      status.textContent='選択範囲を反映中です。完了後に描画してください。';
+      return;
+    }
     if(!tool||(!allowFinger.checked&&event.pointerType==='touch')||
       (drawing!==null&&event.pointerId!==drawing.pointer)||!source()||!viewport||
       !(event.target instanceof Element)||!event.target.closest('.surface')||
@@ -480,16 +529,16 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   },true);
   document.addEventListener('pointercancel',event=>{
     if(!drawing||event.pointerId!==drawing.pointer)return;
-    drawing=null;points=[];brushPoints=[];overlayPath();
+    drawing=null;points=[];brushPoints=[];overlayPath();brushOverlayPath();
   },true);
-  const documentChanged=()=>{job++;currentWork=null;source();
+  const documentChanged=()=>{job++;pendingSelectionJob=0;currentWork=null;source();
     callbacks.getSurface()?.setSelectionVisible(showSelection.checked);
     void updateNamed();};
   refresh();documentChanged();
   return {
     active:()=>active,
     documentChanged,
-    updateView:()=>{visual?.updateView();overlayPath();},
+    updateView:()=>{visual?.updateView();overlayPath();brushOverlayPath();},
     refresh,
     clear:()=>{job++;publish(null);},
     replaceActive:mask=>{job++;publish(mask);},
