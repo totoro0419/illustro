@@ -104,7 +104,11 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
         :alpha;
       if(ink>=threshold)walls[i]=1;
     }else{
-      const colorDifference=Math.max(...[0,1,2].map(channel=>Math.abs(source[p+channel]!-source[opaqueBackground+channel]!)));
+      // Avoid per-pixel array creation: this runs up to 16 million times on 4000px art.
+      const colorDifference=Math.max(
+        Math.abs(source[p]!-source[opaqueBackground]!),
+        Math.abs(source[p+1]!-source[opaqueBackground+1]!),
+        Math.abs(source[p+2]!-source[opaqueBackground+2]!));
       if(colorDifference*alpha/255>=threshold||alpha<240&&240-alpha>=threshold)walls[i]=1;
     }
   }
