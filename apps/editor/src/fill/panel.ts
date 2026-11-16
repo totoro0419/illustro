@@ -42,7 +42,7 @@ export function installFillPanel(host:HTMLElement,api:{
   let pending:Awaited<ReturnType<typeof runFill>>|null=null;
   let displayDocument='';
   let candidateGeneration=0,pendingColor='#000000';
-  let previewAbort:AbortController|null=null;
+  let previewAbort:AbortController|null=null,analysisAbort:AbortController|null=null;
   let hints:readonly ColorHint[]=[];
   let manualDraft=false,inspectPoint:Point|undefined;
   let localGaps:readonly GapCandidate[]|null=null;
@@ -186,6 +186,7 @@ export function installFillPanel(host:HTMLElement,api:{
     const targetName=outputLayer==='active'?api.targetName():api.targetName()+placement+'に「'+layerName+'」を作成';
     targets.textContent='参照元 '+(pending&&candidate?candidate.source.name:sourceName)+'　塗り先 '+targetName;
     const available=sourceAvailable(),usable=graphUsable();
+    stopCalculation.disabled=!previewAbort&&!analysisAbort;
     analysisState.textContent=analyzing?'解析中…':analysisError?'⚠ 解析エラー '+analysisError:
       !currentGraph?'○ 未解析':!usable?'⚠ 無効。境界と領域の両方がある線画を指定してください。':
       !available?'⚠ 保存済みの領域が変更されました。使う版を選び直してください。':
@@ -306,13 +307,15 @@ export function installFillPanel(host:HTMLElement,api:{
     }
   }
   async function analyze(points?:readonly Point[],remove=false,stored?:LineRegions,restoring=false,preserveInk=false){
+    analysisAbort?.abort();
+    const abort=new AbortController();analysisAbort=abort;
     analyzing=true;analysisError=null;sync();
     output.textContent='線画を解析しています。';
     try{
       const source=await read(false,stored),old=restoring?stored?.manual??[]:manuals.get(source.key)??stored?.manual??[];
       const manual=points?[...old,{points,remove,...(preserveInk?{preserveInk:true}:{})}]:old;
       const current=settings();
-      const response=await runFill({type:'graph',source:source.source,width:source.width,height:source.height,settings:current,manual});
+      const response=await runFill({type:'graph',source:source.source,width:source.width,height:source.height,settings:current,manual},abort.signal);
       if(!source.valid()||!response.graph)throw Error('参照元が変わりました。もう一度解析してください。');
       manuals.set(source.key,manual);
       previous=capture?.key===source.key?currentGraph:null;
@@ -326,7 +329,7 @@ export function installFillPanel(host:HTMLElement,api:{
       const outside=currentGraph.external.reduce((sum,x)=>sum+x,0);
       output.textContent=(confirmed?'保存済み':'確認待ち')+' '+source.name+'。閉領域 '+(currentGraph.count-outside)+' 件、外側 '+outside+' 件。';
     }catch(error){analysisError=error instanceof Error?error.message:String(error);throw error;}
-    finally{analyzing=false;}
+    finally{analyzing=false;if(analysisAbort===abort)analysisAbort=null;sync();}
   }
   function stopGesture(){gesture?.setCanvasEditGesture(null);gesture=null;}
   function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false,traceColor='#ffb742'){
@@ -427,6 +430,18 @@ export function installFillPanel(host:HTMLElement,api:{
     output.textContent='直前の塗りの調整を終了しました。';
   });
   const dropPaint=button('塗り候補を取り消す',()=>{previewAbort?.abort();candidateGeneration++;candidate=null;pending=null;paint();output.textContent='塗り候補を取り消しました。';});
+  // This control bypasses work() so cancellation remains responsive while busy.
+  const stopCalculation=document.createElement('button');
+  stopCalculation.type='button';
+  stopCalculation.textContent='計算を中止';
+  stopCalculation.onclick=()=>{
+    previewAbort?.abort();analysisAbort?.abort();
+    previewAbort=null;analysisAbort=null;
+    candidateGeneration++;candidate=null;pending=null;
+    output.textContent='塗りつぶしの計算を中止しました。';
+    paint();sync();
+  };
+  actions.append(stopCalculation);
   button('線画を解析・更新',async()=>{await analyze();confirmed=false;});
   const vectorCompare=button('ベクターのパスと見た目を比較',async()=>{
     const original=capture;
@@ -683,7 +698,7 @@ export function installFillPanel(host:HTMLElement,api:{
   }
   const advancedActions=document.createElement('div');advancedActions.className='c06-clipboard-grid';
   const basic=new Set(['キャンバスで塗る','領域を選択範囲にする','候補を適用','塗り候補を取り消す',
-    '直前の塗りを調整','キャンバス操作をやめる']);
+    '直前の塗りを調整','キャンバス操作をやめる','計算を中止']);
   for(const control of Array.from(actions.querySelectorAll('button'))){
     if(!basic.has(control.textContent??''))advancedActions.append(control);
   }
