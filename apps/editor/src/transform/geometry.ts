@@ -94,7 +94,12 @@ export function transformRaster(source:Uint8Array,width:number,height:number,t:T
     const channel=(i:0|1|2|3)=>(a[i]*(1-dx)+b[i]*dx)*(1-dy)+(c[i]*(1-dx)+d[i]*dx)*dy;
     return [channel(0),channel(1),channel(2),channel(3)];
   };
-  const area=t.interpolation==='area'?[-.375,-.125,.125,.375]:[0];
+  // Four fixed samples alias badly at 8x or larger reductions (e.g. checkerboards).
+  // Increase the sample grid only when the user chooses high-quality area filtering;
+  // cap it to keep CPU and preview latency bounded.
+  const reduction=t.mode==='affine'?Math.max(1,1/Math.max(1e-6,Math.abs(t.sx)),1/Math.max(1e-6,Math.abs(t.sy))):1;
+  const samples=t.interpolation==='area'?Math.min(8,Math.max(4,Math.ceil(Math.max(sx,sy)*reduction))):1;
+  const area=t.interpolation==='area'?Array.from({length:samples},(_,index)=>(index+.5)/samples-.5):[0];
   for(let y=0;y<previewHeight;y++)for(let x=0;x<previewWidth;x++){
     const px=(x+.5)*sx,py=(y+.5)*sy,index=(y*previewWidth+x)*4;
     let red=0,green=0,blue=0,alpha=0;

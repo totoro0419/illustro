@@ -33,7 +33,7 @@ export function transformLinkedMask(mask:LayerMask,settings:Transform,width:numb
         const result=mapping.forward(point.x,point.y);
         if(result&&Number.isFinite(result.x)&&Number.isFinite(result.y))return result;
         if(liquify)return null;
-        if(mesh)return point;
+        if(mesh)throw Error('マスクの一部が網目の変形範囲外です。マスクを連動させないか、網目の範囲を広げてください。');
         throw Error('マスクが遠近変形の範囲外にあります。');
       });
       if(mapped.every(point=>point!==null))return {...mask,shape:'path',points:mapped};
