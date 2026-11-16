@@ -59,8 +59,19 @@ describe('C04 sequential macro dispatch',()=>{
     expect(calls).toEqual(['paint','undo']);
     expect(outcome).toEqual({ok:false,reason:'history unavailable',failedStep:2,unfinished:false});
   });
-  it('never treats a dispatch-only DOM command as confirmed complete',async()=>{
-    const result=await invokeMacroSequence(['paint','erase'],async id=>succeed(id==='erase'));
+  it('stops dependent steps when an earlier completion cannot be confirmed',async()=>{
+    const calls:string[]=[];
+    const result=await invokeMacroSequence(['undo','redo'],async id=>{
+      calls.push(id);return succeed(false);
+    });
+    expect(calls).toEqual(['undo']);
+    expect(result.ok).toBe(false);
+    expect(result.failedStep).toBe(1);
+    expect(result.unfinished).toBe(true);
+    expect(result.reason).toMatch(/確認できない/);
+  });
+  it('does not describe a final dispatch-only command as confirmed complete',async()=>{
+    const result=await invokeMacroSequence(['undo'],async()=>succeed(false));
     expect(result.ok).toBe(true);
     expect(result.unfinished).toBe(true);
   });
