@@ -470,8 +470,44 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const overwrite=asButton('選んだ保存を上書き',()=>void overwriteCurrent());
   const load=asButton('保存した範囲を使う',()=>void loadCurrent());
   const remove=asButton('保存した範囲を削除',()=>void deleteCurrent());
-  named.onchange=()=>refresh();
-  saveArea.append(named,save,overwrite,load,remove);
+  const savedPreview=document.createElement('canvas');
+  savedPreview.width=112;savedPreview.height=80;
+  savedPreview.hidden=true;savedPreview.setAttribute('role','img');
+  savedPreview.setAttribute('aria-label','保存した選択範囲の形');
+  savedPreview.style.cssText='grid-column:1/-1;width:112px;height:80px;max-width:100%;image-rendering:pixelated;border:1px solid var(--a-border,#aaa);border-radius:6px;';
+  let previewRequest=0;
+  async function updateNamedPreview(){
+    const id=named.value,doc=source(),current=++previewRequest;
+    savedPreview.hidden=true;
+    if(!id||!doc)return;
+    try{
+      const entry=(await listSavedSelections(doc.id)).find(item=>item.id===id);
+      if(!entry)return;
+      const mask=await loadNamedSelection(entry);
+      if(current!==previewRequest||source()?.id!==doc.id||named.value!==id)return;
+      const ctx=savedPreview.getContext('2d');
+      if(!ctx)return;
+      const image=ctx.createImageData(savedPreview.width,savedPreview.height);
+      const pixels=image.data;
+      for(let y=0;y<savedPreview.height;y++)for(let x=0;x<savedPreview.width;x++){
+        const sx=Math.min(mask.width-1,Math.floor((x+.5)*mask.width/savedPreview.width));
+        const sy=Math.min(mask.height-1,Math.floor((y+.5)*mask.height/savedPreview.height));
+        const value=mask.alpha[sy*mask.width+sx]!;
+        const i=(y*savedPreview.width+x)*4;
+        const base=(x+y)%2?242:223;
+        pixels[i]=Math.round(base*(255-value)/255+49*value/255);
+        pixels[i+1]=Math.round(base*(255-value)/255+154*value/255);
+        pixels[i+2]=Math.round(base*(255-value)/255+207*value/255);
+        pixels[i+3]=255;
+      }
+      ctx.putImageData(image,0,0);
+      savedPreview.hidden=false;
+    }catch{
+      savedPreview.hidden=true;
+    }
+  }
+  named.onchange=()=>{refresh();void updateNamedPreview();};
+  saveArea.append(named,savedPreview,save,overwrite,load,remove);
   async function updateNamed(){
     const doc=source();if(!doc)return;
     const previousName=named.value;
@@ -479,13 +515,14 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(source()?.id!==doc.id)return;
     named.replaceChildren(new Option('保存した範囲を選ぶ',''),...list.map(x=>new Option(x.name,x.id)));
     if(list.some(item=>item.id===previousName))named.value=previousName;
+    refresh();void updateNamedPreview();
   }
   async function saveCurrent(){
     const doc=source();if(!doc||!active)return;
     const name=window.prompt('選択範囲の名前','選択範囲');if(!name)return;
     try{
       const saved=await saveNamedSelection(doc.id,name,active);
-      await updateNamed();named.value=saved.id;refresh();
+      await updateNamed();named.value=saved.id;refresh();void updateNamedPreview();
       status.textContent='選択範囲を保存しました。';
     }catch(error){status.textContent=String(error);}
   }
@@ -497,7 +534,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       if(!entry)throw Error('上書きする保存済み範囲が見つかりません。');
       if(!window.confirm('「'+entry.name+'」の保存内容を現在の選択範囲に置き換えますか？'))return;
       await saveNamedSelection(doc.id,entry.name,active,entry.id);
-      await updateNamed();named.value=entry.id;refresh();
+      await updateNamed();named.value=entry.id;refresh();void updateNamedPreview();
       status.textContent='「'+entry.name+'」を上書きしました。';
     }catch(error){status.textContent=String(error);}
   }
