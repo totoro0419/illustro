@@ -53,6 +53,7 @@ export function colorMarkup():string {
    '<label class="color-sample-source" id="colorSampleLayerLabel" hidden>取得するレイヤー<select id="colorSampleLayerId"></select></label>'+
    '<label class="color-sample-source">取得する範囲<select id="colorSampleDiameter"><option value="1">1画素（点）</option><option value="3">3×3画素の平均</option><option value="5">5×5画素の平均</option></select></label>'+
    '<label class="color-sample-source">透明の扱い<select id="colorSampleTransparency"><option value="skip">透明な画素は除外</option><option value="keep">透明も平均に含める</option><option value="white">白背景上の見た目</option></select></label>'+
+   '<output id="colorSampleActiveSummary" class="color-sample-current" role="status" aria-live="polite">現在の採色元: 見えている作品全体</output>'+ 
    '<button id="referenceSampleOpen" type="button">参考画像から色を取る</button><small>作品の補助線・選択枠・色覚確認表示は採色に含めません。</small>'+
   '</div></details>'+
  '</section>'+
@@ -141,8 +142,13 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(pickerMode==='orbit')orbit.reflect(hueMemory,displayS,hsv.v);
   if(document.activeElement!==hexField)hexField.value=hex(c);
   if(!channelEditing)updateChannels();
-  for(const el of document.querySelectorAll<HTMLButtonElement>('.color-swatch')){
-   el.setAttribute('aria-pressed',String(el.dataset.hex===hex(c)));
+  // Preview can fire on every pointer move. Touch only chips whose selected
+  // state actually changes; avoid walking 2×256 palette controls each move.
+  const nextHex=hex(c);
+  if(nextHex!==selectedChipHex){
+    for(const chip of chipsByHex.get(selectedChipHex)??[])chip.setAttribute('aria-pressed','false');
+    for(const chip of chipsByHex.get(nextHex)??[])chip.setAttribute('aria-pressed','true');
+    selectedChipHex=nextHex;
   }
   options.onBrushColor();
  }
@@ -247,10 +253,16 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  function updateChannels(){const v=values();v.forEach((n,i)=>{const s=document.getElementById('colorSlider'+i) as HTMLInputElement|null,f=document.getElementById('colorNumber'+i) as HTMLInputElement|null;if(s)s.value=String(n);if(f&&document.activeElement!==f)f.value=String(Math.round(n*10)/10);});}
  // HSB/RGB/HSL values are directly visible below the diamond.
  const list=id<HTMLElement>('colorPaletteList'),manager=id<HTMLElement>('colorPaletteManageList'),history=id<HTMLElement>('colorHistoryList'),selector=id<HTMLSelectElement>('colorPaletteSelect');
+ const chipsByHex=new Map<string,HTMLButtonElement[]>();
+ let selectedChipHex=hex(state.current),renderedCollectionsVersion=-1;
  function makeChip(color:RGB,label:string,onSelect:()=>void):HTMLButtonElement{
-  const b=document.createElement('button');b.type='button';b.className='color-swatch';b.style.backgroundColor=hex(color);b.dataset.hex=hex(color);b.title=label+' '+hex(color);b.setAttribute('aria-label',label+' '+hex(color));b.setAttribute('aria-pressed',String(hex(color)===hex(state.current)));b.onclick=onSelect;return b;
+  const b=document.createElement('button');b.type='button';b.className='color-swatch';b.style.backgroundColor=hex(color);b.dataset.hex=hex(color);b.title=label+' '+hex(color);b.setAttribute('aria-label',label+' '+hex(color));b.setAttribute('aria-pressed',String(hex(color)===hex(state.current)));b.onclick=onSelect;
+  const key=b.dataset.hex!;const registered=chipsByHex.get(key);
+  if(registered)registered.push(b);else chipsByHex.set(key,[b]);
+  return b;
  }
  function renderCollections(){
+  chipsByHex.clear();
   selector.replaceChildren(...state.palettes.map(p=>{const op=new Option((p.folder?p.folder+' / ':'')+p.name,p.id);op.selected=p.id===state.paletteId;return op;}));
   const folder=id<HTMLInputElement>('c04PaletteFolder');if(document.activeElement!==folder)folder.value=state.palette.folder??'';
   list.replaceChildren();manager.replaceChildren();
@@ -274,6 +286,8 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(!manager.childElementCount)manager.innerHTML='<span class="color-empty">保存した色はありません。</span>';
   history.replaceChildren(...state.history.map((c,i)=>makeChip(c,'最近の色 '+(i+1),()=>state.choose(c))));
   if(!history.childElementCount)history.innerHTML='<span class="color-empty">色を選ぶと、ここからすぐ戻せます。</span>';
+  selectedChipHex=hex(state.current);
+  renderedCollectionsVersion=state.collectionsVersion;
  }
  selector.onchange=()=>state.selectPalette(selector.value);
  id<HTMLInputElement>('c04PaletteFolder').onchange=e=>state.setPaletteFolder((e.target as HTMLInputElement).value);
@@ -302,7 +316,10 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(file.size>262144){error.textContent='ファイルが大きすぎます（256KBまで）。';return;}
   try{state.importPalette(await file.text());selectScreen('palette');notice.textContent='パレットを読み込みました。';}catch(ex){error.textContent=ex instanceof Error?ex.message:String(ex);}
  };
- const unsubscribe=state.subscribe(()=>{reflect();if(!state.isEditing)renderCollections();});
+ const unsubscribe=state.subscribe(()=>{
+  reflect();
+  if(!state.isEditing&&state.collectionsVersion!==renderedCollectionsVersion)renderCollections();
+ });
  renderChannels();reflect();renderCollections();
  return {destroy:()=>{unsubscribe();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1){model='RGB';(document.querySelector<HTMLInputElement>('input[name="colorModel"][value="RGB"]')!).checked=true;renderChannels();}}};
 }
