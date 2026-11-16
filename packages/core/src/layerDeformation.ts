@@ -16,6 +16,7 @@ export type LiquifyStroke=Readonly<{
 export type DeformationBrushPass=Readonly<{selection:PixelLayerMask|null;records:readonly unknown[]}>;
 type LayerDeformationSource=Readonly<{
   version:1;
+  enabled?:boolean;
   sourceRevision:RevisionId;
   sourceLayerId?:LayerId;
   bounds:TransformBounds;
@@ -42,9 +43,9 @@ export function validateLayerDeformation(input:unknown):LayerDeformation|null{
   if(typeof input!=='object')throw invalid();
   if(validated.has(input))return input as LayerDeformation;
   const value=input as LayerDeformation;
-  const {version,sourceRevision,sourceLayerId,mode,bounds,interpolation,selection,linkedMask,maskDigest,postPaint}=value;
+  const {version,enabled,sourceRevision,sourceLayerId,mode,bounds,interpolation,selection,linkedMask,maskDigest,postPaint}=value;
   const coordinate=(value:unknown):value is number=>typeof value==='number'&&Number.isFinite(value)&&Math.abs(value)<=1e6;
-  if(version!==1||typeof sourceRevision!=='string'||
+  if(version!==1||enabled!==undefined&&typeof enabled!=='boolean'||typeof sourceRevision!=='string'||
     !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(sourceRevision)||
     (sourceLayerId!==undefined&&(typeof sourceLayerId!=='string'||!/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(sourceLayerId)))||
     (mode!=='affine'&&mode!=='free'&&mode!=='projective'&&mode!=='skew'&&mode!=='mesh-grid'&&mode!=='cage'&&mode!=='liquify')||
@@ -75,7 +76,7 @@ export function validateLayerDeformation(input:unknown):LayerDeformation|null{
       return Object.freeze({selection,records:Object.freeze([...pass.records])});
     }));
   }
-  const base={version,sourceRevision,...(sourceLayerId?{sourceLayerId}:{}),bounds:Object.freeze({x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height}),
+  const base={version,...(enabled===false?{enabled:false}:{}),sourceRevision,...(sourceLayerId?{sourceLayerId}:{}),bounds:Object.freeze({x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height}),
     interpolation,selection:mask,linkedMask,...(maskDigest?{maskDigest}:{}),...(replay?.length?{postPaint:replay}:{})};
   let safe:LayerDeformation;
   if(value.mode==='affine'){

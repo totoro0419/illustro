@@ -18,7 +18,7 @@ export type TransformSource={
 };
 type Target='layer'|'selected'|'boundary';
 
-export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>Promise<TransformSource>,bake:()=>Promise<void>,addAbove:()=>Promise<void>){
+export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>Promise<TransformSource>,bake:()=>Promise<void>,addAbove:()=>Promise<void>,changeEnabled:(remove:boolean)=>Promise<string>){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const summary=document.createElement('summary');summary.textContent='変形';
   const target=document.createElement('select');target.setAttribute('aria-label','変形する対象');
@@ -389,6 +389,12 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   const bakeButton=button('適用済みの変形を画像に焼き込む',async()=>{
     await bake();status.textContent='変形を画像に焼き込みました。直前のUndoで編集できる状態に戻せます。';
   });
+  const toggleEffect=button('変形を表示・非表示',async()=>{
+    const message=await changeEnabled(false);if(message)status.textContent=message;
+  });
+  const removeEffect=button('元の絵に戻して変形を外す',async()=>{
+    const message=await changeEnabled(true);if(message)status.textContent=message;
+  });
   const cancel=button('取り消す',()=>reset('変形を取り消しました。'));
   const apply=button('変形を適用',async()=>{
     const current=source;
@@ -464,6 +470,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     flipX.disabled=flipY.disabled=!source||busy;
     vanishing.hidden=settings.mode!=='projective'||!source;vanishing.disabled=busy;
     bakeButton.disabled=!!source||busy;newAbove.disabled=!!source||busy;
+    toggleEffect.disabled=removeEffect.disabled=!!source||busy;
     openOriginal.disabled=!source?.initial||busy;
     openOriginal.textContent=editingOriginal?'変形後の確認':'元の絵に描く';
     undoOriginal.hidden=!editingOriginal;undoOriginal.disabled=busy||!originalUndo;
@@ -494,7 +501,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }catch(error){if(id===previewId&&!controller.signal.aborted){preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
   }
   compare.onchange=()=>void refreshPreview();
-  tools.append(start,direct,vanishing,flipX,flipY,back,forward,openOriginal,undoOriginal,apply,cancel,newAbove,bakeButton);
+  tools.append(start,direct,vanishing,flipX,flipY,back,forward,openOriginal,undoOriginal,apply,cancel,newAbove,toggleEffect,removeEffect,bakeButton);
   panel.append(summary,target,status,tools,controls,snapFields,cornerFields,meshFields,liquifyFields,comparison,preview,originalCanvas);host.append(panel);
   panel.ontoggle=()=>{if(!panel.open&&!busy&&source)reset('候補を取り消しました。');};
   sync();

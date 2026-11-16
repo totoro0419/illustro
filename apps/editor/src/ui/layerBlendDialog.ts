@@ -1,4 +1,4 @@
-import {LAYER_BLEND_MODES,type LayerBlend,type LayerBlendMode,type LayerTone} from '@illustro/core';
+import {LAYER_BLEND_MODES,type LayerBlend,type LayerBlendMode,type LayerTone,type LayerColorEffect,type LayerMask} from '@illustro/core';
 
 export const layerBlendNames:Record<LayerBlendMode,string>={
   normal:'通常',darken:'比較（暗）',lighten:'比較（明）',multiply:'乗算',screen:'スクリーン',
@@ -13,6 +13,7 @@ export type LayerBlendChoice=Readonly<{blend:LayerBlend;opacity:number;tonePrevi
 export function openLayerBlendDialog(options:{
   title:string;current:LayerBlendChoice;stages:readonly string[];
   sampleTone:(source:LayerTone['source'])=>Promise<ImageData>;
+  selectionMask:()=>LayerMask|null;
   preview:(choice:LayerBlendChoice|null)=>void;complete:(choice?:LayerBlendChoice)=>void;
 }){
   const dialog=document.createElement('dialog'),form=document.createElement('form');
@@ -63,7 +64,7 @@ export function openLayerBlendDialog(options:{
   let sampled:ImageData|null=null,epoch=0;
   const selected=(preview=false):LayerBlendChoice=>({
     blend:{mode:mode.value as LayerBlendMode,space:space.value==='linear'?'linear':'encoded',seed:options.current.blend.seed,
-      ...(toneEnabled.checked?{tone:tone()}:{})},
+      ...(toneEnabled.checked?{tone:tone()}:{}) ,...(effect?{effect}:{} )},
     opacity,...(preview&&toneEnabled.checked&&highlight.checked?{tonePreview:true}:{})
   });
   let before=false;
@@ -138,6 +139,46 @@ export function openLayerBlendDialog(options:{
   tonePanel.append(toneTitle,field('明るさで範囲を絞る',toneEnabled),field('調べる絵',toneSource),
     field('色の成分',toneChannel),...controls.map((control,index)=>field(names[index]!,control)),
     field('影響する場所をピンクで表示',highlight),field('画像で調整する境界',pickBound),histogram,image,message);
+  const effectPanel=document.createElement('details'),effectTitle=document.createElement('summary');
+  effectTitle.textContent='再編集できる色の効果';
+  let effect:LayerColorEffect|undefined=options.current.blend.effect;
+  effectPanel.open=!!effect;
+  const defaultEffect:LayerColorEffect={enabled:true,brightness:0,contrast:1,saturation:1,invert:false,mask:null};
+  const effectEnabled=document.createElement('input');effectEnabled.type='checkbox';
+  const invert=document.createElement('input');invert.type='checkbox';
+  const effectFields=(['brightness','contrast','saturation'] as const).map((key,index)=>{
+    const input=document.createElement('input');input.type='range';
+    input.min=index?'0':'-100';input.max=index?'400':'100';input.step='1';
+    return {key,input};
+  });
+  const effectDescription=document.createElement('output');effectDescription.setAttribute('role','status');
+  function reflectEffect(){
+    effectEnabled.checked=effect?.enabled??false;invert.checked=effect?.invert??false;
+    for(const {key,input} of effectFields)input.value=String(Math.round((effect??defaultEffect)[key]*100));
+    effectDescription.textContent=effect?.mask?'選択から作った効果用マスクで範囲を制限しています。':'レイヤー全体が効果の対象です。';
+  }
+  function changeEffect(patch:Partial<LayerColorEffect>){
+    effect={...(effect??defaultEffect),...patch};
+    reflectEffect();before=false;update();
+  }
+  effectEnabled.onchange=()=>changeEffect({enabled:effectEnabled.checked});
+  invert.onchange=()=>changeEffect({invert:invert.checked,enabled:effect?.enabled??true});
+  effectFields.forEach(({key,input})=>input.oninput=()=>changeEffect({[key]:input.valueAsNumber/100,enabled:effect?.enabled??true}));
+  const localButton=(label:string,click:()=>void)=>{
+    const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=click;return button;
+  };
+  effectPanel.append(effectTitle,field('色の効果を有効にする',effectEnabled),
+    ...effectFields.map(({input},index)=>field(['明るさ','コントラスト','彩度'][index]!,input)),
+    field('色を反転',invert),
+    localButton('選択範囲を効果のマスクにする',()=>{
+      const mask=options.selectionMask();
+      if(!mask){effectDescription.textContent='先にキャンバスで範囲を選んでください。';return;}
+      changeEffect({mask});
+    }),
+    localButton('効果のマスクを外す',()=>{if(effect)changeEffect({mask:null});}),
+    localButton('色の効果を削除',()=>{effect=undefined;reflectEffect();before=false;update();}),
+    effectDescription);
+  reflectEffect();
   const actions=document.createElement('menu');
   const cancel=document.createElement('button');cancel.type='submit';cancel.value='cancel';cancel.textContent='取り消す';
   const apply=document.createElement('button');apply.type='submit';apply.value='apply';apply.textContent='確定';
@@ -152,7 +193,7 @@ export function openLayerBlendDialog(options:{
   const transparency=document.createElement('p');
   transparency.textContent='透明部分は透明度の分だけ合成が弱まります。透明度が0の部分は下の絵に影響しません。';
   stages.append(stageTitle,order,transparency);
-  form.append(title,field('モード',mode),field('色の混ぜ方',space),strength,tonePanel,actions,stages);
+  form.append(title,field('モード',mode),field('色の混ぜ方',space),strength,tonePanel,effectPanel,actions,stages);
   dialog.append(form);document.body.append(dialog);
   const key=(event:KeyboardEvent)=>{
     if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close('cancel');}

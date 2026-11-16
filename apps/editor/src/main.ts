@@ -33,7 +33,7 @@ import type {SnapMark} from './transform/layout';
 import {runTransform} from './transform/run';
 import {replayBrushPasses} from './selection/brush';
 import {digestLayerMask,readSelectionMask,transformLinkedMask} from './transform/mask';
-import {cornerMode,initialTransform,meshMode} from './transform/geometry';
+import {cornerMode,initialTransform,meshMode,type Transform} from './transform/geometry';
 import {alphaBounds} from './transform/quadrilateral';
 import {boundsOfSelection} from './selection/mask';
 import type {LayerDeformation} from '@illustro/core';
@@ -819,6 +819,7 @@ function editLayerBlend(){
   const root=artwork.root,clip=root.clippingSource(layer.id);
   const stages=[
     layer.deformation?'変形した絵と、その上に描いた線':layer.editable?'編集できる図形・文字・グラデーション':'レイヤーの絵',
+    ...(layer.blend?.effect?.enabled?['効果用マスクの範囲で色を調整する']:[]),
     ...(layer.vectorMask?.enabled?['レイヤーマスクで表示する範囲を決める']:[]),
     ...(clip?['「'+clip.name+'」で切り抜く']:[]),
     'レイヤーの不透明度と、選んだモードで下の絵に重ねる'
@@ -847,7 +848,9 @@ function editLayerBlend(){
     cache.set(kind,loading);return loading;
   };
   const dialog=openLayerBlendDialog({
-    title:layer.name,stages,sampleTone,
+    title:layer.name,stages,sampleTone,selectionMask:()=>{
+      const selection=c06Selection?.active();return selection?selectionAsLayerMask(selection):null;
+    },
     current:{blend:layer.blend??{mode:'normal',space:'encoded',seed:parseInt(layer.id.slice(-8),16)>>>0},opacity:layer.opacity},
     preview:choice=>drawing.setLayerBlendPreview(choice?{layerId:layer.id,...choice}:null),
     complete:choice=>{
@@ -862,7 +865,7 @@ function editLayerBlend(){
       }
       changeLayer('レイヤーの合成設定を変更しました。',tx=>{
         const {blend,opacity}=choice;
-        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'&&!blend.tone?null:blend);
+        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'&&!blend.tone&&!blend.effect?null:blend);
         return tx.setLayerOpacity(layer.id,opacity)||changed;
       });
     },
@@ -1089,7 +1092,7 @@ const renderLayers=()=>{
         row.dataset.colorTag=layer.colorTag;
         row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
       }
-      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'全体ロック中':'',layer.contentLocked?'内容ロック中':'',layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',layer.vectorMask?.enabled?'マスク中':'',layer.clipSourceId?(root.clippingSource(layer.id)?'クリップ中':'クリップ元なし'):'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
+      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'全体ロック中':'',layer.contentLocked?'内容ロック中':'',layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',layer.vectorMask?.enabled?'マスク中':'',layer.deformation?(layer.deformation.enabled===false?'変形は非表示':'再編集できる変形'):'',layer.blend?.effect?'色の効果':'',layer.clipSourceId?(root.clippingSource(layer.id)?'クリップ中':'クリップ元なし'):'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
       row.onclick=event=>{
         if(batchRow){
@@ -3437,6 +3440,18 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
     });
   }};
 });
+function savedTransformSettings(saved:NonNullable<ReturnType<CoreDocument['root']['getLayer']>['deformation']>):Transform{
+  return {...initialTransform,mode:saved.mode,interpolation:saved.interpolation,
+    ...('affine' in saved?saved.affine:'strokes' in saved?{liquify:saved.strokes}:
+      'mesh' in saved?{mesh:{bounds:saved.bounds,controls:saved.mesh}}:
+        {quadrilateral:{bounds:saved.bounds,corners:saved.corners}})};
+}
+async function originalTransformPixels(artwork:CoreDocument,original:ReturnType<CoreDocument['root']['getLayer']>,revision:RevisionId){
+  const frozen=captureExport(artwork,original.id,revision),surfaceId=original.surface.descriptor.surfaceId;
+  return new Uint8Array(await renderFrozenArtwork({...frozen,layers:[{surfaceId,visible:true,opacity:1}],
+    strokes:frozen.strokes.filter(item=>item.surfaceId===surfaceId),
+    basePixels:frozen.basePixels?.filter(item=>item.surfaceId===surfaceId)??[]}));
+}
 installTransformPanel(byId('documentBoxBody'),async target=>{
   const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
   const {width,height}=artwork.root;
@@ -3456,14 +3471,8 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
     if(target==='boundary'&&activeSelection){
       pixels=new Uint8Array(width*height*4);
       for(let i=0;i<activeSelection.alpha.length;i++){pixels[i*4]=255;pixels[i*4+1]=155;pixels[i*4+3]=activeSelection.alpha[i]!;}
-    }else if(saved){
-      const frozen=captureExport(artwork,original.id,sourceRevision),surfaceId=original.surface.descriptor.surfaceId;
-      pixels=new Uint8Array(await renderFrozenArtwork({
-        ...frozen,layers:[{surfaceId,visible:true,opacity:1}],
-        strokes:frozen.strokes.filter(item=>item.surfaceId===surfaceId),
-        basePixels:frozen.basePixels?.filter(item=>item.surfaceId===surfaceId)??[]
-      }));
-    }else pixels=(await viewport.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
+    }else if(saved)pixels=await originalTransformPixels(artwork,original,sourceRevision);
+    else pixels=(await viewport.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
     const otherLayers=artwork.root.rootLayerIds.filter(id=>id!==layer.id&&layerBatchIds.has(id));
     if(otherLayers.length){
       const frames=await viewport.captureDocumentLayers(new Set(otherLayers));
@@ -3487,8 +3496,7 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
     guides:guidePreferences.enabled?{
       x:[{value:guidePreferences.x??0,name:'定規の基準 X'}],y:[{value:guidePreferences.y??0,name:'定規の基準 Y'}]
     }:null,
-    ...(saved?{initial:{...initialTransform,mode:saved.mode,interpolation:saved.interpolation,
-      ...('affine' in saved?saved.affine:'strokes' in saved?{liquify:saved.strokes}:'mesh' in saved?{mesh:{bounds:saved.bounds,controls:saved.mesh}}:{quadrilateral:{bounds:saved.bounds,corners:saved.corners}})}}:{}),
+    ...(saved?{initial:savedTransformSettings(saved)}:{}),
     apply:async(settings,result,editedOriginal)=>{
       if(!valid())throw Error('変形を開始したときの対象から変更されています。');
       if(target==='boundary'){
@@ -3558,6 +3566,31 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
     controller.lastPersistenceHandoff=tx.commit().persistence;
     controller.selectLayer(id);return 'edit';
   });
+},async remove=>{
+  const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer,saved=layer.deformation;
+  if(!saved)throw Error('再編集できる変形を持つレイヤーを選んでください。');
+  if(remove&&!confirm('元の絵と後から描いた筆を残して変形を取り除きますか？'))return '';
+  const original=artwork.revision(saved.sourceRevision).root.getLayer(saved.sourceLayerId??layer.id);
+  const {width,height}=artwork.root;
+  const settings=savedTransformSettings(saved),enable=!remove&&saved.enabled===false;
+  const linked=!!(saved.linkedMask&&layer.vectorMask?.linked!==false&&original.vectorMask);
+  if(linked&&saved.maskDigest&&layer.vectorMask&&await digestLayerMask(layer.vectorMask)!==saved.maskDigest)
+    throw Error('変形後にマスクを編集しています。現在のマスクを保つにはリンクを外してください。');
+  const mask=linked&&original.vectorMask?(enable?transformLinkedMask(original.vectorMask,settings,width,height):original.vectorMask):null;
+  const digest=mask?await digestLayerMask(mask):undefined;
+  const before=await originalTransformPixels(artwork,original,saved.sourceRevision);
+  const transformed=enable?new Uint8Array(await runTransform({pixels:before,width,height,settings,
+    selection:saved.selection?readSelectionMask(saved.selection,width,height):null,outputWidth:width,outputHeight:height})):before;
+  const pixels=await replayBrushPasses(saved.postPaint??[],width,height,transformed);
+  await withClipboardAccess(async()=>{
+    if(controller.document!==artwork||artwork.head!==head||controller.selectedLayer.id!==layer.id)
+      throw Error('作品が変更されました。');
+    const tx=artwork.begin(remove?'変形のみを取り除く':enable?'変形を有効にする':'変形を無効にする');
+    tx.replaceLayerDeformation(layer.id,pixels,remove?null:{...saved,enabled:enable,...(digest?{maskDigest:digest}:{})});
+    if(mask)tx.setVectorLayerMask(layer.id,mask);
+    controller.lastPersistenceHandoff=tx.commit().persistence;return 'edit';
+  });
+  return remove?'元の絵に戻して変形を外しました。':enable?'変形を表示しました。':'変形を隠しました。設定と元の絵は保存されています。';
 });
 async function collectFillMask(mask:LayerMask,width:number,height:number,valid:()=>boolean){
   const alpha=new Uint8Array(width*height);

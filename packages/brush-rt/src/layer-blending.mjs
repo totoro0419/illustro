@@ -54,11 +54,21 @@ export function artworkToneWeight(tone,channels){
  const upper=tone.lightStart===tone.lightEnd?Number(value<=tone.lightEnd):1-ease(value,tone.lightStart,tone.lightEnd);
  return ease(value,tone.darkStart,tone.darkEnd)*upper;
 }
-export function blendArtworkPixel(destination,offset,source,alpha,blend,x,y){
+export function applyArtworkEffect(effect,source,coverage){
+ if(!effect?.enabled||coverage<=0)return source;
+ const light=source.map(value=>clamp((value-.5)*effect.contrast+.5+effect.brightness));
+ const gray=toneColor(light,0);
+ return light.map((value,index)=>{
+  const saturated=clamp(gray+(value-gray)*effect.saturation);
+  return source[index]+coverage*((effect.invert?1-saturated:saturated)-source[index]);
+ });
+}
+export function blendArtworkPixel(destination,offset,source,alpha,blend,x,y,effectCoverage=1){
+ let b=[destination[offset]/255,destination[offset+1]/255,destination[offset+2]/255];
+ let s=applyArtworkEffect(blend.effect,[source[offset]/255,source[offset+1]/255,source[offset+2]/255],effectCoverage);
  if(blend.tone){
-  const selected=blend.tone.source==='backdrop'?destination:source;
   if(blend.tone.source==='backdrop'&&!destination[offset+3])return;
-  alpha*=artworkToneWeight(blend.tone,[selected[offset]/255,selected[offset+1]/255,selected[offset+2]/255]);
+  alpha*=artworkToneWeight(blend.tone,blend.tone.source==='backdrop'?b:s);
   if(alpha<=0)return;
  }
  const mode=layerBlendIndex(blend.mode);
@@ -67,8 +77,6 @@ export function blendArtworkPixel(destination,offset,source,alpha,blend,x,y){
   alpha=1;
  }
  const baseAlpha=destination[offset+3]/255,a=alpha+baseAlpha*(1-alpha);
- let b=[destination[offset]/255,destination[offset+1]/255,destination[offset+2]/255];
- let s=[source[offset]/255,source[offset+1]/255,source[offset+2]/255];
  const inLinear=blend.space==='linear'&&mode!==24;
  if(inLinear){b=b.map(linear);s=s.map(linear);}
  let mixed=s;
@@ -149,6 +157,10 @@ function shaderFunctions(wg){
   fn('toneWeight',args(sc,'value','low','lowSoft','highSoft','high'),sc,
    dec('rise','step(low,value)')+dec('fall','step(value,high)')+
    'if(lowSoft>low){rise=smoothstep(low,lowSoft,value);}if(high>highSoft){fall=1.-smoothstep(highSoft,high,value);}return rise*fall;'),
+  fn('effectColor',[[vec,'rgb'],[sc,'amount'],[sc,'brightness'],[sc,'contrast'],[sc,'saturation'],[sc,'invert']],vec,
+   (wg?'var color=':vec+' color=')+'clamp((rgb-'+vec+'(.5))*contrast+'+vec+'(.5+brightness),'+vec+'(0.),'+vec+'(1.));'+
+   dec('gray','toneChannel(color,0.)')+'color=clamp('+vec+'(gray)+(color-'+vec+'(gray))*saturation,'+vec+'(0.),'+vec+'(1.));'+
+   'if(invert>0.){color='+vec+'(1.)-color;}return mix(rgb,color,amount);'),
   fn('toLinear',args(sc,'c'),sc,branch('c<=.04045','c/12.92')+'return pow((c+.055)/1.055,2.4);'),
   fn('toEncoded',args(sc,'c'),sc,branch('c<=.0031308','12.92*c')+'return 1.055*pow(c,1./2.4)-.055;'),
  ].join('\n');
@@ -181,12 +193,19 @@ export function makeLayerBlendShader(source,wg,tile){
  const header=shaderFunctions(wg)+'\n'+shaderHash(wg)+'\n';
  if(wg){
   const functions=header+`@group(0)@binding(13)var layerBackdrop:texture_2d<f32>;
+@group(0)@binding(14)var effectMaskImage:texture_2d<f32>;
 fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
  let dst=textureLoad(layerBackdrop,q,0);
  var a=src.a*coverage;
+ var paint=src.rgb;
+ if(p.v[2].y>0.){
+  var amount=p.v[2].z;
+  if(p.v[2].y>1.){amount=textureLoad(effectMaskImage,q,0).r;}
+  paint=effectColor(paint,amount,p.v[2].w,p.v[3].x,p.v[3].y,p.v[3].z);
+ }
  let paper=(1.-dst.a)*p.v[6].w;
  if(p.v[0].z>0.){
-  var measured=src.rgb;
+  var measured=paint;
   if(p.v[0].z>1.){
    if(dst.a+paper<=0.){return dst;}
    measured=(dst.rgb+vec3f(paper))/max(dst.a+paper,.000001);
@@ -201,11 +220,11 @@ fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
   let seed=(u32(p.v[4].z)<<16u)|u32(p.v[4].w);
   let xy=vec2u(p.v[0].xy+vec2f(q));
   if(a<1.&&blendHash(seed,xy.x,xy.y)>=a){return dst;}
-  return vec4f(src.rgb,1.);
+  return vec4f(paint,1.);
  }
  let ba=dst.a+paper;
  var b=(dst.rgb+vec3f(paper))/max(ba,.000001);
- var s=src.rgb;
+ var s=paint;
  let inLinear=p.v[5].y>0.;
  if(inLinear){b=vec3f(toLinear(b.r),toLinear(b.g),toLinear(b.b));s=vec3f(toLinear(s.r),toLinear(s.g),toLinear(s.b));}
  let blend=artisticBlend(b,s,mode);
@@ -220,14 +239,20 @@ fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
    'return compositeArtwork(q,'+result+',p.v[7].w*clipCoverage(q)*shapeCoverage(q));',
   );
  }
- const functions=header+`uniform highp sampler2D layerBackdrop;
+ const functions=header+`uniform highp sampler2D layerBackdrop,effectMaskImage;
 vec4 compositeArtwork(ivec2 q,vec4 src,float coverage){
  int bottom=int(min(128.,params[4].y-params[0].y))-1-q.y;
  vec4 dst=texelFetch(layerBackdrop,ivec2(q.x,bottom),0);
  float a=src.a*coverage;
+ vec3 paint=src.rgb;
+ if(params[2].y>0.){
+  float amount=params[2].z;
+  if(params[2].y>1.)amount=texelFetch(effectMaskImage,q,0).r;
+  paint=effectColor(paint,amount,params[2].w,params[3].x,params[3].y,params[3].z);
+ }
  float paper=(1.-dst.a)*params[6].w;
  if(params[0].z>0.){
-  vec3 measured=src.rgb;
+  vec3 measured=paint;
   if(params[0].z>1.){
    if(dst.a+paper<=0.)return dst;
    measured=(dst.rgb+paper)/max(dst.a+paper,.000001);
@@ -242,11 +267,11 @@ vec4 compositeArtwork(ivec2 q,vec4 src,float coverage){
   uint seed=(uint(params[4].z)<<16u)|uint(params[4].w);
   uvec2 xy=uvec2(params[0].xy+vec2(q));
   if(a<1.&&blendHash(seed,xy.x,xy.y)>=a)return dst;
-  return vec4(src.rgb,1.);
+  return vec4(paint,1.);
  }
  float ba=dst.a+paper;
  vec3 b=(dst.rgb+paper)/max(ba,.000001);
- vec3 s=src.rgb;
+ vec3 s=paint;
  bool inLinear=params[5].y>0.;
  if(inLinear){b=vec3(toLinear(b.r),toLinear(b.g),toLinear(b.b));s=vec3(toLinear(s.r),toLinear(s.g),toLinear(s.b));}
  vec3 blend=artisticBlend(b,s,mode);

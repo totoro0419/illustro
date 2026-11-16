@@ -307,7 +307,7 @@ export class GpuRenderer {
   for(const {surfaceKey,visible,opacity,clipKey,mask,blend,white} of styles){
    if(typeof surfaceKey!=='string'||next.has(surfaceKey)||typeof visible!=='boolean'||!Number.isFinite(opacity)||opacity<0||opacity>1)throw Error('Invalid surface style');
    if(clipKey!==undefined&&typeof clipKey!=='string')throw Error('Invalid clipping source');
-   const before=previous.get(surfaceKey),blendTone=blend?.tone?JSON.stringify([blend.tone,!!blend.tonePreview]):null,maskSignature=mask?.enabled?JSON.stringify(mask):null;
+   const before=previous.get(surfaceKey),blendTone=blend?.tone||blend?.effect?JSON.stringify([blend.tone,!!blend.tonePreview,blend.effect]):null,maskSignature=mask?.enabled?JSON.stringify(mask):null;
    const activeMask=maskSignature===before?.maskSignature?before.mask:maskSignature?mask:null;
    changed||=!before||before.visible!==visible||before.opacity!==opacity||before.clipKey!==clipKey||before.mask!==activeMask||
     before.blend?.mode!==blend?.mode||before.blend?.space!==blend?.space||before.blend?.seed!==blend?.seed||before.blendTone!==blendTone||before.white!==white;
@@ -316,7 +316,7 @@ export class GpuRenderer {
   if(!changed)return;
   b.surfaceStyles=next;
   b.paperOpacity=[...next.values()].find(style=>style.white&&style.visible)?.opacity??0;
-  const active=new Set([...next.values()].map(style=>style.mask));
+  const active=new Set([...next.values()].flatMap(style=>[style.mask,style.blend?.effect?.mask]));
   for(const mask of b.layerMaskTextures?.keys()??[])if(!active.has(mask))releaseLayerMaskTextures(b,mask);
   for(const t of b.tiles.values())b.dirtyConfirmed.add(t.key);
   for(const v of b.previews.values())for(const key of v.keys)b.dirtyConfirmed.add(key);
@@ -614,7 +614,7 @@ class WebGpuBackend {
   this.depositLayout=d.createBindGroupLayout({entries:[u,tex(1),{binding:2,visibility:GPUShaderStage.COMPUTE,storageTexture:{access:'write-only',format:'rgba32float'}},{binding:3,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},tex(4),tex(5),tex(6),{binding:7,visibility:GPUShaderStage.COMPUTE,storageTexture:{access:'write-only',format:'rgba8unorm'}}]});
   this.liveLayout=d.createBindGroupLayout({entries:[u,{binding:1,visibility:GPUShaderStage.VERTEX,buffer:{type:'read-only-storage'}},tex(2),tex(3)]});const displayEntries=[u,tex(1),tex(2),...Array.from({length:8},(_,i)=>tex(i+3)),tex(11)];this.displayLayout=d.createBindGroupLayout({entries:displayEntries});if(this.sparsePreview){
    this.feedbackLayout=d.createBindGroupLayout({entries:[...displayEntries,tex(12)]});
-   this.blendLayout=d.createBindGroupLayout({entries:[...displayEntries,tex(12),tex(13)]});
+   this.blendLayout=d.createBindGroupLayout({entries:[...displayEntries,tex(12),tex(13),tex(14)]});
   }
   d.pushErrorScope('validation');const module=code=>d.createShaderModule({code});for(const code of [S.wgDeposit,S.wgLive,S.wgDisplay,PRESENT_WGSL,PRESENT_WGSL_LINEAR]){const info=await module(code).getCompilationInfo();const errors=info.messages.filter(x=>x.type==='error');if(errors.length)throw Error(errors.map(x=>x.message).join('\n'));}
   this.deposit=await d.createComputePipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[this.depositLayout]}),compute:{module:module(B.wgDeposit),entryPoint:'main'}});
@@ -772,14 +772,14 @@ function releaseLayerMaskTextures(b,mask){
  if(b.gl){for(const {t} of textures.values())b.gl.deleteTexture(t);}
  else for(const texture of textures.values())texture.destroy();
 }
-function maskTexture(b,key,mask,params){
+function maskTexture(b,key,mask,params,base=22){
  if(!mask?.enabled)return b.zeroLayer;
  const alpha=layerMaskTile(mask,key);
  if(typeof alpha==='number'){
-  params[22]=1;params[23]=alpha/255;
+  params[base]=1;params[base+1]=alpha/255;
   return b.zeroLayer;
  }
- params[22]=2;
+ params[base]=2;
  b.layerMaskTextures??=new Map();
  let textures=b.layerMaskTextures.get(mask);
  if(!textures){textures=new Map();b.layerMaskTextures.set(mask,textures);}
@@ -800,7 +800,7 @@ function maskTexture(b,key,mask,params){
  return texture;
 }
 function needsBackdrop(blend){
- return blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone);
+ return blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone||blend.effect?.enabled);
 }
 function artworkBlendParams(b,params,blend){
  params[18]=blend.seed>>>16;
@@ -818,6 +818,16 @@ function artworkBlendParams(b,params,blend){
   params[7]=tone.lightEnd;
   params[8]=blend.tonePreview?1:0;
  }
+}
+function effectTexture(b,key,params,effect){
+ if(!effect?.enabled){params[9]=0;return b.zeroLayer;}
+ const texture=maskTexture(b,key,effect.mask,params,9);
+ if(!effect.mask?.enabled){params[9]=1;params[10]=1;}
+ params[11]=effect.brightness;
+ params[12]=effect.contrast;
+ params[13]=effect.saturation;
+ params[14]=effect.invert?1:0;
+ return texture;
 }
 function backdropGl(b,key,direct){
  const g=b.gl;
@@ -920,10 +930,11 @@ function renderSparseGl(b,states,dirty,diag){
    const params=clipParameters(compositionParams(b,key,direct?t:null,direct?overlays:[],false,opacity),input,b.clipScratch?.includes(clip));
    const layerMaskImage=maskTexture(b,key,mask,params),advanced=needsBackdrop(blend);
    if(advanced)artworkBlendParams(b,params,blend);
+   const effectMaskImage=advanced?effectTexture(b,key,params,blend.effect):null;
    if(direct){
     if(!advanced)g.enable(g.BLEND);g.blendEquation(g.FUNC_ADD);g.blendFunc(g.ONE,g.ONE_MINUS_SRC_ALPHA);
     const program=advanced?backdropGl(b,key,true):b.feedbackDirect;
-    b.use(program,params,{...glTextures(b,t,overlays,null),...(clip?{archiveImage:clip}:{}),layerMaskImage,...(advanced?{layerBackdrop:b.layerBackdrop}:{})});
+    b.use(program,params,{...glTextures(b,t,overlays,null),...(clip?{archiveImage:clip}:{}),layerMaskImage,...(advanced?{layerBackdrop:b.layerBackdrop,effectMaskImage}:{})});
     g.drawArrays(g.TRIANGLES,0,6);g.disable(g.BLEND);diag.compositedLayerPasses++;diag.feedbackDirectPasses=(diag.feedbackDirectPasses??0)+1;continue;
    }
    let base=null;
@@ -937,7 +948,7 @@ function renderSparseGl(b,states,dirty,diag){
    if(!advanced)g.enable(g.BLEND);
    g.blendEquation(g.FUNC_ADD);g.blendFunc(g.ONE,g.ONE_MINUS_SRC_ALPHA);
    const program=advanced?backdropGl(b,key,false):b.feedbackTile;
-   b.use(program,params,{layer:base,archiveImage:clip??b.zeroLayer,layerMaskImage,...(advanced?{layerBackdrop:b.layerBackdrop}:{})});
+   b.use(program,params,{layer:base,archiveImage:clip??b.zeroLayer,layerMaskImage,...(advanced?{layerBackdrop:b.layerBackdrop,effectMaskImage}:{})});
    g.drawArrays(g.TRIANGLES,0,6);g.disable(g.BLEND);diag.compositedLayerPasses++;
   }
  }diag.dirtyTiles=dirty.size;if(b.tiledPresentation)diag.compositionKeys=[...dirty];b.presentationPyramid.invalidate(dirty);
@@ -989,13 +1000,14 @@ function renderSparseGpu(b,e,states,dirty,diag){
    const params=clipParameters(compositionParams(b,key,direct?t:null,direct?overlays:[],false,opacity),input,false);
    const layerMaskImage=maskTexture(b,key,mask,params),advanced=needsBackdrop(blend);
    if(advanced)artworkBlendParams(b,params,blend);
+   const effectMaskImage=advanced?effectTexture(b,key,params,blend.effect):null;
    if(direct){
     if(advanced){scenePass?.end();scenePass=null;}
     const pipeline=advanced?backdropGpu(b,e,key,true):b.feedbackDirect;
     const rp=scene(),textures=gpuTextures(b,t,overlays,null);
     if(clip)textures[textures.length-1]=clip;
     rp.setPipeline(pipeline);
-    rp.setBindGroup(0,b.group(advanced?b.blendLayout:b.feedbackLayout,[b.buffer(params,GPUBufferUsage.UNIFORM),...textures,layerMaskImage,...(advanced?[b.layerBackdrop]:[])]));
+    rp.setBindGroup(0,b.group(advanced?b.blendLayout:b.feedbackLayout,[b.buffer(params,GPUBufferUsage.UNIFORM),...textures,layerMaskImage,...(advanced?[b.layerBackdrop,effectMaskImage]:[])]));
     rp.draw(6);diag.compositedLayerPasses++;diag.feedbackDirectPasses=(diag.feedbackDirectPasses??0)+1;continue;
    }
    scenePass?.end();scenePass=null;
@@ -1009,7 +1021,7 @@ function renderSparseGpu(b,e,states,dirty,diag){
    }
    const pipeline=advanced?backdropGpu(b,e,key,false):b.feedbackTile;
    const rp=scene();rp.setPipeline(pipeline);
-   rp.setBindGroup(0,b.group(advanced?b.blendLayout:b.feedbackLayout,[b.buffer(params,GPUBufferUsage.UNIFORM),base,b.zeroStroke,...Array(8).fill(b.zeroLive),clip??b.archiveTarget,layerMaskImage,...(advanced?[b.layerBackdrop]:[])]));
+   rp.setBindGroup(0,b.group(advanced?b.blendLayout:b.feedbackLayout,[b.buffer(params,GPUBufferUsage.UNIFORM),base,b.zeroStroke,...Array(8).fill(b.zeroLive),clip??b.archiveTarget,layerMaskImage,...(advanced?[b.layerBackdrop,effectMaskImage]:[])]));
    rp.draw(6);diag.compositedLayerPasses++;
   }
  }scenePass?.end();diag.dirtyTiles=dirty.size;if(b.tiledPresentation)diag.compositionKeys=[...dirty];b.presentationPyramid.invalidate(dirty);

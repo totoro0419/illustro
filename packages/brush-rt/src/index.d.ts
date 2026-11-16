@@ -31,4 +31,4 @@ export function layerMaskTile(mask:import('@illustro/core').LayerMask|null|undef
 export function layerMaskCoverage(mask:import('@illustro/core').LayerMask|null|undefined,x:number,y:number):number;
 export function traceMaskPath(context:CanvasRenderingContext2D,mask:import('@illustro/core').VectorLayerMask):void;
 export function samplePixelMask(mask:import('@illustro/core').PixelLayerMask,x:number,y:number):number;
-export function blendArtworkPixel(destination:Uint8ClampedArray,offset:number,source:Uint8Array|Uint8ClampedArray,alpha:number,blend:import('@illustro/core').LayerBlend,x:number,y:number):void;
+export function blendArtworkPixel(destination:Uint8ClampedArray,offset:number,source:Uint8Array|Uint8ClampedArray,alpha:number,blend:import('@illustro/core').LayerBlend,x:number,y:number,effectCoverage?:number):void;

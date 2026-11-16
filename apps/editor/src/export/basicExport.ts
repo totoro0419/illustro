@@ -50,13 +50,14 @@ export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|U
   if(!Number.isFinite(opacity)||opacity<0||opacity>1)throw new Error('不正なレイヤー不透明度です。');
   const tileSize=TILE;
   const blend=shape?.blend;
-  const advanced=blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone);
-  const hasMask=shape&&(shape.mask?.enabled||clip?.mask?.enabled);
-  const maskRows=new Map<number,readonly [number|Uint8Array,number|Uint8Array]>();
+  const advanced=blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone||blend.effect?.enabled);
+  const hasMask=shape&&(shape.mask?.enabled||clip?.mask?.enabled||blend?.effect?.enabled&&blend.effect.mask?.enabled);
+  const maskRows=new Map<number,readonly [number|Uint8Array,number|Uint8Array,number|Uint8Array]>();
   let tileY=-1;
   for(let i=0;i<destination.length;i+=4){
     let sa=source[i+3]!/255*opacity*(clip?clip.pixels[i+3]!/255*clip.opacity:1);
     if(sa===0)continue;
+    let effectCoverage=1;
     if(hasMask){
       const pixel=i/4,x=pixel%shape.width,y=Math.floor(pixel/shape.width);
       const tx=Math.floor(x/tileSize),ty=Math.floor(y/tileSize);
@@ -64,17 +65,18 @@ export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|U
       let alpha=maskRows.get(tx);
       if(!alpha){
         const key=tx+','+ty;
-        alpha=[layerMaskTile(shape.mask,key),layerMaskTile(clip?.mask,key)];
+        alpha=[layerMaskTile(shape.mask,key),layerMaskTile(clip?.mask,key),layerMaskTile(blend?.effect?.mask,key)];
         maskRows.set(tx,alpha);
       }
       const offset=(y%tileSize)*tileSize+x%tileSize;
-      const [own,source]=alpha;
+      const [own,source,adjustment]=alpha;
+      effectCoverage=(typeof adjustment==='number'?adjustment:adjustment[offset]!)/255;
       sa*=(typeof own==='number'?own:own[offset]!)*(typeof source==='number'?source:source[offset]!)/65025;
     }
     if(sa===0)continue;
     if(advanced){
       const pixel=i/4,width=shape!.width;
-      blendArtworkPixel(destination,i,source,sa,blend,pixel%width,Math.floor(pixel/width));
+      blendArtworkPixel(destination,i,source,sa,blend,pixel%width,Math.floor(pixel/width),effectCoverage);
       continue;
     }
     const da=destination[i+3]!/255;

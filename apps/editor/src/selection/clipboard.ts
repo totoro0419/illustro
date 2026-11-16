@@ -229,8 +229,9 @@ export class ArtworkClipboard {
         return placed;
       };
       const entries=await Promise.all(record.editable.layers.map(async({layer,pixels,transform,regionSource})=>{
-        const mask=moveMask(layer.vectorMask,x,y);
-        const entry={layer,pixels:place(pixels),mask,editable:layer.editable?moveEditableArtwork(layer.editable,x,y):null};
+        const mask=moveMask(layer.vectorMask,x,y),effect=layer.blend?.effect;
+        const placedLayer=effect&&layer.blend?{...layer,blend:{...layer.blend,effect:{...effect,mask:moveMask(effect.mask,x,y)}}}:layer;
+        const entry={layer:placedLayer,pixels:place(pixels),mask,editable:layer.editable?moveEditableArtwork(layer.editable,x,y):null};
         if(!transform)return {...entry,...(regionSource?{regionSource}:{})};
         let deformation=moveDeformation(transform.deformation,x,y);
         const oldDigest=transform.deformation.maskDigest;
