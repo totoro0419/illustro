@@ -6,7 +6,7 @@ export type FillSettings=Readonly<{
   method:'color'|'line'|'lasso'|'lasso-closed';tolerance:number;gap:number;opacity:number;color:string;
   erase:boolean;contiguous:boolean;closedOnly:boolean;
   edge?:number;edgeShape?:'square'|'round';traceWidth?:number;condition?:'all'|'transparent'|'color';
-  alphaTolerance?:number;matchColor?:string;excluded?:readonly number[];included?:readonly number[];
+  alphaTolerance?:number;matchColor?:string;antialias?:boolean;excluded?:readonly number[];included?:readonly number[];
 }>;
 export type Walls=RegionWalls;
 export type GapCandidate=Readonly<{from:Point;to:Point;length:number;kind?:'tips'|'edge'|'junction'|'near'}>;
@@ -298,6 +298,10 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
     const radius=Math.min(24,Math.abs(edge)),mask={width,height,alpha};
     alpha=settings.edgeShape==='round'?roundedEdge(mask,radius,edge>0):growOrShrink(mask,radius,edge>0?'grow':'shrink').alpha;
   }
+  // Optional subpixel coverage along the edge. Keep the precise binary result
+  // as the default: on the current layer a soft edge can otherwise tint ink.
+  if(settings.antialias&&alpha.some(Boolean))
+    alpha=roundedEdge({width,height,alpha},1,true);
   for(let i=0;i<length;i++){
     if(!alpha[i])continue;
     if(selection)alpha[i]=Math.round(alpha[i]!*selection.alpha[i]!/255);
