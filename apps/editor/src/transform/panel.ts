@@ -378,6 +378,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       settings=source.initial??{...initialTransform,cx:source.width/2,cy:source.height/2};
       status.textContent=source.name+'を変形します。'+(source.maskLink===undefined?'':source.maskLink?' マスクも一緒に変形します。':' マスクは現在の位置に残ります。')+
         (source.initial?' 仮表示は原本の変形です。上に描いた筆は適用時に同じ位置へ重ねます。':'');
+      status.textContent+=' キャンバス上の半透明の変形表示は目安です。正確なレイヤー画素は下の候補欄で確認してください。';
       editingHandles=usesHandles(settings.mode);placingPoints=false;refreshHandles();compare.checked=false;
     }finally{busy=false;sync();}
     void refreshPreview();
