@@ -56,6 +56,7 @@ export function eraseSegment(path:EditablePath,point:ArtPoint){
 
 /** Combine independent strokes without changing the native, backwards-compatible path format. */
 export function appendPathStroke(base:EditablePath,stroke:EditablePath):EditablePath{
+  if(base.booleanOperands||stroke.booleanOperands)throw Error('図形演算の元データを含む形には追加できません。');
   if(base.shape==='rectangle'||base.shape==='ellipse'||stroke.shape==='rectangle'||stroke.shape==='ellipse'||
     base.closed||stroke.closed||base.points.some(point=>point.close)||stroke.points.some(point=>point.close))
     throw Error('別の線を追加するには、閉じていないベクター線を選んでください。');
@@ -101,12 +102,6 @@ export function eraseWholeStroke(path:EditablePath,position:ArtPoint):EditablePa
   return {...path,shape:path.shape==='freehand'?'freehand':'polyline',closed:false,points};
 }
 
-function sampleCurve(a:ArtPoint,b:ArtPoint,t:number){
-  const u=1-t,hasHandles=a.outX!==undefined||b.inX!==undefined;
-  const coord=(a:number,b:number,c:number,d:number)=>hasHandles?u**3*a+3*u*u*t*b+3*u*t*t*c+t**3*d:a+(d-a)*t;
-  const pa=a.pressure??1,pb=b.pressure??1;
-  return {x:coord(a.x,a.outX??a.x,b.inX??b.x,b.x),y:coord(a.y,a.outY??a.y,b.inY??b.y,b.y),pressure:pa+(pb-pa)*t};
-}
 /**
  * Adaptive Bézier sampling limits geometric error rather than sampling by fixed distance.
  * The cap prevents unusually complex drawings from freezing a canvas operation.
@@ -180,7 +175,10 @@ export async function combineShapes(current:EditablePath,other:EditablePath,mode
     ring.slice(0,-1).map(([x,y],index,list):ArtPoint=>({x,y,...(index===0?{move:true}:{}),...(index===list.length-1?{close:true}:{})}))));
   if(points.length<3)throw Error('演算結果に面がありません。');
   if(points.length>4096)throw Error('演算結果の点が多すぎます。元の形の点数を減らしてください。');
-  return {...current,shape:'polyline',closed:false,points,fill:current.fill??current.stroke};
+  // Keep copies of both input shapes for later re-editing, without changing how older renderers display the result.
+  const {booleanOperands:_ignoredA,...left}=current,{booleanOperands:_ignoredB,...right}=other;
+  return {...current,shape:'polyline',closed:false,points,fill:current.fill??current.stroke,
+    booleanOperands:{mode,a:left,b:right}};
 }
 
 export function splitPath(path:EditablePath,index:number):EditablePath{
