@@ -12,7 +12,7 @@
 | 調査問題ID | **129件すべて一意** | PR #73のREADMEを読み、129 ID・重複0を確認 |
 | 調査分類 | A81 / B29 / C19 | 調査時の分類。現在の欠陥確定率ではない |
 | 優先度 | P1 55 / P2 74 | 調査時の値 |
-| 実装担当PR | **11件提出（すべてDraft）** | PR #76/#77/#80/#81/#82/#83/#84/#86/#88/#89/#90。C04操作担当PRは未確認 |
+| 実装担当PR | **12件提出（すべてDraft）** | PR #76/#77/#80/#81/#82/#83/#84/#86/#88/#89/#90/#97。12担当枠に対応 |
 | 取り込み済み実装PR | **0** | 統合作業開始時点 |
 | ビルド・回帰検査 | **独立したコード検査成功（1回）** | [Actions #43888071455](https://github.com/totoro0419/illustro/actions/runs/43888071455)、コミット `363d49e`。旧文書分類チェックのみ不合格・診断扱い |
 | Androidペン/指実機検査 | **未実施** | CIと別に判定 |
@@ -25,7 +25,7 @@
 | 担当枠 | PR | 対応領域と状況 | 審査・最新確認 | 統合コミット | 未解決 |
 |---|---|---|---|---|---|
 | 01 C03 | [#76](https://github.com/totoro0419/illustro/pull/76) | 履歴・保存・復元、**Draft** | CI再確認中。統合側の旧CI比較方法で誤判定した記録あり | — | `main.ts`接続等、部分対応 |
-| 02 C04 操作 | 未提出・未確認 | UIと操作設定 | PR待ち | — | — |
+| 02 C04 操作 | [#97](https://github.com/totoro0419/illustro/pull/97) | 操作・設定・マクロ、**Draft** | [CI成功 #43889839213](https://github.com/totoro0419/illustro/actions/runs/43889839213) + [#43889839217](https://github.com/totoro0419/illustro/actions/runs/43889839217) | — | マクロの非同期完了通知、実機操作検証 |
 | 03 C04 色 | [#83](https://github.com/totoro0419/illustro/pull/83) | 色選択、**Draft** | [CI成功 #43889333899](https://github.com/totoro0419/illustro/actions/runs/43889333899) | — | パレット保存経路と採色高速化は未結線 |
 | 04 C05 素材 | [#77](https://github.com/totoro0419/illustro/pull/77) | 素材庫、**Draft** | [CI成功 #43889164943](https://github.com/totoro0419/illustro/actions/runs/43889164943) | — | DB旧版移行の実データ検証、依存先の確認 |
 | 05 C05 参考資料 | [#82](https://github.com/totoro0419/illustro/pull/82) | 資料・作品管理、**Draft** | CI進行中（取得時点） | — | `main.ts`で複製・切替・通知の接続が必要 |
@@ -39,12 +39,18 @@
 
 ## 2026-11-16 JST — 11件の実装PR受付・初回レビュー
 
-- **12担当のうち11件**の実装PRを実際のGitHubで確認。いずれも `quality/C03-C10-integration` がbase、初回確認ではDraft。Draftを最終承認の意味として扱わず、**製品コードの取り込みは0件**。
+- **12担当すべての実装PR**を実際のGitHubで確認。いずれも `quality/C03-C10-integration` がbase、初回確認ではDraft。Draftを最終承認の意味として扱わず、**製品コードの取り込みは0件**。
 - PR #76, #80, #81の最初のCI失敗は、統合管理側の拒否ルールがPR自身の変更でなく両tipの差分を判定していたための誤判定。**3点（merge-base）差分に修正：`2387a4f6f8e9c1bd333b728b9778ccfeb43e0d4c`**。修正前CIの失敗は実装不具合とみなさない。修正後にPRヘッドを更新して再検査する。
 - 更新後のPR #81ほかでCI成功例あり。ただしCI成功だけで作画・保存・4000px画質・Android実機の合格とは断定しない。
 - 現在の統合HEAD `2387a4f6` は [CI #43889067281](https://github.com/totoro0419/illustro/actions/runs/43889067281) 成功。旧 `prep:check` の既存問題は診断のままで成功扱いしない。
 - #86の古い差分表示にはCI設定ファイルが見えるが、最新統合HEADとのGitHub比較では`apps/editor/src/assets/linkedImages.ts`と`transform/*`のみが差分。引き続き最新コミットで再照合する。
 - 共通作業の衝突は **PRの変更ファイルだけでなく、連携箇所**（`main.ts`、共通描画、保存形式、ブラシの表示）も見て解消する。C10文字の依存Issue #78/#79、C07の #85 も追跡する。
+
+## 12担当のPR到着（追加確認）
+
+PR [#97](https://github.com/totoro0419/illustro/pull/97) を新たに確認。C04操作・設定・マクロの担当で、変更ファイルは `apps/editor/src/ui/*`、専用CI、`docs/quality-fixes/C04-operation-ui.md`。統合管理所有の `main.ts` と監査原本は変更していない。現行ヘッドで自動検査成功（#43889839213 / #43889839217）を確認。**全12件の提出は確認済み、全12件Draft、統合実績は0件**。
+
+提出済みと全機能完成・実機合格は別判定。C04-002では共通操作の完了通知を統合担当が接続する必要があるため、現時点でその問題IDは解決確認済みとしない。
 
 ## 更新ルール
 
