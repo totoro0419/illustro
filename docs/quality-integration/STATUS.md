@@ -1,8 +1,25 @@
 # Illustro C03〜C10 — 品質改善統合台帳
 
+## 最新確認（2026-11-17 07:36 JST、統合HEAD `e56c36420f81`）
+
+**実装PR統合：4/12件**。#76 → #80 → #77 → #82 の順で `quality/C03-C10-integration` へマージ済み。残り8件はDraft・未統合。**129件の独立解決確認済み：0件**。以下はコード取り込み記録であり、機能・実機の完成判定ではない。
+
+| 順序 | PR・領域 | 統合コミット | PR最終HEADの統合CI | 統合コミットのCore CI |
+|---|---|---|---|---|
+| 1 | #76 C03 保存/履歴 | [ec6e29d8](https://github.com/totoro0419/illustro/commit/ec6e29d821a8a6b56065a887e2e8b799daa4c14e) | [43970643618](https://github.com/totoro0419/illustro/actions/runs/43970643618) success | [43970901248](https://github.com/totoro0419/illustro/actions/runs/43970901248) success |
+| 2 | #80 共通描画 | [d1ffd845](https://github.com/totoro0419/illustro/commit/d1ffd845ab1442d00911555a0fe924fc472dad40) | [43889547783](https://github.com/totoro0419/illustro/actions/runs/43889547783) success | [43971183920](https://github.com/totoro0419/illustro/actions/runs/43971183920) success |
+| 3 | #77 C05 素材 | [852c2ca7](https://github.com/totoro0419/illustro/commit/852c2ca70c7d48513c7f5eed2a2d0861fc4fdc91) | [43971042284](https://github.com/totoro0419/illustro/actions/runs/43971042284) success | [43971372499](https://github.com/totoro0419/illustro/actions/runs/43971372499) success |
+| 4 | #82 C05 参考資料 | [e56c3642](https://github.com/totoro0419/illustro/commit/e56c36420f8120ed535df0a5495eaac7d6ebe8e4) | [43890670333](https://github.com/totoro0419/illustro/actions/runs/43890670333) success | [43971569104](https://github.com/totoro0419/illustro/actions/runs/43971569104) success |
+
+**未確認の検査**：各マージ後のCore CIは `core:typecheck` と `core:test` の成功。**統合後の最新HEADでBrush/Editor全回帰・Editor本番ビルドが成功した記録は、この照合では取得できていない**。PR単独の成功と統合後の成功を混同しない。旧 `prep:check` は既存の未分類 `docs/development/PROTOTYPE_PROGRESS.md` により失敗する診断扱いで、PASSではない。
+
+**未解決**：#76の `main.ts` 接続と旧作品/Undo/Redo、#82の作品複製・切替時の `copyReferenceBoard` / `flush()` 接続、#77のIndexedDB移行実データ、#80の仮線/画素一致、Androidペン/指・4000×4000実機検証。次の統合前に現在の統合HEADの全回帰を確認する。調査PR #73の原本9件、129 ID、A/B/Cの確度は変更せず、`main` も固定HEAD `bdc7135b` から不変を確認。
+
+---
+
 最初の確認日時：2026-11-16 JST。詳細ルールは [README](README.md)、調整窓口は [Issue #74](https://github.com/totoro0419/illustro/issues/74)。
 
-## 現状（初期スナップショット）
+## 初期スナップショット（履歴・最新状態は冒頭参照）
 
 | 項目 | 状態 | 根拠・備考 |
 |---|---|---|
