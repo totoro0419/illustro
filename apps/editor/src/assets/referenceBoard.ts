@@ -4,7 +4,7 @@
  */
 import {readBoard,writeBoard,newBoardItem,type BoardSnapshot,type BoardItem} from './referenceBoardStore';
 import {getAsset} from './library';
-import {exportAssetPack,importAssetPack,readAssetPack} from './packs';
+import {exportAssetPack,importAssetPack,readAssetPack,type PackManifest} from './packs';
 import type {PortableSectionInput} from '../persistence/format';
 import type {PreservedPortableData} from '../persistence/portable';
 import type {ForegroundColor} from '../color/model';
@@ -12,6 +12,7 @@ export type ReferenceBoardService=Readonly<{
   add:(assetId:string)=>Promise<void>;
   refresh:()=>Promise<void>;
   refreshIfChanged:()=>Promise<void>;
+  flush:()=>Promise<void>;
   exportLayout:()=>Promise<Blob>;
   undo:()=>Promise<void>;
   redo:()=>Promise<void>;
@@ -30,7 +31,7 @@ const safePos=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,va
 export function installReferenceBoard(options:Options):ReferenceBoardService{
   const panel=document.getElementById('referenceBoxBody');
   if(!panel)return {
-    add:async()=>{},refresh:async()=>{},refreshIfChanged:async()=>{},
+    add:async()=>{},refresh:async()=>{},refreshIfChanged:async()=>{},flush:async()=>{},
     exportLayout:async()=>new Blob(),undo:async()=>{},redo:async()=>{},
     exportNative:async()=>null,importNative:async()=>{}
   };
@@ -66,6 +67,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   document.body.append(canvasLayer);
   let currentDoc:string|null=null,board:BoardSnapshot|null=null;
   let saving:Promise<void>=Promise.resolve(),transition=0,renderEpoch=0;
+  let saveError:unknown=null,temporaryHidden=false;
   let back:BoardSnapshot[]=[],forward:BoardSnapshot[]=[];
   const urls=new Map<string,string>();
   const error=(reason:unknown)=>{status.textContent=reason instanceof Error?reason.message:String(reason);};
@@ -81,23 +83,22 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     if(!board||board.documentId!==change.documentId)return;
     if(history){back.push(clone(board));if(back.length>60)back.shift();forward=[];}
     board=change;
-    const expectedDocument=change.documentId;
-    saving=saving.catch(()=>{}).then(async()=>{
-      if(options.getDocumentId()!==expectedDocument)return;
-      await writeBoard(change);
-    }).catch(error);
+    // A queued write belongs to its captured document, even if the user switches works.
+    // Do not discard it after getDocumentId() changes.
+    saving=saving.then(()=>writeBoard(clone(change)),()=>writeBoard(clone(change)))
+      .then(()=>{saveError=null;},reason=>{saveError=reason;error(reason);});
     void render();drawList();
   }
   async function refreshIfChanged(){
     const id=options.getDocumentId();
     if(id===currentDoc)return;
-    currentDoc=id;transition++;back=[];forward=[];board=null;
+    currentDoc=id;transition++;back=[];forward=[];board=null;temporaryHidden=false;
     for(const url of urls.values())URL.revokeObjectURL(url);urls.clear();canvasLayer.replaceChildren();list.replaceChildren();
     if(!id){status.textContent='作品を開くと、資料を並べられます。';return;}
     try{
       const current=transition,data=await readBoard(id);
       if(current!==transition||id!==currentDoc)return;
-      board=data;await render();drawList();
+      board=data;temporaryHidden=data.hidden;await render();drawList();
     }catch(e){error(e);}
   }
   async function refresh(){
@@ -106,7 +107,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   async function add(assetId:string){
     await refreshIfChanged();
     if(!board)throw Error('作品を開いてから資料を追加してください。');
+    const targetDocument=board.documentId;
     const asset=await getAsset(assetId);
+    if(board?.documentId!==targetDocument||options.getDocumentId()!==targetDocument)
+      throw Error('作品を切り替えたため、参考資料の追加を中止しました。');
     if(!asset||asset.deleted||asset.kind!=='reference'||!asset.mime.startsWith('image/'))
       throw Error('この素材は参考画像として開けません。');
     if(board.items.length>=80)throw Error('資料は1作品80枚までです。');
@@ -127,7 +131,9 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   }
   async function toggleVisibility(){
     await refreshIfChanged();if(!board)return;
-    syncAfter({...board,hidden:!board.hidden});
+    temporaryHidden=!temporaryHidden;
+    canvasLayer.hidden=temporaryHidden;
+    drawList();
   }
   async function undo(){
     if(!board||!back.length)return;
@@ -139,8 +145,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     back.push(clone(board));board=forward.pop()!;
     syncAfter(board,false);
   }
+  async function flush(){await saving;if(saveError)throw saveError;}
   async function exportLayout(){
     await refreshIfChanged();if(!board)throw Error('作品がありません。');
+    await flush();
     return new Blob([JSON.stringify(board,null,2)],{type:'application/json'});
   }
   const NATIVE_ID='c05.reference-board';
@@ -239,7 +247,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     groupToggle.disabled=!groupSelect.value;
     const members=current.items.filter(i=>i.group===groupSelect.value);
     groupToggle.textContent=members.length&&members.every(i=>i.hidden)?'グループを再表示':'グループを隠す';
-    show.textContent=current.hidden?'資料をすべて再表示':'資料を一時的に隠す';
+    show.textContent=temporaryHidden?'資料をすべて再表示':'資料を一時的に隠す';
     for(const item of current.items){
       const row=document.createElement('div');row.className='c05-reference-row';
       const name=document.createElement('span');name.textContent='資料 '+item.assetId.slice(0,8);
@@ -353,5 +361,5 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   }
   groupSelect.onchange=()=>drawList();
   void refreshIfChanged();
-  return {add,refresh,refreshIfChanged,exportLayout,undo,redo,exportNative,importNative};
+  return {add,refresh,refreshIfChanged,flush,exportLayout,undo,redo,exportNative,importNative};
 }
