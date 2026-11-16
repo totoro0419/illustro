@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {buildRegions,fillBoundaries,fillMask,type FillSettings} from './pixels';
+import {buildRegions,fillBoundaries,fillMask,paintColorHints,type FillSettings} from './pixels';
 
 const settings:FillSettings={
   method:'color',tolerance:15,gap:0,opacity:1,color:'#ff0000',erase:false,
@@ -35,6 +35,24 @@ describe('C08 fill boundaries and destination gating',()=>{
     const graph=buildRegions(data,9,9,15,0,[]);
     expect(graph.hasInk).toBe(true);
     expect(graph.external[graph.labels[4*9+4]!]).toBe(0);
+  });
+  it('uses the majority background when a stroke touches one image corner',()=>{
+    const data=image(9,9,[12,12,12,255]);
+    rectangle(data,9,0,0,6,6,[255,255,255,255]);
+    const result=fillBoundaries(data,9,9,15,0);
+    expect(result.walls[0]).toBe(1);
+    expect(result.walls[8*9+8]).toBe(0);
+  });
+  it('applies a transparent-only color hint only to transparent destination pixels',()=>{
+    const data=image(9,9);
+    rectangle(data,9,2,2,6,6,[0,0,0,255]);
+    const graph=buildRegions(data,9,9,15,0,[]);
+    const target=image(9,9);
+    setPixel(target,9,4,4,[255,0,0,255]);
+    const result=paintColorHints(graph,[{color:'#00ff00',width:1,points:[{x:4,y:4}]}],
+      target,null,{...settings,condition:'transparent'},false);
+    expect(Array.from(result.pixels.slice((4*9+4)*4,(4*9+4)*4+4))).toEqual([255,0,0,255]);
+    expect(Array.from(result.pixels.slice((3*9+4)*4,(3*9+4)*4+4))).toEqual([0,255,0,255]);
   });
   it('never auto-connects neighboring parallel strokes without tips',()=>{
     const data=image(10,9);
