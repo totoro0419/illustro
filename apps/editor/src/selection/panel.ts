@@ -5,6 +5,7 @@ import {rasterizeSelection,combineSelection,invertSelection,fullSelection,transl
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection,storeCurrentSelection,loadCurrentSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
 import {SelectionOverlay} from './overlay';
+import {snapMagneticPoint} from './magnetic';
 import type {AnalyzeOptions} from './autoSelect';
 import type {PreservedPortableData} from '../persistence/portable';
 import type {PortableSectionInput} from '../persistence/format';
@@ -29,7 +30,7 @@ type SelectionCallbacks=Readonly<{
   capturePixels:(source:'layer'|'merged')=>Promise<Uint8ClampedArray>;
   moveContent:(dx:number,dy:number)=>Promise<void>;
 }>;
-type Tool='rectangle'|'ellipse'|'lasso'|'polygon'|'autoColor'|'autoBrightness'|'autoInk'|'brushAdd'|'brushSubtract';
+type Tool='rectangle'|'ellipse'|'lasso'|'magnetic'|'polygon'|'autoColor'|'autoBrightness'|'autoInk'|'brushAdd'|'brushSubtract';
 const asButton=(label:string,fn:()=>void)=>{
   const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=fn;
   return button;
@@ -70,7 +71,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   modes.append(mode);
   const shapeButtons=new Map<Tool,HTMLButtonElement>();
   let tool:Tool|null=null,active:MaskData|null=null,points:{x:number;y:number}[]=[],
-    brushPoints:SelectionBrushPoint[]=[],
+    brushPoints:SelectionBrushPoint[]=[],magneticPixels:Uint8ClampedArray|null=null,
     drawing:{pointer:number;first:{x:number;y:number}}|null=null;
   const history:(MaskData|null)[]=[];const future:(MaskData|null)[]=[];
   const MAX_MASK_UNDO_BYTES=64*1024*1024;
@@ -125,7 +126,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       flushStoredSelection();
       currentWork=identity;active=null;lastSelection=null;selectionBounds=null;history.length=0;future.length=0;
       pendingSelectionJob=0;
-      tool=null;points=[];brushPoints=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
+      tool=null;points=[];brushPoints=[];magneticPixels=null;drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
       const request=++job,loadedId=info.id;
       void storeQueue.then(()=>loadCurrentSelection(loadedId)).then(loaded=>{
         const doc=callbacks.getDocument();
@@ -204,7 +205,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const doc=source();if(!doc)return;
     const current=++job,currentMode=mode.value as CombineMode,previous=active;
     pendingSelectionJob=current;
-    points=[];drawing=null;overlayPath();tool=null;refresh();
+    points=[];drawing=null;overlayPath();tool=null;magneticPixels=null;refresh();
     status.textContent='選択の形を反映しています。キャンバス操作は続けられます。';
     void raster.shape(shape,previous,currentMode,doc.width,doc.height)
       .then(next=>{
@@ -219,17 +220,36 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(tool==='rectangle'||tool==='ellipse'){
       const a=points[0]!,b=points.at(-1)!;
       applyShape({type:tool,x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),width:Math.abs(b.x-a.x),height:Math.abs(b.y-a.y)});
-    }else if(tool==='lasso'&&points.length>=3)applyShape({type:'lasso',points});
+    }else if((tool==='lasso'||tool==='magnetic')&&points.length>=3)applyShape({type:'lasso',points});
     else{points=[];drawing=null;overlayPath();}
   }
   function arm(shape:Tool){
     const doc=source();if(!doc)return;
-    tool=tool===shape?null:shape;points=[];brushPoints=[];drawing=null;brushOverlayPath();
+    if(shape==='magnetic'){
+      if(tool==='magnetic'){
+        ++job;tool=null;magneticPixels=null;refresh();overlayPath();return;
+      }
+      const request=++job;
+      tool=null;magneticPixels=null;points=[];drawing=null;
+      pendingSelectionJob=request;
+      refresh();overlayPath();
+      status.textContent='磁気選択のため、画像の輪郭を準備しています。';
+      void callbacks.capturePixels('layer').then(pixels=>{
+        if(request!==job||callbacks.getDocument()?.id!==doc.id)return;
+        magneticPixels=pixels;
+        tool='magnetic';refresh();
+        status.textContent='輪郭に沿ってペンを動かしてください。輪郭のない場所では通常の投げ縄になります。';
+      }).catch(error=>{
+        if(request===job)status.textContent='磁気選択を開始できませんでした。'+String(error);
+      }).finally(()=>{if(pendingSelectionJob===request)pendingSelectionJob=0;});
+      return;
+    }
+    tool=tool===shape?null:shape;magneticPixels=null;points=[];brushPoints=[];drawing=null;brushOverlayPath();
     callbacks.getSurface()?.setSelectionMode(false);
     refresh();overlayPath();
   }
   for(const [name,label] of [
-    ['rectangle','四角形'],['ellipse','楕円'],['lasso','投げ縄'],['polygon','多角形']
+    ['rectangle','四角形'],['ellipse','楕円'],['lasso','投げ縄'],['magnetic','輪郭に吸い付く投げ縄'],['polygon','多角形']
   ] as const){
     const button=asButton(label,()=>arm(name));shapeButtons.set(name,button);tools.append(button);
   }
@@ -603,7 +623,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(drawing)return;
     drawing={pointer:event.pointerId,first:point};
     try{viewport.setPointerCapture(event.pointerId);}catch{}
-    points=[point,point];overlayPath();
+    const first=tool==='magnetic'&&magneticPixels?
+      snapMagneticPoint(magneticPixels,source()!.width,source()!.height,point,null):point;
+    points=[first,first];overlayPath();
   },true);
   document.addEventListener('pointermove',event=>{
     if(!drawing||event.pointerId!==drawing.pointer||!tool)return;
@@ -612,9 +634,11 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       addBrushPoint(event);return;
     }
     const point=toDoc(event);
-    if(tool==='lasso'){
+    if(tool==='lasso'||tool==='magnetic'){
       const last=points.at(-1)!;
-      if(Math.hypot(point.x-last.x,point.y-last.y)>2&&points.length<4096)points.push(point);
+      const current=tool==='magnetic'&&magneticPixels&&source()?
+        snapMagneticPoint(magneticPixels,source()!.width,source()!.height,point,last):point;
+      if(Math.hypot(current.x-last.x,current.y-last.y)>2&&points.length<4096)points.push(current);
     }else points[1]=point;
     overlayPath();
   },true);
@@ -627,8 +651,12 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       return;
     }
     const point=toDoc(event);
-    if(tool==='lasso'){if(points.length<4096)points.push(point);}
-    else points[1]=point;
+    if(tool==='lasso'||tool==='magnetic'){
+      const last=points.at(-1)??point;
+      const current=tool==='magnetic'&&magneticPixels&&source()?
+        snapMagneticPoint(magneticPixels,source()!.width,source()!.height,point,last):point;
+      if(points.length<4096)points.push(current);
+    }else points[1]=point;
     endStroke();
     try{viewport?.releasePointerCapture(event.pointerId);}catch{}
   },true);
