@@ -475,7 +475,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
         remember(id);renderQuick();
         // DOM click handlers may start work in the background. Only explicit
         // completion promises and local UI state count as observed completion.
-        const settled=outcome instanceof Promise||id.startsWith('workspace:')||id.startsWith('color:');
+        const settled=outcome instanceof Promise||id.startsWith('workspace:')||id.startsWith('color:')||
+          id.startsWith('brush:')||['paint','erase','eyedropper','colorPage','brushPage',
+            'workspaceToggle','c04FocusToggle'].includes(id);
         return {ok:true,reason:null,settled};
       }catch(error){return {ok:false,reason:error instanceof Error?error.message:'実行できませんでした。',settled:false};}
     },
