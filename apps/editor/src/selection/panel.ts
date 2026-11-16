@@ -59,6 +59,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     visual?.setVisible(showSelection.checked);
     preview.hidden=!showSelection.checked;
+    updateQuickPosition();
     status.textContent=showSelection.checked?'選択範囲の表示を戻しました。':'選択範囲は有効なまま、境界を隠しました。';
   };
   const mode=document.createElement('select');mode.setAttribute('aria-label','選択範囲を組み合わせる方法');
@@ -113,6 +114,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   preview.append(path,brushTrace);
   viewport?.append(preview,box);
   let currentWork:null|string=null;
+  let selectionBounds:ReturnType<typeof boundsOfSelection>=null;
   const source=()=>{
     const info=callbacks.getDocument();
     if(!info||!callbacks.getSurface())return null;
@@ -121,7 +123,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       raster.destroy();raster=new MaskRasterWorker();
       if(previewDialog?.open)previewDialog.close();
       flushStoredSelection();
-      currentWork=identity;active=null;lastSelection=null;history.length=0;future.length=0;
+      currentWork=identity;active=null;lastSelection=null;selectionBounds=null;history.length=0;future.length=0;
       pendingSelectionJob=0;
       tool=null;points=[];brushPoints=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
       const request=++job,loadedId=info.id;
@@ -186,6 +188,8 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     active=next;
     visual?.set(active);
     const bounds=active?boundsOfSelection(active):null;
+    selectionBounds=bounds;
+    updateQuickPosition();
     callbacks.getSurface()?.restoreRectangleSelection(bounds);
     callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     callbacks.onMaskChanged(active);
@@ -435,6 +439,32 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     publish(future.pop()??null,false);
   });
   actions.append(all,clear,reselect,invert,shift,movePixels,grow,shrink,feather,border,undo,redo);
+  // Collapsed, position-aware edit tools save a round-trip to the side panel.
+  // The user can ignore or close these without losing the active selection.
+  const quick=document.createElement('details');quick.className='c06-selection-quick';quick.hidden=true;
+  quick.style.cssText='position:absolute;z-index:13;min-width:128px;max-width:200px;border:1px solid #66aec7;border-radius:8px;background:var(--a-surface,#fff);box-shadow:0 4px 14px #0003;color:inherit;font-size:12px;';
+  const quickTitle=document.createElement('summary');
+  quickTitle.textContent='選択の操作';quickTitle.style.cssText='min-height:34px;padding:8px;cursor:pointer;';
+  const quickButtons=document.createElement('div');
+  quickButtons.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:5px;';
+  const quickCopy=asButton('コピー',()=>document.getElementById('c06CopySelection')?.click());
+  const quickCut=asButton('切り取る',()=>document.getElementById('c06CutSelection')?.click());
+  const quickInvert=asButton('反転',()=>invert.click());
+  const quickFeather=asButton('ぼかす',()=>feather.click());
+  for(const button of [quickCopy,quickCut,quickInvert,quickFeather])
+    button.style.cssText='min-height:40px;padding:5px;border:1px solid #aab9c1;border-radius:5px;background:var(--a-accent-soft,#fff5e7);color:inherit;';
+  quickButtons.append(quickCopy,quickCut,quickInvert,quickFeather);
+  quick.append(quickTitle,quickButtons);viewport?.append(quick);
+  function updateQuickPosition(){
+    const bounds=selectionBounds,drawingSurface=callbacks.getSurface();
+    if(!viewport||!bounds||!drawingSurface||!showSelection.checked){
+      quick.hidden=true;quick.open=false;return;
+    }
+    const at=drawingSurface.documentToScreen({x:bounds.x,y:bounds.y});
+    quick.style.left=Math.max(4,Math.min(viewport.clientWidth-138,at.x))+'px';
+    quick.style.top=Math.max(4,Math.min(viewport.clientHeight-50,at.y-46))+'px';
+    quick.hidden=false;
+  }
   const named=document.createElement('select');named.setAttribute('aria-label','保存した選択範囲');
   const save=asButton('名前を付けて保存',()=>void saveCurrent());
   const overwrite=asButton('選んだ保存を上書き',()=>void overwriteCurrent());
@@ -507,7 +537,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   document.addEventListener('pointerdown',event=>{
     if(pendingSelectionJob&&pendingSelectionJob===job&&
       event.target instanceof Element&&event.target.closest('.surface')&&
-      !event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame')){
+      !event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame,.c06-selection-quick')){
       event.preventDefault();event.stopImmediatePropagation();
       status.textContent='選択範囲を反映中です。完了後に描画してください。';
       return;
@@ -515,7 +545,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!tool||(!allowFinger.checked&&event.pointerType==='touch')||
       (drawing!==null&&event.pointerId!==drawing.pointer)||!source()||!viewport||
       !(event.target instanceof Element)||!event.target.closest('.surface')||
-      event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame')||
+      event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame,.c06-selection-quick')||
       event.button!==0)return;
     event.preventDefault();event.stopImmediatePropagation();
     const point=toDoc(event);
@@ -578,7 +608,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   return {
     active:()=>active,
     documentChanged,
-    updateView:()=>{visual?.updateView();overlayPath();brushOverlayPath();},
+    updateView:()=>{visual?.updateView();overlayPath();brushOverlayPath();updateQuickPosition();},
     refresh,
     clear:()=>{job++;publish(null);},
     replaceActive:mask=>{job++;publish(mask);},
