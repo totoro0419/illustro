@@ -311,16 +311,16 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const epoch=++renderEpoch,snapshotBoard=board;
     if(!snapshotBoard)return;
     const update=transition;
-    // Rebuild only as a user requests a board operation, not per stroke.
-    canvasLayer.replaceChildren();
+    // Read assets concurrently and swap the complete view only once. Previous
+    // windows stay visible while an IndexedDB lookup is in progress.
+    const visible=snapshotBoard.items.filter(item=>!item.hidden);
+    const resolved=await Promise.all(visible.map(async item=>({item,asset:await getAsset(item.assetId)})));
+    if(epoch!==renderEpoch||update!==transition||board?.documentId!==snapshotBoard.documentId)return;
     const needed=new Set(snapshotBoard.items.map(i=>i.assetId));
     for(const [id,url] of urls)if(!needed.has(id)){URL.revokeObjectURL(url);urls.delete(id);}
-    canvasLayer.hidden=snapshotBoard.hidden;
-    for(const item of snapshotBoard.items){
-      if(epoch!==renderEpoch||update!==transition||board?.documentId!==snapshotBoard.documentId)return;
-      if(item.hidden)continue;
-      const asset=await getAsset(item.assetId);
-      if(epoch!==renderEpoch||update!==transition||board?.documentId!==snapshotBoard.documentId)return;
+    const replacement=document.createDocumentFragment();
+    canvasLayer.hidden=temporaryHidden;
+    for(const {item,asset} of resolved){
       const frame=document.createElement('section');frame.className='c05-reference-frame';
       frame.style.left=item.x+'px';frame.style.top=item.y+'px';
       frame.style.width=item.width+'px';frame.style.height=item.height+'px';
@@ -369,8 +369,8 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
           if(!start||event.pointerId!==start.id)return;
           const dx=event.clientX-start.x,dy=event.clientY-start.y;
           if(mode==='frame'){
-            frame.style.left=safePos(start.item.x+dx,0,innerWidth-100)+'px';
-            frame.style.top=safePos(start.item.y+dy,0,innerHeight-70)+'px';
+            frame.style.left=safePos(start.item.x+dx,0,Math.max(0,innerWidth-100))+'px';
+            frame.style.top=safePos(start.item.y+dy,0,Math.max(0,innerHeight-70))+'px';
           }else if(mode==='size'){
             frame.style.width=safePos(start.item.width+dx,160,Math.max(180,innerWidth-20))+'px';
             frame.style.height=safePos(start.item.height+dy,120,Math.max(140,innerHeight-30))+'px';
@@ -386,7 +386,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
           const dx=event.clientX-from.x,dy=event.clientY-from.y;
           if(Math.hypot(dx,dy)<1)return;
           changeItem(item.id,mode==='frame'?{
-            x:safePos(item.x+dx,0,innerWidth-100),y:safePos(item.y+dy,0,innerHeight-70)
+            x:safePos(item.x+dx,0,Math.max(0,innerWidth-100)),y:safePos(item.y+dy,0,Math.max(0,innerHeight-70))
           }:mode==='size'?{
             width:safePos(item.width+dx,160,Math.max(180,innerWidth-20)),
             height:safePos(item.height+dy,120,Math.max(140,innerHeight-30))
@@ -395,10 +395,30 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
         handle.addEventListener('pointerup',event=>finish(event,false));
         handle.addEventListener('pointercancel',event=>finish(event,true));
       };
-      frame.append(heading,imageArea,footer,resize);canvasLayer.append(frame);
+      frame.append(heading,imageArea,footer,resize);replacement.append(frame);
       attachDrag(heading,'frame');attachDrag(resize,'size');attachDrag(imageArea,'image');
     }
+    if(epoch===renderEpoch&&update===transition&&board?.documentId===snapshotBoard.documentId)
+      canvasLayer.replaceChildren(replacement);
   }
+  // Keep the reference title/drag handle reachable after orientation or window
+  // size changes. This also protects the corrected position across restarts.
+  let resizeTimer:ReturnType<typeof setTimeout>|null=null;
+  window.addEventListener('resize',()=>{
+    if(resizeTimer!==null)clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(()=>{
+      resizeTimer=null;
+      if(!board)return;
+      let changed=false;
+      const items=board.items.map(item=>{
+        const x=safePos(item.x,0,Math.max(0,innerWidth-100));
+        const y=safePos(item.y,0,Math.max(0,innerHeight-70));
+        if(x===item.x&&y===item.y)return item;
+        changed=true;return {...item,x,y};
+      });
+      if(changed)syncAfter({...board,items},false);
+    },140);
+  });
   groupSelect.onchange=()=>drawList();
   void refreshIfChanged();
   return {add,refresh,refreshIfChanged,flush,exportLayout,undo,redo,exportNative,importNative};
