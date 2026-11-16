@@ -16,6 +16,20 @@ const SAFE=new Set([
   'layerSoloToggle','layerAlphaLock','layerClipping'
 ]);
 const permitted=(id:string)=>SAFE.has(id)||id.startsWith('brush:')||id.startsWith('color:')||id.startsWith('workspace:');
+/** Await every declared command completion and report dispatch-only steps honestly. */
+export async function invokeMacroSequence(
+  steps:readonly string[],
+  invoke:CommandService['invokeAsync']
+):Promise<Readonly<{ok:boolean;reason:string|null;failedStep:number|null;unfinished:boolean}>>{
+  let unfinished=false;
+  for(const [i,id] of steps.entries()){
+    if(!permitted(id))return {ok:false,reason:'対応していない操作が含まれています。',failedStep:i+1,unfinished};
+    const result=await invoke(id);
+    if(!result.ok)return {ok:false,reason:result.reason??'現在は使えません。',failedStep:i+1,unfinished};
+    if(!result.settled)unfinished=true;
+  }
+  return {ok:true,reason:null,failedStep:null,unfinished};
+}
 const read=():SimpleMacro[]=>{
   try{
     const input=JSON.parse(localStorage.getItem(KEY)||'null') as Stored|null;
@@ -137,17 +151,12 @@ export function installSimpleMacros(commands:CommandService){
     if(playing){status.textContent='ほかの操作セットが実行中です。';return;}
     playing=true;run.disabled=true;
     try{
-      let unfinished=false;
-      for(const [i,id] of macro.steps.entries()){
-        if(!permitted(id)){status.textContent='対応していない操作が含まれています。';return;}
-        const result=await commands.invokeAsync(id);
-        if(!result.ok){
-          status.textContent=(i+1)+'番目の操作で停止しました。'+(result.reason??'現在は使えません。');
-          return;
-        }
-        if(!result.settled)unfinished=true;
+      const result=await invokeMacroSequence(macro.steps,commands.invokeAsync);
+      if(!result.ok){
+        status.textContent=result.failedStep+'番目の操作で停止しました。'+result.reason;
+        return;
       }
-      status.textContent=unfinished
+      status.textContent=result.unfinished
         ?'「'+macro.name+'」の操作を送りました。履歴や描画の完了はまだ確認できていません。'
         :'「'+macro.name+'」の操作を実行しました。';
     }catch(error){
