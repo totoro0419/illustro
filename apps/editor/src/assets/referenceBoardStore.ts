@@ -25,6 +25,11 @@ export async function readBoard(documentId:string):Promise<BoardSnapshot>{
     req.onsuccess=()=>resolve(req.result);
     req.onerror=()=>reject(req.error??Error('資料の配置を読み込めませんでした。'));
   });
+  return decodeBoardRecord(documentId,value);
+}
+
+/** Pure validation used by imports and regression tests, with no storage writes. */
+export function decodeBoardRecord(documentId:string,value:unknown):BoardSnapshot{
   if(value===undefined)return {version:1,documentId,items:[],hidden:false};
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('保存した参考資料の情報が壊れています。元データを保護するため変更できません。');
   const raw=value as Partial<BoardSnapshot>;
@@ -50,6 +55,7 @@ export async function readBoard(documentId:string):Promise<BoardSnapshot>{
   }
   return {version:1,documentId,items,hidden:!!raw.hidden};
 }
+
 export async function writeBoard(input:BoardSnapshot):Promise<void>{
   if(input.version!==1||input.items.length>80||!input.documentId)
     throw Error('資料の数か作品IDが正しくありません。');
