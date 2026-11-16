@@ -33,7 +33,8 @@ jobs:
           set -euo pipefail
           # An implementation PR may not overwrite the shared editor entry point,
           # integration ledger or independent audit evidence.
-          violations="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -E '^(apps/editor/src/main\.ts|docs/quality-integration/(README|STATUS)\.md|docs/quality-audit/)' || true)"
+          # Three-dot diff only sees changes introduced by this PR since its merge base.
+          violations="$(git diff --name-only "$BASE_SHA...$HEAD_SHA" | grep -E '^(apps/editor/src/main\.ts|docs/quality-integration/(README|STATUS)\.md|docs/quality-audit/)' || true)"
           if [[ -n "$violations" ]]; then
             echo "::error::Integration-owned files changed by implementation PR:"
             echo "$violations"
