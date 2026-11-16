@@ -158,7 +158,17 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   function setCorners(corners:TransformQuad){
     if(settings.quadrilateral)change({...settings,quadrilateral:{...settings.quadrilateral,corners}});
   }
-  const usesHandles=(mode:Transform['mode'])=>cornerMode(mode)||meshMode(mode);
+  const usesHandles=(mode:Transform['mode'])=>mode==='affine'||cornerMode(mode)||meshMode(mode);
+  function affineHandles(t:Transform,bounds:TransformBounds){
+    const rad=t.angle*Math.PI/180,cos=Math.cos(rad),sin=Math.sin(rad);
+    const corners=rectCorners(bounds).map(p=>{
+      const x=p.x-t.cx,y=p.y-t.cy,u=t.sx*x+t.shear*y,v=t.sy*y;
+      return {x:t.cx+t.dx+u*cos-v*sin,y:t.cy+t.dy+u*sin+v*cos};
+    });
+    const radius=Math.max(30,Math.min(120,Math.max(bounds.width,bounds.height)*.5+30));
+    const center={x:t.cx+t.dx,y:t.cy+t.dy};
+    return {center,points:[...corners,{x:center.x+radius*Math.sin(rad),y:center.y-radius*Math.cos(rad)}]};
+  }
   const pointSelect=document.createElement('select');
   const pointLabel=document.createElement('label');pointLabel.append('制御点',pointSelect);
   const lockPoint=document.createElement('input');lockPoint.type='checkbox';
@@ -230,6 +240,40 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   function refreshHandles(){
     if(!usesHandles(settings.mode)){if(editingHandles)stopGesture();return;}
     if(!source||!editingHandles)return;
+    if(settings.mode==='affine'){
+      const handles=affineHandles(settings,source.bounds),{center,points}=handles;
+      ownedGesture=source.drawing;
+      ownedGesture.setCanvasEditGesture({path:false,width:2,color:'#ffb742',complete:()=>{},
+        pointEdit:{points,edges:[[0,1],[1,2],[2,3],[3,0]],closed:false,commit:(index,point)=>{
+          if(index===4){
+            const old=points[4]!;
+            const oldAngle=Math.atan2(old.y-center.y,old.x-center.x);
+            const newAngle=Math.atan2(point.y-center.y,point.x-center.x);
+            const delta=Math.atan2(Math.sin(newAngle-oldAngle),Math.cos(newAngle-oldAngle));
+            change({...settings,angle:(settings.angle+delta*180/Math.PI+540)%360-180});
+            return;
+          }
+          const old=points[index];
+          if(!old)return;
+          if(keepRatio.checked){
+            const ox=old.x-center.x,oy=old.y-center.y,denom=ox*ox+oy*oy;
+            const ratio=denom>1e-8?((point.x-center.x)*ox+(point.y-center.y)*oy)/denom:1;
+            if(Math.abs(ratio)<.001){status.textContent='倍率が0に近すぎます。';return;}
+            change({...settings,sx:settings.sx*ratio,sy:settings.sy*ratio});
+          }else{
+            const start=rectCorners(source!.bounds)[index]!;
+            const x=start.x-settings.cx,y=start.y-settings.cy;
+            const rad=settings.angle*Math.PI/180,cos=Math.cos(rad),sin=Math.sin(rad);
+            const dx=point.x-center.x,dy=point.y-center.y;
+            const u=dx*cos+dy*sin,v=-dx*sin+dy*cos;
+            const sy=Math.abs(y)>1e-6?v/y:settings.sy;
+            const sx=Math.abs(x)>1e-6?(u-settings.shear*y)/x:settings.sx;
+            if(!Number.isFinite(sx*sy)||Math.abs(sx*sy)<1e-6){status.textContent='倍率を0以外にしてください。';return;}
+            change({...settings,sx,sy});
+          }
+        }}});
+      return;
+    }
     const mesh=meshMode(settings.mode)?settings.mesh?.controls:null;
     const points=mesh?.points??settings.quadrilateral?.corners;
     if(!points)return;
@@ -307,7 +351,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       if(originalPointer!==null)throw Error('ペンを離してから候補を確かめてください。');
       editingOriginal=false;originalCanvas.hidden=true;status.textContent='変形後の候補を確認できます。';void refreshPreview();
     }else{
-      stopGesture();editingOriginal=true;previewAbort?.abort();preview.hidden=true;
+      stopGesture();editingOriginal=true;previewAbort?.abort();source.drawing.showArtworkPreview(null);preview.hidden=true;
       status.textContent='下の絵は変形前の座標です。現在のブラシか消しゴムで編集できます。';paintOriginal();
     }
     sync();
@@ -347,7 +391,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     stopGesture();
     if(settings.mode==='liquify'){armLiquify();return;}
     if(usesHandles(settings.mode)){
-      editingHandles=true;placingPoints=false;sync();refreshHandles();status.textContent='キャンバス上の点をドラッグできます。';return;
+      editingHandles=true;placingPoints=false;sync();refreshHandles();status.textContent=settings.mode==='affine'?'四隅を動かして拡縮、上の点を動かして回転できます。':'キャンバス上の点をドラッグできます。';return;
     }
     ownedGesture=source.drawing;
     status.textContent='絵をタップして中心を指定するか、ドラッグして移動します。';
@@ -432,7 +476,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }finally{busy=false;sync();}
   });
   function reset(message:string){
-    stopGesture();source=null;originalPointer=null;originalInput=[];originalDraft=undefined;originalUndo.length=originalRedo.length=0;editingOriginal=false;originalCanvas.hidden=true;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();
+    stopGesture();source?.drawing.showArtworkPreview(null);source=null;originalPointer=null;originalInput=[];originalDraft=undefined;originalUndo.length=originalRedo.length=0;editingOriginal=false;originalCanvas.hidden=true;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();
     preview.hidden=true;status.textContent=message;sync();
   }
   function change(next:Transform){
@@ -514,8 +558,11 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         selection:current.selection,outputWidth,outputHeight,showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
       if(id!==previewId)return;
       preview.width=outputWidth;preview.height=outputHeight;
-      const context=preview.getContext('2d');
-      context?.putImageData(new ImageData(pixels,outputWidth,outputHeight),0,0);
+      const context=preview.getContext('2d'),image=new ImageData(pixels,outputWidth,outputHeight);
+      context?.putImageData(image,0,0);
+      // This responsive canvas overlay is approximate: the original layer remains below it.
+      // The isolated panel preview continues to show the exact prospective layer pixels.
+      current.drawing.showArtworkPreview(compare.checked?null:image);
       if(context&&marks&&!compare.checked){
         context.strokeStyle='#45c8ef';context.lineWidth=1;context.setLineDash([4,4]);
         context.beginPath();
@@ -524,7 +571,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         context.stroke();
       }
       preview.hidden=false;
-    }catch(error){if(id===previewId&&!controller.signal.aborted){preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
+    }catch(error){if(id===previewId&&!controller.signal.aborted){current.drawing.showArtworkPreview(null);preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
   }
   compare.onchange=()=>void refreshPreview();
   tools.append(start,direct,vanishing,flipX,flipY,back,forward,openOriginal,undoOriginal,redoOriginal,apply,cancel,newAbove,toggleEffect,removeEffect,bakeButton);
