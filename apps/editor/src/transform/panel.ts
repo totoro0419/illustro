@@ -1,3 +1,5 @@
+import {CanonicalBuilder,type Sample} from '@illustro/brush-rt';
+import {replayBrushPasses} from '../selection/brush';
 import type {LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import type {MaskData} from '../selection/mask';
@@ -11,12 +13,12 @@ import {addCagePoint,cageMesh,changeGrid,gridMesh,meshEdges} from './mesh';
 export type TransformSource={
   width:number;height:number;name:string;pixels:Uint8Array;selection:MaskData|null;
   drawing:BrushSurface;valid:()=>boolean;bounds:TransformBounds;initial?:Transform;maskLink?:boolean;
-  objectSnap:SnapTargets;guides:SnapTargets|null;
-  apply:(settings:Transform,pixels:Uint8ClampedArray)=>Promise<void>;
+  objectSnap:SnapTargets;guides:SnapTargets|null;originalAlphaLocked?:boolean;
+  apply:(settings:Transform,pixels:Uint8ClampedArray,editedOriginal?:Uint8Array)=>Promise<void>;
 };
 type Target='layer'|'selected'|'boundary';
 
-export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>Promise<TransformSource>,bake:()=>Promise<void>){
+export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>Promise<TransformSource>,bake:()=>Promise<void>,addAbove:()=>Promise<void>){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const summary=document.createElement('summary');summary.textContent='変形';
   const target=document.createElement('select');target.setAttribute('aria-label','変形する対象');
@@ -33,6 +35,11 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   const preview=document.createElement('canvas');preview.hidden=true;preview.style.cssText='max-width:100%;border:1px solid currentColor';
   const comparison=document.createElement('label'),compare=document.createElement('input');
   compare.type='checkbox';comparison.append(compare,' 変形前を見る');comparison.hidden=true;
+  const originalCanvas=document.createElement('canvas');
+  originalCanvas.hidden=true;originalCanvas.style.cssText='max-width:100%;touch-action:none;border:1px solid currentColor';
+  originalCanvas.setAttribute('aria-label','変形前の絵に描くキャンバス');
+  let originalDraft:Uint8Array|undefined,originalUndo:Uint8Array|undefined,editingOriginal=false;
+  let originalPointer:number|null=null,originalInput:Sample[]=[];
   let source:TransformSource|null=null,settings=initialTransform,undo:Transform[]=[],redo:Transform[]=[],previewId=0,busy=false;
   let ownedGesture:BrushSurface|null=null,editingHandles=false,placingPoints=false,previewAbort:AbortController|null=null;
   const inputs=new Map<keyof Omit<Transform,'quadrilateral'|'mesh'|'liquify'>,HTMLSelectElement|HTMLInputElement>();
@@ -220,12 +227,92 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   function stopGesture(){
     ownedGesture?.setCanvasEditGesture(null);ownedGesture=null;editingHandles=false;
   }
+  function paintOriginal(){
+    const current=source;
+    if(!editingOriginal||!current)return;
+    const ratio=Math.min(1,540/Math.max(current.width,current.height));
+    originalCanvas.width=Math.max(1,Math.round(current.width*ratio));
+    originalCanvas.height=Math.max(1,Math.round(current.height*ratio));
+    const context=originalCanvas.getContext('2d');
+    if(!context)return;
+    const input=originalDraft??current.pixels,scaled=context.createImageData(originalCanvas.width,originalCanvas.height);
+    for(let y=0;y<scaled.height;y++)for(let x=0;x<scaled.width;x++){
+      const source=(Math.min(current.height-1,Math.floor(y/ratio))*current.width+Math.min(current.width-1,Math.floor(x/ratio)))*4;
+      const at=(y*scaled.width+x)*4;
+      scaled.data[at]=input[source]!;scaled.data[at+1]=input[source+1]!;
+      scaled.data[at+2]=input[source+2]!;scaled.data[at+3]=input[source+3]!;
+    }
+    context.putImageData(scaled,0,0);originalCanvas.hidden=false;
+  }
+  function originalSample(event:PointerEvent):Sample{
+    const rect=originalCanvas.getBoundingClientRect(),current=source!;
+    return {x:(event.clientX-rect.left)*current.width/rect.width,y:(event.clientY-rect.top)*current.height/rect.height,
+      t:event.timeStamp,pointerType:event.pointerType,pressure:event.pointerType==='pen'?event.pressure:.5};
+  }
+  originalCanvas.onpointerdown=event=>{
+    if(!source?.valid()||!editingOriginal||busy||originalPointer!==null||event.button!==0)return;
+    originalPointer=event.pointerId;originalInput=[originalSample(event)];originalCanvas.setPointerCapture(event.pointerId);event.preventDefault();
+  };
+  originalCanvas.onpointermove=event=>{
+    if(originalPointer!==event.pointerId)return;
+    const samples=event.getCoalescedEvents?.()??[];
+    for(const item of samples.length?samples:[event]){
+      if(originalInput.length>=8192)break;
+      originalInput.push(originalSample(item));
+    }
+    const context=originalCanvas.getContext('2d'),rect=originalCanvas.getBoundingClientRect();
+    if(context){
+      context.fillStyle='#ecad47';
+      context.beginPath();context.arc((event.clientX-rect.left)*originalCanvas.width/rect.width,
+        (event.clientY-rect.top)*originalCanvas.height/rect.height,1.5,0,2*Math.PI);context.fill();
+    }
+  };
+  originalCanvas.onpointercancel=()=>{originalPointer=null;originalInput=[];paintOriginal();};
+  originalCanvas.onpointerup=async event=>{
+    const current=source;
+    if(!current||!editingOriginal||originalPointer!==event.pointerId)return;
+    const input=originalInput;originalPointer=null;originalInput=[];
+    const preset=current.drawing.preset;
+    if(!preset){status.textContent='先にブラシか消しゴムを選んでください。';return;}
+    busy=true;sync();
+    try{
+      const builder=new CanonicalBuilder(preset,undefined,0,current.originalAlphaLocked?{alphaLocked:true}:{});
+      for(const point of input)builder.accept(point);
+      builder.release(originalSample(event));builder.finish();
+      const record=builder.record(),prior=originalDraft??current.pixels;
+      const edited=await replayBrushPasses([{selection:null,records:[record]}],current.width,current.height,prior.slice());
+      if(!current.valid()||source!==current||!editingOriginal)throw Error('編集する作品が変わりました。');
+      originalUndo=prior;originalDraft=edited;paintOriginal();
+      status.textContent='元の絵に反映しました。「変形後の確認」で戻ります。';
+    }catch(error){status.textContent=error instanceof Error?error.message:String(error);paintOriginal();}
+    finally{busy=false;sync();}
+  };
+  const openOriginal=button('元の絵に描く',()=>{
+    if(!source?.initial||!source.valid())throw Error('変形を保持したレイヤーで「変形を始める」を押してください。');
+    if(editingOriginal){
+      if(originalPointer!==null)throw Error('ペンを離してから候補を確かめてください。');
+      editingOriginal=false;originalCanvas.hidden=true;status.textContent='変形後の候補を確認できます。';void refreshPreview();
+    }else{
+      stopGesture();editingOriginal=true;previewAbort?.abort();preview.hidden=true;
+      status.textContent='下の絵は変形前の座標です。現在のブラシか消しゴムで編集できます。';paintOriginal();
+    }
+    sync();
+  });
+  const undoOriginal=button('元の絵の一筆を戻す',()=>{
+    if(!originalUndo||!source)return;
+    originalDraft=originalUndo===source.pixels?undefined:originalUndo;
+    originalUndo=undefined;paintOriginal();sync();
+  });
+  const newAbove=button('変形の上に描画用レイヤーを追加',async()=>{
+    await addAbove();status.textContent='新しい描画用レイヤーを選びました。';
+  });
   const start=button('変形を始める',async()=>{
     busy=true;sync();
     try{
-      source=await capture(target.value as Target);undo=[];redo=[];
+      source=await capture(target.value as Target);undo=[];redo=[];originalDraft=originalUndo=undefined;editingOriginal=false;
       settings=source.initial??{...initialTransform,cx:source.width/2,cy:source.height/2};
-      status.textContent=source.name+'を変形します。'+(source.maskLink===undefined?'':source.maskLink?' マスクも一緒に変形します。':' マスクは現在の位置に残ります。');
+      status.textContent=source.name+'を変形します。'+(source.maskLink===undefined?'':source.maskLink?' マスクも一緒に変形します。':' マスクは現在の位置に残ります。')+
+        (source.initial?' 仮表示は原本の変形です。上に描いた筆は適用時に同じ位置へ重ねます。':'');
       editingHandles=usesHandles(settings.mode);placingPoints=false;refreshHandles();compare.checked=false;
     }finally{busy=false;sync();}
     void refreshPreview();
@@ -310,15 +397,15 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     inverseTransform(choice,current.width,current.height);
     busy=true;sync();status.textContent='変形を計算しています。';
     try{
-      const pixels=await runTransform({pixels:current.pixels,width:current.width,height:current.height,
+      const pixels=await runTransform({pixels:originalDraft??current.pixels,width:current.width,height:current.height,
         settings:choice,selection:current.selection,outputWidth:current.width,outputHeight:current.height});
       if(!current.valid())throw Error('計算中に作品が変更されました。');
-      await current.apply(choice,pixels);
+      await current.apply(choice,pixels,originalDraft);
       reset('変形を適用しました。');
     }finally{busy=false;sync();}
   });
   function reset(message:string){
-    stopGesture();source=null;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();
+    stopGesture();source=null;originalPointer=null;originalInput=[];originalDraft=originalUndo=undefined;editingOriginal=false;originalCanvas.hidden=true;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();
     preview.hidden=true;status.textContent=message;sync();
   }
   function change(next:Transform){
@@ -371,22 +458,25 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         (liquify&&!['mode','interpolation','radius','strength'].includes(key));
     }
     start.disabled=busy||!!source;target.disabled=busy||!!source;cancel.disabled=!source||busy;
-    apply.disabled=!source||busy;back.disabled=!source||busy||!undo.length;forward.disabled=!source||busy||!redo.length;
-    direct.disabled=!source||busy;direct.textContent=liquify?'キャンバスでゆがみブラシを使う':'絵の上で位置を指定';
+    apply.disabled=!source||busy||editingOriginal;back.disabled=!source||busy||!undo.length;forward.disabled=!source||busy||!redo.length;
+    direct.disabled=!source||busy||editingOriginal;direct.textContent=liquify?'キャンバスでゆがみブラシを使う':'絵の上で位置を指定';
     flipX.hidden=flipY.hidden=usingCorners||!!mesh||liquify;
     flipX.disabled=flipY.disabled=!source||busy;
     vanishing.hidden=settings.mode!=='projective'||!source;vanishing.disabled=busy;
-    bakeButton.disabled=!!source||busy;
-    comparison.hidden=!source;snapFields.hidden=!source;
+    bakeButton.disabled=!!source||busy;newAbove.disabled=!!source||busy;
+    openOriginal.disabled=!source?.initial||busy;
+    openOriginal.textContent=editingOriginal?'変形後の確認':'元の絵に描く';
+    undoOriginal.hidden=!editingOriginal;undoOriginal.disabled=busy||!originalUndo;
+    comparison.hidden=!source||editingOriginal;snapFields.hidden=!source||editingOriginal;
   }
   async function refreshPreview(){
     const current=source,id=++previewId;
-    if(!current)return;
+    if(!current||editingOriginal)return;
     previewAbort?.abort();const controller=new AbortController();previewAbort=controller;
     try{
       const scale=Math.min(1,280/Math.max(current.width,current.height));
       const outputWidth=Math.max(1,Math.round(current.width*scale)),outputHeight=Math.max(1,Math.round(current.height*scale));
-      const pixels=await runTransform({pixels:current.pixels,width:current.width,height:current.height,
+      const pixels=await runTransform({pixels:compare.checked?current.pixels:originalDraft??current.pixels,width:current.width,height:current.height,
         settings:compare.checked?{...initialTransform,cx:settings.cx,cy:settings.cy}:settings,
         selection:current.selection,outputWidth,outputHeight,showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
       if(id!==previewId)return;
@@ -404,8 +494,8 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }catch(error){if(id===previewId&&!controller.signal.aborted){preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
   }
   compare.onchange=()=>void refreshPreview();
-  tools.append(start,direct,vanishing,flipX,flipY,back,forward,apply,cancel,bakeButton);
-  panel.append(summary,target,status,tools,controls,snapFields,cornerFields,meshFields,liquifyFields,comparison,preview);host.append(panel);
+  tools.append(start,direct,vanishing,flipX,flipY,back,forward,openOriginal,undoOriginal,apply,cancel,newAbove,bakeButton);
+  panel.append(summary,target,status,tools,controls,snapFields,cornerFields,meshFields,liquifyFields,comparison,preview,originalCanvas);host.append(panel);
   panel.ontoggle=()=>{if(!panel.open&&!busy&&source)reset('候補を取り消しました。');};
   sync();
 }

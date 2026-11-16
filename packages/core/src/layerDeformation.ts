@@ -13,6 +13,7 @@ export type LiquifyStroke=Readonly<{
   radius:number;strength:number;
   points:readonly (TransformPoint&Readonly<{pressure:number}>)[];
 }>;
+export type DeformationBrushPass=Readonly<{selection:PixelLayerMask|null;records:readonly unknown[]}>;
 type LayerDeformationSource=Readonly<{
   version:1;
   sourceRevision:RevisionId;
@@ -22,9 +23,14 @@ type LayerDeformationSource=Readonly<{
   selection:PixelLayerMask|null;
   linkedMask:boolean;
   maskDigest?:string;
+  postPaint?:readonly DeformationBrushPass[];
 }>;
 
+export type AffineDeformation=Readonly<{
+  dx:number;dy:number;sx:number;sy:number;angle:number;shear:number;cx:number;cy:number;
+}>;
 export type LayerDeformation=LayerDeformationSource&(
+  |Readonly<{mode:'affine';affine:AffineDeformation}>
   |Readonly<{mode:'free'|'projective'|'skew';corners:TransformQuad}>
   |Readonly<{mode:'mesh-grid'|'cage';mesh:TransformMesh}>
   |Readonly<{mode:'liquify';strokes:readonly LiquifyStroke[]}>
@@ -36,12 +42,12 @@ export function validateLayerDeformation(input:unknown):LayerDeformation|null{
   if(typeof input!=='object')throw invalid();
   if(validated.has(input))return input as LayerDeformation;
   const value=input as LayerDeformation;
-  const {version,sourceRevision,sourceLayerId,mode,bounds,interpolation,selection,linkedMask,maskDigest}=value;
+  const {version,sourceRevision,sourceLayerId,mode,bounds,interpolation,selection,linkedMask,maskDigest,postPaint}=value;
   const coordinate=(value:unknown):value is number=>typeof value==='number'&&Number.isFinite(value)&&Math.abs(value)<=1e6;
   if(version!==1||typeof sourceRevision!=='string'||
     !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(sourceRevision)||
     (sourceLayerId!==undefined&&(typeof sourceLayerId!=='string'||!/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(sourceLayerId)))||
-    (mode!=='free'&&mode!=='projective'&&mode!=='skew'&&mode!=='mesh-grid'&&mode!=='cage'&&mode!=='liquify')||
+    (mode!=='affine'&&mode!=='free'&&mode!=='projective'&&mode!=='skew'&&mode!=='mesh-grid'&&mode!=='cage'&&mode!=='liquify')||
     !bounds||!coordinate(bounds.x)||!coordinate(bounds.y)||!coordinate(bounds.width)||!coordinate(bounds.height)||
     bounds.width<1||bounds.height<1||
     (interpolation!=='nearest'&&interpolation!=='bilinear'&&interpolation!=='area')||typeof linkedMask!=='boolean'||
@@ -53,10 +59,32 @@ export function validateLayerDeformation(input:unknown):LayerDeformation|null{
   };
   const mask=validateLayerMask(selection);
   if(mask&&mask.shape!=='pixels')throw invalid();
+  let replay:readonly DeformationBrushPass[]|undefined;
+  if(postPaint!==undefined){
+    if(!Array.isArray(postPaint)||postPaint.length>1024)throw invalid();
+    let total=0;
+    replay=Object.freeze(postPaint.map((pass:DeformationBrushPass)=>{
+      if(!pass||!Array.isArray(pass.records)||!pass.records.length||pass.records.length>64)throw invalid();
+      total+=pass.records.length;if(total>4096)throw invalid();
+      const selection=validateLayerMask(pass.selection);
+      if(selection&&selection.shape!=='pixels')throw invalid();
+      for(const raw of pass.records){
+        const record=raw as {version?:number;commands?:unknown;raw?:unknown}|null;
+        if(!record||(record.version!==2&&record.version!==3)||!Array.isArray(record.commands)||!Array.isArray(record.raw))throw invalid();
+      }
+      return Object.freeze({selection,records:Object.freeze([...pass.records])});
+    }));
+  }
   const base={version,sourceRevision,...(sourceLayerId?{sourceLayerId}:{}),bounds:Object.freeze({x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height}),
-    interpolation,selection:mask,linkedMask,...(maskDigest?{maskDigest}:{})};
+    interpolation,selection:mask,linkedMask,...(maskDigest?{maskDigest}:{}),...(replay?.length?{postPaint:replay}:{})};
   let safe:LayerDeformation;
-  if(value.mode==='liquify'){
+  if(value.mode==='affine'){
+    const edit=value.affine;
+    if(!edit||![edit.dx,edit.dy,edit.sx,edit.sy,edit.angle,edit.shear,edit.cx,edit.cy].every(coordinate)||
+      !edit.sx||!edit.sy||Math.abs(edit.sx)>16||Math.abs(edit.sy)>16||Math.abs(edit.shear)>4)throw invalid();
+    const {dx,dy,sx,sy,angle,shear,cx,cy}=edit;
+    safe=Object.freeze({...base,mode:value.mode,affine:Object.freeze({dx,dy,sx,sy,angle,shear,cx,cy})});
+  }else if(value.mode==='liquify'){
     if(!Array.isArray(value.strokes)||value.strokes.length>512)throw invalid();
     let total=0;
     const strokes=value.strokes.map((stroke:LiquifyStroke)=>{

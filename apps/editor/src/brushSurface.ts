@@ -23,6 +23,7 @@ import {DEFAULT_SYMMETRY,symmetryCopies,symmetryPoint,type SymmetrySettings} fro
 import {buildSymmetricStrokes} from './runSymmetry';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,lockStraightGuide,snapToStraightGuide,type GuideSettings,type LockedGuide} from './strokeGuide';
 import {rectangleFromPoints,clampSelectionRect,type SelectionRect} from './strokeSelection';
+import {selectionAsLayerMask} from './artwork/selectionMask';
 import {applySelectedStroke} from './selection/brush';
 import type {MaskData} from './selection/mask';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
@@ -695,7 +696,15 @@ export class BrushSurface{
       const result=await applySelectedStroke(mask,previous,[record,...copies]);
       if(!result||this.disposed||artwork.head!==target.baseRevision)return;
       const transaction=artwork.begin(record.preset.blend==='erase'?'選択範囲を消す':'選択範囲に描く');
-      transaction.replaceLayerRaster(target.layerId,result);
+      const deformation=artwork.root.getLayer(target.layerId).deformation;
+      if(deformation){
+        const later=artwork.rasterReplayPlan().operations.flatMap(operation=>
+          operation.kind==='brush.stroke'&&operation.targetEntityIds[0]===target.layerId?[operation.parameters.strokeRecord]:[]);
+        const passes=[...deformation.postPaint??[]];
+        for(let start=0;start<later.length;start+=64)passes.push({selection:null,records:later.slice(start,start+64)});
+        passes.push({selection:selectionAsLayerMask(mask),records:[record,...copies]});
+        transaction.replaceLayerRaster(target.layerId,result,undefined,undefined,{...deformation,postPaint:passes});
+      }else transaction.replaceLayerRaster(target.layerId,result);
       transaction.activateDrawingLayer(target.layerId);
       this.controller.lastPersistenceHandoff=transaction.commit().persistence;
       this.discardRedoProjection();

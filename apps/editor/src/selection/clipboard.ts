@@ -45,7 +45,12 @@ function moveMask(mask:LayerMask|null|undefined,x:number,y:number){
 function moveDeformation(deformation:LayerDeformation,x:number,y:number):LayerDeformation{
   const move=<T extends {x:number;y:number}>(value:T):T=>({...value,x:value.x+x,y:value.y+y});
   const selection=deformation.selection?{...deformation.selection,x:deformation.selection.x+x,y:deformation.selection.y+y}:null;
-  const base={...deformation,bounds:move(deformation.bounds),selection};
+  const postPaint=deformation.postPaint?.map(pass=>({
+    selection:pass.selection?{...pass.selection,x:pass.selection.x+x,y:pass.selection.y+y}:null,
+    records:pass.records.map(record=>translateStroke(validateRecord(record),x,y))
+  }));
+  const base={...deformation,bounds:move(deformation.bounds),selection,...(postPaint?{postPaint}:{})};
+  if('affine' in deformation)return {...base,mode:deformation.mode,affine:{...deformation.affine,cx:deformation.affine.cx+x,cy:deformation.affine.cy+y}};
   if('corners' in deformation)return {...base,mode:deformation.mode,corners:deformation.corners.map(move) as unknown as typeof deformation.corners};
   if('mesh' in deformation){
     const mesh=deformation.mesh;

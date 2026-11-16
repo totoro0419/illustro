@@ -1,12 +1,19 @@
-import {cpuReference,TILE,type StrokeRecord} from '@illustro/brush-rt';
+import {cpuReference,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 
-type Job={width:number;height:number;pixels:Uint8Array;alpha:Uint8Array;records:readonly StrokeRecord[]};
+import type {PixelLayerMask} from '@illustro/core';
+type Pass={selection:PixelLayerMask|null;records:readonly unknown[]};
+type Job={width:number;height:number;pixels:Uint8Array}&(
+  {alpha:Uint8Array;records:readonly StrokeRecord[]}|{passes:readonly Pass[]}
+);
 
 self.onmessage=({data}:MessageEvent<Job>)=>{
   try{
-    const {width,height,pixels,alpha,records}=data;
+    const {width,height,pixels}=data;
+    const alpha='alpha' in data?data.alpha:null;
+    const passes='passes' in data?data.passes:[{selection:null,records:data.records}];
     let changed=false;
-    for(const record of records){
+    for(const pass of passes)for(const raw of pass.records){
+      const record='passes' in data?validateRecord(raw):raw as StrokeRecord;
       const commandsByTile=new Map<number,Array<StrokeRecord['commands'][number]>>();
       const columns=Math.ceil(width/TILE);
       for(const command of record.commands){
@@ -26,9 +33,12 @@ self.onmessage=({data}:MessageEvent<Job>)=>{
       for(const [key,commands] of commandsByTile){
         const x=(key%columns)*TILE,y=Math.floor(key/columns)*TILE;
         const w=Math.min(TILE,width-x),h=Math.min(TILE,height-y),mask=new Uint8Array(w*h);
+        const tile=pass.selection?layerMaskTile(pass.selection,(x/TILE)+','+(y/TILE)):255;
         for(let row=0;row<h;row++){
           const offset=(y+row)*width+x;
-          mask.set(alpha.subarray(offset,offset+w),row*w);
+          if(alpha)mask.set(alpha.subarray(offset,offset+w),row*w);
+          else if(typeof tile==='number')mask.fill(tile,row*w,(row+1)*w);
+          else mask.set(tile.subarray(row*TILE,row*TILE+w),row*w);
         }
         if(!mask.some(Boolean))continue;
         const base=new Uint8ClampedArray(w*h*4);
@@ -42,6 +52,7 @@ self.onmessage=({data}:MessageEvent<Job>)=>{
         for(let row=0;row<h;row++)pixels.set(rendered.subarray(row*w*4,(row+1)*w*4),((y+row)*width+x)*4);
       }
     }
-    (self as unknown as Worker).postMessage({pixels:changed?pixels:null},changed?[pixels.buffer as ArrayBuffer]:[]);
+    const keep=changed||'passes' in data;
+    (self as unknown as Worker).postMessage({pixels:keep?pixels:null},keep?[pixels.buffer as ArrayBuffer]:[]);
   }catch(error){self.postMessage({error:error instanceof Error?error.message:String(error)});}
 };

@@ -184,6 +184,16 @@ export class DocumentTransaction{
       this.recordRasterOperation(id,operation,hints);
     }
   }
+  replaceDeformationOriginal(id:LayerId,pixels:Uint8Array,mask:LayerMask|null){
+    const layer=this.updatesValue.get(id),deformation=layer?.deformation;
+    if(!deformation)throw Error('元の絵を入れ替える変形が見つかりません。');
+    const groups=this.rootValue.groupsForLayer(id),outer=groups[0];
+    const reference=outer?this.rootValue.rootLayerIds.findLast(item=>outer.members.includes(item))??id:id;
+    const sourceId=this.addRasterSnapshotAbove(reference,pixels,layer.name.slice(0,4060)+'（変形原本）',false,false);
+    this.meta(sourceId,{visible:false,locked:true,positionLocked:true,vectorMask:validateLayerMask(mask)});
+    const revision=this.resultId??=this.doc._internal(CORE_INTERNAL).ids.revision();
+    this.meta(id,{deformation:validateLayerDeformation({...deformation,sourceRevision:revision,sourceLayerId:sourceId})});
+  }
   setLineRegions(id:LayerId,data:LineRegions){
     const region=validateLineRegions(data)!;
     if(!this.doc.hasRevision(region.sourceRevision))throw Error('元の線画が見つかりません。');
