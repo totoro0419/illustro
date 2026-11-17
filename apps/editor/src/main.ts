@@ -28,7 +28,7 @@ import {installStrokeCorrection} from './artwork/strokeCorrection';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {runArtwork} from './artwork/run';
 import {selectionAsLayerMask} from './artwork/selectionMask';
-import {selectionCanCreateMask,explicitSaveStatus} from './artwork/c03UiGuards';
+import {selectionCanCreateMask,explicitSaveStatus,maskApplyAllowed} from './artwork/c03UiGuards';
 import type {ArtworkActions} from './artwork/tools';
 import {fillLayerName,installFillPanel} from './fill/panel';
 import {readFillReference} from './fill/reference';
@@ -465,7 +465,9 @@ function updateVectorMaskControls(){
   for(const id of ['vectorMaskEnabled','maskLinked','vectorMaskInverted','vectorMaskDensity','vectorMaskRemove','vectorMaskApply']){
     (byId(id) as HTMLInputElement|HTMLButtonElement).disabled=disabled||!mask;
   }
-  byId<HTMLButtonElement>('vectorMaskApply').disabled=disabled||!mask?.enabled||!surface?.canChangeGeometry||geometryBusy||historyPending;
+  byId<HTMLButtonElement>('vectorMaskApply').disabled=!maskApplyAllowed({
+    editable:!disabled,maskEnabled:!!mask?.enabled,geometryReady:!!surface?.canChangeGeometry,geometryBusy,historyPending,
+  });
   byId<HTMLInputElement>('vectorMaskEnabled').checked=mask?.enabled??false;
   byId<HTMLInputElement>('maskLinked').checked=mask?.linked??true;
   byId<HTMLInputElement>('vectorMaskInverted').checked=mask?.inverted??false;
@@ -593,8 +595,10 @@ function startMaskPointEditing(){
 
 async function applyVectorMask(){
   const drawing=surface,artwork=controller.document,layer=controller.selectedLayer,mask=layer.vectorMask;
-  if(!documentReady||layer.implicitRaster||layer.baseColor==='white'||artwork.root.isLayerContentLocked(layer.id)||
-      !drawing?.canChangeGeometry||!mask?.enabled||geometryBusy||historyPending){
+  if(!maskApplyAllowed({
+    editable:documentReady&&!layer.implicitRaster&&layer.baseColor!=='white'&&!artwork.root.isLayerContentLocked(layer.id),
+    maskEnabled:!!mask?.enabled,geometryReady:!!drawing?.canChangeGeometry,geometryBusy,historyPending,
+  })){
     byId('status').textContent=!mask?.enabled?'有効なマスクを選んでください。':
       artwork.root.isLayerContentLocked(layer.id)?'ロックされているレイヤーにはマスクを適用できません。':
       '現在の操作が終わってからマスクを適用してください。';
@@ -3503,6 +3507,9 @@ c06Selection=installSelectionWorkbench({
   onMaskChanged:mask=>{
     c06Clipboard.setSelectionMask(mask);
     c06ClipboardUI?.refresh();
+    // Free-form selection changes do not necessarily update BrushSurface.selectedRectangle.
+    // Refresh the actual selection-mask action immediately.
+    updateVectorMaskControls();
   },
   capturePixels:async source=>{
     const drawing=surface,artwork=controller.document,revision=artwork.head;

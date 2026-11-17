@@ -14,3 +14,10 @@ export function explicitSaveStatus(output:'picker'|'download',verified:boolean,a
   if(!verified)return '保存先の確認が取れていません。作品ファイルを確認してください。自動保存状態には影響しません。';
   return (asCopy?'別名の作品ファイルを保存しました':'作品ファイルを保存しました（'+sizeLabel+'）')+'。保存先の内容を確認済みです。自動保存状態には影響しません。';
 }
+
+/** Keep button availability and the execution guard on the same conditions. */
+export function maskApplyAllowed(state:Readonly<{
+  editable:boolean;maskEnabled:boolean;geometryReady:boolean;geometryBusy:boolean;historyPending:boolean;
+}>):boolean{
+  return state.editable&&state.maskEnabled&&state.geometryReady&&!state.geometryBusy&&!state.historyPending;
+}

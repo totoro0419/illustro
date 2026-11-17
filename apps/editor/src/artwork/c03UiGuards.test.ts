@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {explicitSaveStatus,selectionCanCreateMask} from './c03UiGuards';
+import {explicitSaveStatus,selectionCanCreateMask,maskApplyAllowed} from './c03UiGuards';
 
 describe('C03-002 selection-to-mask action gates',()=>{
   const selection={width:3,height:2,alpha:new Uint8Array([0,255,0,128,0,0])};
@@ -31,5 +31,19 @@ describe('C03-004 save feedback',()=>{
     expect(explicitSaveStatus('picker',true,false,'4 MB')).toContain('保存先の内容を確認済み');
     expect(explicitSaveStatus('picker',true,true,'4 MB')).toContain('別名');
     expect(explicitSaveStatus('picker',false,false,'4 MB')).not.toContain('確認済み');
+  });
+});
+
+describe('C03-006 mask application readiness',()=>{
+  const state={editable:true,maskEnabled:true,geometryReady:true,geometryBusy:false,historyPending:false};
+  it('accepts ready editable layers with an enabled mask',()=>{
+    expect(maskApplyAllowed(state)).toBe(true);
+  });
+  it('rejects locked layers, disabled masks and in-progress edits using one shared guard',()=>{
+    expect(maskApplyAllowed({...state,editable:false})).toBe(false);
+    expect(maskApplyAllowed({...state,maskEnabled:false})).toBe(false);
+    expect(maskApplyAllowed({...state,geometryReady:false})).toBe(false);
+    expect(maskApplyAllowed({...state,geometryBusy:true})).toBe(false);
+    expect(maskApplyAllowed({...state,historyPending:true})).toBe(false);
   });
 });
