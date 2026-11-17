@@ -144,6 +144,33 @@ export class CoreDocument{
       for(let row=0;row<copyH;row++)out.set(b.subarray(row*T*4,(row*T+copyW)*4),((ty*T+row)*root.width+tx*T)*4);
     }return out;
   }
+  /** Lossless sparse renderer tiles for a materialized baseline.
+   * Splits 256px Core blocks into 128px display-worker tiles without ever
+   * allocating the full canvas-sized RGBA image. */
+  readBaseRasterTiles(layerId:LayerId,revisionId:RevisionId=this.head){
+    const root=this.revision(revisionId).root,layer=root.getLayer(layerId);
+    if(layer.baseColor==='white')throw new Error('White background needs the ordinary geometry seed');
+    if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('unsupported encoding');
+    const size=128,canonical=CANONICAL_TILE_SIZE,out:Array<{key:string;pixels:Uint8Array}>=[];
+    if(canonical%size!==0)throw new Error('unsupported sparse seed tile size');
+    for(const [key,value] of layer.surface.tiles.entries()){
+      if(!value.baseBlockId)continue;
+      if(value.mutations.length)throw new Error('strict raster materialization pending');
+      const [tileX,tileY]=parseTileKey(key),left=tileX*canonical,top=tileY*canonical;
+      if(left<0||top<0||left>=root.width||top>=root.height)continue;
+      const block=this.storeValue.readCopy(value.baseBlockId);
+      for(let dy=0;dy<canonical&&top+dy<root.height;dy+=size)
+        for(let dx=0;dx<canonical&&left+dx<root.width;dx+=size){
+          const pixels=new Uint8Array(size*size*4),width=Math.min(size,root.width-left-dx),height=Math.min(size,root.height-top-dy);
+          for(let row=0;row<height;row++)pixels.set(
+            block.subarray(((dy+row)*canonical+dx)*4,((dy+row)*canonical+dx+width)*4),
+            row*size*4
+          );
+          if(pixels.some(value=>value!==0))out.push({key:((left+dx)/size)+','+((top+dy)/size),pixels});
+        }
+    }
+    return out;
+  }
   getTileValue(layerId:LayerId,tileX:number,tileY:number){return this.root.getLayer(layerId).surface.getValue(tileX,tileY);}
   readPixel(layerId:LayerId,x:number,y:number){if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y))throw new Error('invalid pixel coordinate');const l=this.root.getLayer(layerId);
     if(l.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('readPixel helper only supports rgba.unorm8.v1');const tx=pixelToTile(x),ty=pixelToTile(y),value=l.surface.getValue(tx.tile,ty.tile);

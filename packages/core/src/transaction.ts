@@ -205,6 +205,59 @@ export class DocumentTransaction{
     if(editable!==undefined)this.setEditableArtwork(id,editable);
     return true;
   }
+  /** Replaces a raster layer using only populated 128px renderer tiles.
+   * A snapshot (not a strict delta) is essential: it supersedes old semantic
+   * brush strokes during history replay, exactly like replaceLayerRaster(). */
+  replaceLayerRasterTiles(
+    id:LayerId,tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[],
+    source?:RevisionId,editable?:EditableArtwork|null,deformation?:LayerDeformation|null
+  ){
+    this.open();
+    if(this.slotsValue.length)throw new Error('Replace layer pixels as a standalone operation');
+    if(source&&!this.doc.hasRevision(source))throw new Error('復元元の履歴が見つかりません。');
+    const layer=this.editableRaster(id),tileSize=128,canonical=CANONICAL_TILE_SIZE;
+    if(layer.baseColor==='white')throw new Error('白背景を描画用に変換してから復元してください。');
+    if(layer.imageLink)throw Error('画像の参照を解除してから画素を編集してください。');
+    if(layer.deformation&&deformation===undefined)throw new Error('このレイヤーは変形を保持しています。画像に焼き込むか、変形の上に別レイヤーを追加してください。');
+    if(deformation&&(!this.doc.hasRevision(deformation.sourceRevision)||
+      !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId??id)))throw new Error('変形前の原本が見つかりません。');
+    if(layer.editable&&editable===undefined)throw new Error('編集できるレイヤーです。専用の操作画面で編集するか、描画用に変換してください。');
+    if(canonical%tileSize!==0||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
+      throw new Error('対応していない画像の区画形式です。');
+    const seen=new Set<string>(),maxX=Math.ceil(this.rootValue.width/tileSize),maxY=Math.ceil(this.rootValue.height/tileSize);
+    for(const tile of tiles){
+      if(!/^\\d+,\\d+$/.test(tile.key)||seen.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.length!==tileSize*tileSize*4)
+        throw new Error('画像の区画が重複または破損しています。');
+      const [x,y]=tile.key.split(',').map(Number);
+      if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0||x>=maxX||y>=maxY)
+        throw new Error('画像の区画が作品の外です。');
+      seen.add(tile.key);
+    }
+    const empty=new RasterSurfaceManifest(layer.surface.descriptor);
+    const working=new RasterWorkingSet(empty,this.doc._internal(CORE_INTERNAL).store);
+    for(const {key,pixels} of tiles){
+      if(!pixels.some(value=>value!==0))continue;
+      const [tx,ty]=key.split(',').map(Number),originX=tx*tileSize,originY=ty*tileSize;
+      const cx=Math.floor(originX/canonical),cy=Math.floor(originY/canonical);
+      const localX=originX-cx*canonical,localY=originY-cy*canonical;
+      const w=Math.min(tileSize,this.rootValue.width-originX),h=Math.min(tileSize,this.rootValue.height-originY);
+      working.editTile(cx,cy,bytes=>{
+        for(let row=0;row<h;row++)bytes.set(
+          pixels.subarray(row*tileSize*4,row*tileSize*4+w*4),
+          ((localY+row)*canonical+localX)*4
+        );
+      });
+    }
+    this.updatesValue.set(id,Object.freeze({...layer,surface:empty}));
+    this.workingValue.set(id,working);
+    this.slotsValue.push(Object.freeze({
+      type:'working' as const,layerId:id,initial:true as const,replace:true as const,
+      ...(deformation?.sourceRevision??source?{source:deformation?.sourceRevision??source}: {})
+    }));
+    if(deformation!==undefined)this.meta(id,{deformation:validateLayerDeformation(deformation)});
+    if(editable!==undefined)this.setEditableArtwork(id,editable);
+    return true;
+  }
   replaceLayerDeformation(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,deformation:LayerDeformation|null){
     const layer=this.rootValue.getLayer(id);
     this.replaceLayerRaster(id,pixels,undefined,undefined,deformation);
