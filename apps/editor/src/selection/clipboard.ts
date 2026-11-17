@@ -262,12 +262,10 @@ export class ArtworkClipboard {
         throw Error('貼り付けを取り消しました。');
       const place=(pixels:Uint8Array)=>{
         if(!x&&!y&&record.width===root.width&&record.height===root.height)return pixels;
-        const placed=new Uint8Array(root.width*root.height*4);
-        for(let row=0;row<record.height;row++){
-          const start=row*record.width*4;
-          placed.set(pixels.subarray(start,start+record.width*4),((row+y)*root.width+x)*4);
-        }
-        return placed;
+        // Keep the original bytes and offset. Core seeds only intersecting
+        // tiles, instead of allocating one giant transparent RGBA buffer per
+        // editable layer (including each preserved deformation source).
+        return {x,y,width:record.width,height:record.height,pixels};
       };
       const entries=await Promise.all(record.editable.layers.map(async({layer,pixels,transform,regionSource})=>{
         const mask=moveMask(layer.vectorMask,x,y),effect=layer.blend?.effect;

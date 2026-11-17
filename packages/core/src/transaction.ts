@@ -19,6 +19,11 @@ import {CANONICAL_TILE_SIZE,parseTileKey,pixelToTile,tileKey,RasterSurfaceManife
 export type DocumentGeometryKind='document.crop'|'document.canvas-resize'|'document.image-resize';
 type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'artwork-guides';guides:readonly ArtworkGuide[]}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;source?:RevisionId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
+/** A small image in document coordinates; avoid creating a transparent full-canvas buffer. */
+export type RasterPixelRegion=Readonly<{
+  x:number;y:number;width:number;height:number;pixels:Uint8Array|Uint8ClampedArray;
+}>;
+type RasterPixels=Uint8Array|Uint8ClampedArray|RasterPixelRegion;
 
 export class DocumentTransaction{
   private readonly baseValue:RevisionId;private readonly expectedHead:RevisionId;private resultId:RevisionId|undefined;private readonly rootValue;private readonly idValue:TransactionId;private readonly workingValue=new Map<LayerId,RasterWorkingSet>();
@@ -51,9 +56,17 @@ export class DocumentTransaction{
     }
     this.updatesValue.set(layerId,layer);this.slotsValue.push(Object.freeze({type:'structure' as const,layerId,surfaceId,insertIndex,name}));return layerId;
   }
-  addRasterSnapshotAbove(referenceId:LayerId,pixels:Uint8Array|Uint8ClampedArray,name:string,copyStyle=false,inheritGroup=true,below=false){
+  addRasterSnapshotAbove(referenceId:LayerId,pixels:RasterPixels,name:string,copyStyle=false,inheritGroup=true,below=false){
     const root=this.rootValue;
-    if(pixels.length!==root.width*root.height*4)throw new Error('画像の大きさが作品と一致しません。');
+    if('pixels' in pixels){
+      if(!Number.isSafeInteger(pixels.x)||!Number.isSafeInteger(pixels.y)||
+        !Number.isSafeInteger(pixels.width)||!Number.isSafeInteger(pixels.height)||
+        pixels.width<1||pixels.height<1||pixels.x<0||pixels.y<0||
+        pixels.x+pixels.width>root.width||pixels.y+pixels.height>root.height||
+        pixels.pixels.length!==pixels.width*pixels.height*4)
+        throw new Error('貼り付ける画像の大きさ・配置が正しくありません。');
+    }else if(pixels.length!==root.width*root.height*4)
+      throw new Error('画像の大きさが作品と一致しません。');
     const id=this.addRasterLayerAbove(referenceId,inheritGroup,below);
     this.renameLayer(id,name);
     if(copyStyle){
@@ -79,14 +92,15 @@ export class DocumentTransaction{
       if(source.vectorMask)this.meta(id,{vectorMask:source.vectorMask});
       if(source.editable)this.meta(id,{editable:source.editable});
     }
-    this.seedRasterPixels(id,pixels);
+    if('pixels' in pixels)this.seedRasterRegion(id,pixels);
+    else this.seedRasterPixels(id,pixels);
     return id;
   }
   pasteRasterLayers(referenceId:LayerId,entries:readonly Readonly<{
-    layer:LayerNode;pixels:Uint8Array|Uint8ClampedArray;mask?:LayerMask|null;editable?:EditableArtwork|null;
-    source?:Readonly<{pixels:Uint8Array;mask:LayerMask|null;deformation:LayerDeformation}>;
+    layer:LayerNode;pixels:RasterPixels;mask?:LayerMask|null;editable?:EditableArtwork|null;
+    source?:Readonly<{pixels:RasterPixels;mask:LayerMask|null;deformation:LayerDeformation}>;
     strokes?:readonly Readonly<{operation:RasterSemanticMutation;tiles:readonly DirtyTileHint[]}>[];
-    regionSource?:Readonly<{pixels:Uint8Array;recipe:LineRegions}>;
+    regionSource?:Readonly<{pixels:RasterPixels;recipe:LineRegions}>;
   }>[],groups:readonly LayerGroup[]){
     this.open();
     if(!entries.length)throw new Error('貼り付けるレイヤーがありません。');
@@ -257,6 +271,30 @@ export class DocumentTransaction{
     const layer=this.editableRaster(id);
     if(!layer.deformation)throw new Error('再編集できる変形がありません。');
     return this.meta(id,{deformation:null});
+  }
+  /** Write only intersecting nonempty tiles. An empty area has no allocated blocks. */
+  private seedRasterRegion(id:LayerId,region:RasterPixelRegion){
+    const size=CANONICAL_TILE_SIZE;
+    const lastX=region.x+region.width,lastY=region.y+region.height;
+    for(let tileY=Math.floor(region.y/size);tileY<Math.ceil(lastY/size);tileY++)
+      for(let tileX=Math.floor(region.x/size);tileX<Math.ceil(lastX/size);tileX++){
+        const x0=Math.max(region.x,tileX*size),x1=Math.min(lastX,(tileX+1)*size);
+        const y0=Math.max(region.y,tileY*size),y1=Math.min(lastY,(tileY+1)*size);
+        let occupied=false;
+        for(let y=y0;y<y1&&!occupied;y++){
+          const offset=((y-region.y)*region.width+x0-region.x)*4;
+          const segment=region.pixels.subarray(offset,offset+(x1-x0)*4);
+          occupied=segment.some(value=>value!==0);
+        }
+        if(!occupied)continue;
+        this.editTile(id,tileX,tileY,tile=>{
+          for(let y=y0;y<y1;y++){
+            const offset=((y-region.y)*region.width+x0-region.x)*4;
+            tile.set(region.pixels.subarray(offset,offset+(x1-x0)*4),
+              ((y-tileY*size)*size+x0-tileX*size)*4);
+          }
+        });
+      }
   }
   private seedRasterPixels(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,replace=false,source?:RevisionId){
     const {width:documentWidth,height:documentHeight}=this.rootValue;
