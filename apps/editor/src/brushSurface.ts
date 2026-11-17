@@ -7,6 +7,7 @@ import {penEraserInput} from './stylusButtons';
 import {EmptyStrokeError} from './strokeCommit';
 import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
+import {captureSelectedLayerTiles} from './selection/tileCapture';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {averageSampledPixels} from './color/sampleAverage';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
@@ -27,7 +28,7 @@ import {buildSymmetricStrokes} from './runSymmetry';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,lockStraightGuide,lockArtworkGuide,snapToStraightGuide,type GuideSettings,type LockedGuide} from './strokeGuide';
 import {rectangleFromPoints,clampSelectionRect,type SelectionRect} from './strokeSelection';
 import {selectionAsLayerMask} from './artwork/selectionMask';
-import {applySelectedStroke,writableRasterView} from './selection/brush';
+import {applySelectedStroke,applySelectedStrokeTiles,writableRasterView} from './selection/brush';
 import type {MaskData} from './selection/mask';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
 
@@ -841,9 +842,20 @@ export class BrushSurface{
       const copies=seamless?variants.flatMap((variant,index)=>[
         ...(index?[variant]:[]),...wrappedCopies(variant,target.width,target.height).map(copy=>copy.record)
       ]):variants.slice(1);
-      const previous=writableRasterView(await renderer.read(target.surfaceId));
-      const result=await applySelectedStroke(mask,previous,[record,...copies]);
-      if(!result||this.disposed||artwork.head!==target.baseRevision)return;
+      const records=[record,...copies];
+      const host=renderer as unknown as Parameters<typeof captureSelectedLayerTiles>[0];
+      const sparse=typeof host.inspect==='function'&&typeof host.backend?.readTiles==='function';
+      // Keep the compatible full-frame path for a non-Worker renderer. On the
+      // normal drawing worker path, capture existing GPU tiles in <=1 MiB
+      // batches and transfer those tiles directly to the selection Worker.
+      const updatedTiles=sparse
+        ?await applySelectedStrokeTiles(mask,
+          await captureSelectedLayerTiles(host,target.surfaceId,target.width,target.height,
+            ()=>!this.disposed&&artwork.head===target.baseRevision),records)
+        :null;
+      const fullPixels=sparse?null:await applySelectedStroke(mask,
+        writableRasterView(await renderer.read(target.surfaceId)),records);
+      if((!updatedTiles&&!fullPixels)||this.disposed||artwork.head!==target.baseRevision)return;
       const transaction=artwork.begin(record.preset.blend==='erase'?'選択範囲を消す':'選択範囲に描く');
       const deformation=artwork.root.getLayer(target.layerId).deformation;
       if(deformation){
@@ -852,8 +864,10 @@ export class BrushSurface{
         const passes=[...deformation.postPaint??[]];
         for(let start=0;start<later.length;start+=64)passes.push({selection:null,records:later.slice(start,start+64)});
         passes.push({selection:selectionAsLayerMask(mask),records:[record,...copies]});
-        transaction.replaceLayerRaster(target.layerId,result,undefined,undefined,{...deformation,postPaint:passes});
-      }else transaction.replaceLayerRaster(target.layerId,result);
+        if(updatedTiles)transaction.replaceLayerRasterTiles(target.layerId,updatedTiles,undefined,undefined,{...deformation,postPaint:passes});
+        else transaction.replaceLayerRaster(target.layerId,fullPixels!,undefined,undefined,{...deformation,postPaint:passes});
+      }else if(updatedTiles)transaction.replaceLayerRasterTiles(target.layerId,updatedTiles);
+      else transaction.replaceLayerRaster(target.layerId,fullPixels!);
       transaction.activateDrawingLayer(target.layerId);
       this.controller.lastPersistenceHandoff=transaction.commit().persistence;
       this.discardRedoProjection();
@@ -1100,7 +1114,17 @@ export class BrushSurface{
         else if(operation.kind==='raster.strict-delta')throw new Error('Direct raster deltas outside geometry need materialization');
       }
       const savedCache=this.validProjectionCache(cache);
-      const baseGeometry:ProjectionCacheV1|undefined=needsSeed&&!savedCache?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,layers:this.controller.layers.filter(layer=>geometry||seededLayers.has(layer.id)).map(layer=>({surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)}))}:undefined;
+      const baseGeometry:ProjectionCache|undefined=needsSeed&&!savedCache
+        ?geometry
+          ?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,
+            layers:this.controller.layers.map(layer=>({
+              surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)
+            }))}
+          :{version:2,revisionId:this.controller.document.head,width:root.width,height:root.height,tileSize:TILE,
+            layers:this.controller.layers.filter(layer=>seededLayers.has(layer.id)).map(layer=>({
+              surfaceId:layer.surface.descriptor.surfaceId,tiles:this.controller.document.readBaseRasterTiles(layer.id)
+            }))}
+        :undefined;
       const validCache=savedCache??baseGeometry;
       const cachedKeys=needsSeed&&!savedCache?new Set<SemanticOperation['key']>():new Set(validCache?this.controller.document.rasterReplayPlan(validCache.revisionId as RevisionId).operations.filter(op=>op.kind==='brush.stroke').map(op=>op.key):[]);
       await (this.session as any).restore(entries.map(e=>({...e,cached:cachedKeys.has(e.operation.key)})),validCache,needsSeed);

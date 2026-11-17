@@ -1,0 +1,40 @@
+import {describe,it,expect,vi} from 'vitest';
+import {captureSelectedLayerTiles,type InspectableDrawingRenderer} from './tileCapture';
+
+function fakeRenderer(tiles:readonly [string,string,number][]=[],bad=false){
+ const inventory=new Map(tiles.map(([surfaceKey,key])=>[surfaceKey+'\\0'+key,{surfaceKey,key}]));
+ const readTiles=vi.fn(async (requests:readonly {surfaceId:string;key:string}[])=>
+  requests.map(request=>{
+   const pixels=new Uint8Array(128*128*4);
+   const found=tiles.find(([surface,key])=>surface===request.surfaceId&&key===request.key);
+   if(found)pixels[0]=found[2];
+   return {...request,pixels};
+  }));
+ const renderer={
+  drain:vi.fn(async()=>{}),
+  inspect:vi.fn(async()=>{}),
+  backend:{tiles:inventory,readTiles}
+ };
+ return {renderer:renderer as InspectableDrawingRenderer,readTiles};
+}
+describe('C06-002 bounded GPU inventory capture',()=>{
+ it('collects only actual nonzero layer tiles and never allocates a full-frame buffer',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',255],['OTHER','1,2',110],['L','2,1',0]]);
+  const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true);
+  expect(result.map(t=>t.key)).toEqual(['0,0']);
+  expect(result[0]?.pixels.length).toBe(128*128*4);
+  expect(readTiles).toHaveBeenCalledTimes(1);
+  expect(readTiles.mock.calls[0]?.[0]?.length).toBe(2);
+  expect(renderer.inspect).toHaveBeenCalledTimes(1);
+ });
+ it('stops without reading if the document changes after inventory refresh',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',255]]);
+  let valid=true;renderer.inspect=vi.fn(async()=>{valid=false;});
+  await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>valid)).rejects.toThrow(/切り替わりました/);
+  expect(readTiles).not.toHaveBeenCalled();
+ });
+ it('safely rejects a broken tile inventory',async()=>{
+  const {renderer}=fakeRenderer([['L','32,0',255]]);
+  await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true)).rejects.toThrow(/作品の外/);
+ });
+});
