@@ -33,8 +33,8 @@ describe('C07-004 post-transform painted strokes in preview',()=>{
   const expected=cpuReference({
     ...record,
     commands:record.commands.map(c=>{
-      const v=[...c];for(const i of [0,1,16,17])v[i]*=.25;
-      for(const i of [2,18,23])v[i]*=.25;return v;
+      const v=[...c];for(const i of [0,1,16,17])v[i]=(v[i]??0)*.25;
+      for(const i of [2,18,23])v[i]=(v[i]??0)*.25;return v;
     })
   },32,32);
   expect(display).toEqual(expected);
