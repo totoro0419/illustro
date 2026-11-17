@@ -11,11 +11,14 @@ type Task={
  * caused repeated startup and full module initialization. Commands are
  * serialized without blocking the drawing/input thread. */
 let worker:Worker|null=null,active:Task|null=null;
+// The same immutable selection mask may be used for hundreds of strokes.
+// Keep its Worker-side copy until the selection changes or the Worker closes.
+let residentMask:Uint8Array|null=null;
 const waiting:Task[]=[];
 let timeout:ReturnType<typeof setTimeout>|null=null,
   idle:ReturnType<typeof setTimeout>|null=null;
 function closeWorker(){
-  worker?.terminate();worker=null;
+  worker?.terminate();worker=null;residentMask=null;
 }
 function pump(){
   if(active)return;
@@ -39,9 +42,9 @@ function pump(){
     };
     currentWorker.onmessage=(event:MessageEvent<{pixels?:Uint8Array|null;error?:string}>)=>{
       const response=event.data;
-      if(response?.error){finish(null,Error(response.error));return;}
+      if(response?.error){closeWorker();finish(null,Error(response.error));return;}
       if(response?.pixels!==null&&!(response?.pixels instanceof Uint8Array)){
-        finish(null,Error('選択範囲の筆の結果を確認できませんでした。'));return;
+        closeWorker();finish(null,Error('選択範囲の筆の結果を確認できませんでした。'));return;
       }
       finish(response.pixels??null);
     };
@@ -53,7 +56,16 @@ function pump(){
       closeWorker();
       finish(null,Error('選択範囲への描画が長時間終わりませんでした。'));
     },60000);
-    currentWorker.postMessage(next.job,[next.job.pixels.buffer as ArrayBuffer]);
+    const mask=next.job.alpha;
+    const selected=mask instanceof Uint8Array&&Array.isArray(next.job.records);
+    // The main thread still owns its mask. Only the first selected stroke
+    // transfers a clone; subsequent strokes reference the resident Worker
+    // copy. A changed mask or restarted Worker sends the new bytes.
+    const message=selected&&residentMask===mask
+      ?(()=>{const {alpha:unused,...rest}=next.job;return rest;})()
+      :next.job;
+    currentWorker.postMessage(message,[next.job.pixels.buffer as ArrayBuffer]);
+    if(selected)residentMask=mask;
   }catch(error){
     closeWorker();
     if(timeout!==null){clearTimeout(timeout);timeout=null;}

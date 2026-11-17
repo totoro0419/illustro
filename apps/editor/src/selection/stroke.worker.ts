@@ -3,13 +3,22 @@ import {cpuReference,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '
 import type {PixelLayerMask} from '@illustro/core';
 type Pass={selection:PixelLayerMask|null;records:readonly unknown[]};
 type Job={width:number;height:number;pixels:Uint8Array}&(
-  {alpha:Uint8Array;records:readonly StrokeRecord[]}|{passes:readonly Pass[]}
+  {alpha?:Uint8Array;records:readonly StrokeRecord[]}|{passes:readonly Pass[]}
 );
+let retainedMask:Uint8Array|null=null,retainedWidth=0,retainedHeight=0;
 
 self.onmessage=({data}:MessageEvent<Job>)=>{
   try{
     const {width,height,pixels}=data;
-    const alpha='alpha' in data?data.alpha:null;
+    let alpha:Uint8Array|null=null;
+    if('records' in data){
+      if(data.alpha){
+        if(data.alpha.length!==width*height)throw Error('選択マスクの大きさが作品に一致しません。');
+        retainedMask=data.alpha;retainedWidth=width;retainedHeight=height;
+      }else if(!retainedMask||retainedWidth!==width||retainedHeight!==height)
+        throw Error('選択マスクの再利用情報が失われました。');
+      alpha=retainedMask;
+    }
     const passes='passes' in data?data.passes:[{selection:null,records:data.records}];
     let changed=false;
     for(const pass of passes)for(const raw of pass.records){
