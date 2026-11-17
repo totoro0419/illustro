@@ -4,6 +4,10 @@ import {ASSET_KINDS,ASSET_LABELS,type AssetInfo,type AssetKind,listAssets,getAss
 import {exportAssetPack,readAssetPack,previewAssetPack,importAssetPack,type PackManifest,type PackImportResult} from './packs';
 import {boardsUsingAsset} from './referenceBoardStore';
 import {ensureFont} from '../artwork/fonts';
+import {
+  type ImportRecovery,initialImportRecovery,updateImportRecovery,
+  readImportRecovery,writeImportRecovery,clearImportRecovery
+} from './assetImportRecovery';
 
 type PanelOptions=Readonly<{openReference:(assetId:string)=>Promise<void>;flushReferences:()=>Promise<void>}>;
 function button(text:string,handler:()=>void,css=''){
@@ -41,18 +45,18 @@ export function installAssetPanel(opts:PanelOptions){
   const add=button('素材を追加',()=>importFile.click());
   const importPack=button('素材セットを読み込む',()=>packFile.click());
   const exportPack=button('表示中をまとめて書き出す',()=>void doExport());
-  const retryButton=button('失敗した素材だけ再試行',()=>void run(async()=>{
-    const state=retry;if(!state)return;
-    const result=await importAssetPack(state.manifest,{
-      onlyIds:state.failedIds,resolvedIds:state.resolvedIds,
-      onItem:(index,total)=>{status.textContent='失敗分を再試行中 '+index+'/'+total;}
-    });
-    showImportResult(result,state.manifest);
-    await refresh();
-  }));
+  const retryButton=button('保存した続きから再開',()=>void run(resumePendingImport));
   retryButton.hidden=true;
+  const discardButton=button('再開記録を破棄',()=>void run(async()=>{
+    if(!recovery)return;
+    if(!window.confirm('読み込みの再開情報を削除しますか？ すでに素材庫に入った素材はそのまま残ります。'))return;
+    await clearImportRecovery();
+    recovery=null;refreshRecoveryControls();
+    status.textContent='再開記録を破棄しました。保存済みの素材は削除していません。';
+  }));
+  discardButton.hidden=true;
   const actions=document.createElement('div');actions.className='c05-asset-actions';
-  actions.append(importKind,add,importPack,exportPack,retryButton);
+  actions.append(importKind,add,importPack,exportPack,retryButton,discardButton);
   const results=document.createElement('div');results.className='c05-asset-results';
   const count=document.createElement('small'),status=document.createElement('output');status.setAttribute('role','status');
   const failedBox=document.createElement('details'),failedTitle=document.createElement('summary'),failedList=document.createElement('pre');
@@ -61,13 +65,13 @@ export function installAssetPanel(opts:PanelOptions){
   const info=document.createElement('small');info.textContent='削除はゴミ箱へ移動します。資料やブラシの実際の適用先は種類ごとに確認します。';
   root.append(title,lead,search,actions,count,results,info,status,failedBox,importFile,packFile);host.append(root);
   let all:AssetInfo[]=[],visible:AssetInfo[]=[],busy=false,displayLimit=200;
-  let retry:Readonly<{manifest:PackManifest;failedIds:readonly string[];resolvedIds:Readonly<Record<string,string>>}>|null=null;
+  let recovery:ImportRecovery|null=null;
   const error=(e:unknown)=>status.textContent=e instanceof Error?e.message:String(e);
   const run=async(action:()=>Promise<void>)=>{
     if(busy)return;
-    busy=true;add.disabled=importPack.disabled=exportPack.disabled=retryButton.disabled=true;
+    busy=true;add.disabled=importPack.disabled=exportPack.disabled=retryButton.disabled=discardButton.disabled=true;
     try{await action();}catch(e){error(e);}
-    finally{busy=false;add.disabled=importPack.disabled=exportPack.disabled=retryButton.disabled=false;}
+    finally{busy=false;add.disabled=importPack.disabled=exportPack.disabled=retryButton.disabled=discardButton.disabled=false;}
   };
   async function refresh(){
     try{all=await listAssets(true);render();}
@@ -258,14 +262,44 @@ export function installAssetPanel(opts:PanelOptions){
       status.textContent=included+'件（旧版を含む）の書き出しを開始しました。保存先を確認してください。';
     });
   }
-  function showImportResult(result:PackImportResult,manifest:PackManifest){
-    retry=result.failedIds.length?{manifest,failedIds:result.failedIds,resolvedIds:result.resolvedIds}:null;
-    retryButton.hidden=!retry;
+  function refreshRecoveryControls(){
+    const incomplete=!!recovery&&recovery.remainingIds.length>0;
+    retryButton.hidden=!incomplete;
+    discardButton.hidden=!recovery;
+    if(incomplete)retryButton.textContent='残り'+recovery!.remainingIds.length+'件の読み込みを再開';
+  }
+  async function resumePendingImport():Promise<void>{
+    const state=recovery??await readImportRecovery();
+    if(!state){recovery=null;refreshRecoveryControls();return;}
+    recovery=state;
+    if(!state.remainingIds.length){
+      await clearImportRecovery();recovery=null;refreshRecoveryControls();
+      status.textContent='素材セットの読み込みが完了しています。';return;
+    }
+    const result=await importAssetPack(state.manifest,{
+      onlyIds:state.remainingIds,
+      resolvedIds:state.resolvedIds,
+      resumeExisting:true,
+      onResolvedIds:async mapping=>{
+        recovery=updateImportRecovery(recovery!,{resolvedIds:mapping});
+        await writeImportRecovery(recovery);
+      },
+      onItemSucceeded:async originalId=>{
+        recovery=updateImportRecovery(recovery!,{importedId:originalId});
+        await writeImportRecovery(recovery);
+      },
+      onItem:(index,total)=>{status.textContent='素材を読み込み中 '+index+'/'+total;}
+    });
+    if(!recovery?.remainingIds.length){
+      await clearImportRecovery();recovery=null;
+    }
+    refreshRecoveryControls();
     failedBox.hidden=!result.failures.length;
     failedList.textContent=result.failures.join('\n');
-    status.textContent='今回'+result.imported.length+'件追加。失敗'+result.failures.length+'件。'+
-      (result.unresolvedParents.length?' 旧版が見つからない素材'+result.unresolvedParents.length+'件。':'')+
-      (retry?'「失敗した素材だけ再試行」で残りを再実行できます。':'');
+    status.textContent='今回'+result.imported.length+'件確認・追加。'+
+      (recovery?'未完了'+recovery.remainingIds.length+'件。アプリを閉じても再開できます。':'すべて完了しました。')+
+      (result.unresolvedParents.length?' 旧版不足'+result.unresolvedParents.length+'件。':'');
+    await refresh();
   }
   packFile.onchange=()=>{
     const file=packFile.files?.[0];packFile.value='';if(!file)return;
@@ -275,13 +309,29 @@ export function installAssetPanel(opts:PanelOptions){
         '・'+i.name+(i.conflict?'（同じIDあり：別IDで保存）':'')).join('\n');
       if(!window.confirm(summary.items.length+'件の素材を読み込みます。合計'+Math.round(summary.totalBytes/1024)+'KB。\n'+
         '元の素材を上書きしません。\n'+titles+'\n\n読み込みますか？'))return;
-      const result=await importAssetPack(manifest,{onItem:(index,total)=>{
-        status.textContent='素材を読み込み中 '+index+'/'+total;
-      }});
-      showImportResult(result,manifest);
-      await refresh();
+      const previous=await readImportRecovery();
+      if(previous){
+        recovery=previous;refreshRecoveryControls();
+        throw Error('前の素材セットの読み込みが未完了です。先に再開するか、再開記録を破棄してください。');
+      }
+      recovery=initialImportRecovery(manifest);
+      // Do not import anything unless the entire source file can first be
+      // stored for a later restart. A storage quota error is reported here.
+      await writeImportRecovery(recovery,true);
+      refreshRecoveryControls();
+      await resumePendingImport();
     });
   };
+  void readImportRecovery().then(saved=>{
+    recovery=saved;refreshRecoveryControls();
+    if(saved?.remainingIds.length){
+      status.textContent='前回の素材セットが残っています。'+saved.remainingIds.length+
+        '件を「読み込みを再開」から続けられます。';
+    }else if(saved){
+      void clearImportRecovery().then(()=>{recovery=null;refreshRecoveryControls();})
+        .catch(error);
+    }
+  }).catch(error);
   void refresh();
   return {refresh};
 }
