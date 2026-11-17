@@ -111,6 +111,8 @@ export class BrushSurface{
   private selectionVisible=true;
   private selectionMode=false;private selectionPointer:number|null=null;private selectionAnchor:Point|null=null;
   selectionMask:()=>MaskData|null=()=>null;
+  /** Prevent painting against a stale selection while a mask job is pending. */
+  selectionPending:()=>boolean=()=>false;
   private strokeMask:MaskData|null=null;
   onSelectionChanged:()=>void=()=>{};
   private guideSettings:GuideSettings=DEFAULT_GUIDE_SETTINGS;
@@ -725,6 +727,7 @@ export class BrushSurface{
       return;
     }
     const eraser=penEraserInput(e,this.barrelErases)?this.eraserPreset():null,preset=eraser??this.preset;
+    if(this.selectionPending()){this.status('選択範囲の計算・復元中です。完了後に描画してください。');return;}
     const mask=this.selectionMask();
     if(mask&&this.busy){this.status('前の描画を反映しています。');return;}
     if(this.layerBlendPreview?.layerId===this.controller.selectedLayer.id){this.status('合成モードを確定または取り消してから描いてください。');return;}
