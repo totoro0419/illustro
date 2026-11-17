@@ -191,8 +191,9 @@ export async function importAssetPack(
         // A crash can happen after the blob commit but before the checkpoint.
         // Accept such an item ONLY after exact metadata and binary comparison.
         const compatible=!existing.deleted&&existing.kind===item.kind&&
-          existing.name===item.name&&existing.version===item.version&&
-          existing.parentId===parentId&&existing.mime===item.mime&&existing.bytes===item.bytes;
+          existing.name===item.name.trim().slice(0,100)&&existing.version===item.version&&
+          existing.parentId===parentId&&existing.mime===item.mime.toLowerCase()&&
+          existing.bytes===item.bytes;
         let equal=compatible;
         for(let start=0;equal&&start<payload.byteLength;start+=1048576){
           const end=Math.min(payload.byteLength,start+1048576);
