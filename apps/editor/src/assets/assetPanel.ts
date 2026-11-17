@@ -2,8 +2,9 @@
 import {ASSET_KINDS,ASSET_LABELS,type AssetInfo,type AssetKind,listAssets,getAsset,addAsset,
   updateAsset,removeAsset,restoreAsset,markAssetUsed,duplicateAsset,createAssetVersion} from './library';
 import {exportAssetPack,readAssetPack,previewAssetPack,importAssetPack,type PackManifest,type PackImportResult} from './packs';
+import {boardsUsingAsset} from './referenceBoardStore';
 
-type PanelOptions=Readonly<{openReference:(assetId:string)=>Promise<void>}>;
+type PanelOptions=Readonly<{openReference:(assetId:string)=>Promise<void>;flushReferences:()=>Promise<void>}>;
 function button(text:string,handler:()=>void,css=''){
   const b=document.createElement('button');b.type='button';b.textContent=text;b.className=css;b.onclick=handler;return b;
 }
@@ -139,6 +140,17 @@ export function installAssetPanel(opts:PanelOptions){
           saveBlob(saved.name,saved.data);await markAssetUsed(item.id);
         })));
         controls.append(button('ゴミ箱へ',()=>void run(async()=>{
+          if(item.kind==='reference'){
+            // Protect references queued moments ago and references in other works.
+            // A failed scan also blocks removal rather than assuming no users.
+            await opts.flushReferences();
+            const usedBy=await boardsUsingAsset(item.id);
+            if(usedBy.length){
+              status.textContent='この参考画像は'+usedBy.length+
+                '件の作品で使用中です。先に各作品の参考資料から外してください。素材は削除していません。';
+              return;
+            }
+          }
           const descendants=all.filter(other=>other.parentId===item.id&&!other.deleted).length;
           const warning=descendants?'この素材を旧版として参照する新版が'+descendants+'件あります。\n':'';
           if(!window.confirm('「'+item.name+'」をゴミ箱へ移しますか？\n'+warning+
