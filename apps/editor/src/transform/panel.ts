@@ -5,6 +5,7 @@ import type {BrushSurface} from '../brushSurface';
 import type {MaskData} from '../selection/mask';
 import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} from './geometry';
 import {createTransformPreviewRunner,runTransform} from './run';
+import {progressiveTransformPreviewSize} from './previewQuality';
 import {snapLayout,type SnapTargets} from './layout';
 import {makeLiquifyStroke} from './liquify';
 import {cornersTowardVanishingPoint,rectCorners} from './quadrilateral';
@@ -50,6 +51,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   let originalPointer:number|null=null,originalInput:Sample[]=[];
   let source:TransformSource|null=null,settings=initialTransform,undo:Transform[]=[],redo:Transform[]=[],previewId=0,busy=false;
   let ownedGesture:BrushSurface|null=null,editingHandles=false,placingPoints=false,previewAbort:AbortController|null=null;
+  let highQualityPreviewTimer:number|null=null;
   let previewRunner:ReturnType<typeof createTransformPreviewRunner>|null=null;
   const inputs=new Map<keyof Omit<Transform,'quadrilateral'|'mesh'|'liquify'>,HTMLSelectElement|HTMLInputElement>();
   const keepRatio=document.createElement('input');keepRatio.type='checkbox';keepRatio.checked=true;
@@ -479,6 +481,8 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   });
   function reset(message:string){
     stopGesture();source?.drawing.showArtworkPreview(null);source=null;originalPointer=null;originalInput=[];originalDraft=undefined;originalUndo.length=originalRedo.length=0;editingOriginal=false;originalCanvas.hidden=true;marks=null;skipSnap=false;snapStatus.textContent='';previewId++;previewAbort?.abort();previewRunner?.dispose();previewRunner=null;
+    if(highQualityPreviewTimer!==null)clearTimeout(highQualityPreviewTimer);
+    highQualityPreviewTimer=null;
     preview.hidden=true;status.textContent=message;sync();
   }
   function change(next:Transform){
@@ -550,8 +554,11 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   }
   async function refreshPreview(){
     const current=source,id=++previewId,runner=previewRunner;
+    if(highQualityPreviewTimer!==null)clearTimeout(highQualityPreviewTimer);
+    highQualityPreviewTimer=null;
+    previewAbort?.abort();
     if(!current||editingOriginal||!runner)return;
-    previewAbort?.abort();const controller=new AbortController();previewAbort=controller;
+    const controller=new AbortController();previewAbort=controller;
     try{
       const scale=Math.min(1,280/Math.max(current.width,current.height));
       const outputWidth=Math.max(1,Math.round(current.width*scale)),outputHeight=Math.max(1,Math.round(current.height*scale));
@@ -573,6 +580,37 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         context.stroke();
       }
       preview.hidden=false;
+      // Keep first feedback lightweight. After the user stops moving handles,
+      // refresh only the on-canvas overlay at roughly the displayed viewport
+      // resolution, not the entire 4000px document. Stale work is discarded.
+      if(!compare.checked&&!controller.signal.aborted){
+        const rect=current.drawing.viewportRect;
+        const quality=progressiveTransformPreviewSize(current.width,current.height,
+          rect.width,rect.height,window.devicePixelRatio||1);
+        if(quality.width>outputWidth&&quality.height>=outputHeight){
+          const savedSettings=settings,savedPixels=originalDraft??current.pixels;
+          const selection=current.selection,protection=protectionVisible.checked;
+          highQualityPreviewTimer=window.setTimeout(()=>{
+            highQualityPreviewTimer=null;
+            if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal)return;
+            void runner.run({
+              pixels:savedPixels,width:current.width,height:current.height,
+              settings:savedSettings,selection,
+              outputWidth:quality.width,outputHeight:quality.height,
+              showProtection:protection
+            },controller.signal).then(highPixels=>{
+              if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal)return;
+              current.drawing.showArtworkPreview(new ImageData(highPixels,quality.width,quality.height));
+            }).catch(error=>{
+              // The already visible 280px preview is still valid. A failed
+              // optional refinement must not erase it or block editing.
+              if(id===previewId&&!controller.signal.aborted)
+                status.textContent='変形の仮表示は軽量表示のままです。'+
+                  (error instanceof Error?error.message:'');
+            });
+          },220);
+        }
+      }
     }catch(error){if(id===previewId&&!controller.signal.aborted){current.drawing.showArtworkPreview(null);preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
   }
   compare.onchange=()=>void refreshPreview();
