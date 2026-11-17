@@ -13,7 +13,9 @@ export type ImportRecovery=Readonly<{
 }>;
 
 const DATABASE='illustro-c05-import-recovery-v1',STORE='pending';
-const KEY='current';
+const MANIFEST_KEY='manifest',PROGRESS_KEY='progress';
+// The large base64 image payload is written ONCE. Every later checkpoint
+// stores only a few IDs to avoid cloning up to 48MB for every asset.
 let connection:Promise<IDBDatabase>|null=null;
 
 function openDb():Promise<IDBDatabase>{
@@ -82,17 +84,34 @@ export function updateImportRecovery(
   });
 }
 export async function readImportRecovery():Promise<ImportRecovery|null>{
-  const value=await transaction<unknown>('readonly',(store,done)=>{
-    const request=store.get(KEY);
-    request.onsuccess=()=>done(request.result);
-    request.onerror=()=>{throw request.error??Error('素材の再開記録を読み込めません。');};
+  const value=await transaction<Readonly<{manifest:unknown;progress:unknown}>>('readonly',(store,done)=>{
+    const file=store.get(MANIFEST_KEY),progress=store.get(PROGRESS_KEY);
+    let fileDone=false,progressDone=false;
+    const settle=()=>{if(fileDone&&progressDone)done({manifest:file.result,progress:progress.result});};
+    file.onsuccess=()=>{fileDone=true;settle();};
+    progress.onsuccess=()=>{progressDone=true;settle();};
   });
-  return value===undefined?null:validateImportRecovery(value);
+  if(value.manifest===undefined&&value.progress===undefined)return null;
+  if(!value.progress||typeof value.progress!=='object'||!value.manifest)
+    throw Error('素材の再開記録が不完全です。上書きしません。');
+  return validateImportRecovery({
+    ...(value.progress as object),manifest:value.manifest
+  });
 }
-export async function writeImportRecovery(recovery:ImportRecovery):Promise<void>{
+/** On first import includeManifest=true. During progress only write small IDs. */
+export async function writeImportRecovery(recovery:ImportRecovery,includeManifest=false):Promise<void>{
   const clean=validateImportRecovery(recovery);
-  await transaction<void>('readwrite',(store,done)=>{store.put(clean,KEY);done();});
+  await transaction<void>('readwrite',(store,done)=>{
+    if(includeManifest)store.put(clean.manifest,MANIFEST_KEY);
+    store.put({
+      version:1,remainingIds:clean.remainingIds,resolvedIds:clean.resolvedIds,
+      updatedAt:clean.updatedAt
+    },PROGRESS_KEY);
+    done();
+  });
 }
 export async function clearImportRecovery():Promise<void>{
-  await transaction<void>('readwrite',(store,done)=>{store.delete(KEY);done();});
+  await transaction<void>('readwrite',(store,done)=>{
+    store.delete(MANIFEST_KEY);store.delete(PROGRESS_KEY);done();
+  });
 }
