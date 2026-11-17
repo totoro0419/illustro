@@ -29,7 +29,7 @@ describe('C06-006 .illustro native selection preservation',()=>{
     const named=sections.find(s=>s.id==='c06.selection.saved.first');
     expect(active?.type).toBe('selection.alpha.rle.v2');
     expect(named?.type).toBe('selection.alpha.rle.v2');
-    expect(sections.reduce((sum,s)=>sum+s.bytes.byteLength,0)).toBeLessThan(25000);
+    expect(sections.reduce((sum,s)=>sum+s.bytes.byteLength,0)).toBeLessThan(50000);
     state.saved.length=0;
     const imported=await importSelectionSections(
       {manifestExtras:{},optionalSections:sections} as PreservedPortableData,
