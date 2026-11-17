@@ -13,7 +13,9 @@
 .c04-color-harmony label input{flex:none}
 .c04-color-harmony p{margin:2px 0;color:var(--a-subtle,#667);line-height:1.4}
 /* Proof only the painted image. Pixel coordinates, crop handles and brush cursor stay legible. */
-body.c04-gray-proof .surface > #canvas{filter:grayscale(1)}
+body.c04-gray-proof .surface > #canvas,
+body.c04-gray-proof .surface > .illustro-document-presentation,
+body.c04-gray-proof .surface > .illustro-stroke-overlay{filter:grayscale(1)}
 
 .c04-secondary-color{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid var(--a-border,#ddd);font-size:11px}
 .c04-secondary-color label{display:flex;align-items:center;gap:7px}
@@ -28,9 +30,15 @@ body.c04-gray-proof .surface > #canvas{filter:grayscale(1)}
 .c04-color-harmony label:has(select){display:flex;flex-direction:column;align-items:stretch;gap:4px}
 .c04-color-harmony label select{min-width:0;width:100%}
 .c04-color-harmony small{font-size:10px;line-height:1.45;color:var(--a-subtle,#667)}
-body[data-c04-vision="protan"] .surface > #canvas{filter:url("#c04-vision-protan")}
-body[data-c04-vision="deutan"] .surface > #canvas{filter:url("#c04-vision-deutan")}
-body[data-c04-vision="tritan"] .surface > #canvas{filter:url("#c04-vision-tritan")}
+body[data-c04-vision="protan"] .surface > #canvas,
+body[data-c04-vision="protan"] .surface > .illustro-document-presentation,
+body[data-c04-vision="protan"] .surface > .illustro-stroke-overlay{filter:url("#c04-vision-protan")}
+body[data-c04-vision="deutan"] .surface > #canvas,
+body[data-c04-vision="deutan"] .surface > .illustro-document-presentation,
+body[data-c04-vision="deutan"] .surface > .illustro-stroke-overlay{filter:url("#c04-vision-deutan")}
+body[data-c04-vision="tritan"] .surface > #canvas,
+body[data-c04-vision="tritan"] .surface > .illustro-document-presentation,
+body[data-c04-vision="tritan"] .surface > .illustro-stroke-overlay{filter:url("#c04-vision-tritan")}
 
 .c04-color-opacity{display:grid;grid-template-columns:auto minmax(65px,1fr) 48px auto;align-items:center;gap:6px;padding:7px 9px;font-size:11px}
 .c04-color-opacity input[type=range]{width:100%;min-width:0}
