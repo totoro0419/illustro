@@ -613,3 +613,12 @@ GitHubの各PRメタデータ、全12件の変更ファイル、各HEADに結び
 - [最新HEADのCore CI #44186340715](https://github.com/totoro0419/illustro/actions/runs/44186340715) は `success`。ジョブの `core:typecheck` と `core:test` の成功を再取得。ただし**同HEADの統合CI（Brush/Editor/型検査/本番ビルド）成功は今回確認できず、統合全体PASSとは判定しない**。旧 `prep:check` の未分類文書による既知の失敗も解消確認なし。
 - 新規実装PRなし（最新作成は#97）。12担当PRは既存の12/12統合を維持。PR #75はDraft・未マージ、調査PR #73はDraft・未マージ（原本9ファイル、129問題ID、A/B/C確度を維持）。`main` は `bdc7135b` のまま。**独立解決確認0/129、Androidペン/指・旧作品保存復元・4K画素一致は未確認**。
 - 今回は新規PRの受入・マージなし。次回は最新HEADの統合CIと、C07プレビューのレイヤー順・マスク・非通常合成・キャンセル時復帰・連続入力・保存/Undoを確認する。無条件に合格としない。
+
+
+## 2026-11-18 08時台 JST — C07〜C10横断差分の監視
+
+- 直前の監視記録の実装HEAD `7ed47052` から、確認時HEAD [`2cfafdbb`](https://github.com/totoro0419/illustro/commit/2cfafdbb41dc055a259bc4b3fc634003eaddd352) まで、GitHub比較で **32コミット、19ファイル**の変更（behind=0）。今回の変更は既存の統合ブランチへ直接積まれており、**新規実装PRの提出・マージではない**。
+- 変更箇所はC07変形プレビュー（`transform/panel.ts`・`previewReplacement.ts`）、C08塗り参照と細部確認（`fill/panel.ts`・`reference.ts`・`detailPreview.ts`）、C09定規・図形のガイド処理（`artwork/guidedPath.ts`・`shapeGradient.ts`）、C10ベクターの演算元の検証・表示（`artwork/booleanSourceVisibility.ts`・`vectorPanel.ts`）に及ぶ。共通 `apps/editor/src/main.ts` と `brushSurface.ts` も変更されており、保存/Undo/Redo・描画・レイヤー操作との横断回帰が必要。変更ファイルの存在は確認したが、**全機能の完成・画素一致を認定するものではない**。
+- 最新HEADに紐づく [Core CI #44196806326](https://github.com/totoro0419/illustro/actions/runs/44196806326) は **success**（verifyジョブ）。一方、**同HEADのBrush/Editorテスト・型検査・本番ビルドを含む統合CIの成功は確認できない**ため、統合全体PASS・実機合格とはしない。旧 `prep:check` は元の未分類ドキュメントで失敗する既知事項として維持し、PASSに数えない。
+- 11月18日作成の新規PRは0件。既存12担当PRの統合済み12/12を維持し、PR #75と独立調査PR #73はDraft・未マージ。調査原本9ファイル、129件の既存問題IDと元A/B/C分類は変更しない。比較した `main` は従来の `bdc7135b` から変更なし。
+- **独立解決確認0/129**。Androidのペン・指操作、旧作品保存/復元、4K作品の応答性、変形・塗り・図形・ベクターの画素一致は未検証。新規PRの受入・マージなし。次回は最新HEADの統合CI、共有ファイル変更とC07〜C10の回帰を確認する。
