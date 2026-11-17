@@ -6,6 +6,7 @@ import {readBoard,writeBoard,decodeBoardRecord,newBoardItem,type BoardSnapshot,t
 import {getAsset,addAsset,type AssetEntry} from './library';
 import {canReuseExternalReference,parseExternalReferences,type ExternalReference} from './referenceBundleMode';
 import {referenceFrameKey} from './referenceFrameKey';
+import {referencePixelAtScreen,sampleReferenceBitmap} from './referenceDirectSample';
 import {exportAssetPack,importAssetPack,readAssetPack,type PackManifest} from './packs';
 import type {PortableSectionInput} from '../persistence/format';
 import type {PreservedPortableData} from '../persistence/portable';
@@ -24,6 +25,7 @@ export type ReferenceBoardService=Readonly<{
 type Options=Readonly<{
   getDocumentId:()=>string|null;
   onPickColor:(assetId:string)=>Promise<void>;
+  getSampling:()=>Readonly<{diameter:1|3|5;transparency:'skip'|'keep'|'white'}>;
   color:ForegroundColor;
 }>;
 const input=(label:string,handler:()=>void)=>{
@@ -103,6 +105,27 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   let back:BoardSnapshot[]=[],forward:BoardSnapshot[]=[];
   const urls=new Map<string,string>();
   const assetCache=new Map<string,AssetEntry|null>();
+  let directSampleId:string|null=null,readingSample=false;
+  let sampledBitmap:{assetId:string;bitmap:ImageBitmap}|null=null;
+  const releaseSamplingBitmap=()=>{
+    sampledBitmap?.bitmap.close();sampledBitmap=null;
+  };
+  const updateSampleMode=()=>{
+    for(const frame of canvasLayer.querySelectorAll<HTMLElement>('.c05-reference-frame')){
+      const selected=frame.dataset.referenceId===directSampleId;
+      frame.classList.toggle('c05-reference-picking',selected);
+      const toggle=frame.querySelector<HTMLButtonElement>('[data-reference-sample-toggle]');
+      if(toggle)toggle.textContent=selected?'採色を終了':'画像上で直接採色';
+    }
+  };
+  const toggleSampleMode=(itemId:string)=>{
+    directSampleId=directSampleId===itemId?null:itemId;
+    releaseSamplingBitmap();
+    updateSampleMode();
+    status.textContent=directSampleId
+      ?'採色モードです。資料画像をタップして色を取れます。画像を移動するときは「採色を終了」を押してください。'
+      :'画像の移動・拡大操作に戻りました。';
+  };
   const error=(reason:unknown)=>{status.textContent=reason instanceof Error?reason.message:String(reason);};
   function download(name:string,blob:Blob){
     const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;link.click();
@@ -141,6 +164,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const id=options.getDocumentId();
     if(id===currentDoc)return;
     currentDoc=id;transition++;back=[];forward=[];board=null;temporaryHidden=false;
+    directSampleId=null;releaseSamplingBitmap();
     nativeMode.disabled=!id;
     let remembered='embedded';
     if(id)try{remembered=localStorage.getItem(nativeModeKey(id))??'embedded';}catch{}
@@ -164,7 +188,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     }catch(e){error(e);}
   }
   async function refresh(){
-    currentDoc=null;assetCache.clear();await refreshIfChanged();
+    currentDoc=null;assetCache.clear();releaseSamplingBitmap();await refreshIfChanged();
   }
   async function add(assetId:string){
     await refreshIfChanged();
@@ -196,7 +220,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
           status.textContent='画像は素材庫に保存しました。作品が切り替わったため資料への配置は変更していません。';
           return;
         }
-        assetCache.clear();
+        assetCache.clear();releaseSamplingBitmap();
         changeItem(itemId,{assetId:added.id});
         status.textContent='参考画像を選び直しました。元の資料配置は維持しました。';
       })().catch(error);
@@ -352,7 +376,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
     if(epoch!==transition||options.getDocumentId()!==doc)return;
     const result=await importAssetPack(embedded,{atomic:true});
-    assetCache.clear();
+    assetCache.clear();releaseSamplingBitmap();
     if(epoch!==transition||options.getDocumentId()!==doc)return;
     // If an image that WAS embedded fails to import, never accidentally display
     // an unrelated local image which happens to use the same asset identifier.
@@ -458,6 +482,40 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       row.append(name,groupButton,pin,visible,sample,reselect,remove);list.append(row);
     }
   }
+  async function sampleReferenceAt(
+    item:BoardItem,asset:AssetEntry,x:number,y:number,
+    imageArea:HTMLElement,image:HTMLImageElement
+  ):Promise<void>{
+    if(readingSample||directSampleId!==item.id)return;
+    if(asset.deleted||asset.kind!=='reference'||!asset.mime.startsWith('image/'))
+      throw Error('この資料の元画像がありません。');
+    const doc=currentDoc;
+    readingSample=true;
+    try{
+      let bitmap:ImageBitmap;
+      if(sampledBitmap?.assetId===asset.id)bitmap=sampledBitmap.bitmap;
+      else{
+        const decoded=await createImageBitmap(asset.data);
+        if(currentDoc!==doc||directSampleId!==item.id){decoded.close();return;}
+        releaseSamplingBitmap();
+        sampledBitmap={assetId:asset.id,bitmap:decoded};
+        bitmap=decoded;
+      }
+      if(currentDoc!==doc||directSampleId!==item.id)return;
+      const rect=imageArea.getBoundingClientRect();
+      const source=referencePixelAtScreen(
+        x,y,{left:rect.left,top:rect.top,width:rect.width,height:rect.height},
+        item,image.offsetWidth,image.offsetHeight,bitmap.width,bitmap.height
+      );
+      if(!source){status.textContent='画像が表示されている場所をタップしてください。';return;}
+      const {diameter,transparency}=options.getSampling();
+      const sampled=sampleReferenceBitmap(bitmap,source,diameter,transparency);
+      if(!sampled){status.textContent='この場所には取得できる色がありません。';return;}
+      if(currentDoc!==doc||directSampleId!==item.id)return;
+      options.color.choose(sampled);
+      status.textContent='参考画像の元の画素から色を取得しました。';
+    }finally{readingSample=false;}
+  }
   async function render(){
     const epoch=++renderEpoch,snapshotBoard=board;
     if(!snapshotBoard)return;
@@ -522,11 +580,17 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       tool('上下反転',()=>changeItem(item.id,{flipY:!item.flipY}));
       tool('グレー',()=>changeItem(item.id,{grayscale:!item.grayscale}));
       tool('採色',()=>void options.onPickColor(item.assetId).catch(error));
+      const directSample=input(directSampleId===item.id?'採色を終了':'画像上で直接採色',
+        ()=>toggleSampleMode(item.id));
+      directSample.dataset.referenceSampleToggle='true';
+      footer.append(directSample);
+      if(directSampleId===item.id)frame.classList.add('c05-reference-picking');
       const resize=document.createElement('button');resize.className='c05-reference-resize';resize.type='button';resize.title='右下を動かして大きさを変更';resize.textContent='↘';
       const attachDrag=(handle:HTMLElement,mode:'frame'|'size'|'image')=>{
         let start:{id:number;x:number;y:number;item:BoardItem}|null=null;
         handle.style.touchAction='none';
         handle.addEventListener('pointerdown',event=>{
+          if(mode==='image'&&directSampleId===item.id)return;
           if(item.pinned||event.button!==0)return;
           if(event.target instanceof Element&&event.target.closest('button'))return;
           event.preventDefault();event.stopPropagation();
@@ -565,6 +629,23 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       };
       frame.append(heading,imageArea,footer,resize);desired.push(frame);
       attachDrag(heading,'frame');attachDrag(resize,'size');attachDrag(imageArea,'image');
+      let samplingPointer:{id:number;x:number;y:number}|null=null;
+      imageArea.addEventListener('pointerdown',event=>{
+        if(directSampleId!==item.id||event.button!==0||!image.src)return;
+        event.preventDefault();event.stopPropagation();
+        samplingPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
+        imageArea.setPointerCapture(event.pointerId);
+      });
+      imageArea.addEventListener('pointerup',event=>{
+        if(!samplingPointer||samplingPointer.id!==event.pointerId)return;
+        const start=samplingPointer;samplingPointer=null;
+        event.preventDefault();event.stopPropagation();
+        if(Math.hypot(event.clientX-start.x,event.clientY-start.y)>8)return;
+        if(!asset)return;
+        void sampleReferenceAt(item,asset,event.clientX,event.clientY,imageArea,image)
+          .catch(error);
+      });
+      imageArea.addEventListener('pointercancel',()=>{samplingPointer=null;});
     }
     if(epoch===renderEpoch&&update===transition&&board?.documentId===snapshotBoard.documentId){
       // Replacing only the changed frame keeps pointer capture, scroll and
