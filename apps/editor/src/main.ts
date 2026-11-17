@@ -92,7 +92,7 @@ import type {PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
 import {fingerprintRenderedPixels,sameRenderedPixels,type VisualFingerprint} from './persistence/visualIntegrity';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerImageLink,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,validateEditableArtwork,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerImageLink,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -3558,11 +3558,11 @@ const c04Commands=installCommandPalette(shellUi,foreground,{
     if(!qaMode)await persistence.selectWorkLayer(selectedId);
   },
 });
-installSimpleMacros(c04Commands);
+const c04MacroService=installSimpleMacros(c04Commands);
 installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
 const c04Toolbar=installToolbarSettings();
-installWorkspaceProfiles(c04FloatingPanels,c04Toolbar);
+const c04WorkspaceService=installWorkspaceProfiles(c04FloatingPanels,c04Toolbar);
 installInputDeviceProfiles(()=>surface);
 installGestureShortcuts();
 installShortcutSettings(c04Commands,()=>!surface||!surface.inputActive);
@@ -3582,7 +3582,35 @@ const c05References=installReferenceBoard({
   }
 });
 c05ReferenceBoard=c05References;
-installAssetPanel({openReference:assetId=>c05References.add(assetId),flushReferences:()=>c05References.flush()});
+installAssetPanel({
+  openReference:assetId=>c05References.add(assetId),
+  flushReferences:()=>c05References.flush(),
+  placeImage:async file=>{
+    if(!documentReady||!surface)throw Error('作品を開いてください。');
+    await c06Clipboard.importImage(file,file.name);
+    await withClipboardAccess(async()=>{
+      await c06Clipboard.paste(controller,'center');
+      return 'edit';
+    });
+  },
+  applyEditable:async asset=>{
+    if(!documentReady||!surface)throw Error('作品を開いてください。');
+    if(asset.data.size>1048576)throw Error('図形・グラデーションのデータが大きすぎます。');
+    const content=validateEditableArtwork(JSON.parse(await asset.data.text()));
+    if((asset.kind==='shape'&&content.kind!=='path')||
+      (asset.kind==='gradient'&&content.kind!=='gradient'))
+      throw Error('素材の種類と図形・グラデーションの内容が一致しません。');
+    await artworkActions.save(content,asset.name);
+  },
+  importMacro:text=>{
+    if(!c04MacroService)throw Error('操作セットの読み込み画面がありません。');
+    return c04MacroService.importText(text);
+  },
+  importWorkspace:text=>{
+    if(!c04WorkspaceService)throw Error('作業場設定の読み込み画面がありません。');
+    return c04WorkspaceService.importText(text);
+  }
+});
 document.querySelector('#referenceBoxBody')?.closest('.workspace-box')?.querySelector('.box-toggle')
   ?.addEventListener('click',()=>{void c05References.refreshIfChanged();});
 
