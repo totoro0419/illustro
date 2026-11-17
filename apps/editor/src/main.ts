@@ -35,6 +35,7 @@ import {fillLayerName,installFillPanel} from './fill/panel';
 import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
 import {installLayoutPanel} from './transform/layoutPanel';
+import {groupTransformPlan} from './transform/groupTransform';
 import {installImageLinkPanel} from './transform/imageLinkPanel';
 import {chooseLinkedImage,decodeLinkedImage,placedImage,readLinkedFile,rememberImageHandle,forgetImageHandle,nextLinkedImageFileKey} from './assets/linkedImages';
 import type {SnapMark} from './transform/layout';
@@ -3875,7 +3876,46 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
   const items=ids.map(item),reference=item(referenceId);
   const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&controller.selectedLayer.id===referenceId&&
     ids.length===layerBatchIds.size&&ids.every(id=>layerBatchIds.has(id));
-  return {items,reference,width,height,valid,apply:async moves=>{
+  return {items,reference,width,height,valid,applyGroup:async options=>{
+    if(!valid())throw Error('作品または選択レイヤーが変更されました。');
+    const {settings}=groupTransformPlan(items,width,height,options);
+    const changes:Array<{
+      id:LayerId;pixels:Uint8ClampedArray;deformation:LayerDeformation;
+      mask:LayerMask|null
+    }>=[];
+    // Compute one layer at a time. No flattened group image is created.
+    for(const item of items){
+      const layer=root.getLayer(item.id);
+      if(item.fixed||layer.editable||layer.lineRegions||layer.imageLink||layer.deformation)
+        throw Error('「'+layer.name+'」はこのまとめて変形で安全に編集できません。通常の描画レイヤーを選んでください。');
+      const pixels=await runTransform({pixels:pixels.get(item.id)!,width,height,settings,
+        selection:null,outputWidth:width,outputHeight:height});
+      if(!valid())throw Error('変形の計算中に作品または選択が変更されました。');
+      const linked=!!(layer.vectorMask&&layer.vectorMask.linked!==false);
+      const mask=linked?transformLinkedMask(layer.vectorMask!,settings,width,height):null;
+      const maskDigest=mask?await digestLayerMask(mask):undefined;
+      const deformation:LayerDeformation={
+        version:1,sourceRevision:head,bounds:item.bounds,mode:'affine',
+        interpolation:settings.interpolation,selection:null,linkedMask:linked,
+        affine:{dx:settings.dx,dy:settings.dy,sx:settings.sx,sy:settings.sy,
+          angle:settings.angle,shear:settings.shear,cx:settings.cx,cy:settings.cy},
+        ...(maskDigest?{maskDigest}:{})
+      };
+      changes.push({id:item.id,pixels,deformation,mask});
+    }
+    await withClipboardAccess(async()=>{
+      if(!valid())throw Error('作品が変更されました。変形をやり直してください。');
+      const tx=artwork.begin('複数レイヤーをまとめて変形');
+      try{
+        for(const change of changes){
+          tx.replaceLayerDeformation(change.id,change.pixels,change.deformation);
+          if(change.mask)tx.setVectorLayerMask(change.id,change.mask);
+        }
+        controller.lastPersistenceHandoff=tx.commit().persistence;
+      }catch(error){tx.cancel();throw error;}
+      return 'edit';
+    });
+  },apply:async moves=>{
     const updates=await Promise.all(moves.filter(move=>Math.abs(move.dx)+Math.abs(move.dy)>.01).map(async move=>{
       const {id}=move.item,layer=root.getLayer(id);
       if(move.item.fixed)throw Error('「'+layer.name+'」は移動できません。このレイヤーを基準にするかロックを解除してください。');
