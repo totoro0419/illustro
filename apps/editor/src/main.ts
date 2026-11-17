@@ -4306,6 +4306,9 @@ symmetryPanel=installSymmetryPanel(byId('documentBoxBody'),artworkActions,settin
 symmetryPanel.restore(symmetrySettings);
 c06ClipboardUI=installClipboardPanel({
   canEdit:()=>documentReady&&!!surface&&!geometryBusy&&!historyPending&&!documentActivationPending,
+  getView:()=>documentReady&&surface?{
+    drawing:surface,width:controller.document.root.width,height:controller.document.root.height
+  }:null,
   hasSelection:()=>!!surface?.selectedRectangle,
   copy:(merged,selection)=>withClipboardAccess(async drawing=>{
     await c06Clipboard.copy(controller,drawing,{merged,selectionOnly:selection});return 'read';
