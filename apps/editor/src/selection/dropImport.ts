@@ -6,6 +6,10 @@ type Destination=Readonly<{
   reference:(file:File)=>Promise<void>;
   asset:(file:File)=>Promise<void>;
 }>;
+/** Protect the artwork from default browser navigation on a dropped file. */
+export function shouldPreventFileNavigation(
+  kinds:readonly string[],onFileInput=false
+):boolean{return kinds.includes('Files')&&!onFileInput;}
 const supported=(file:File)=>/^image\/(png|jpeg|webp|avif|gif)$/.test(file.type)||
   /\.(png|jpe?g|webp|avif|gif)$/i.test(file.name);
 export function installImageDropRouting(options:Destination){
@@ -50,6 +54,16 @@ export function installImageDropRouting(options:Destination){
   document.body.append(dialog);
   dialog.addEventListener('close',()=>{current=null;info.textContent='';});
   const isFile=(event:DragEvent)=>event.dataTransfer?.types.includes('Files')??false;
+  // A file dropped outside the canvas must not navigate the browser away
+  // from a work-in-progress painting. The surface's own handler still runs.
+  const guard=(event:DragEvent)=>{
+    const nativeFileInput=event.target instanceof Element&&
+      !!event.target.closest('input[type="file"]');
+    if(shouldPreventFileNavigation([...(event.dataTransfer?.types??[])],nativeFileInput))
+      event.preventDefault();
+  };
+  document.addEventListener('dragover',guard,{capture:true});
+  document.addEventListener('drop',guard,{capture:true});
   surface.addEventListener('dragenter',event=>{
     if(!isFile(event))return;
     event.preventDefault();
