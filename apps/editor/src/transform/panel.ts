@@ -566,7 +566,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       const pixels=await runner.run({pixels:compare.checked?current.pixels:originalDraft??current.pixels,width:current.width,height:current.height,
         settings:compare.checked?{...initialTransform,cx:settings.cx,cy:settings.cy}:settings,
         selection:current.selection,outputWidth,outputHeight,
-        postPaint:compare.checked?[]:current.postPaint,
+        ...(compare.checked?{}:current.postPaint?{postPaint:current.postPaint}:{}),
         showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
       if(id!==previewId)return;
       preview.width=outputWidth;preview.height=outputHeight;
@@ -600,7 +600,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
               pixels:savedPixels,width:current.width,height:current.height,
               settings:savedSettings,selection,
               outputWidth:quality.width,outputHeight:quality.height,
-              postPaint:current.postPaint,
+              ...(current.postPaint?{postPaint:current.postPaint}:{}),
               showProtection:protection
             },controller.signal).then(highPixels=>{
               if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal)return;

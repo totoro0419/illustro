@@ -35,7 +35,7 @@ export function renderPostPaintPreview(
     next[18]=command[18]!*radiusScale;next[23]=command[23]!*radiusScale;
     return next;
    });
-   pixels=cpuReference({...record,commands} as StrokeRecord,width,height,pixels,mask);
+   pixels=cpuReference({...record,commands} as StrokeRecord,width,height,pixels,mask??undefined);
   }
  }
  return pixels;

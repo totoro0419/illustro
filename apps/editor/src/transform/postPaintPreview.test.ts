@@ -23,8 +23,8 @@ describe('C07-004 post-transform painted strokes in preview',()=>{
   const expected=cpuReference(record,w,h,base);
   const actual=renderPostPaintPreview(base,w,h,w,h,[{selection:null,records:[record]}]);
   expect(actual).toEqual(expected);
-  expect(actual[(24*w+18)*4+3]).toBeGreaterThan(0);
-  expect(base[(24*w+18)*4+3]).toBe(0);
+  expect(actual[(24*w+18)*4+3]??0).toBeGreaterThan(0);
+  expect(base[(24*w+18)*4+3]??0).toBe(0);
  });
  it('keeps post-transform ink in destination coordinates when preview is downscaled',()=>{
   const w=128,h=128,record=brush([[100,100,0],[105,106,10]]);
@@ -38,7 +38,7 @@ describe('C07-004 post-transform painted strokes in preview',()=>{
     })
   },32,32);
   expect(display).toEqual(expected);
-  expect(display[(25*32+25)*4+3]).toBeGreaterThan(0);
+  expect(display[(25*32+25)*4+3]??0).toBeGreaterThan(0);
  });
  it('keeps later strokes on top of earlier ones',()=>{
   const w=48,h=48,one=brush([[20,20,0]]),two=brush([[28,28,0]]);
