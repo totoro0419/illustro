@@ -51,3 +51,11 @@
 .c06-selection-brush>label{grid-column:1/-1;font-size:11px;display:grid;grid-template-columns:minmax(90px,1fr) minmax(70px,1.2fr);align-items:center;gap:7px}
 .c06-selection-brush input{min-width:0;width:100%;accent-color:#368da8}
 .c06-selection-brush input[type=number]{min-height:37px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-surface,#fff);color:inherit;padding:5px}
+
+/* C06-017: lightweight preview directly over the existing artwork view.
+   Preview pixels are capped at 512px; exact placement is committed by Core. */
+.c06-placement-preview{position:absolute;inset:0;z-index:16;pointer-events:none;overflow:hidden}
+.c06-placement-image{position:absolute;left:0;top:0;transform-origin:0 0;opacity:.67;pointer-events:auto;touch-action:none;cursor:move;border:1px dashed #408fbc;box-shadow:0 0 0 1px #fff7;image-rendering:auto}
+.c06-placement-toolbar{pointer-events:auto;position:absolute;right:8px;top:8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;max-width:min(460px,calc(100% - 18px));border:1px solid var(--a-border,#aaa);border-radius:9px;background:var(--a-surface,#fff);box-shadow:0 4px 14px #1234;padding:8px}
+.c06-placement-toolbar output{flex:1 1 100%;font-size:11px;color:inherit}
+.c06-placement-toolbar button{min-height:42px;padding:7px 12px;border-radius:7px;border:1px solid var(--a-border,#aaa);background:var(--a-accent-soft,#f2f6ff);color:inherit;font-size:12px}
