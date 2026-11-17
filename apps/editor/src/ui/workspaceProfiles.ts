@@ -56,11 +56,14 @@ function download(name:string,text:string){
   window.setTimeout(()=>URL.revokeObjectURL(url),0);
 }
 
-export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:ToolbarSettingsService){
+export type WorkspaceImportService=Readonly<{importText:(json:string)=>number}>;
+export function installWorkspaceProfiles(
+  floating:FloatingPanelService,toolbar:ToolbarSettingsService
+):WorkspaceImportService|null{
   const panel=document.getElementById('workspaceBoxBody');
   const stackElement=document.getElementById('boxStack');
   const widthElement=document.getElementById('width');
-  if(!panel||!stackElement||!(widthElement instanceof HTMLInputElement))return;
+  if(!panel||!stackElement||!(widthElement instanceof HTMLInputElement))return null;
   const stack=stackElement,width=widthElement;
   const boxIds=()=>[...stack.children].map(node=>node instanceof HTMLElement
     ?node.dataset.boxId??node.dataset.placeholderFor:null).filter((value):value is string=>!!value);
@@ -275,18 +278,23 @@ export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:T
       status.textContent='一括設定を保存しました。キー設定を反映するには、作品を保存したあとで画面を再読み込みしてください。';
     }catch(error){status.textContent=error instanceof Error?error.message:'一括設定を読み込めませんでした。';}
   };
+  function importText(json:string):number{
+    if(json.length>1048576)throw Error('ファイルが大きすぎます。');
+    const imported=parseFile(JSON.parse(json),boxIds());
+    const duplicate=imported.filter(x=>profiles.some(p=>p.name===x.name)).map(x=>x.name);
+    if(duplicate.length&&!window.confirm('同名の設定 '+duplicate.join('、')+' を置き換えますか？'))return 0;
+    const merged=profiles.filter(x=>!imported.some(y=>y.name===x.name)).concat(imported);
+    if(merged.length>32)throw Error('保存できる配置は32件までです。');
+    if(!persist(merged))throw Error('作業場の設定を保存できませんでした。');
+    choices(imported[0]?.name);
+    status.textContent=imported.length+'件の配置を読み込みました。対応しないパネルは元のまま残します。';
+    return imported.length;
+  }
   file.onchange=async()=>{
     const source=file.files?.[0];file.value='';if(!source)return;
     try{
       if(source.size>1048576)throw new Error('ファイルが大きすぎます。');
-      const imported=parseFile(JSON.parse(await source.text()),boxIds());
-      const duplicate=imported.filter(x=>profiles.some(p=>p.name===x.name)).map(x=>x.name);
-      if(duplicate.length&&!window.confirm('同名の設定 '+duplicate.join('、')+' を置き換えますか？'))return;
-      const merged=profiles.filter(x=>!imported.some(y=>y.name===x.name)).concat(imported);
-      if(merged.length>32)throw new Error('保存できる配置は32件までです。');
-      if(!persist(merged))return;
-      choices(imported[0]?.name);
-      status.textContent=imported.length+'件の配置を読み込みました。対応しないパネルは元のまま残します。';
+      importText(await source.text());
     }catch(e){status.textContent=e instanceof Error?e.message:'設定を読み込めませんでした。';}
   };
   handed.onchange=()=>setHanded(handed.checked);
@@ -294,6 +302,7 @@ export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:T
   rearrange(orderSaved());
   setHanded(read(HANDED_KEY)==='true');setDensity(read(DENSITY_KEY)==='true');
   choices();bindMoving();
+  return {importText};
 }
 const DEFAULT_ORDER=[
  'right.layers','right.color','right.brush','right.inspector','right.reference','right.assets',
