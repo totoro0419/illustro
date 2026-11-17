@@ -3571,6 +3571,10 @@ installShortcutSettings(c04Commands,()=>!surface||!surface.inputActive);
 const c05References=installReferenceBoard({
   getDocumentId:()=>documentReady?controller.document.root.documentId:null,
   color:foreground,
+  getSampling:()=>{
+    const {diameter,transparency}=eyedropperSettings.options();
+    return {diameter,transparency};
+  },
   onPickColor:async assetId=>{
     const entry=await getAsset(assetId);
     if(!entry||entry.deleted||!entry.mime.startsWith('image/'))throw Error('参考画像が見つかりません。');
