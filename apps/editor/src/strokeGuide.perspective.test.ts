@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import type {ArtworkGuide} from '@illustro/core';
 import {lockArtworkGuide,perspectiveAxisForHeading,snapToStraightGuide} from './strokeGuide';
 
-const guide:ArtworkGuide={id:'p',name:'透視',kind:'perspective2',origin:{x:0,y:100},
+const guide:ArtworkGuide={id:'p',name:'透視',kind:'perspective2',origin:{x:0,y:25},
   vanishing:[{x:100,y:0},{x:150,y:150}],activeAxis:0,angle:0,rx:120,ry:72,
   spacing:32,strength:1,range:24,enabled:true,locked:false,applyEraser:false};
 const start={x:50,y:50};
