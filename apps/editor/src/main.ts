@@ -3578,7 +3578,7 @@ const c05References=installReferenceBoard({
   }
 });
 c05ReferenceBoard=c05References;
-installAssetPanel({openReference:assetId=>c05References.add(assetId)});
+installAssetPanel({openReference:assetId=>c05References.add(assetId),flushReferences:()=>c05References.flush()});
 document.querySelector('#referenceBoxBody')?.closest('.workspace-box')?.querySelector('.box-toggle')
   ?.addEventListener('click',()=>{void c05References.refreshIfChanged();});
 
