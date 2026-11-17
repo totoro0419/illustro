@@ -3951,7 +3951,7 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
     guides:guidePreferences.enabled?{
       x:[{value:guidePreferences.x??0,name:'定規の基準 X'}],y:[{value:guidePreferences.y??0,name:'定規の基準 Y'}]
     }:null,
-    ...(saved?{initial:savedTransformSettings(saved)}:{}),
+    ...(saved?{initial:savedTransformSettings(saved),postPaint:saved.postPaint??[]}:{}),
     apply:async(settings,result,editedOriginal)=>{
       if(!valid())throw Error('変形を開始したときの対象から変更されています。');
       if(target==='boundary'){

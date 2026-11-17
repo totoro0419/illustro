@@ -27,6 +27,7 @@ export function runTransform(job:TransformJob,signal?:AbortSignal){
 export function createTransformPreviewRunner(){
   const worker=new Worker(new URL('./worker.ts',import.meta.url),{type:'module'});
   let disposed=false,source:Uint8Array|null=null,selection:TransformJob['selection']=null;
+  let postPaint:TransformJob['postPaint']=undefined;
   let queue:Promise<void>=Promise.resolve();
   let cancelCurrent:((reason:unknown)=>void)|null=null;
   function run(job:TransformJob,signal?:AbortSignal){
@@ -44,13 +45,14 @@ export function createTransformPreviewRunner(){
         complete();disposed=true;worker.terminate();
         reject(new Error(event.message||'変形プレビューを計算できませんでした。'));
       };
-      const {pixels,selection:mask,...rest}=job;
+      const {pixels,selection:mask,postPaint:brushPasses,...rest}=job;
       const message:CachedTransformJob={...rest,kind:'cached',
         ...(source===pixels?{}:{pixels}),
-        ...(selection===mask?{}:{selection:mask})};
+        ...(selection===mask?{}:{selection:mask}),
+        ...(postPaint===brushPasses?{}:{postPaint:brushPasses})};
       try{
         worker.postMessage(message);
-        source=pixels;selection=mask;
+        source=pixels;selection=mask;postPaint=brushPasses;
       }catch(error){complete();reject(error);}
     }));
     queue=task.then(()=>undefined,()=>undefined);
@@ -60,7 +62,7 @@ export function createTransformPreviewRunner(){
     if(disposed)return;
     disposed=true;
     cancelCurrent?.(Error('変形プレビューを終了しました。'));
-    worker.terminate();source=null;selection=null;
+    worker.terminate();source=null;selection=null;postPaint=undefined;
   }
   return {run,dispose};
 }

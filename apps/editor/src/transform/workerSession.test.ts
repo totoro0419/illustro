@@ -44,3 +44,21 @@ describe('C07 preview worker image caching',()=>{
     runner.dispose();
   });
 });
+
+describe('C07-004 transform preview caches later strokes',()=>{
+  it('sends post-transform strokes exactly once until the saved pass list changes',async()=>{
+    vi.stubGlobal('Worker',FakeWorker);
+    const runner=createTransformPreviewRunner();
+    const pixels=new Uint8Array(16),postPaint=[{selection:null,records:[{version:2}]}];
+    const job={pixels,width:2,height:2,settings:initialTransform,selection:null,postPaint,
+      outputWidth:2,outputHeight:2};
+    await runner.run(job);
+    await runner.run({...job,settings:{...initialTransform,dx:2}});
+    await runner.run({...job,postPaint:[]});
+    const sent=FakeWorker.instances[0]!.messages as Array<PreviewMessage&{postPaint?:unknown[]}>;
+    expect(sent[0]!.postPaint).toBe(postPaint);
+    expect(Object.hasOwn(sent[1]!, 'postPaint')).toBe(false);
+    expect(sent[2]!.postPaint).toEqual([]);
+    runner.dispose();
+  });
+});

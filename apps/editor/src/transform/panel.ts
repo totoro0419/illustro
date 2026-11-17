@@ -1,6 +1,6 @@
 import {CanonicalBuilder,type Sample} from '@illustro/brush-rt';
 import {replayBrushPasses} from '../selection/brush';
-import type {LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
+import type {DeformationBrushPass,LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import type {MaskData} from '../selection/mask';
 import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} from './geometry';
@@ -15,6 +15,7 @@ export type TransformSource={
   width:number;height:number;name:string;pixels:Uint8Array;selection:MaskData|null;
   drawing:BrushSurface;valid:()=>boolean;bounds:TransformBounds;initial?:Transform;maskLink?:boolean;
   objectSnap:SnapTargets;guides:SnapTargets|null;originalAlphaLocked?:boolean;
+  postPaint?:readonly DeformationBrushPass[];
   apply:(settings:Transform,pixels:Uint8ClampedArray,editedOriginal?:Uint8Array)=>Promise<void>;
 };
 type Target='layer'|'selected'|'boundary';
@@ -564,7 +565,9 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       const outputWidth=Math.max(1,Math.round(current.width*scale)),outputHeight=Math.max(1,Math.round(current.height*scale));
       const pixels=await runner.run({pixels:compare.checked?current.pixels:originalDraft??current.pixels,width:current.width,height:current.height,
         settings:compare.checked?{...initialTransform,cx:settings.cx,cy:settings.cy}:settings,
-        selection:current.selection,outputWidth,outputHeight,showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
+        selection:current.selection,outputWidth,outputHeight,
+        postPaint:compare.checked?[]:current.postPaint,
+        showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
       if(id!==previewId)return;
       preview.width=outputWidth;preview.height=outputHeight;
       const context=preview.getContext('2d'),image=new ImageData(pixels,outputWidth,outputHeight);
@@ -597,6 +600,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
               pixels:savedPixels,width:current.width,height:current.height,
               settings:savedSettings,selection,
               outputWidth:quality.width,outputHeight:quality.height,
+              postPaint:current.postPaint,
               showProtection:protection
             },controller.signal).then(highPixels=>{
               if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal)return;
