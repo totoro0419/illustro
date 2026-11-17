@@ -2,10 +2,12 @@ import type {CoreDocument,RevisionId} from '@illustro/core';
 import {CanvasNavigation} from '../canvasNavigation';
 import {CanvasView} from '../canvasView';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
+import {HistoryPreviewQueue} from './historyPreviewQueue';
 
 // Reuse both completed and in-flight thumbnails. A 4000px preview can otherwise
 // allocate several full-resolution pixel buffers for duplicate concurrent calls.
 const cachedThumbnails=new WeakMap<CoreDocument,Map<RevisionId,Promise<Blob>>>();
+const historyPreviewQueue=new HistoryPreviewQueue();
 export function historyPreviewDimensions(width:number,height:number,maxWidth:number,maxHeight:number){
   if(![width,height,maxWidth,maxHeight].every(Number.isFinite)||[width,height,maxWidth,maxHeight].some(v=>v<1))
     throw new Error('履歴画像の大きさが正しくありません。');
@@ -32,7 +34,7 @@ async function renderHistoryPreview(artwork:CoreDocument,revision:RevisionId,max
 }
 
 export function historyComparisonPreview(artwork:CoreDocument,revision:RevisionId){
-  return renderHistoryPreview(artwork,revision,1600,1200);
+  return historyPreviewQueue.run(()=>renderHistoryPreview(artwork,revision,1600,1200),'foreground');
 }
 
 export async function historyThumbnail(artwork:CoreDocument,revision:RevisionId){
@@ -40,7 +42,7 @@ export async function historyThumbnail(artwork:CoreDocument,revision:RevisionId)
   if(!cache){cache=new Map();cachedThumbnails.set(artwork,cache);}
   const cached=cache.get(revision);
   if(cached)return cached;
-  const thumbnail=renderHistoryPreview(artwork,revision,160,120).then(result=>result.blob);
+  const thumbnail=historyPreviewQueue.run(()=>renderHistoryPreview(artwork,revision,160,120).then(result=>result.blob));
   if(cache.size>=24)cache.delete(cache.keys().next().value!);
   cache.set(revision,thumbnail);
   try{return await thumbnail;}
