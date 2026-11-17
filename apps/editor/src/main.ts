@@ -36,6 +36,7 @@ import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
 import {installLayoutPanel} from './transform/layoutPanel';
 import {groupTransformPlan} from './transform/groupTransform';
+import {layerEditingStates} from './transform/layerEditingStates';
 import {installImageLinkPanel} from './transform/imageLinkPanel';
 import {chooseLinkedImage,decodeLinkedImage,placedImage,readLinkedFile,rememberImageHandle,forgetImageHandle,nextLinkedImageFileKey} from './assets/linkedImages';
 import type {SnapMark} from './transform/layout';
@@ -1206,8 +1207,10 @@ const renderLayers=()=>{
     rows:rows.map(layer=>[
       layer.id,layer.name,layer.kind,layer.baseColor,layer.visible,layer.locked,
       layer.contentLocked,layer.positionLocked,layer.alphaLocked,layer.colorTag,
-      layer.opacity,layer.vectorMask?.enabled,layer.vectorMask?.shape,
-      layer.deformation?.enabled,!!layer.deformation,!!layer.blend?.effect,
+      layer.opacity,layer.vectorMask?.enabled,layer.vectorMask?.shape,layer.vectorMask?.linked,
+      layer.deformation?.enabled,layer.deformation?.mode,!!layer.blend?.effect,
+      layer.imageLink?.kind,layer.imageLink?.fileKey,
+      layer.imageLink?.sourceId,layer.imageLink?.digest,
       layer.blend?.mode,layer.clipSourceId,
       root.isLayerVisible(layer.id),root.isLayerLocked(layer.id),
       root.isLayerContentLocked(layer.id),root.isLayerPositionLocked(layer.id),
@@ -1262,8 +1265,12 @@ const renderLayers=()=>{
         row.dataset.colorTag=layer.colorTag;
         row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
       }
-      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'全体ロック中':'',layer.contentLocked?'内容ロック中':'',layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',layer.vectorMask?.enabled?'マスク中':'',layer.deformation?(layer.deformation.enabled===false?'変形は非表示':'再編集できる変形'):'',layer.blend?.effect?'色の効果':'',layer.clipSourceId?(root.clippingSource(layer.id)?'クリップ中':'クリップ元なし'):'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
+      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'全体ロック中':'',layer.contentLocked?'内容ロック中':'',layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',...layerEditingStates(layer),layer.blend?.effect?'色の効果':'',layer.clipSourceId?(root.clippingSource(layer.id)?'クリップ中':'クリップ元なし'):'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
+      if(state.textContent){
+        row.title=state.textContent;
+        row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+state.textContent.replaceAll('・','、'));
+      }
       row.onclick=event=>{
         if(batchRow){
           selectLayerForBatch(layer.id,matching,event.shiftKey);

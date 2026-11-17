@@ -2,6 +2,7 @@ import type {LayerId} from '@illustro/core';
 import {button,selectField} from '../artwork/tools';
 import {alignLayers,type Arrangement,type LayoutItem,type LayoutMove} from './layout';
 import {groupTransformPlan,type GroupTransformOptions} from './groupTransform';
+import {recommendInterpolation,type ArtworkKind} from './interpolationAdvice';
 
 export type LayoutSource=Readonly<{
   items:readonly LayoutItem[];reference:LayoutItem;width:number;height:number;valid:()=>boolean;
@@ -36,6 +37,31 @@ export function installLayoutPanel(host:HTMLElement,capture:()=>Promise<LayoutSo
     interp.add(new Option(label,key));
   const interpolation=document.createElement('label');interpolation.append('画像の補間方法',interp);
   groupControls.append(interpolation);
+  const genre=document.createElement('select');
+  for(const [value,title] of [
+    ['illustration','一般的なイラスト'],['line-art','線画'],['pixel-art','ドット絵'],['photo','写真']
+  ] as const)genre.add(new Option(title,value));
+  const genreLabel=document.createElement('label');genreLabel.append('絵の種類（おすすめ用）',genre);
+  const groupAdvice=document.createElement('output');groupAdvice.setAttribute('aria-live','polite');
+  const groupAdviceApply=button('おすすめを選ぶ',()=>{
+    interp.value=groupRecommended().value;
+    groupPreview.hidden=true;
+  },status);
+  groupControls.append(genreLabel,groupAdvice,groupAdviceApply);
+  function groupRecommended(){
+    return recommendInterpolation(genre.value as ArtworkKind,{
+      mode:'affine',sx:sx.valueAsNumber,sy:sy.valueAsNumber,
+      angle:angle.valueAsNumber,shear:0
+    });
+  }
+  const showAdvice=()=>{
+    const recommended=groupRecommended();
+    groupAdvice.textContent='おすすめ：'+recommended.label+'。'+recommended.reason+
+      ' 現在の設定は自動では変更しません。';
+  };
+  groupControls.addEventListener('input',()=>{groupPreview.hidden=true;showAdvice();});
+  groupControls.addEventListener('change',()=>{groupPreview.hidden=true;showAdvice();});
+  showAdvice();
   const groupPreview=document.createElement('canvas');groupPreview.hidden=true;
   groupPreview.style.maxWidth='100%';
   const groupHelp=document.createElement('p');

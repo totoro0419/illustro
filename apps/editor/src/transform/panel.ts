@@ -7,6 +7,7 @@ import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} fr
 import {createTransformPreviewRunner,runTransform} from './run';
 import {progressiveTransformPreviewSize} from './previewQuality';
 import {originalPreviewSize} from './originalPreview';
+import {recommendInterpolation,type ArtworkKind} from './interpolationAdvice';
 import {snapLayout,type SnapTargets} from './layout';
 import {makeLiquifyStroke} from './liquify';
 import {cornersTowardVanishingPoint,rectCorners} from './quadrilateral';
@@ -130,6 +131,28 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     ['liquify','ゆがみブラシ']
   ]);
   options('interpolation','変形後の画素',[['bilinear','なめらか'],['nearest','ドット絵向け'],['area','縮小向け']]);
+  const artworkKind=document.createElement('select');
+  for(const [value,title] of [
+    ['illustration','一般的なイラスト'],['line-art','線画'],['pixel-art','ドット絵'],['photo','写真']
+  ] as const)artworkKind.add(new Option(title,value));
+  const artworkKindLabel=document.createElement('label');artworkKindLabel.append('絵の種類（おすすめ用）',artworkKind);
+  const interpolationAdvice=document.createElement('output');interpolationAdvice.setAttribute('aria-live','polite');
+  const acceptAdvice=button('おすすめを選ぶ',()=>{
+    const recommended=recommendInterpolation(artworkKind.value as ArtworkKind,settings);
+    if(!source||busy)return;
+    if(settings.interpolation===recommended.value){
+      status.textContent='現在の画素の方法が、おすすめと同じです。';return;
+    }
+    change({...settings,interpolation:recommended.value});
+  });
+  controls.append(artworkKindLabel,interpolationAdvice,acceptAdvice);
+  artworkKind.onchange=()=>showInterpolationAdvice();
+  function showInterpolationAdvice(){
+    const recommended=recommendInterpolation(artworkKind.value as ArtworkKind,settings);
+    interpolationAdvice.textContent='おすすめ：'+recommended.label+'。'+recommended.reason+
+      ' 現在の設定は自動では変更しません。';
+  }
+  showInterpolationAdvice();
   number('dx','横の移動（px）',-8192,8192,.5);number('dy','縦の移動（px）',-8192,8192,.5);
   number('sx','横の倍率',-16,16,.01);number('sy','縦の倍率',-16,16,.01);
   number('angle','角度（°）',-360,360,.1);number('shear','傾き',-4,4,.01);
@@ -577,6 +600,8 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     undoOriginal.hidden=redoOriginal.hidden=!editingOriginal;undoOriginal.disabled=busy||!originalUndo.length;redoOriginal.disabled=busy||!originalRedo.length;
     ratioLabel.hidden=!source||usingCorners||!!mesh||liquify;keepRatio.disabled=busy;
     comparison.hidden=!source||editingOriginal;snapFields.hidden=!source||editingOriginal;
+    artworkKind.disabled=!source||busy;acceptAdvice.disabled=!source||busy;
+    showInterpolationAdvice();
   }
   async function refreshPreview(){
     const current=source,id=++previewId,runner=previewRunner;
