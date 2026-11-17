@@ -69,3 +69,17 @@ describe('C06-002 repeated strokes share one mask snapshot',()=>{
     expect(replies[2]?.error).toMatch(/再利用情報/);
   });
 });
+
+describe('C06-002 selected stroke GPU readback memory',()=>{
+  it('reuses the transferred pixel buffer without allocating a second full image',async()=>{
+    const {writableRasterView}=await import('./brush');
+    const entire=new Uint8ClampedArray(80);
+    const cropped=entire.subarray(12,52);
+    const result=writableRasterView(cropped);
+    expect(result.buffer).toBe(entire.buffer);
+    expect(result.byteOffset).toBe(12);
+    expect(result.byteLength).toBe(40);
+    result[3]=240;
+    expect(cropped[3]).toBe(240);
+  });
+});

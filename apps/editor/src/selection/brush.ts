@@ -81,6 +81,11 @@ function runBrushWorker(job:Job):Promise<Uint8Array|null>{
     pump();
   });
 }
+/** A typed view of the already transferred GPU readback: no second 64 MiB
+ * allocation for a 4000x4000 raster. Keep the original byte offset intact. */
+export function writableRasterView(pixels:Uint8Array|Uint8ClampedArray):Uint8Array{
+  return new Uint8Array(pixels.buffer,pixels.byteOffset,pixels.byteLength);
+}
 export function applySelectedStroke(mask:MaskData,pixels:Uint8Array,records:readonly StrokeRecord[]){
   return runBrushWorker({width:mask.width,height:mask.height,alpha:mask.alpha,pixels,records});
 }

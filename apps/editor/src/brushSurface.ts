@@ -27,7 +27,7 @@ import {buildSymmetricStrokes} from './runSymmetry';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,lockStraightGuide,lockArtworkGuide,snapToStraightGuide,type GuideSettings,type LockedGuide} from './strokeGuide';
 import {rectangleFromPoints,clampSelectionRect,type SelectionRect} from './strokeSelection';
 import {selectionAsLayerMask} from './artwork/selectionMask';
-import {applySelectedStroke} from './selection/brush';
+import {applySelectedStroke,writableRasterView} from './selection/brush';
 import type {MaskData} from './selection/mask';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
 
@@ -841,7 +841,7 @@ export class BrushSurface{
       const copies=seamless?variants.flatMap((variant,index)=>[
         ...(index?[variant]:[]),...wrappedCopies(variant,target.width,target.height).map(copy=>copy.record)
       ]):variants.slice(1);
-      const previous=new Uint8Array(await renderer.read(target.surfaceId));
+      const previous=writableRasterView(await renderer.read(target.surfaceId));
       const result=await applySelectedStroke(mask,previous,[record,...copies]);
       if(!result||this.disposed||artwork.head!==target.baseRevision)return;
       const transaction=artwork.begin(record.preset.blend==='erase'?'選択範囲を消す':'選択範囲に描く');
