@@ -242,9 +242,9 @@ export class DrawingHost {
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 
-class DrawingSessionPort {
+export class DrawingSessionPort {
  constructor(host){this.renderer=host;this.prediction=true;this.id=0;this.recordIds=new WeakMap;this.tokens=new WeakMap;this.recordsByToken=new Map;this.pending=[];this.pendingRawCount=0;this.rawAccepted=0;this.browserPredictions=0;this.errors=[];}
- begin(preset,fast=0,context={},surfaceKey='default'){if(this.active)throw Error('Stroke already active');const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};if(this.renderer.backend.viewTransform)this.renderer.send('view',this.renderer.backend.viewTransform);this.renderer.send('begin',{preset,fast,context,surfaceKey,id});return id;}
+ begin(preset,fast=0,context={},surfaceKey='default',showPreview=true){if(this.active)throw Error('Stroke already active');const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};if(this.renderer.backend.viewTransform)this.renderer.send('view',this.renderer.backend.viewTransform);this.renderer.send('begin',{preset,fast,context,surfaceKey,id,showPreview:showPreview!==false});return id;}
  accept(sample){if(!this.active)return;this.pending.push(sample);this.active.count++;this.rawAccepted++;}
  predictions(samples){this.predicted=samples;this.browserPredictions+=samples.length;}
  flush(){if(!this.active||!this.pending.length)return;this.renderer.send('samples',{samples:this.pending,predictions:this.predicted??[],prediction:this.prediction});this.pending=[];}
