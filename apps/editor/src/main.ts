@@ -3888,7 +3888,7 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
       const layer=root.getLayer(item.id);
       if(item.fixed||layer.editable||layer.lineRegions||layer.imageLink||layer.deformation)
         throw Error('「'+layer.name+'」はこのまとめて変形で安全に編集できません。通常の描画レイヤーを選んでください。');
-      const pixels=await runTransform({pixels:pixels.get(item.id)!,width,height,settings,
+      const transformed=await runTransform({pixels:pixels.get(item.id)!,width,height,settings,
         selection:null,outputWidth:width,outputHeight:height});
       if(!valid())throw Error('変形の計算中に作品または選択が変更されました。');
       const linked=!!(layer.vectorMask&&layer.vectorMask.linked!==false);
@@ -3901,7 +3901,7 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
           angle:settings.angle,shear:settings.shear,cx:settings.cx,cy:settings.cy},
         ...(maskDigest?{maskDigest}:{})
       };
-      changes.push({id:item.id,pixels,deformation,mask});
+      changes.push({id:item.id,pixels:transformed,deformation,mask});
     }
     await withClipboardAccess(async()=>{
       if(!valid())throw Error('作品が変更されました。変形をやり直してください。');
