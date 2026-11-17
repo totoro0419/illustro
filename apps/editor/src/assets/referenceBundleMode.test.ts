@@ -20,7 +20,7 @@ describe('C05-013 local-only reference compatibility',()=>{
     const local={...image,bytes:4,data:bytes} as AssetEntry;
     expect(await verifyExternalReference(descriptor,local)).toBe(true);
     expect(await verifyExternalReference(descriptor,{...local,data:altered})).toBe(false);
-    expect(await verifyExternalReference({...descriptor,fingerprint:undefined},local)).toBe(false);
+    expect(await verifyExternalReference({assetId:image.id,name:image.name,bytes:4,mime:image.mime},local)).toBe(false);
     expect(parseExternalReferences([descriptor])).toEqual([descriptor]);
     expect(()=>parseExternalReferences([{...descriptor,fingerprint:'invalid'}])).toThrow();
   });
