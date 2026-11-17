@@ -6,6 +6,7 @@ import type {DecodedPortableFile,PortableManifestSection,PortableSectionInput} f
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
 import {cloneProjectionTiles} from './projectionTransfer';
 import {exactBlobBuffer} from './blobBuffer';
+import {needsUnloadWarning} from './unloadGuard';
 import type {SelectionRect} from '../strokeSelection';
 
 export class ExternalFileConflict extends Error{
@@ -40,7 +41,7 @@ export class PersistenceCoordinator{
     this.worker.onmessage=(event:MessageEvent<WorkerReply>)=>{const pending=this.pendingRequests.get(event.data.id);if(!pending)return;this.pendingRequests.delete(event.data.id);event.data.ok?pending.resolve(event.data.result):pending.reject(new Error(event.data.error??'Persistence Worker error'));};
     this.worker.onerror=event=>this.failWorker(new Error(event.message||'作品の保護処理が停止しました。'));
     this.worker.onmessageerror=()=>this.failWorker(new Error('作品の保護処理との通信に失敗しました。'));
-    addEventListener('online',this.onlineState);addEventListener('offline',this.onlineState);document.addEventListener('visibilitychange',this.visibility,{capture:true});addEventListener('pagehide',this.pagehide,{capture:true});
+    addEventListener('online',this.onlineState);addEventListener('offline',this.onlineState);addEventListener('beforeunload',this.beforeUnload);document.addEventListener('visibilitychange',this.visibility,{capture:true});addEventListener('pagehide',this.pagehide,{capture:true});
   }
   get state(){return this.stateValue;}get preservedData(){return this.preserved;}
   async initialize(controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>,savedRevision:RevisionId|null=null,preserved?:PreservedPortableData,recovered=false,selection:SelectionRect|null=null){
@@ -172,7 +173,7 @@ export class PersistenceCoordinator{
     try{const estimate=storage?.estimate?await storage.estimate():null;usage=estimate?.usage??null;quota=estimate?.quota??null;}catch{}
     this.patch({storagePersisted:persisted,storageUsage:usage,storageQuota:quota});return {persisted,usage,quota};
   }
-  destroy(){this.destroyed=true;this.cancelIdle();this.failWorker(new Error('作品の保護処理が終了しました。'));this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
+  destroy(){this.destroyed=true;this.cancelIdle();this.failWorker(new Error('作品の保護処理が終了しました。'));this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);removeEventListener('beforeunload',this.beforeUnload);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
   private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:120});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},60);}
   private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
   private async drain(){
@@ -219,6 +220,13 @@ export class PersistenceCoordinator{
     }catch(error){try{await writable.abort?.();}catch{}throw error;}
     return await verifyExternalWrite(h,stable);
   }
+  // This is a best-effort warning only. Android and background tab termination
+  // may bypass beforeunload entirely, so checkpointing continues normally.
+  private beforeUnload=(event:BeforeUnloadEvent)=>{
+    if(this.destroyed||!this.controller||!needsUnloadWarning(this.stateValue))return;
+    event.preventDefault();
+    event.returnValue='';
+  };
   private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared().catch(error=>this.patch({storageError:message(error)}));};private pagehide=()=>{void this.flushPrepared().catch(error=>this.patch({storageError:message(error)}));};private onlineState=()=>this.patch({offline:!navigator.onLine});
 }
 
