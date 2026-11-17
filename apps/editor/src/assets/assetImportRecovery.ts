@@ -58,7 +58,8 @@ export function validateImportRecovery(input:unknown):ImportRecovery{
     (raw.remainingIds as string[]).some(id=>!ids.includes(id)))
     throw Error('素材の再開対象が正しくありません。');
   const mappings=raw.resolvedIds as Record<string,unknown>;
-  if(Object.keys(mappings).some(id=>!ids.includes(id)||typeof mappings[id]!=='string'||!mappings[id]))
+  if(Object.keys(mappings).some(id=>!ids.includes(id)||typeof mappings[id]!=='string'||!mappings[id])||
+    new Set(Object.values(mappings)).size!==Object.keys(mappings).length)
     throw Error('素材の識別情報が正しくありません。');
   return {
     version:1,manifest,remainingIds:[...(raw.remainingIds as string[])],
