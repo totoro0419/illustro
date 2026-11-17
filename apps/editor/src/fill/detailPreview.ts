@@ -4,7 +4,7 @@
 export function sampleFillDetail(
  pixels:Uint8Array|Uint8ClampedArray,width:number,height:number,
  centerX:number,centerY:number,size=64
-):Uint8ClampedArray{
+):Uint8ClampedArray<ArrayBuffer>{
  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||
    !Number.isSafeInteger(size)||size<1||size>128||pixels.length!==width*height*4||
    !Number.isFinite(centerX)||!Number.isFinite(centerY))
