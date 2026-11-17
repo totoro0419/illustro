@@ -3,7 +3,8 @@
  * renderer, saved raster tiles or exported composited images.
  */
 import {readBoard,writeBoard,decodeBoardRecord,newBoardItem,type BoardSnapshot,type BoardItem} from './referenceBoardStore';
-import {getAsset} from './library';
+import {getAsset,type AssetEntry} from './library';
+import {referenceFrameKey} from './referenceFrameKey';
 import {exportAssetPack,importAssetPack,readAssetPack,type PackManifest} from './packs';
 import type {PortableSectionInput} from '../persistence/format';
 import type {PreservedPortableData} from '../persistence/portable';
@@ -73,6 +74,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   let saveError:unknown=null,temporaryHidden=false;
   let back:BoardSnapshot[]=[],forward:BoardSnapshot[]=[];
   const urls=new Map<string,string>();
+  const assetCache=new Map<string,AssetEntry|null>();
   const error=(reason:unknown)=>{status.textContent=reason instanceof Error?reason.message:String(reason);};
   function download(name:string,blob:Blob){
     const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;link.click();
@@ -111,7 +113,8 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const id=options.getDocumentId();
     if(id===currentDoc)return;
     currentDoc=id;transition++;back=[];forward=[];board=null;temporaryHidden=false;
-    for(const url of urls.values())URL.revokeObjectURL(url);urls.clear();canvasLayer.replaceChildren();list.replaceChildren();
+    for(const url of urls.values())URL.revokeObjectURL(url);
+    urls.clear();assetCache.clear();canvasLayer.replaceChildren();list.replaceChildren();
     if(!id){status.textContent='作品を開くと、資料を並べられます。';return;}
     try{
       const current=transition;
@@ -129,7 +132,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     }catch(e){error(e);}
   }
   async function refresh(){
-    currentDoc=null;await refreshIfChanged();
+    currentDoc=null;assetCache.clear();await refreshIfChanged();
   }
   async function add(assetId:string){
     await refreshIfChanged();
@@ -259,6 +262,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
     if(epoch!==transition||options.getDocumentId()!==doc)return;
     const result=await importAssetPack(embedded,{atomic:true});
+    assetCache.clear();
     if(epoch!==transition||options.getDocumentId()!==doc)return;
     // If an image that WAS embedded fails to import, never accidentally display
     // an unrelated local image which happens to use the same asset identifier.
@@ -369,14 +373,31 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     // Read assets concurrently and swap the complete view only once. Previous
     // windows stay visible while an IndexedDB lookup is in progress.
     const visible=snapshotBoard.items.filter(item=>!item.hidden);
-    const resolved=await Promise.all(visible.map(async item=>({item,asset:await getAsset(item.assetId)})));
+    const resolved=await Promise.all(visible.map(async item=>{
+      let asset:AssetEntry|null;
+      if(assetCache.has(item.assetId))asset=assetCache.get(item.assetId)??null;
+      else{
+        asset=await getAsset(item.assetId);
+        assetCache.set(item.assetId,asset);
+      }
+      return {item,asset};
+    }));
     if(epoch!==renderEpoch||update!==transition||board?.documentId!==snapshotBoard.documentId)return;
     const needed=new Set(snapshotBoard.items.map(i=>i.assetId));
     for(const [id,url] of urls)if(!needed.has(id)){URL.revokeObjectURL(url);urls.delete(id);}
-    const replacement=document.createDocumentFragment();
+    const existing=new Map([...canvasLayer.querySelectorAll<HTMLElement>(':scope > .c05-reference-frame')]
+      .map(frame=>[frame.dataset.referenceId??'',frame]));
+    const desired:HTMLElement[]=[];
     canvasLayer.hidden=temporaryHidden;
     for(const {item,asset} of resolved){
+      const signature=referenceFrameKey(item,asset);
+      const retained=existing.get(item.id);
+      if(retained?.dataset.referenceSignature===signature){
+        desired.push(retained);
+        continue;
+      }
       const frame=document.createElement('section');frame.className='c05-reference-frame';
+      frame.dataset.referenceSignature=signature;
       frame.style.left=item.x+'px';frame.style.top=item.y+'px';
       frame.style.width=item.width+'px';frame.style.height=item.height+'px';
       if(item.front)frame.classList.add('c05-reference-front');
@@ -450,11 +471,21 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
         handle.addEventListener('pointerup',event=>finish(event,false));
         handle.addEventListener('pointercancel',event=>finish(event,true));
       };
-      frame.append(heading,imageArea,footer,resize);replacement.append(frame);
+      frame.append(heading,imageArea,footer,resize);desired.push(frame);
       attachDrag(heading,'frame');attachDrag(resize,'size');attachDrag(imageArea,'image');
     }
-    if(epoch===renderEpoch&&update===transition&&board?.documentId===snapshotBoard.documentId)
-      canvasLayer.replaceChildren(replacement);
+    if(epoch===renderEpoch&&update===transition&&board?.documentId===snapshotBoard.documentId){
+      // Replacing only the changed frame keeps pointer capture, scroll and
+      // interaction state of the other floating windows intact.
+      const retained=new Set(desired);
+      for(const child of [...canvasLayer.children]){
+        if(!retained.has(child as HTMLElement))child.remove();
+      }
+      for(const [index,frame] of desired.entries()){
+        if(canvasLayer.children[index]!==frame)
+          canvasLayer.insertBefore(frame,canvasLayer.children[index]??null);
+      }
+    }
   }
   // Keep the reference title/drag handle reachable after orientation or window
   // size changes. This also protects the corrected position across restarts.
