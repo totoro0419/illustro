@@ -1352,6 +1352,7 @@ const renderLayers=()=>{
               byId('status').textContent='この設定を開けませんでした。レイヤーを選んで設定画面から開いてください。';
               return;
             }
+            destination.dispatchEvent(new Event('illustro:open-layer-settings'));
             destination.open=true;
             destination.scrollIntoView({block:'nearest'});
             destination.querySelector<HTMLElement>('summary')?.focus({preventScroll:true});

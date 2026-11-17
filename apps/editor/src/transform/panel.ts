@@ -670,6 +670,15 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   compare.onchange=()=>void refreshPreview();
   tools.append(start,direct,vanishing,flipX,flipY,back,forward,openOriginal,undoOriginal,redoOriginal,apply,cancel,newAbove,toggleEffect,removeEffect,bakeButton);
   panel.append(summary,target,status,tools,controls,snapFields,cornerFields,meshFields,liquifyFields,comparison,preview,originalCanvas);host.append(panel);
-  panel.ontoggle=()=>{if(!panel.open&&!busy&&source)reset('候補を取り消しました。');};
+  panel.addEventListener('illustro:open-layer-settings',()=>{
+    // A panel can remain open while the user selects another layer.
+    // Never reuse the previous layer's preview and commit callback.
+    if(source&&!source.valid()&&!busy)reset('別のレイヤーを選んだため、以前の変形候補を取り消しました。');
+  });
+  panel.ontoggle=()=>{
+    if(source&&!source.valid()&&!busy)
+      reset('編集するレイヤーが変わったため、以前の変形候補を取り消しました。');
+    else if(!panel.open&&!busy&&source)reset('候補を取り消しました。');
+  };
   sync();
 }
