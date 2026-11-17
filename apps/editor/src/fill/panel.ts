@@ -735,6 +735,7 @@ export function installFillPanel(host:HTMLElement,api:{
   }
   const advancedActions=document.createElement('div');advancedActions.className='c06-clipboard-grid';
   const basic=new Set(['キャンバスで塗る','領域を選択範囲にする','候補を適用','塗り候補を取り消す',
+    '表示中の絵から1枚を除外して参照',
     '直前の塗りを調整','キャンバス操作をやめる','計算を中止']);
   for(const control of Array.from(actions.querySelectorAll('button'))){
     if(!basic.has(control.textContent??''))advancedActions.append(control);
