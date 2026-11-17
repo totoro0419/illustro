@@ -110,3 +110,7 @@ details p{font-size:13px}
 }
 .artwork-history-panel .history-image-viewport{height:clamp(128px,24dvh,300px)}
 @media(max-width:540px){.artwork-history-panel[open]:not(:modal){max-height:66dvh}}
+
+/* Layer-page only: direct edit buttons for layers that already contain
+ * a transform, image link or mask. Keep the primary name and controls stable. */
+.layer-edit-shortcut{padding:5px 7px;min-width:40px;white-space:nowrap;font-size:12px}

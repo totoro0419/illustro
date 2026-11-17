@@ -23,7 +23,7 @@ export type TransformSource={
 type Target='layer'|'selected'|'boundary';
 
 export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>Promise<TransformSource>,bake:()=>Promise<void>,addAbove:()=>Promise<void>,changeEnabled:(remove:boolean)=>Promise<string>){
-  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';panel.dataset.editPanel='transform';
   const summary=document.createElement('summary');summary.textContent='変形';
   const target=document.createElement('select');target.setAttribute('aria-label','変形する対象');
   target.add(new Option('レイヤー全体','layer'));target.add(new Option('選択した絵','selected'));target.add(new Option('選択の枠だけ','boundary'));

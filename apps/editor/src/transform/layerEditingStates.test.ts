@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {layerEditingStates} from './layerEditingStates';
+import {layerEditingStates,layerEditingTargets} from './layerEditingStates';
 
 describe('C07-016 readable layer editing indicators',()=>{
  it('describes re-editable, hidden or absent deformations without changing the data',()=>{
@@ -23,5 +23,17 @@ describe('C07-016 readable layer editing indicators',()=>{
   const states=layerEditingStates({deformation:{enabled:true},imageLink:{kind:'embedded'},vectorMask:{enabled:true,linked:false}});
   expect(states).toEqual(['変形を再編集可','画像を埋め込み','マスク：独立']);
   expect(new Set(states).size).toBe(states.length);
+ });
+});
+
+describe('C07-016 direct editing destinations',()=>{
+ it('exposes only existing transform, image link and mask settings',()=>{
+  expect(layerEditingTargets({})).toEqual([]);
+  expect(layerEditingTargets({deformation:{enabled:false}}))
+   .toEqual([{kind:'transform',label:'変形'}]);
+  expect(layerEditingTargets({imageLink:{kind:'instance'},vectorMask:{enabled:false}}))
+   .toEqual([{kind:'image-link',label:'画像'},{kind:'mask',label:'マスク'}]);
+  expect(layerEditingTargets({deformation:{enabled:true},vectorMask:{enabled:true}}))
+   .toEqual([{kind:'transform',label:'変形'},{kind:'mask',label:'マスク'}]);
  });
 });

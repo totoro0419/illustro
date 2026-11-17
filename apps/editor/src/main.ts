@@ -36,7 +36,7 @@ import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
 import {installLayoutPanel} from './transform/layoutPanel';
 import {groupTransformPlan} from './transform/groupTransform';
-import {layerEditingStates} from './transform/layerEditingStates';
+import {layerEditingStates,layerEditingTargets} from './transform/layerEditingStates';
 import {installImageLinkPanel} from './transform/imageLinkPanel';
 import {chooseLinkedImage,decodeLinkedImage,placedImage,readLinkedFile,rememberImageHandle,forgetImageHandle,nextLinkedImageFileKey} from './assets/linkedImages';
 import type {SnapMark} from './transform/layout';
@@ -1330,7 +1330,36 @@ const renderLayers=()=>{
       };
       visibility.className='layer-visibility';
       lock.className='layer-lock';
-      entry.append(row,visibility,lock);
+      const editingTargets=id==='layerPageList'&&!layerBatchMode?layerEditingTargets(layer):[];
+      if(editingTargets.length){
+        entry.style.gridTemplateColumns='minmax(0,1fr) repeat('+(editingTargets.length+2)+',auto)';
+        const buttons=editingTargets.map(item=>{
+          const edit=document.createElement('button');
+          edit.type='button';edit.className='layer-edit-shortcut';edit.textContent=item.label;
+          edit.setAttribute('aria-label',layer.name+'の'+item.label+'設定を開く');
+          edit.onclick=()=>{
+            // Reuse the normal layer selection first. In batch mode these
+            // buttons do not exist, so a shortcut never mutates a batch.
+            row.click();
+            if(controller.selectedLayerId!==layer.id)return;
+            const box=item.kind==='mask'?'layersBox':'documentBox';
+            shellUi.openBox(box);
+            const destination=item.kind==='mask'
+              ?byId<HTMLDetailsElement>('layerVectorMask')
+              :byId('documentBoxBody').querySelector<HTMLDetailsElement>(
+                '[data-edit-panel="'+item.kind+'"]');
+            if(!destination){
+              byId('status').textContent='この設定を開けませんでした。レイヤーを選んで設定画面から開いてください。';
+              return;
+            }
+            destination.open=true;
+            destination.scrollIntoView({block:'nearest'});
+            destination.querySelector<HTMLElement>('summary')?.focus({preventScroll:true});
+          };
+          return edit;
+        });
+        entry.append(row,...buttons,visibility,lock);
+      }else entry.append(row,visibility,lock);
       entries.push(entry);
     }
     list.replaceChildren(...entries);

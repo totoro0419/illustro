@@ -18,3 +18,14 @@ export function layerEditingStates(layer:LayerEditingIndicators):string[]{
  }
  return labels;
 }
+
+/** Direct navigation targets for the layer page. Only show controls for
+ * operations actually present on the selected layer. */
+export type LayerEditingTarget=Readonly<{kind:'transform'|'image-link'|'mask';label:string}>;
+export function layerEditingTargets(layer:LayerEditingIndicators):LayerEditingTarget[]{
+ return [
+  ...(layer.deformation?[{kind:'transform' as const,label:'変形'}]:[]),
+  ...(layer.imageLink?[{kind:'image-link' as const,label:'画像'}]:[]),
+  ...(layer.vectorMask?[{kind:'mask' as const,label:'マスク'}]:[])
+ ];
+}
