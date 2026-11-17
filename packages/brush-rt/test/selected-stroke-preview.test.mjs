@@ -34,7 +34,7 @@ test('C06-001: masked composition never displays pixels outside the selection',(
 });
 test('C06-001: the unmasked GPU mailbox never receives a selected preview',()=>{
  const r=Object.create(GpuRenderer.prototype);
- r.hiddenStrokeIds=new Set();r.strokeHandoff=true;r.previewStates=new Map();
+ r.hiddenStrokeIds=new Set();r.strokeHandoff=true;r.previewStates=new Map();r.inputStarts=new Map();
  r.backend={overlayHoldIds:new Set()};
  let cpu=0,requests=0;
  r.proxy={enqueue:()=>{cpu++;return false;}};
