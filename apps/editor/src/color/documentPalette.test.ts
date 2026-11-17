@@ -46,6 +46,20 @@ describe('C04-004 artwork-specific palette portability',()=>{
     expect(restored.palette.swatches[1]?.tags).toEqual(['人物','影']);
     expect(restored.palettes[0]?.swatches).toHaveLength(0);
   });
+  it('opens an artwork even if its device-local palette backup is corrupt',()=>{
+    const former=(globalThis as unknown as {localStorage?:Storage}).localStorage;
+    const storage={getItem:(key:string)=>key.startsWith('illustro.c04.artwork-palette.v1.')?'invalid JSON':null,
+      setItem:()=>{},removeItem:()=>{},clear:()=>{},key:()=>null,length:0} as Storage;
+    Object.defineProperty(globalThis,'localStorage',{configurable:true,value:storage});
+    try{
+      const color=new ForegroundColor(true);
+      expect(()=>color.bindDocumentPalette('work-with-bad-backup')).not.toThrow();
+      expect(color.palette.swatches).toHaveLength(0);
+    }finally{
+      if(former===undefined)Reflect.deleteProperty(globalThis,'localStorage');
+      else Object.defineProperty(globalThis,'localStorage',{configurable:true,value:former});
+    }
+  });
   it('refuses corrupt native palette without altering personal palettes',()=>{
     const colors=new ForegroundColor(false);
     const corrupted={id:DOCUMENT_PALETTE_SECTION,type:DOCUMENT_PALETTE_TYPE,required:false,
