@@ -123,6 +123,63 @@ async function pixel({x,y,surfaceKey}){const b=renderer.backend,layer=surfaceKey
  if(b.gl){const g=b.gl,a=new Uint8Array(4);g.bindFramebuffer(g.FRAMEBUFFER,layer?t.layer[t.l].f:b.liveTarget.f);g.readPixels(sx,layer?sy:b.height-1-sy,1,1,g.RGBA,g.UNSIGNED_BYTE,a);return [...a];}
  const d=b.device,buffer=d.createBuffer({size:256,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});try{const e=d.createCommandEncoder();e.copyTextureToBuffer({texture:layer?t.layer[t.l]:b.liveTarget,origin:{x:sx,y:sy}},{buffer,bytesPerRow:256},[1,1]);d.queue.submit([e.finish()]);await buffer.mapAsync(GPUMapMode.READ);const a=new Uint8Array(buffer.getMappedRange()),bgra=!layer&&b.format.startsWith('bgra');return [a[bgra?2:0],a[1],a[bgra?0:2],a[3]];}finally{buffer.destroy();}
 }
+/** Read a 1/3/5 px sample area in one worker request and at most 4 GPU
+ * rectangles, even when the area straddles a 128px layer tile boundary. */
+async function pixelArea({x,y,width,height,surfaceKey}){
+ const b=renderer.backend,layer=surfaceKey!==null;
+ if(![x,y,width,height].every(Number.isSafeInteger)||width<1||height<1||
+   width>5||height>5||x<0||y<0||x+width>b.width||y+height>b.height)
+  throw Error('invalid eyedropper sample area');
+ const output=new Uint8Array(width*height*4);
+ for(let row=0;row<height;){
+  const sampleY=y+row,blockHeight=layer?Math.min(height-row,TILE-sampleY%TILE):height-row;
+  for(let col=0;col<width;){
+   const sampleX=x+col,blockWidth=layer?Math.min(width-col,TILE-sampleX%TILE):width-col;
+   const tile=layer?b.tiles.get(surfaceKey+'\u0000'+Math.floor(sampleX/TILE)+','+Math.floor(sampleY/TILE)):null;
+   if(!layer||tile){
+    const originX=layer?sampleX%TILE:sampleX,originY=layer?sampleY%TILE:sampleY;
+    let values,stride,flipped=false,bgra=false;
+    if(b.gl){
+     const g=b.gl,src=new Uint8Array(blockWidth*blockHeight*4);
+     g.bindFramebuffer(g.FRAMEBUFFER,layer?tile.layer[tile.l].f:b.liveTarget.f);
+     g.readPixels(originX,layer?originY:b.height-originY-blockHeight,
+       blockWidth,blockHeight,g.RGBA,g.UNSIGNED_BYTE,src);
+     if(g.getError()!==g.NO_ERROR)throw Error('Eyedropper GPU read failed');
+     values=src;stride=blockWidth*4;flipped=!layer;
+    }else{
+     const device=b.device,buffer=device.createBuffer({
+       size:Math.ceil(blockWidth*4/256)*256*blockHeight,
+       usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+     });
+     try{
+      stride=Math.ceil(blockWidth*4/256)*256;
+      const encoder=device.createCommandEncoder();
+      encoder.copyTextureToBuffer({
+        texture:layer?tile.layer[tile.l]:b.liveTarget,
+        origin:{x:originX,y:originY}
+      },{buffer,bytesPerRow:stride},[blockWidth,blockHeight]);
+      device.queue.submit([encoder.finish()]);
+      await buffer.mapAsync(GPUMapMode.READ);
+      values=new Uint8Array(buffer.getMappedRange().slice(0));
+      buffer.unmap();
+      bgra=!layer&&b.format.startsWith('bgra');
+     }finally{buffer.destroy();}
+    }
+    for(let dy=0;dy<blockHeight;dy++)for(let dx=0;dx<blockWidth;dx++){
+      const p=(flipped?blockHeight-1-dy:dy)*stride+dx*4;
+      const q=((row+dy)*width+col+dx)*4;
+      output[q]=values[p+(bgra?2:0)];
+      output[q+1]=values[p+1];
+      output[q+2]=values[p+(bgra?0:2)];
+      output[q+3]=values[p+3];
+    }
+   }
+   col+=blockWidth;
+  }
+  row+=blockHeight;
+ }
+ return output;
+}
 async function settlePictures(){requestPublish();while(publishing||publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size||lastSent>acknowledged){if(renderer.errors.length)throw Error(renderer.errors.join(';'));await new Promise(ok=>setTimeout(ok,0));}}
 async function command(method,a){const r=renderer,s=session;
  switch(method){
@@ -144,6 +201,7 @@ async function command(method,a){const r=renderer,s=session;
  case 'readViewport':await r.drain();return r.backend.readViewport();
  case 'readTiles':return readTiles(a);
  case 'pixel':return pixel(a);
+ case 'pixelArea':return pixelArea(a);
  case 'layerThumbnail':{
   const {surfaceKey}=a,{width,height}=r.backend;
   const side=48,scale=Math.min(side/width,side/height);
