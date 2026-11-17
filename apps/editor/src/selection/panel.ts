@@ -4,7 +4,7 @@ import {rasterizeSelection,combineSelection,invertSelection,fullSelection,transl
   type SelectionShape,type MaskData,type CombineMode,type SelectionBrushPoint} from './mask';
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection,storeCurrentSelection,loadCurrentSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
-import {selectionBrushPreviewDabs} from './brushPreview';
+import {selectionBrushPreviewDabs,selectionBrushPreviewRaster} from './brushPreview';
 import {SelectionOverlay} from './overlay';
 import {snapMagneticPoint} from './magnetic';
 import type {AnalyzeOptions} from './autoSelect';
@@ -62,6 +62,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     visual?.setVisible(showSelection.checked);
     preview.hidden=!showSelection.checked;
+    brushRaster.hidden=!showSelection.checked||!brushPoints.length;
     updateQuickPosition();
     status.textContent=showSelection.checked?'選択範囲の表示を戻しました。':'選択範囲は有効なまま、境界を隠しました。';
   };
@@ -129,6 +130,11 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   brushTrace.append(brushGuide);
   preview.append(path,brushDefs,brushTrace);
   viewport?.append(preview,box);
+  const brushRaster=document.createElement('canvas');
+  brushRaster.className='c06-selection-brush-raster';
+  brushRaster.hidden=true;
+  brushRaster.setAttribute('aria-hidden','true');
+  viewport?.append(brushRaster);
   let currentWork:null|string=null;
   let selectionBounds:ReturnType<typeof boundsOfSelection>=null;
   const source=()=>{
@@ -185,6 +191,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       !(tool==='brushAdd'||tool==='brushSubtract')){
       brushGuide.setAttribute('d','');
       brushTrace.replaceChildren(brushGuide);
+      brushRaster.hidden=true;
       if(!points.length)preview.setAttribute('data-empty','true');
       return;
     }
@@ -199,6 +206,41 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     brushGuide.setAttribute('stroke',color);
     const size=Number(brushSize.value),opacity=Number(brushDensity.value)/100;
     const hardness=Number(brushHardness.value)/100;
+    const doc=callbacks.getDocument();
+    const settings={size,opacity,hardness,mode:tool==='brushAdd'?'add' as const:'subtract' as const};
+    const exact=doc?selectionBrushPreviewRaster(active,brushPoints,settings,doc.width,doc.height):null;
+    if(exact&&showSelection.checked){
+      if(brushRaster.width!==exact.width)brushRaster.width=exact.width;
+      if(brushRaster.height!==exact.height)brushRaster.height=exact.height;
+      const context=brushRaster.getContext('2d');
+      if(context){
+        const image=context.createImageData(exact.width,exact.height),pixels=image.data;
+        const color=tool==='brushAdd'?[24,186,217]:[231,120,69];
+        for(let i=0;i<exact.alpha.length;i++){
+          const alpha=exact.alpha[i]!;
+          if(!alpha)continue;
+          const offset=i*4;
+          pixels[offset]=color[0]!;
+          pixels[offset+1]=color[1]!;
+          pixels[offset+2]=color[2]!;
+          pixels[offset+3]=Math.round(alpha*.75);
+        }
+        context.putImageData(image,0,0);
+        const topLeft=drawingSurface.documentToScreen({x:exact.x,y:exact.y});
+        const horizontal=drawingSurface.documentToScreen({x:exact.x+1,y:exact.y});
+        const vertical=drawingSurface.documentToScreen({x:exact.x,y:exact.y+1});
+        brushRaster.style.transform='matrix('+[
+          horizontal.x-topLeft.x,horizontal.y-topLeft.y,
+          vertical.x-topLeft.x,vertical.y-topLeft.y,
+          topLeft.x,topLeft.y
+        ].join(',')+')';
+        brushRaster.hidden=false;
+        brushTrace.replaceChildren(brushGuide);
+        preview.setAttribute('data-empty','false');
+        return;
+      }
+    }
+    brushRaster.hidden=true;
     const left=drawingSurface.documentToScreen({x:0,y:0});
     const right=drawingSurface.documentToScreen({x:1,y:0});
     const zoom=Math.hypot(right.x-left.x,right.y-left.y);

@@ -59,3 +59,7 @@
 .c06-placement-toolbar{pointer-events:auto;position:absolute;right:8px;top:8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;max-width:min(460px,calc(100% - 18px));border:1px solid var(--a-border,#aaa);border-radius:9px;background:var(--a-surface,#fff);box-shadow:0 4px 14px #1234;padding:8px}
 .c06-placement-toolbar output{flex:1 1 100%;font-size:11px;color:inherit}
 .c06-placement-toolbar button{min-height:42px;padding:7px 12px;border-radius:7px;border:1px solid var(--a-border,#aaa);background:var(--a-accent-soft,#f2f6ff);color:inherit;font-size:12px}
+
+/* Bounded pixel-exact preview for small selection-brush strokes. */
+.c06-selection-brush-raster{position:absolute;left:0;top:0;z-index:10;pointer-events:none;transform-origin:0 0;image-rendering:pixelated}
+.c06-selection-brush-raster[hidden]{display:none}
