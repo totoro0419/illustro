@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {CanonicalBuilder,createPreset,referenceBrushes} from '@illustro/brush-rt';
+import {CanonicalBuilder,createPreset,cpuReference} from '@illustro/brush-rt';
 import {renderSelectedStrokeTiles} from './tileStroke';
 import type {StrokeRecord} from '@illustro/brush-rt';
 
@@ -54,5 +54,28 @@ describe('C06-002: tile-only selected brush processor',()=>{
   expect(()=>renderSelectedStrokeTiles(300,300,mask,[tile,tile],[])).toThrow(/正しく/);
   expect(()=>renderSelectedStrokeTiles(300,300,mask,[{key:'0,0',pixels:new Uint8Array(3)}],[])).toThrow(/正しく/);
   expect(()=>renderSelectedStrokeTiles(300,300,mask,[{key:'3,0',pixels:tile.pixels}],[])).toThrow(/作品の外/);
+ });
+});
+
+
+describe('C06-002 pixel-equivalence against the full-canvas CPU reference',()=>{
+ it('preserves exact color, opacity, brush edges and masks across 128px boundaries',()=>{
+  const width=300,height=150,alpha=new Uint8Array(width*height);
+  for(let y=8;y<130;y++)for(let x=102;x<270;x++)
+   alpha[y*width+x]=x<130?255:x<190?128:255;
+  const tiles:Array<{key:string;pixels:Uint8Array}>=[];
+  const baseline=new Uint8ClampedArray(width*height*4);
+  baseline.set([31,60,90,255],(25*width+27)*4);
+  const first=new Uint8Array(TILE*TILE*4);
+  first.set([31,60,90,255],(25*TILE+27)*4);
+  tiles.push({key:'0,0',pixels:first});
+  const record=stroke([[110,55,0],[132,55,5],[145,75,10],[256,79,35]]);
+  const expected=cpuReference(record,width,height,baseline,alpha);
+  const actualTiles=renderSelectedStrokeTiles(width,height,alpha,tiles,[record]);
+  expect(actualTiles).not.toBeNull();
+  const actual=spread(actualTiles!,width,height);
+  for(let i=0;i<actual.length;i++)if(actual[i]!==expected[i])
+   throw new Error('Different rendered pixel at RGBA offset '+i+
+    ': tiles='+actual[i]+' full='+expected[i]);
  });
 });
