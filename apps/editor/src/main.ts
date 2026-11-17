@@ -1488,9 +1488,17 @@ byId<HTMLButtonElement>('layerBatchDestination').onclick=()=>{
   chooseLayerGroupDestination(destination=>changeLayer('選んだレイヤーを移動しました。',tx=>tx.moveLayersIntoGroup(ids,destination)));
 };
 byId<HTMLButtonElement>('layerBatchGroup').onclick=()=>{
+  const root=controller.document.root,ids=new Set(layerBatchIds);
+  const positions=root.rootLayerIds.flatMap((id,index)=>ids.has(id)?[index]:[]);
+  if(!positions.length)return;
+  const separated=positions.at(-1)!-positions[0]!+1!==positions.length;
+  if(separated&&!window.confirm(
+    '離れたレイヤーを隣り合わせに移してグループにします。間にあるレイヤーとの重なり順が変わります。\n' +
+    '既存のグループは分割せず、まとめて1回で元に戻せます。続けますか？'
+  ))return;
   const name=window.prompt('グループ名','グループ')?.trim();
   if(!name)return;
-  changeLayer('選んだレイヤーをグループにまとめました。',tx=>tx.createLayerGroup(layerBatchIds,name));
+  changeLayer('選んだレイヤーをグループにまとめました。',tx=>tx.createLayerGroup(ids,name,separated));
 };
 byId<HTMLButtonElement>('layerBatchUp').onclick=()=>changeLayer('選んだレイヤーを上に移動しました。',tx=>tx.moveRasterLayers(layerBatchIds,1));
 byId<HTMLButtonElement>('layerBatchDown').onclick=()=>changeLayer('選んだレイヤーを下に移動しました。',tx=>tx.moveRasterLayers(layerBatchIds,-1));

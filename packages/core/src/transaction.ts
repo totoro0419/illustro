@@ -378,18 +378,35 @@ export class DocumentTransaction{
     this.slotsValue.push(Object.freeze({type:'comps',id,action}));
     return true;
   }
-  createLayerGroup(ids:ReadonlySet<LayerId>,name:string){
+  createLayerGroup(ids:ReadonlySet<LayerId>,name:string,packSeparated=false){
     this.open();
-    const members=this.rootValue.rootLayerIds.filter(id=>ids.has(id));
+    if(this.slotsValue.length)throw new Error('グループ化は独立した操作として実行してください。');
+    const original=this.rootValue.rootLayerIds;
+    const members=original.filter(id=>ids.has(id));
     if(members.length!==ids.size||!members.length)throw new Error('まとめるレイヤーを選んでください。');
-    if(members.some(id=>this.rootValue.getLayer(id).baseColor==='white'||this.rootValue.isLayerLocked(id)))throw new Error('白背景やロック中のレイヤーはグループ化できません。');
+    if(members.some(id=>this.rootValue.getLayer(id).baseColor==='white'||this.rootValue.isLayerLocked(id)))
+      throw new Error('白背景やロック中のレイヤーはグループ化できません。');
+    const first=original.indexOf(members[0]!);
+    const spread=original.indexOf(members.at(-1)!)-first+1!==members.length;
+    // Keep the old order unless the user explicitly approved packing separate layers.
+    if(spread&&!packSeparated)throw new Error('離れたレイヤーをまとめるには、重なり順の変更を確認してください。');
+    const order=spread
+      ?[...original.slice(0,first).filter(id=>!ids.has(id)),...members,
+        ...original.slice(first).filter(id=>!ids.has(id))]
+      :[...original];
     const id=this.doc._internal(CORE_INTERNAL).ids.layer();
+    const groups=[...this.rootValue.layerGroups,{id,name:name.trim(),members,visible:true,locked:false}];
     try{
-      return this.editGroups('create',id,[...this.rootValue.layerGroups,{id,name:name.trim(),members,visible:true,locked:false}]);
+      // Check all old groups before mutating the transaction. A nested group must
+      // not be torn apart merely to make a noncontiguous selection fit.
+      validateLayerGroups(groups,order);
     }catch(error){
-      if(error instanceof Error&&(error.message.includes('stay together')||error.message.includes('overlapping')))throw new Error('隣り合うレイヤーを、既存のグループを途中で分けないように選んでください。');
+      if(error instanceof Error&&(error.message.includes('stay together')||error.message.includes('overlapping')))
+        throw new Error('既存グループを途中で分ける配置にはできません。グループごと選ぶか、並び順を変えてください。');
       throw error;
     }
+    if(spread)this.rootOrderValue=order;
+    return this.editGroups('create',id,groups);
   }
   updateLayerGroup(id:LayerId,patch:Partial<Pick<LayerGroup,'name'|'visible'|'locked'|'compositing'>>){
     const groups=this.rootValue.layerGroups;
