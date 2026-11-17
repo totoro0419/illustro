@@ -20,7 +20,11 @@ export function historyPreviewDimensions(width:number,height:number,maxWidth:num
 async function renderHistoryPreview(artwork:CoreDocument,revision:RevisionId,maxWidth:number,maxHeight:number){
   const frozen=captureExport(artwork,undefined,revision);
   const {width,height}=historyPreviewDimensions(frozen.width,frozen.height,maxWidth,maxHeight);
-  const fastPixels=await renderFrozenArtworkTiledPreview(frozen,width,height);
+  // A GPU/backend that cannot read individual tiles still uses the original
+  // fully accurate rendering route; thumbnail failure must not lose history.
+  let fastPixels:Uint8ClampedArray|null=null;
+  try{fastPixels=await renderFrozenArtworkTiledPreview(frozen,width,height);}
+  catch{fastPixels=null;}
   if(fastPixels)return {blob:await encodePng(fastPixels,width,height),width,height};
   const pixels=await renderFrozenArtwork(frozen);
   const bitmap=await createImageBitmap(
