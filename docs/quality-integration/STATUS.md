@@ -178,3 +178,9 @@ GitHubの各PRメタデータ、全12件の変更ファイル、各HEADに結び
 | C03-013 | 未対応 | レイヤー一覧の全作り直し。100レイヤー等の実測で根拠を確かめて修正 |
 
 **次回開始点：** `quality/C03-C10-integration` の最新HEADと本表/Issue #92/#96を照合し、C03-007〜013の残件・C03-001〜006の不足試験から再開。合格や完了の推定は禁止。
+
+### 2026-11-17 C03自動検査・失敗修復の追補
+
+- 追加連携コミット [`27a43e8d`](https://github.com/totoro0419/illustro/commit/27a43e8d4d0e29adbe21858932f17be8e0873dd0) は、Core CI [44017376670](https://github.com/totoro0419/illustro/actions/runs/44017376670) success・Editor単体試験233件 successだったが、[統合CI 44017370244](https://github.com/totoro0419/illustro/actions/runs/44017370244) は **failure**。共通条件関数へ移した際に、`main.ts` で `drawing` のnullをTypeScriptが否定できず TS18047（4箇所）でビルド失敗。
+- 修正コミット [`f2eee15d`](https://github.com/totoro0419/illustro/commit/f2eee15dd0bca3450c194e6318fb1c06aead2348) で描画画面の有無を先に検査。**同コミットの[統合CI 44017534449](https://github.com/totoro0419/illustro/actions/runs/44017534449) success・[Core CI 44017540469](https://github.com/totoro0419/illustro/actions/runs/44017540469) success** をGitHub Actionsで再確認。以前の失敗をなかったことにはしない。
+- 実機・4000px・旧作品の実データについては未確認のまま。C03の6件（001〜006）は「修正実装済み・検証待ち」であり「解決確認済み」ではない。
