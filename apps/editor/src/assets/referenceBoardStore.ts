@@ -82,6 +82,29 @@ export async function writeBoard(input:BoardSnapshot):Promise<void>{
     item.id!==input.items[index]?.id||item.assetId!==input.items[index]?.assetId))
     throw Error('資料の保存内容を確認できませんでした。');
 }
+/** Identify stored reference-board dependencies before an asset goes to trash. */
+export async function boardsUsingAsset(assetId:string):Promise<readonly string[]>{
+  if(!assetId)throw Error('素材の識別番号がありません。');
+  const store=await db();
+  return new Promise<readonly string[]>((resolve,reject)=>{
+    const tx=store.transaction(STORE,'readonly'),request=tx.objectStore(STORE).openCursor();
+    const used:string[]=[];
+    request.onsuccess=()=>{
+      const cursor=request.result;
+      if(!cursor){resolve(used);return;}
+      try{
+        const raw=cursor.value as {documentId?:unknown};
+        if(typeof raw?.documentId!=='string'||!raw.documentId)
+          throw Error('参考資料の保存状態が壊れており、素材の使用状況を確認できません。');
+        const board=decodeBoardRecord(raw.documentId,cursor.value);
+        if(board.items.some(item=>item.assetId===assetId))used.push(board.documentId);
+        cursor.continue();
+      }catch(reason){reject(reason);}
+    };
+    request.onerror=()=>reject(request.error??Error('素材の使用状況を確認できません。'));
+    tx.onabort=()=>reject(tx.error??Error('参考資料の調査を完了できませんでした。'));
+  });
+}
 /** Copy placement only: original assets remain shared and are never deleted. */
 export async function copyReferenceBoard(sourceDocumentId:string,targetDocumentId:string):Promise<number>{
   if(!sourceDocumentId||!targetDocumentId||sourceDocumentId===targetDocumentId)
