@@ -330,10 +330,14 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       stopHandles();
       status.textContent='絵の上をドラッグしてください。';
       locate(current.drawing,path=>{
-        const a=path[0]!,b=path.at(-1)!;
+        // Only line-like shapes and gradient directions follow drawing rulers.
+        // Snapping rectangle/ellipse corners could collapse their height.
+        const guided=type.value==='gradient'||shape.value==='polyline'||shape.value==='bezier';
+        const located=guided&&current.snapGuidedPath?current.snapGuidedPath(path):path;
+        const a=located[0]!,b=located.at(-1)!;
         if(path.length===1)return;
         setPoints(type.value==='gradient'||['rectangle','rounded','polygon','ellipse'].includes(shape.value)?[a,b]:
-          shape.value==='bezier'?curve(a,path[Math.floor(path.length/2)]!,b):path);
+          shape.value==='bezier'?curve(a,located[Math.floor(located.length/2)]!,b):located);
         void refresh();
       });
     },status),
