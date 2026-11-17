@@ -263,7 +263,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  }
  function renderCollections(){
   chipsByHex.clear();
-  selector.replaceChildren(...state.palettes.map(p=>{const op=new Option((p.folder?p.folder+' / ':'')+p.name,p.id);op.selected=p.id===state.paletteId;return op;}));
+  selector.replaceChildren(...state.availablePalettes.map(p=>{const op=new Option((p.folder?p.folder+' / ':'')+p.name,p.id);op.selected=p.id===state.paletteId;return op;}));
   const folder=id<HTMLInputElement>('c04PaletteFolder');if(document.activeElement!==folder)folder.value=state.palette.folder??'';
   list.replaceChildren();manager.replaceChildren();
   for(const [i,s] of state.palette.swatches.entries()){
