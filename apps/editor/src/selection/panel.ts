@@ -4,6 +4,7 @@ import {rasterizeSelection,combineSelection,invertSelection,fullSelection,transl
   type SelectionShape,type MaskData,type CombineMode,type SelectionBrushPoint} from './mask';
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection,storeCurrentSelection,loadCurrentSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
+import {selectionBrushPreviewDabs} from './brushPreview';
 import {SelectionOverlay} from './overlay';
 import {snapMagneticPoint} from './magnetic';
 import type {AnalyzeOptions} from './autoSelect';
@@ -108,12 +109,25 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const preview=document.createElement('svg');
   preview.classList.add('c06-selection-preview');preview.setAttribute('aria-hidden','true');
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-  const brushTrace=document.createElementNS('http://www.w3.org/2000/svg','path');
-  brushTrace.setAttribute('fill','none');
-  brushTrace.setAttribute('stroke-linecap','round');
-  brushTrace.setAttribute('stroke-linejoin','round');
-  brushTrace.style.strokeDasharray='none';
-  preview.append(path,brushTrace);
+  const svgNs='http://www.w3.org/2000/svg';
+  const brushTrace=document.createElementNS(svgNs,'g');
+  const brushGuide=document.createElementNS(svgNs,'path');
+  brushGuide.setAttribute('fill','none');
+  brushGuide.setAttribute('stroke-linecap','round');
+  brushGuide.setAttribute('stroke-linejoin','round');
+  brushGuide.setAttribute('stroke-width','1');
+  brushGuide.setAttribute('opacity','.3');
+  const brushDefs=document.createElementNS(svgNs,'defs');
+  const brushGradient=document.createElementNS(svgNs,'radialGradient');
+  const brushGradientId='c06-brush-preview-'+Math.random().toString(36).slice(2);
+  brushGradient.id=brushGradientId;
+  const brushCenter=document.createElementNS(svgNs,'stop');
+  const brushEdge=document.createElementNS(svgNs,'stop');
+  brushEdge.setAttribute('offset','100%');
+  brushEdge.setAttribute('stop-opacity','0');
+  brushGradient.append(brushCenter,brushEdge);brushDefs.append(brushGradient);
+  brushTrace.append(brushGuide);
+  preview.append(path,brushDefs,brushTrace);
   viewport?.append(preview,box);
   let currentWork:null|string=null;
   let selectionBounds:ReturnType<typeof boundsOfSelection>=null;
@@ -163,27 +177,54 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       })():viewPoints.map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
     path.setAttribute('d',d);preview.setAttribute('data-empty','false');
   }
-  function brushOverlayPath(){
+  let brushPreviewFrame=0;
+  function paintBrushOverlay(){
+    brushPreviewFrame=0;
     const drawingSurface=callbacks.getSurface();
     if(!drawingSurface||!brushPoints.length||
       !(tool==='brushAdd'||tool==='brushSubtract')){
-      brushTrace.setAttribute('d','');
+      brushGuide.setAttribute('d','');
+      brushTrace.replaceChildren(brushGuide);
       if(!points.length)preview.setAttribute('data-empty','true');
       return;
     }
-    // Keep preview rendering bounded even for a long, pressure-sensitive stroke.
+    // Use exactly the same dab spacing and pressure-to-radius rule as
+    // brushSelection. Limit DOM work to the newest dabs; keep a thin guide for
+    // the older points so long strokes remain visible while drawing.
+    const color=tool==='brushAdd'?'#18bad9':'#e77845';
     const visible=brushPoints.slice(-2048);
-    const viewPoints=visible.map(point=>drawingSurface.documentToScreen(point));
-    brushTrace.setAttribute('d',viewPoints.map((point,index)=>
+    const coords=visible.map(point=>drawingSurface.documentToScreen(point));
+    brushGuide.setAttribute('d',coords.map((point,index)=>
       (index?'L ':'M ')+point.x+' '+point.y).join(' '));
+    brushGuide.setAttribute('stroke',color);
+    const size=Number(brushSize.value),opacity=Number(brushDensity.value)/100;
+    const hardness=Number(brushHardness.value)/100;
     const left=drawingSurface.documentToScreen({x:0,y:0});
-    const right=drawingSurface.documentToScreen({x:Number(brushSize.value),y:0});
+    const right=drawingSurface.documentToScreen({x:1,y:0});
     const zoom=Math.hypot(right.x-left.x,right.y-left.y);
-    const pressure=visible.at(-1)?.pressure??1;
-    brushTrace.style.strokeWidth=String(Math.max(1,zoom*(.25+.75*Math.min(1,Math.max(0,pressure)))));
-    brushTrace.style.stroke=tool==='brushAdd'?'#18bad9':'#e77845';
-    brushTrace.style.opacity=String(Math.min(.9,Math.max(.2,Number(brushDensity.value)/100)));
+    const dots=selectionBrushPreviewDabs(brushPoints,size,256);
+    const fragment=document.createDocumentFragment();
+    brushCenter.setAttribute('offset',String(Math.max(0,Math.min(1,hardness))*100)+'%');
+    brushCenter.setAttribute('stop-color',color);
+    brushCenter.setAttribute('stop-opacity',String(Math.max(0,Math.min(1,opacity))));
+    brushEdge.setAttribute('stop-color',color);
+    for(const dot of dots){
+      const center=drawingSurface.documentToScreen(dot);
+      const circle=document.createElementNS(svgNs,'circle');
+      circle.setAttribute('cx',String(center.x));
+      circle.setAttribute('cy',String(center.y));
+      circle.setAttribute('r',String(Math.max(.5,dot.radius*zoom)));
+      circle.setAttribute('fill','url(#'+brushGradientId+')');
+      fragment.append(circle);
+    }
+    brushTrace.replaceChildren(brushGuide,fragment);
     preview.setAttribute('data-empty','false');
+  }
+  function brushOverlayPath(){
+    if(!brushPoints.length){
+      if(brushPreviewFrame)cancelAnimationFrame(brushPreviewFrame);
+      paintBrushOverlay();
+    }else if(!brushPreviewFrame)brushPreviewFrame=requestAnimationFrame(paintBrushOverlay);
   }
   function publish(next:MaskData|null,record=true,persist=true){
     const doc=source();if(!doc)return;
