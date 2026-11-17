@@ -9,6 +9,7 @@ import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {captureSelectedLayerTiles} from './selection/tileCapture';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
+import {originalVisibleWithTransformPreview} from './transform/previewReplacement';
 import {averageSampledPixels} from './color/sampleAverage';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
 import {CANONICAL_TILE_SIZE,type RasterPixelTiles,type LayerBlend,type LayerMask,type MaskPoint,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
@@ -1250,7 +1251,7 @@ export class BrushSurface{
         :candidate?.blend!==undefined?candidate.blend:layer.blend;
       return {
         surfaceKey:layer.surface.descriptor.surfaceId,
-        visible:solo?layer.id===solo.id:visible&&layer.id!==this.artworkPreviewReplacementId,
+        visible:solo?layer.id===solo.id:originalVisibleWithTransformPreview(visible,layer.id,this.artworkPreviewReplacementId),
         ...(!solo&&clip?{clipKey:clip.surface.descriptor.surfaceId}:{}),
         ...(isolation.length?{isolation}:{}),
         ...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),
