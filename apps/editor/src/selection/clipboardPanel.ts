@@ -55,7 +55,10 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
   make('c06SystemCopy','端末へ画像をコピー',actions.writeSystem);
   make('c06SystemPaste','端末から画像を読む',actions.readSystem);
   let placementOverlay:HTMLElement|null=null;
+  let placementCleanup:(()=>void)|null=null;
   function closePlacement(){
+    const cleanup=placementCleanup;placementCleanup=null;
+    cleanup?.();
     placementOverlay?.remove();
     placementOverlay=null;
     previewButton.disabled=!clipboard.hasContent||!actions.canEdit();
@@ -76,7 +79,7 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
     image.style.width=item.width+'px';image.style.height=item.height+'px';
     if(item.pixels){
       const context=image.getContext('2d');
-      context?.putImageData(new ImageData(item.pixels,item.previewWidth,item.previewHeight),0,0);
+      context?.putImageData(new ImageData(new Uint8ClampedArray(item.pixels),item.previewWidth,item.previewHeight),0,0);
     }else{
       const context=image.getContext('2d');
       if(context){context.fillStyle='#75baf255';context.fillRect(0,0,image.width,image.height);}
@@ -87,6 +90,8 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
     commit.type=cancel.type='button';commit.textContent='この位置に確定';cancel.textContent='取り消す';
     bar.append(caption,commit,cancel);overlay.append(image,bar);surface.append(overlay);
     placementOverlay=overlay;
+    for(const name of ['pointerdown','pointermove','pointerup','pointercancel'] as const)
+      overlay.addEventListener(name,event=>event.stopPropagation());
     function position(){
       const live=actions.getView();
       if(!live||!placementOverlay||clipboard.snapshotId!==originalId||!actions.canEdit()){
@@ -109,17 +114,17 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
       if(placementOverlay===overlay)frame=requestAnimationFrame(tick);
     };
     frame=requestAnimationFrame(tick);
-    const cleanup=()=>{
-      cancelAnimationFrame(frame);
-      if(placementOverlay===overlay)closePlacement();
-      document.removeEventListener('keydown',keyGuard,true);
-    };
+    const cleanup=()=>closePlacement();
     const keyGuard=(event:KeyboardEvent)=>{
       if(event.key==='Escape'&&placementOverlay===overlay){
         event.preventDefault();event.stopPropagation();cleanup();
       }
     };
     document.addEventListener('keydown',keyGuard,true);
+    placementCleanup=()=>{
+      cancelAnimationFrame(frame);
+      document.removeEventListener('keydown',keyGuard,true);
+    };
     let drag:{id:number;screen:{x:number;y:number};x:number;y:number}|null=null;
     image.addEventListener('pointerdown',event=>{
       if(event.button!==0||working)return;
