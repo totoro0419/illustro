@@ -228,7 +228,7 @@ export class DocumentTransaction{
     for(const tile of tiles){
       if(!/^\\d+,\\d+$/.test(tile.key)||seen.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.length!==tileSize*tileSize*4)
         throw new Error('画像の区画が重複または破損しています。');
-      const [x,y]=tile.key.split(',').map(Number);
+      const [x=NaN,y=NaN]=tile.key.split(',').map(Number);
       if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0||x>=maxX||y>=maxY)
         throw new Error('画像の区画が作品の外です。');
       seen.add(tile.key);
@@ -237,7 +237,7 @@ export class DocumentTransaction{
     const working=new RasterWorkingSet(empty,this.doc._internal(CORE_INTERNAL).store);
     for(const {key,pixels} of tiles){
       if(!pixels.some(value=>value!==0))continue;
-      const [tx,ty]=key.split(',').map(Number),originX=tx*tileSize,originY=ty*tileSize;
+      const [tx=NaN,ty=NaN]=key.split(',').map(Number),originX=tx*tileSize,originY=ty*tileSize;
       const cx=Math.floor(originX/canonical),cy=Math.floor(originY/canonical);
       const localX=originX-cx*canonical,localY=originY-cy*canonical;
       const w=Math.min(tileSize,this.rootValue.width-originX),h=Math.min(tileSize,this.rootValue.height-originY);
@@ -250,9 +250,10 @@ export class DocumentTransaction{
     }
     this.updatesValue.set(id,Object.freeze({...layer,surface:empty}));
     this.workingValue.set(id,working);
+    const sourceRevision=deformation?.sourceRevision??source;
     this.slotsValue.push(Object.freeze({
       type:'working' as const,layerId:id,initial:true as const,replace:true as const,
-      ...(deformation?.sourceRevision??source?{source:deformation?.sourceRevision??source}: {})
+      ...(sourceRevision?{source:sourceRevision}:{})
     }));
     if(deformation!==undefined)this.meta(id,{deformation:validateLayerDeformation(deformation)});
     if(editable!==undefined)this.setEditableArtwork(id,editable);
