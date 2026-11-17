@@ -179,6 +179,31 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     syncAfter({...board,items:[...board.items,newBoardItem(assetId,board.items.length)]});
     status.textContent='資料を追加しました。';
   }
+  function reselectReferenceImage(itemId:string){
+    const current=board,reference=current?.items.find(item=>item.id===itemId);
+    if(!current||!reference)return;
+    if(!reference.assetId.startsWith('missing:')&&!window.confirm(
+      'この資料の画像を別の画像に入れ替えますか？ 元の素材は削除しません。'))return;
+    const filePicker=document.createElement('input');
+    filePicker.type='file';filePicker.hidden=true;
+    filePicker.accept='image/png,image/jpeg,image/webp,image/avif,image/gif';
+    document.body.append(filePicker);
+    filePicker.onchange=()=>{
+      const file=filePicker.files?.[0];filePicker.remove();if(!file)return;
+      void (async()=>{
+        const added=await addAsset({kind:'reference',name:file.name,data:file});
+        if(board?.documentId!==current.documentId||!board.items.some(item=>item.id===itemId)){
+          status.textContent='画像は素材庫に保存しました。作品が切り替わったため資料への配置は変更していません。';
+          return;
+        }
+        assetCache.clear();
+        changeItem(itemId,{assetId:added.id});
+        status.textContent='参考画像を選び直しました。元の資料配置は維持しました。';
+      })().catch(error);
+    };
+    filePicker.addEventListener('cancel',()=>filePicker.remove(),{once:true});
+    filePicker.click();
+  }
   function changeItem(itemId:string,patch:Partial<BoardItem>,history=true){
     const prior=snapshot(),item=prior.items.find(x=>x.id===itemId);
     if(!item)return;
@@ -427,8 +452,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       const pin=input(item.pinned?'固定解除':'位置を固定',()=>changeItem(item.id,{pinned:!item.pinned}));
       const visible=input(item.hidden?'再表示':'隠す',()=>changeItem(item.id,{hidden:!item.hidden}));
       const sample=input('採色',()=>void options.onPickColor(item.assetId).catch(error));
+      const reselect=input(item.assetId.startsWith('missing:')?'元画像を選び直す':'画像を入れ替える',
+        ()=>reselectReferenceImage(item.id));
       const remove=input('外す',()=>removeItem(item.id));
-      row.append(name,groupButton,pin,visible,sample,remove);list.append(row);
+      row.append(name,groupButton,pin,visible,sample,reselect,remove);list.append(row);
     }
   }
   async function render(){
