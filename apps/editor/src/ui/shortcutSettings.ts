@@ -58,6 +58,14 @@ const write=(bindings:readonly Binding[])=>{try{localStorage.setItem(KEY,JSON.st
 const normalizedKey=(event:KeyboardEvent)=>event.key===' '?'space':event.key.toLowerCase();
 const isText=(target:EventTarget|null)=>target instanceof Element&&!!target.closest('input,textarea,select,[contenteditable], [role="textbox"]');
 const isHoldable=(id:string)=>id==='eyedropper'||id==='panView'||id==='erase'||id==='quickControllerOpen';
+/** Releasing Quick must not cancel an unrelated temporarily held drawing tool. */
+export function holdRestoreAllowed(
+  id:string,epoch:number,
+  active:ReadonlyMap<string,unknown>,
+  latest:ReadonlyMap<string,number>,
+):boolean{
+  return !active.has(id)&&latest.get(id)===epoch;
+}
 
 export function installShortcutSettings(commands:CommandService,canSwitchTools:()=>boolean=()=>true){
   const parent=el('workspaceBoxBody');if(!parent)return;
@@ -93,6 +101,7 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
   mode.onchange=()=>{if(mode.value==='hold'&&!isHoldable(commandSelect.value)){mode.value='press';status.textContent='押している間だけ使えるのは、スポイト・消しゴム・表示移動です。';}};
   const active=new Map<string,{restore:()=>void;epoch:number}>();
   let holdEpoch=0;
+  const latestHoldEpoch=new Map<string,number>();
   function render(){
     list.replaceChildren();
     const names=new Map(commands.list().map(c=>[c.id,c.label]));
@@ -208,6 +217,7 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     const id=binding.commandId;
     const on=(el<HTMLButtonElement>(id)?.getAttribute(id==='quickControllerOpen'?'aria-expanded':'aria-pressed')==='true');
     const epoch=++holdEpoch;
+    latestHoldEpoch.set(id,epoch);
     if(on){active.set(id,{restore:()=>{},epoch});return;}
     const previous=['paint','erase','eyedropper','panView'].find(
       key=>el<HTMLButtonElement>(key)?.getAttribute('aria-pressed')==='true')??'paint';
@@ -238,7 +248,7 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
   },{capture:true});
   const restoreAfterStroke=(id:string,restore:()=>void,epoch:number)=>{
     const check=()=>{
-      if(active.has(id)||epoch!==holdEpoch)return; // another hold superseded release
+      if(!holdRestoreAllowed(id,epoch,active,latestHoldEpoch))return; // only newer hold of this tool supersedes
       if(!canSwitchTools()){window.setTimeout(check,32);return;}
       restore();
     };
