@@ -118,6 +118,12 @@ export type PackImportOptions=Readonly<{
   onItem?:(index:number,total:number)=>void;
   onlyIds?:readonly string[];
   resolvedIds?:Readonly<Record<string,string>>;
+  /** Save the complete ID allocation BEFORE writing any item, for crash-safe retry. */
+  onResolvedIds?:(mapping:Readonly<Record<string,string>>)=>Promise<void>|void;
+  /** The item is durable: record success before the next item starts. */
+  onItemSucceeded?:(originalId:string)=>Promise<void>|void;
+  /** Verify and reuse a previously imported ID when resuming a saved batch. */
+  resumeExisting?:boolean;
   /** Required for a reference-board bundle: all assets commit or none do. */
   atomic?:boolean;
 }>;
@@ -140,6 +146,9 @@ export async function importAssetPack(
     while(occupied.has(target)||usedTargets.has(target))target=crypto.randomUUID();
     resolvedIds[item.id]=target;usedTargets.add(target);
   }
+  // The caller's recovery record must contain the whole mapping before the
+  // first addAsset. Otherwise a page close could create duplicate imports.
+  await options?.onResolvedIds?.(resolvedIds);
   const pending=input.items.filter(item=>!selected||selected.has(item.id));
   if(options?.atomic){
     if(selected)throw Error('一括保護する素材の一部だけを選ぶことはできません。');
@@ -170,22 +179,48 @@ export async function importAssetPack(
   }
   for(const [index,item] of pending.entries()){
     options?.onItem?.(index+1,pending.length);
+    let result:AssetInfo|null=null;
     try{
       const payload=decode(item.dataBase64);
       if(payload.byteLength!==item.bytes)throw Error('素材の中身が欠けています。');
       const id=resolvedIds[item.id]!;
-      // Every parent in the same pack uses its mapped identity, even when IDs conflict.
+      // Every parent in the same pack uses its mapped identity.
       const parentId=item.parentId?(resolvedIds[item.parentId]??item.parentId):undefined;
-      const result=await addAsset({
-        id,kind:item.kind,name:item.name,data:new Blob([payload.buffer as ArrayBuffer],{type:item.mime}),
-        folder:item.folder,tags:item.tags,license:item.license,origin:item.origin,notes:item.notes,
-        version:item.version,...(parentId?{parentId}:{})
-      });
-      renamedIds[item.id]=result.id;imported.push(result);
+      const existing=options?.resumeExisting?await getAsset(id):null;
+      if(existing){
+        // A crash can happen after the blob commit but before the checkpoint.
+        // Accept such an item ONLY after exact metadata and binary comparison.
+        const compatible=!existing.deleted&&existing.kind===item.kind&&
+          existing.name===item.name&&existing.version===item.version&&
+          existing.parentId===parentId&&existing.mime===item.mime&&existing.bytes===item.bytes;
+        let equal=compatible;
+        for(let start=0;equal&&start<payload.byteLength;start+=1048576){
+          const end=Math.min(payload.byteLength,start+1048576);
+          const stored=new Uint8Array(await existing.data.slice(start,end).arrayBuffer());
+          if(stored.length!==end-start)equal=false;
+          else for(let offset=0;offset<stored.length;offset++){
+            if(stored[offset]!==payload[start+offset]){equal=false;break;}
+          }
+        }
+        if(!equal)throw Error('再開前に保存された素材の内容が一致しません。上書きしていません。');
+        result=existing;
+      }else{
+        result=await addAsset({
+          id,kind:item.kind,name:item.name,data:new Blob([payload.buffer as ArrayBuffer],{type:item.mime}),
+          folder:item.folder,tags:item.tags,license:item.license,origin:item.origin,notes:item.notes,
+          version:item.version,...(parentId?{parentId}:{})
+        });
+      }
     }catch(error){
       failedIds.push(item.id);
       failures.push(item.name+': '+(error instanceof Error?error.message:String(error)));
+      continue;
     }
+    // This callback is deliberately outside the catch. A failed progress
+    // checkpoint must stop importing rather than masquerade as a bad asset.
+    renamedIds[item.id]=result.id;
+    imported.push(result);
+    await options?.onItemSucceeded?.(item.id);
   }
   const unresolvedParents:string[]=[];
   for(const entry of imported){
