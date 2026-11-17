@@ -105,8 +105,9 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
         base.x,base.y
       ].join(',')+')';
       if(image.style.transform!==matrix)image.style.transform=matrix;
-      caption.textContent=item.sourceName+' · X '+x+' / Y '+y+
-        (item.editable?' · 複数レイヤーの場合は貼り付け前の枠を表示':' · 半透明の配置案');
+      const label=item.sourceName+' · X '+x+' / Y '+y+
+        (item.editable?' · 編集できるレイヤーの配置案':' · 半透明の配置案');
+      if(caption.textContent!==label)caption.textContent=label;
     }
     const tick=()=>{
       if(placementOverlay!==overlay)return;
