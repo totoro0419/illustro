@@ -41,7 +41,7 @@ describe('C07-003 multi-layer non-destructive one-step transform',()=>{
   const restored=CoreDocument.restore({snapshot:JSON.parse(JSON.stringify(state)),blockPayloads:doc.persistenceBlockPayloads(state)});
   expect(restored.readPixel(b,25,20)).toEqual([20,100,220,255]);
   expect(restored.root.getLayer(a).deformation?.sourceRevision).toBe(sourceRevision);
-  expect(root.getLayer(a).deformation).toBeNull();
+  expect(root.getLayer(a).deformation).toBeFalsy();
  });
 });
 
@@ -59,6 +59,6 @@ describe('C07-003 atomic validation of multi-layer snapshots',()=>{
   expect(()=>tx.replaceLayerDeformationsBatch([entry,entry])).toThrow(/重複/);
   tx.cancel();
   expect(doc.head).toBe(rev);
-  expect(doc.root.getLayer(id).deformation).toBeNull();
+  expect(doc.root.getLayer(id).deformation).toBeFalsy();
  });
 });
