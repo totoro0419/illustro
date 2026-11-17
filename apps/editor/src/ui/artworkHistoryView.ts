@@ -1,7 +1,7 @@
 import type {CoreDocument,RevisionId} from '@illustro/core';
 import {CanvasNavigation} from '../canvasNavigation';
 import {CanvasView} from '../canvasView';
-import {captureExport,renderFrozenArtwork} from '../export/basicExport';
+import {captureExport,renderFrozenArtwork,renderFrozenArtworkTiledPreview,encodePng} from '../export/basicExport';
 import {HistoryPreviewQueue} from './historyPreviewQueue';
 
 // Reuse both completed and in-flight thumbnails. A 4000px preview can otherwise
@@ -19,8 +19,10 @@ export function historyPreviewDimensions(width:number,height:number,maxWidth:num
 // is encoded to PNG. Full-size comparisons remain available on explicit request.
 async function renderHistoryPreview(artwork:CoreDocument,revision:RevisionId,maxWidth:number,maxHeight:number){
   const frozen=captureExport(artwork,undefined,revision);
-  const pixels=await renderFrozenArtwork(frozen);
   const {width,height}=historyPreviewDimensions(frozen.width,frozen.height,maxWidth,maxHeight);
+  const fastPixels=await renderFrozenArtworkTiledPreview(frozen,width,height);
+  if(fastPixels)return {blob:await encodePng(fastPixels,width,height),width,height};
+  const pixels=await renderFrozenArtwork(frozen);
   const bitmap=await createImageBitmap(
     new ImageData(pixels as Uint8ClampedArray<ArrayBuffer>,frozen.width,frozen.height),
     {resizeWidth:width,resizeHeight:height,resizeQuality:'high'},

@@ -1,5 +1,6 @@
 import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId} from '@illustro/core';
 import {blendArtworkPixel,gradientMapTable,mapGradientPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
+import {canUseTiledHistoryPreview,createTiledPreviewAccumulator} from './tiledPreview';
 
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
@@ -161,6 +162,47 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
     }
     while(groups.length)closeGroup();
     return composite;
+  }finally{renderer?.destroy();canvas.width=1;canvas.height=1;}
+}
+
+/** Thumbnail-only fast path: identical source-over compositing per source pixel,
+ * but only one GPU tile is read and combined at a time. Advanced content falls
+ * back to the unchanged full-resolution renderer.
+ */
+export async function renderFrozenArtworkTiledPreview(
+  frozen:FrozenExport,targetWidth:number,targetHeight:number,
+):Promise<Uint8ClampedArray|null>{
+  if(!canUseTiledHistoryPreview(frozen,targetWidth,targetHeight))return null;
+  const {width,height,layers,strokes}=frozen;
+  const canvas=createRenderCanvas(width,height);
+  let renderer:GpuRenderer|null=null;
+  try{
+    try{renderer=await GpuRenderer.create(canvas,width,height,'webgl2',{webglDesynchronized:false});}
+    catch{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
+    renderer.setSurfaceStack(layers.map(layer=>layer.surfaceId));
+    let id=0;
+    for(const {surfaceId,record} of strokes){
+      const preset={...record.preset,__legacyStarAa:record.engine==='illustro-rt-2.4'};
+      renderer.document.append(++id,preset,record.commands,null,surfaceId);
+      renderer.document.end(id,preset,surfaceId);
+    }
+    await renderer.drain();
+    const accumulator=createTiledPreviewAccumulator(width,height,targetWidth,targetHeight);
+    const plainWhite=new Uint8Array(TILE*TILE*4).fill(255);
+    const visible=layers.filter(layer=>!layer.referenceOnly&&layer.visible&&layer.opacity>0);
+    for(let ty=0;ty<Math.ceil(height/TILE);ty++){
+      for(let tx=0;tx<Math.ceil(width/TILE);tx++){
+        const tile=new Uint8ClampedArray(TILE*TILE*4),key=tx+','+ty;
+        for(const layer of visible){
+          const source=layer.baseColor==='white'?plainWhite:await renderer.readTile(layer.surfaceId,key);
+          if(source)compositeLayer(tile,source,layer.opacity);
+        }
+        accumulator.addTile(tile,tx*TILE,ty*TILE,TILE);
+      }
+      // History preview is background work; do not monopolize pointer frames.
+      await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+    }
+    return accumulator.finish();
   }finally{renderer?.destroy();canvas.width=1;canvas.height=1;}
 }
 

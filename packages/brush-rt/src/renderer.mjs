@@ -462,6 +462,12 @@ export class GpuRenderer {
  async waitStroke(ids){const start=performance.now(),epoch=this.navigationEpoch;while(ids.some(id=>!this.presentedStrokes.has(id))){if(epoch!==this.navigationEpoch||ids.some(id=>this.supersededStrokes?.has(id))){for(const id of ids)this.supersededStrokes?.delete(id);return {superseded:true};}if(this.errors.length||this.disposed)throw Error(this.errors.join(';')||'Renderer stopped');if(performance.now()-start>120000)throw Error('Stroke GPU completion timeout');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}for(const id of ids)this.presentedStrokes.delete(id);if(ids.some(id=>this.hiddenStrokeIds.has(id)))return {superseded:true};}
  async drain(finalFrame=true){const start=performance.now();while(this.inflight||this.guardPreparing||this.document.jobs.length){if(this.errors.length)throw Error(this.errors.join(';'));if(performance.now()-start>120000)throw Error('confirmed renderer drain timeout '+JSON.stringify({jobs:this.document.jobs.length,count:this.document.count,inflight:this.inflight,guard:this.guardPreparing,historyPreparing:this.historyPreparing,head:this.document.jobs[0]&&{id:this.document.jobs[0].id,commit:this.document.jobs[0].commit,offset:this.document.jobs[0].offset,commands:this.document.jobs[0].commands.length},history:this.backend.imageHistory?.summary(),strokeFrames:this.strokeFrames.size}));await new Promise(r=>requestAnimationFrame(r));this.frame(performance.now());}if(finalFrame){this.needsFrame=true;this.frame(performance.now());while(this.inflight||this.guardPreparing){await new Promise(r=>requestAnimationFrame(r));this.backend.poll?.();}}if(this.errors.length)throw Error(this.errors.join(';'));}
  async read(surfaceKey='default'){await this.drain();return this.backend.read(surfaceKey);}
+ /** Read only one 128px raster tile for bounded-memory thumbnails. The caller
+  * must have completed drain() before a sequence of tile reads. */
+ async readTile(surfaceKey='default',key='0,0'){
+  if(this.inflight||this.guardPreparing||this.document.jobs.length)await this.drain();
+  return this.backend.readTile(surfaceKey,key);
+ }
  async cancelStroke(id){
   if(this.ended.has(id))throw Error('cannot cancel an ended stroke');
   if(this.cancellingStroke)throw Error('stroke cancellation already pending');
@@ -608,6 +614,14 @@ class WebGlBackend {
  poll(){if(!this.fence)return;const g=this.gl,s=g.clientWaitSync(this.fence,0,0);if(s===g.ALREADY_SIGNALED||s===g.CONDITION_SATISFIED){g.deleteSync(this.fence);this.fence=null;const p=this.pending;this.pending=null;p.resolve();return true;}else if(s===g.WAIT_FAILED){g.deleteSync(this.fence);this.fence=null;this.pending.reject(Error('GPU fence failed'));this.pending=null;}}
  readViewport(){const g=this.gl,w=this.width,h=this.height,a=new Uint8Array(w*h*4),out=new Uint8ClampedArray(a.length);g.bindFramebuffer(g.FRAMEBUFFER,this.liveTarget.f);g.readPixels(0,0,w,h,g.RGBA,g.UNSIGNED_BYTE,a);for(let y=0;y<h;y++)out.set(a.subarray((h-1-y)*w*4,(h-y)*w*4),y*w*4);return out;}
  read(surfaceKey='default'){const g=this.gl,out=new Uint8ClampedArray(this.width*this.height*4);for(const t of this.tiles.values()){if(t.surfaceKey!==surfaceKey)continue;g.bindFramebuffer(g.FRAMEBUFFER,t.layer[t.l].f);const a=new Uint8Array(TILE*TILE*4);g.readPixels(0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,a);for(let y=0;y<TILE&&t.y+y<this.height;y++){const n=Math.min(TILE,this.width-t.x);out.set(a.subarray(y*TILE*4,(y*TILE+n)*4),((t.y+y)*this.width+t.x)*4);}}return out;}
+ readTile(surfaceKey='default',key='0,0'){
+  const tile=this.tiles.get(surfaceTileKey(surfaceKey,key));if(!tile)return null;
+  const g=this.gl,bytes=new Uint8Array(TILE*TILE*4);
+  g.bindFramebuffer(g.FRAMEBUFFER,tile.layer[tile.l].f);
+  g.readPixels(0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,bytes);
+  if(g.getError()!==g.NO_ERROR)throw Error('GPU thumbnail tile read failed');
+  return bytes;
+ }
  retirePreview(id){const v=this.previews.get(id);if(v?.tiles){retireSparsePreview(this,v);return;}if(v){for(const key of v.keys)this.dirtyConfirmed.add(key);this.release(v.prefix);this.release(v.tail);this.previews.delete(id);}}
  cancelStroke(id,keys,surfaceKey){for(const key of keys){const qualified=surfaceTileKey(surfaceKey,key),t=this.tiles.get(qualified);if(t?.active!==id)continue;for(const s of t.stroke??[])this.release(s);t.stroke=null;t.active=null;t.preset=t.previousPreset??emptyPreset;delete t.previousPreset;if(t.uncommittedOwner===id){for(const s of t.layer)this.release(s);this.tiles.delete(qualified);}this.dirtyConfirmed.add(key);}this.dropHistory([id]);}
  invalidateTiles(keys,surfaceKey='default'){this.imageHistory?.invalidate(surfaceKey,keys);for(const key of keys){const qualified=surfaceTileKey(surfaceKey,key),t=this.tiles.get(qualified);if(t){for(const s of t.layer)this.release(s);if(t.stroke)for(const s of t.stroke)this.release(s);this.tiles.delete(qualified);}if(!this.layered)this.archiveIds.delete(key);this.dirtyConfirmed.add(key);}}
@@ -678,6 +692,20 @@ class WebGpuBackend {
  }
  async readViewport(){const d=this.device,w=this.width,h=this.height,stride=Math.ceil(w*4/256)*256,b=d.createBuffer({size:stride*h,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ}),e=d.createCommandEncoder();e.copyTextureToBuffer({texture:this.liveTarget},{buffer:b,bytesPerRow:stride},[w,h]);d.queue.submit([e.finish()]);await b.mapAsync(GPUMapMode.READ);const a=new Uint8Array(b.getMappedRange()),out=new Uint8ClampedArray(w*h*4),bgra=this.format.startsWith('bgra');for(let y=0;y<h;y++)for(let x=0;x<w;x++){const src=y*stride+x*4,dst=(y*w+x)*4;out[dst]=a[src+(bgra?2:0)];out[dst+1]=a[src+1];out[dst+2]=a[src+(bgra?0:2)];out[dst+3]=a[src+3];}b.unmap();b.destroy();return out;}
  async read(surfaceKey='default'){const d=this.device,out=new Uint8ClampedArray(this.width*this.height*4);for(const t of this.tiles.values()){if(t.surfaceKey!==surfaceKey)continue;const b=d.createBuffer({size:TILE*TILE*4,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});const e=d.createCommandEncoder();e.copyTextureToBuffer({texture:t.layer[t.l]},{buffer:b,bytesPerRow:TILE*4},[TILE,TILE]);d.queue.submit([e.finish()]);await b.mapAsync(GPUMapMode.READ);const a=new Uint8Array(b.getMappedRange());for(let y=0;y<TILE&&t.y+y<this.height;y++){const n=Math.min(TILE,this.width-t.x);out.set(a.subarray(y*TILE*4,(y*TILE+n)*4),((t.y+y)*this.width+t.x)*4);}b.unmap();b.destroy();}return out;}
+ async readTile(surfaceKey='default',key='0,0'){
+  const tile=this.tiles.get(surfaceTileKey(surfaceKey,key));if(!tile)return null;
+  const d=this.device,buffer=d.createBuffer({size:TILE*TILE*4,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+  try{
+   const encoder=d.createCommandEncoder();
+   encoder.copyTextureToBuffer({texture:tile.layer[tile.l]},{buffer,bytesPerRow:TILE*4},[TILE,TILE]);
+   d.queue.submit([encoder.finish()]);
+   await buffer.mapAsync(GPUMapMode.READ);
+   const result=new Uint8Array(TILE*TILE*4);
+   result.set(new Uint8Array(buffer.getMappedRange()));
+   buffer.unmap();
+   return result;
+  }finally{buffer.destroy();}
+ }
  retirePreview(id){const v=this.previews.get(id);if(v?.tiles){retireSparsePreview(this,v);return;}if(v){for(const key of v.keys)this.dirtyConfirmed.add(key);v.prefix.destroy();v.tail.destroy();v.depth?.destroy();this.previews.delete(id);}}
  cancelStroke(id,keys,surfaceKey){for(const key of keys){const qualified=surfaceTileKey(surfaceKey,key),t=this.tiles.get(qualified);if(t?.active!==id)continue;for(const s of t.stroke??[])s.destroy();t.stroke=null;t.active=null;t.preset=t.previousPreset??emptyPreset;delete t.previousPreset;if(t.uncommittedOwner===id){for(const s of t.layer)s.destroy();this.tiles.delete(qualified);}this.dirtyConfirmed.add(key);}this.dropHistory([id]);}
  invalidateTiles(keys,surfaceKey='default'){this.imageHistory?.invalidate(surfaceKey,keys);for(const key of keys){const qualified=surfaceTileKey(surfaceKey,key),t=this.tiles.get(qualified);if(t){for(const s of t.layer)s.destroy();if(t.stroke)for(const s of t.stroke)s.destroy();this.tiles.delete(qualified);}if(!this.layered)this.archiveIds.delete(key);this.dirtyConfirmed.add(key);}}
