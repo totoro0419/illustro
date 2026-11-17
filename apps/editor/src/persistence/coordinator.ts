@@ -7,6 +7,7 @@ import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from
 import {cloneProjectionTiles} from './projectionTransfer';
 import {exactBlobBuffer} from './blobBuffer';
 import {needsUnloadWarning} from './unloadGuard';
+import {fingerprintOwnedBytes,fingerprintFileChunks} from './chunkFingerprint';
 import type {SelectionRect} from '../strokeSelection';
 
 export class ExternalFileConflict extends Error{
@@ -237,23 +238,29 @@ function previewLayersFor(document:CoreDocument,revisionId:RevisionId):readonly 
 function runtimeSupportedAlgorithms(packet:CoreRecoveryPacketV1){
   const supported=new Set<string>();for(const operation of packet.revision.command.operations)for(const ref of operation.algorithmVersionRefs)supported.add(ref);return Object.freeze([...supported]);
 }
-async function fingerprintHandle(handle:unknown){const file=await (handle as {getFile:()=>Promise<File>}).getFile(),bytes=new Uint8Array(await file.arrayBuffer()),hash=await hashHex(bytes);return file.size+':'+file.lastModified+':'+hash;}
+async function fingerprintHandle(handle:unknown){
+  const file=await (handle as {getFile:()=>Promise<File>}).getFile();
+  return file.size+':'+file.lastModified+':'+await fingerprintFileChunks(file);
+}
 async function verifyExternalWrite(handle:{getFile:()=>Promise<File>},expected:Uint8Array){
-  const expectedHash=await hashHex(expected),delays=[0,30,80,160,320,640,1200,2000];let lastSize:number|null=null,lastReason='読み戻しできませんでした';
+  const expectedHash=await fingerprintOwnedBytes(expected),delays=[0,30,80,160,320,640,1200,2000];
+  let lastSize:number|null=null,lastReason='読み戻しできませんでした';
   for(const delay of delays){
     if(delay)await sleep(delay);
     try{
       const file=await handle.getFile();lastSize=file.size;
       if(file.size!==expected.byteLength){lastReason='保存先のサイズが反映待ちです';continue;}
-      const actual=new Uint8Array(await file.arrayBuffer());if(actual.byteLength!==expected.byteLength){lastReason='保存先の読み戻しサイズが一致しません';continue;}
-      const actualHash=await hashHex(actual);if(actualHash===expectedHash)return file.size+':'+file.lastModified+':'+actualHash;
+      // Verify every byte indirectly, via the same ordered chunk fingerprint as
+      // the encoded source, without loading the entire saved file into RAM.
+      const actualHash=await fingerprintFileChunks(file);
+      if(actualHash===expectedHash)return file.size+':'+file.lastModified+':'+actualHash;
       lastReason='保存先の内容がまだ反映されていません';
     }catch(error){lastReason=message(error);}
   }
-  const sizeText=lastSize===null?'不明':String(lastSize);throw new Error('保存先の検証に失敗しました。書き込み後のファイルが端末側で正しく確認できませんでした（確認サイズ '+sizeText+' B / 予定 '+expected.byteLength+' B、'+lastReason+'）。');
+  const sizeText=lastSize===null?'不明':String(lastSize);
+  throw new Error('保存先の検証に失敗しました。書き込み後のファイルが端末側で正しく確認できませんでした（確認サイズ '+sizeText+' B / 予定 '+expected.byteLength+' B、'+lastReason+'）。');
 }
 function sleep(ms:number){return new Promise<void>(resolve=>setTimeout(resolve,ms));}
-async function hashHex(bytes:Uint8Array){const copy=bytes.byteOffset===0&&bytes.byteLength===bytes.buffer.byteLength?bytes:bytes.slice(),hash=new Uint8Array(await crypto.subtle.digest('SHA-256',copy as Uint8Array<ArrayBuffer>));return [...hash].map(x=>x.toString(16).padStart(2,'0')).join('');}
 function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([exactBlobBuffer(bytes)],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
 function safeFileName(value:string){return (value.trim()||'Illustro作品').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').slice(0,120);}
 function message(error:unknown){return error instanceof Error?error.message:String(error);}
