@@ -8,6 +8,7 @@ import {cloneProjectionTiles} from './projectionTransfer';
 import {exactBlobBuffer} from './blobBuffer';
 import {needsUnloadWarning} from './unloadGuard';
 import {fingerprintOwnedBytes,fingerprintFileChunks} from './chunkFingerprint';
+import {NavigationBarrier} from './navigationBarrier';
 import type {SelectionRect} from '../strokeSelection';
 
 export class ExternalFileConflict extends Error{
@@ -30,6 +31,7 @@ type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=
 
 export class PersistenceCoordinator{
   private destroyed=false;private workerFailure:Error|null=null;private navigationSequence=0;private navigationPending=0;
+  private readonly navigationBarrier=new NavigationBarrier();
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
   private saveAttachmentProvider:SaveAttachments|null=null;
@@ -46,7 +48,8 @@ export class PersistenceCoordinator{
   }
   get state(){return this.stateValue;}get preservedData(){return this.preserved;}
   async initialize(controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>,savedRevision:RevisionId|null=null,preserved?:PreservedPortableData,recovered=false,selection:SelectionRect|null=null){
-    this.cancelIdle();await this.drain();this.queue=[];this.controller=controller;this.preserved=preserved;this.selection=selection;const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
+    // A previous document's Undo/Redo head write must not cross this switch.
+    await this.flushPrepared();this.queue=[];this.controller=controller;this.preserved=preserved;this.selection=selection;const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
     const storage=await this.storageStatus(true);const result=await this.request('init',{documentId:document.root.documentId,writerEpochId:document.writerEpochId,snapshot,blocks,savedRevisionId:savedRevision},blocks.map(x=>x.bytes.buffer as ArrayBuffer)) as any;
     this.patch({currentRevision:document.head,savedRevision,protectedThrough:String(result.protectedThrough??'0'),backend:String(result.backend??'unknown'),recovered,
       storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false,saving:false,
@@ -58,9 +61,38 @@ export class PersistenceCoordinator{
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
-    const sequence=++this.navigationSequence,revisionId=document.head;this.navigationPending++;this.patch({currentRevision:revisionId,protectionPending:true});void this.flushPrepared().then(()=>{if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;return this.request('set-head',{revisionId,name:document.root.name,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId,previewLayers:previewLayersFor(document,revisionId)});}).catch(error=>this.patch({storageError:message(error)})).finally(()=>{this.navigationPending--;this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});});
+    const sequence=++this.navigationSequence,revisionId=document.head;
+    this.navigationPending++;
+    this.patch({currentRevision:revisionId,protectionPending:true});
+    // Use the commit-only barrier here: the public flushPrepared also waits for
+    // navigation jobs and would deadlock if a job waited for itself.
+    const write=this.flushCommitted().then(()=>{
+      if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;
+      return this.request('set-head',{
+        revisionId,name:document.root.name,width:document.root.width,height:document.root.height,
+        selectedLayerId:this.controller?.selectedLayerId,previewLayers:previewLayersFor(document,revisionId),
+      });
+    }).catch(error=>this.patch({storageError:message(error)})).finally(()=>{
+      this.navigationPending--;
+      this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});
+    });
+    this.navigationBarrier.track(write);
   }
-  async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
+  private async flushCommitted(){
+    this.cancelIdle();
+    await this.drain();
+    if(this.stateValue.storageError||this.queue.length)
+      throw new Error(this.stateValue.storageError??'自動保存が完了していません。');
+  }
+  async flushPrepared(){
+    // Navigation state itself is durable data: finish set-head after the raster
+    // journal, including a new Undo/Redo issued while an older write completes.
+    do{
+      await this.flushCommitted();
+      await this.navigationBarrier.waitUntilIdle();
+    }while(this.navigationPending>0||this.queue.length>0||this.activeDrain!==null);
+    if(this.stateValue.storageError)throw new Error(this.stateValue.storageError);
+  }
   async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}
   async bindWork(expectedEpoch:string|null=null){if(!this.controller)throw new Error('作品が開かれていません。');return this.request('library-bind',{selectedLayerId:this.controller.selectedLayerId,expectedEpoch,preserved:this.preserved,selection:this.selection});}
   async loadWork(documentId:string){const raw=await this.request('library-load',{documentId});
