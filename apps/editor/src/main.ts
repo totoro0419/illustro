@@ -4238,11 +4238,20 @@ const artworkActions:ArtworkActions={
       missingFontCandidates:controller.layers.flatMap(item=>item.editable?.kind==='text'&&item.editable.fontAsset
         ?[{name:item.name,assetId:item.editable.fontAsset}]:[])};
   },
-  save:async(content,name,editing,initialMask)=>{
+  save:async(content,name,editing,initialMask,hideSourcePaths)=>{
     const artwork=controller.document,head=artwork.head,drawing=surface,selection=c06Selection?.active();
     if(!drawing||!documentReady)throw Error('作品を開いてください。');
     const {width,height}=artwork.root,reference=controller.selectedLayer.id;
     if(editing&&reference!==editing)throw Error('編集するレイヤーを選び直してください。');
+    const sources=hideSourcePaths??[];
+    if(sources.length){
+      if(editing||sources.length!==2||new Set(sources).size!==2)
+        throw Error('演算元の2レイヤーを選び直してください。');
+      for(const id of sources){
+        if(!artwork.root.hasLayer(id)||artwork.root.getLayer(id).editable?.kind!=='path'||artwork.root.isLayerLocked(id))
+          throw Error('元の形が変更されたか、ロックされています。非表示を解除してやり直してください。');
+      }
+    }
     const selected=editing?artwork.root.getLayer(editing):null;
     const previous=selected?.editable??null;
     const mask=selected?selected.vectorMask??null:
@@ -4260,6 +4269,9 @@ const artworkActions:ArtworkActions={
         tx.setEditableArtwork(id,content);
         if(mask)tx.setVectorLayerMask(id,mask);
       }
+      // Keep the operands for future edits, but show only the boolean result.
+      // Source visibility and result creation must share a single Undo step.
+      for(const sourceId of sources)tx.setLayerVisibility(sourceId,false);
       controller.lastPersistenceHandoff=tx.commit().persistence;
       controller.selectLayer(id);
       return 'edit';
