@@ -493,7 +493,7 @@ export class BrushSurface{
     this.positionDocumentOverlay(canvas);
   }
   /** A safe replacement overlay hides the original raster only while shown. */
-  showArtworkPreview(image:ImageData|null,isolated=false,replacementLayerId:LayerId|null=null){
+  showArtworkPreview(image:ImageData|null,isolated=false,replacementLayerId:LayerId|null=null,replacementOpacity=1){
     if(!image){
       this.artworkPreview?.remove();this.artworkPreview=null;
       this.setArtworkPreviewReplacement(null);
@@ -501,7 +501,8 @@ export class BrushSurface{
     }
     const root=this.controller.document.root;
     const replacement=!isolated&&replacementLayerId&&root.hasLayer(replacementLayerId)&&
-      this.controller.selectedLayer.id===replacementLayerId&&!this.inspectedLayer
+      this.controller.selectedLayer.id===replacementLayerId&&!this.inspectedLayer&&
+      Number.isFinite(replacementOpacity)&&replacementOpacity>0&&replacementOpacity<=1
       ?replacementLayerId:null;
     const {width,height}=root;
     const canvas=this.artworkPreview??document.createElement('canvas');
@@ -510,7 +511,7 @@ export class BrushSurface{
     if(canvas.height!==image.height)canvas.height=image.height;
     canvas.setAttribute('aria-hidden','true');
     canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:3;transform-origin:0 0;'+
-      (isolated?'opacity:1;background:repeating-conic-gradient(#e5e5e5 0% 25%,#fff 0% 50%) 50% / 16px 16px':replacement?'opacity:1':'opacity:.78');
+      (isolated?'opacity:1;background:repeating-conic-gradient(#e5e5e5 0% 25%,#fff 0% 50%) 50% / 16px 16px':replacement?'opacity:'+replacementOpacity:'opacity:.78');
     canvas.style.width=width+'px';canvas.style.height=height+'px';
     canvas.getContext('2d')?.putImageData(image,0,0);
     if(!this.artworkPreview)this.inputViewport.append(canvas);
