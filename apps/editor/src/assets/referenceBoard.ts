@@ -2,7 +2,7 @@
  * C05 floating reference windows. No reference content enters the artwork
  * renderer, saved raster tiles or exported composited images.
  */
-import {readBoard,writeBoard,newBoardItem,type BoardSnapshot,type BoardItem} from './referenceBoardStore';
+import {readBoard,writeBoard,decodeBoardRecord,newBoardItem,type BoardSnapshot,type BoardItem} from './referenceBoardStore';
 import {getAsset} from './library';
 import {exportAssetPack,importAssetPack,readAssetPack,type PackManifest} from './packs';
 import type {PortableSectionInput} from '../persistence/format';
@@ -223,13 +223,14 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       throw Error('参考資料が不完全な状態で保存された作品です。絵は開けますが、端末に残る資料を確認してください。');
     if(data.schema!=='illustro.reference-bundle'||data.version!==1||!data.board||!data.pack)
       throw Error('対応していない参考資料データです。');
-    const input=data.board as Partial<BoardSnapshot>;
-    if(!Array.isArray(input.items)||input.items.length>80||
-      input.items.some(item=>!item||typeof item.assetId!=='string'||!item.assetId||
-        typeof item.id!=='string'||!item.id||
-        ![item.x,item.y,item.width,item.height,item.zoom,item.rotation].every(Number.isFinite)||
-        item.width<=0||item.height<=0||item.zoom<=0))
-      throw Error('参考資料の配置情報が正しくありません。既存の資料は保護されました。');
+    // Validate ALL fields (including IDs, pan, rotation, group and duplicate
+    // entries) before modifying the stored board or the asset library.
+    const incoming=data.board as Partial<BoardSnapshot>;
+    if(typeof incoming.documentId!=='string'||!incoming.documentId)
+      throw Error('参考資料の保存元作品を確認できません。');
+    // A duplicated artwork legitimately has a new document ID, while its
+    // portable reference attachment still remembers the source work ID.
+    const input=decodeBoardRecord(incoming.documentId,incoming);
 
     // Never silently prefer a stale local layout over the file being opened.
     // Keep the old layout intact when the user declines replacement.
@@ -243,21 +244,32 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     }
     const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
     if(epoch!==transition||options.getDocumentId()!==doc)return;
-    const result=await importAssetPack(embedded);
+    const result=await importAssetPack(embedded,{atomic:true});
     if(epoch!==transition||options.getDocumentId()!==doc)return;
     // If an image that WAS embedded fails to import, never accidentally display
     // an unrelated local image which happens to use the same asset identifier.
     // The missing: prefix retains the original ID for a later repair.
-    const packagedIds=new Set(embedded.items.map(item=>item.id));
-    const resolveId=(id:string)=>result.renamedIds[id]??
-      (packagedIds.has(id)?'missing:'+id:id);
+    // Absent embedded assets are ALWAYS placeholders, not unverified local
+    // content sharing the same ID. This prevents wrong-reference substitution.
+    const resolveId=(id:string)=>result.renamedIds[id]??'missing:'+id;
     const newItems:BoardItem[]=input.items.map((item,index)=>({
       ...newBoardItem(resolveId(item.assetId),index),
       ...item,assetId:resolveId(item.assetId),
       id:crypto.randomUUID()
     }));
     const imported:BoardSnapshot={version:1,documentId:doc,items:newItems,hidden:false};
+    const previous=clone(board);
     syncAfter(imported,false);
+    try{await flush();}
+    catch(error){
+      // The original local record is still intact after an IndexedDB failure.
+      // Do not leave the UI claiming that an unpersisted import succeeded.
+      if(epoch===transition&&board?.documentId===doc){
+        board=previous;void render().catch(error);drawList();
+      }
+      throw error;
+    }
+    if(epoch!==transition||options.getDocumentId()!==doc)return;
     temporaryHidden=false;
     const missing=new Set([
       ...input.items.filter(item=>!result.renamedIds[item.assetId]).map(item=>item.assetId),
