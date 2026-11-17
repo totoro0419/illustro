@@ -63,6 +63,48 @@ describe('C03-007 bounded tile compositing',()=>{
       for(let c=0;c<4;c++)expect(Math.abs(preview[destination+c]!-expected[c]!)).toBeLessThanOrEqual(1);
     }
   });
+  it('matches full-canvas mask coverage on the second 128px tile',()=>{
+    const width=256,height=128,tileSize=128;
+    const mask={enabled:true,inverted:false,density:1,shape:'rectangle' as const,
+      x:128,y:0,width:128,height:128};
+    const source=new Uint8ClampedArray(width*height*4);
+    for(let i=0;i<source.length;i+=4)source.set([210,25,70,255],i);
+    const full=new Uint8ClampedArray(source.length);
+    compositeLayer(full,source,1,undefined,{width,mask});
+    for(const originX of [0,128]){
+      const tile=new Uint8ClampedArray(tileSize*tileSize*4);
+      const ink=new Uint8ClampedArray(tile.length);
+      for(let y=0;y<height;y++)ink.set(source.subarray((y*width+originX)*4,(y*width+originX+tileSize)*4),y*tileSize*4);
+      compositeLayer(tile,ink,1,undefined,{width:tileSize,mask,originX,originY:0});
+      for(let y=0;y<height;y++)
+        expect(tile.subarray(y*tileSize*4,(y+1)*tileSize*4))
+          .toEqual(full.subarray((y*width+originX)*4,(y*width+originX+tileSize)*4));
+    }
+  });
+  it('keeps advanced dissolve blend anchored in global artwork coordinates',()=>{
+    const width=256,height=128,tileSize=128;
+    const blend={mode:'dissolve' as const,space:'encoded' as const,seed:31};
+    const source=new Uint8ClampedArray(width*height*4);
+    const base=new Uint8ClampedArray(source.length);
+    for(let i=0;i<source.length;i+=4){
+      source.set([244,87,10,145],i);
+      base.set([15,66,187,255],i);
+    }
+    const full=new Uint8ClampedArray(base);
+    compositeLayer(full,source,0.8,undefined,{width,blend});
+    for(const originX of [0,128]){
+      const tile=new Uint8ClampedArray(tileSize*tileSize*4);
+      const ink=new Uint8ClampedArray(tile.length);
+      for(let y=0;y<height;y++){
+        const start=(y*width+originX)*4,end=start+tileSize*4,offset=y*tileSize*4;
+        tile.set(base.subarray(start,end),offset);ink.set(source.subarray(start,end),offset);
+      }
+      compositeLayer(tile,ink,0.8,undefined,{width:tileSize,blend,originX,originY:0});
+      for(let y=0;y<height;y++)
+        expect(tile.subarray(y*tileSize*4,(y+1)*tileSize*4))
+          .toEqual(full.subarray((y*width+originX)*4,(y*width+originX+tileSize)*4));
+    }
+  });
   it('supports complicated groups, masks, clipping and seeded raster data with pixel-exact per-tile composite',()=>{
     const layer={surfaceId:'ink',visible:true,opacity:1};
     const simple={width:4000,height:4000,layers:[layer]};
