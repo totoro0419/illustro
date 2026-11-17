@@ -283,6 +283,37 @@ export class DocumentTransaction{
     if(editable!==undefined)this.setEditableArtwork(id,editable);
     return true;
   }
+  /** One atomic non-destructive snapshot per layer, all in the SAME
+   * revision. Ordinary replaceLayerDeformation deliberately stays
+   * standalone; this explicit API validates every target before writing. */
+  replaceLayerDeformationsBatch(entries:readonly Readonly<{
+    id:LayerId;pixels:Uint8Array|Uint8ClampedArray;deformation:LayerDeformation
+  }>[]) {
+    this.open();
+    if(this.slotsValue.length||entries.length<2)throw Error('複数レイヤーをまとめて変形するには2枚以上指定してください。');
+    const seen=new Set<LayerId>(),expected=this.rootValue.width*this.rootValue.height*4;
+    const candidates=entries.map(entry=>{
+      if(seen.has(entry.id))throw Error('同じレイヤーが重複しています。');
+      seen.add(entry.id);
+      const layer=this.editableRaster(entry.id);
+      if(layer.baseColor==='white'||layer.imageLink||layer.editable||layer.deformation||layer.lineRegions||
+        this.rootValue.isLayerPositionLocked(entry.id))
+        throw Error('まとめて変形できないレイヤーが含まれています。');
+      if(entry.pixels.length!==expected||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
+        throw Error('変形結果の画素データが作品と一致しません。');
+      const deformation=validateLayerDeformation(entry.deformation);
+      if(!deformation||!this.doc.hasRevision(deformation.sourceRevision)||
+        !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId??entry.id))
+        throw Error('変形前の画像の履歴が見つかりません。');
+      return {id:entry.id,layer,pixels:entry.pixels,deformation};
+    });
+    for(const {id,layer,pixels,deformation} of candidates){
+      this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
+      this.seedRasterPixels(id,pixels,true,deformation.sourceRevision);
+      this.meta(id,{deformation});
+    }
+    return true;
+  }
   replaceLayerDeformation(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,deformation:LayerDeformation|null){
     const layer=this.rootValue.getLayer(id);
     this.replaceLayerRaster(id,pixels,undefined,undefined,deformation);

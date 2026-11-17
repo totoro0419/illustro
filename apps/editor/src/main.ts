@@ -3907,10 +3907,8 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
       if(!valid())throw Error('作品が変更されました。変形をやり直してください。');
       const tx=artwork.begin('複数レイヤーをまとめて変形');
       try{
-        for(const change of changes){
-          tx.replaceLayerDeformation(change.id,change.pixels,change.deformation);
-          if(change.mask)tx.setVectorLayerMask(change.id,change.mask);
-        }
+        tx.replaceLayerDeformationsBatch(changes.map(({id,pixels,deformation})=>({id,pixels,deformation})));
+        for(const change of changes)if(change.mask)tx.setVectorLayerMask(change.id,change.mask);
         controller.lastPersistenceHandoff=tx.commit().persistence;
       }catch(error){tx.cancel();throw error;}
       return 'edit';

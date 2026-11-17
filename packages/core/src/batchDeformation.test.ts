@@ -20,13 +20,13 @@ describe('C07-003 multi-layer non-destructive one-step transform',()=>{
     return out;
   };
   tx=doc.begin('batch transform');
-  for(const [id,pixels] of [[a,rgbaA],[b,rgbaB]] as const){
-    tx.replaceLayerDeformation(id,shift(pixels,5),{
-      version:1,sourceRevision,bounds:{x:0,y:0,width:64,height:64},
-      interpolation:'nearest',selection:null,linkedMask:false,mode:'affine',
+  tx.replaceLayerDeformationsBatch(([[a,rgbaA],[b,rgbaB]] as const).map(([id,pixels])=>({
+    id,pixels:shift(pixels,5),deformation:{
+      version:1 as const,sourceRevision,bounds:{x:0,y:0,width:64,height:64},
+      interpolation:'nearest' as const,selection:null,linkedMask:false,mode:'affine' as const,
       affine:{dx:5,dy:0,sx:1,sy:1,angle:0,shear:0,cx:32,cy:32}
-    });
-  }
+    }
+  })));
   tx.commit();
   expect(doc.readPixel(a,13,8)).toEqual([200,20,30,255]);
   expect(doc.readPixel(b,25,20)).toEqual([20,100,220,255]);
@@ -42,5 +42,23 @@ describe('C07-003 multi-layer non-destructive one-step transform',()=>{
   expect(restored.readPixel(b,25,20)).toEqual([20,100,220,255]);
   expect(restored.root.getLayer(a).deformation?.sourceRevision).toBe(sourceRevision);
   expect(root.getLayer(a).deformation).toBeNull();
+ });
+});
+
+describe('C07-003 atomic validation of multi-layer snapshots',()=>{
+ it('rejects a duplicate layer or a changed/missing source without mutating history',()=>{
+  const doc=new CoreDocument({width:64,height:64,ids:createDeterministicIdFactory()});
+  const id=doc.defaultRasterLayerId,rev=doc.head;
+  const pixels=new Uint8Array(64*64*4);
+  const entry={id,pixels,deformation:{
+   version:1 as const,sourceRevision:rev,bounds:{x:0,y:0,width:64,height:64},
+   interpolation:'nearest' as const,selection:null,linkedMask:false,mode:'affine' as const,
+   affine:{dx:2,dy:0,sx:1,sy:1,angle:0,shear:0,cx:32,cy:32}
+  }};
+  const tx=doc.begin('invalid transform');
+  expect(()=>tx.replaceLayerDeformationsBatch([entry,entry])).toThrow(/重複/);
+  tx.cancel();
+  expect(doc.head).toBe(rev);
+  expect(doc.root.getLayer(id).deformation).toBeNull();
  });
 });
