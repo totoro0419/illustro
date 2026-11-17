@@ -23,7 +23,13 @@ export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;pa
 export type RasterPixelRegion=Readonly<{
   x:number;y:number;width:number;height:number;pixels:Uint8Array|Uint8ClampedArray;
 }>;
-type RasterPixels=Uint8Array|Uint8ClampedArray|RasterPixelRegion;
+/** Whole-layer sparse 128px tiles. x/y place the source canvas within the
+ * destination; missing tiles are transparent, with no full-canvas buffer. */
+export type RasterPixelTiles=Readonly<{
+  x:number;y:number;width:number;height:number;tileSize:128;
+  tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[];
+}>;
+type RasterPixels=Uint8Array|Uint8ClampedArray|RasterPixelRegion|RasterPixelTiles;
 
 export class DocumentTransaction{
   private readonly baseValue:RevisionId;private readonly expectedHead:RevisionId;private resultId:RevisionId|undefined;private readonly rootValue;private readonly idValue:TransactionId;private readonly workingValue=new Map<LayerId,RasterWorkingSet>();
@@ -58,7 +64,24 @@ export class DocumentTransaction{
   }
   addRasterSnapshotAbove(referenceId:LayerId,pixels:RasterPixels,name:string,copyStyle=false,inheritGroup=true,below=false){
     const root=this.rootValue;
-    if('pixels' in pixels){
+    if('tiles' in pixels){
+      if(!Number.isSafeInteger(pixels.x)||!Number.isSafeInteger(pixels.y)||
+        !Number.isSafeInteger(pixels.width)||!Number.isSafeInteger(pixels.height)||
+        pixels.width<1||pixels.height<1||pixels.x<0||pixels.y<0||
+        pixels.x+pixels.width>root.width||pixels.y+pixels.height>root.height||
+        pixels.tileSize!==128||CANONICAL_TILE_SIZE%pixels.tileSize)
+        throw new Error('貼り付ける区画の大きさ・配置が正しくありません。');
+      const seen=new Set<string>(),cols=Math.ceil(pixels.width/pixels.tileSize),rows=Math.ceil(pixels.height/pixels.tileSize);
+      for(const tile of pixels.tiles){
+        if(!/^\d+,\d+$/.test(tile.key)||seen.has(tile.key)||
+          !(tile.pixels instanceof Uint8Array)||tile.pixels.byteLength!==pixels.tileSize*pixels.tileSize*4)
+          throw new Error('貼り付ける区画が重複または破損しています。');
+        const [tx=NaN,ty=NaN]=tile.key.split(',').map(Number);
+        if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||tx>=cols||ty>=rows)
+          throw new Error('貼り付ける区画が作品の外にあります。');
+        seen.add(tile.key);
+      }
+    }else if('pixels' in pixels){
       if(!Number.isSafeInteger(pixels.x)||!Number.isSafeInteger(pixels.y)||
         !Number.isSafeInteger(pixels.width)||!Number.isSafeInteger(pixels.height)||
         pixels.width<1||pixels.height<1||pixels.x<0||pixels.y<0||
@@ -92,7 +115,8 @@ export class DocumentTransaction{
       if(source.vectorMask)this.meta(id,{vectorMask:source.vectorMask});
       if(source.editable)this.meta(id,{editable:source.editable});
     }
-    if('pixels' in pixels)this.seedRasterRegion(id,pixels);
+    if('tiles' in pixels)this.seedRasterTiles(id,pixels);
+    else if('pixels' in pixels)this.seedRasterRegion(id,pixels);
     else this.seedRasterPixels(id,pixels);
     return id;
   }
@@ -325,6 +349,31 @@ export class DocumentTransaction{
     const layer=this.editableRaster(id);
     if(!layer.deformation)throw new Error('再編集できる変形がありません。');
     return this.meta(id,{deformation:null});
+  }
+  /** Seed a translated layer from only occupied 128px tiles. This preserves
+   * its source-space pixel positions even with non-aligned document offsets. */
+  private seedRasterTiles(id:LayerId,source:RasterPixelTiles){
+    const chunk=source.tileSize,canonical=CANONICAL_TILE_SIZE;
+    for(const {key,pixels} of source.tiles){
+      if(!pixels.some(v=>v!==0))continue;
+      const [sx=NaN,sy=NaN]=key.split(',').map(Number);
+      const sourceX=sx*chunk,sourceY=sy*chunk;
+      const left=source.x+sourceX,top=source.y+sourceY;
+      const width=Math.min(chunk,source.width-sourceX),height=Math.min(chunk,source.height-sourceY);
+      const right=left+width,bottom=top+height;
+      for(let tileY=Math.floor(top/canonical);tileY<Math.ceil(bottom/canonical);tileY++)
+        for(let tileX=Math.floor(left/canonical);tileX<Math.ceil(right/canonical);tileX++){
+          const x0=Math.max(left,tileX*canonical),x1=Math.min(right,(tileX+1)*canonical);
+          const y0=Math.max(top,tileY*canonical),y1=Math.min(bottom,(tileY+1)*canonical);
+          this.editTile(id,tileX,tileY,destination=>{
+            for(let y=y0;y<y1;y++){
+              const from=((y-top)*chunk+x0-left)*4;
+              const to=((y-tileY*canonical)*canonical+x0-tileX*canonical)*4;
+              destination.set(pixels.subarray(from,from+(x1-x0)*4),to);
+            }
+          });
+        }
+    }
   }
   /** Write only intersecting nonempty tiles. An empty area has no allocated blocks. */
   private seedRasterRegion(id:LayerId,region:RasterPixelRegion){

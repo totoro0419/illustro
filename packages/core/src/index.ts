@@ -1,5 +1,5 @@
 export {CoreDocument,type CoreOptions,type CoreRestoreOptions} from './coreDocument';
-export {DocumentTransaction,type RasterSemanticMutation} from './transaction';
+export {DocumentTransaction,type RasterSemanticMutation,type RasterPixelTiles} from './transaction';
 export type {CommitReceipt} from './commit';
 export {cryptoIdFactory} from './ids';
 export type {BlockId,DocumentId,IdFactory,LayerId,OperationKey,RasterSurfaceId,ResourceId,RevisionId,TransactionId,WriterEpochId} from './ids';
