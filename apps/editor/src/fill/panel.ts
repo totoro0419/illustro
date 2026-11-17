@@ -5,6 +5,7 @@ import type {Point} from '../transform/geometry';
 import type {FillSettings,GapCandidate,RegionGraph,Walls} from './pixels';
 import {runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
+import {sampleFillDetail} from './detailPreview';
 
 export type Reference=LineRegions['reference'];
 export type Destination='active'|'new'|'under'|'color-layer';
@@ -34,6 +35,10 @@ export function installFillPanel(host:HTMLElement,api:{
   const analysisState=document.createElement('output');analysisState.setAttribute('role','status');
   const preview=document.createElement('canvas');preview.hidden=true;preview.style.cssText='max-width:100%;border:1px solid currentColor;image-rendering:auto';
   preview.setAttribute('aria-label','塗り候補と線画領域のプレビュー');
+  const detailPreview=document.createElement('canvas');
+  detailPreview.hidden=true;detailPreview.width=64;detailPreview.height=64;
+  detailPreview.style.cssText='width:192px;max-width:100%;height:auto;aspect-ratio:1;border:1px solid currentColor;image-rendering:pixelated';
+  detailPreview.setAttribute('aria-label','タップした位置の元の画素を一つずつ拡大表示');
   const gapZoom=document.createElement('canvas');
   gapZoom.hidden=true;gapZoom.width=144;gapZoom.height=144;gapZoom.style.cssText='max-width:100%;border:1px solid currentColor';
   gapZoom.setAttribute('aria-label','隙間候補の拡大表示');
@@ -48,6 +53,7 @@ export function installFillPanel(host:HTMLElement,api:{
   let manualDraft=false,inspectPoint:Point|undefined;
   let localGaps:readonly GapCandidate[]|null=null;
   let analysisError:string|null=null,analyzing=false,excludedAreas:readonly Point[]=[];
+  let detailPosition:Point|null=null;
   const manuals=new Map<string,Walls>();
   const makeLabel=(text:string,control:HTMLElement)=>{
     const label=document.createElement('label');label.append(text,control);options.append(label);
@@ -160,7 +166,7 @@ export function installFillPanel(host:HTMLElement,api:{
     regionLayers.replaceChildren(new Option('選択してください',''),...entries.map(entry=>new Option(entry.name,entry.id)));
     regionLayers.value=entries.some(entry=>entry.id===current)?current:'';
   }
-  function forgetAnalysis(){previewAbort?.abort();previewAbort=null;candidateGeneration++;capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;lastFill=null;pending=null;hints=[];refreshHintList();manualDraft=false;analysisError=null;excludedAreas=[];issue.replaceChildren();excludedGap=-1;localGaps=null;inspectedRegion=0;mergeTarget.replaceChildren();paint();}
+  function forgetAnalysis(){detailPosition=null;detailPreview.hidden=true;previewAbort?.abort();previewAbort=null;candidateGeneration++;capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;lastFill=null;pending=null;hints=[];refreshHintList();manualDraft=false;analysisError=null;excludedAreas=[];issue.replaceChildren();excludedGap=-1;localGaps=null;inspectedRegion=0;mergeTarget.replaceChildren();paint();}
   const gapCandidates=()=>localGaps??currentGraph?.candidates??[];
   const sourceAvailable=()=>!saved||api.regionLayers().some(entry=>entry.id===saved?.id&&entry.data===saved.data);
   const graphUsable=()=>!!currentGraph?.hasInk&&currentGraph.count>0;
@@ -221,11 +227,23 @@ export function installFillPanel(host:HTMLElement,api:{
   }
   const read=(needTarget:boolean,stored?:LineRegions)=>
     api.capture(reference.value as Reference,destination.value as Destination,activeIds(),needTarget,stored);
+  function paintDetail(){
+    const frozen=candidate?.source??(compare.checked&&previousCapture?previousCapture:capture);
+    if(!detailPosition||!frozen){detailPreview.hidden=true;return;}
+    const pixels=(!showBefore.checked?pending?.pixels:null)??(
+      pending&&candidate?.source.target?candidate.source.target:frozen.source);
+    const context=detailPreview.getContext('2d');
+    if(!context){detailPreview.hidden=true;return;}
+    const detail=sampleFillDetail(pixels,frozen.width,frozen.height,detailPosition.x,detailPosition.y,64);
+    context.putImageData(new ImageData(detail,64,64),0,0);
+    detailPreview.hidden=false;
+  }
   function paint(){
     const graph=pending&&candidate?.workingGraph?candidate.workingGraph:compare.checked&&previous?previous:currentGraph;
     const frozen=pending&&candidate?candidate.source:compare.checked&&previousCapture?previousCapture:capture;
     preview.hidden=!frozen;gapZoom.hidden=true;
-    if(!frozen)return;
+    if(!frozen){detailPreview.hidden=true;return;}
+    paintDetail();
     // A higher preview resolution keeps thin line details visible without full-size allocation.
     const {width,height,source}=frozen,scale=Math.min(1,1024/Math.max(width,height));
     const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
@@ -690,9 +708,11 @@ export function installFillPanel(host:HTMLElement,api:{
   preview.onclick=event=>{
     const inspectedGraph=candidate?.workingGraph??(compare.checked&&previous&&!pending?previous:currentGraph);
     const frozen=candidate?.source??capture;
-    if(!frozen||!inspectedGraph)return;
+    if(!frozen)return;
     const rect=preview.getBoundingClientRect(),x=Math.floor((event.clientX-rect.left)*frozen.width/rect.width),y=Math.floor((event.clientY-rect.top)*frozen.height/rect.height);
     if(x<0||x>=frozen.width||y<0||y>=frozen.height)return;
+    detailPosition={x,y};paintDetail();
+    if(!inspectedGraph)return;
     const region=inspectedGraph.labels[y*frozen.width+x]!;
     if(region&&candidate&&!candidate.hints&&usesRegions()){
       const c=candidate;
@@ -721,6 +741,6 @@ export function installFillPanel(host:HTMLElement,api:{
   }
   advanced.append(advancedTitle,advancedOptions,advancedActions);
   panel.ontoggle=()=>{if(panel.open){sync();refreshReferences();refreshRegionList();}else stopGesture();};
-  panel.append(summary,options,targets,analysisState,actions,advanced,preview,gapZoom,output);host.append(panel);sync();
+  panel.append(summary,options,targets,analysisState,actions,advanced,preview,detailPreview,gapZoom,output);host.append(panel);sync();
   return {refresh:()=>{if(panel.open)sync();}};
 }
