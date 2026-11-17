@@ -28,6 +28,7 @@ import {installGradientMapPanel} from './artwork/gradientMap';
 import {installStrokeCorrection} from './artwork/strokeCorrection';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {runArtwork} from './artwork/run';
+import {validatedBooleanSourceVisibility} from './artwork/booleanSourceVisibility';
 import {selectionAsLayerMask} from './artwork/selectionMask';
 import {selectionCanCreateMask,explicitSaveStatus,maskApplyAllowed} from './artwork/c03UiGuards';
 import type {ArtworkActions} from './artwork/tools';
@@ -4244,15 +4245,7 @@ const artworkActions:ArtworkActions={
     if(!drawing||!documentReady)throw Error('作品を開いてください。');
     const {width,height}=artwork.root,reference=controller.selectedLayer.id;
     if(editing&&reference!==editing)throw Error('編集するレイヤーを選び直してください。');
-    const sources=hideSourcePaths??[];
-    if(sources.length){
-      if(editing||sources.length!==2||new Set(sources).size!==2)
-        throw Error('演算元の2レイヤーを選び直してください。');
-      for(const id of sources){
-        if(!artwork.root.hasLayer(id)||artwork.root.getLayer(id).editable?.kind!=='path'||artwork.root.isLayerLocked(id))
-          throw Error('元の形が変更されたか、ロックされています。非表示を解除してやり直してください。');
-      }
-    }
+    const sources=validatedBooleanSourceVisibility(artwork.root,hideSourcePaths??[],editing);
     const selected=editing?artwork.root.getLayer(editing):null;
     const previous=selected?.editable??null;
     const mask=selected?selected.vectorMask??null:
