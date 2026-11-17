@@ -13,7 +13,7 @@ describe('C03-007 bounded tile compositing',()=>{
   });
   it('averages premultiplied color to avoid dark halos around transparent ink',()=>{
     const acc=createTiledPreviewAccumulator(2,1,1,1);
-    acc.addTile(Uint8Array.of(255,0,0,255,0,0,255,0),0,0,2);
+    acc.addTile(Uint8Array.of(255,0,0,255,0,0,255,0,0,0,0,0,0,0,0,0),0,0,2);
     expect([...acc.finish()]).toEqual([255,0,0,128]);
   });
   it('handles partial edge tiles without bleeding past canvas bounds',()=>{
