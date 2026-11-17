@@ -3597,6 +3597,7 @@ installAssetPanel({
     if(!documentReady||!surface)throw Error('作品を開いてください。');
     if(asset.data.size>1048576)throw Error('図形・グラデーションのデータが大きすぎます。');
     const content=validateEditableArtwork(JSON.parse(await asset.data.text()));
+    if(!content)throw Error('素材に図形・グラデーションの編集データがありません。');
     if((asset.kind==='shape'&&content.kind!=='path')||
       (asset.kind==='gradient'&&content.kind!=='gradient'))
       throw Error('素材の種類と図形・グラデーションの内容が一致しません。');
