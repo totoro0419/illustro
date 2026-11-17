@@ -51,6 +51,7 @@ export class BrushSurface{
   private editStrokeOutline:SVGSVGElement|null=null;
   private editOutlineFrame=0;
   private artworkPreview:HTMLCanvasElement|null=null;
+  private artworkPreviewReplacementId:LayerId|null=null;
   private maskInspection:HTMLCanvasElement|null=null;
   private layerOutline:HTMLCanvasElement|null=null;
   private layerOutlineSequence=0;
@@ -490,20 +491,36 @@ export class BrushSurface{
     this.maskInspection=canvas;
     this.positionDocumentOverlay(canvas);
   }
-  showArtworkPreview(image:ImageData|null,isolated=false){
-    if(!image){this.artworkPreview?.remove();this.artworkPreview=null;return;}
-    const {width,height}=this.controller.document.root;
+  /** A safe replacement overlay hides the original raster only while shown. */
+  showArtworkPreview(image:ImageData|null,isolated=false,replacementLayerId:LayerId|null=null){
+    if(!image){
+      this.artworkPreview?.remove();this.artworkPreview=null;
+      this.setArtworkPreviewReplacement(null);
+      return;
+    }
+    const root=this.controller.document.root;
+    const replacement=!isolated&&replacementLayerId&&root.hasLayer(replacementLayerId)&&
+      this.controller.selectedLayer.id===replacementLayerId&&!this.inspectedLayer
+      ?replacementLayerId:null;
+    const {width,height}=root;
     const canvas=this.artworkPreview??document.createElement('canvas');
     // Do not discard a live preview's backing store on every pointer update.
     if(canvas.width!==image.width)canvas.width=image.width;
     if(canvas.height!==image.height)canvas.height=image.height;
     canvas.setAttribute('aria-hidden','true');
     canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:3;transform-origin:0 0;'+
-      (isolated?'opacity:1;background:repeating-conic-gradient(#e5e5e5 0% 25%,#fff 0% 50%) 50% / 16px 16px':'opacity:.78');
+      (isolated?'opacity:1;background:repeating-conic-gradient(#e5e5e5 0% 25%,#fff 0% 50%) 50% / 16px 16px':replacement?'opacity:1':'opacity:.78');
     canvas.style.width=width+'px';canvas.style.height=height+'px';
     canvas.getContext('2d')?.putImageData(image,0,0);
     if(!this.artworkPreview)this.inputViewport.append(canvas);
     this.artworkPreview=canvas;this.positionDocumentOverlay(canvas);
+    this.setArtworkPreviewReplacement(replacement);
+  }
+  private setArtworkPreviewReplacement(layerId:LayerId|null){
+    if(this.artworkPreviewReplacementId===layerId)return;
+    this.artworkPreviewReplacementId=layerId;
+    // Style-only update: never alter layer data, GPU tiles, revision or history.
+    this.syncLayerStyles();
   }
   private positionDocumentOverlay(overlay:HTMLCanvasElement){
     if(!this.view)return;
@@ -1233,7 +1250,7 @@ export class BrushSurface{
         :candidate?.blend!==undefined?candidate.blend:layer.blend;
       return {
         surfaceKey:layer.surface.descriptor.surfaceId,
-        visible:solo?layer.id===solo.id:visible,
+        visible:solo?layer.id===solo.id:visible&&layer.id!==this.artworkPreviewReplacementId,
         ...(!solo&&clip?{clipKey:clip.surface.descriptor.surfaceId}:{}),
         ...(isolation.length?{isolation}:{}),
         ...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),
