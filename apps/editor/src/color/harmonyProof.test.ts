@@ -1,6 +1,8 @@
 import {describe,it,expect} from 'vitest';
-import proofCss from './harmony.css?raw';
-import auroraCss from '../ui/aurora.css?raw';
+// @ts-ignore: Node-only fixture reader; editor runtime never imports Node modules.
+import {readFileSync} from 'node:fs';
+const proofCss=readFileSync(new URL('./harmony.css',import.meta.url),'utf8');
+const auroraCss=readFileSync(new URL('../ui/aurora.css',import.meta.url),'utf8');
 
 describe('C04-013 display-only proofing',()=>{
   it('covers retained artwork and temporary strokes as well as the base canvas',()=>{
