@@ -17,3 +17,10 @@ export function canReplaceTopmostTransformLayer(
     return false;
   return true;
 }
+
+/** Restore the saved visibility automatically when a transform preview closes. */
+export function originalVisibleWithTransformPreview(
+  visible:boolean,layerId:LayerId,replacementLayerId:LayerId|null
+):boolean{
+  return visible&&layerId!==replacementLayerId;
+}
