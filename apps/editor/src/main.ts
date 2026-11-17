@@ -15,6 +15,7 @@ import {installEyedropperSettings,sampleSourceLabel} from './color/eyedropperSet
 import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
+import {copyReferenceBoard} from './assets/referenceBoardStore';
 import {exportFonts,importFonts} from './artwork/fontAttachments';
 import {installTextPanel} from './artwork/textPanel';
 import {installVectorPanel} from './artwork/vectorPanel';
@@ -3401,7 +3402,26 @@ if(!qaMode){
       if(isOpen){const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);}
       await refreshWorks();
     },
-    duplicateWork:async(id)=>{if(!(await prepareWorkSwitch()))throw new Error('現在の作品を保存できませんでした。');const loaded=await persistence.loadWork(id),copy=copyOpened(loaded.opened,loaded.entry.name+' のコピー');await activateOpened(copy);await refreshWorks();},
+    duplicateWork:async(id)=>{
+      if(!(await prepareWorkSwitch()))throw new Error('現在の作品を保存できませんでした。');
+      if(documentReady&&controller.document.root.documentId===id)
+        await c05References.flush();
+      const loaded=await persistence.loadWork(id);
+      let copy=copyOpened(loaded.opened,loaded.entry.name+' のコピー');
+      // Copy the latest reference placements BEFORE exposing the new work.
+      // Keep the image bytes in the shared asset library: they are not
+      // deleted by a placement removal or by ordinary artwork duplication.
+      const copied=await copyReferenceBoard(id,copy.document.root.documentId);
+      if(copied>0){
+        // A stale embedded board from a previous file import must not pop up
+        // and replace the newer local placements we just copied.
+        copy={...copy,preserved:{...copy.preserved,optionalSections:
+          copy.preserved.optionalSections.filter(section=>section.id!=='c05.reference-board')}};
+      }
+      await activateOpened(copy);
+      if(copied>0)homeUi?.notify(copied+'枚の参考資料を含めて作品を複製しました。');
+      await refreshWorks();
+    },
     deleteWork:async(id)=>{
       if(documentReady&&controller.document.root.documentId===id){
         if(!(await prepareWorkSwitch()))throw Error('現在の作品を保存してからゴミ箱へ移してください。');
