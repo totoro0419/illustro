@@ -3,6 +3,7 @@ import {ASSET_KINDS,ASSET_LABELS,type AssetInfo,type AssetKind,listAssets,getAss
   updateAsset,removeAsset,restoreAsset,markAssetUsed,duplicateAsset,createAssetVersion} from './library';
 import {exportAssetPack,readAssetPack,previewAssetPack,importAssetPack,type PackManifest,type PackImportResult} from './packs';
 import {boardsUsingAsset} from './referenceBoardStore';
+import {ensureFont} from '../artwork/fonts';
 
 type PanelOptions=Readonly<{openReference:(assetId:string)=>Promise<void>;flushReferences:()=>Promise<void>}>;
 function button(text:string,handler:()=>void,css=''){
@@ -104,7 +105,7 @@ export function installAssetPanel(opts:PanelOptions){
         '第'+item.version+'版',item.parentId?'旧版 '+item.parentId.slice(0,8):'',
         Math.round(item.bytes/1024)+'KB',item.license?'利用条件あり':''].filter(Boolean).join(' · ');
       head.append(h,meta);
-      if(!['brush','palette','reference'].includes(item.kind)){
+      if(!['brush','palette','reference','font'].includes(item.kind)){
         const hint=document.createElement('small');
         hint.textContent='保管・整理・書き出しに対応。作品への直接適用は未接続です。';
         head.append(hint);
@@ -134,6 +135,14 @@ export function installAssetPanel(opts:PanelOptions){
         if(item.kind==='brush'||item.kind==='palette')controls.append(button(
           item.kind==='brush'?'ブラシに読み込む':'色セットに読み込む',()=>void run(async()=>{
           await useAsset(item);await markAssetUsed(item.id);await refresh();
+        })));
+        if(item.kind==='font')controls.append(button('文字に使う準備',()=>void run(async()=>{
+          // Reuse the existing font asset: importing a duplicate here would
+          // break the identity already referenced by editable text layers.
+          await ensureFont(item.id);
+          await markAssetUsed(item.id);
+          status.textContent='フォントを使用できるようにしました。「文字」の設定から選べます。';
+          await refresh();
         })));
         controls.append(button('ファイルを出す',()=>void run(async()=>{
           const saved=await getAsset(item.id);if(!saved)throw Error('素材がありません。');
