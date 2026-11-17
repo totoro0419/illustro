@@ -14,7 +14,7 @@ import {installColorPanel} from './color/panel';
 import {installEyedropperSettings,sampleSourceLabel} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
-import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
+import {installReferenceBoard,referenceUnavailableSection,type ReferenceBoardService} from './assets/referenceBoard';
 import {copyReferenceBoard} from './assets/referenceBoardStore';
 import {exportFonts,importFonts} from './artwork/fontAttachments';
 import {installTextPanel} from './artwork/textPanel';
@@ -3656,7 +3656,19 @@ persistence.setSaveAttachmentProvider(()=>{
   const preserved=persistence.preservedData;
   const documentPalette=foreground.exportDocumentPaletteSection();
   const symmetry={id:SYMMETRY_SECTION,type:SYMMETRY_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(symmetrySettings))};
-  const editingState=Promise.all([c05References.exportNative(),c06Selection?.exportNative()??[]])
+  const referenceDocumentId=controller.document.root.documentId;
+  const safeReference=c05References.exportNative().catch(reason=>{
+    // References are optional. An unreadable sidecar must never prevent the
+    // artwork itself from being saved, but a stale old bundle must not survive.
+    const warning='参考資料の書き出しに失敗しました。絵は保存しますが、このファイルの参考資料を復元できない可能性があります。'+
+      (reason instanceof Error?reason.message:'');
+    byId('status').textContent=warning;
+    window.dispatchEvent(new CustomEvent('illustro:reference-save-warning',{
+      detail:{message:warning,documentId:referenceDocumentId,omittedAssetIds:[]}
+    }));
+    return referenceUnavailableSection(referenceDocumentId);
+  });
+  const editingState=Promise.all([safeReference,c06Selection?.exportNative()??[]])
     .then(values=>({values}),error=>({error}));
   return async root=>{
     const result=await editingState;
