@@ -8,6 +8,7 @@ import {EmptyStrokeError} from './strokeCommit';
 import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
+import {averageSampledPixels} from './color/sampleAverage';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
 import {CANONICAL_TILE_SIZE,type LayerBlend,type LayerMask,type MaskPoint,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
@@ -1223,31 +1224,48 @@ export class BrushSurface{
   private async flushSamples(){this.sampleRunning=true;const epoch=this.sampleEpoch;try{while(this.pendingSample&&epoch===this.sampleEpoch&&!this.disposed){const requested=this.pendingSample;this.pendingSample=null;let rgba:readonly number[]|null=null;try{rgba=await this.readSampleArea(requested.point);}catch(error){this.status('色を取得できませんでした。'+(error instanceof Error?error.message:String(error)));}
     if(epoch!==this.sampleEpoch||this.disposed)return;if(this.pendingSample&&requested.phase!=='commit')continue;if(requested.phase==='commit')this.commitSamplePending=false;this.onSample(rgba,requested.phase,requested.point);
    }}finally{this.sampleRunning=false;if(this.pendingSample&&!this.disposed)void this.flushSamples();}}
-  /** Optional 3x3/5x5 eyedropper averaging. One-pixel path stays the default. */
+  /** Read 3x3 or 5x5 with one Worker request rather than 9-25 GPU RPCs. */
   private async readSampleArea(point:Point):Promise<readonly number[]|null>{
     const diameter=this.sampleDiameter,mode=this.sampleTransparency;
     if(diameter===1){
       const rgba=await this.readOnePixel(point);
       if(!rgba||rgba.length<4)return null;
       if(mode==='skip'&&(rgba[3]??0)===0)return null;
-      return mode==='white'?this.sampleAgainstWhite(rgba):rgba;
+      return mode==='white'?compositeWhiteBackdrop(rgba,1):rgba;
     }
-    const half=Math.floor(diameter/2);
+    const x=Math.floor(point.x),y=Math.floor(point.y);
+    const {width:canvasWidth,height:canvasHeight}=this.controller.document.root;
+    if(x<0||y<0||x>=canvasWidth||y>=canvasHeight)return null;
+    const half=Math.floor(diameter/2),left=Math.max(0,x-half),top=Math.max(0,y-half);
+    const width=Math.min(canvasWidth-1,x+half)-left+1;
+    const height=Math.min(canvasHeight-1,y+half)-top+1;
+    const selected=this.sampleSource==='specific'
+      ?this.controller.layers.find(layer=>layer.id===this.sampleLayerId):this.controller.selectedLayer;
+    if(this.sampleSource==='specific'&&!selected)return null;
+    if(this.sampleSource!=='composite'&&selected?.baseColor==='white')return [255,255,255,255];
+    const surfaceKey=this.sampleSource==='composite'?null:selected?.surface.descriptor.surfaceId??null;
+    const host=this.renderer as unknown as {
+      readPixelArea?:(x:number,y:number,w:number,h:number,key:string|null)=>Promise<Uint8Array>;
+    }|null;
+    if(host?.readPixelArea){
+      const bytes=await host.readPixelArea(left,top,width,height,surfaceKey);
+      if(bytes.byteLength!==width*height*4)throw Error('採色用の画素が不足しています。');
+      const solo=this.inspectedLayer;
+      const white=this.sampleSource==='composite'
+        ?this.controller.layers.find(layer=>layer.baseColor==='white'&&(solo?solo.id===layer.id:layer.visible)&&layer.opacity>0):null;
+      return averageSampledPixels(bytes,mode,white?.opacity??null);
+    }
+    // Older embedded drawing hosts may not support the new request yet.
     const sum=[0,0,0,0];let count=0;
-    for(let y=-half;y<=half;y++)for(let x=-half;x<=half;x++){
-      const rgba=await this.readOnePixel({x:point.x+x,y:point.y+y});
-      if(!rgba||rgba.length<4)continue;
-      if(mode==='skip'&&(rgba[3]??0)===0)continue;
-      const c=mode==='white'?this.sampleAgainstWhite(rgba):rgba;
-      for(let i=0;i<4;i++)sum[i]=(sum[i]??0)+(c[i]??0);
+    for(let row=top;row<top+height;row++)for(let col=left;col<left+width;col++){
+      const pixel=await this.readOnePixel({x:col,y:row});
+      if(!pixel)continue;
+      if(mode==='skip'&&(pixel[3]??0)===0)continue;
+      const rgba=mode==='white'?compositeWhiteBackdrop(pixel,1):pixel;
+      for(let i=0;i<4;i++)sum[i]=(sum[i]??0)+(rgba[i]??0);
       count++;
     }
-    if(!count)return null;
-    return sum.map(n=>Math.min(255,Math.max(0,Math.round(n/count))));
-  }
-  private sampleAgainstWhite(rgba:readonly number[]):readonly number[]{
-    const opacity=Math.min(1,Math.max(0,(rgba[3]??0)/255));
-    return [0,1,2].map(index=>Math.min(255,Math.max(0,Math.round((rgba[index]??0)+(1-opacity)*255)))).concat([255]);
+    return count?sum.map(value=>Math.min(255,Math.max(0,Math.round(value/count)))):null;
   }
   /** Read only a 1x1 GPU region. Neither a canvas readback nor a layer recomposition is allowed here. */
   private async readOnePixel(point:Point):Promise<readonly number[]|null>{
