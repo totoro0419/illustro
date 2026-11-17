@@ -37,7 +37,7 @@ jobs:
       - name: Build editor for separate preview path
         run: |
           npm ci --no-audit --no-fund
-          npm run editor:build -- --base=/illustro/preview/
+          npm --workspace @illustro/editor run build -- --base=/illustro/preview/
       - name: Build existing public home unchanged
         working-directory: p0-source/prototypes/p0-architecture
         run: |
