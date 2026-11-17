@@ -611,7 +611,14 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     if(highQualityPreviewTimer!==null)clearTimeout(highQualityPreviewTimer);
     highQualityPreviewTimer=null;
     previewAbort?.abort();
-    if(!current||editingOriginal||!runner)return;
+    if(!current||editingOriginal||!runner||!current.valid()){
+      current?.drawing.showArtworkPreview(null);
+      preview.hidden=true;
+      return;
+    }
+    // Switching to "before" must reveal the original immediately, not after
+    // an older transform worker request finishes.
+    if(compare.checked)current.drawing.showArtworkPreview(null);
     const controller=new AbortController();previewAbort=controller;
     try{
       const scale=Math.min(1,280/Math.max(current.width,current.height));
@@ -621,7 +628,13 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         selection:current.selection,outputWidth,outputHeight,
         ...(compare.checked?{}:current.postPaint?{postPaint:current.postPaint}:{}),
         showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
-      if(id!==previewId)return;
+      if(id!==previewId||source!==current)return;
+      if(!current.valid()){
+        current.drawing.showArtworkPreview(null);
+        preview.hidden=true;
+        status.textContent='作品が変更されたため、古い変形候補を表示しません。';
+        return;
+      }
       preview.width=outputWidth;preview.height=outputHeight;
       const context=preview.getContext('2d'),image=new ImageData(pixels,outputWidth,outputHeight);
       context?.putImageData(image,0,0);
@@ -648,7 +661,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
           const selection=current.selection,protection=protectionVisible.checked;
           highQualityPreviewTimer=window.setTimeout(()=>{
             highQualityPreviewTimer=null;
-            if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal)return;
+            if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal||!current.valid())return;
             void runner.run({
               pixels:savedPixels,width:current.width,height:current.height,
               settings:savedSettings,selection,
@@ -656,7 +669,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
               ...(current.postPaint?{postPaint:current.postPaint}:{}),
               showProtection:protection
             },controller.signal).then(highPixels=>{
-              if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal)return;
+              if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal||!current.valid())return;
               current.drawing.showArtworkPreview(new ImageData(highPixels,quality.width,quality.height),false,current.replacementLayerId??null,current.replacementOpacity??1);
             }).catch(error=>{
               // The already visible 280px preview is still valid. A failed
