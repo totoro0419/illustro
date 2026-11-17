@@ -35,6 +35,8 @@ export function decodeBoardRecord(documentId:string,value:unknown):BoardSnapshot
   const raw=value as Partial<BoardSnapshot>;
   if(raw.version!==1||raw.documentId!==documentId||!Array.isArray(raw.items)||raw.items.length>80)
     throw Error('参考資料の保存形式が一致しません。元データを上書きせず保持しました。');
+  if(raw.hidden!==undefined&&typeof raw.hidden!=='boolean')
+    throw Error('参考資料の表示設定が壊れています。元データを保護しました。');
   const found=new Set<string>();const items:BoardItem[]=[];
   for(const item of raw.items){
     if(!item||typeof item!=='object'||typeof item.id!=='string'||!item.id||found.has(item.id)||
@@ -47,9 +49,13 @@ export function decodeBoardRecord(documentId:string,value:unknown):BoardSnapshot
       throw Error('参考資料の配置の一部が壊れています。元のデータは上書きしていません。');
     if((item.group!==undefined&&typeof item.group!=='string')||(item.notes!==undefined&&typeof item.notes!=='string'))
       throw Error('参考資料の文字情報が壊れています。元のデータは上書きしていません。');
+    if((['pinned','hidden','grayscale','flipX','flipY','front'] as const)
+      .some(key=>item[key]!==undefined&&typeof item[key]!=='boolean'))
+      throw Error('参考資料の表示設定が壊れています。元データを保護しました。');
     found.add(item.id);items.push({
       id:item.id,assetId:item.assetId,group:item.group??'',x:item.x,y:item.y,
-      width:Math.max(120,Math.min(1000,item.width)),height:Math.max(90,Math.min(900,item.height)),
+      // A large floating reference window must not shrink on reload.
+      width:Math.max(120,Math.min(8192,item.width)),height:Math.max(90,Math.min(8192,item.height)),
       zoom:Math.max(.1,Math.min(16,item.zoom)),panX:Number.isFinite(item.panX)?item.panX:0,panY:Number.isFinite(item.panY)?item.panY:0,
       rotation:item.rotation,pinned:!!item.pinned,hidden:!!item.hidden,grayscale:!!item.grayscale,
       flipX:!!item.flipX,flipY:!!item.flipY,front:!!item.front,notes:item.notes??''
@@ -67,7 +73,8 @@ export async function writeBoard(input:BoardSnapshot):Promise<void>{
       typeof item.assetId!=='string'||!item.assetId||
       typeof item.group!=='string'||typeof item.notes!=='string'||
       ![item.x,item.y,item.width,item.height,item.zoom,item.panX,item.panY,item.rotation].every(Number.isFinite)||
-      item.width<=0||item.height<=0||item.zoom<=0)
+      item.width<120||item.height<90||item.width>8192||item.height>8192||
+      item.zoom<.1||item.zoom>16)
       throw Error('資料の配置が正しくありません。保存前の情報を保護しました。');
     ids.add(item.id);
   }
@@ -78,9 +85,13 @@ export async function writeBoard(input:BoardSnapshot):Promise<void>{
     tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error??Error('資料の配置を保存できませんでした。'));
   });
   const output=await readBoard(input.documentId);
-  if(output.items.length!==input.items.length||output.items.some((item,index)=>
-    item.id!==input.items[index]?.id||item.assetId!==input.items[index]?.assetId))
-    throw Error('資料の保存内容を確認できませんでした。');
+  const fields:(keyof BoardItem)[]=[
+    'id','assetId','group','x','y','width','height','zoom','panX','panY',
+    'rotation','pinned','hidden','grayscale','flipX','flipY','front','notes'
+  ];
+  if(output.hidden!==input.hidden||output.items.length!==input.items.length||
+    output.items.some((item,index)=>fields.some(key=>item[key]!==input.items[index]?.[key])))
+    throw Error('資料の保存内容が変更されています。正しい保存を確認できませんでした。');
 }
 /** Identify stored reference-board dependencies before an asset goes to trash. */
 export async function boardsUsingAsset(assetId:string):Promise<readonly string[]>{
