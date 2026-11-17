@@ -11,7 +11,7 @@ export type ArtworkContext=Readonly<{
 }>;
 export type ArtworkActions=Readonly<{
   context:()=>ArtworkContext|null;
-  save:(content:EditableArtwork,name:string,id?:LayerId,initialMask?:LayerMask|null)=>Promise<void>;
+  save:(content:EditableArtwork,name:string,id?:LayerId,initialMask?:LayerMask|null,hideSourcePaths?:readonly LayerId[])=>Promise<void>;
   rasterize:(id:LayerId)=>Promise<void>;
 }>;
 export function button(text:string,run:()=>void|Promise<void>,output:HTMLOutputElement){
