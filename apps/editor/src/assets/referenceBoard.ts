@@ -279,7 +279,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       // The original local record is still intact after an IndexedDB failure.
       // Do not leave the UI claiming that an unpersisted import succeeded.
       if(epoch===transition&&board?.documentId===doc){
-        board=previous;void render().catch(error);drawList();
+        board=previous;void render().catch(reason=>{status.textContent=String(reason);});drawList();
       }
       throw error;
     }
