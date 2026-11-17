@@ -5,6 +5,7 @@ import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortab
 import type {DecodedPortableFile,PortableManifestSection,PortableSectionInput} from './format';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
 import {cloneProjectionTiles} from './projectionTransfer';
+import {exactBlobBuffer} from './blobBuffer';
 import type {SelectionRect} from '../strokeSelection';
 
 export class ExternalFileConflict extends Error{
@@ -206,10 +207,13 @@ export class PersistenceCoordinator{
     type Writable={write:(b:Blob|BufferSource|string)=>Promise<void>;truncate?:(size:number)=>Promise<void>;close:()=>Promise<void>;abort?:()=>Promise<void>};
     const h=handle as {getFile:()=>Promise<File>;createWritable:(options?:{keepExistingData?:boolean})=>Promise<Writable>};if(!h?.getFile||!h?.createWritable)throw new Error('保存先を使用できません。');
     if(expectedFingerprint&&await fingerprintHandle(handle)!==expectedFingerprint)throw new ExternalFileConflict(await h.getFile());
-    const stable=bytes.slice(),writable=await h.createWritable({keepExistingData:false});
+    // encode-save transfers a uniquely owned byte buffer from the Worker. It is
+    // not modified while this awaited write and read-back verification run.
+    // Avoid cloning a potentially huge native save file before writing it.
+    const stable=bytes,writable=await h.createWritable({keepExistingData:false});
     try{
       await writable.truncate?.(0);
-      await writable.write(new Blob([stable.buffer as ArrayBuffer],{type:'application/octet-stream'}));
+      await writable.write(new Blob([exactBlobBuffer(stable)],{type:'application/octet-stream'}));
       await writable.truncate?.(stable.byteLength);
       await writable.close();
     }catch(error){try{await writable.abort?.();}catch{}throw error;}
@@ -242,7 +246,7 @@ async function verifyExternalWrite(handle:{getFile:()=>Promise<File>},expected:U
 }
 function sleep(ms:number){return new Promise<void>(resolve=>setTimeout(resolve,ms));}
 async function hashHex(bytes:Uint8Array){const copy=bytes.byteOffset===0&&bytes.byteLength===bytes.buffer.byteLength?bytes:bytes.slice(),hash=new Uint8Array(await crypto.subtle.digest('SHA-256',copy as Uint8Array<ArrayBuffer>));return [...hash].map(x=>x.toString(16).padStart(2,'0')).join('');}
-function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([bytes.slice().buffer as ArrayBuffer],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
+function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([exactBlobBuffer(bytes)],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
 function safeFileName(value:string){return (value.trim()||'Illustro作品').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').slice(0,120);}
 function message(error:unknown){return error instanceof Error?error.message:String(error);}
 
