@@ -10,7 +10,7 @@ export function averageSampledPixels(bytes:Uint8Array,mode:SampleTransparency,wh
     if(whiteOpacity!==null)pixel=compositeWhiteBackdrop(pixel,whiteOpacity);
     if(mode==='skip'&&pixel[3]===0)continue;
     if(mode==='white')pixel=compositeWhiteBackdrop(pixel,1);
-    for(let channel=0;channel<4;channel++)sum[channel]+=pixel[channel]!;
+    for(let channel=0;channel<4;channel++)sum[channel]=(sum[channel]??0)+(pixel[channel]??0);
     count++;
   }
   if(!count)return null;
