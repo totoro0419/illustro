@@ -1,4 +1,4 @@
-import type {EditableArtwork,LayerId,LayerMask} from '@illustro/core';
+import type {ArtPoint,EditableArtwork,LayerId,LayerMask} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import type {MaskStrokePoint} from '../layerMaskEditing';
 
@@ -6,6 +6,7 @@ export type ArtworkContext=Readonly<{
   width:number;height:number;color:string;drawing:BrushSurface;
   selected:Readonly<{id:LayerId;name:string;content:EditableArtwork|null;mask:LayerMask|null}>;
   selectionMask:()=>LayerMask|null;
+  snapGuidedPath?:(points:readonly ArtPoint[])=>ArtPoint[];
   paths:readonly Readonly<{id:LayerId;name:string;content:EditableArtwork}>[];
   missingFontCandidates:readonly Readonly<{name:string;assetId:string}>[];
 }>;
