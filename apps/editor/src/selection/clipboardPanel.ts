@@ -68,7 +68,7 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
     const surface=document.querySelector<HTMLElement>('.surface'),view=actions.getView();
     const item=clipboard.preview();
     if(!surface||!view||!item||!actions.canEdit())return;
-    const originalId=clipboard.snapshotId;
+    const originalId=clipboard.snapshotId,previewName=item.sourceName,previewEditable=item.editable;
     let x=Math.round((view.width-item.width)/2),y=Math.round((view.height-item.height)/2);
     let working=false,frame=0;
     const overlay=document.createElement('section');overlay.className='c06-placement-preview';
@@ -105,8 +105,8 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
         base.x,base.y
       ].join(',')+')';
       if(image.style.transform!==matrix)image.style.transform=matrix;
-      const label=item.sourceName+' · X '+x+' / Y '+y+
-        (item.editable?' · 編集できるレイヤーの配置案':' · 半透明の配置案');
+      const label=previewName+' · X '+x+' / Y '+y+
+        (previewEditable?' · 編集できるレイヤーの配置案':' · 半透明の配置案');
       if(caption.textContent!==label)caption.textContent=label;
     }
     const tick=()=>{
