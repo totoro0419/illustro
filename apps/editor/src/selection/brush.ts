@@ -1,10 +1,12 @@
 import type {StrokeRecord} from '@illustro/brush-rt';
 import type {DeformationBrushPass} from '@illustro/core';
 import type {MaskData} from './mask';
+import type {RasterWorkerTile} from './tileStroke';
 
-type Job={pixels:Uint8Array;[key:string]:unknown};
+type Job={pixels?:Uint8Array;tiles?:RasterWorkerTile[];[key:string]:unknown};
+type Result=Uint8Array|RasterWorkerTile[]|null;
 type Task={
-  job:Job;resolve:(pixels:Uint8Array|null)=>void;reject:(reason:Error)=>void;
+  job:Job;resolve:(pixels:Result)=>void;reject:(reason:Error)=>void;
 };
 
 /** Share a single warm selection-stroke Worker. One Worker per pen stroke
@@ -33,16 +35,23 @@ function pump(){
   try{
     if(!worker)worker=new Worker(new URL('./stroke.worker.ts',import.meta.url),{type:'module'});
     const currentWorker=worker;
-    const finish=(pixels:Uint8Array|null,error?:Error)=>{
+    const finish=(pixels:Result,error?:Error)=>{
       if(active!==next)return;
       if(timeout!==null){clearTimeout(timeout);timeout=null;}
       active=null;
       if(error)next.reject(error);else next.resolve(pixels);
       pump();
     };
-    currentWorker.onmessage=(event:MessageEvent<{pixels?:Uint8Array|null;error?:string}>)=>{
+    currentWorker.onmessage=(event:MessageEvent<{pixels?:Uint8Array|null;tiles?:RasterWorkerTile[]|null;error?:string}>)=>{
       const response=event.data;
       if(response?.error){closeWorker();finish(null,Error(response.error));return;}
+      if(next.job.tiles){
+        if(response?.tiles!==null&&!Array.isArray(response?.tiles)||
+          response?.tiles?.some(tile=>!tile||typeof tile.key!=='string'||!(tile.pixels instanceof Uint8Array))){
+          closeWorker();finish(null,Error('区画ごとの筆の結果を確認できませんでした。'));return;
+        }
+        finish(response.tiles??null);return;
+      }
       if(response?.pixels!==null&&!(response?.pixels instanceof Uint8Array)){
         closeWorker();finish(null,Error('選択範囲の筆の結果を確認できませんでした。'));return;
       }
@@ -64,7 +73,10 @@ function pump(){
     const message=selected&&residentMask===mask
       ?(()=>{const {alpha:unused,...rest}=next.job;return rest;})()
       :next.job;
-    currentWorker.postMessage(message,[next.job.pixels.buffer as ArrayBuffer]);
+    const transferred=next.job.tiles
+      ?next.job.tiles.map(tile=>tile.pixels.buffer as ArrayBuffer)
+      :next.job.pixels?[next.job.pixels.buffer as ArrayBuffer]:[];
+    currentWorker.postMessage(message,transferred);
     if(selected)residentMask=mask;
   }catch(error){
     closeWorker();
@@ -74,7 +86,7 @@ function pump(){
     pump();
   }
 }
-function runBrushWorker(job:Job):Promise<Uint8Array|null>{
+function runBrushWorker(job:Job):Promise<Result>{
   if(waiting.length>=16)return Promise.reject(Error('選択描画の処理が溜まっています。'));
   return new Promise((resolve,reject)=>{
     waiting.push({job,resolve,reject});
@@ -86,14 +98,22 @@ function runBrushWorker(job:Job):Promise<Uint8Array|null>{
 export function writableRasterView(pixels:Uint8Array|Uint8ClampedArray):Uint8Array{
   return new Uint8Array(pixels.buffer,pixels.byteOffset,pixels.byteLength);
 }
-export function applySelectedStroke(mask:MaskData,pixels:Uint8Array,records:readonly StrokeRecord[]){
-  return runBrushWorker({width:mask.width,height:mask.height,alpha:mask.alpha,pixels,records});
+export async function applySelectedStroke(mask:MaskData,pixels:Uint8Array,records:readonly StrokeRecord[]){
+  const result=await runBrushWorker({width:mask.width,height:mask.height,alpha:mask.alpha,pixels,records});
+  if(result!==null&&!(result instanceof Uint8Array))throw Error('選択範囲の描画形式が正しくありません。');
+  return result;
+}
+/** Worker owns incoming tiles after transfer; returning null means no pixel changed. */
+export async function applySelectedStrokeTiles(mask:MaskData,tiles:RasterWorkerTile[],records:readonly StrokeRecord[]){
+  const result=await runBrushWorker({width:mask.width,height:mask.height,alpha:mask.alpha,tiles,records});
+  if(result!==null&&!Array.isArray(result))throw Error('選択範囲の描画結果に問題があります。');
+  return result;
 }
 export async function replayBrushPasses(
   passes:readonly DeformationBrushPass[],width:number,height:number,pixels:Uint8Array
 ){
   if(!passes.length)return pixels;
   const result=await runBrushWorker({passes,width,height,pixels});
-  if(!result)throw Error('変形後に描いた筆を復元できませんでした。');
+  if(!(result instanceof Uint8Array))throw Error('変形後に描いた筆を復元できませんでした。');
   return result;
 }

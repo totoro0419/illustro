@@ -1,15 +1,17 @@
 import {cpuReference,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 
 import type {PixelLayerMask} from '@illustro/core';
+import {renderSelectedStrokeTiles,type RasterWorkerTile} from './tileStroke';
 type Pass={selection:PixelLayerMask|null;records:readonly unknown[]};
-type Job={width:number;height:number;pixels:Uint8Array}&(
-  {alpha?:Uint8Array;records:readonly StrokeRecord[]}|{passes:readonly Pass[]}
+type Job={width:number;height:number}&(
+  ({pixels:Uint8Array}&({alpha?:Uint8Array;records:readonly StrokeRecord[]}|{passes:readonly Pass[]}))
+  |{tiles:RasterWorkerTile[];alpha?:Uint8Array;records:readonly StrokeRecord[]}
 );
 let retainedMask:Uint8Array|null=null,retainedWidth=0,retainedHeight=0;
 
 self.onmessage=({data}:MessageEvent<Job>)=>{
   try{
-    const {width,height,pixels}=data;
+    const {width,height}=data;
     let alpha:Uint8Array|null=null;
     if('records' in data){
       if(data.alpha){
@@ -19,6 +21,12 @@ self.onmessage=({data}:MessageEvent<Job>)=>{
         throw Error('選択マスクの再利用情報が失われました。');
       alpha=retainedMask;
     }
+    if('tiles' in data){
+      const result=renderSelectedStrokeTiles(width,height,alpha!,data.tiles,data.records);
+      (self as unknown as Worker).postMessage({tiles:result},result?.map(tile=>tile.pixels.buffer as ArrayBuffer)??[]);
+      return;
+    }
+    const pixels=data.pixels;
     const passes='passes' in data?data.passes:[{selection:null,records:data.records}];
     let changed=false;
     for(const pass of passes)for(const raw of pass.records){
