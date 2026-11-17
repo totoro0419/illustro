@@ -29,11 +29,15 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
   const sourceSide=selectField(coordinates,'直す元の形',[
     ['a','1つ目の形'],['b','2つ目の形']
   ] as const);
+  const hideOperands=document.createElement('input');hideOperands.type='checkbox';hideOperands.checked=true;
+  labelledField(coordinates,'演算結果を作ったら元の2レイヤーを隠す（Undoで戻せます）',hideOperands);
+  hideOperands.parentElement!.hidden=true;
   const combination=selectField(coordinates,'形の組み合わせ方',[
     ['union','重ね合わせる'],['intersection','重なる部分だけ'],['difference','重なる部分を引く'],['xor','重ならない部分だけ']
   ] as const);
   let path:EditablePath|null=null,editing:LayerId|undefined,previewId=0,pointDrawing:BrushSurface|null=null;
   let sourceEdit:{operands:NonNullable<EditablePath['booleanOperands']>;side:'a'|'b'}|null=null;
+  let combinedSourceIds:readonly LayerId[]|null=null;
   function draft(){
     if(!path)throw Error('線を描くか、ベクターレイヤーを選んでください。');
     return validateEditableArtwork({...path,stroke:color.value,fill:filled.checked?fill.value:null,
@@ -50,7 +54,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     status.textContent=`${path?.points.length} 点・編集中の点 ${index+1}`;
   }
   function readPath(next:EditablePath,id?:LayerId){
-    path=next;editing=id;
+    path=next;editing=id;combinedSourceIds=null;hideOperands.parentElement!.hidden=true;
     color.value=next.stroke;filled.checked=!!next.fill;if(next.fill)fill.value=next.fill;
     closed.checked=next.closed;thickness.value=String(next.width);lineStyle.value=next.lineStyle??'solid';
     const options=api.context()?.paths.filter(p=>p.id!==editing)??[];
@@ -243,16 +247,24 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       status.textContent='元の図形を再計算しました。「作品に反映」で結果を保存できます。';
     },status),
     button('2つの形を組み合わせる',async()=>{
+      const originalId=editing,otherId=secondary.value as LayerId;
       const result=await combineShapes(draft(),otherPath(),combination.value as 'union'|'intersection'|'difference'|'xor');
       sourceEdit=null;readPath(result);
-      status.textContent='演算結果を新しいレイヤーに作ります。元の図形は削除されません。必要に応じて非表示にしてください。';
+      if(originalId&&otherId&&originalId!==otherId){
+        combinedSourceIds=[originalId,otherId];hideOperands.parentElement!.hidden=false;
+        status.textContent='新しい図形を保存するとき、元の2レイヤーを同時に隠せます。Undoは1回です。';
+      }else status.textContent='演算結果を新しいレイヤーに作ります。元の形はそのまま残ります。';
     },status),
     button('作品に反映',async()=>{
       if(sourceEdit)throw Error('元の形を編集中です。先に「元の形から演算を更新」を押してください。');
-      stopPoints();await api.save(draft(),'ベクター線',editing);status.textContent='ベクター線を保存しました。';
+      stopPoints();await api.save(draft(),'ベクター線',editing,undefined,
+        hideOperands.checked?combinedSourceIds??undefined:undefined);
+      combinedSourceIds=null;hideOperands.parentElement!.hidden=true;
+      status.textContent='ベクター線を保存しました。';
     },status),
     button('候補を取り消す',()=>{
-      stopPoints();sourceEdit=null;path=null;editing=undefined;previewId++;preview.hidden=true;status.textContent='候補を取り消しました。';
+      stopPoints();sourceEdit=null;path=null;editing=undefined;combinedSourceIds=null;
+      hideOperands.parentElement!.hidden=true;previewId++;preview.hidden=true;status.textContent='候補を取り消しました。';
     },status)
   );
   pointIndex.onchange=syncPoint;
