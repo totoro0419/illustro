@@ -49,10 +49,10 @@ export function createTiledPreviewAccumulator(
             const dx=Math.min(bx,ox+1)-Math.max(ax,ox);
             if(dx<=0)continue;
             const area=dx*dy*alpha,dst=(oy*targetWidth+ox)*4;
-            sum[dst]+=tile[offset]!*area;
-            sum[dst+1]+=tile[offset+1]!*area;
-            sum[dst+2]+=tile[offset+2]!*area;
-            sum[dst+3]+=area;
+            sum[dst]=(sum[dst]??0)+tile[offset]!*area;
+            sum[dst+1]=(sum[dst+1]??0)+tile[offset+1]!*area;
+            sum[dst+2]=(sum[dst+2]??0)+tile[offset+2]!*area;
+            sum[dst+3]=(sum[dst+3]??0)+area;
           }
         }
       }
