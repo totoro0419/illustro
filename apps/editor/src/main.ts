@@ -11,7 +11,7 @@ import './color/color.css';
 import './color/harmony.css';
 import {ForegroundColor,rgb,hex,fromHex,DOCUMENT_PALETTE_SECTION} from './color/model';
 import {installColorPanel} from './color/panel';
-import {installEyedropperSettings} from './color/eyedropperSettings';
+import {installEyedropperSettings,sampleSourceLabel} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
@@ -1771,7 +1771,12 @@ function updateContextBar(){
   tool.disabled=layer.disabled=selection.disabled=!active;
   source.hidden=selectedTool!=='eyedropper';
   source.disabled=!active;
-  source.textContent='採色元: '+(byId<HTMLSelectElement>('colorSampleSource').value==='layer'?'選択したレイヤー':'見えている作品全体');
+  const sampleSource=byId<HTMLSelectElement>('colorSampleSource').value;
+  const sampleLayerId=byId<HTMLSelectElement>('colorSampleLayerId').value;
+  source.textContent='採色元: '+sampleSourceLabel({
+    source:sampleSource==='layer'?'layer':sampleSource==='specific'?'specific':'composite',
+    layerId:sampleLayerId?sampleLayerId as LayerId:null,
+  },controller.layers.map(item=>({id:item.id,name:item.name})));
   tool.textContent='道具: '+(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
   layer.textContent='描画先: '+(active?controller.selectedLayer.name:'作品なし');
   const selected=surface?.selectedRectangle;
@@ -1785,7 +1790,7 @@ byId<HTMLButtonElement>('c04ContextLayer').onclick=()=>shellUi.setLayerPage(true
 byId<HTMLButtonElement>('c04ContextSelection').onclick=()=>byId<HTMLButtonElement>('selection').click();
 byId<HTMLButtonElement>('c04ContextReference').onclick=()=>shellUi.openBox('colorBox');
 const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity)});
-const eyedropperSettings=installEyedropperSettings({foreground,getSurface:()=>surface,getLayers:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name}))});
+const eyedropperSettings=installEyedropperSettings({foreground,getSurface:()=>surface,getLayers:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name})),onChange:updateContextBar});
 function refreshSelectionControls(){
  const selecting=surface?.selectingRectangle??false;
  const rectangle=surface?.selectedRectangle;
