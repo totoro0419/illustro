@@ -10,6 +10,7 @@ on:
 permissions:
   contents: read
   pages: write
+  statuses: write
   id-token: write
 
 concurrency:
@@ -70,3 +71,40 @@ jobs:
       - name: Deploy Pages with preview subpath
         id: deploy
         uses: actions/deploy-pages@v4
+      - name: Verify public editor preview and existing homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 8 --retry-delay 3 --retry-all-errors \
+            --output /tmp/illustro-preview.html "https://totoro0419.github.io/illustro/preview/"
+          curl --fail --location --silent --show-error --retry 8 --retry-delay 3 --retry-all-errors \
+            --output /tmp/illustro-home.html "https://totoro0419.github.io/illustro/"
+          grep -qi '<html' /tmp/illustro-preview.html
+          grep -qi '<html' /tmp/illustro-home.html
+
+  report:
+    needs: [build, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record deployment result for independent inspection
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+        run: |
+          set -euo pipefail
+          if [[ "$DEPLOY_RESULT" == "success" ]]; then
+            state=success
+            message="Preview deployed; public preview and homepage checks passed"
+          else
+            state=failure
+            message="Preview build, deployment, or public URL verification failed"
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            --method POST \
+            -f state="$state" \
+            -f context="illustro-preview/pages" \
+            -f description="$message" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            --silent
