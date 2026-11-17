@@ -42,6 +42,7 @@ export function installEyedropperSettings(args:{
   foreground:ForegroundColor;
   getSurface:()=>BrushSurface|null;
   getLayers:()=>readonly {id:LayerId;name:string}[];
+  onChange?:()=>void;
 }){
   const source=el<HTMLSelectElement>('colorSampleSource');
   const layer=el<HTMLSelectElement>('colorSampleLayerId');
@@ -78,6 +79,7 @@ export function installEyedropperSettings(args:{
     refreshLayers();
     const value=options();
     args.getSurface()?.configureSample(value);
+    args.onChange?.();
     try{localStorage.setItem(KEY,JSON.stringify({version:1,...value}));}catch{/* allow session-only settings */}
   }
   for(const control of [source,diameter,transparency])control.addEventListener('change',apply);
