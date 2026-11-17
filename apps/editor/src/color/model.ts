@@ -110,8 +110,12 @@ export class ForegroundColor {
     try{payload=localStorage.getItem(DOCUMENT_PALETTE_KEY+documentId);}catch{}
   }
   if(payload){
-    const parsed=parsePalette(payload);
-    this.documentPalette={...parsed,id:'document:'+documentId};
+    // A damaged device-only backup must never prevent a verified artwork
+    // from opening. Embedded file corruption is still reported to the caller.
+    try{
+      const parsed=parsePalette(payload);
+      this.documentPalette={...parsed,id:'document:'+documentId};
+    }catch(error){if(section)throw error;}
   }
   this.notify();
  }
