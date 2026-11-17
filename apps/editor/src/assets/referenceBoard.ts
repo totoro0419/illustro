@@ -4,7 +4,8 @@
  */
 import {readBoard,writeBoard,decodeBoardRecord,newBoardItem,type BoardSnapshot,type BoardItem} from './referenceBoardStore';
 import {getAsset,addAsset,type AssetEntry} from './library';
-import {canReuseExternalReference,parseExternalReferences,type ExternalReference} from './referenceBundleMode';
+import {verifyExternalReference,parseExternalReferences,type ExternalReference} from './referenceBundleMode';
+import {fingerprintFileChunks} from '../persistence/chunkFingerprint';
 import {referenceFrameKey} from './referenceFrameKey';
 import {referencePixelAtScreen,sampleReferenceBitmap} from './referenceDirectSample';
 import {exportAssetPack,importAssetPack,readAssetPack,type PackManifest} from './packs';
@@ -288,7 +289,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
         try{asset=await getAsset(assetId);}catch{/* Keep the placement for manual recovery. */}
         if(asset&&!asset.deleted&&asset.kind==='reference'&&asset.mime.startsWith('image/')&&
           asset.mime.length<=180&&asset.bytes>=1&&asset.bytes<=32*1024*1024){
-          externalRefs.push({assetId,name:asset.name,bytes:asset.bytes,mime:asset.mime});
+          try{
+            const fingerprint=await fingerprintFileChunks(asset.data);
+            externalRefs.push({assetId,name:asset.name,bytes:asset.bytes,mime:asset.mime,fingerprint});
+          }catch{missing.push(assetId);}
         }else missing.push(assetId);
       }
       if(missing.length){
@@ -370,7 +374,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     if(storageMode==='linked'){
       for(const reference of externalRefs){
         const local=await getAsset(reference.assetId);
-        if(canReuseExternalReference(reference,local))reusable.add(reference.assetId);
+        if(await verifyExternalReference(reference,local))reusable.add(reference.assetId);
       }
     }
     const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
