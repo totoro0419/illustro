@@ -763,7 +763,7 @@ export class BrushSurface{
       // The eraser keeps its own separately configurable opacity.
       const strokePreset=preset.blend==='erase'||this.colorOpacity===1?preset:
         {...preset,opacity:preset.opacity*this.colorOpacity};
-      this.activeStrokeId=this.session.begin(strokePreset,0,context,this.target.surfaceId,!mask);if(this.reservation)this.pendingStrokeIds.set(this.reservation,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;
+      this.activeStrokeId=this.session.begin(strokePreset,0,context,this.target.surfaceId,true,mask);if(this.reservation)this.pendingStrokeIds.set(this.reservation,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;
       this.strokeSymmetry=!e.shiftKey&&this.symmetry.mode!=='off'&&(preset.blend!=='erase'||this.symmetry.erase)?this.symmetry:null;
       if(this.symmetry.mode!=='off'){this.updateSymmetryOverlay();this.trackSymmetryCursor(e);}
       const correction=e.pointerType==='pen'&&!this.strokeSymmetry&&!this.view.seamless&&preset.blend==='normal'?this.correctionHold():null;

@@ -16,3 +16,16 @@ test('ordinary strokes retain preview by default',()=>{
   session.begin({id:'brush'},0,{},'ordinary-layer');
   assert.equal(sent[0].args.showPreview,true);
 });
+
+test('C06-001: a selection is uploaded once per immutable alpha reference',()=>{
+ const sent=[],host={backend:{viewTransform:null},send:(method,args)=>sent.push({method,args})};
+ const session=new DrawingSessionPort(host);
+ const selection={width:4,height:4,alpha:new Uint8Array(16).fill(128)};
+ session.begin({id:'brush'},0,{},'layer',true,selection);
+ session.active=null;
+ session.begin({id:'brush'},0,{},'layer',true,selection);
+ assert.equal(sent[0].args.selection.alpha,selection.alpha);
+ assert.equal(sent[1].args.selection.alpha,undefined);
+ assert.equal(sent[0].args.selection.id,sent[1].args.selection.id);
+ assert.equal(sent[1].args.showPreview,true);
+});

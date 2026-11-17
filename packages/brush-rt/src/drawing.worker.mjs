@@ -11,6 +11,7 @@ let renderer,session,sink,diagnostics=false,visibilityEpoch=0,latestView,initial
 let publishing=false,publishRequested=false,lastSent=0,acknowledged=0,serial=0,sentPacket=null;
 let formalGate=null,recordGate=false;const heldRecords=[],records=new Map,recordTokens=new WeakMap,pendingTiles=new Set;
 const metrics={gpuCaptures:0,bitmapBytes:0,publications:0,formal:[]};
+let previewMaskId=null,previewMask=null;
 const tokenFor=record=>recordTokens.get(record);
 function remember(token,record){records.set(token,record);recordTokens.set(record,token);return record;}
 function record(token){const value=records.get(token);if(!value)throw Error('Unknown stroke token');return value;}
@@ -183,7 +184,25 @@ async function pixelArea({x,y,width,height,surfaceKey}){
 async function settlePictures(){requestPublish();while(publishing||publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size||lastSent>acknowledged){if(renderer.errors.length)throw Error(renderer.errors.join(';'));await new Promise(ok=>setTimeout(ok,0));}}
 async function command(method,a){const r=renderer,s=session;
  switch(method){
- case 'begin':{const id=s.begin(a.preset,a.fast,a.context,a.surfaceKey,a.showPreview!==false);if(id!==a.id)throw Error('Drawing worker stroke sequence mismatch');return id;}
+ case 'begin':{
+  let mask=null;
+  if(a.selection){
+   const {id,width,height,alpha}=a.selection;
+   if(!Number.isSafeInteger(id)||width!==r.document.width||height!==r.document.height)
+    throw Error('Selection preview dimensions do not match document');
+   if(alpha!==undefined){
+    if(!(alpha instanceof Uint8Array)||alpha.length!==width*height)
+      throw Error('Invalid selection preview payload');
+    previewMaskId=id;previewMask={width,height,alpha};
+   }else if(previewMaskId!==id||!previewMask||
+      previewMask.width!==width||previewMask.height!==height)
+    throw Error('Selection preview cache is no longer valid');
+   mask=previewMask;
+  }
+  const id=s.begin(a.preset,a.fast,a.context,a.surfaceKey,a.showPreview!==false,mask);
+  if(id!==a.id)throw Error('Drawing worker stroke sequence mismatch');
+  return id;
+ }
  case 'samples':s.prediction=a.prediction!==false;for(const sample of a.samples)s.accept(sample,false);s.predictions(a.predictions??[]);s.flush();s.updateLive(performance.now());return;
  case 'end':{r.releaseInteractiveUntil=performance.now()+280;const value=await s.end(a.release);if(value)remember(a.token,value);return value;}
  case 'commit':a.additional.forEach((value,i)=>remember(a.token+':copy:'+i,value));return s.commitRecord(record(a.token),a.additional,a.surfaceKey);
