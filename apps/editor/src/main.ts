@@ -1640,6 +1640,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
   return eraser?.blend==='erase'?(inputPreferences.eraserSizeLink&&active?{...eraser,size:active.size}:eraser):null;
  };
  drawing.selectionMask=()=>surface===drawing?c06Selection?.active()??null:null;
+ drawing.selectionPending=()=>surface===drawing?(c06Selection?.isPending()??false):false;
  applyInputPreferences(drawing);
  drawing.onLayerPickShortcut=point=>{if(surface===drawing&&documentReady)pickLayerOnCanvas(point);};
  drawing.onSelectionChanged=()=>{if(surface===drawing){
