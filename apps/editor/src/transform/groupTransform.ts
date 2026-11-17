@@ -12,8 +12,15 @@ export type GroupOutline=Readonly<{id:string;before:GroupBounds;after:readonly {
 export function groupTransformPlan(
  items:readonly GroupItem[],width:number,height:number,options:GroupTransformOptions
 ):{settings:Transform;outlines:GroupOutline[]}{
- if(items.length<2||!items.every(i=>i.bounds.width>0&&i.bounds.height>0))
+ if(items.length<2)
   throw Error('変形するレイヤーを2枚以上選んでください。');
+ if(!items.every(i=>i.id.length>0&&
+   [i.bounds.x,i.bounds.y,i.bounds.width,i.bounds.height,
+    i.bounds.x+i.bounds.width,i.bounds.y+i.bounds.height].every(Number.isFinite)&&
+   i.bounds.width>0&&i.bounds.height>0))
+  throw Error('変形するレイヤーの範囲が正しくありません。');
+ if(new Set(items.map(i=>i.id)).size!==items.length)
+  throw Error('同じレイヤーを重複して変形できません。');
  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||
    ![options.dx,options.dy,options.sx,options.sy,options.angle].every(Number.isFinite)||
    Math.abs(options.dx)>8192||Math.abs(options.dy)>8192||
