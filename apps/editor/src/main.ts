@@ -85,10 +85,11 @@ import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
 import {compilePreset,layerMaskTile,TILE,type FoundationPreset} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
-import {captureExport,compositeLayer,exportImage,exportFileName,renderFrozenArtwork,type FrozenExport,type ImageFormat,type ImageExportResult} from './export/basicExport';
+import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,type FrozenExport,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
+import {fingerprintRenderedPixels,sameRenderedPixels,type VisualFingerprint} from './persistence/visualIntegrity';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
 import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerImageLink,type LayerId} from '@illustro/core';
 
@@ -3082,20 +3083,32 @@ function showMigrationDetails(source:()=>Promise<FrozenExport>,converted:CoreDoc
   close.onclick=()=>dialog.close();
   save.onclick=()=>{dialog.close();if(controller.document===converted)void saveWork(true);};
   compare.onclick=async()=>{
-    compare.disabled=true;status.textContent='比較画像を準備しています。';
+    compare.disabled=true;
+    status.textContent='移行前後の色・透明度を含む全画素を比較しています。';
     try{
+      const fingerprints:VisualFingerprint[]=[];
       for(const [capture,label] of [[source,'移行前'],[async()=>captureExport(converted),'移行コピー']] as const){
         if(!dialog.open)return;
-        const output=await exportImage(await capture(),'png');
+        const frozen=await capture();
+        // Render only once for both the visual preview and exact pixel checksum.
+        // Keep the first full-size buffer out of scope before replaying the next.
+        const output=await (async()=>{
+          const pixels=await renderFrozenArtwork(frozen);
+          const fingerprint=await fingerprintRenderedPixels(pixels,frozen.width,frozen.height);
+          const blob=await encodePng(pixels,frozen.width,frozen.height);
+          return {blob,fingerprint,width:frozen.width,height:frozen.height};
+        })();
         if(!dialog.open)return;
+        fingerprints.push(output.fingerprint);
         const url=URL.createObjectURL(output.blob);urls.push(url);
         const view=createHistoryComparison(url,label,output.width,output.height);
         previews.append(view.figure);views.push(view.dispose);
       }
-      status.textContent='画像を並べました。見た目の違いがないか確認できます。';
+      status.textContent=fingerprints.length===2&&sameRenderedPixels(fingerprints[0]!,fingerprints[1]!)
+        ?'描き出した画像の全画素（色・透明度）が一致しました。元ファイルと移行コピーの比較結果です。'
+        :'移行前後の画像データに差があります。両方の絵を見比べ、元ファイルは残してください。';
     }catch(error){
-      if(dialog.open)status.textContent='比較画像を作成できませんでした。'+(error instanceof Error?error.message:'');
-      compare.disabled=false;
+      if(dialog.open)status.textContent='比較を完了できませんでした。'+(error instanceof Error?error.message:'');
     }
   };
   section.append(title,message,details,compare,save,close,status,previews);
