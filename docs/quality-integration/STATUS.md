@@ -476,3 +476,26 @@ GitHubの各PRメタデータ、全12件の変更ファイル、各HEADに結び
 - 当該コードHEADの [Core CI #44086356030](https://github.com/totoro0419/illustro/actions/runs/44086356030) は**success**（Core型検査・テスト）。**Core・Brush・Editor全体の統合CIと本番ビルドは、このHEADについて成功未確認**。従来の [統合CI #44082660762](https://github.com/totoro0419/illustro/actions/runs/44082660762) は旧HEAD `c2476af7` の成功であり、今回のコードの合格根拠に流用しない。旧 `prep:check` の既存未分類ドキュメント診断失敗は引き続き不合格として区別。
 - PR #73の変更ファイル一覧を再取得し、原調査9ファイルのみであることを確認。129件の既存問題ID・A/B/C（81/29/19）を保持し、**独立解決確認済み0/129件**。PR #73・#75はDraft・未マージ。比較で `main` は基準 `bdc7135b` とidentical。新たなPRマージ、公開アプリ・過去ブランチの変更は実施しない。
 
+
+
+## 2026-11-17 — C06第4回：選択中描画の全画面GPU読戻しを区画単位の処理に変更
+
+**開始HEAD** [`51d70b42`](https://github.com/totoro0419/illustro/commit/51d70b421c0c8832adb770db024a1a3f1bc0103a)、**最終実装・検査HEAD** [`932de5ae`](https://github.com/totoro0419/illustro/commit/932de5ae2d8f3b2cf67bbdf2de6cc015cef2a095)。今回はC06-002を重点改善。原監査PR #73の129件の問題ID・分類・原本9ファイルを変更せず、統合PR #75 Draftおよびmain未マージを維持。
+
+### C06-002：変更内容と根拠
+
+1. [`c5d373a6`](https://github.com/totoro0419/illustro/commit/c5d373a6ee4da93d67e2aaddd1c50e4854d68580)：Coreに`replaceLayerRasterTiles()`と`readBaseRasterTiles()`を追加。GPU/Workerの128px区画からCore内部の256px区画へ画素を統合し、**完全なレイヤースナップショット**として保存。過去のブラシ履歴と混ぜて部分上書きしないため、復元で古い線が消えたり重複する原因を回避。透明な区画は保存しない。4000×4000、複数区画、キャンバス端、Undo/Redo、端末保存用の書出し・再読込み、空画像への置換をCore単体テストで検査。型不一致の[`164bfbb8`](https://github.com/totoro0419/illustro/commit/164bfbb851826ea06f4e73366dc88dc560be8683)、区画キー検証の[`486d7470`](https://github.com/totoro0419/illustro/commit/486d7470b8c82ea180cbded70d65bb3cde3d6616)を修正後、Core CI成功。
+2. [`f943e754`](https://github.com/totoro0419/illustro/commit/f943e754ce0513456cfc7109d65b9ad3f9c350ce)、[`dfeab722`](https://github.com/totoro0419/illustro/commit/dfeab7226c6640a23e29144313373f6b46ab4189)：選択筆の計算を作品サイズのRGBA配列ではなく、描画のある128px区画の列に対して適用する処理と、既存Workerへの転送経路を追加。マスクの保持・再利用、空白区画への新規描画、元画像の保持、作業外の区画の不変更、壊れた/重複した区画の拒否を実装。
+3. [`cd3a5cd8`](https://github.com/totoro0419/illustro/commit/cd3a5cd8f47f5e742caa5aaacf4f1022ebb2ecc8)：`brushSurface.ts`で描画Workerの最新の区画一覧を取得し、選択中の筆の確定で対象レイヤーの**既存描画がある区画すべて**を最大16区画／1回（最大1MiB）ずつGPUから読む方式に変更。選択Workerへ小区画を渡し、Coreスナップショットとして確定。作品切替の検知と、未対応レンダラー向け旧方式を維持。復元側もこのスナップショットについては疎なV2区画形式でGPUへ戻し、余分な全面RGBA作成を省いた。
+4. [`932de5ae`](https://github.com/totoro0419/illustro/commit/932de5ae2d8f3b2cf67bbdf2de6cc015cef2a095)：**従来の全画面CPU基準描画と、区画単位の選択付き描画の全画素が一致**することを、実際の筆データ、境界、半透明マスク、既存画素で比較する自動テストを追加。新旧の画素差はテスト上0。
+
+**検査**：最終HEAD [統合CI #44086665670](https://github.com/totoro0419/illustro/actions/runs/44086665670) **success**（Core・ブラシ・Editorテスト、型検査、本番ビルド）、[Core CI #44086671398](https://github.com/totoro0419/illustro/actions/runs/44086671398) **success**。直前の実装HEAD [`cd3a5cd8` 統合CI #44086346950](https://github.com/totoro0419/illustro/actions/runs/44086346950)、[Core CI #44086356030](https://github.com/totoro0419/illustro/actions/runs/44086356030)もsuccess。途中のCore CI失敗は型と区画番号検証の不備で、修正済みコードで再実行して成功。古い`prep:check`文書分類警告は別途残る。
+
+**C06判定（未認定事項を維持）**：
+- **C06-002：構造改善・自動検査成功、Android実機検証待ち**。通常のWorker描画では全作品サイズのRGBA読戻し・64MB級の単独配列・全画面復元用配列を削減。ただし対象レイヤーの既存描画を守るため、**描かれている区画はすべてGPUから取得する**。全面に絵がある場合は読戻し総量が大きくなるので、「常に変更区画だけで済む」とは主張しない。実機速度・メモリ・長い線での応答性は未計測。特殊な非Workerレンダラーでは旧方式を維持。
+- **C06-001：部分対応**。選択範囲の正確なCPU仮表示が対応する通常ブラシ等には実装済みだが、消しゴム/複雑な合成/下側のレイヤーなど未対応表示方式の仮線は今後改善。
+- **C06-007：改善実装済み、マスク確定時とSVG仮表示の画素境界・重なりの一致は未確認**。
+- **C06-015：タイル保存対応済み。コピー元レイヤーのGPU全画面取得・実機大容量グループ試験は未解決**。
+- C05-020の部分未完了を保持。C03〜C06の**65/129件コード再照合**は維持。全129件の独立実機解決確認 **0/129**（C06 0/17）。「コード実装・自動検査成功」と「Androidで完成した」を混同しない。
+
+**次回「続けて」**：C06-001の未対応ブラシ・消しゴムでの選択付き仮表示、C06-007の確定マスクとの一致、C06-015のコピー元全画面読み取り削減とグループ回帰を改善する。C06の残状態を再照合・Issueに更新後、C07-001〜016へ。mainへはマージしない。
