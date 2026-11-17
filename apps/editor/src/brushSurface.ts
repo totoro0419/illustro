@@ -135,6 +135,7 @@ export class BrushSurface{
   previewArtworkGuides(guides:readonly ArtworkGuide[]|null){this.guidePreview=guides;this.paintArtworkGuides();}
   showArtworkGuideLines(visible:boolean){this.showArtworkGuides=visible;this.paintArtworkGuides();}
   setPreferredGuide(id:string|null){this.preferredGuide=id;}
+  get preferredArtworkGuideId(){return this.preferredGuide;}
   bypassNextGuide(){this.skipNextArtworkGuide=true;}
   private guideGeometry:Readonly<{items:readonly ArtworkGuide[];width:number;height:number;preview:boolean}>|null=null;
   private paintArtworkGuides(){
