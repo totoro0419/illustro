@@ -8,7 +8,7 @@ export function canUseTiledHistoryPreview(
 ):boolean{
   if(!Number.isSafeInteger(targetWidth)||!Number.isSafeInteger(targetHeight)||
      targetWidth<1||targetHeight<1||targetWidth>frozen.width||targetHeight>frozen.height||
-     targetWidth*targetHeight>128_000||Boolean(frozen.basePixels?.length))return false;
+     targetWidth*targetHeight>128_000||!frozen.layers.length||Boolean(frozen.basePixels?.length))return false;
   return frozen.layers.every(layer=>{
     const b=layer.blend;
     return !layer.clipSurfaceId&&!layer.mask?.enabled&&
