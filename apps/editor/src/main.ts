@@ -68,7 +68,7 @@ import './ui/floatingPanels.css';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {layerBlendNames,openLayerBlendDialog} from './ui/layerBlendDialog';
-import {createHistoryComparison,historyThumbnail} from './ui/artworkHistoryView';
+import {createHistoryComparison,historyThumbnail,historyComparisonPreview} from './ui/artworkHistoryView';
 import {drawMaskPreview,paintPixelMask,type MaskStrokePoint} from './layerMaskEditing';
 import {restoreHistoryPixels} from './historyBrush';
 import {penEraserInput} from './stylusButtons';
@@ -2144,7 +2144,7 @@ function openArtworkHistory(){
   const settings=createHistorySettings(artwork,entries,()=>dialog.close());
   const title=document.createElement('h2'),status=document.createElement('output');
   const label=document.createElement('label'),list=document.createElement('select');
-  const more=document.createElement('button'),compare=document.createElement('button');
+  const more=document.createElement('button'),compare=document.createElement('button'),compareFull=document.createElement('button');
   const restore=document.createElement('button'),close=document.createElement('button');
   const pin=document.createElement('button'),branch=document.createElement('button');
   const note=document.createElement('p');
@@ -2214,7 +2214,7 @@ function openArtworkHistory(){
     shown+=page.length;
     more.hidden=shown>=entries.length;
   }
-  for(const [button,text] of [[more,'さらに表示'],[compare,'現在と比較'],[restore,'この時点を復元'],[pin,'現在の状態を名前付きで保存'],[branch,'この時点から別案を作る'],[close,'閉じる']] as const){
+  for(const [button,text] of [[more,'さらに表示'],[compare,'現在と比較'],[compareFull,'原寸で比較'],[restore,'この時点を復元'],[pin,'現在の状態を名前付きで保存'],[branch,'この時点から別案を作る'],[close,'閉じる']] as const){
     button.type='button';button.textContent=text;
   }
   title.textContent='作品の履歴';
@@ -2228,7 +2228,7 @@ function openArtworkHistory(){
     request++;
     clearPreviews();
     restore.disabled=!list.value||list.value===head;
-    compare.disabled=restore.disabled;
+    compare.disabled=compareFull.disabled=restore.disabled;
     branch.disabled=restore.disabled;
     note.textContent=entries.find(entry=>entry.id===list.value)?.snapshot?.note??'';
     note.hidden=!note.textContent;
@@ -2272,30 +2272,35 @@ function openArtworkHistory(){
     dialog.close();
     void restoreArtworkHistory(artwork,id);
   };
-  compare.onclick=async()=>{
+  const displayComparison=async(fullResolution:boolean)=>{
     const id=list.value as RevisionId,token=++request;
-    compare.disabled=true;
+    compare.disabled=compareFull.disabled=true;
     clearPreviews();
-    status.textContent='画像を用意しています。';
+    status.textContent=fullResolution?'原寸画像を準備しています。':'表示用の比較画像を準備しています。';
     try{
       for(const [revision,caption] of [[head,'現在'],[id,'選んだ時点']] as const){
         if(!dialog.open||request!==token)return;
-        const result=await exportImage(captureExport(artwork,undefined,revision),'png');
+        const result=fullResolution
+          ?await exportImage(captureExport(artwork,undefined,revision),'png')
+          :await historyComparisonPreview(artwork,revision);
         if(!dialog.open||request!==token)return;
         const url=URL.createObjectURL(result.blob);urls.push(url);
         const preview=createHistoryComparison(url,caption,result.width,result.height);
         disposePreviews.push(preview.dispose);
         previews.append(preview.figure);
       }
-      status.textContent='';
+      status.textContent=fullResolution?'原寸画像で比較しています。':
+        '軽量な縮小画像で比較中です。細部は「原寸で比較」で確認できます。';
     }catch(error){
       if(request===token&&dialog.open)status.textContent='比較画像を作れませんでした。'+(error instanceof Error?error.message:'');
     }finally{
-      if(request===token&&dialog.open)compare.disabled=false;
+      if(request===token&&dialog.open)compare.disabled=compareFull.disabled=false;
     }
   };
-  form.append(title,pinnedTitle,pinned,morePinned,label,note,more,compare,restore,pin,branch,close,partial,status,previews,settings);
-  dialog.className='export-dialog artwork-history-dialog';
+  compare.onclick=()=>{void displayComparison(false);};
+  compareFull.onclick=()=>{void displayComparison(true);};
+  form.append(title,pinnedTitle,pinned,morePinned,label,note,more,compare,compareFull,restore,pin,branch,close,partial,status,previews,settings);
+  dialog.className='export-dialog artwork-history-dialog artwork-history-panel';
   dialog.setAttribute('aria-label','作品の履歴');
   dialog.append(form);
   document.body.append(dialog);
@@ -2305,7 +2310,7 @@ function openArtworkHistory(){
     dialog.remove();
   },{once:true});
   update();
-  dialog.showModal();
+  dialog.show();
   appendPinned();
 }
 byId<HTMLButtonElement>('openArtworkHistory').onclick=openArtworkHistory;
