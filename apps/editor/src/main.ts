@@ -595,6 +595,7 @@ function startMaskPointEditing(){
 
 async function applyVectorMask(){
   const drawing=surface,artwork=controller.document,layer=controller.selectedLayer,mask=layer.vectorMask;
+  if(!drawing){byId('status').textContent='作品を開いてから操作してください。';return;}
   if(!maskApplyAllowed({
     editable:documentReady&&!layer.implicitRaster&&layer.baseColor!=='white'&&!artwork.root.isLayerContentLocked(layer.id),
     maskEnabled:!!mask?.enabled,geometryReady:!!drawing?.canChangeGeometry,geometryBusy,historyPending,
