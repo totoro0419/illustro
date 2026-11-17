@@ -25,5 +25,6 @@ describe('C05-015 import recovery checkpoints',()=>{
     expect(()=>validateImportRecovery({...start,remainingIds:['unknown']})).toThrow();
     expect(()=>validateImportRecovery({...start,resolvedIds:{unknown:'target'}})).toThrow();
     expect(()=>validateImportRecovery({...start,resolvedIds:{first:''}})).toThrow();
+    expect(()=>validateImportRecovery({...start,resolvedIds:{first:'same',second:'same'}})).toThrow();
   });
 });
