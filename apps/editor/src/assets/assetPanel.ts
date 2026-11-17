@@ -74,6 +74,7 @@ export function installAssetPanel(opts:PanelOptions){
   root.append(title,lead,search,actions,count,results,info,status,failedBox,importFile,packFile);host.append(root);
   let all:AssetInfo[]=[],visible:AssetInfo[]=[],busy=false,displayLimit=200;
   let recovery:ImportRecovery|null=null;
+  let recoveryBoot:Promise<ImportRecovery|null>|null=null;
   const error=(e:unknown)=>status.textContent=e instanceof Error?e.message:String(e);
   const run=async(action:()=>Promise<void>)=>{
     if(busy)return;
@@ -338,6 +339,8 @@ export function installAssetPanel(opts:PanelOptions){
         '・'+i.name+(i.conflict?'（同じIDあり：別IDで保存）':'')).join('\n');
       if(!window.confirm(summary.items.length+'件の素材を読み込みます。合計'+Math.round(summary.totalBytes/1024)+'KB。\n'+
         '元の素材を上書きしません。\n'+titles+'\n\n読み込みますか？'))return;
+      // Resolve startup recovery before allowing a new import to overwrite it.
+      await recoveryBoot;
       const previous=await readImportRecovery();
       if(previous){
         recovery=previous;refreshRecoveryControls();
@@ -351,7 +354,8 @@ export function installAssetPanel(opts:PanelOptions){
       await resumePendingImport();
     });
   };
-  void readImportRecovery().then(saved=>{
+  recoveryBoot=readImportRecovery();
+  void recoveryBoot.then(saved=>{
     recovery=saved;refreshRecoveryControls();
     if(saved?.remainingIds.length){
       status.textContent='前回の素材セットが残っています。'+saved.remainingIds.length+
