@@ -1,5 +1,5 @@
 /** C06 copy/cut/paste operating on real document pixels and history. */
-import {transformLayerMask,moveEditableArtwork,type LayerNode,type LayerGroup,type LayerDeformation,type LayerMask,type LayerId,type LineRegions} from '@illustro/core';
+import {transformLayerMask,moveEditableArtwork,type RasterPixelTiles,type LayerNode,type LayerGroup,type LayerDeformation,type LayerMask,type LayerId,type LineRegions} from '@illustro/core';
 import {validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {translateStroke} from '../seamlessStroke';
 import {describeStroke,strokeTilesForCanvas} from '../strokeCommit';
@@ -14,7 +14,7 @@ import {type MaskData,rasterizeSelection} from './mask';
 import {runMaskedPixelJob} from './pixels';
 import {forEachPastedTile} from './pasteTiles';
 
-type EditableLayerCopy=Readonly<{layer:LayerNode;pixels:Uint8Array;regionSource?:Readonly<{pixels:Uint8Array;recipe:LineRegions}>;transform?:Readonly<{
+type EditableLayerCopy=Readonly<{layer:LayerNode;pixels:Uint8Array|RasterPixelTiles;regionSource?:Readonly<{pixels:Uint8Array;recipe:LineRegions}>;transform?:Readonly<{
   original:Uint8Array;mask:LayerMask|null;deformation:LayerDeformation;
   strokes:readonly Readonly<{record:StrokeRecord;supplemental:boolean}>[];
 }>}>;
@@ -123,15 +123,25 @@ export class ArtworkClipboard {
           if(link?.kind==='instance'&&root.layers.get(link.sourceId)?.imageLink)ids.add(link.sourceId);
         }
       }
-      const captured=await drawing.captureDocumentLayers(ids);
+      // Normal group layers are copied as occupied tiles. Geometry-aware
+      // layers (deformation, line-regions, white paper) retain their full
+      // compatible capture; they have additional reconstruction semantics.
+      const sparseIds=group&&!selection?new Set([...ids].filter(id=>{
+        const candidate=root.getLayer(id);
+        return candidate.baseColor!=='white'&&!candidate.deformation&&!candidate.lineRegions;
+      })):null;
+      const sparse= sparseIds?.size?await drawing.captureDocumentLayerTiles(sparseIds):null;
+      const fullIds=sparse?new Set([...ids].filter(id=>!sparseIds!.has(id))):ids;
+      const captured=fullIds.size?await drawing.captureDocumentLayers(fullIds):new Map<LayerId,Uint8Array>();
       if(!selection&&layer.baseColor!=='white'){
         const operations=document.rasterReplayPlan(head).operations;
         const layers:EditableLayerCopy[]=[];
         for(const id of root.rootLayerIds.filter(id=>ids.has(id))){
-          const current=root.getLayer(id),pixels=captured.get(id);
+          const current=root.getLayer(id),pixels=sparse?.get(id)??captured.get(id);
           if(!pixels)throw Error('コピーするレイヤーを読み込めませんでした。');
           const recipe=current.lineRegions;
           if(recipe){
+            if(!(pixels instanceof Uint8Array))throw Error('線画領域の参照元が正しくありません。');
             const source=document.revision(recipe.sourceRevision).root;
             if(source.width!==root.width||source.height!==root.height)
               throw Error('元の線画の大きさが変わっています。領域を更新してからコピーしてください。');
@@ -158,9 +168,12 @@ export class ArtworkClipboard {
         ):[];
         editable={layers,groups};
       }
-      const pixels=captured.get(layer.id);
-      if(!pixels)throw Error('レイヤーを読み込めませんでした。');
-      source=pixels;
+      if(group)source=new Uint8Array(0); // A group preview uses its outline; no merged 4K image.
+      else{
+        const pixels=captured.get(layer.id);
+        if(!pixels)throw Error('レイヤーを読み込めませんでした。');
+        source=pixels;
+      }
     }
     if(document.head!==head)throw Error('コピー中に作品が変更されました。もう一度コピーしてください。');
     const masked=this.selectionMask&&this.selectionMask.width===root.width&&this.selectionMask.height===root.height&&selection
@@ -260,7 +273,8 @@ export class ArtworkClipboard {
       const originals=record.editable.layers.some(entry=>entry.transform)?'変形を再編集できるように、非表示の原本も一緒に置きます。':'';
       if(!window.confirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤー設定・マスク・文字・パスを保持します。元作品のUndo履歴は含みません。${originals}${hasRegions?'確認した線画の版も保持します。':''}${detached}${fontNotice}${missingLinks?'元が見つからない複製は現在の画像を埋め込みます。':''}`))
         throw Error('貼り付けを取り消しました。');
-      const place=(pixels:Uint8Array)=>{
+      const place=(pixels:Uint8Array|RasterPixelTiles)=>{
+        if('tiles' in pixels)return {...pixels,x,y,width:record.width,height:record.height};
         if(!x&&!y&&record.width===root.width&&record.height===root.height)return pixels;
         // Keep the original bytes and offset. Core seeds only intersecting
         // tiles, instead of allocating one giant transparent RGBA buffer per

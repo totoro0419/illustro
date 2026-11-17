@@ -11,7 +11,7 @@ import {captureSelectedLayerTiles} from './selection/tileCapture';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {averageSampledPixels} from './color/sampleAverage';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
-import {CANONICAL_TILE_SIZE,type LayerBlend,type LayerMask,type MaskPoint,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,type RasterPixelTiles,type LayerBlend,type LayerMask,type MaskPoint,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import drawingWorkerUrl from '../../../packages/brush-rt/dist/rt/drawing.worker.mjs?worker&url';
 import presentationWorkerUrl from '../../../packages/brush-rt/dist/rt/presentation.worker.mjs?worker&url';
@@ -1071,6 +1071,24 @@ export class BrushSurface{
     }
     if(this.busy||this.disposed)throw new Error('Thumbnail became stale');
     return output.convertToBlob({type:'image/png'});
+  }
+  /** Read an editable group without one full canvas RGBA buffer per layer.
+   * Unsupported renderer implementations still use captureDocumentLayers. */
+  async captureDocumentLayerTiles(ids:ReadonlySet<LayerId>):Promise<Map<LayerId,RasterPixelTiles>|null>{
+    if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
+    const host=this.renderer as unknown as Parameters<typeof captureSelectedLayerTiles>[0];
+    if(typeof host.inspect!=='function'||typeof host.backend?.readTiles!=='function')return null;
+    const revision=this.controller.document.head,root=this.controller.document.root;
+    const valid=()=>!this.disposed&&!this.busy&&this.controller.document.head===revision;
+    const result=new Map<LayerId,RasterPixelTiles>();
+    for(const id of ids){
+      if(!root.hasLayer(id))throw Error('コピー対象のレイヤーが見つかりません。');
+      const surfaceId=root.getLayer(id).surface.descriptor.surfaceId;
+      const tiles=await captureSelectedLayerTiles(host,surfaceId,root.width,root.height,valid);
+      result.set(id,{x:0,y:0,width:root.width,height:root.height,tileSize:128,tiles});
+    }
+    if(!valid())throw Error('コピー中に作品が変更されました。');
+    return result;
   }
   async captureDocumentLayers(ids?:ReadonlySet<LayerId>){if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
     await this.renderer.drain();
