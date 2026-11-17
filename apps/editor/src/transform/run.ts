@@ -56,7 +56,19 @@ export function createTransformPreviewRunner(){
       }catch(error){complete();reject(error);}
     }));
     queue=task.then(()=>undefined,()=>undefined);
-    return task;
+    // Return promptly when a queued or running preview is superseded.
+    // Keep the worker task serialized until its response arrives so that
+    // later requests never attach handlers to the previous worker response.
+    if(!signal)return task;
+    let onAbort:()=>void=()=>{};
+    const canceled=new Promise<never>((_resolve,reject)=>{
+      onAbort=()=>reject(signal.reason??Error('古いプレビューを取り消しました。'));
+      signal.addEventListener('abort',onAbort,{once:true});
+      if(signal.aborted)onAbort();
+    });
+    return Promise.race([task,canceled]).finally(()=>{
+      signal.removeEventListener('abort',onAbort);
+    });
   }
   function dispose(){
     if(disposed)return;
