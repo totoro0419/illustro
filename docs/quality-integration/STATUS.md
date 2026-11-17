@@ -604,3 +604,12 @@ GitHubの各PRメタデータ、全12件の変更ファイル、各HEADに結び
 - **最終コードHEAD `bf54a9639a32de34f1ba357323d8404cec156064`**：[統合CI #44179382161](https://github.com/totoro0419/illustro/actions/runs/44179382161) **success**（Core/Brush/Editorテスト、TypeScript、本番ビルド）、[Core CI #44179396276](https://github.com/totoro0419/illustro/actions/runs/44179396276) **success**。Androidタブレットでのボタン幅・移動先・操作負荷は独立して未確認。「実装・自動検査成功」と「実機品質認定」を区別する。
 
 **C07-015/016の提案2件は、コード上の機能と基本操作の実装がそろった。ただしC07全体の独立合格認定はまだない。** C07の他の部分対応（001/002/003/004/005/014）、C05・C06からの未解決も保留。固定C07-001〜016と全129件のIDを維持し、独立Android実機の解決確認は **0/129**。次回はC07-001・002・003・004のプレビュー精度・高解像度性能・操作の回帰へ。元PR #73を改変しない、main未マージ、PR #75 Draft。
+
+
+## 2026-11-18 07時台 JST — C07プレビュー追加修正の監視確認
+
+- 前回記録済みHEAD `963c9884` から最新確認HEAD [`7ed47052`](https://github.com/totoro0419/illustro/commit/7ed47052fb4a98f0dcd2387e1d507cf04b968667) まで **12コミット、変更9ファイル**。GitHub比較で `ahead_by=12`、`behind_by=0` を確認。変更範囲は `apps/editor/src/transform/{groupTransform,panel,previewReplacement,run,workerSession.test,groupTransform.test,previewReplacement.test}.ts` 等、`apps/editor/src/brushSurface.ts` と統合担当所有 `apps/editor/src/main.ts`（2行追加）。
+- **C07-001の追加対応**：通常合成・不透明・マスクなし・最上位の描画レイヤーだけ、キャンバス上の変形仮表示で元レイヤーを置換する判定を追加。グループ・クリッピング・リンク・効果・非通常合成などは元の近似表示へフォールバックし、閉じたときに表示状態を戻す。最終コミットで安全条件と表示復帰の単体テストを追加。変形Workerのプレビュー要求直列化・キャッシュ、複数レイヤー変形入力検証も変更。**描画結果の完全一致や4K性能は未実機確認**。
+- [最新HEADのCore CI #44186340715](https://github.com/totoro0419/illustro/actions/runs/44186340715) は `success`。ジョブの `core:typecheck` と `core:test` の成功を再取得。ただし**同HEADの統合CI（Brush/Editor/型検査/本番ビルド）成功は今回確認できず、統合全体PASSとは判定しない**。旧 `prep:check` の未分類文書による既知の失敗も解消確認なし。
+- 新規実装PRなし（最新作成は#97）。12担当PRは既存の12/12統合を維持。PR #75はDraft・未マージ、調査PR #73はDraft・未マージ（原本9ファイル、129問題ID、A/B/C確度を維持）。`main` は `bdc7135b` のまま。**独立解決確認0/129、Androidペン/指・旧作品保存復元・4K画素一致は未確認**。
+- 今回は新規PRの受入・マージなし。次回は最新HEADの統合CIと、C07プレビューのレイヤー順・マスク・非通常合成・キャンセル時復帰・連続入力・保存/Undoを確認する。無条件に合格としない。
