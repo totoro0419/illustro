@@ -18,6 +18,19 @@ describe('C05 reference-board data safety',()=>{
     expect(result.items[1]?.x).toBe(second.x);
     expect(result.hidden).toBe(true);
   });
+  it('preserves a reference resized wider than 1000px after reload',()=>{
+    const original=newBoardItem('large-reference',0);
+    const record=valid();
+    const result=decodeBoardRecord(doc,{...record,items:[{
+      ...original,width:1840,height:1150,x:750,zoom:1.4
+    }]});
+    expect(result.items[0]).toMatchObject({width:1840,height:1150,x:750,zoom:1.4});
+  });
+  it('rejects damaged visibility flags instead of treating a string as true',()=>{
+    const record=valid(),original=record.items[0]!;
+    expect(()=>decodeBoardRecord(doc,{...record,hidden:'false'})).toThrow();
+    expect(()=>decodeBoardRecord(doc,{...record,items:[{...original,pinned:'false'}]})).toThrow();
+  });
   it('refuses partial, duplicate, invalid and oversized records rather than silently erasing images',()=>{
     const record=valid(),first=record.items[0]!;
     expect(()=>decodeBoardRecord(doc,{...record,items:[first,{...first}]})).toThrow();
