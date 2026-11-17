@@ -3495,7 +3495,31 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 
 // C04 command entries forward to the installed real controls; do not duplicate their logic.
 installFocusMode();
-const c04Commands=installCommandPalette(shellUi,foreground);
+const c04Commands=installCommandPalette(shellUi,foreground,{
+  layers:()=>{
+    if(!documentReady)return [];
+    const root=controller.document.root;
+    return root.rootLayerIds.map(id=>{
+      const layer=root.getLayer(id);
+      return {id,name:layer.name,visible:root.isLayerVisible(id)};
+    });
+  },
+  selectLayer:async id=>{
+    if(!documentReady||!controller.document.root.hasLayer(id as LayerId))
+      throw new Error('選ぼうとしたレイヤーが現在の作品にありません。');
+    const selectedId=id as LayerId,root=controller.document.root,layer=root.getLayer(selectedId);
+    shellUi.setLayerPage(true);
+    if(layer.baseColor==='white'&&layer.visible&&!layer.locked){
+      await materializeAndSelectWhiteLayer(selectedId);
+      return;
+    }
+    controller.selectLayer(selectedId);
+    renderLayers();updateHistoryButtons();updateQa();
+    byId('status').textContent=layer.name+(root.isLayerVisible(selectedId)
+      ?'を選びました。':'を選びました。描くにはレイヤーを表示してください。');
+    if(!qaMode)await persistence.selectWorkLayer(selectedId);
+  },
+});
 installSimpleMacros(c04Commands);
 installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
