@@ -2602,6 +2602,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     });
   }
   // Prefer the exact palette embedded in this native file to device-local data.
+  eyedropperSettings.refreshLayers();eyedropperSettings.apply();
   const paletteSection=opened.preserved.optionalSections.find(
     part=>part.id===DOCUMENT_PALETTE_SECTION
   )??null;
@@ -2651,6 +2652,7 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     const storage=await storagePromise;
     if(!storage.ok)throw storage.error;
     foreground.bindDocumentPalette(controller.document.root.documentId);
+    eyedropperSettings.refreshLayers();eyedropperSettings.apply();
     scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
     updatePersistenceDisplay();
     updateQa();
