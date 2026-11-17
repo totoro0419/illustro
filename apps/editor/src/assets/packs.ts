@@ -2,7 +2,7 @@
  * C05 offline asset-pack exchange. JSON contains only binary bytes and
  * declarative metadata, never executable scripts, styles or remote URLs.
  */
-import {type AssetKind,ASSET_KINDS,type AssetInfo,getAsset,addAsset,listAssets} from './library';
+import {type AssetKind,ASSET_KINDS,type AssetInfo,getAsset,addAsset,addAssetsAtomically,listAssets} from './library';
 export type PackManifest=Readonly<{
   schema:'illustro.asset-pack';version:1;createdAt:number;items:readonly PackItem[];
 }>;
@@ -118,6 +118,8 @@ export type PackImportOptions=Readonly<{
   onItem?:(index:number,total:number)=>void;
   onlyIds?:readonly string[];
   resolvedIds?:Readonly<Record<string,string>>;
+  /** Required for a reference-board bundle: all assets commit or none do. */
+  atomic?:boolean;
 }>;
 export async function importAssetPack(
   manifest:PackManifest,options?:PackImportOptions
@@ -139,6 +141,33 @@ export async function importAssetPack(
     resolvedIds[item.id]=target;usedTargets.add(target);
   }
   const pending=input.items.filter(item=>!selected||selected.has(item.id));
+  if(options?.atomic){
+    if(selected)throw Error('一括保護する素材の一部だけを選ぶことはできません。');
+    // Decode and validate ALL payloads before opening the single transaction.
+    // Any invalid bytes or unavailable storage prevents partial additions.
+    const staged:Parameters<typeof addAssetsAtomically>[0][number][]=[];
+    for(const [index,item] of pending.entries()){
+      options.onItem?.(index+1,pending.length);
+      const payload=decode(item.dataBase64);
+      if(payload.byteLength!==item.bytes)throw Error('素材「'+item.name+'」の中身が欠けています。');
+      const parentId=item.parentId?(resolvedIds[item.parentId]??item.parentId):undefined;
+      staged.push({
+        id:resolvedIds[item.id]!,kind:item.kind,name:item.name,
+        data:new Blob([payload.buffer as ArrayBuffer],{type:item.mime}),
+        folder:item.folder,tags:item.tags,license:item.license,
+        origin:item.origin,notes:item.notes,version:item.version,
+        ...(parentId?{parentId}:{})
+      });
+    }
+    const entries=await addAssetsAtomically(staged);
+    const unresolvedParents:string[]=[];
+    for(const entry of entries){
+      renamedIds[pending.find(item=>resolvedIds[item.id]===entry.id)!.id]=entry.id;
+      if(entry.parentId&&!entries.some(item=>item.id===entry.parentId)&&!(await getAsset(entry.parentId)))
+        unresolvedParents.push(entry.name);
+    }
+    return {imported:entries,renamedIds,resolvedIds,failures:[],failedIds:[],unresolvedParents};
+  }
   for(const [index,item] of pending.entries()){
     options?.onItem?.(index+1,pending.length);
     try{
