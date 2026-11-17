@@ -38,15 +38,20 @@ jobs:
       - name: Build editor for separate preview path
         run: |
           npm ci --no-audit --no-fund
-          npm run brush:build
+          npm run brush:build > /tmp/illustro-brush-build.log 2>&1 || { tail -n 80 /tmp/illustro-brush-build.log; exit 1; }
           npm --workspace @illustro/editor run build -- --base=/illustro/preview/
-      - name: Build existing public home unchanged
-        working-directory: p0-source/prototypes/p0-architecture
+      - name: Build existing public home in an isolated directory
+        shell: bash
         run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/illustro-p0"
+          cp -a p0-source/prototypes/p0-architecture/. "$RUNNER_TEMP/illustro-p0/"
+          cd "$RUNNER_TEMP/illustro-p0"
           npm install --no-audit --no-fund
           npm run typecheck
           npm test
           npm run build:pages
+          cp -a dist "$GITHUB_WORKSPACE/p0-source/prototypes/p0-architecture/dist"
       - name: Combine both builds without overwriting home
         shell: bash
         run: |
