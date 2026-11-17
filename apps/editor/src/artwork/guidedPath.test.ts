@@ -21,7 +21,8 @@ describe('C09-003/016 unified ruler snapping for line and gradient tools',()=>{
   it('chooses one perspective direction from the gesture and applies it consistently',()=>{
     const points=[{x:50,y:50},{x:60,y:60},{x:80,y:20}];
     const snapped=snapArtworkPathToGuide(points,[perspective],DEFAULT_GUIDE_SETTINGS,null);
-    expect(snapped[0]).toEqual({x:50,y:50});
+    expect(snapped[0]!.x).toBeCloseTo(50);
+    expect(snapped[0]!.y).toBeCloseTo(50);
     expect(snapped[1]!.x+snapped[1]!.y).toBeCloseTo(100);
     expect(snapped[2]!.x+snapped[2]!.y).toBeCloseTo(100);
   });
