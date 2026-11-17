@@ -43,3 +43,13 @@ test('C06-001: the unmasked GPU mailbox never receives a selected preview',()=>{
  r.setLive({id:1,selectionMask:{width:2,height:2,alpha:new Uint8Array(4).fill(255)},surfaceKey:'layer'});
  assert.equal(cpu,1);assert.equal(requests,1);
 });
+
+test('C06-001: preview mask remains attached to artwork while rotating and flipping the view',()=>{
+ const alpha=new Uint8Array(32*32);alpha[5*32+5]=128;
+ const mask={width:32,height:32,alpha};
+ const rotated=Float64Array.from(view);rotated[7]=Math.PI/2;
+ const flipped=Float64Array.from(view);flipped[10]=-1;
+ assert.equal(selectionPreviewCoverage(mask,rotated,{scale:1},26,5),128/255);
+ assert.equal(selectionPreviewCoverage(mask,flipped,{scale:1},26,5),128/255);
+ assert.equal(selectionPreviewCoverage(mask,view,{scale:.5},2,2),128/255);
+});
