@@ -1,15 +1,23 @@
 /** C05 personal asset library, independent of artwork layers. */
-import {ASSET_KINDS,ASSET_LABELS,type AssetInfo,type AssetKind,listAssets,getAsset,addAsset,
+import {ASSET_KINDS,ASSET_LABELS,type AssetInfo,type AssetEntry,type AssetKind,listAssets,getAsset,addAsset,
   updateAsset,removeAsset,restoreAsset,markAssetUsed,duplicateAsset,createAssetVersion} from './library';
 import {exportAssetPack,readAssetPack,previewAssetPack,importAssetPack,type PackManifest,type PackImportResult} from './packs';
 import {boardsUsingAsset} from './referenceBoardStore';
 import {ensureFont} from '../artwork/fonts';
+import {materialUseRoute,materialUseLabel} from './materialUseRouting';
 import {
   type ImportRecovery,initialImportRecovery,updateImportRecovery,
   readImportRecovery,writeImportRecovery,clearImportRecovery
 } from './assetImportRecovery';
 
-type PanelOptions=Readonly<{openReference:(assetId:string)=>Promise<void>;flushReferences:()=>Promise<void>}>;
+type PanelOptions=Readonly<{
+  openReference:(assetId:string)=>Promise<void>;
+  flushReferences:()=>Promise<void>;
+  placeImage:(file:File)=>Promise<void>;
+  applyEditable:(asset:AssetEntry)=>Promise<void>;
+  importMacro:(text:string)=>number;
+  importWorkspace:(text:string)=>number;
+}>;
 function button(text:string,handler:()=>void,css=''){
   const b=document.createElement('button');b.type='button';b.textContent=text;b.className=css;b.onclick=handler;return b;
 }
@@ -109,9 +117,14 @@ export function installAssetPanel(opts:PanelOptions){
         '第'+item.version+'版',item.parentId?'旧版 '+item.parentId.slice(0,8):'',
         Math.round(item.bytes/1024)+'KB',item.license?'利用条件あり':''].filter(Boolean).join(' · ');
       head.append(h,meta);
-      if(!['brush','palette','reference','font'].includes(item.kind)){
+      const useRoute=materialUseRoute(item);
+      if(['tip','paper','texture','pattern'].includes(item.kind)&&useRoute==='image-layer'){
         const hint=document.createElement('small');
-        hint.textContent='保管・整理・書き出しに対応。作品への直接適用は未接続です。';
+        hint.textContent='通常の画像レイヤーとして配置できます。ブラシ先端・紙質などへの専用適用とは異なります。';
+        head.append(hint);
+      }else if(!useRoute&&!['brush','palette','reference','font'].includes(item.kind)){
+        const hint=document.createElement('small');
+        hint.textContent='保管・整理・書き出しに対応。現在の形式を制作へ直接適用する機能はありません。';
         head.append(hint);
       }
       const controls=document.createElement('div');controls.className='c05-asset-entry-actions';
@@ -147,6 +160,22 @@ export function installAssetPanel(opts:PanelOptions){
           await markAssetUsed(item.id);
           status.textContent='フォントを使用できるようにしました。「文字」の設定から選べます。';
           await refresh();
+        })));
+        if(useRoute)controls.append(button(materialUseLabel(useRoute),()=>void run(async()=>{
+          const entry=await getAsset(item.id);
+          if(!entry||entry.deleted)throw Error('素材が見つからないため適用できません。');
+          if(useRoute==='image-layer'){
+            await opts.placeImage(new File([entry.data],entry.name,{type:entry.mime}));
+            status.textContent='画像を新しいレイヤーに配置しました。';
+          }else if(useRoute==='editable-artwork'){
+            await opts.applyEditable(entry);
+            status.textContent='編集できる図形・グラデーションを新しいレイヤーに追加しました。';
+          }else{
+            const text=await entry.data.text();
+            const imported=useRoute==='macro'?opts.importMacro(text):opts.importWorkspace(text);
+            status.textContent=imported?imported+'件の設定を読み込みました。':'読み込みはキャンセルされました。';
+          }
+          await markAssetUsed(entry.id);await refresh();
         })));
         controls.append(button('ファイルを出す',()=>void run(async()=>{
           const saved=await getAsset(item.id);if(!saved)throw Error('素材がありません。');
