@@ -47,7 +47,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/illustro-p0"
           cp -a p0-source/prototypes/p0-architecture/. "$RUNNER_TEMP/illustro-p0/"
           cd "$RUNNER_TEMP/illustro-p0"
-          npm install --no-audit --no-fund
+          yarn install --non-interactive --no-lockfile
           npm run typecheck
           npm test
           npm run build:pages
