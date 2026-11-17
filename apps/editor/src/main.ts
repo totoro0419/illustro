@@ -4148,7 +4148,8 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
   color:()=>hex(foreground.current),
   documentId:()=>controller.document.root.documentId,
   targetName:()=>controller.selectedLayer.name,
-  references:()=>controller.layers.filter(layer=>!layer.lineRegions).map(layer=>({id:layer.id,name:layer.name,vector:layer.editable?.kind==='path'})),
+  references:()=>controller.layers.filter(layer=>!layer.lineRegions).map(layer=>({id:layer.id,name:layer.name,
+    vector:layer.editable?.kind==='path',visible:controller.document.root.isLayerVisible(layer.id)&&layer.opacity>0})),
   regionLayers:()=>controller.layers.flatMap(layer=>layer.lineRegions?[{id:layer.id,name:layer.name,data:layer.lineRegions}]:[]),
   saveRegion:async(data,id)=>{
     const artwork=controller.document,layer=controller.selectedLayer;
