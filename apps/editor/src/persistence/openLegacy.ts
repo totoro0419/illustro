@@ -29,6 +29,10 @@ export async function legacySourcePreview(file:File,converted:CoreDocument):Prom
   const {source}=await runLegacyMigration(new Uint8Array(await file.arrayBuffer()));
   if(!source)throw Error('元の描線を読み込めませんでした。');
   const frozen=captureExport(converted),layer=frozen.layers[0]!;
-  return {...frozen,width:source.width,height:source.height,layers:[layer],
+  // Do not accidentally include the migrated copy's raster seed in the
+  // source-side comparison. The source must replay only the original strokes.
+  const {basePixels:discardMigratedPixels,...unseeded}=frozen;
+  void discardMigratedPixels;
+  return {...unseeded,width:source.width,height:source.height,layers:[layer],
     strokes:source.strokes.map(record=>({surfaceId:layer.surfaceId,record}))};
 }
