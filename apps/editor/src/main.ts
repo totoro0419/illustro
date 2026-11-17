@@ -28,6 +28,7 @@ import {installGradientMapPanel} from './artwork/gradientMap';
 import {installStrokeCorrection} from './artwork/strokeCorrection';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {runArtwork} from './artwork/run';
+import {snapArtworkPathToGuide} from './artwork/guidedPath';
 import {validatedBooleanSourceVisibility} from './artwork/booleanSourceVisibility';
 import {selectionAsLayerMask} from './artwork/selectionMask';
 import {selectionCanCreateMask,explicitSaveStatus,maskApplyAllowed} from './artwork/c03UiGuards';
@@ -4234,6 +4235,8 @@ const artworkActions:ArtworkActions={
     if(!drawing||!documentReady)return null;
     const {width,height}=controller.document.root;
     return {width,height,color:hex(foreground.current),drawing,
+      snapGuidedPath:points=>snapArtworkPathToGuide(points,controller.document.root.artworkGuides,
+        guidePreferences,drawing.preferredArtworkGuideId),
       selected:{id:layer.id,name:layer.name,content:layer.editable??null,mask:layer.vectorMask??null},
       selectionMask:()=>{const selection=c06Selection?.active();return selection?selectionAsLayerMask(selection):null;},
       paths:controller.layers.flatMap(item=>item.editable?.kind==='path'?[{id:item.id,name:item.name,content:item.editable}]:[]),
