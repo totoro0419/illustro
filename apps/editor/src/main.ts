@@ -9,7 +9,7 @@ import './ui/home.css';
 import {installHomeShell,type HomeShell} from './ui/homeShell';
 import './color/color.css';
 import './color/harmony.css';
-import {ForegroundColor,rgb,hex,fromHex} from './color/model';
+import {ForegroundColor,rgb,hex,fromHex,DOCUMENT_PALETTE_SECTION} from './color/model';
 import {installColorPanel} from './color/panel';
 import {installEyedropperSettings} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
@@ -2596,6 +2596,16 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       byId('status').textContent=error instanceof Error?error.message:String(error);
     });
   }
+  // Prefer the exact palette embedded in this native file to device-local data.
+  const paletteSection=opened.preserved.optionalSections.find(
+    part=>part.id===DOCUMENT_PALETTE_SECTION
+  )??null;
+  try{foreground.bindDocumentPalette(opened.document.root.documentId,paletteSection);}
+  catch(error){
+    foreground.bindDocumentPalette(opened.document.root.documentId);
+    byId('status').textContent='作品の色一覧を復元できませんでした。元の作品は開いています。'+
+      (error instanceof Error?error.message:'');
+  }
   scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
   }catch(error){
     // A started storage initialization must finish before rollback restores
@@ -2635,6 +2645,7 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     measureCanvasStage('prewarmed-editor-setup',presetSetupStarted);
     const storage=await storagePromise;
     if(!storage.ok)throw storage.error;
+    foreground.bindDocumentPalette(controller.document.root.documentId);
     scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
     updatePersistenceDisplay();
     updateQa();
@@ -3616,6 +3627,7 @@ c06Selection=installSelectionWorkbench({
 });
 persistence.setSaveAttachmentProvider(()=>{
   const preserved=persistence.preservedData;
+  const documentPalette=foreground.exportDocumentPaletteSection();
   const symmetry={id:SYMMETRY_SECTION,type:SYMMETRY_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(symmetrySettings))};
   const editingState=Promise.all([c05References.exportNative(),c06Selection?.exportNative()??[]])
     .then(values=>({values}),error=>({error}));
@@ -3623,7 +3635,7 @@ persistence.setSaveAttachmentProvider(()=>{
     const result=await editingState;
     if('error' in result)throw result.error;
     const [reference,selections]=result.values,fonts=await exportFonts(root,preserved);
-    return [...(reference?[reference]:[]),...selections,...fonts,symmetry];
+    return [...(reference?[reference]:[]),...selections,...fonts,...(documentPalette?[documentPalette]:[]),symmetry];
   };
 });
 const unavailableImageLinks=new Set<string>();
