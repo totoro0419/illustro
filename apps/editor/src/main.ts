@@ -36,7 +36,7 @@ import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
 import {installLayoutPanel} from './transform/layoutPanel';
 import {installImageLinkPanel} from './transform/imageLinkPanel';
-import {chooseLinkedImage,decodeLinkedImage,placedImage,readLinkedFile,rememberImageHandle} from './assets/linkedImages';
+import {chooseLinkedImage,decodeLinkedImage,placedImage,readLinkedFile,rememberImageHandle,forgetImageHandle,nextLinkedImageFileKey} from './assets/linkedImages';
 import type {SnapMark} from './transform/layout';
 import {runTransform} from './transform/run';
 import {replayBrushPasses} from './selection/brush';
@@ -3754,6 +3754,8 @@ imageLinkPanel=installImageLinkPanel(byId('documentBoxBody'),{
     const create=action==='link'||action==='embed'||action==='instance';
     let edits:Array<{id:LayerId;pixels:Uint8Array;link:LayerImageLink}>=[];
     let fileToRemember:Parameters<typeof rememberImageHandle>|undefined;
+    let staleFileKey:string|undefined;
+    let needsManualUpdate=false;
     if(action==='instance'||action==='rebind'){
       const ref=original?.imageLink;
       if(!original||!ref||ref.kind==='instance'||original.id===selected.id&&action==='rebind')
@@ -3780,7 +3782,14 @@ imageLinkPanel=installImageLinkPanel(byId('documentBoxBody'),{
       const loaded=await decodeLinkedImage(opened.file);
       try{
         if(action==='update'&&update?.digest===loaded.digest){unavailableImageLinks.delete(update.fileKey);imageLinkPanel?.refresh();return null;}
-        const fileKey=update?.fileKey??crypto.randomUUID(),natural=Math.min(1,width/loaded.bitmap.width,height/loaded.bitmap.height);
+        // Only an automatic refresh may reuse the existing handle identity.
+        // If the user picked a different file (or a browser input fallback),
+        // use a new key so an older persisted handle cannot reopen it.
+        const fileKey=nextLinkedImageFileKey(action==='update'?'update':action==='reselect'?'reselect':'link',
+          update?.fileKey??null,()=>crypto.randomUUID());
+        if(update&&fileKey!==update.fileKey)staleFileKey=update.fileKey;
+        needsManualUpdate=action!=='embed'&&opened.handle===null;
+        const natural=Math.min(1,width/loaded.bitmap.width,height/loaded.bitmap.height);
         const placement=update?{x:update.x,y:update.y,width:update.width,height:update.height}:
           fit(Math.max(1,Math.round(natural*loaded.bitmap.width)),Math.max(1,Math.round(natural*loaded.bitmap.height)));
         const common={name:loaded.name,digest:loaded.digest,...placement};
@@ -3801,7 +3810,8 @@ imageLinkPanel=installImageLinkPanel(byId('documentBoxBody'),{
     const old=create?null:linkPreview(artwork.readBaseRasterPixels(selected.id),width,height);
     const after=linkPreview(first.pixels,width,height);
     const description=(create?'画像を新しいレイヤーに配置します。':`${edits.length}枚の画像を更新します。`)+
-      ' 元画像 '+first.link.name+'　版 '+first.link.digest.slice(0,10)+'。';
+      ' 元画像 '+first.link.name+'　版 '+first.link.digest.slice(0,10)+'。'+
+      (needsManualUpdate?' このブラウザーでは元ファイルの自動更新ができません。変更したら「元ファイルを選び直す」を使ってください。':'');
     return {before:old,after,description,apply:async()=>{
       await withClipboardAccess(async()=>{
         if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==selected.id)
@@ -3816,10 +3826,22 @@ imageLinkPanel=installImageLinkPanel(byId('documentBoxBody'),{
           for(const entry of edits)tx.updateLayerImagePixels(entry.id,entry.pixels,entry.link);
           controller.lastPersistenceHandoff=tx.commit().persistence;
         }
-        if(first.link.kind==='linked')unavailableImageLinks.delete(first.link.fileKey);
+        if(first.link.kind==='linked'){
+          if(needsManualUpdate)unavailableImageLinks.add(first.link.fileKey);
+          else unavailableImageLinks.delete(first.link.fileKey);
+        }
         return 'edit';
       });
-      if(fileToRemember)await rememberImageHandle(...fileToRemember);
+      // The artwork has already been committed. A browser storage failure
+      // must not convert a successful image edit into a misleading retry.
+      if(fileToRemember){
+        const saved=await rememberImageHandle(...fileToRemember);
+        if(!saved)byId('status').textContent='参照画像を反映しました。この端末で元ファイルの参照を保存できなかったため、再起動後は元ファイルを選び直してください。';
+      }
+      if(staleFileKey){
+        try{await forgetImageHandle(staleFileKey);}
+        catch{byId('status').textContent='参照画像は更新しましたが、古いファイルの参照情報を片付けられませんでした。元画像へのリンクには新しい参照先を使います。';}
+      }
     }};
   },
   finish:async action=>{

@@ -1,6 +1,20 @@
 type LinkedHandle=Readonly<{getFile:()=>Promise<File>}>;
 type PickerWindow=Window&{showOpenFilePicker?:(options:unknown)=>Promise<LinkedHandle[]>};
 const handles=new Map<string,LinkedHandle>();
+/** Updating the same source keeps its key. Manually selecting another file
+ * MUST rotate the key: a stale saved browser handle must never turn a future
+ * "check for changes" back into the previously selected file. */
+export function nextLinkedImageFileKey(
+ action:'link'|'reselect'|'update',previous:string|null,newKey:()=>string
+):string{
+ if(action==='update'){
+  if(!previous)throw Error('更新する元画像の参照先がありません。');
+  return previous;
+ }
+ const key=newKey();
+ if(!key||key===previous)throw Error('元画像の新しい参照先を作れませんでした。');
+ return key;
+}
 let storage:Promise<IDBDatabase>|undefined;
 function database(){
   storage??=new Promise<IDBDatabase>((resolve,reject)=>{
@@ -41,8 +55,9 @@ export async function rememberImageHandle(key:string,handle:LinkedHandle):Promis
     return false;
   }
 }
-// Call before committing a re-selection that no longer grants access to the old file.
-// Removing the persisted handle prevents a later "check updates" from reverting the image.
+// Call only after the updated artwork transaction commits. A manual reselect
+// uses a distinct file key, so failure to clean an orphan never restores the
+// previously selected image on the new layer.
 export async function forgetImageHandle(key:string):Promise<void>{
   const previous=handles.get(key);handles.delete(key);
   try{
