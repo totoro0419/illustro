@@ -69,6 +69,7 @@ import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {layerBlendNames,openLayerBlendDialog} from './ui/layerBlendDialog';
 import {createHistoryComparison,historyThumbnail,historyComparisonPreview} from './ui/artworkHistoryView';
+import {layerListSignature} from './ui/layerListSignature';
 import {drawMaskPreview,paintPixelMask,type MaskStrokePoint} from './layerMaskEditing';
 import {restoreHistoryPixels} from './historyBrush';
 import {penEraserInput} from './stylusButtons';
@@ -1093,6 +1094,8 @@ function scheduleLayerDrawingThumbnail(open=documentReady&&shellUi.layerPageOpen
   },200);
 }
 
+let previousLayerListKey:string|null=null;
+let previousLayerListDocument:CoreDocument|null=null;
 const renderLayers=()=>{
   fillPanel?.refresh();imageLinkPanel?.refresh();rulerPanel?.refresh();
   if(surface)surface.setArtworkGuides(controller.document.root.artworkGuides);
@@ -1190,6 +1193,28 @@ const renderLayers=()=>{
   const previous=rows[selectedIndex-1],next=rows[selectedIndex+1];
   byId<HTMLButtonElement>('moveLayerUp').disabled=!canMove||!previous||previous.baseColor==='white'||!sameParent(selectedLayer.id,previous.id);
   byId<HTMLButtonElement>('moveLayerDown').disabled=!canMove||!next||next.baseColor==='white'||!sameParent(selectedLayer.id,next.id);
+  const nextLayerListKey=layerListSignature({
+    documentId:root.documentId,
+    selectedId:selectedLayer.id,documentReady,
+    batchMode:layerBatchMode,batchIds:[...layerBatchIds].sort(),
+    collapsedGroups:[...collapsedLayerGroups].sort(),
+    query,tagFilter,kindFilter,
+    groups:root.layerGroups.map(group=>[group.id,group.name,group.members,group.visible,group.locked,group.compositing]),
+    rows:rows.map(layer=>[
+      layer.id,layer.name,layer.kind,layer.baseColor,layer.visible,layer.locked,
+      layer.contentLocked,layer.positionLocked,layer.alphaLocked,layer.colorTag,
+      layer.opacity,layer.vectorMask?.enabled,layer.vectorMask?.shape,
+      layer.deformation?.enabled,!!layer.deformation,!!layer.blend?.effect,
+      layer.blend?.mode,layer.clipSourceId,
+      root.isLayerVisible(layer.id),root.isLayerLocked(layer.id),
+      root.isLayerContentLocked(layer.id),root.isLayerPositionLocked(layer.id),
+      root.groupsForLayer(layer.id).map(group=>group.id),
+    ]),
+  });
+  // Ink-only revisions keep the same layer metadata; avoid allocating hundreds
+  // of buttons and destroying touch/focus state after every completed brush stroke.
+  if(previousLayerListDocument!==controller.document||previousLayerListKey!==nextLayerListKey){
+    previousLayerListDocument=controller.document;previousLayerListKey=nextLayerListKey;
   for(const id of ['layerList','layerPageList']){
     const list=byId<HTMLDivElement>(id);
     const matching=id==='layerPageList'?rows.filter(layer=>{
@@ -1300,6 +1325,7 @@ const renderLayers=()=>{
     }
     list.replaceChildren(...entries);
     if(!entries.length)list.textContent=selectedLayer.implicitRaster?'ひと筆描くとレイヤーができます。':'一致するレイヤーがありません。';
+  }
   }
   scheduleLayerDrawingThumbnail();
   updateContextBar();
