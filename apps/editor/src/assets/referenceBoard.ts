@@ -67,6 +67,9 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   document.body.append(canvasLayer);
   let currentDoc:string|null=null,board:BoardSnapshot|null=null;
   let saving:Promise<void>=Promise.resolve(),transition=0,renderEpoch=0;
+  // Retain the newest unconfirmed layout per work in memory: a failed write
+  // must not be mistaken for an empty/stale stored board on a rapid switch.
+  const pendingBoardWrites=new Map<string,BoardSnapshot>();
   let saveError:unknown=null,temporaryHidden=false;
   let back:BoardSnapshot[]=[],forward:BoardSnapshot[]=[];
   const urls=new Map<string,string>();
@@ -93,10 +96,15 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     if(!board||board.documentId!==change.documentId)return;
     if(history){back.push(clone(board));if(back.length>60)back.shift();forward=[];}
     board=change;
-    // A queued write belongs to its captured document, even if the user switches works.
-    // Do not discard it after getDocumentId() changes.
-    saving=saving.then(()=>writeBoard(clone(change)),()=>writeBoard(clone(change)))
-      .then(()=>{saveError=null;},reason=>{saveError=reason;error(reason);});
+    const pending=clone(change);
+    pendingBoardWrites.set(change.documentId,pending);
+    // Each write keeps the exact document and snapshot it was queued for.
+    saving=saving.then(()=>writeBoard(pending),()=>writeBoard(pending))
+      .then(()=>{
+        if(pendingBoardWrites.get(change.documentId)===pending)
+          pendingBoardWrites.delete(change.documentId);
+        saveError=null;
+      },reason=>{saveError=reason;error(reason);});
     void render().catch(error);drawList();
   }
   async function refreshIfChanged(){
@@ -106,9 +114,15 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     for(const url of urls.values())URL.revokeObjectURL(url);urls.clear();canvasLayer.replaceChildren();list.replaceChildren();
     if(!id){status.textContent='作品を開くと、資料を並べられます。';return;}
     try{
-      const current=transition,data=await readBoard(id);
+      const current=transition;
+      // Wait for older work's outstanding writes before reading this work.
+      // Otherwise rapid A→B→A switches can resurrect an old board and save it.
+      await saving;
+      const unconfirmed=pendingBoardWrites.get(id);
+      const data=unconfirmed??await readBoard(id);
       if(current!==transition||id!==currentDoc)return;
       board=data;temporaryHidden=false;
+      if(unconfirmed)status.textContent='資料の最新配置はまだ端末へ保存できていません。配置を書き出して保護してください。';
       const fitted=fitWithinWindow(data);
       if(fitted!==data)syncAfter(fitted,false);
       else {await render();drawList();}
