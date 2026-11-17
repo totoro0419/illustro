@@ -47,7 +47,7 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
 }
 
 /** Straight-alpha source-over; layer order is bottom to top. Output is never the presentation canvas. */
-export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|Uint8ClampedArray,opacity=1,clip?:{pixels:Uint8Array|Uint8ClampedArray;opacity:number;mask?:LayerMask|null},shape?:{width:number;mask?:LayerMask|null;blend?:LayerBlend|null}):void{
+export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|Uint8ClampedArray,opacity=1,clip?:{pixels:Uint8Array|Uint8ClampedArray;opacity:number;mask?:LayerMask|null},shape?:{width:number;mask?:LayerMask|null;blend?:LayerBlend|null;originX?:number;originY?:number}):void{
   if(destination.length!==source.length||destination.length%4)throw new Error('レイヤーの画像サイズが違います。');
   if(!Number.isFinite(opacity)||opacity<0||opacity>1)throw new Error('不正なレイヤー不透明度です。');
   const tileSize=TILE;
@@ -61,7 +61,7 @@ export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|U
     if(sa===0)continue;
     let effectCoverage=1;
     if(hasMask){
-      const pixel=i/4,x=pixel%shape.width,y=Math.floor(pixel/shape.width);
+      const pixel=i/4,x=pixel%shape.width+(shape.originX??0),y=Math.floor(pixel/shape.width)+(shape.originY??0);
       const tx=Math.floor(x/tileSize),ty=Math.floor(y/tileSize);
       if(ty!==tileY){maskRows.clear();tileY=ty;}
       let alpha=maskRows.get(tx);
@@ -78,7 +78,7 @@ export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|U
     if(sa===0)continue;
     if(advanced){
       const pixel=i/4,width=shape!.width;
-      blendArtworkPixel(destination,i,source,sa,blend,pixel%width,Math.floor(pixel/width),effectCoverage);
+      blendArtworkPixel(destination,i,source,sa,blend,pixel%width+(shape!.originX??0),Math.floor(pixel/width)+(shape!.originY??0),effectCoverage);
       continue;
     }
     const da=destination[i+3]!/255;
@@ -180,6 +180,7 @@ export async function renderFrozenArtworkTiledPreview(
     try{renderer=await GpuRenderer.create(canvas,width,height,'webgl2',{webglDesynchronized:false});}
     catch{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
     renderer.setSurfaceStack(layers.map(layer=>layer.surfaceId));
+    if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels,width,height);
     let id=0;
     for(const {surfaceId,record} of strokes){
       const preset={...record.preset,__legacyStarAa:record.engine==='illustro-rt-2.4'};
@@ -189,17 +190,64 @@ export async function renderFrozenArtworkTiledPreview(
     await renderer.drain();
     const accumulator=createTiledPreviewAccumulator(width,height,targetWidth,targetHeight);
     const plainWhite=new Uint8Array(TILE*TILE*4).fill(255);
-    const visible=layers.filter(layer=>!layer.referenceOnly&&layer.visible&&layer.opacity>0);
+    const layerBySurface=new Map(layers.map(layer=>[layer.surfaceId,layer]));
+    const clippingSources=new Set(layers.flatMap(layer=>layer.clipSurfaceId?[layer.clipSurfaceId]:[]));
+    const gradientTables=new WeakMap<object,Uint8Array>();
+    // Reuse exactly the same per-pixel compositing as full export, except that
+    // every allocation and GPU readback is confined to the current 128px tile.
     for(let ty=0;ty<Math.ceil(height/TILE);ty++){
       for(let tx=0;tx<Math.ceil(width/TILE);tx++){
-        const tile=new Uint8ClampedArray(TILE*TILE*4),key=tx+','+ty;
-        for(const layer of visible){
-          const source=layer.baseColor==='white'?plainWhite:await renderer.readTile(layer.surfaceId,key);
-          if(source)compositeLayer(tile,source,layer.opacity);
+        const composite=new Uint8ClampedArray(TILE*TILE*4),key=tx+','+ty;
+        const sourcePixels=new Map<string,Uint8Array|Uint8ClampedArray>();
+        const readLayer=async(layer:FrozenExport['layers'][number])=>{
+          const pixels=sourcePixels.get(layer.surfaceId)??(layer.baseColor==='white'
+            ?plainWhite
+            :await renderer!.readTile(layer.surfaceId,key)??new Uint8Array(TILE*TILE*4));
+          if(clippingSources.has(layer.surfaceId))sourcePixels.set(layer.surfaceId,pixels);
+          return pixels;
+        };
+        const groups:Array<{id:string;pixels:Uint8ClampedArray}>=[];
+        const closeGroup=()=>{
+          const group=groups.pop()!;
+          compositeLayer(groups.at(-1)?.pixels??composite,group.pixels);
+        };
+        for(const layer of layers){
+          if(layer.referenceOnly||!layer.visible||layer.opacity<=0)continue;
+          const isolation=layer.isolation??[];
+          let common=0;
+          while(common<groups.length&&isolation[common]===groups[common]?.id)common++;
+          while(groups.length>common)closeGroup();
+          for(const id of isolation.slice(common))groups.push({id,pixels:new Uint8ClampedArray(TILE*TILE*4)});
+          const clip=layer.clipSurfaceId?layerBySurface.get(layer.clipSurfaceId):undefined;
+          if(clip&&(!clip.visible||clip.opacity<=0))continue;
+          const destination=groups.at(-1)?.pixels??composite;
+          const map=layer.blend?.gradientMap;
+          if(map){
+            let table=gradientTables.get(map);
+            if(!table){table=gradientMapTable(map);gradientTables.set(map,table);}
+            const clipPixels=clip?await readLayer(clip):null;
+            const mask=layerMaskTile(layer.mask,key),clipMask=layerMaskTile(clip?.mask,key);
+            for(let ly=0;ly<TILE&&ty*TILE+ly<height;ly++)
+              for(let lx=0;lx<TILE&&tx*TILE+lx<width;lx++){
+                const offset=(ly*TILE+lx)*4,local=ly*TILE+lx;
+                const coverage=layer.opacity*(typeof mask==='number'?mask:mask[local]!)/255*
+                  (clipPixels&&clip?clipPixels[offset+3]!*clip.opacity*
+                   (typeof clipMask==='number'?clipMask:clipMask[local]!)/65025:1);
+                mapGradientPixel(destination,offset,table,map,tx*TILE+lx,ty*TILE+ly,coverage);
+              }
+            continue;
+          }
+          const pixels=await readLayer(layer);
+          const clipped=clip?await readLayer(clip):null;
+          compositeLayer(destination,pixels,layer.opacity,
+            clip&&clipped?{pixels:clipped,opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,
+            {width:TILE,originX:tx*TILE,originY:ty*TILE,
+             ...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
         }
-        accumulator.addTile(tile,tx*TILE,ty*TILE,TILE);
+        while(groups.length)closeGroup();
+        accumulator.addTile(composite,tx*TILE,ty*TILE,TILE);
       }
-      // History preview is background work; do not monopolize pointer frames.
+      // History rendering must leave time for normal pointer input.
       await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
     }
     return accumulator.finish();

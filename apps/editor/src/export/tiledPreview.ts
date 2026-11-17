@@ -8,14 +8,8 @@ export function canUseTiledHistoryPreview(
 ):boolean{
   if(!Number.isSafeInteger(targetWidth)||!Number.isSafeInteger(targetHeight)||
      targetWidth<1||targetHeight<1||targetWidth>frozen.width||targetHeight>frozen.height||
-     targetWidth*targetHeight>128_000||!frozen.layers.length||Boolean(frozen.basePixels?.length))return false;
-  return frozen.layers.every(layer=>{
-    const b=layer.blend;
-    return !layer.clipSurfaceId&&!layer.mask?.enabled&&
-      !(layer.isolation?.length)&&(!b||(
-        b.mode==='normal'&&b.space!=='linear'&&!b.tone&&!b.effect?.enabled&&!b.gradientMap
-      ));
-  });
+     targetWidth*targetHeight>128_000||!frozen.layers.length)return false;
+  return true;
 }
 
 export function createTiledPreviewAccumulator(

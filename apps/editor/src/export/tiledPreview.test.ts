@@ -63,13 +63,13 @@ describe('C03-007 bounded tile compositing',()=>{
       for(let c=0;c<4;c++)expect(Math.abs(preview[destination+c]!-expected[c]!)).toBeLessThanOrEqual(1);
     }
   });
-  it('keeps advanced effects and saved raster bases on the exact fallback path',()=>{
+  it('supports complicated groups, masks, clipping and seeded raster data with pixel-exact per-tile composite',()=>{
     const layer={surfaceId:'ink',visible:true,opacity:1};
     const simple={width:4000,height:4000,layers:[layer]};
     expect(canUseTiledHistoryPreview(simple,160,120)).toBe(true);
-    expect(canUseTiledHistoryPreview({...simple,layers:[{...layer,clipSurfaceId:'under'}]},160,120)).toBe(false);
-    expect(canUseTiledHistoryPreview({...simple,basePixels:[{surfaceId:'ink',pixels:new Uint8Array(4)}]},160,120)).toBe(false);
-    expect(canUseTiledHistoryPreview({...simple,layers:[{...layer,isolation:['g']}]},160,120)).toBe(false);
+    expect(canUseTiledHistoryPreview({...simple,layers:[{...layer,clipSurfaceId:'under'}]},160,120)).toBe(true);
+    expect(canUseTiledHistoryPreview({...simple,basePixels:[{surfaceId:'ink',pixels:new Uint8Array(4)}]},160,120)).toBe(true);
+    expect(canUseTiledHistoryPreview({...simple,layers:[{...layer,isolation:['g']}]},160,120)).toBe(true);
     expect(canUseTiledHistoryPreview(simple,1600,1200)).toBe(false);
   });
 });
