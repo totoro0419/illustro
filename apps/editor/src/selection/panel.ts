@@ -600,7 +600,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   document.addEventListener('pointerdown',event=>{
     if(pendingSelectionJob&&pendingSelectionJob===job&&
       event.target instanceof Element&&event.target.closest('.surface')&&
-      !event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame,.c06-selection-quick')){
+      !event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame,.c06-selection-quick,.c06-placement-preview')){
       event.preventDefault();event.stopImmediatePropagation();
       status.textContent='選択範囲を反映中です。完了後に描画してください。';
       return;
@@ -608,7 +608,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!tool||(!allowFinger.checked&&event.pointerType==='touch')||
       (drawing!==null&&event.pointerId!==drawing.pointer)||!source()||!viewport||
       !(event.target instanceof Element)||!event.target.closest('.surface')||
-      event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame,.c06-selection-quick')||
+      event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame,.c06-selection-quick,.c06-placement-preview')||
       event.button!==0)return;
     event.preventDefault();event.stopImmediatePropagation();
     const point=toDoc(event);
