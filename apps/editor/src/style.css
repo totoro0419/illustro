@@ -99,3 +99,14 @@ details p{font-size:13px}
 #layerPageList{flex:1 0 120px;min-height:120px}
 
 .history-cleanup-list { max-height: 25dvh; overflow: auto; }
+
+
+/* C03-012: history can stay open while the user works on the canvas. */
+.artwork-history-panel[open]:not(:modal){
+ position:fixed;
+ inset:auto max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) auto;
+ margin:0;width:min(440px,calc(100vw - 24px));max-width:calc(100vw - 24px);
+ max-height:min(85dvh,740px);z-index:35;
+}
+.artwork-history-panel .history-image-viewport{height:clamp(128px,24dvh,300px)}
+@media(max-width:540px){.artwork-history-panel[open]:not(:modal){max-height:66dvh}}
