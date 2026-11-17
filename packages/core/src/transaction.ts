@@ -226,7 +226,7 @@ export class DocumentTransaction{
       throw new Error('対応していない画像の区画形式です。');
     const seen=new Set<string>(),maxX=Math.ceil(this.rootValue.width/tileSize),maxY=Math.ceil(this.rootValue.height/tileSize);
     for(const tile of tiles){
-      if(!/^\\d+,\\d+$/.test(tile.key)||seen.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.length!==tileSize*tileSize*4)
+      if(!/^\d+,\d+$/.test(tile.key)||seen.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.length!==tileSize*tileSize*4)
         throw new Error('画像の区画が重複または破損しています。');
       const [x=NaN,y=NaN]=tile.key.split(',').map(Number);
       if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0||x>=maxX||y>=maxY)
