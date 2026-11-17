@@ -34,7 +34,7 @@ import type {ArtworkActions} from './artwork/tools';
 import {fillLayerName,installFillPanel} from './fill/panel';
 import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
-import {canReplaceTopmostTransformLayer} from './transform/previewReplacement';
+import {transformPreviewReplacementOpacity} from './transform/previewReplacement';
 import {installLayoutPanel} from './transform/layoutPanel';
 import {groupTransformPlan} from './transform/groupTransform';
 import {layerEditingStates,layerEditingTargets} from './transform/layerEditingStates';
@@ -4024,7 +4024,8 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
   return {
     width,height,bounds,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
     pixels,selection:target==='boundary'?null:selection,drawing,valid,objectSnap:marks,originalAlphaLocked:!!original.alphaLocked,...(layer.vectorMask?{maskLink:linkedMask}:{}),
-    ...(canReplaceTopmostTransformLayer(artwork.root,layer.id,target)?{replacementLayerId:layer.id}:{}),
+    ...((()=>{const opacity=transformPreviewReplacementOpacity(artwork.root,layer.id,target);
+      return opacity===null?{}:{replacementLayerId:layer.id,replacementOpacity:opacity};})()),
     guides:guidePreferences.enabled?{
       x:[{value:guidePreferences.x??0,name:'定規の基準 X'}],y:[{value:guidePreferences.y??0,name:'定規の基準 Y'}]
     }:null,
