@@ -4,6 +4,7 @@ import {combineSelection,type MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
 import type {FillSettings,GapCandidate,RegionGraph,Walls} from './pixels';
 import {runFill} from './run';
+import {visibleFillReferenceIds} from './reference';
 
 export type Reference=LineRegions['reference'];
 export type Destination='active'|'new'|'under'|'color-layer';
@@ -19,7 +20,7 @@ type Entry={id:LayerId;name:string;data:LineRegions};
 
 export function installFillPanel(host:HTMLElement,api:{
   drawing:()=>BrushSurface|null;color:()=>string;documentId:()=>string;targetName:()=>string;
-  references:()=>readonly {id:string;name:string;vector:boolean}[];
+  references:()=>readonly {id:string;name:string;vector:boolean;visible:boolean}[];
   regionLayers:()=>readonly Entry[];
   saveRegion:(regions:LineRegions,id?:LayerId)=>Promise<LayerId>;
   capture:(reference:Reference,destination:Destination,layerIds:readonly string[],needTarget:boolean,stored?:LineRegions)=>Promise<FillCapture>;
@@ -72,6 +73,7 @@ export function installFillPanel(host:HTMLElement,api:{
     ['layer','指定するレイヤー'],['layers','指定する複数のレイヤー'],
     ['vector','ベクターのパス'],['vector-visible','ベクターの見た目']]);
   const referenceLayer=select('参照するレイヤー',[]);
+  const omittedLayer=select('全体参照から外すレイヤー',[]);
   const selectedRefs=document.createElement('div');selectedRefs.className='c06-clipboard-grid';options.append(selectedRefs);
   const destination=select('塗る場所',[['active','選んだレイヤー'],['new','上の新しいレイヤー'],['under','下の新しいレイヤー'],['color-layer','色の名前でレイヤーを作る']]);
   const regionLayers=select('作品に保存した線画領域',[]);
@@ -131,6 +133,10 @@ export function installFillPanel(host:HTMLElement,api:{
   }
   function refreshReferences(replace=false){
     const all=api.references(),id=api.documentId();
+    const omitted=omittedLayer.value;
+    omittedLayer.replaceChildren(new Option('選択してください',''),
+      ...all.filter(item=>item.visible).map(({id,name})=>new Option(name,id)));
+    omittedLayer.value=all.some(item=>item.visible&&item.id===omitted)?omitted:'';
     let checked=activeIds();
     if(replace){try{checked=JSON.parse(localStorage.getItem('illustro.fill.references.'+id)??'[]');}catch{checked=[];}}
     if(!Array.isArray(checked))checked=[];
@@ -403,6 +409,13 @@ export function installFillPanel(host:HTMLElement,api:{
       ...(usesRegions()&&currentGraph?{savedGraph:currentGraph,manual:manuals.get(source.key)??[]}:{} )};
     await refreshCandidate();
   }
+  button('表示中の絵から1枚を除外して参照',()=>{
+    const all=api.references(),ids=visibleFillReferenceIds(all,omittedLayer.value);
+    reference.value='layers';refreshReferences();
+    for(const input of selectedRefs.querySelectorAll<HTMLInputElement>('input'))input.checked=ids.includes(input.value);
+    rememberRefs();forgetAnalysis();sync();
+    output.textContent='表示中のレイヤーから選んだ1枚を外しました。参照元を確認してから塗ってください。';
+  });
   button('キャンバスで塗る',()=>onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',points=>fill(points,false),method.value.startsWith('lasso')));
   button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',points=>fill(points,true),method.value.startsWith('lasso')));
   const applyPaint=button('候補を適用',async()=>{
