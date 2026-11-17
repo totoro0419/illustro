@@ -1,6 +1,6 @@
 import {CanonicalBuilder,type Sample} from '@illustro/brush-rt';
 import {replayBrushPasses} from '../selection/brush';
-import type {DeformationBrushPass,LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
+import type {DeformationBrushPass,LayerId,LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import type {MaskData} from '../selection/mask';
 import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} from './geometry';
@@ -18,6 +18,7 @@ export type TransformSource={
   drawing:BrushSurface;valid:()=>boolean;bounds:TransformBounds;initial?:Transform;maskLink?:boolean;
   objectSnap:SnapTargets;guides:SnapTargets|null;originalAlphaLocked?:boolean;
   postPaint?:readonly DeformationBrushPass[];
+  replacementLayerId?:LayerId;
   apply:(settings:Transform,pixels:Uint8ClampedArray,editedOriginal?:Uint8Array)=>Promise<void>;
 };
 type Target='layer'|'selected'|'boundary';
@@ -430,7 +431,9 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       settings=source.initial??{...initialTransform,cx:source.width/2,cy:source.height/2};
       status.textContent=source.name+'を変形します。'+(source.maskLink===undefined?'':source.maskLink?' マスクも一緒に変形します。':' マスクは現在の位置に残ります。')+
         (source.initial?' 仮表示は原本の変形です。上に描いた筆は適用時に同じ位置へ重ねます。':'');
-      status.textContent+=' キャンバス上の半透明の変形表示は目安です。正確なレイヤー画素は下の候補欄で確認してください。';
+      status.textContent+=source.replacementLayerId
+        ?' 元レイヤーを一時的に隠して候補を表示します。拡大時の画素は下の候補欄で確認してください。'
+        :' キャンバス上の半透明の変形表示は目安です。正確なレイヤー画素は下の候補欄で確認してください。';
       editingHandles=usesHandles(settings.mode);placingPoints=false;refreshHandles();compare.checked=false;
     }finally{busy=false;sync();}
     void refreshPreview();
@@ -624,7 +627,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       context?.putImageData(image,0,0);
       // This responsive canvas overlay is approximate: the original layer remains below it.
       // The isolated panel preview continues to show the exact prospective layer pixels.
-      current.drawing.showArtworkPreview(compare.checked?null:image);
+      current.drawing.showArtworkPreview(compare.checked?null:image,false,current.replacementLayerId??null);
       if(context&&marks&&!compare.checked){
         context.strokeStyle='#45c8ef';context.lineWidth=1;context.setLineDash([4,4]);
         context.beginPath();
@@ -654,7 +657,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
               showProtection:protection
             },controller.signal).then(highPixels=>{
               if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal)return;
-              current.drawing.showArtworkPreview(new ImageData(highPixels,quality.width,quality.height));
+              current.drawing.showArtworkPreview(new ImageData(highPixels,quality.width,quality.height),false,current.replacementLayerId??null);
             }).catch(error=>{
               // The already visible 280px preview is still valid. A failed
               // optional refinement must not erase it or block editing.
