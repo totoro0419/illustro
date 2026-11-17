@@ -233,6 +233,7 @@ export class DrawingHost {
  async drain(finalFrame=true){this.update(await this.call('drain',finalFrame));}
  read(surfaceKey='default'){return this.call('read',surfaceKey);}
  readPixel(x,y,surfaceKey){return this.call('pixel',{x,y,surfaceKey});}
+ readPixelArea(x,y,width,height,surfaceKey){return this.call('pixelArea',{x,y,width,height,surfaceKey});}
  setPerformanceEnabled(enabled){this.send('measure',enabled);}
  performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){return false;}
