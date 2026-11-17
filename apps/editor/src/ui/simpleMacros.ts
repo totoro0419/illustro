@@ -16,6 +16,30 @@ const SAFE=new Set([
   'layerSoloToggle','layerAlphaLock','layerClipping'
 ]);
 const permitted=(id:string)=>SAFE.has(id)||id.startsWith('brush:')||id.startsWith('color:')||id.startsWith('workspace:');
+/** Validate user-imported macros before storing or exposing any commands. */
+export function parseSimpleMacroFile(input:unknown):SimpleMacro[]{
+  if(!input||typeof input!=='object'||Array.isArray(input))
+    throw Error('操作セットの形式が正しくありません。');
+  const file=input as Record<string,unknown>;
+  if(file.schema!=='illustro.macros.simple'||file.version!==1||
+    !Array.isArray(file.items)||file.items.length>MAX_MACROS)
+    throw Error('対応していない操作セットです。');
+  const ids=new Set<string>(),names=new Set<string>(),result:SimpleMacro[]=[];
+  for(const row of file.items){
+    if(!row||typeof row!=='object'||Array.isArray(row))
+      throw Error('操作セットの情報が正しくありません。');
+    const item=row as Record<string,unknown>;
+    if(typeof item.id!=='string'||!item.id||item.id.length>100||
+      typeof item.name!=='string'||!item.name.trim()||item.name.length>80||
+      ids.has(item.id)||names.has(item.name)||
+      !Array.isArray(item.steps)||item.steps.length<1||item.steps.length>MAX_STEPS||
+      !item.steps.every(step=>typeof step==='string'&&permitted(step)))
+      throw Error('操作セットに使えない操作や重複した名前が含まれています。');
+    ids.add(item.id);names.add(item.name);
+    result.push({id:item.id,name:item.name,steps:[...item.steps] as string[]});
+  }
+  return result;
+}
 /** Await every declared command completion and report dispatch-only steps honestly. */
 export async function invokeMacroSequence(
   steps:readonly string[],
@@ -60,9 +84,10 @@ const persist=(items:readonly SimpleMacro[]):boolean=>{
 const uid=()=>typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'
   ?crypto.randomUUID():'macro-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 
-export function installSimpleMacros(commands:CommandService){
+export type SimpleMacroService=Readonly<{importText:(json:string)=>number}>;
+export function installSimpleMacros(commands:CommandService):SimpleMacroService|null{
   const workspace=document.getElementById('workspaceBoxBody');
-  if(!workspace)return;
+  if(!workspace)return null;
   let macros=read(),playing=false,steps:string[]=[],selectedId:string|null=null;
   const root=document.createElement('details');root.className='c04-simple-macros';
   const summary=document.createElement('summary');summary.textContent='よく使う操作をまとめる';
@@ -181,5 +206,31 @@ export function installSimpleMacros(commands:CommandService){
     execute:()=>play(macro)
   }));
   commands.registerProvider(provider);
+  function importText(json:string):number{
+    if(json.length>1048576)throw Error('操作セットが大きすぎます。');
+    const imported=parseSimpleMacroFile(JSON.parse(json));
+    const nameSet=new Set(imported.map(item=>item.name));
+    if(imported.some(item=>macros.some(existing=>existing.name===item.name))&&
+      !window.confirm('同名の操作セットを置き換えますか？'))
+      return 0;
+    const remaining=macros.filter(existing=>!nameSet.has(existing.name));
+    if(remaining.length+imported.length>MAX_MACROS)
+      throw Error('保存できる操作セットは32件までです。');
+    const occupied=new Set(remaining.map(item=>item.id));
+    const safe=imported.map(item=>{
+      let id=item.id;
+      while(occupied.has(id))id=uid();
+      occupied.add(id);
+      return {...item,id};
+    });
+    const next=[...remaining,...safe];
+    if(!persist(next))throw Error('操作セットを端末へ保存できませんでした。');
+    macros=next;
+    load(safe[0]?.id??'');
+    refreshSelect();refreshSteps();commands.refresh();
+    status.textContent=safe.length+'件の操作セットを読み込みました。';
+    return safe.length;
+  }
   refreshSelect();refreshOptions();refreshSteps();
+  return {importText};
 }
