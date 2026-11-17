@@ -7,7 +7,7 @@ on:
       - .github/workflows/illustro-editor-preview-publish.yml
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
   statuses: write
@@ -30,7 +30,7 @@ jobs:
         with:
           ref: gh-pages
           path: existing-site
-          persist-credentials: false
+          persist-credentials: true
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -51,6 +51,26 @@ jobs:
           cmp existing-site/index.html pages-output/index.html
           test -f pages-output/preview/index.html
           test -s pages-output/index.html
+      - name: Commit preview files to the actual Pages publishing branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p existing-site/preview
+          cp -a apps/editor/dist/. existing-site/preview/
+          git -C existing-site config user.name "github-actions[bot]"
+          git -C existing-site config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C existing-site add -- preview/
+          changed="$(git -C existing-site diff --cached --name-only)"
+          if [[ -n "$changed" ]]; then
+            while IFS= read -r file; do
+              [[ "$file" == preview/* ]] || { echo "Refusing to change non-preview file: $file"; exit 1; }
+            done <<< "$changed"
+            git -C existing-site commit -m "deploy: publish Illustro editor preview under preview/"
+            git -C existing-site push origin HEAD:gh-pages
+          else
+            echo "Preview files are already committed"
+          fi
+          test -f existing-site/preview/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
