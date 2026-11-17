@@ -18,7 +18,7 @@ export type TransformSource={
   drawing:BrushSurface;valid:()=>boolean;bounds:TransformBounds;initial?:Transform;maskLink?:boolean;
   objectSnap:SnapTargets;guides:SnapTargets|null;originalAlphaLocked?:boolean;
   postPaint?:readonly DeformationBrushPass[];
-  replacementLayerId?:LayerId;
+  replacementLayerId?:LayerId;replacementOpacity?:number;
   apply:(settings:Transform,pixels:Uint8ClampedArray,editedOriginal?:Uint8Array)=>Promise<void>;
 };
 type Target='layer'|'selected'|'boundary';
@@ -627,7 +627,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       context?.putImageData(image,0,0);
       // This responsive canvas overlay is approximate: the original layer remains below it.
       // The isolated panel preview continues to show the exact prospective layer pixels.
-      current.drawing.showArtworkPreview(compare.checked?null:image,false,current.replacementLayerId??null);
+      current.drawing.showArtworkPreview(compare.checked?null:image,false,current.replacementLayerId??null,current.replacementOpacity??1);
       if(context&&marks&&!compare.checked){
         context.strokeStyle='#45c8ef';context.lineWidth=1;context.setLineDash([4,4]);
         context.beginPath();
@@ -657,7 +657,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
               showProtection:protection
             },controller.signal).then(highPixels=>{
               if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal)return;
-              current.drawing.showArtworkPreview(new ImageData(highPixels,quality.width,quality.height),false,current.replacementLayerId??null);
+              current.drawing.showArtworkPreview(new ImageData(highPixels,quality.width,quality.height),false,current.replacementLayerId??null,current.replacementOpacity??1);
             }).catch(error=>{
               // The already visible 280px preview is still valid. A failed
               // optional refinement must not erase it or block editing.
