@@ -28,6 +28,7 @@ import {installStrokeCorrection} from './artwork/strokeCorrection';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {runArtwork} from './artwork/run';
 import {selectionAsLayerMask} from './artwork/selectionMask';
+import {selectionCanCreateMask,explicitSaveStatus} from './artwork/c03UiGuards';
 import type {ArtworkActions} from './artwork/tools';
 import {fillLayerName,installFillPanel} from './fill/panel';
 import {readFillReference} from './fill/reference';
@@ -454,7 +455,9 @@ function updateVectorMaskControls(){
   byId('maskInspectionBar').hidden=!maskInspection;
   byId<HTMLButtonElement>('maskInspectOnly').disabled=!mask;
   byId<HTMLButtonElement>('maskInspectRed').disabled=!mask;
-  byId<HTMLButtonElement>('vectorMaskFromSelection').disabled=disabled||!surface?.selectedRectangle;
+  byId<HTMLButtonElement>('vectorMaskFromSelection').disabled=disabled||!surface||!selectionCanCreateMask(
+    byId<HTMLSelectElement>('vectorMaskShape').value,surface.selectedRectangle,c06Selection?.active()??null,root.width,root.height
+  );
   byId<HTMLButtonElement>('pixelMaskAdd').disabled=disabled;
   byId<HTMLButtonElement>('maskPathEdit').disabled=disabled;
   byId<HTMLButtonElement>('maskPointEdit').disabled=disabled||mask?.shape!=='path';
@@ -462,7 +465,7 @@ function updateVectorMaskControls(){
   for(const id of ['vectorMaskEnabled','maskLinked','vectorMaskInverted','vectorMaskDensity','vectorMaskRemove','vectorMaskApply']){
     (byId(id) as HTMLInputElement|HTMLButtonElement).disabled=disabled||!mask;
   }
-  byId<HTMLButtonElement>('vectorMaskApply').disabled=disabled||!mask?.enabled;
+  byId<HTMLButtonElement>('vectorMaskApply').disabled=disabled||!mask?.enabled||!surface?.canChangeGeometry||geometryBusy||historyPending;
   byId<HTMLInputElement>('vectorMaskEnabled').checked=mask?.enabled??false;
   byId<HTMLInputElement>('maskLinked').checked=mask?.linked??true;
   byId<HTMLInputElement>('vectorMaskInverted').checked=mask?.inverted??false;
@@ -590,7 +593,13 @@ function startMaskPointEditing(){
 
 async function applyVectorMask(){
   const drawing=surface,artwork=controller.document,layer=controller.selectedLayer,mask=layer.vectorMask;
-  if(!drawing?.canChangeGeometry||!mask?.enabled||geometryBusy||historyPending)return;
+  if(!documentReady||layer.implicitRaster||layer.baseColor==='white'||artwork.root.isLayerContentLocked(layer.id)||
+      !drawing?.canChangeGeometry||!mask?.enabled||geometryBusy||historyPending){
+    byId('status').textContent=!mask?.enabled?'有効なマスクを選んでください。':
+      artwork.root.isLayerContentLocked(layer.id)?'ロックされているレイヤーにはマスクを適用できません。':
+      '現在の操作が終わってからマスクを適用してください。';
+    return;
+  }
   if(!window.confirm('マスクを絵に適用します。隠れていた画素に戻すには、元に戻す操作を使ってください。'))return;
   const head=artwork.head,root=artwork.root;
   geometryBusy=true;
@@ -1394,13 +1403,18 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
 };
 byId<HTMLButtonElement>('layerBlendMode').onclick=editLayerBlend;
 byId<HTMLButtonElement>('pickLayerOnCanvas').onclick=()=>pickLayerOnCanvas();
+byId<HTMLSelectElement>('vectorMaskShape').onchange=updateVectorMaskControls;
 byId<HTMLButtonElement>('vectorMaskFromSelection').onclick=()=>{
-  const rect=surface?.selectedRectangle,layer=controller.selectedLayer;
-  if(!rect)return;
-  const mode=byId<HTMLSelectElement>('vectorMaskShape').value;
-  const selection=c06Selection?.active();
+  const drawing=surface,layer=controller.selectedLayer,root=controller.document.root;
+  const rect=drawing?.selectedRectangle??null,mode=byId<HTMLSelectElement>('vectorMaskShape').value;
+  const selection=c06Selection?.active()??null;
+  if(!documentReady||!drawing||layer.implicitRaster||layer.baseColor==='white'||root.isLayerContentLocked(layer.id)||
+    !selectionCanCreateMask(mode,rect,selection,root.width,root.height)){
+    byId('status').textContent='マスクにする選択範囲がありません。選択を作成してから操作してください。';
+    return;
+  }
   const mask:LayerMask=mode==='selection'&&selection?selectionAsLayerMask(selection):{
-    ...rect,shape:mode==='ellipse'?'ellipse':'rectangle',density:1,enabled:true,inverted:false,linked:true
+    ...rect!,shape:mode==='ellipse'?'ellipse':'rectangle',density:1,enabled:true,inverted:false,linked:true
   };
   if(!replaceMaskAllowed(mask.shape))return;
   stopMaskEditing();
@@ -2025,7 +2039,7 @@ async function applyHistoryBrush(session:HistoryBrushSession,points:readonly Mas
     if(!pixels||session!==historyBrush||artwork.head!==head||drawing!==surface)return;
     const changed=restoreHistoryPixels(pixels,session.source,points,{
       width:root.width,height:root.height,sourceWidth:session.width,sourceHeight:session.height,
-      size:drawing.brushSize,opacity,selection:drawing.selectedRectangle,lockAlpha:root.getLayer(target).alphaLocked??false,
+      size:drawing.brushSize,opacity,selection:drawing.selectedRectangle,selectionMask:c06Selection?.active()??null,lockAlpha:root.getLayer(target).alphaLocked??false,
     });
     if(!changed)return;
     const transaction=artwork.begin('履歴ブラシで復元');
@@ -3098,8 +3112,7 @@ async function saveWork(asCopy=false){
   byId('status').textContent='作品ファイルを作成しています。';
   try{
     const result=await persistence.save(document,layer,asCopy,pending,drawing.selectedRectangle);
-    byId('status').textContent=asCopy?'別名の作品ファイルを保存しました。自動保存状態には影響しません。':
-      '作品ファイルを保存しました（'+formatFileSize(result.byteLength)+'）。自動保存状態には影響しません。';
+    byId('status').textContent=explicitSaveStatus(result.output,result.verified,asCopy,formatFileSize(result.byteLength));
   }catch(error){
     if(error instanceof ExternalFileConflict)showExternalSaveConflict(error,document);
     byId('status').textContent=error instanceof DOMException&&error.name==='AbortError'
