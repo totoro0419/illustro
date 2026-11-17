@@ -13,6 +13,7 @@ import {exportSelectionSections,importSelectionSections} from './native';
 
 export type SelectionWorkbench=Readonly<{
   active:()=>MaskData|null;
+  isPending:()=>boolean;
   documentChanged:()=>void;
   refresh:()=>void;
   updateView:()=>void;
@@ -37,7 +38,7 @@ const asButton=(label:string,fn:()=>void)=>{
 };
 export function installSelectionWorkbench(callbacks:SelectionCallbacks):SelectionWorkbench{
   const host=document.getElementById('documentBoxBody');
-  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{},shiftActive:()=>{},replaceActive:()=>{},exportNative:async()=>[],importNative:async()=>{}};
+  if(!host)return {active:()=>null,isPending:()=>false,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{},shiftActive:()=>{},replaceActive:()=>{},exportNative:async()=>[],importNative:async()=>{}};
   const panel=document.createElement('details');panel.className='c06-selection-panel';
   const summary=document.createElement('summary');summary.textContent='選択範囲を編集';
   const intro=document.createElement('p');
@@ -128,12 +129,16 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       pendingSelectionJob=0;
       tool=null;points=[];brushPoints=[];magneticPixels=null;drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
       const request=++job,loadedId=info.id;
+      // A saved selection must finish loading BEFORE the user may draw:
+      // otherwise the first stroke could paint outside its restored mask.
+      pendingSelectionJob=request;
       void storeQueue.then(()=>loadCurrentSelection(loadedId)).then(loaded=>{
         const doc=callbacks.getDocument();
         if(request!==job||!doc||doc.id!==loadedId||!loaded||
           loaded.width!==doc.width||loaded.height!==doc.height)return;
         publish(loaded,false,false);
-      }).catch(error=>{if(callbacks.getDocument()?.id===loadedId)status.textContent='保存された範囲を復元できませんでした。'+String(error);});
+      }).catch(error=>{if(callbacks.getDocument()?.id===loadedId)status.textContent='保存された範囲を復元できませんでした。'+String(error);})
+        .finally(()=>{if(pendingSelectionJob===request)pendingSelectionJob=0;});
     }
     return info;
   };
@@ -673,6 +678,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   refresh();documentChanged();
   return {
     active:()=>active,
+    isPending:()=>pendingSelectionJob!==0&&pendingSelectionJob===job,
     documentChanged,
     updateView:()=>{visual?.updateView();overlayPath();brushOverlayPath();updateQuickPosition();},
     refresh,
