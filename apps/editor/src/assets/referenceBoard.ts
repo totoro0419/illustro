@@ -29,6 +29,16 @@ const input=(label:string,handler:()=>void)=>{
   const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.onclick=handler;return btn;
 };
 const safePos=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
+/** Explicitly replace a stale embedded bundle if references cannot be exported. */
+export function referenceUnavailableSection(documentId:string):PortableSectionInput{
+  if(!documentId)throw Error('参考資料の作品IDがありません。');
+  return {
+    id:'c05.reference-board',type:'reference.board.embedded.v1',required:false,
+    bytes:new TextEncoder().encode(JSON.stringify({
+      schema:'illustro.reference-unavailable',version:1,documentId
+    }))
+  };
+}
 export function installReferenceBoard(options:Options):ReferenceBoardService{
   const panel=document.getElementById('referenceBoxBody');
   if(!panel)return {
@@ -194,8 +204,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       const warning='参考資料の配置を読み取れませんでした。作品本体は保存しますが、資料はこのファイルに含まれません。端末側の元データは変更していません。';
       status.textContent=warning;
       window.dispatchEvent(new CustomEvent('illustro:reference-save-warning',{detail:{message:warning,documentId:id,omittedAssetIds:[]}}));
-      const unavailable={schema:'illustro.reference-unavailable',version:1,documentId:id};
-      return {id:NATIVE_ID,type:NATIVE_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(unavailable))};
+      return referenceUnavailableSection(id);
     }
     // Reference files are optional. Missing or oversized images must not block
     // saving the user's artwork. Keep ALL placements, including missing items,
