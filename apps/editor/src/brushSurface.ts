@@ -198,6 +198,7 @@ export class BrushSurface{
   private symmetryAnchor:Point|null=null;
   private symmetryFrame=0;
   private activeGuide:LockedGuide|null=null;
+  private pendingPerspectiveHeading:{origin:Point;eraser:boolean}|null=null;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:(reason?:'view'|'view-command'|'state')=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
   async initialize(){const target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('canvas-viewport')?.94:1);
     this.canvas.style.aspectRatio=document.body.classList.contains('canvas-viewport')?'auto':target.width+' / '+target.height;
@@ -784,6 +785,12 @@ export class BrushSurface{
       const guideOrigin={x:origin.x-(this.wrapOrigin?.x??0),y:origin.y-(this.wrapOrigin?.y??0)};
       const bypass=e.shiftKey||this.skipNextArtworkGuide;
       this.skipNextArtworkGuide=false;
+      // Wait for the first meaningful pen movement before picking the
+      // vanishing-point axis. Freeze that choice for the rest of this stroke.
+      this.pendingPerspectiveHeading=!bypass&&this.artworkGuides.some(item=>
+        item.enabled&&item.strength>0&&item.kind.startsWith('perspective')&&
+        (preset.blend!=='erase'||item.applyEraser))
+        ?{origin:guideOrigin,eraser:preset.blend==='erase'}:null;
       const picked=!bypass&&this.artworkGuides.length?lockArtworkGuide(guideOrigin,this.artworkGuides,preset.blend==='erase',this.preferredGuide):null;
       this.activeGuide=picked?.guide??lockStraightGuide(guideOrigin,this.guideSettings,preset.blend==='erase',bypass);
       if(this.artworkGuides.length||bypass)this.onArtworkGuideTarget(picked?picked.name+'へ吸着（'+picked.distance.toFixed(1)+' px）':bypass?'この一筆は吸着を解除':'作品の定規への吸着なし');
@@ -825,7 +832,23 @@ export class BrushSurface{
     if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
     if(e.pointerType==='touch'&&this.navigation?.touchMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
      if(this.navigation?.mouseMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
-     if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();if(this.holdStroke)this.trackCorrectionHold(this.pointerLocation(e));const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];for(let i=0;i<events.length;i++){
+     if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();if(this.holdStroke)this.trackCorrectionHold(this.pointerLocation(e));const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];
+     if(this.pendingPerspectiveHeading&&this.view){
+       const pending=this.pendingPerspectiveHeading;
+       const documentPoint=this.view.document(this.pointerLocation(events[0]!));
+       const heading={x:documentPoint.x-(this.wrapOrigin?.x??0)-pending.origin.x,
+         y:documentPoint.y-(this.wrapOrigin?.y??0)-pending.origin.y};
+       if(Math.hypot(heading.x,heading.y)>=2){
+         this.pendingPerspectiveHeading=null;
+         const selected=lockArtworkGuide(pending.origin,this.artworkGuides,pending.eraser,this.preferredGuide,heading);
+         if(selected){
+           this.activeGuide=selected.guide;
+           this.onArtworkGuideTarget(selected.name+'へ吸着（方向を自動選択）');
+           this.updateGuideOverlay();
+         }
+       }
+     }
+     for(let i=0;i<events.length;i++){
       const sample=this.sample(events[i]!);
       actual.push(sample);this.session.accept(sample,i===events.length-1);
     }
@@ -845,7 +868,7 @@ export class BrushSurface{
     }
     if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.eyedropperPointer=null;this.queueSample(this.screenToDocument(this.pointerLocation(e)),'commit');return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId!==this.pointer||!this.session||!this.target)return;
     this.finishStroke(this.sample(e));};
-  private finishStroke(release:Sample|null=null){if(!this.session||!this.target||this.pointer===null)return;const session=this.session,target=this.target,seamless=this.view?.seamless??false,strokeId=this.activeStrokeId,reservation=this.reservation,mask=this.strokeMask,symmetry=this.strokeSymmetry;session.predictions([]);const upAt=performance.now();this.pointer=null;this.strokeSymmetry=null;if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.reservation=null;
+  private finishStroke(release:Sample|null=null){if(!this.session||!this.target||this.pointer===null)return;const session=this.session,target=this.target,seamless=this.view?.seamless??false,strokeId=this.activeStrokeId,reservation=this.reservation,mask=this.strokeMask,symmetry=this.strokeSymmetry;session.predictions([]);const upAt=performance.now();this.pointer=null;this.strokeSymmetry=null;if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.pendingPerspectiveHeading=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.reservation=null;
     const hold=this.endCorrectionHold();
     if(mask){void this.finishMaskedStroke(session,target,mask,seamless,release,symmetry,hold);return;}
     if(!reservation)return;
@@ -968,7 +991,7 @@ export class BrushSurface{
     }
     if(this.pointer!==null){void this.cancelStroke();this.status('入力が中断されたため、この線を取り消しました。');}
   };
-  private async cancelStroke(){this.endCorrectionHold();const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.strokeSymmetry=null;if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
+  private async cancelStroke(){this.endCorrectionHold();const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.strokeSymmetry=null;if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.pendingPerspectiveHeading=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
   private frame=(now:number)=>{if(this.disposed)return;this.lastFrameAt=now;this.session?.frame(now);if(this.viewNotificationPending){this.viewNotificationPending=false;this.onStateChanged('view');}const pressure=!!(this.renderer as any)?.backend.previewPressure;if(pressure!==this.previewPressureShown){this.previewPressureShown=pressure;if(pressure)this.status('表示処理が混み合っています。入力を保持して線の確定を優先しています。');else if(!this.handoffFault&&!this.historySyncing)this.status('描画を続けられます。');this.onStateChanged();}
     const rendererErrors=this.renderer?.errors.length??0,sessionErrors=this.session?.errors.length??0;
     if(rendererErrors!==this.reportedFrameErrors.renderer||sessionErrors!==this.reportedFrameErrors.session){
