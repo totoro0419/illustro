@@ -3,7 +3,8 @@
  * renderer, saved raster tiles or exported composited images.
  */
 import {readBoard,writeBoard,decodeBoardRecord,newBoardItem,type BoardSnapshot,type BoardItem} from './referenceBoardStore';
-import {getAsset,type AssetEntry} from './library';
+import {getAsset,addAsset,type AssetEntry} from './library';
+import {canReuseExternalReference,parseExternalReferences,type ExternalReference} from './referenceBundleMode';
 import {referenceFrameKey} from './referenceFrameKey';
 import {exportAssetPack,importAssetPack,readAssetPack,type PackManifest} from './packs';
 import type {PortableSectionInput} from '../persistence/format';
@@ -73,7 +74,15 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   const groupSelect=document.createElement('select');groupSelect.setAttribute('aria-label','資料のグループ');
   const groupToggle=input('グループを隠す',()=>void toggleGroup());
   groupRow.append(groupSelect,groupToggle);
-  root.append(title,intro,buttons,navigator,groupRow,list,status);panel.append(root);
+  const nativeMode=document.createElement('select');
+  nativeMode.setAttribute('aria-label','作品ファイルに参考画像を含めるか');
+  nativeMode.add(new Option('画像を作品ファイルに含める（別端末でも開ける）','embedded'));
+  nativeMode.add(new Option('この端末の素材庫を参照（画像は含めない）','linked'));
+  const modeLabel=document.createElement('label');modeLabel.className='c05-reference-native-mode';
+  modeLabel.append('作品ファイルの参考画像',nativeMode);
+  const modeHelp=document.createElement('p');modeHelp.className='c05-reference-mode-help';
+  modeHelp.textContent='画像を含めない場合、別端末や素材庫を削除した後は元画像を選び直す必要があります。';
+  root.append(title,intro,buttons,modeLabel,modeHelp,navigator,groupRow,list,status);panel.append(root);
   const canvasLayer=document.createElement('div');canvasLayer.id='c05ReferenceLayer';canvasLayer.className='c05-reference-layer';
   document.body.append(canvasLayer);
   let currentDoc:string|null=null,board:BoardSnapshot|null=null;
@@ -82,6 +91,15 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   // must not be mistaken for an empty/stale stored board on a rapid switch.
   const pendingBoardWrites=new Map<string,BoardSnapshot>();
   let saveError:unknown=null,temporaryHidden=false;
+  const nativeModeKey=(id:string)=>'illustro.c05.reference-native-mode.'+id;
+  nativeMode.onchange=()=>{
+    const id=options.getDocumentId();
+    if(!id)return;
+    try{localStorage.setItem(nativeModeKey(id),nativeMode.value);}catch{}
+    status.textContent=nativeMode.value==='linked'
+      ?'作品ファイルには画像を入れず、端末の素材庫を参照します。別端末では画像の再選択が必要です。'
+      :'作品ファイルに参考画像を含めます。';
+  };
   let back:BoardSnapshot[]=[],forward:BoardSnapshot[]=[];
   const urls=new Map<string,string>();
   const assetCache=new Map<string,AssetEntry|null>();
@@ -123,6 +141,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const id=options.getDocumentId();
     if(id===currentDoc)return;
     currentDoc=id;transition++;back=[];forward=[];board=null;temporaryHidden=false;
+    nativeMode.disabled=!id;
+    let remembered='embedded';
+    if(id)try{remembered=localStorage.getItem(nativeModeKey(id))??'embedded';}catch{}
+    nativeMode.value=remembered==='linked'?'linked':'embedded';
     for(const url of urls.values())URL.revokeObjectURL(url);
     urls.clear();assetCache.clear();canvasLayer.replaceChildren();list.replaceChildren();
     if(!id){status.textContent='作品を開くと、資料を並べられます。';return;}
@@ -210,6 +232,29 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     // saving the user's artwork. Keep ALL placements, including missing items,
     // so that the original reference can be reattached later.
     const ids=[...new Set(current.items.map(item=>item.assetId))];
+    if(nativeMode.value==='linked'){
+      const externalRefs:ExternalReference[]=[],missing:string[]=[];
+      for(const assetId of ids){
+        let asset:AssetEntry|null=null;
+        try{asset=await getAsset(assetId);}catch{/* Keep the placement for manual recovery. */}
+        if(asset&&!asset.deleted&&asset.kind==='reference'&&asset.mime.startsWith('image/')&&
+          asset.mime.length<=180&&asset.bytes>=1&&asset.bytes<=32*1024*1024){
+          externalRefs.push({assetId,name:asset.name,bytes:asset.bytes,mime:asset.mime});
+        }else missing.push(assetId);
+      }
+      if(missing.length){
+        const warning=missing.length+'枚の参考画像が素材庫で見つかりません。作品の配置は残します。';
+        status.textContent=warning;
+        window.dispatchEvent(new CustomEvent('illustro:reference-save-warning',{
+          detail:{message:warning,documentId:id,omittedAssetIds:missing}
+        }));
+      }
+      const emptyPack:PackManifest={schema:'illustro.asset-pack',version:1,createdAt:Date.now(),items:[]};
+      const data={schema:'illustro.reference-bundle',version:1,storageMode:'linked',
+        board:{...current,hidden:false},pack:emptyPack,externalRefs,omittedAssetIds:missing};
+      return {id:NATIVE_ID,type:NATIVE_TYPE,required:false,
+        bytes:new TextEncoder().encode(JSON.stringify(data))};
+    }
     let pack:PackManifest;
     const omitted:string[]=[];
     try{
@@ -268,6 +313,17 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
         status.textContent='端末に保存してある資料配置を残しました。';return;
       }
     }
+    const storageMode=data.storageMode===undefined||data.storageMode==='embedded'?'embedded':
+      data.storageMode==='linked'?'linked':null;
+    if(!storageMode)throw Error('参考画像の保存方式が正しくありません。');
+    const externalRefs=storageMode==='linked'?parseExternalReferences(data.externalRefs):[];
+    const reusable=new Set<string>();
+    if(storageMode==='linked'){
+      for(const reference of externalRefs){
+        const local=await getAsset(reference.assetId);
+        if(canReuseExternalReference(reference,local))reusable.add(reference.assetId);
+      }
+    }
     const embedded=await readAssetPack(new Blob([JSON.stringify(data.pack)],{type:'application/json'}));
     if(epoch!==transition||options.getDocumentId()!==doc)return;
     const result=await importAssetPack(embedded,{atomic:true});
@@ -278,7 +334,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     // The missing: prefix retains the original ID for a later repair.
     // Absent embedded assets are ALWAYS placeholders, not unverified local
     // content sharing the same ID. This prevents wrong-reference substitution.
-    const resolveId=(id:string)=>result.renamedIds[id]??'missing:'+id;
+    const resolveId=(id:string)=>result.renamedIds[id]??(reusable.has(id)?id:'missing:'+id);
     const newItems:BoardItem[]=input.items.map((item,index)=>({
       ...newBoardItem(resolveId(item.assetId),index),
       ...item,assetId:resolveId(item.assetId),
@@ -299,7 +355,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     if(epoch!==transition||options.getDocumentId()!==doc)return;
     temporaryHidden=false;
     const missing=new Set([
-      ...input.items.filter(item=>!result.renamedIds[item.assetId]).map(item=>item.assetId),
+      ...input.items.filter(item=>!result.renamedIds[item.assetId]&&!reusable.has(item.assetId)).map(item=>item.assetId),
       ...(Array.isArray(data.omittedAssetIds)?data.omittedAssetIds.filter((id):id is string=>typeof id==='string'):[])
     ]);
     status.textContent=newItems.length+'枚の資料配置を読み込みました。'+(missing.size||result.failures.length?
