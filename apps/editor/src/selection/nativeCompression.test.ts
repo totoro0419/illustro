@@ -18,8 +18,8 @@ import {exportSelectionSections,importSelectionSections} from './native';
 beforeEach(()=>{state.saved.length=0;});
 describe('C06-006 .illustro native selection preservation',()=>{
   it('exports sparse active and named selections compactly and restores exact pixels',async()=>{
-    const width=1024,height=1024,alpha=new Uint8Array(width*height);
-    alpha[77]=255;alpha[200000]=125;alpha[width*height-1]=255;
+    const width=256,height=256,alpha=new Uint8Array(width*height);
+    alpha[77]=255;alpha[20000]=125;alpha[width*height-1]=255;
     state.saved.push({
       id:'first',name:'細い線',documentId:'work',width,height,
       createdAt:123,modifiedAt:456,alpha:new Blob([alpha.slice().buffer as ArrayBuffer])
@@ -29,7 +29,7 @@ describe('C06-006 .illustro native selection preservation',()=>{
     const named=sections.find(s=>s.id==='c06.selection.saved.first');
     expect(active?.type).toBe('selection.alpha.rle.v2');
     expect(named?.type).toBe('selection.alpha.rle.v2');
-    expect(sections.reduce((sum,s)=>sum+s.bytes.byteLength,0)).toBeLessThan(50000);
+    expect(sections.reduce((sum,s)=>sum+s.bytes.byteLength,0)).toBeLessThan(5000);
     state.saved.length=0;
     const imported=await importSelectionSections(
       {manifestExtras:{},optionalSections:sections} as PreservedPortableData,
