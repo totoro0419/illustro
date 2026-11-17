@@ -62,14 +62,44 @@ function moveDeformation(deformation:LayerDeformation,x:number,y:number):LayerDe
 
 export class ArtworkClipboard {
   private item:ClipboardItem|null=null;
+  private serial=0;
   private selectionMask:MaskData|null=null;
+  get snapshotId(){return this.serial;}
+  /** Generate a small read-only visual candidate, never a second 4K canvas. */
+  preview(maxSide=512):Readonly<{
+    width:number;height:number;originX:number;originY:number;
+    previewWidth:number;previewHeight:number;pixels:Uint8ClampedArray|null;
+    editable:boolean;sourceName:string;
+  }>|null{
+    const item=this.item;
+    if(!item)return null;
+    const factor=Math.min(1,maxSide/Math.max(item.width,item.height));
+    const previewWidth=Math.max(1,Math.round(item.width*factor)),
+      previewHeight=Math.max(1,Math.round(item.height*factor));
+    let pixels:Uint8ClampedArray|null=null;
+    if(item.pixels.length===item.width*item.height*4){
+      pixels=new Uint8ClampedArray(previewWidth*previewHeight*4);
+      for(let py=0;py<previewHeight;py++){
+        const sy=Math.min(item.height-1,Math.floor((py+.5)*item.height/previewHeight));
+        for(let px=0;px<previewWidth;px++){
+          const sx=Math.min(item.width-1,Math.floor((px+.5)*item.width/previewWidth));
+          const from=(sy*item.width+sx)*4,to=(py*previewWidth+px)*4;
+          pixels.set(item.pixels.subarray(from,from+4),to);
+        }
+      }
+    }
+    return {
+      width:item.width,height:item.height,originX:item.originX,originY:item.originY,
+      previewWidth,previewHeight,pixels,editable:!!item.editable,sourceName:item.sourceName
+    };
+  }
   setSelectionMask(mask:MaskData|null){this.selectionMask=mask;}
   get hasContent(){return this.item!==null;}
   get summary(){return this.item?{
     name:this.item.sourceName,width:this.item.width,height:this.item.height,
     sourceDocumentId:this.item.sourceDocumentId,selected:this.item.selected,merged:this.item.merged,editable:this.item.editable?.layers.length??0,group:this.item.editable?.groups.length!==0&&!!this.item.editable
   }:null;}
-  clear(){this.item=null;}
+  clear(){this.item=null;this.serial++;}
   async copy(controller:EditorController,drawing:BrushSurface,opts:Readonly<{merged:boolean;selectionOnly:boolean;group?:boolean}>){
     const document=controller.document,root=document.root,head=document.head;
     const selection=opts.selectionOnly?drawing.selectedRectangle:null;
@@ -143,7 +173,7 @@ export class ArtworkClipboard {
       originX:area.x,originY:area.y,width:area.width,height:area.height,
       selected:!!selection,merged:opts.merged,pixels,...(editable?{editable}:{})
     };
-    this.item=record;
+    this.item=record;this.serial++;
     return record;
   }
   async cut(controller:EditorController,drawing:BrushSurface){
@@ -190,7 +220,10 @@ export class ArtworkClipboard {
     controller.lastPersistenceHandoff=transaction.commit().persistence;
     return {revision:document.head,layerId:layer.id};
   }
-  async paste(controller:EditorController,placement:'center'|'original'='center'){
+  async paste(
+    controller:EditorController,
+    placement:'center'|'original'|Readonly<{x:number;y:number}>='center'
+  ){
     const record=this.item;
     if(!record)throw Error('先にコピーしてください。');
     const document=controller.document,root=document.root,head=document.head,reference=controller.selectedLayer.id;
@@ -199,8 +232,12 @@ export class ArtworkClipboard {
     if(!record.editable&&record.sourceDocumentId!=='external-image'&&record.sourceDocumentId!==root.documentId&&
       !window.confirm('別の作品から貼り付けます。現段階では画素だけを新しいレイヤーへ移し、元のブラシ履歴・特殊なレイヤー設定は移せません。続けますか？'))
       throw Error('別作品への貼り付けを取り消しました。');
-    const x=placement==='original'?record.originX:Math.round((root.width-record.width)/2);
-    const y=placement==='original'?record.originY:Math.round((root.height-record.height)/2);
+    const custom=typeof placement==='object'?placement:null;
+    if(custom&&(!Number.isSafeInteger(custom.x)||!Number.isSafeInteger(custom.y)||
+      Math.abs(custom.x)>16384||Math.abs(custom.y)>16384))
+      throw Error('貼り付け位置の座標が正しくありません。');
+    const x=custom?custom.x:placement==='original'?record.originX:Math.round((root.width-record.width)/2);
+    const y=custom?custom.y:placement==='original'?record.originY:Math.round((root.height-record.height)/2);
     if(record.editable){
       if(x<0||y<0||x+record.width>root.width||y+record.height>root.height)
         throw Error('編集できるレイヤーを保つには、元作品と同じ大きさ以上のキャンバスに貼り付けてください。');
@@ -294,7 +331,7 @@ export class ArtworkClipboard {
         width:bitmap.width,height:bitmap.height,selected:false,merged:true,
         pixels:data.data.slice()
       };
-      this.item=item;return item;
+      this.item=item;this.serial++;return item;
     }finally{bitmap.close();}
   }
   async writeSystemClipboard():Promise<void>{
