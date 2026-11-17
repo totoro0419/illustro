@@ -20,6 +20,19 @@ describe('C07-003 group transformation geometry',()=>{
    expect(point.y).toBeCloseTo(line.before.y,8);
   }
  });
+ it('rejects invalid bounds and duplicate layers before a grouped edit',()=>{
+  const valid={dx:0,dy:0,sx:1,sy:1,angle:0,interpolation:'bilinear' as const};
+  expect(()=>groupTransformPlan([items[0]!,items[0]!],400,300,valid)).toThrow('重複');
+  expect(()=>groupTransformPlan([
+    {...items[0]!,bounds:{...items[0]!.bounds,x:NaN}},items[1]!
+  ],400,300,valid)).toThrow('範囲');
+  expect(()=>groupTransformPlan([
+    items[0]!,{...items[1]!,bounds:{...items[1]!.bounds,width:Infinity}}
+  ],400,300,valid)).toThrow('範囲');
+  expect(()=>groupTransformPlan([
+    items[0]!,{...items[1]!,bounds:{...items[1]!.bounds,width:-2}}
+  ],400,300,valid)).toThrow('範囲');
+ });
  it('rejects impossible scales and missing layer selection',()=>{
   const valid={dx:0,dy:0,sx:1,sy:1,angle:0,interpolation:'bilinear' as const};
   expect(()=>groupTransformPlan([items[0]!],400,300,valid)).toThrow('2枚以上');
