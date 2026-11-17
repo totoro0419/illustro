@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {quickPinTarget} from './commandPalette';
 import {invokeMacroSequence} from './simpleMacros';
-import {validateShortcutSettings} from './shortcutSettings';
+import {holdRestoreAllowed,validateShortcutSettings} from './shortcutSettings';
 import {validateWorkspaceProfiles} from './workspaceProfiles';
 
 const succeed=(settled:boolean)=>({ok:true,reason:null,settled});
@@ -18,6 +18,20 @@ const layout=()=>({
 });
 const workspaces=(profiles:unknown[])=>({
   schema:'illustro.workspace.profiles',version:1,profiles
+});
+
+describe('C04-001 held-tool and Quick release ordering',()=>{
+  it('unrelated Quick hold does not suppress eraser return after key release',()=>{
+    const latest=new Map([['erase',1],['quickControllerOpen',2]]);
+    const active=new Map<string,unknown>([['quickControllerOpen',{}]]);
+    expect(holdRestoreAllowed('erase',1,active,latest)).toBe(true);
+  });
+  it('a new hold of the same tool suppresses the earlier release',()=>{
+    const latest=new Map([['erase',4]]);
+    expect(holdRestoreAllowed('erase',3,new Map(),latest)).toBe(false);
+    expect(holdRestoreAllowed('erase',4,new Map([['erase',{}]]),latest)).toBe(false);
+    expect(holdRestoreAllowed('erase',4,new Map(),latest)).toBe(true);
+  });
 });
 
 describe('C04 Quick Controller replacement safety',()=>{
