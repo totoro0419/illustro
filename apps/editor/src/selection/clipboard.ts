@@ -12,6 +12,7 @@ import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 import type {SelectionRect} from '../strokeSelection';
 import {type MaskData,rasterizeSelection} from './mask';
 import {runMaskedPixelJob} from './pixels';
+import {forEachPastedTile} from './pasteTiles';
 
 type EditableLayerCopy=Readonly<{layer:LayerNode;pixels:Uint8Array;regionSource?:Readonly<{pixels:Uint8Array;recipe:LineRegions}>;transform?:Readonly<{
   original:Uint8Array;mask:LayerMask|null;deformation:LayerDeformation;
@@ -264,19 +265,13 @@ export class ArtworkClipboard {
     if((x<0||y<0||x+record.width>root.width||y+record.height>root.height)&&
       !window.confirm('貼り付ける画像の一部がキャンバスの外です。はみ出した部分は省いて新しいレイヤーへ貼り付けます。続けますか？'))
       throw Error('貼り付けを取り消しました。');
-    const pixels=new Uint8ClampedArray(root.width*root.height*4);
-    for(let row=0;row<record.height;row++){
-      const dy=y+row;
-      if(dy<0||dy>=root.height)continue;
-      const x0=Math.max(0,x),x1=Math.min(root.width,x+record.width);
-      if(x0>=x1)continue;
-      const srcStart=(row*record.width+x0-x)*4;
-      const destStart=(dy*root.width+x0)*4;
-      pixels.set(record.pixels.subarray(srcStart,srcStart+(x1-x0)*4),destStart);
-    }
+    // Core stores raster pixels by tile. Write exactly the touched tiles,
+    // never create an unnecessary canvas-wide RGBA allocation for a 4px image.
     const tx=document.begin('画像を貼り付ける');
-    const id=tx.addRasterSnapshotAbove(controller.selectedLayer.id,pixels,
-      (record.sourceName||'貼り付け').slice(0,100)+'（貼り付け）',false,false);
+    const id=tx.addRasterLayerAbove(controller.selectedLayer.id,false);
+    tx.renameLayer(id,(record.sourceName||'貼り付け').slice(0,100)+'（貼り付け）');
+    forEachPastedTile(record,{width:root.width,height:root.height},x,y,
+      (tileX,tileY,bytes)=>tx.editTile(id,tileX,tileY,destination=>destination.set(bytes)));
     controller.lastPersistenceHandoff=tx.commit().persistence;
     controller.selectLayer(id);
     return {revision:document.head,layerId:id,x,y};
