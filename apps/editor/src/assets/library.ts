@@ -101,6 +101,49 @@ export async function addAsset(spec:Readonly<{
   if(!check||check.bytes!==entry.bytes||check.version!==entry.version)throw Error('保存した素材を読み戻せませんでした。');
   return assetMetadata(check);
 }
+/**
+ * Import a set of new asset blobs in one IndexedDB transaction.
+ * If any blob cannot be stored, IndexedDB rolls back the entire set.
+ * Caller must reserve unique target IDs; existing assets are NEVER overwritten.
+ */
+export async function addAssetsAtomically(specs:readonly Readonly<{
+  kind:AssetKind;name:string;data:Blob;folder?:string;tags?:readonly string[];
+  license?:string;origin?:string;notes?:string;id:string;parentId?:string;version?:number;
+}>[]):Promise<AssetInfo[]>{
+  if(specs.length>80)throw Error('一度に取り込める素材は80件までです。');
+  const now=Date.now(),ids=new Set<string>(),entries:AssetEntry[]=[];
+  for(const spec of specs){
+    if(typeof spec.id!=='string'||!spec.id||ids.has(spec.id))throw Error('素材の識別番号が重複しています。');
+    if(!ASSET_KINDS.includes(spec.kind)||typeof spec.name!=='string'||!spec.name.trim())
+      throw Error('素材の種類と名前が正しくありません。');
+    if(!(spec.data instanceof Blob)||spec.data.size<1||spec.data.size>MAX_SINGLE)
+      throw Error('素材は1件32MB以下にしてください。');
+    if(spec.version!==undefined&&(!Number.isSafeInteger(spec.version)||spec.version<1))
+      throw Error('素材の版番号が正しくありません。');
+    ids.add(spec.id);
+    entries.push({
+      id:spec.id,kind:spec.kind,name:clean(spec.name),
+      folder:clean(spec.folder??'',80),tags:normalTags(spec.tags??[]),
+      favorite:false,hidden:false,deleted:false,
+      version:spec.version??1,...(spec.parentId?{parentId:spec.parentId}:{}),
+      createdAt:now,updatedAt:now,lastUsedAt:null,
+      mime:spec.data.type||'application/octet-stream',bytes:spec.data.size,
+      license:clean(spec.license??'',200),origin:clean(spec.origin??'',600),
+      notes:clean(spec.notes??'',1200),data:spec.data
+    });
+  }
+  if(!entries.length)return [];
+  await transact<void>('readwrite',(store,metadata,done)=>{
+    for(const entry of entries){
+      // add(), unlike put(), fails if another window has already created the
+      // same ID. The shared transaction then aborts all earlier additions.
+      store.add(entry);
+      metadata.add(assetMetadata(entry));
+    }
+    done(undefined);
+  });
+  return entries.map(assetMetadata);
+}
 export async function updateAsset(assetId:string,change:Readonly<{
   name?:string;folder?:string;tags?:readonly string[];favorite?:boolean;hidden?:boolean;
   license?:string;origin?:string;notes?:string;deleted?:boolean;
