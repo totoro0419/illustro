@@ -94,7 +94,10 @@ describe('C07-011 superseded preview responsiveness',()=>{
     expect(worker.messages).toHaveLength(1);
     worker.respond();
     await first;
-    await vi.waitFor(()=>expect(worker.messages).toHaveLength(1));
+    // Drain the queued continuation before checking that no stale job ran.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(worker.messages).toHaveLength(1);
     runner.dispose();
   });
   it('unblocks an aborted in-flight caller but keeps the next worker reply paired with its request',async()=>{
