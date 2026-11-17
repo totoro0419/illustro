@@ -17,6 +17,20 @@ export type CommandService=Readonly<{
   registerProvider:(provider:()=>readonly CommandDefinition[])=>()=>void;
   refresh:()=>void;
 }>;
+export type LayerCommandSource=Readonly<{
+  layers:()=>readonly Readonly<{id:string;name:string;visible:boolean}>[];
+  selectLayer:(id:string)=>void|Promise<void>;
+}>;
+/** Generate commands from the artwork, not whichever rows the UI happens to show. */
+export function layerCommandsFromArtwork(source:LayerCommandSource):CommandDefinition[]{
+  return source.layers().map(layer=>({
+    id:'layer:'+layer.id,
+    label:layer.name+(layer.visible?'':'（非表示）'),
+    category:'レイヤー',aliases:'描画先 選ぶ '+layer.id,
+    availability:()=>source.layers().some(item=>item.id===layer.id)?null:'このレイヤーはもうありません。',
+    execute:()=>source.selectLayer(layer.id),
+  }));
+}
 type PinState=Readonly<{version:1;slots:readonly string[];names?:readonly string[];groups?:readonly string[]}>;
 const PIN_KEY='illustro.c04.quick-controller.v1';
 const RECENTS_KEY='illustro.c04.command-history.v1';
@@ -51,7 +65,7 @@ const parseRecents=():string[]=>{
   try{const raw=JSON.parse(read(RECENTS_KEY)||'[]') as unknown;return Array.isArray(raw)?raw.filter((s):s is string=>typeof s==='string').slice(0,24):[];}catch{return [];}
 };
 
-export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>,colorState:ForegroundColor):CommandService{
+export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>,colorState:ForegroundColor,layerSource:LayerCommandSource):CommandService{
   const actions:Array<readonly [string,string,string,string]>= [
     ['undo','元に戻す','履歴','Undo 取り消し'],
     ['redo','やり直す','履歴','Redo'],
@@ -148,17 +162,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
         execute:()=>{shell.openBox('brushBox');brush.value=option.value;brush.dispatchEvent(new Event('change',{bubbles:true}));},
       });
     }
-    // Search all layers rather than the filtered/collapsed layer page.
-    const layerRows=document.querySelectorAll<HTMLButtonElement>('#layerList button[data-layer-id]');
-    for(const row of layerRows){
-      const id='layer:'+row.dataset.layerId;
-      if(!row.dataset.layerId)continue;
-      commands.push({
-        id,label:(row.textContent||'レイヤー').trim().slice(0,80),category:'レイヤー',aliases:'描画先 選ぶ '+row.dataset.layerId,
-        availability:()=>row.disabled?'このレイヤーは今選択できません。':null,
-        execute:()=>{shell.setLayerPage(true);row.click();},
-      });
-    }
+    // Includes hidden, filtered, collapsed and unmounted layers. No DOM lookup
+    // can silently drop an artwork layer from the search index.
+    commands.push(...layerCommandsFromArtwork(layerSource));
     return commands;
   }
   let slots=parsePins(),recents=parseRecents(),lastFocus:HTMLElement|null=null,editingSlot:number|null=null;
