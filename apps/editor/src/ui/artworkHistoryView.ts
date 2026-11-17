@@ -6,28 +6,41 @@ import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 // Reuse both completed and in-flight thumbnails. A 4000px preview can otherwise
 // allocate several full-resolution pixel buffers for duplicate concurrent calls.
 const cachedThumbnails=new WeakMap<CoreDocument,Map<RevisionId,Promise<Blob>>>();
+export function historyPreviewDimensions(width:number,height:number,maxWidth:number,maxHeight:number){
+  if(![width,height,maxWidth,maxHeight].every(Number.isFinite)||[width,height,maxWidth,maxHeight].some(v=>v<1))
+    throw new Error('履歴画像の大きさが正しくありません。');
+  const scale=Math.min(1,maxWidth/width,maxHeight/height);
+  return {width:Math.max(1,Math.round(width*scale)),height:Math.max(1,Math.round(height*scale))};
+}
+
+// Full-resolution pixels are rendered exactly once; only the small on-screen image
+// is encoded to PNG. Full-size comparisons remain available on explicit request.
+async function renderHistoryPreview(artwork:CoreDocument,revision:RevisionId,maxWidth:number,maxHeight:number){
+  const frozen=captureExport(artwork,undefined,revision);
+  const pixels=await renderFrozenArtwork(frozen);
+  const {width,height}=historyPreviewDimensions(frozen.width,frozen.height,maxWidth,maxHeight);
+  const bitmap=await createImageBitmap(
+    new ImageData(pixels as Uint8ClampedArray<ArrayBuffer>,frozen.width,frozen.height),
+    {resizeWidth:width,resizeHeight:height,resizeQuality:'high'},
+  );
+  try{
+    const canvas=new OffscreenCanvas(width,height),context=canvas.getContext('2d');
+    if(!context)throw new Error('履歴画像を縮小できません。');
+    context.drawImage(bitmap,0,0);
+    return {blob:await canvas.convertToBlob({type:'image/png'}),width,height};
+  }finally{bitmap.close();}
+}
+
+export function historyComparisonPreview(artwork:CoreDocument,revision:RevisionId){
+  return renderHistoryPreview(artwork,revision,1600,1200);
+}
+
 export async function historyThumbnail(artwork:CoreDocument,revision:RevisionId){
   let cache=cachedThumbnails.get(artwork);
   if(!cache){cache=new Map();cachedThumbnails.set(artwork,cache);}
   const cached=cache.get(revision);
   if(cached)return cached;
-  const thumbnail=(async()=>{
-    const frozen=captureExport(artwork,undefined,revision);
-    const pixels=await renderFrozenArtwork(frozen);
-    const scale=Math.min(1,160/frozen.width,120/frozen.height);
-    const width=Math.max(1,Math.round(frozen.width*scale)),height=Math.max(1,Math.round(frozen.height*scale));
-    // renderFrozenArtwork already returns Uint8ClampedArray. Never duplicate
-    // the full-resolution buffer merely to pass it into ImageData.
-    const bitmap=await createImageBitmap(new ImageData(pixels as Uint8ClampedArray<ArrayBuffer>,frozen.width,frozen.height),{
-      resizeWidth:width,resizeHeight:height,resizeQuality:'medium',
-    });
-    try{
-      const canvas=new OffscreenCanvas(width,height),context=canvas.getContext('2d');
-      if(!context)throw new Error('画像を縮小できません。');
-      context.drawImage(bitmap,0,0);
-      return await canvas.convertToBlob({type:'image/png'});
-    }finally{bitmap.close();}
-  })();
+  const thumbnail=renderHistoryPreview(artwork,revision,160,120).then(result=>result.blob);
   if(cache.size>=24)cache.delete(cache.keys().next().value!);
   cache.set(revision,thumbnail);
   try{return await thumbnail;}
