@@ -6,6 +6,7 @@ import type {MaskData} from '../selection/mask';
 import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} from './geometry';
 import {createTransformPreviewRunner,runTransform} from './run';
 import {progressiveTransformPreviewSize} from './previewQuality';
+import {originalPreviewSize} from './originalPreview';
 import {snapLayout,type SnapTargets} from './layout';
 import {makeLiquifyStroke} from './liquify';
 import {cornersTowardVanishingPoint,rectCorners} from './quadrilateral';
@@ -292,7 +293,9 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   function paintOriginal(){
     const current=source;
     if(!editingOriginal||!current)return;
-    const ratio=Math.min(1,540/Math.max(current.width,current.height));
+    const view=current.drawing.viewportRect;
+    const size=originalPreviewSize(current.width,current.height,view.width,view.height,window.devicePixelRatio||1);
+    const ratio=Math.min(size.width/current.width,size.height/current.height);
     originalCanvas.width=Math.max(1,Math.round(current.width*ratio));
     originalCanvas.height=Math.max(1,Math.round(current.height*ratio));
     const context=originalCanvas.getContext('2d');
@@ -304,7 +307,9 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       scaled.data[at]=input[source]!;scaled.data[at+1]=input[source+1]!;
       scaled.data[at+2]=input[source+2]!;scaled.data[at+3]=input[source+3]!;
     }
-    context.putImageData(scaled,0,0);originalCanvas.hidden=false;
+    context.putImageData(scaled,0,0);
+    originalCanvas.hidden=!!ownedGesture; // The main drawing canvas is now the editor.
+    current.drawing.showArtworkPreview(scaled,true);
   }
   function originalSample(event:PointerEvent):Sample{
     const rect=originalCanvas.getBoundingClientRect(),current=source!;
@@ -330,33 +335,53 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }
   };
   originalCanvas.onpointercancel=()=>{originalPointer=null;originalInput=[];paintOriginal();};
-  originalCanvas.onpointerup=async event=>{
+  async function commitOriginalStroke(input:readonly Sample[]){
     const current=source;
-    if(!current||!editingOriginal||originalPointer!==event.pointerId)return;
-    const input=originalInput;originalPointer=null;originalInput=[];
+    if(!current||!editingOriginal||!input.length||!current.valid())return;
+    if(busy){status.textContent='前の筆を反映しています。';return;}
     const preset=current.drawing.preset;
     if(!preset){status.textContent='先にブラシか消しゴムを選んでください。';return;}
     busy=true;sync();
     try{
       const builder=new CanonicalBuilder(preset,undefined,0,current.originalAlphaLocked?{alphaLocked:true}:{});
       for(const point of input)builder.accept(point);
-      builder.release(originalSample(event));builder.finish();
+      const last=input.at(-1)!;
+      builder.release({...last,phase:'release'});builder.finish();
       const record=builder.record(),prior=originalDraft??current.pixels;
-      const edited=await replayBrushPasses([{selection:null,records:[record]}],current.width,current.height,prior.slice());
-      if(!current.valid()||source!==current||!editingOriginal)throw Error('編集する作品が変わりました。');
-      saveOriginalStep(originalUndo,prior);originalRedo.length=0;originalDraft=edited;paintOriginal();
-      status.textContent='元の絵に反映しました。「変形後の確認」で戻ります。';
-    }catch(error){status.textContent=error instanceof Error?error.message:String(error);paintOriginal();}
-    finally{busy=false;sync();}
+      const edited=await replayBrushPasses([{selection:null,records:[record]}],
+        current.width,current.height,prior.slice());
+      if(!current.valid()||source!==current||!editingOriginal)
+        throw Error('編集する作品が変わりました。');
+      saveOriginalStep(originalUndo,prior);originalRedo.length=0;originalDraft=edited;
+      paintOriginal();status.textContent='元の絵に反映しました。続けて描くか「変形後の確認」で戻れます。';
+    }catch(error){
+      status.textContent=error instanceof Error?error.message:String(error);
+      if(source===current&&editingOriginal)paintOriginal();
+    }finally{busy=false;sync();}
+  }
+  originalCanvas.onpointerup=event=>{
+    if(!editingOriginal||originalPointer!==event.pointerId)return;
+    const input=[...originalInput,originalSample(event)];originalPointer=null;originalInput=[];
+    void commitOriginalStroke(input);
   };
   const openOriginal=button('元の絵に描く',()=>{
     if(!source?.initial||!source.valid())throw Error('変形を保持したレイヤーで「変形を始める」を押してください。');
     if(editingOriginal){
       if(originalPointer!==null)throw Error('ペンを離してから候補を確かめてください。');
-      editingOriginal=false;originalCanvas.hidden=true;status.textContent='変形後の候補を確認できます。';void refreshPreview();
+      editingOriginal=false;stopGesture();originalCanvas.hidden=true;
+      source.drawing.showArtworkPreview(null);
+      status.textContent='変形後の候補を確認できます。';void refreshPreview();
     }else{
-      stopGesture();editingOriginal=true;previewAbort?.abort();source.drawing.showArtworkPreview(null);preview.hidden=true;
-      status.textContent='下の絵は変形前の座標です。現在のブラシか消しゴムで編集できます。';paintOriginal();
+      stopGesture();editingOriginal=true;previewAbort?.abort();
+      source.drawing.showArtworkPreview(null);preview.hidden=true;
+      ownedGesture=source.drawing;
+      ownedGesture.setCanvasEditGesture({
+        path:false,width:Math.max(1,source.drawing.brushSize),color:'#ecad47',
+        complete:()=>{},
+        completeSamples:samples=>{void commitOriginalStroke(samples);}
+      });
+      status.textContent='制作キャンバス上で変形前の元画像を編集できます。現在のブラシや消しゴム、ペンの筆圧が使えます。';
+      paintOriginal();
     }
     sync();
   });

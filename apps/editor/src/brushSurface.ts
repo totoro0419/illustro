@@ -37,6 +37,7 @@ export type InputPointerRole='draw'|'pan'|'sample';
 export type PointerRoleSettings=Readonly<{pen:InputPointerRole;mouse:InputPointerRole}>;
 type CanvasEditGesture=Readonly<{
   path:boolean;width:number;color:string;complete:(points:readonly MaskStrokePoint[])=>void;
+  completeSamples?:(samples:readonly Sample[])=>void;
   pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;commit:(index:number,point:MaskPoint)=>void}>;
 }>;
 
@@ -46,6 +47,7 @@ export class BrushSurface{
   private editPointIndex:number|null=null;
   private editPointerType='';
   private editPoints:MaskStrokePoint[]=[];
+  private editSamples:Sample[]=[];
   private editStrokeOutline:SVGSVGElement|null=null;
   private editOutlineFrame=0;
   private artworkPreview:HTMLCanvasElement|null=null;
@@ -488,7 +490,7 @@ export class BrushSurface{
     this.maskInspection=canvas;
     this.positionDocumentOverlay(canvas);
   }
-  showArtworkPreview(image:ImageData|null){
+  showArtworkPreview(image:ImageData|null,isolated=false){
     if(!image){this.artworkPreview?.remove();this.artworkPreview=null;return;}
     const {width,height}=this.controller.document.root;
     const canvas=this.artworkPreview??document.createElement('canvas');
@@ -496,7 +498,8 @@ export class BrushSurface{
     if(canvas.width!==image.width)canvas.width=image.width;
     if(canvas.height!==image.height)canvas.height=image.height;
     canvas.setAttribute('aria-hidden','true');
-    canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:3;transform-origin:0 0;opacity:.78';
+    canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:3;transform-origin:0 0;'+
+      (isolated?'opacity:1;background:repeating-conic-gradient(#e5e5e5 0% 25%,#fff 0% 50%) 50% / 16px 16px':'opacity:.78');
     canvas.style.width=width+'px';canvas.style.height=height+'px';
     canvas.getContext('2d')?.putImageData(image,0,0);
     if(!this.artworkPreview)this.inputViewport.append(canvas);
@@ -549,6 +552,7 @@ export class BrushSurface{
     this.editPointIndex=null;
     this.editPointerType='';
     this.editPoints=[];
+    this.editSamples=[];
     this.editStrokeOutline?.remove();
     this.editStrokeOutline=null;
   }
@@ -557,8 +561,14 @@ export class BrushSurface{
     const {x,y}=this.view.document(this.pointerLocation(event));
     const pressure=event.pointerType==='pen'?(event.pressure||this.editPoints.at(-1)?.pressure||.5):1;
     const last=this.editPoints.at(-1);
-    if(!last||Math.hypot(x-last.x,y-last.y)>=.5)this.editPoints.push({x,y,pressure});
-    if(this.editPoints.length>4096)this.editPoints=this.editPoints.filter((_,i)=>i%2===0);
+    if(!last||Math.hypot(x-last.x,y-last.y)>=.5){
+      this.editPoints.push({x,y,pressure});
+      if(this.editGesture?.completeSamples)this.editSamples.push(this.sample(event));
+    }
+    if(this.editPoints.length>4096){
+      this.editPoints=this.editPoints.filter((_,i)=>i%2===0);
+      this.editSamples=this.editSamples.filter((_,i)=>i%2===0);
+    }
   }
   private requestEditStrokeOutline(){
     // Coalesce high-frequency pen/touch events into one SVG update per frame.
@@ -623,7 +633,7 @@ export class BrushSurface{
   }
   private finishCanvasEditGesture(event:PointerEvent){
     this.appendEditPoint(event);
-    const gesture=this.editGesture,points=this.editPoints,index=this.editPointIndex;
+    const gesture=this.editGesture,points=this.editPoints,index=this.editPointIndex,samples=this.editSamples;
     this.clearCanvasEditGestureStroke();
     if(gesture?.pointEdit){
       const finalPoint=points.at(-1);
@@ -631,7 +641,8 @@ export class BrushSurface{
       if(this.editGesture?.pointEdit)this.updateEditStrokeOutline();
       return;
     }
-    gesture?.complete(points);
+    if(gesture?.completeSamples)gesture.completeSamples(samples);
+    else gesture?.complete(points);
   }
   private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset)return;
     // Undo can restore a virtual background while it remains selected. Do not
