@@ -16,7 +16,7 @@ export function selectionPreviewCoverage(mask,view,plan,cellX,cellY){
  const doc=toDocument(view,(cellX+.5)/plan.scale,(cellY+.5)/plan.scale);
  const x=Math.floor(doc.x),y=Math.floor(doc.y);
  return x<0||y<0||x>=mask.width||y>=mask.height?0:(mask.alpha[y*mask.width+x]??0)/255;
-}}
+}
 // Screen-to-screen affine reprojection of a pending stroke image. Completed
 // artwork stays on its original high-quality GPU presentation path.
 export function viewAffine(from,to){const map=(x,y)=>{const d=toDocument(from,x,y);return toScreen(to,d.x,d.y);},p=map(0,0),x=map(1,0),y=map(0,1);return [x.x-p.x,x.y-p.y,y.x-p.x,y.y-p.y,p.x,p.y];}
