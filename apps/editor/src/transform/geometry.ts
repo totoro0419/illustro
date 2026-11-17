@@ -79,12 +79,44 @@ function sample(source:Uint8Array,width:number,height:number,x:number,y:number,m
   return [source[at]!*a,source[at+1]!*a,source[at+2]!*a,a];
 }
 
+/** Exact box area coverage for axis-aligned affine shrinking. The work is
+ * proportional to the source pixels covered by each output cell, so a 32x
+ * reduction doesn't silently skip 3 out of 4 source columns as an 8x8
+ * fixed-grid supersample would. No document-sized integral-image buffers. */
+function sampleAreaBox(source:Uint8Array,width:number,height:number,
+ x0:number,y0:number,x1:number,y1:number,mask:MaskData|null):Pixel{
+ const left=Math.min(x0,x1),right=Math.max(x0,x1);
+ const top=Math.min(y0,y1),bottom=Math.max(y0,y1);
+ const area=(right-left)*(bottom-top);
+ if(!Number.isFinite(area)||area<=0)return empty;
+ const startX=Math.max(0,Math.floor(left)),endX=Math.min(width,Math.ceil(right));
+ const startY=Math.max(0,Math.floor(top)),endY=Math.min(height,Math.ceil(bottom));
+ if(startX>=endX||startY>=endY)return empty;
+ let red=0,green=0,blue=0,alpha=0;
+ const inverseArea=1/area;
+ for(let y=startY;y<endY;y++){
+  const overlapY=Math.max(0,Math.min(y+1,bottom)-Math.max(y,top));
+  for(let x=startX;x<endX;x++){
+   const overlapX=Math.max(0,Math.min(x+1,right)-Math.max(x,left));
+   if(overlapX<=0||overlapY<=0)continue;
+   const index=y*width+x,at=index*4;
+   const a=source[at+3]!/255*(mask?mask.alpha[index]!/255:1);
+   const contribution=overlapX*overlapY*inverseArea*a;
+   red+=source[at]!*contribution;
+   green+=source[at+1]!*contribution;
+   blue+=source[at+2]!*contribution;
+   alpha+=contribution;
+  }
+ }
+ return [red,green,blue,alpha];
+}
 export function transformRaster(source:Uint8Array,width:number,height:number,t:Transform,selection:MaskData|null=null,
   previewWidth=width,previewHeight=height,showProtection=false){
   if(source.length!==width*height*4)throw Error('変形する画像の大きさが一致しません。');
   const warp=t.mode==='liquify'?liquifyMapping(t.liquify??[]):null;
   const inverse=warp?.inverse??inverseTransform(t,width,height),out=new Uint8ClampedArray(previewWidth*previewHeight*4);
   const sx=width/previewWidth,sy=height/previewHeight;
+  const exactArea=t.interpolation==='area'&&t.mode==='affine'&&t.angle%360===0&&t.shear===0;
   const read=(x:number,y:number):Pixel=>{
     if(!Number.isFinite(x)||!Number.isFinite(y))return empty;
     if(t.interpolation==='nearest')return sample(source,width,height,x,y,selection);
@@ -103,12 +135,18 @@ export function transformRaster(source:Uint8Array,width:number,height:number,t:T
   for(let y=0;y<previewHeight;y++)for(let x=0;x<previewWidth;x++){
     const px=(x+.5)*sx,py=(y+.5)*sy,index=(y*previewWidth+x)*4;
     let red=0,green=0,blue=0,alpha=0;
-    for(const oy of area)for(const ox of area){
-      const p=inverse(px+ox*sx,py+oy*sy),value=read(p.x,p.y);
-      red+=value[0];green+=value[1];blue+=value[2];alpha+=value[3];
+    if(exactArea){
+      const topLeft=inverse(px-sx/2,py-sy/2),bottomRight=inverse(px+sx/2,py+sy/2);
+      const value=sampleAreaBox(source,width,height,topLeft.x,topLeft.y,bottomRight.x,bottomRight.y,selection);
+      red=value[0];green=value[1];blue=value[2];alpha=value[3];
+    }else{
+      for(const oy of area)for(const ox of area){
+        const p=inverse(px+ox*sx,py+oy*sy),value=read(p.x,p.y);
+        red+=value[0];green+=value[1];blue+=value[2];alpha+=value[3];
+      }
+      const n=area.length**2;
+      red/=n;green/=n;blue/=n;alpha/=n;
     }
-    const n=area.length**2;
-    red/=n;green/=n;blue/=n;alpha/=n;
     if(selection){
       const base=sample(source,width,height,px,py,null);
       const amount=selection.alpha[Math.floor(py)*width+Math.floor(px)]!/255;
