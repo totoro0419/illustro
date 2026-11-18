@@ -32,7 +32,7 @@ export function applyTextSelectionStyle(
    const old=ranges.find(r=>r.start<=a&&r.end>=b);
    const covered=a>=start&&b<=end;
    if(!old&&!covered)continue;
-   const next=covered?(clear?{}:{...old,...patch}):old??{};
+   const next:Readonly<{color?:string;size?:number}>=covered?(clear?{}:{...old,...patch}):old??{};
    if(next.color!==undefined||next.size!==undefined)result.push({
      start:a,end:b,
      ...(next.color!==undefined?{color:next.color}:{}),
