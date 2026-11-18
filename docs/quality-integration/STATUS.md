@@ -646,3 +646,13 @@ GitHubの各PRメタデータ、全12件の変更ファイル、各HEADに結び
 - 最終HEAD `0970cb1b9eb993785f8cbbc512d0e8f77aebb5c3` の [統合CI #44219244865](https://github.com/totoro0419/illustro/actions/runs/44219244865) は **success**。ジョブのCore/Brush/Editorテスト、型検査、Editor本番ビルドの各ステップもsuccess。[Core CI #44219251079](https://github.com/totoro0419/illustro/actions/runs/44219251079) もsuccess。ただし旧`prep:check`は従来の未分類ドキュメントに起因する診断失敗を含み、**prep:check自体のPASSとは扱わない**。
 - 11月18日作成の新規PRは **0件**。12担当PRは既に **12/12統合済み**、PR #75と原調査PR #73は **Draft・未マージ**。PR #73の原調査9ファイル・129件のID・A/B/C確度（81/29/19）は改変しない。`main` のHEADは `bdc7135b51033982d90ea5dad104bb04fc107df2` から変更なし。
 - **独立解決確認0/129件**。Androidペン/指、4000×4000、画素一致、旧作品の保存復元は未検証。今回の新規PRマージはなし。共有変更の内容と検査は [Issue #74の既存報告](https://github.com/totoro0419/illustro/issues/74#issuecomment-6966672250) に記録済みのため重複コメントは行わない。
+
+## 2026-11-18 15時台 JST — C08/C09/C10追加修正の統合監視（第11回）
+
+- 前回記録HEAD [`9b154d7b`](https://github.com/totoro0419/illustro/commit/9b154d7b1dbce72b72d2e97b91449343c931e660) → 最新実装HEAD [`6fbb3908`](https://github.com/totoro0419/illustro/commit/6fbb3908b7c9a09dd10f44ea5a2ac517580d23aa) は、GitHub比較で **12コミット・8ファイル変更**（ahead=12、behind=0）。新規PRのマージではなく、統合ブランチへの追加実装コミット。今回の差分に `apps/editor/src/main.ts`、`docs/quality-audit/`、`docs/quality-integration/` は含まれない。
+- **C08-001/014**：`fill/pixels.ts` に自動隙間接続と局所候補の誤接続防止を追加。2つの線端の間の周辺に第3の線が近接する場合を拒否する。安全な線端の接続を維持する回帰テストを追加。**C08-013**：三重・離散閉領域の分類テストを追加。多様な線画での完全保証や実機での候補精度は未確認。
+- **C09-013**：`artwork/gradientDistance.ts` と `artwork/render.ts` で、形状追従グラデーションの境界距離を縦横別の縮小倍率に基づく作品画素単位へ修正。縦横の縮小率が異なる場合のテスト追加。**C10-012**：`artwork/textPlacement.ts` を共通化し、通常文字と輪郭化の行頭・行送り・縦書きセル位置の式を揃える。フォント差を含む最終画素一致は未検証。
+- 最終コードHEAD `6fbb3908` の [統合CI #44251968962](https://github.com/totoro0419/illustro/actions/runs/44251968962) は **completed/success**。Coreテスト/型検査、Brush回帰、Editor単体テスト、Editor TypeScript/本番ビルドの各ステップがsuccess。[Core CI #44251976551](https://github.com/totoro0419/illustro/actions/runs/44251976551) もsuccess。旧`prep:check`の未分類文書に起因する診断失敗は継続し、**prep:check自体のPASSではない**。
+- 新規実装PR **0件**、既存12担当PRは **12/12件統合済み**。PR #75とPR #73はDraft・未マージ。PR #73の原調査9ファイル、129件の問題ID、元A/B/C確度を保護。 `main` は `bdc7135b` のまま。
+- **独立解決確認0/129件**。Androidペン/指、4000×4000画素、プレビューと確定画素の一致、旧作品の保存復元・Undo/Redo実機検査は未完了。今回の差分は自動検査成功までで、全件解決とは判定しない。
+- [Issue #74の既存コメント](https://github.com/totoro0419/illustro/issues/74#issuecomment-6971098992) と [Issue #92の実装報告](https://github.com/totoro0419/illustro/issues/92#issuecomment-6971092787) に同一HEADの変更・検査・未完了条件が記録済みのため、重複投稿は行わない。追加PRマージ、`main`・公開アプリ・過去ブランチの変更なし。
