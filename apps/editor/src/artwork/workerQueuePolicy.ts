@@ -7,3 +7,9 @@ export function artworkQueuePosition(priorities:readonly ArtworkPriority[],prior
   const firstPreview=priorities.indexOf('preview');
   return firstPreview<0?priorities.length:firstPreview;
 }
+
+/** Non-text artwork also needs a main-canvas fallback when Worker startup or
+ * OffscreenCanvas rendering fails. Never restart a canceled task. */
+export function artworkWorkerFallbackAllowed(kind:'path'|'gradient'|'text',workerText:boolean,aborted:boolean):boolean{
+  return !aborted&&(kind!=='text'||workerText);
+}

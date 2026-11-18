@@ -4,7 +4,7 @@ import {ensureFont,artworkWorkerFont} from './fonts';
 import type {ArtworkWorkerFont} from './workerFonts';
 import {textFontAssetIds} from './textStyles';
 import {canRenderTextInArtworkWorker} from './textWorkerSafety';
-import {artworkQueuePosition,type ArtworkPriority} from './workerQueuePolicy';
+import {artworkQueuePosition,artworkWorkerFallbackAllowed,type ArtworkPriority} from './workerQueuePolicy';
 
 // Keep a small number of drawing workers alive. Creating one for every preview
 // causes repeated startup and can overload the browser during rapid edits.
@@ -107,7 +107,7 @@ export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortS
     pending.splice(artworkQueuePosition(pending.map(item=>item.priority),task.priority),0,task);
     pumpArtwork();
   }).catch(error=>{
-    if(!workerText||signal?.aborted)throw error;
+    if(!artworkWorkerFallbackAllowed(job.content.kind,workerText,!!signal?.aborted))throw error;
     // Unsupported worker FontFace loading falls back to the already loaded
     // document face, never to a substitute font.
     // Fall back to the original compatible main-thread renderer.
