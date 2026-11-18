@@ -82,6 +82,7 @@ export class MaskRasterWorker{
   brush(previous:MaskData|null,width:number,height:number,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings){
     return this.execute(width,height,'brush',{previous,brushPoints:points,brushSettings:settings});
   }
+  get supportsBrushPreview(){return this.worker!==null;}
   brushPreview(liveKey:string,previous:MaskData|null,width:number,height:number,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings){
     if(!this.worker)return Promise.reject(Error('選択ブラシの途中計算を使えません。'));
     const id=++this.nextId,initialize=this.liveKey!==liveKey;

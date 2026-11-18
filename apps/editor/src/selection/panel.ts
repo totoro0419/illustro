@@ -235,8 +235,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const hardness=Number(brushHardness.value)/100;
     const doc=callbacks.getDocument();
     const settings={size,opacity,hardness,mode:tool==='brushAdd'?'add' as const:'subtract' as const};
+    if(!raster.supportsBrushPreview&&liveBrushKey)stopBrushPreview();
     const short=doc&&!liveBrushKey?selectionBrushPreviewRaster(active,brushPoints,settings,doc.width,doc.height):null;
-    const exact=short??(doc?workerBrushPreview(doc,settings):null);
+    const exact=short??(doc&&raster.supportsBrushPreview?workerBrushPreview(doc,settings):null);
     if(exact&&showSelection.checked){
       if(brushRaster.width!==exact.width)brushRaster.width=exact.width;
       if(brushRaster.height!==exact.height)brushRaster.height=exact.height;

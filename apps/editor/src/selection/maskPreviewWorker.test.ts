@@ -8,6 +8,7 @@ it('sends the original mask once, routes preview replies separately, and release
   constructor(){worker=this;}
  });
  const runner=new MaskRasterWorker(),prior={width:2,height:2,alpha:new Uint8Array([30,60,90,120])};
+ expect(runner.supportsBrushPreview).toBe(true);
  const settings={size:4,opacity:.4,hardness:.5,mode:'add' as const},points=[{x:1,y:1,pressure:.5}];
  const preview={x:0,y:0,width:2,height:2,alpha:new Uint8Array([4,8,16,32]),scaleX:1,scaleY:1};
  const first=runner.brushPreview('stroke',prior,2,2,points,settings);
@@ -26,4 +27,9 @@ it('sends the original mask once, routes preview replies separately, and release
  const pending=runner.brushPreview('next',prior,2,2,points,settings);
  expect(worker!.postMessage.mock.calls[3]![0].initialize).toBe(true);
  runner.destroy();await expect(pending).rejects.toThrow('終了');
+ expect(runner.supportsBrushPreview).toBe(false);
+});
+it('keeps small exact previews available when workers cannot start',()=>{
+ vi.stubGlobal('Worker',class{constructor(){throw Error('unavailable');}});
+ const runner=new MaskRasterWorker();expect(runner.supportsBrushPreview).toBe(false);runner.destroy();
 });
