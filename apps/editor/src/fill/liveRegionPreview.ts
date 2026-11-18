@@ -29,14 +29,17 @@ export function addTraceRegions(
 
 /** Downsample just the region labels, never allocate a full-resolution overlay. */
 export function renderLiveRegionPreview(
- graph:RegionGraph,selected:ReadonlySet<number>,maxDimension=512
+ graph:RegionGraph,selected:ReadonlySet<number>,maxDimension=512,
+ reuse?:Uint8ClampedArray<ArrayBuffer>
 ):LiveRegionPreview{
  if(!Number.isSafeInteger(graph.width)||!Number.isSafeInteger(graph.height)||
     graph.width<1||graph.height<1||!Number.isSafeInteger(maxDimension)||maxDimension<1||maxDimension>1024)
    throw Error('塗りの仮表示を作れません。');
  const scale=Math.min(1,maxDimension/Math.max(graph.width,graph.height));
  const width=Math.max(1,Math.round(graph.width*scale)),height=Math.max(1,Math.round(graph.height*scale));
- const pixels=new Uint8ClampedArray(width*height*4);
+ const pixels=reuse?.length===width*height*4?reuse:new Uint8ClampedArray(width*height*4);
+ // An existing canvas buffer is reused across animation frames to avoid GC.
+ pixels.fill(0);
  if(!selected.size)return {width,height,pixels};
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
    const sourceIndex=Math.floor(y*graph.height/height)*graph.width+Math.floor(x*graph.width/width);
