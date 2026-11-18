@@ -89,6 +89,27 @@ describe('C08 fill boundaries and destination gating',()=>{
     for(let x=4;x<=8;x++)expect(result.bridges[4*w+x]).toBe(0);
     expect(result.walls[3*w+6]).toBe(1);
   });
+  it('does not auto-connect two gaps that cross an already proposed bridge',()=>{
+    const w=15,h=15,data=image(w,h);
+    for(const x of [1,2,3,9,10,11])setPixel(data,w,x,7,[0,0,0,255]);
+    for(const y of [2,3,4,10,11,12])setPixel(data,w,6,y,[0,0,0,255]);
+    const result=fillBoundaries(data,w,h,15,6);
+    const horizontal=[4,5,6,7,8].every(x=>result.bridges[7*w+x]===1);
+    const vertical=[5,6,7,8,9].every(y=>result.bridges[y*w+6]===1);
+    expect(Number(horizontal)+Number(vertical)).toBe(1);
+    expect(result.candidates).toHaveLength(1);
+  });
+  it('never applies untracked bridges after the 4096-candidate review limit',()=>{
+    const w=12,lines=4100,h=lines*4+3,data=image(w,h);
+    for(let line=0;line<lines;line++){
+      const y=2+line*4;
+      for(const x of [1,2,3,6,7,8])setPixel(data,w,x,y,[0,0,0,255]);
+    }
+    const result=fillBoundaries(data,w,h,15,2);
+    expect(result.candidates).toHaveLength(4096);
+    expect(result.bridges[(2+4095*4)*w+4]).toBe(1);
+    expect(result.bridges[(2+4099*4)*w+4]).toBe(0);
+  });
   it('still connects two isolated opposite tips with no third line beside the gap',()=>{
     const w=15,h=9,data=image(w,h);
     for(const x of [1,2,3,9,10,11])setPixel(data,w,x,4,[0,0,0,255]);
