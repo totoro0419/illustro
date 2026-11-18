@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type LayerId} from '@illustro/core';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -54,6 +54,31 @@ describe('C09-004 area-averaged rectangular mask previews',()=>{
     expect(rectanglePreviewCoverage({...mask,inverted:true},0,0,2,2)).toBeCloseTo(.875);
     expect(rectanglePreviewCoverage(mask,2,2,4,4)).toBeCloseTo(.5);
     expect(rectanglePreviewCoverage({...mask,inverted:true},2,2,4,4)).toBeCloseTo(1);
+  });
+});
+
+describe('C09-004 exact small path coverage at low zoom',()=>{
+  it('keeps a subpixel triangular selection that the center sample misses',()=>{
+    const mask={shape:'path',points:[{x:.2,y:.2},{x:.7,y:.2},{x:.2,y:.7}],
+      enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray(2*2*4);
+    for(let i=0;i<4;i++)pixels.set([12,34,56,200],i*4);
+    applyShapePreviewMask(pixels,mask,4,4,2,2);
+    // Triangle area is 0.125 document pixels; preview pixel covers 4.
+    expect(pixels[3]).toBe(6);
+    expect([pixels[7],pixels[11],pixels[15]]).toEqual([0,0,0]);
+    expect(Array.from(pixels.slice(0,3))).toEqual([12,34,56]);
+    expect(smallPathPreviewCoverage(mask,0,0,2,2)).toBeCloseTo(.125/4,9);
+  });
+  it('respects even-odd fill for self-crossing paths and inverted density',()=>{
+    const mask={shape:'path',points:[{x:0,y:0},{x:2,y:2},{x:0,y:2},{x:2,y:0}],
+      enabled:true,inverted:false,density:1} as const;
+    expect(smallPathPreviewCoverage(mask,0,0,2,2)).toBeCloseTo(.5,9);
+    expect(smallPathPreviewCoverage({...mask,inverted:true},0,0,2,2)).toBeCloseTo(.5,9);
+    expect(smallPathPreviewCoverage({...mask,density:.5},0,0,2,2)).toBeCloseTo(.75,9);
+    expect(smallPathPreviewCoverage({...mask,inverted:true,density:.5},0,0,2,2)).toBeCloseTo(.75,9);
+    expect(smallPathPreviewCoverage(mask,3,3,4,4)).toBe(0);
+    expect(smallPathPreviewCoverage({...mask,inverted:true},3,3,4,4)).toBe(1);
   });
 });
 
