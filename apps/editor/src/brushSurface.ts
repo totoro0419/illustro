@@ -8,6 +8,7 @@ import {EmptyStrokeError} from './strokeCommit';
 import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {captureSelectedLayerTiles} from './selection/tileCapture';
+import {selectedStrokeMayAffectMask} from './selection/maskStrokeBounds';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {originalVisibleWithTransformPreview} from './transform/previewReplacement';
 import {averageSampledPixels} from './color/sampleAverage';
@@ -981,6 +982,12 @@ export class BrushSurface{
         ...(index?[variant]:[]),...wrappedCopies(variant,target.width,target.height).map(copy=>copy.record)
       ]):variants.slice(1);
       const records=[record,...copies];
+      // Reject only strokes that provably cannot touch any selected pixel.
+      // This avoids a full occupied-tile GPU readback for a no-op stroke.
+      if(!selectedStrokeMayAffectMask(mask,records)){
+        this.status('選択範囲の外のため、線は追加されませんでした。');
+        return;
+      }
       const host=renderer as unknown as Parameters<typeof captureSelectedLayerTiles>[0];
       const sparse=typeof host.inspect==='function'&&typeof host.backend?.readTiles==='function';
       // Keep the compatible full-frame path for a non-Worker renderer. On the
