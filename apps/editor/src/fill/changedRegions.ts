@@ -28,7 +28,8 @@ export function updateChangedRegions(graph:RegionGraph,points:readonly Point[],r
        if(other>=0&&graph.labels[other])affected[graph.labels[other]!]=1;
    }
  }
- if(!changes.size)return null;
+ // A valid no-op must not trigger an expensive full-canvas rebuild.
+ if(!changes.size)return graph;
  const walls=owned?graph.walls:graph.walls.slice(),labels=owned?graph.labels:graph.labels.slice();
  for(const at of changes){walls[at]=remove?0:1;labels[at]=0;}
  const eligible=(at:number)=>!walls[at]&&labels[at]!<=count&&

@@ -47,6 +47,12 @@ describe('C08-015 changed-component region relabeling',()=>{
    if(result)compare(result,full);else expect(full.walls).toEqual(before.walls);
   }
  });
+ it('returns the unchanged graph for a valid no-op instead of rebuilding all regions',()=>{
+  const before=buildRegions(image(9,9,()=>false),9,9,15,0,[]);
+  expect(updateChangedRegions(before,[{x:4,y:4}],true)).toBe(before);
+  const ink=buildRegions(image(9,9,(x,y)=>x===4&&y===4),9,9,15,0,[]);
+  expect(updateChangedRegions(ink,[{x:4,y:4}],false)).toBe(ink);
+ });
  it('reuses owned worker buffers and rejects bridge edits or invalid points',()=>{
   const before=buildRegions(image(9,9,()=>false),9,9,15,0,[]);
   const result=updateChangedRegions(before,[{x:4,y:4}],false,true)!;

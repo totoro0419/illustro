@@ -382,6 +382,18 @@ export function colorMask(target:Uint8Array|null,mask:MaskData,settings:FillSett
   return result;
 }
 
+/** Only pixels inside the fill mask can differ from the original layer.
+ * Avoid a four-channel full-canvas comparison for every 4K fill operation. */
+export function hasFillPixelChanges(result:Uint8ClampedArray,target:Uint8Array|null,mask:MaskData):boolean{
+ for(let i=0;i<mask.alpha.length;i++){
+   if(!mask.alpha[i])continue;
+   const p=i*4;
+   if(result[p]!== (target?.[p]??0)||result[p+1]!== (target?.[p+1]??0)||
+      result[p+2]!== (target?.[p+2]??0)||result[p+3]!== (target?.[p+3]??0))return true;
+ }
+ return false;
+}
+
 export function paintColorHints(graph:RegionGraph,hints:readonly ColorHint[],target:Uint8Array|null,
   selection:MaskData|null,settings:FillSettings,alphaLocked:boolean){
   const {width,height,labels}=graph,assignments=new Map<number,number>(),colors=hints.map(hint=>{

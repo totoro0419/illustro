@@ -49,6 +49,22 @@ describe('C08-003 incremental region preview',()=>{
    expect(cleared.pixels[3]).toBe(0);
    expect(cleared.pixels[(3*6+5)*4+3]).toBeGreaterThan(0);
  });
+ it('samples the same narrow diagonal trace pixels as the final line fill',()=>{
+  const labels=new Uint32Array(4*4);
+  labels[4]=1; // (0,1) is crossed only by the final two-samples-per-pixel path.
+  const narrow={...graph,width:4,height:4,labels,anchors:Uint32Array.of(0,4),count:1};
+  const picked=new Set<number>();
+  addTraceRegions(narrow,{x:0,y:0},{x:1,y:1.5},1,false,picked);
+  expect([...picked]).toEqual([1]);
+ });
+ it('keeps a one-pixel region visible when 4K thumbnail samples miss it',()=>{
+  const labels=new Uint32Array(64);
+  labels[0]=1;
+  const narrow={...graph,width:8,height:8,labels,anchors:Uint32Array.of(0,0),count:1};
+  const preview=renderLiveRegionPreview(narrow,new Set([1]),1);
+  expect([preview.width,preview.height]).toEqual([1,1]);
+  expect(preview.pixels[3]).toBe(32);
+ });
  it('does not include absent or non-finite pointer seeds',()=>{
   const picked=new Set<number>();
   addTraceRegions(graph,{x:NaN,y:0},{x:Infinity,y:0},1,false,picked);
