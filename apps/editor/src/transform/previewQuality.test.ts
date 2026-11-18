@@ -1,5 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {progressiveTransformPreviewSize} from './previewQuality';
+import {initialTransform,transformRaster} from './geometry';
 
 describe('C07-001 progressive viewport preview quality',()=>{
  it('uses a sharper preview for large artworks without allocating a 4000px screen-sized buffer',()=>{
@@ -19,5 +20,17 @@ describe('C07-001 progressive viewport preview quality',()=>{
  it('rejects impossible artwork dimensions',()=>{
   expect(()=>progressiveTransformPreviewSize(0,4000,500,500)).toThrow('大きさ');
   expect(()=>progressiveTransformPreviewSize(4000,NaN,500,500)).toThrow('大きさ');
+ });
+});
+
+
+describe('C07-014 exact area shrink on sparse artwork',()=>{
+ it('preserves a single opaque ink pixel without leaking hidden transparent RGB',()=>{
+  const source=new Uint8Array(8*8*4);
+  source.set([255,0,0,255],0);
+  source.set([0,255,0,0],(1*8+1)*4);
+  const result=transformRaster(source,8,8,{...initialTransform,interpolation:'area'},null,2,2);
+  expect([...result.slice(0,4)]).toEqual([255,0,0,16]);
+  expect([...result.slice(4)]).toEqual(Array.from({length:12},()=>0));
  });
 });
