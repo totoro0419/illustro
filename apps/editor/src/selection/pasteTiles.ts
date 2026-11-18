@@ -23,16 +23,22 @@ export function forEachPastedTile(
     for(let tx=Math.floor(left/TILE);tx<=Math.floor((right-1)/TILE);tx++){
       const x0=Math.max(left,tx*TILE),x1=Math.min(right,(tx+1)*TILE);
       const y0=Math.max(top,ty*TILE),y1=Math.min(bottom,(ty+1)*TILE);
-      const tile=new Uint8Array(TILE*TILE*4);
+      // Skip allocating a full tile for an entirely empty clipboard area.
+      // All RGBA channels matter: even alpha-zero RGB is preserved bytewise.
       let nonzero=false;
       for(let y=y0;y<y1;y++){
-        const src=((y-offsetY)*source.width+x0-offsetX)*4,
-          dest=((y-ty*TILE)*TILE+x0-tx*TILE)*4;
-        const scan=source.pixels.subarray(src,src+(x1-x0)*4);
-        tile.set(scan,dest);
-        if(!nonzero)nonzero=scan.some(byte=>byte!==0);
+        const from=((y-offsetY)*source.width+x0-offsetX)*4;
+        if(source.pixels.subarray(from,from+(x1-x0)*4).some(byte=>byte!==0)){
+          nonzero=true;break;
+        }
       }
       if(!nonzero)continue;
+      const tile=new Uint8Array(TILE*TILE*4);
+      for(let y=y0;y<y1;y++){
+        const from=((y-offsetY)*source.width+x0-offsetX)*4,
+          dest=((y-ty*TILE)*TILE+x0-tx*TILE)*4;
+        tile.set(source.pixels.subarray(from,from+(x1-x0)*4),dest);
+      }
       apply(tx,ty,tile);count++;
     }
   return count;

@@ -43,6 +43,26 @@ describe('C06-015 tile-bounded clipboard paste',()=>{
       -1,-1,(_,__,bytes)=>{tile=bytes;});
     expect(Array.from(tile!.subarray(0,4))).toEqual([10,11,12,255]);
   });
+  it('skips empty regions of a sparse 4K clipboard image',()=>{
+    const pixels=new Uint8Array(4000*4000*4);
+    pixels.set([12,34,56,255],(3100*4000+3000)*4);
+    const touched:string[]=[];
+    const count=forEachPastedTile({width:4000,height:4000,pixels},
+      {width:4000,height:4000},0,0,(x,y,bytes)=>{
+        touched.push(x+','+y);
+        const offset=((3100%TILE)*TILE+3000%TILE)*4;
+        expect(Array.from(bytes.subarray(offset,offset+4))).toEqual([12,34,56,255]);
+      });
+    expect(count).toBe(1);
+    expect(touched).toEqual([Math.floor(3000/TILE)+','+Math.floor(3100/TILE)]);
+  });
+  it('preserves nonzero RGB data with zero alpha',()=>{
+    let output:Uint8Array|undefined;
+    const count=forEachPastedTile({width:1,height:1,pixels:Uint8Array.of(91,42,17,0)},
+      {width:4000,height:4000},0,0,(_x,_y,bytes)=>{output=bytes;});
+    expect(count).toBe(1);
+    expect(Array.from(output!.subarray(0,4))).toEqual([91,42,17,0]);
+  });
   it('skips fully zero tiles and rejects broken input sizes',()=>{
     let called=0;
     expect(forEachPastedTile({width:1,height:1,pixels:new Uint8Array(4)},
