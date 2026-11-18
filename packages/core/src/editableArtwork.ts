@@ -95,7 +95,7 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
       (boxHeight!==undefined&&!numeric(boxHeight,1,32768)))throw invalid();
     const styles:TextStyleRange[]=[];
     if(styleRanges!==undefined){
-      if(!Array.isArray(styleRanges)||styleRanges.length>512)throw invalid();
+      if(!Array.isArray(styleRanges)||styleRanges.length>text.length)throw invalid();
       let previousEnd=0;
       const boundary=(offset:number)=>offset===0||offset===text.length||
         !(text.charCodeAt(offset-1)>=0xd800&&text.charCodeAt(offset-1)<=0xdbff&&
