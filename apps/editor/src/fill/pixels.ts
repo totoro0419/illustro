@@ -146,6 +146,9 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
     return true;
   };
   const connect=(x:number,y:number,dx:number,dy:number)=>{
+    // Dense line art may hit the bounded review budget early. No further
+    // scan can produce a reviewable bridge after that point.
+    if(candidates.length>=4096)return;
     let from:Point|null=null,steps=0;
     while(x>=0&&y>=0&&x<width&&y<height){
       if(original[y*width+x]){
@@ -178,10 +181,17 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
     }
   };
   if(radius){
-    for(let x=0;x<width;x++){connect(x,0,0,1);connect(x,0,1,1);connect(x,0,-1,1);}
+    // At gap=1, diagonal tips separated by even one missing pixel are
+    // 2*sqrt(2) apart, exceeding the allowed radius+1=2. Skip four
+    // full-canvas diagonal scans that cannot produce a valid repair.
+    const diagonals=radius>1;
+    for(let x=0;x<width;x++){
+      connect(x,0,0,1);
+      if(diagonals){connect(x,0,1,1);connect(x,0,-1,1);}
+    }
     for(let y=0;y<height;y++){
       connect(0,y,1,0);
-      if(y){connect(0,y,1,1);connect(width-1,y,-1,1);}
+      if(y&&diagonals){connect(0,y,1,1);connect(width-1,y,-1,1);}
     }
   }
   for(const {remove,preserveInk,points} of manual){
