@@ -1,6 +1,14 @@
 import type {Point} from '../transform/geometry';
 import type {RegionGraph} from './pixels';
 
+// Editing beside an automatically generated bridge can change its validity.
+// The fast path cannot recompute gap proposals, so let the full analyzer decide.
+function touchesSuggestedBridge(bridges:Uint8Array,width:number,at:number):boolean{
+ for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)
+   if(bridges[at+dy*width+dx])return true;
+ return false;
+}
+
 /** A deliberately conservative fast path for adding walls inside an existing
  * region. If the new wall could split/merge any component, touch the exterior,
  * change an automatically suggested bridge or invalidate a label anchor,
@@ -31,7 +39,7 @@ export function tryIncrementalBoundaryAddition(
      if(x<=1||y<=1||x>=width-2||y>=height-2)return null;
      const at=y*width+x;
      if(walls[at]||scheduled.has(at))continue;
-     if(bridges[at]||!labels[at])return null;
+     if(touchesSuggestedBridge(bridges,width,at)||!labels[at])return null;
      const id=labels[at]!;
      if(region&&id!==region)return null;
      region=id;
@@ -93,7 +101,7 @@ export function tryIncrementalBoundaryRemoval(graph:RegionGraph,points:readonly 
      if(x<=1||y<=1||x>=width-2||y>=height-2)return null;
      const at=y*width+x;
      if(!wallAt(at))continue;
-     if(bridges[at]||removed.size>=8192)return null;
+     if(touchesSuggestedBridge(bridges,width,at)||removed.size>=8192)return null;
      const adjacent=[at-1,at+1,at-width,at+width].filter(index=>!wallAt(index));
      const id=adjacent.length?labelAt(adjacent[0]!):0;
      if(!id||adjacent.some(index=>labelAt(index)!==id))return null;
