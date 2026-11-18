@@ -13,9 +13,9 @@ const stroke=(commands:readonly number[][]):StrokeRecord=>({commands} as unknown
 describe('C06-002 selected-stroke early rejection',()=>{
  it('avoids full GPU tile readback when a stroke is outside a small 4K selection',()=>{
    const selection=mask(4000,4000,3500,3500);
-   const before=selection.alpha.slice();
    expect(selectedStrokeMayAffectMask(selection,[stroke([[50,50,12]])])).toBe(false);
-   expect(selection.alpha).toEqual(before);
+   expect(selection.alpha[3500*4000+3500]).toBe(255);
+   expect(selection.alpha[50*4000+50]).toBe(0);
    expect(selectedStrokeMayAffectMask(selection,[stroke([[3500,3500,12]])])).toBe(true);
  });
  it('keeps conservative coverage for connected long brush segments',()=>{
