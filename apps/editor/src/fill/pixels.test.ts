@@ -102,14 +102,14 @@ describe('C08 fill boundaries and destination gating',()=>{
   it('repairs a one-pixel horizontal gap without unnecessary diagonal scanning',()=>{
     const w=9,h=9,horizontal=image(w,h),diagonal=image(w,h);
     for(const x of [1,2,4,5])setPixel(horizontal,w,x,4,[0,0,0,255]);
-    for(const [x,y] of [[1,1],[2,2],[4,4],[5,5]])
+    for(const [x,y] of [[1,1],[2,2],[4,4],[5,5]] as const)
       setPixel(diagonal,w,x,y,[0,0,0,255]);
     expect(fillBoundaries(horizontal,w,h,15,1).bridges[4*w+3]).toBe(1);
     expect(fillBoundaries(diagonal,w,h,15,1).bridges.some(Boolean)).toBe(false);
   });
   it('preserves a genuine diagonal repair between aligned diagonal tips',()=>{
     const w=11,h=11,data=image(w,h);
-    for(const [x,y] of [[1,1],[2,2],[3,3],[6,6],[7,7],[8,8]])
+    for(const [x,y] of [[1,1],[2,2],[3,3],[6,6],[7,7],[8,8]] as const)
       setPixel(data,w,x,y,[0,0,0,255]);
     const result=fillBoundaries(data,w,h,15,4);
     expect(result.bridges[4*w+4]).toBe(1);
