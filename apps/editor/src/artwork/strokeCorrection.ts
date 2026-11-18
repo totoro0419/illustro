@@ -27,7 +27,7 @@ export function correctionGeometry(points:readonly ArtPoint[],shape:CandidateSha
   if(shape==='rectangle')return [
     {x:minX,y:minY},{x:maxX,y:minY},{x:maxX,y:maxY},{x:minX,y:maxY}
   ];
-  const cx=(minX+maxX)/2,cy=(minY+maxY)/2,w=maxX-minX,h=maxY-minY;
+  const cx=(minX+maxX)/2,cy=(minY+maxY)/2,w=Math.max(1,maxX-minX),h=Math.max(1,maxY-minY);
   return Array.from({length:64},(_,i)=>{
     const angle=2*Math.PI*i/64;
     return {x:cx+w/2*Math.cos(angle),y:cy+h/2*Math.sin(angle)};
