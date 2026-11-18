@@ -99,6 +99,15 @@ describe('C08 fill boundaries and destination gating',()=>{
     expect(Number(horizontal)+Number(vertical)).toBe(1);
     expect(result.candidates).toHaveLength(1);
   });
+  it('does not suggest two competing repairs crossing the same empty corridor',()=>{
+    const w=15,h=15,data=image(w,h);
+    for(const x of [1,2,3,9,10,11])setPixel(data,w,x,7,[0,0,0,255]);
+    for(const y of [2,3,4,10,11,12])setPixel(data,w,6,y,[0,0,0,255]);
+    const gaps=suggestLocalGaps(buildRegions(data,w,h,15,0,[]),{x:6,y:7},6,[]);
+    const horizontal=gaps.filter(g=>g.from.y===7&&g.to.y===7);
+    const vertical=gaps.filter(g=>g.from.x===6&&g.to.x===6);
+    expect(horizontal.length+vertical.length).toBe(1);
+  });
   it('does not suggest a second gap through an already repaired bridge',()=>{
     const w=15,h=15,data=image(w,h);
     for(const x of [1,2,3,9,10,11])setPixel(data,w,x,7,[0,0,0,255]);
