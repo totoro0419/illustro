@@ -70,6 +70,20 @@ describe('C08 fill boundaries and destination gating',()=>{
     expect(result.bridges[3*11+4]).toBe(1);
     expect(result.bridges[3*11+5]).toBe(1);
   });
+  it('does not seal a long line-art gap when a separate stroke passes close to its interior',()=>{
+    const w=15,h=9,data=image(w,h);
+    for(const x of [1,2,3,9,10,11])setPixel(data,w,x,4,[0,0,0,255]);
+    setPixel(data,w,6,3,[0,0,0,255]); // not adjacent to either end
+    const result=fillBoundaries(data,w,h,15,6);
+    for(let x=4;x<=8;x++)expect(result.bridges[4*w+x]).toBe(0);
+    expect(result.walls[3*w+6]).toBe(1);
+  });
+  it('still connects two isolated opposite tips with no third line beside the gap',()=>{
+    const w=15,h=9,data=image(w,h);
+    for(const x of [1,2,3,9,10,11])setPixel(data,w,x,4,[0,0,0,255]);
+    const result=fillBoundaries(data,w,h,15,6);
+    for(let x=4;x<=8;x++)expect(result.bridges[4*w+x]).toBe(1);
+  });
   it('does not falsely connect an inner hole to the canvas outside',()=>{
     const data=image(13,13);
     rectangle(data,13,2,2,10,10,[0,0,0,255]);
