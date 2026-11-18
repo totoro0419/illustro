@@ -32,6 +32,14 @@
 - **残件**：C03-007は部分対応のまま。4K履歴比較画像の全画素処理、Android実機の時間・メモリ、保存復元・Undo/Redoの独立検証は未実施。保存形式と履歴構造は変更なし。
 - **次回**：C03-007の履歴比較画像の4K負荷（`apps/editor/src/ui/artworkHistoryView.ts`、`apps/editor/src/export/tiledPreview.ts`）。競合時はC10-002/015の高倍率・複雑合成プレビュー、C07-014の縮小品質へ。
 
+### 2026-11-19 定期自動開発②｜C03-007・C08-003・C07-014の追加改善（検査結果は未確認）
+
+- **C03-007（部分改善）**：4K作品の履歴比較（最大1600×1200）でも条件付きでタイル単位の再描画を使い、CPU側で作品全体のレイヤー画像を保持する経路を回避。縮小画像の集計配列をFloat64からFloat32へ変更し、1600×1200時の集計配列を約61MBから約31MBへ削減。小さな画像では従来の判定を維持。変更・テスト [0dad45f0](https://github.com/totoro0419/illustro/commit/0dad45f048bdf13eec2a8a8cb3106ed7ad57a422) / [ea47868e](https://github.com/totoro0419/illustro/commit/ea47868e6f52db19a938f7c44388eee53961e415)。
+- **C08-003（部分改善）**：線画領域の解析結果が入れ替わった場合、同じ領域番号を以前の領域と誤認して古い仮表示を残さないよう更新。長い筆跡で同じ画素を重複して調べる処理も省略。変更・テスト [36eca116](https://github.com/totoro0419/illustro/commit/36eca116b0dc7b2e881508889fb1f80679415406) / [0e977ca9](https://github.com/totoro0419/illustro/commit/0e977ca9d5b57a23df3bc05a82ff080a39b5ead5) / [1ccc32fb](https://github.com/totoro0419/illustro/commit/1ccc32fbf342f1947cf33a62580276b67e6a3b4e)。
+- **C07-014（部分改善）**：4K作品の縮小用の正確な画素平均で、透明画素・選択範囲外画素を早期に省略。透明RGBが結果へ混入しない回帰テストを追加。変更・テスト [05d234b5](https://github.com/totoro0419/illustro/commit/05d234b589e18af937a1ba3c17fa0616495b476d) / [56a1243c](https://github.com/totoro0419/illustro/commit/56a1243cad0ff29c2125ef0d3d34632c45d3706a)。
+- **検証状態**：GitHub上のコードとテストファイルへのコミットは確認。数値検査ではFloat32の色丸め差が抽出条件内で0〜1未満だった。ただしリポジトリ全体をローカル取得できず、GitHub Actionsの実行結果も現在の連携手段から取得できないため、Vitest・型検査・本番ビルドの成功は**未確認**。未検証のため完全解決認定は行わない。Android実機・4K実測・保存復元/Undo/Redoの独立検証も未実施。
+- **残件と次回**：記録上の部分対応37件・実装根拠未確認0件・修正記録あり完了未認定92件を維持。次回はまず本コミットのCI結果を確認し、失敗があれば修正。続いてC06-001/002（`apps/editor/src/brushSurface.ts`、`apps/editor/src/selection/tileCapture.ts`）の選択付き消しゴム・特殊合成の仮表示とGPU読戻し削減。タスク①と競合する場合はC08-015（`apps/editor/src/fill/incrementalBoundary.ts`）を優先。保存形式・履歴構造は変更なし。main・PR #73は変更せず、PR #75はDraft維持。
+
 ## 集計
 
 | 記録上の区分 | 件数 | 意味 |
