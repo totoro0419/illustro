@@ -1,10 +1,19 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`b2cef2c8`](https://github.com/totoro0419/illustro/commit/b2cef2c8ca22a95e68b696f7832ad27c854cd531)
+**照合対象のコードHEAD:** [`ec230c61`](https://github.com/totoro0419/illustro/commit/ec230c610e2198efa52765e92d1dc1f0ca72fef4)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
+
+### 2026-11-19 定期自動開発②｜C09-004・C09-005・C09-015｜小領域マスク・仮表示の連続改善（3 ID）
+
+- **C09-004（部分改善）**：縮小プレビューの中心点から外れた小さな自由形状選択が消える問題を改善。64頂点以下かつ表示上2画素以内の小さなパスは、自己交差も含め偶奇規則で画素内面積を積分し、選択密度・反転を反映。大きなパスは従来の高速タイル方式を維持。小三角形・自己交差・反転・密度の回帰テストを追加。
+- **C09-004 / C09-005（部分改善）**：図形の仮表示で元から透明な画素はマスクを参照しても可視化されないため、マスクタイル取得・領域計算を省略。透明画素のRGBとアルファを保ち、非透明画素は従来のマスク計算を維持するテストを追加。
+- **C09-005 / C09-015（部分改善）**：編集中に別レイヤーが選択されても、編集対象の元レイヤーマスクを保持して途中表示するよう修正。編集中レイヤーが選択中なら最新のそのマスクを使用し、別レイヤーのマスクを誤用しない。選択切替・マスクなし・新規作成の回帰テストを追加。
+- **コード・回帰テスト（6コミット）**：[91bc28f4](https://github.com/totoro0419/illustro/commit/91bc28f44425aa54a5553fb79b438ba874e907bb) → [cb019f29](https://github.com/totoro0419/illustro/commit/cb019f2904c5bfab1630f7d8b06e68645dfad87b) → [a3fc7a78](https://github.com/totoro0419/illustro/commit/a3fc7a78a3c131e9daf5e4fc0c042503cf145f49) → [1322a75f](https://github.com/totoro0419/illustro/commit/1322a75ff468d75ad6054229234816f7bb8575fd) → [ba7be9d5](https://github.com/totoro0419/illustro/commit/ba7be9d5e343dd9465b5fcc8dfde29e3665967f6) → [ec230c61](https://github.com/totoro0419/illustro/commit/ec230c610e2198efa52765e92d1dc1f0ca72fef4)。変更は `artwork/shapeGradient.ts` と `shapeGradient.quality.test.ts` のみ。保存形式・履歴構造は変更なし。
+- **検証**：最終コードHEAD `ec230c61` の[統合CI #44421877791](https://github.com/totoro0419/illustro/actions/runs/44421877791) と[Core CI #44421886277](https://github.com/totoro0419/illustro/actions/runs/44421886277) が両方 **completed/success**。Core・Brush・Editorテスト、型検査、本番ビルド成功。Android実機、4Kの時間・メモリ、複雑なレイヤー、旧作品保存復元・Undo/Redoの独立実機検証は未実施。
+- **残件・次回**：3 IDとも部分改善で完全解決認定なし。記録上の部分対応37件・根拠未確認0件・個別完了未認定92件を維持。次回は **C09-004** の大きなパス・画素マスク縮小精度と、**C09-005/015** の複雑レイヤー合成・実機プレビュー（`apps/editor/src/artwork/shapeGradient.ts`、`apps/editor/src/artwork/render.ts`）。競合時は **C07-003** 特殊レイヤー一括変形（`apps/editor/src/transform/`）へ。main・PR #73変更なし、PR #75 Draft維持。
 
 ### 2026-11-19 定期自動開発①｜C06-007・C06-015・C07-003・C07-014（4 ID、2段階の実装修正）
 
