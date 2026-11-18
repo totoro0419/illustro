@@ -6,6 +6,7 @@ import type {FillSettings,GapCandidate,RegionGraph,Walls} from './pixels';
 import {runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
 import {sampleFillDetail} from './detailPreview';
+import {addTraceRegions,renderLiveRegionPreview} from './liveRegionPreview';
 
 export type Reference=LineRegions['reference'];
 export type Destination='active'|'new'|'under'|'color-layer';
@@ -360,15 +361,33 @@ export function installFillPanel(host:HTMLElement,api:{
     finally{analyzing=false;if(analysisAbort===abort)analysisAbort=null;sync();}
   }
   function stopGesture(){gesture?.setCanvasEditGesture(null);gesture=null;}
-  function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false,traceColor='#ffb742'){
+  function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false){
     stopGesture();
     const drawing=api.drawing();
     if(!drawing)throw Error('作品を開いてください。');
-    gesture=drawing;output.textContent=label;
-    drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,complete:points=>{
-      stopGesture();
-      if(points.length)void work(()=>complete(points));
-    }});
+    const graph=liveFill&&method.value==='line'&&confirmed&&currentGraph&&capture?.referenceValid()&&
+      value(tolerance)===graphTolerance&&value(gap)===graphGap?currentGraph:null;
+    const picked=new Set<number>();
+    let processed=0;
+    gesture=drawing;output.textContent=graph
+      ?label+' なぞった領域を青く仮表示します。正確な結果は指を離した後に計算します。':label;
+    drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,
+      ...(graph?{update:(points:readonly Point[])=>{
+        if(points.length<processed){processed=0;picked.clear();}
+        // Process each segment only once; avoid replaying a long 4K trace per frame.
+        for(let i=Math.max(0,processed-1);i<points.length;i++){
+          const point=points[i]!,previous=points[Math.max(0,i-1)]!;
+          addTraceRegions(graph,previous,point,value(trace),closedOnly.checked,picked);
+        }
+        processed=points.length;
+        if(!picked.size)return;
+        const image=renderLiveRegionPreview(graph,picked,512);
+        drawing.showFillGesturePreview(new ImageData(image.pixels,image.width,image.height));
+      }}:{}),
+      complete:points=>{
+        stopGesture();
+        if(points.length)void work(()=>complete(points));
+      }});
   }
   const candidateValid=(item:Candidate)=>item.adjustment?item.source.canAdjust():item.source.valid();
   async function refreshCandidate(){
@@ -434,8 +453,8 @@ export function installFillPanel(host:HTMLElement,api:{
     rememberRefs();forgetAnalysis();sync();
     output.textContent='表示中のレイヤーから選んだ1枚を外しました。参照元を確認してから塗ってください。';
   });
-  button('キャンバスで塗る',()=>onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',points=>fill(points,false),method.value.startsWith('lasso')));
-  button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',points=>fill(points,true),method.value.startsWith('lasso')));
+  button('キャンバスで塗る',()=>onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',points=>fill(points,false),method.value.startsWith('lasso'),'#ffb742',true));
+  button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',points=>fill(points,true),method.value.startsWith('lasso'),'#ffb742',true));
   const applyPaint=button('候補を適用',async()=>{
     if(!candidate||!candidateValid(candidate))throw Error('塗る対象が変わりました。');
     const {source,asSelection}=candidate;
