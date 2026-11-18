@@ -98,8 +98,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       const family=current.family.replace(/["\\\n\r]/g,'');
       const font=['serif','sans-serif','monospace'].includes(family)?family:'"'+family+'", sans-serif';
       context.font=current.size+'px '+font;
-      const layout=current.styleRanges?.length?layoutStyledText(current,(character,fontSize)=>{
-        context.font=fontSize+'px '+font;
+      const layout=current.styleRanges?.length?layoutStyledText(current,(character,fontSize,bold,italic)=>{
+        context.font=(italic?'italic ':'')+(bold?'bold ':'')+fontSize+'px '+font;
         return context.measureText(character).width;
       }):layoutEditableText(current,characters=>context.measureText(characters).width+
         Math.max(0,Array.from(characters).length-1)*current.spacing);
