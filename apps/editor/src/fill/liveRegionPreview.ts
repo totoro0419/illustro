@@ -38,14 +38,18 @@ export class LiveRegionTrace{
  private processed=0;
  private tail:Point|null=null;
  private optionKey='';
+ private previousGraph:RegionGraph|null=null;
 
  update(graph:RegionGraph,points:readonly Point[],width:number,closedOnly:boolean):boolean{
    const optionKey=width+':'+closedOnly;
    let changed=false;
-   if(points.length<this.processed||optionKey!==this.optionKey){
+   // A new graph can reuse numeric region IDs for different shapes. Keeping
+   // old IDs would show stale paint even if the pointer has not moved.
+   if(graph!==this.previousGraph||points.length<this.processed||optionKey!==this.optionKey){
      changed=this.selected.size>0;
      this.selected.clear();this.counts.clear();this.lastSegment.clear();
      this.processed=0;this.tail=null;this.optionKey=optionKey;
+     this.previousGraph=graph;
    }else if(this.processed>0&&this.tail){
      const oldTail=points[this.processed-1];
      if(oldTail&&(oldTail.x!==this.tail.x||oldTail.y!==this.tail.y)){
