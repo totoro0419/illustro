@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {CanonicalBuilder,createPreset,cpuReference} from '@illustro/brush-rt';
-import {renderSelectedStrokeTiles} from './tileStroke';
+import {renderSelectedStrokeTiles,validateRasterWorkerTiles,uniqueTransferableTileBuffers} from './tileStroke';
 import type {StrokeRecord} from '@illustro/brush-rt';
 
 const point=(x:number,y:number,t:number)=>({x,y,t,pressure:.8,pointerType:'pen',tilt:0,azimuth:0,twist:0});
@@ -96,5 +96,32 @@ describe('C06-002 sparse mask cache regression',()=>{
   expect(actual).not.toBeNull();
   expect(spread(actual!,width,height)).toEqual(new Uint8Array(expected3));
   expect(actual!.every(tile=>tile.key==='0,0'||tile.key==='1,0')).toBe(true);
+ });
+});
+
+describe('C06-002/C06-015 selection Worker payload safety',()=>{
+ it('rejects corrupt output before it can replace a layer snapshot',()=>{
+  const pixels=new Uint8Array(TILE*TILE*4);
+  expect(()=>validateRasterWorkerTiles(300,300,[{key:'0,0',pixels}])).not.toThrow();
+  expect(()=>validateRasterWorkerTiles(300,300,[{key:'0,0',pixels},{key:'0,0',pixels}])).toThrow('正しく');
+  expect(()=>validateRasterWorkerTiles(300,300,[{key:'03,0',pixels}])).toThrow('正しく');
+  expect(()=>validateRasterWorkerTiles(300,300,[{key:'3,0',pixels}])).toThrow('作品の外');
+  expect(()=>validateRasterWorkerTiles(300,300,[{key:'0,0',pixels:new Uint8Array(3)}])).toThrow('正しく');
+  expect(()=>validateRasterWorkerTiles(300,300,[{key:'0,0',pixels:new Uint8Array(TILE*TILE*4+1)}])).toThrow('正しく');
+ });
+ it('transfers a shared tile backing buffer only once',()=>{
+  const shared=new ArrayBuffer(TILE*TILE*4*2);
+  const tiles=[
+   {key:'0,0',pixels:new Uint8Array(shared,0,TILE*TILE*4)},
+   {key:'1,0',pixels:new Uint8Array(shared,TILE*TILE*4,TILE*TILE*4)}
+  ];
+  expect(uniqueTransferableTileBuffers(tiles)).toEqual([shared]);
+  expect(uniqueTransferableTileBuffers([])).toEqual([]);
+  if(typeof SharedArrayBuffer!=='undefined'){
+   const sharedMemory=new SharedArrayBuffer(TILE*TILE*4);
+   expect(uniqueTransferableTileBuffers([
+    ...tiles,{key:'2,0',pixels:new Uint8Array(sharedMemory)}
+   ])).toEqual([shared]);
+  }
  });
 });

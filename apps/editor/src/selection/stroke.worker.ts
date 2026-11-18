@@ -1,7 +1,7 @@
 import {cpuReference,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 
 import type {PixelLayerMask} from '@illustro/core';
-import {renderSelectedStrokeTiles,type RasterWorkerTile} from './tileStroke';
+import {renderSelectedStrokeTiles,uniqueTransferableTileBuffers,type RasterWorkerTile} from './tileStroke';
 type Pass={selection:PixelLayerMask|null;records:readonly unknown[]};
 type Job={width:number;height:number}&(
   ({pixels:Uint8Array}&({alpha?:Uint8Array;records:readonly StrokeRecord[]}|{passes:readonly Pass[]}))
@@ -23,7 +23,7 @@ self.onmessage=({data}:MessageEvent<Job>)=>{
     }
     if('tiles' in data){
       const result=renderSelectedStrokeTiles(width,height,alpha!,data.tiles,data.records);
-      (self as unknown as Worker).postMessage({tiles:result},result?.map(tile=>tile.pixels.buffer as ArrayBuffer)??[]);
+      (self as unknown as Worker).postMessage({tiles:result},result?uniqueTransferableTileBuffers(result):[]);
       return;
     }
     const pixels=data.pixels;

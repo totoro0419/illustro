@@ -1,7 +1,7 @@
 import type {StrokeRecord} from '@illustro/brush-rt';
 import type {DeformationBrushPass} from '@illustro/core';
 import type {MaskData} from './mask';
-import type {RasterWorkerTile} from './tileStroke';
+import {validateRasterWorkerTiles,uniqueTransferableTileBuffers,type RasterWorkerTile} from './tileStroke';
 
 type Job={pixels?:Uint8Array;tiles?:RasterWorkerTile[];[key:string]:unknown};
 type Result=Uint8Array|RasterWorkerTile[]|null;
@@ -46,13 +46,18 @@ function pump(){
       const response=event.data;
       if(response?.error){closeWorker();finish(null,Error(response.error));return;}
       if(next.job.tiles){
-        if(response?.tiles!==null&&!Array.isArray(response?.tiles)||
-          response?.tiles?.some(tile=>!tile||typeof tile.key!=='string'||!(tile.pixels instanceof Uint8Array))){
-          closeWorker();finish(null,Error('区画ごとの筆の結果を確認できませんでした。'));return;
+        try{
+          if(response?.tiles!==null&&!Array.isArray(response?.tiles))
+            throw Error('区画ごとの筆の結果を確認できませんでした。');
+          if(response.tiles)validateRasterWorkerTiles(
+            next.job.width as number,next.job.height as number,response.tiles);
+        }catch(error){
+          closeWorker();finish(null,error instanceof Error?error:Error(String(error)));return;
         }
         finish(response.tiles??null);return;
       }
-      if(response?.pixels!==null&&!(response?.pixels instanceof Uint8Array)){
+      if(response?.pixels!==null&&(!(response?.pixels instanceof Uint8Array)||
+        response.pixels.byteLength!==(next.job.width as number)*(next.job.height as number)*4)){
         closeWorker();finish(null,Error('選択範囲の筆の結果を確認できませんでした。'));return;
       }
       finish(response.pixels??null);
@@ -74,8 +79,8 @@ function pump(){
       ?(()=>{const {alpha:unused,...rest}=next.job;return rest;})()
       :next.job;
     const transferred=next.job.tiles
-      ?next.job.tiles.map(tile=>tile.pixels.buffer as ArrayBuffer)
-      :next.job.pixels?[next.job.pixels.buffer as ArrayBuffer]:[];
+      ?uniqueTransferableTileBuffers(next.job.tiles)
+      :next.job.pixels?.buffer instanceof ArrayBuffer?[next.job.pixels.buffer]:[];
     currentWorker.postMessage(message,transferred);
     if(selected)residentMask=mask;
   }catch(error){
