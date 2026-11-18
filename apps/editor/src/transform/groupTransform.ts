@@ -27,10 +27,12 @@ export function composeGroupAffine(previous:Transform,next:Transform):Transform{
  const cx=previous.cx,cy=previous.cy;
  if(Math.abs(sx)>16||Math.abs(sy)>16||Math.abs((a*b+c*d)/sx)>4)
    throw Error('重ねた変形が倍率・傾きの上限を超えます。変形量を小さくしてください。');
+ const dx=x+a*cx+b*cy-cx,dy=y+c*cx+d*cy-cy;
+ const shear=(a*b+c*d)/sx,angle=Math.atan2(c,a)*180/Math.PI;
+ if(![dx,dy,shear,angle].every(Number.isFinite))
+   throw Error('重ねた変形の座標が正しくありません。');
  return {...initialTransform,mode:'affine',cx,cy,
-   dx:x+a*cx+b*cy-cx,dy:y+c*cx+d*cy-cy,sx,sy,
-   angle:Math.atan2(c,a)*180/Math.PI,shear:(a*b+c*d)/sx,
-   interpolation:next.interpolation};
+   dx,dy,sx,sy,angle,shear,interpolation:next.interpolation};
 }
 /** All layers share the same group center and the same transform, so their
  * relative alignment is preserved. No layer's pixels are merged or flattened. */
@@ -53,19 +55,30 @@ export function groupTransformPlan(
    Math.abs(options.sx)<.001||Math.abs(options.sy)<.001||
    Math.abs(options.angle)>360||!['nearest','bilinear','area'].includes(options.interpolation))
   throw Error('移動・回転・拡縮の値が正しくありません。');
- const x0=Math.min(...items.map(i=>i.bounds.x)),x1=Math.max(...items.map(i=>i.bounds.x+i.bounds.width));
- const y0=Math.min(...items.map(i=>i.bounds.y)),y1=Math.max(...items.map(i=>i.bounds.y+i.bounds.height));
- const cx=(x0+x1)/2,cy=(y0+y1)/2;
+ // Accumulate without spreading all layer bounds onto the JS call stack.
+ let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+ for(const {bounds} of items){
+  x0=Math.min(x0,bounds.x);y0=Math.min(y0,bounds.y);
+  x1=Math.max(x1,bounds.x+bounds.width);
+  y1=Math.max(y1,bounds.y+bounds.height);
+ }
+ // Halving before addition also avoids overflow for large finite coordinates.
+ const cx=x0/2+x1/2,cy=y0/2+y1/2;
+ if(!Number.isFinite(cx)||!Number.isFinite(cy))
+  throw Error('変形するレイヤーの中心が正しくありません。');
  const settings:Transform={...initialTransform,mode:'affine',cx,cy,...options};
  const a=options.angle*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
  const apply=(x:number,y:number)=>{
   const dx=(x-cx)*options.sx,dy=(y-cy)*options.sy;
   return {x:cx+options.dx+dx*c-dy*s,y:cy+options.dy+dx*s+dy*c};
  };
- return {settings,outlines:items.map(item=>{
+ const outlines=items.map(item=>{
   const {x,y,width:w,height:h}=item.bounds;
   return {id:item.id,before:item.bounds,after:[
    apply(x,y),apply(x+w,y),apply(x+w,y+h),apply(x,y+h)
   ]};
- })};
+ });
+ if(outlines.some(item=>item.after.some(point=>!Number.isFinite(point.x)||!Number.isFinite(point.y))))
+  throw Error('変形後のレイヤー座標が正しくありません。');
+ return {settings,outlines};
 }
