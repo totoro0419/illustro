@@ -57,6 +57,22 @@ describe('C08-003 incremental region preview',()=>{
   addTraceRegions(narrow,{x:0,y:0},{x:1,y:1.5},1,false,picked);
   expect([...picked]).toEqual([1]);
  });
+ it('matches exact circular brush footprints for different widths',()=>{
+  for(const width of [1,3,9,25]){
+    const radius=Math.max(0,Math.min(12,Math.round(width/2-.5)));
+    const expected=new Set<number>();
+    for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){
+      if(dx*dx+dy*dy>radius*radius)continue;
+      const x=1+dx,y=1+dy;
+      if(x<0||y<0||x>=graph.width||y>=graph.height)continue;
+      const id=graph.labels[y*graph.width+x]??0;
+      if(id)expected.add(id);
+    }
+    const actual=new Set<number>();
+    addTraceRegions(graph,{x:1,y:1},{x:1,y:1},width,false,actual);
+    expect([...actual].sort()).toEqual([...expected].sort());
+  }
+ });
  it('keeps a one-pixel region visible when 4K thumbnail samples miss it',()=>{
   const labels=new Uint32Array(64);
   labels[0]=1;
