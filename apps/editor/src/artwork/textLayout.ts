@@ -21,19 +21,42 @@ export function layoutEditableText(
      Math.max(1,Math.floor((text.boxWidth-text.size)/(text.size*text.lineHeight))+1);
    return {lines:columns<lines.length?lines.slice(0,columns):lines,overflow:columns<lines.length};
  }
- if(text.boxWidth===undefined)lines.push(...paragraphs);
- else{
-   for(const paragraph of paragraphs){
-     let row='';
-     for(const char of Array.from(paragraph)){
-       if(row&&measureWidth(row+char)>text.boxWidth){
-         lines.push(row);row=char;
-       }else row+=char;
-     }
-     lines.push(row);
-   }
- }
  const count=text.boxHeight===undefined?Infinity:
    Math.max(1,Math.floor((text.boxHeight-text.size)/(text.size*text.lineHeight))+1);
+ if(text.boxWidth===undefined)lines.push(...paragraphs);
+ else{
+   // Exponential probing with binary refinement avoids measuring a growing
+   // 8,192-character string on every glyph: large text stays responsive.
+   for(const paragraph of paragraphs){
+     const chars=Array.from(paragraph);
+     if(!chars.length){lines.push('');continue;}
+     for(let start=0;start<chars.length;){
+       const available=chars.length-start;
+       const widthOf=(count:number)=>measureWidth(chars.slice(start,start+count).join(''));
+       let fit=1,probe=2;
+       while(probe<=available&&widthOf(probe)<=text.boxWidth){
+         fit=probe;probe*=2;
+       }
+       const upper=Math.min(available,probe);
+       if(upper>fit){
+         if(widthOf(upper)<=text.boxWidth)fit=upper;
+         else{
+           let low=fit,high=upper;
+           while(low+1<high){
+             const mid=Math.floor((low+high)/2);
+             if(widthOf(mid)<=text.boxWidth)low=mid;
+             else high=mid;
+           }
+           fit=low;
+         }
+       }
+       lines.push(chars.slice(start,start+fit).join(''));
+       start+=fit;
+       // One extra row is sufficient to detect a clipped textbox. No need
+       // to measure thousands of remaining glyphs that cannot be displayed.
+       if(lines.length>count)return {lines:lines.slice(0,count),overflow:true};
+     }
+   }
+ }
  return {lines:count<lines.length?lines.slice(0,count):lines,overflow:count<lines.length};
 }
