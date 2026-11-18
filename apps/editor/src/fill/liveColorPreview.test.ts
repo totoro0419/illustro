@@ -17,8 +17,8 @@ describe('C08-003 ordinary fill stroke live preview',()=>{
   const coverage=preview.coverage();
   expect(Array.from(coverage.slice(5,10))).toEqual([1,1,0,0,0]);
   expect(input[2*4]).toBe(0);
-  expect(preview.render().data[(1*5+0)*4+3]).toBe(112);
-  expect(preview.render().data[(1*5+4)*4+3]).toBe(0);
+  expect(preview.renderPixels()[(1*5+0)*4+3]).toBe(112);
+  expect(preview.renderPixels()[(1*5+4)*4+3]).toBe(0);
   expect(preview.add({x:0,y:1},{x:1,y:1},settings)).toBe(false);
  });
  it('allows a later part of the same stroke to select another disconnected region of the original color',()=>{
