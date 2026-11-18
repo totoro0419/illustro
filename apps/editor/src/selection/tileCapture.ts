@@ -44,9 +44,12 @@ export async function captureSelectedLayerTiles(
  const requests:TileReadRequest[]=[];
  const seen=new Set<string>();
  for(const item of backend.tiles.values()){
+  if(!item||typeof item.surfaceKey!=='string'||typeof item.key!=='string')
+   throw new Error('描画区画の一覧が壊れています。');
   if(item.surfaceKey!==surfaceId)continue;
   const key=item.key;
-  if(!/^\d+,\d+$/.test(key)||seen.has(key))throw new Error('描画区画の一覧が壊れています。');
+  if(!/^(0|[1-9]\d*),(0|[1-9]\d*)$/.test(key)||seen.has(key))
+   throw new Error('描画区画の一覧が壊れています。');
   const [tx=NaN,ty=NaN]=key.split(',').map(Number);
   if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||
    tx>=Math.ceil(width/TILE)||ty>=Math.ceil(height/TILE))
