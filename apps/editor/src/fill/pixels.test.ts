@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {buildRegions,fillBoundaries,fillMask,paintColorHints,type FillSettings} from './pixels';
+import {buildRegions,fillBoundaries,fillMask,paintColorHints,suggestLocalGaps,type FillSettings} from './pixels';
 
 const settings:FillSettings={
   method:'color',tolerance:15,gap:0,opacity:1,color:'#ff0000',erase:false,
@@ -83,6 +83,18 @@ describe('C08 fill boundaries and destination gating',()=>{
     for(const x of [1,2,3,9,10,11])setPixel(data,w,x,4,[0,0,0,255]);
     const result=fillBoundaries(data,w,h,15,6);
     for(let x=4;x<=8;x++)expect(result.bridges[4*w+x]).toBe(1);
+  });
+  it('filters misleading gap suggestions that run alongside another stroke',()=>{
+    const w=15,h=9,clean=image(w,h);
+    for(const x of [1,2,3,9,10,11])setPixel(clean,w,x,4,[0,0,0,255]);
+    const fromTo=(c:{from:{x:number;y:number};to:{x:number;y:number}})=>
+      c.from.y===4&&c.to.y===4&&
+      (c.from.x===3&&c.to.x===9||c.from.x===9&&c.to.x===3);
+    const safe=suggestLocalGaps(buildRegions(clean,w,h,15,0,[]),{x:6,y:4},6,[]);
+    expect(safe.some(fromTo)).toBe(true);
+    setPixel(clean,w,6,3,[0,0,0,255]);
+    const risky=suggestLocalGaps(buildRegions(clean,w,h,15,0,[]),{x:6,y:4},6,[]);
+    expect(risky.some(fromTo)).toBe(false);
   });
   it('does not falsely connect an inner hole to the canvas outside',()=>{
     const data=image(13,13);
