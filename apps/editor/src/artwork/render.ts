@@ -1,5 +1,6 @@
 import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText,LayerMask} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
+import {verticalGlyphAdjustment} from './verticalGlyph';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {sampledPath} from './pathOperations';
 
@@ -129,10 +130,12 @@ function drawText(ctx:Context,text:EditableText){
     for(let line=0;line<lines.length;line++){
       let row=0;
       for(const character of Array.from(lines[line]!)){
-        const x=text.origin.x-line*text.size*text.lineHeight,y=text.origin.y+row*(text.size+text.spacing);
+        const placement=verticalGlyphAdjustment(character,text.size);
+        const x=text.origin.x-line*text.size*text.lineHeight+placement.dx;
+        const y=text.origin.y+row*(text.size+text.spacing)+placement.dy;
         ctx.save();
         ctx.translate(x,y+text.size/2);
-        if(/[A-Za-z0-9ー―‐–—]/u.test(character))ctx.rotate(Math.PI/2);
+        if(placement.rotate)ctx.rotate(Math.PI/2);
         ctx.fillText(character,0,-text.size/2);
         ctx.restore();
         row++;
