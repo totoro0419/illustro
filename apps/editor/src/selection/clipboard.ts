@@ -10,7 +10,7 @@ import {getAsset} from '../assets/library';
 import {readFillReference} from '../fill/reference';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 import type {SelectionRect} from '../strokeSelection';
-import {type MaskData,rasterizeSelection} from './mask';
+import {cropSelectionMask,type MaskData,rasterizeSelection} from './mask';
 import {runMaskedPixelJob} from './pixels';
 import {forEachPastedTile} from './pasteTiles';
 
@@ -176,10 +176,14 @@ export class ArtworkClipboard {
       }
     }
     if(document.head!==head)throw Error('コピー中に作品が変更されました。もう一度コピーしてください。');
-    const masked=this.selectionMask&&this.selectionMask.width===root.width&&this.selectionMask.height===root.height&&selection
-      ?await runMaskedPixelJob(source,this.selectionMask,'copy'):source;
+    // Crop before masking: a 12px selection should not transfer a 64 MiB
+    // source and a 16 MiB alpha mask to a Worker just to keep 12px.
+    const selectedMask=this.selectionMask&&this.selectionMask.width===root.width&&
+      this.selectionMask.height===root.height&&selection?this.selectionMask:null;
+    const clipped=group?new Uint8ClampedArray(0):crop(source,root.width,area);
+    const pixels=selectedMask&&!group
+      ?await runMaskedPixelJob(clipped,cropSelectionMask(selectedMask,area),'copy'):clipped;
     if(document.head!==head)throw Error('コピー中に作品が変更されました。');
-    const pixels=group?new Uint8ClampedArray(0):crop(masked,root.width,area);
     const record:ClipboardItem={
       sourceDocumentId:root.documentId,sourceColorProfile:root.colorProfileId,
       sourceName:opts.merged?'合成した作品':group?.name??selectedLayer.name,

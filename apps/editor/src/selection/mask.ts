@@ -85,6 +85,19 @@ export function translateSelection(mask:MaskData,dx:number,dy:number):MaskData{
   }
   return {width:mask.width,height:mask.height,alpha:result};
 }
+/** Copy only the selected rectangle's alpha for a small clipboard job.
+ * Never transfer or scan the full 4K mask in a small selection copy. */
+export function cropSelectionMask(mask:MaskData,area:Readonly<{x:number;y:number;width:number;height:number}>):MaskData{
+  const {x,y,width,height}=area;
+  if(![x,y,width,height,mask.width,mask.height].every(Number.isSafeInteger)||
+    width<1||height<1||x<0||y<0||x+width>mask.width||y+height>mask.height||
+    mask.alpha.length!==mask.width*mask.height)
+    throw Error('切り出す選択範囲が正しくありません。');
+  const alpha=new Uint8Array(width*height);
+  for(let row=0;row<height;row++)
+    alpha.set(mask.alpha.subarray((y+row)*mask.width+x,(y+row)*mask.width+x+width),row*width);
+  return {width,height,alpha};
+}
 export function maskImage(pixels:Uint8Array|Uint8ClampedArray,mask:MaskData):Uint8ClampedArray{
   if(pixels.length!==mask.alpha.length*4)throw Error('選択の大きさが作品に一致しません。');
   const result=new Uint8ClampedArray(pixels);
