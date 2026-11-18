@@ -151,6 +151,17 @@ export function shapeLivePreviewDimensions(width:number,height:number,zoom:numbe
   const scale=Math.min(1,edge/Math.max(width,height));
   return {outputWidth:Math.max(1,Math.round(width*scale)),outputHeight:Math.max(1,Math.round(height*scale))};
 }
+/** The stop bar and markers must show the opacity that the saved gradient uses. */
+export function gradientStopCssColor(stop:Pick<GradientStop,'color'|'opacity'>):string{
+  const red=parseInt(stop.color.slice(1,3),16);
+  const green=parseInt(stop.color.slice(3,5),16);
+  const blue=parseInt(stop.color.slice(5,7),16);
+  return `rgba(${red}, ${green}, ${blue}, ${stop.opacity})`;
+}
+export function gradientStopSwatchBackground(stop:Pick<GradientStop,'color'|'opacity'>):string{
+  const color=gradientStopCssColor(stop);
+  return `linear-gradient(${color},${color}),repeating-conic-gradient(#d5d5d5 0% 25%,#fff 0% 50%) 50% / 8px 8px`;
+}
 export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const heading=document.createElement('summary');heading.textContent='図形・グラデーション';
@@ -390,7 +401,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     bar.setAttribute('aria-label','グラデーションの色帯');
     const updateBar=()=>{
       const sorted=[...stops].sort((a,b)=>a.at-b.at);
-      bar.style.background='linear-gradient(to right,'+sorted.map(s=>s.color+' '+(s.at*100)+'%').join(',')+')';
+      bar.style.background='linear-gradient(to right,'+sorted.map(s=>gradientStopCssColor(s)+' '+(s.at*100)+'%').join(',')+'),repeating-conic-gradient(#d5d5d5 0% 25%,#fff 0% 50%) 50% / 12px 12px';
     };
     updateBar();
     const markers:HTMLButtonElement[]=[];
@@ -399,7 +410,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       const marker=document.createElement('button');
       marker.type='button';marker.title='色 '+(index+1)+' をドラッグして位置を調整';
       marker.setAttribute('aria-label',marker.title);
-      marker.style.cssText='position:absolute;top:4px;transform:translateX(-50%);width:17px;height:24px;border:2px solid white;border-radius:5px;background:'+stop.color+';box-shadow:0 0 0 1px #252525;cursor:ew-resize;touch-action:none;padding:0';
+      marker.style.cssText='position:absolute;top:4px;transform:translateX(-50%);width:17px;height:24px;border:2px solid white;border-radius:5px;background:'+gradientStopSwatchBackground(stop)+';box-shadow:0 0 0 1px #252525;cursor:ew-resize;touch-action:none;padding:0';
       let dragging:number|null=null,positionBeforeDrag=stop.at;
       const setPosition=(at:number):boolean=>{
         if(stops[index]!.at===at)return false;
@@ -461,7 +472,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         const middle=safeGradientStopValue(midpoint.valueAsNumber/100,.01,.99,previous.midpoint);
         stops[index]={at,color:color.value,opacity:alpha,midpoint:middle};
         position.value=String(at*100);opacity.value=String(alpha*100);midpoint.value=String(middle*100);
-        markers[index]!.style.background=color.value;updateMarkers();updateBar();
+        markers[index]!.style.background=gradientStopSwatchBackground(stops[index]!);updateMarkers();updateBar();
         void refresh();
       };
       if(stops.length>2)row.append(button('色を外す',()=>{stops.splice(index,1);redrawStops();void refresh();},status));

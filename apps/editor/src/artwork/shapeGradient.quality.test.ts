@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type LayerId} from '@illustro/core';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -216,5 +216,18 @@ describe('C09-005/015 zoom-aware and no-Worker live preview',()=>{
     expect(shapeLivePreviewDimensions(4000,2000,8,false)).toEqual({outputWidth:256,outputHeight:128});
     expect(shapeLivePreviewDimensions(200,100,4,true)).toEqual({outputWidth:200,outputHeight:100});
     expect(shapeLivePreviewDimensions(4000,2000,Infinity,true)).toEqual({outputWidth:512,outputHeight:256});
+  });
+});
+
+describe('C09-009 transparent gradient stop controls',()=>{
+  it('shows each stop with the same opacity as its saved data',()=>{
+    expect(gradientStopCssColor({color:'#23252d',opacity:1})).toBe('rgba(35, 37, 45, 1)');
+    expect(gradientStopCssColor({color:'#ff8000',opacity:.5})).toBe('rgba(255, 128, 0, 0.5)');
+    expect(gradientStopCssColor({color:'#000000',opacity:0})).toBe('rgba(0, 0, 0, 0)');
+  });
+  it('uses a checkerboard beneath translucent marker colors',()=>{
+    const swatch=gradientStopSwatchBackground({color:'#112233',opacity:.25});
+    expect(swatch).toContain('rgba(17, 34, 51, 0.25)');
+    expect(swatch).toContain('repeating-conic-gradient');
   });
 });
