@@ -1,4 +1,5 @@
 import {describe,expect,it} from 'vitest';
+import type {LayerId} from '@illustro/core';
 import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask} from './shapeGradient';
 
 describe('C09-004 shape selection snapshot',()=>{
@@ -12,7 +13,7 @@ describe('C09-004 shape selection snapshot',()=>{
   it('preserves an explicitly empty selection and existing editable-layer masks',()=>{
     const mask={shape:'ellipse',x:0,y:0,width:20,height:20,enabled:true,inverted:false,density:.5} as const;
     expect(shapeGradientInitialMask(undefined,null)).toBeNull();
-    expect(shapeGradientInitialMask('existing-layer',mask)).toBeUndefined();
+    expect(shapeGradientInitialMask('existing-layer' as LayerId,mask)).toBeUndefined();
   });
 });
 
