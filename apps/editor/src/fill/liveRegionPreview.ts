@@ -15,9 +15,15 @@ export function addTraceRegions(
   const length=Math.max(Math.abs(to.x-from.x),Math.abs(to.y-from.y));
   const steps=Math.max(1,Math.ceil(length*2));
   if(!Number.isFinite(length)||steps>8192)return;
+  let previousX=NaN,previousY=NaN;
   for(let step=1;step<=steps;step++){
     const x=Math.floor(from.x+(to.x-from.x)*step/steps);
     const y=Math.floor(from.y+(to.y-from.y)*step/steps);
+    // Two samples per pixel can land on the same integer cell. A brush
+    // circle around that cell would otherwise be scanned twice on long 4K
+    // strokes, without selecting any additional regions.
+    if(x===previousX&&y===previousY)continue;
+    previousX=x;previousY=y;
     for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){
       if(dx*dx+dy*dy>radius*radius)continue;
       const sx=x+dx,sy=y+dy;
