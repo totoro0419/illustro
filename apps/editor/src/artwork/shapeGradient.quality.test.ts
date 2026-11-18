@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type LayerId} from '@illustro/core';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -106,5 +106,30 @@ describe('C09 editable shape geometry',()=>{
     expect(restored[0]!.midpoint).toBeCloseTo(0.2,12);
     expect(restored[1]!.midpoint).toBeCloseTo(0.8,12);
     expect(original[0]!.at).toBe(0);
+  });
+});
+
+describe('C09-004 area-averaged elliptical selection',()=>{
+  it('keeps a tiny ellipse inside a downscaled pixel even when its center is missed',()=>{
+    const mask={shape:'ellipse',x:1.25,y:1.25,width:.5,height:.5,enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray(2*2*4);
+    for(let i=0;i<4;i++)pixels.set([31,47,63,200],i*4);
+    applyShapePreviewMask(pixels,mask,4,4,2,2);
+    expect(pixels[3]).toBe(Math.round(200*Math.PI*.25*.25/4));
+    expect([pixels[7],pixels[11],pixels[15]]).toEqual([0,0,0]);
+    expect(Array.from(pixels.subarray(0,3))).toEqual([31,47,63]);
+  });
+  it('integrates an ellipse contained by a pixel and respects inversion/density',()=>{
+    const mask={x:0,y:0,width:2,height:2,density:.5,inverted:false};
+    expect(ellipsePreviewCoverage(mask,0,0,2,2)).toBeCloseTo(1-.5*(1-Math.PI/4),8);
+    expect(ellipsePreviewCoverage({...mask,inverted:true},0,0,2,2)).toBeCloseTo(1-.5*Math.PI/4,8);
+    expect(ellipsePreviewCoverage(mask,2,0,4,2)).toBeCloseTo(.5,8);
+  });
+  it('uses the curved edge rather than the bounding rectangle for partial overlaps',()=>{
+    const mask={x:0,y:0,width:4,height:4,density:1,inverted:false};
+    const fraction=ellipsePreviewCoverage(mask,0,0,2,2);
+    expect(fraction).toBeGreaterThan(.75);
+    expect(fraction).toBeLessThan(.8);
+    expect(ellipsePreviewCoverage({...mask,inverted:true},0,0,2,2)).toBeCloseTo(1-fraction,8);
   });
 });

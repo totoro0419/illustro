@@ -53,6 +53,40 @@ export function rectanglePreviewCoverage(
   const inside=(coveredWidth*coveredHeight)/((right-left)*(bottom-top));
   return mask.inverted?1-mask.density*inside:1-mask.density*(1-inside);
 }
+/** Area-averaged coverage for ellipse selections. Integrate the ellipse's
+ * horizontal span rather than sampling only the output pixel center, so a
+ * subpixel ellipse is still visible at low preview resolution. */
+export function ellipsePreviewCoverage(
+  mask:Readonly<{x:number;y:number;width:number;height:number;density:number;inverted:boolean}>,
+  left:number,top:number,right:number,bottom:number
+):number{
+  const rx=mask.width/2,ry=mask.height/2,area=(right-left)*(bottom-top);
+  const outside=mask.inverted?1:1-mask.density;
+  if(!(rx>0&&ry>0&&area>0))return outside;
+  const cx=mask.x+rx,cy=mask.y+ry;
+  const x0=Math.max(left,mask.x),x1=Math.min(right,mask.x+mask.width);
+  const y0=Math.max(top,mask.y),y1=Math.min(bottom,mask.y+mask.height);
+  if(x0>=x1||y0>=y1)return outside;
+  const within=(x:number,y:number)=>((x-cx)/rx)**2+((y-cy)/ry)**2<=1;
+  let covered:number;
+  if(within(left,top)&&within(left,bottom)&&within(right,top)&&within(right,bottom))
+    covered=area;
+  else if(mask.x>=left&&mask.x+mask.width<=right&&mask.y>=top&&mask.y+mask.height<=bottom)
+    covered=Math.PI*rx*ry;
+  else{
+    const span=(y:number)=>{
+      const ratio=(y-cy)/ry,half=rx*Math.sqrt(Math.max(0,1-ratio*ratio));
+      return Math.max(0,Math.min(x1,cx+half)-Math.max(x0,cx-half));
+    };
+    // Only pixels crossing the curved boundary need numerical integration.
+    const slices=32,step=(y1-y0)/slices;
+    let sum=span(y0)+span(y1);
+    for(let i=1;i<slices;i++)sum+=(i%2?4:2)*span(y0+i*step);
+    covered=sum*step/3;
+  }
+  const inside=Math.max(0,Math.min(1,covered/area));
+  return mask.inverted?1-mask.density*inside:1-mask.density*(1-inside);
+}
 /** Apply the same vector/pixel mask coverage as the committed layer,
  * sampled at the preview pixel center in original document coordinates. */
 export function applyShapePreviewMask(
@@ -63,11 +97,14 @@ export function applyShapePreviewMask(
   if(!mask?.enabled)return;
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
     const at=(y*outputWidth+x)*4;
-    const coverage=mask.shape==='rectangle'&&sampleCoverage===layerMaskCoverage&&
-      (outputWidth<width||outputHeight<height)
-      ?rectanglePreviewCoverage(mask,x*width/outputWidth,y*height/outputHeight,
-        (x+1)*width/outputWidth,(y+1)*height/outputHeight)
-      :sampleCoverage(mask,(x+.5)*width/outputWidth,(y+.5)*height/outputHeight);
+    const downscaled=sampleCoverage===layerMaskCoverage&&(outputWidth<width||outputHeight<height);
+    const left=x*width/outputWidth,top=y*height/outputHeight;
+    const right=(x+1)*width/outputWidth,bottom=(y+1)*height/outputHeight;
+    const coverage=downscaled&&mask.shape==='rectangle'
+      ?rectanglePreviewCoverage(mask,left,top,right,bottom)
+      :downscaled&&mask.shape==='ellipse'
+        ?ellipsePreviewCoverage(mask,left,top,right,bottom)
+        :sampleCoverage(mask,(left+right)/2,(top+bottom)/2);
     pixels[at+3]=Math.round(pixels[at+3]!*coverage);
   }
 }
