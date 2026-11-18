@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type LayerId} from '@illustro/core';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -203,5 +203,18 @@ describe('C09-005/015 invalid pointer geometry',()=>{
     expect(moveShapeAnchor(points,0,{x:Infinity,y:5})).toEqual(points);
     expect(moveShapeAnchor(points,1,{x:3,y:NaN})).toEqual(points);
     expect(points[0]).toEqual({x:1.25,y:2.75,inX:1,inY:2});
+  });
+});
+
+describe('C09-005/015 zoom-aware and no-Worker live preview',()=>{
+  it('uses a small preview at fit zoom and more pixels only when zoomed in',()=>{
+    expect(shapeLivePreviewDimensions(4000,2000,.5,true)).toEqual({outputWidth:512,outputHeight:256});
+    expect(shapeLivePreviewDimensions(4000,2000,2,true)).toEqual({outputWidth:768,outputHeight:384});
+    expect(shapeLivePreviewDimensions(4000,2000,4,true)).toEqual({outputWidth:1024,outputHeight:512});
+  });
+  it('keeps the main-thread fallback bounded without losing small documents',()=>{
+    expect(shapeLivePreviewDimensions(4000,2000,8,false)).toEqual({outputWidth:256,outputHeight:128});
+    expect(shapeLivePreviewDimensions(200,100,4,true)).toEqual({outputWidth:200,outputHeight:100});
+    expect(shapeLivePreviewDimensions(4000,2000,Infinity,true)).toEqual({outputWidth:512,outputHeight:256});
   });
 });

@@ -143,6 +143,14 @@ export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:Art
     ...(point.outX===undefined?{}:{outX:point.outX+dx,outY:point.outY!+dy})};
   return points.map((candidate,i)=>i===index?moved:candidate);
 }
+/** Keep the live on-canvas preview light at fit zoom, but use more detail
+ * when zoomed in. Main-thread fallback is deliberately smaller to avoid
+ * blocking pointer input on browsers without OffscreenCanvas. */
+export function shapeLivePreviewDimensions(width:number,height:number,zoom:number,workerAvailable:boolean){
+  const edge=workerAvailable?(Number.isFinite(zoom)&&zoom>=4?1024:Number.isFinite(zoom)&&zoom>=2?768:512):256;
+  const scale=Math.min(1,edge/Math.max(width,height));
+  return {outputWidth:Math.max(1,Math.round(width*scale)),outputHeight:Math.max(1,Math.round(height*scale))};
+}
 export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const heading=document.createElement('summary');heading.textContent='図形・グラデーション';
@@ -276,10 +284,9 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       while(editingHandles&&livePending){
         const task=livePending;livePending=null;
         const {context,content,mask,version,replacement}=task;
-        if(typeof OffscreenCanvas==='undefined')continue;
-        const scale=Math.min(1,512/Math.max(context.width,context.height));
-        const outputWidth=Math.max(1,Math.round(context.width*scale));
-        const outputHeight=Math.max(1,Math.round(context.height*scale));
+        const {outputWidth,outputHeight}=shapeLivePreviewDimensions(
+          context.width,context.height,context.drawing.viewState?.zoom??1,
+          typeof OffscreenCanvas!=='undefined');
         const abort=new AbortController();liveAbort=abort;
         try{
           const pixels=await runArtwork({width:context.width,height:context.height,
