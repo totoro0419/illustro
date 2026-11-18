@@ -28,6 +28,7 @@ export function createTransformPreviewRunner(){
   const worker=new Worker(new URL('./worker.ts',import.meta.url),{type:'module'});
   let disposed=false,source:Uint8Array|null=null,selection:TransformJob['selection']=null;
   let postPaint:TransformJob['postPaint']=undefined;
+  let originalPreset:NonNullable<TransformJob['originalStroke']>['preset']|null=null;
   let queue:Promise<void>=Promise.resolve();
   let cancelCurrent:((reason:unknown)=>void)|null=null;
   function run(job:TransformJob,signal?:AbortSignal){
@@ -45,14 +46,17 @@ export function createTransformPreviewRunner(){
         complete();disposed=true;worker.terminate();
         reject(new Error(event.message||'変形プレビューを計算できませんでした。'));
       };
-      const {pixels,selection:mask,postPaint:brushPasses,...rest}=job;
+      const {pixels,selection:mask,postPaint:brushPasses,originalStroke,...rest}=job;
       const message:CachedTransformJob={...rest,kind:'cached',
         ...(source===pixels?{}:{pixels}),
         ...(selection===mask?{}:{selection:mask}),
-        ...(postPaint===brushPasses?{}:{postPaint:brushPasses})};
+        ...(postPaint===brushPasses?{}:{postPaint:brushPasses}),
+        ...(originalStroke?{originalStroke:{samples:originalStroke.samples,seed:originalStroke.seed,alphaLocked:originalStroke.alphaLocked,
+          ...(originalPreset===originalStroke.preset?{}:{preset:originalStroke.preset})}}:{})};
       try{
         worker.postMessage(message);
         source=pixels;selection=mask;postPaint=brushPasses;
+        if(originalStroke)originalPreset=originalStroke.preset;
       }catch(error){complete();reject(error);}
     }));
     queue=task.then(()=>undefined,()=>undefined);
@@ -74,7 +78,7 @@ export function createTransformPreviewRunner(){
     if(disposed)return;
     disposed=true;
     cancelCurrent?.(Error('変形プレビューを終了しました。'));
-    worker.terminate();source=null;selection=null;postPaint=undefined;
+    worker.terminate();source=null;selection=null;postPaint=undefined;originalPreset=null;
   }
   return {run,dispose};
 }

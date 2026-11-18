@@ -1,6 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {initialTransform} from './geometry';
 import {createTransformPreviewRunner} from './run';
+import {createPreset} from '@illustro/brush-rt';
 
 type PreviewMessage={kind:string;pixels?:Uint8Array;settings:{dx:number}};
 class FakeWorker{
@@ -19,6 +20,16 @@ class FakeWorker{
 afterEach(()=>{vi.unstubAllGlobals();FakeWorker.instances.length=0;});
 
 describe('C07 preview worker image caching',()=>{
+  it('sends original-edit brush resources once while streaming successive pressure samples',async()=>{
+    vi.stubGlobal('Worker',FakeWorker);
+    const runner=createTransformPreviewRunner(),preset=createPreset('original','original');
+    const job={pixels:new Uint8Array(16),width:2,height:2,settings:initialTransform,selection:null,outputWidth:2,outputHeight:2,
+      originalStroke:{preset,samples:[{x:1,y:1,t:1,pressure:.5,pointerType:'pen'}],seed:[1,2] as [number,number],alphaLocked:false}};
+    await runner.run(job);await runner.run({...job,originalStroke:{...job.originalStroke,samples:[...job.originalStroke.samples,{x:2,y:1,t:2,pressure:1,pointerType:'pen'}]}});
+    const sent=FakeWorker.instances[0]!.messages as Array<PreviewMessage&{originalStroke:{preset?:unknown;samples:unknown[]}}>;
+    expect(sent[0]!.originalStroke.preset).toBe(preset);expect(sent[1]!.originalStroke.preset).toBeUndefined();
+    expect(sent[1]!.originalStroke.samples).toHaveLength(2);runner.dispose();
+  });
   it('reuses a worker and sends source pixels only if the source changes',async()=>{
     vi.stubGlobal('Worker',FakeWorker);
     const runner=createTransformPreviewRunner(),pixels=new Uint8Array(4);

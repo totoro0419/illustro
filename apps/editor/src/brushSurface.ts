@@ -40,6 +40,8 @@ export type PointerRoleSettings=Readonly<{pen:InputPointerRole;mouse:InputPointe
 type CanvasEditGesture=Readonly<{
   path:boolean;width:number;color:string;complete:(points:readonly MaskStrokePoint[])=>void;
   completeSamples?:(samples:readonly Sample[])=>void;
+  updateSamples?:(samples:readonly Sample[])=>void;
+  cancel?:()=>void;
   /** At most once per animation frame while tracing a canvas interaction. */
   update?:(points:readonly MaskStrokePoint[])=>void;
   pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;commit:(index:number,point:MaskPoint)=>void}>;
@@ -47,6 +49,7 @@ type CanvasEditGesture=Readonly<{
 
 export class BrushSurface{
   private editGesture:CanvasEditGesture|null=null;
+  private editTraceVisible=true;
   private editPointer:number|null=null;
   private editPointIndex:number|null=null;
   private editPointerType='';
@@ -629,7 +632,12 @@ export class BrushSurface{
     this.editGesture=gesture;
     if(gesture?.pointEdit)this.updateEditStrokeOutline();
   }
-  private clearCanvasEditGestureStroke(){
+  showCanvasEditTrace(visible:boolean){
+    this.editTraceVisible=visible;
+    if(this.editStrokeOutline)this.editStrokeOutline.style.visibility=visible?'visible':'hidden';
+  }
+  private clearCanvasEditGestureStroke(notify=true){
+    const interrupted=this.editPointer!==null;
     if(this.editOutlineFrame){cancelAnimationFrame(this.editOutlineFrame);this.editOutlineFrame=0;}
     this.editPointer=null;
     this.editPointIndex=null;
@@ -638,6 +646,8 @@ export class BrushSurface{
     this.editSamples=[];
     this.editStrokeOutline?.remove();
     this.editStrokeOutline=null;
+    this.editTraceVisible=true;
+    if(notify&&interrupted)this.editGesture?.cancel?.();
   }
   private appendEditPoint(event:PointerEvent){
     if(!this.view)return;
@@ -646,7 +656,7 @@ export class BrushSurface{
     const last=this.editPoints.at(-1);
     if(!last||Math.hypot(x-last.x,y-last.y)>=.5){
       this.editPoints.push({x,y,pressure});
-      if(this.editGesture?.completeSamples)this.editSamples.push(this.sample(event));
+      if(this.editGesture?.completeSamples||this.editGesture?.updateSamples)this.editSamples.push(this.sample(event));
     }
     if(this.editPoints.length>4096){
       this.editPoints=this.editPoints.filter((_,i)=>i%2===0);
@@ -669,6 +679,7 @@ export class BrushSurface{
       const outline=document.createElementNS(svg,'svg');
       outline.setAttribute('aria-hidden','true');
       outline.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:4';
+      outline.style.visibility=this.editTraceVisible?'visible':'hidden';
       outline.append(document.createElementNS(svg,'path'));
       this.inputViewport.append(outline);
       this.editStrokeOutline=outline;
@@ -714,12 +725,13 @@ export class BrushSurface{
     path.setAttribute('stroke-linejoin','round');
     path.setAttribute('stroke-opacity',gesture.path?'1':'.48');
     gesture.update?.(this.editPoints);
+    gesture.updateSamples?.(this.editSamples);
   }
   private finishCanvasEditGesture(event:PointerEvent){
     this.appendEditPoint(event);
     this.showFillGesturePreview(null);
     const gesture=this.editGesture,points=this.editPoints,index=this.editPointIndex,samples=this.editSamples;
-    this.clearCanvasEditGestureStroke();
+    this.clearCanvasEditGestureStroke(false);
     if(gesture?.pointEdit){
       const finalPoint=points.at(-1);
       if(index!==null&&finalPoint)gesture.pointEdit.commit(index,{x:finalPoint.x,y:finalPoint.y});

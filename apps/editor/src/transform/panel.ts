@@ -1,4 +1,4 @@
-import {CanonicalBuilder,type Sample} from '@illustro/brush-rt';
+import {CanonicalBuilder,type FoundationPreset,type Sample} from '@illustro/brush-rt';
 import {replayBrushPasses} from '../selection/brush';
 import type {DeformationBrushPass,LayerId,LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
@@ -57,6 +57,10 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   let ownedGesture:BrushSurface|null=null,editingHandles=false,placingPoints=false,previewAbort:AbortController|null=null;
   let highQualityPreviewTimer:number|null=null;
   let previewRunner:ReturnType<typeof createTransformPreviewRunner>|null=null;
+  let originalPreviewEpoch=0,originalPreviewRunning=false;
+  let originalPreviewInput:readonly Sample[]|null=null,originalPreviewPreset:FoundationPreset|null=null,originalPreviewSeed:[number,number]|null=null;
+  let originalCommitRunning=false;
+  const originalCommitQueue:Array<{source:TransformSource;samples:readonly Sample[];preset:FoundationPreset;seed:[number,number]}>=[];
   const inputs=new Map<keyof Omit<Transform,'quadrilateral'|'mesh'|'liquify'>,HTMLSelectElement|HTMLInputElement>();
   const keepRatio=document.createElement('input');keepRatio.type='checkbox';keepRatio.checked=true;
   const ratioLabel=document.createElement('label');ratioLabel.append(keepRatio,' 縦横比を保つ');controls.append(ratioLabel);
@@ -312,7 +316,42 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       :{points,commit:(index,point)=>moveCorner(index,snapPoint(point,null))}});
   }
   function stopGesture(){
+    invalidateOriginalPreview(false);originalCommitQueue.length=0;
     ownedGesture?.setCanvasEditGesture(null);ownedGesture=null;editingHandles=false;
+  }
+  function invalidateOriginalPreview(restore:boolean){
+    originalPreviewEpoch++;originalPreviewInput=null;originalPreviewPreset=null;originalPreviewSeed=null;
+    if(restore)paintOriginal();
+  }
+  function requestOriginalStrokePreview(samples:readonly Sample[]){
+    if(!editingOriginal||!source?.valid()||busy||!samples.length||!source.drawing.preset)return;
+    originalPreviewPreset??=structuredClone(source.drawing.preset);
+    if(!originalPreviewSeed){const values=crypto.getRandomValues(new Uint32Array(2));originalPreviewSeed=[values[0]!,values[1]!];}
+    originalPreviewInput=[...samples];
+    void pumpOriginalStrokePreview();
+  }
+  async function pumpOriginalStrokePreview(){
+    if(originalPreviewRunning)return;
+    const current=source,runner=previewRunner,epoch=originalPreviewEpoch;
+    if(!current||!runner)return;
+    originalPreviewRunning=true;
+    try{
+      while(originalPreviewInput&&editingOriginal&&source===current&&epoch===originalPreviewEpoch){
+        const samples=originalPreviewInput,preset=originalPreviewPreset,seed=originalPreviewSeed;
+        originalPreviewInput=null;if(!preset||seed===null)break;
+        const view=current.drawing.viewportRect;
+        const size=originalPreviewSize(current.width,current.height,view.width,view.height,window.devicePixelRatio||1);
+        const pixels=await runner.run({pixels:originalDraft??current.pixels,width:current.width,height:current.height,
+          settings:{...initialTransform,interpolation:'nearest'},selection:null,postPaint:[],
+          outputWidth:size.width,outputHeight:size.height,
+          originalStroke:{preset,samples,seed,alphaLocked:current.originalAlphaLocked===true}});
+        if(epoch===originalPreviewEpoch&&editingOriginal&&source===current&&current.valid()){
+          current.drawing.showArtworkPreview(new ImageData(pixels,size.width,size.height),true);
+          current.drawing.showCanvasEditTrace(false);
+        }
+      }
+    }catch(error){if(epoch===originalPreviewEpoch)status.textContent=error instanceof Error?error.message:String(error);}
+    finally{originalPreviewRunning=false;if(originalPreviewInput&&editingOriginal)void pumpOriginalStrokePreview();}
   }
   function paintOriginal(){
     const current=source;
@@ -359,15 +398,23 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }
   };
   originalCanvas.onpointercancel=()=>{originalPointer=null;originalInput=[];paintOriginal();};
-  async function commitOriginalStroke(input:readonly Sample[]){
+  async function commitOriginalStroke(input:readonly Sample[],seed:[number,number]=[0,0],presetOverride:FoundationPreset|null=null){
+    const current=source,preset=presetOverride??current?.drawing.preset;
+    if(!current||!editingOriginal||!input.length||!current.valid()||!preset)return;
+    originalCommitQueue.push({source:current,samples:[...input],seed,preset:structuredClone(preset)});
+    if(originalCommitRunning)return;
+    originalCommitRunning=true;
+    try{while(originalCommitQueue.length){
+      const next=originalCommitQueue.shift()!;
+      if(next.source===source&&editingOriginal&&next.source.valid())await applyOriginalStroke(next.samples,next.seed,next.preset);
+    }}finally{originalCommitRunning=false;}
+  }
+  async function applyOriginalStroke(input:readonly Sample[],seed:[number,number],preset:FoundationPreset){
     const current=source;
     if(!current||!editingOriginal||!input.length||!current.valid())return;
-    if(busy){status.textContent='前の筆を反映しています。';return;}
-    const preset=current.drawing.preset;
-    if(!preset){status.textContent='先にブラシか消しゴムを選んでください。';return;}
     busy=true;sync();
     try{
-      const builder=new CanonicalBuilder(preset,undefined,0,current.originalAlphaLocked?{alphaLocked:true}:{});
+      const builder=new CanonicalBuilder(preset,seed,0,current.originalAlphaLocked?{alphaLocked:true}:{});
       for(const point of input)builder.accept(point);
       const last=input.at(-1)!;
       builder.release({...last,phase:'release'});builder.finish();
@@ -402,7 +449,12 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       ownedGesture.setCanvasEditGesture({
         path:false,width:Math.max(1,source.drawing.brushSize),color:'#ecad47',
         complete:()=>{},
-        completeSamples:samples=>{void commitOriginalStroke(samples);}
+        updateSamples:requestOriginalStrokePreview,
+        cancel:()=>invalidateOriginalPreview(true),
+        completeSamples:samples=>{
+          const preset=originalPreviewPreset,seed:[number,number]=originalPreviewSeed??[0,0];
+          invalidateOriginalPreview(false);void commitOriginalStroke(samples,seed,preset);
+        }
       });
       status.textContent='制作キャンバス上で変形前の元画像を編集できます。現在のブラシや消しゴム、ペンの筆圧が使えます。';
       paintOriginal();
