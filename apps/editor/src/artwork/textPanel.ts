@@ -170,8 +170,9 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   }
   function updateSelectedText(patch:{color?:string;size?:number},clear=false){
     const range=selectedTextRange();
-    styleRanges=applyTextSelectionStyle(text.value,styleRanges,range.start,range.end,patch,clear);
-    if(styleRanges.length>512)throw Error('部分書式が多すぎます。近くの同じ書式をまとめてください。');
+    const next=applyTextSelectionStyle(text.value,styleRanges,range.start,range.end,patch,clear);
+    if(next.length>text.value.length)throw Error('部分書式が多すぎます。近くの同じ書式をまとめてください。');
+    styleRanges=next;
     partialMessage.textContent=clear?'選択部分の個別書式を解除しました。':'選択部分の書式を変更しました。';
     schedulePreview();
     text.focus({preventScroll:true});
