@@ -9,7 +9,7 @@ import {colorHintCenter,moveColorHint} from './colorHintPlacement';
 import {isManualBoundaryNoop} from './manualChangeEffect';
 import {tryIncrementalBoundaryAddition,tryIncrementalBoundaryRemoval} from './incrementalBoundary';
 import {sampleFillDetail} from './detailPreview';
-import {addTraceRegions,renderLiveRegionPreview} from './liveRegionPreview';
+import {LiveRegionTrace,renderLiveRegionPreview} from './liveRegionPreview';
 import type {LiveFillContext} from './liveExactPreview';
 
 export type Reference=LineRegions['reference'];
@@ -429,24 +429,21 @@ export function installFillPanel(host:HTMLElement,api:{
         if(request!==version)void calculate();
       }
     };
-    const picked=new Set<number>();
-    let processed=0,previewPixels:Uint8ClampedArray<ArrayBuffer>|undefined;
+    const regionTrace=new LiveRegionTrace();
+    let previewPixels:Uint8ClampedArray<ArrayBuffer>|undefined;
     const update=(points:readonly Point[])=>{
       latestPoints=points;
       if(prepared&&!sourceValid()){
         stopGesture();output.textContent='作品が変わったため塗りの入力を終了しました。';
         return;
       }
-      if(points.length<processed){processed=0;picked.clear();}
       if(graph){
-        const before=picked.size;
-        for(let i=Math.max(0,processed-1);i<points.length;i++){
-          const point=points[i]!,previous=points[Math.max(0,i-1)]!;
-          addTraceRegions(graph,previous,point,value(trace),closedOnly.checked,picked);
+        if(!regionTrace.update(graph,points,value(trace),closedOnly.checked))return;
+        if(!regionTrace.selected.size){
+          drawing.showFillGesturePreview(null);
+          return;
         }
-        processed=points.length;
-        if(!picked.size||picked.size===before)return;
-        const image=renderLiveRegionPreview(graph,picked,512,previewPixels);
+        const image=renderLiveRegionPreview(graph,regionTrace.selected,512,previewPixels);
         previewPixels=image.pixels;
         drawing.showFillGesturePreview(new ImageData(image.pixels,image.width,image.height));
       }else if(previewColor){version++;void calculate();}

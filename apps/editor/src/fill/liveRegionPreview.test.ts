@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import type {RegionGraph} from './pixels';
-import {addTraceRegions,renderLiveRegionPreview} from './liveRegionPreview';
+import {addTraceRegions,LiveRegionTrace,renderLiveRegionPreview} from './liveRegionPreview';
 
 const graph:RegionGraph={
  width:6,height:4,
@@ -64,6 +64,25 @@ describe('C08-003 incremental region preview',()=>{
   const preview=renderLiveRegionPreview(narrow,new Set([1]),1);
   expect([preview.width,preview.height]).toEqual([1,1]);
   expect(preview.pixels[3]).toBe(32);
+ });
+ it('removes stale highlights when the latest endpoint changes or points shrink',()=>{
+  const trace=new LiveRegionTrace();
+  expect(trace.update(graph,[{x:1,y:1}],1,false)).toBe(true);
+  expect([...trace.selected]).toEqual([1]);
+  expect(trace.update(graph,[{x:1,y:1},{x:4,y:1}],1,false)).toBe(true);
+  expect([...trace.selected].sort()).toEqual([1,2]);
+  expect(trace.update(graph,[{x:1,y:1},{x:1,y:2}],1,false)).toBe(true);
+  expect([...trace.selected]).toEqual([1]);
+  expect(trace.update(graph,[],1,false)).toBe(true);
+  expect(trace.selected.size).toBe(0);
+ });
+ it('replaces the previous tail even if the same update appends another point',()=>{
+  const trace=new LiveRegionTrace();
+  trace.update(graph,[{x:1,y:1},{x:4,y:1}],1,false);
+  expect([...trace.selected].sort()).toEqual([1,2]);
+  trace.update(graph,[{x:1,y:1},{x:1,y:2},{x:1,y:3}],1,false);
+  expect([...trace.selected]).toEqual([1]);
+  expect(trace.update(graph,[{x:1,y:1},{x:1,y:2},{x:1,y:3}],1,false)).toBe(false);
  });
  it('does not include absent or non-finite pointer seeds',()=>{
   const picked=new Set<number>();

@@ -28,6 +28,53 @@ export function addTraceRegions(
   }
 }
 
+
+/** Tracks region membership per gesture segment. Replacing the live pointer
+ * endpoint removes stale region highlights without rescanning a long stroke. */
+export class LiveRegionTrace{
+ readonly selected=new Set<number>();
+ private readonly counts=new Map<number,number>();
+ private lastSegment=new Set<number>();
+ private processed=0;
+ private tail:Point|null=null;
+ private optionKey='';
+
+ update(graph:RegionGraph,points:readonly Point[],width:number,closedOnly:boolean):boolean{
+   const optionKey=width+':'+closedOnly;
+   let changed=false;
+   if(points.length<this.processed||optionKey!==this.optionKey){
+     changed=this.selected.size>0;
+     this.selected.clear();this.counts.clear();this.lastSegment.clear();
+     this.processed=0;this.tail=null;this.optionKey=optionKey;
+   }else if(this.processed>0&&this.tail){
+     const oldTail=points[this.processed-1];
+     if(oldTail&&(oldTail.x!==this.tail.x||oldTail.y!==this.tail.y)){
+       // The previous last segment is no longer valid, even when a new
+       // point was appended in the same update.
+       for(const id of this.lastSegment){
+         const count=(this.counts.get(id)??0)-1;
+         if(count<=0){this.counts.delete(id);this.selected.delete(id);changed=true;}
+         else this.counts.set(id,count);
+       }
+       this.processed--;
+     }
+   }
+   for(let i=this.processed;i<points.length;i++){
+     const segment=new Set<number>();
+     addTraceRegions(graph,points[Math.max(0,i-1)]!,points[i]!,width,closedOnly,segment);
+     for(const id of segment){
+       const count=this.counts.get(id)??0;
+       this.counts.set(id,count+1);
+       if(!count){this.selected.add(id);changed=true;}
+     }
+     this.lastSegment=segment;
+   }
+   this.processed=points.length;
+   this.tail=points.length?{...points[points.length-1]!}:null;
+   return changed;
+ }
+}
+
 /** Downsample just the region labels, never allocate a full-resolution overlay. */
 export function renderLiveRegionPreview(
  graph:RegionGraph,selected:ReadonlySet<number>,maxDimension=512,
