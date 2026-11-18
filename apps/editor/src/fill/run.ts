@@ -2,8 +2,9 @@ import type {Point} from '../transform/geometry';
 import type {FillJob} from './worker';
 import type {GapCandidate,RegionGraph} from './pixels';
 import type {MaskData} from '../selection/mask';
+import type {FillRangePreview} from './liveExactPreview';
 
-type Response={graph?:RegionGraph;boundary?:readonly Point[];gaps?:readonly GapCandidate[];mask?:MaskData;diagnostics?:Readonly<{remaining:Uint8Array;bridges:Uint8Array}>;pixels?:Uint8ClampedArray<ArrayBuffer>|null;error?:string};
+type Response={preview?:FillRangePreview;previewMissing?:boolean;graph?:RegionGraph;boundary?:readonly Point[];gaps?:readonly GapCandidate[];mask?:MaskData;diagnostics?:Readonly<{remaining:Uint8Array;bridges:Uint8Array}>;pixels?:Uint8ClampedArray<ArrayBuffer>|null;error?:string};
 type Task={job:FillJob;resolve:(value:Response)=>void;reject:(error:Error)=>void;signal?:AbortSignal|undefined;abort?:()=>void;timeout?:ReturnType<typeof setTimeout>};
 
 // A single reusable worker avoids repeated startup and prevents simultaneous
@@ -63,6 +64,9 @@ function pump(){
 }
 
 /** Abort terminates the active computation; queued work is preserved. */
+export function releaseLiveFillPreview(id:string){
+  worker?.postMessage({type:'live-end',id});
+}
 export function runFill(job:FillJob,signal?:AbortSignal):Promise<Response>{
   return new Promise<Response>((resolve,reject)=>{
     if(signal?.aborted){reject(new DOMException('塗りつぶしを中断しました。','AbortError'));return;}

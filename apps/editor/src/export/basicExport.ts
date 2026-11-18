@@ -171,23 +171,32 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
  */
 export async function renderFrozenArtworkTiledPreview(
   frozen:FrozenExport,targetWidth:number,targetHeight:number,
+  options?:Readonly<{replacement:{surfaceId:string;pixels:Uint8ClampedArray};signal:AbortSignal}>,
 ):Promise<Uint8ClampedArray|null>{
   if(!canUseTiledHistoryPreview(frozen,targetWidth,targetHeight))return null;
   const {width,height,layers,strokes}=frozen;
+  const replacement=options?.replacement;
+  if(replacement&&(replacement.pixels.length!==width*height*4||!layers.some(layer=>layer.surfaceId===replacement.surfaceId)))
+    throw Error('差し替えるレイヤーの画像サイズが正しくありません。');
+  const check=()=>options?.signal.throwIfAborted();
+  check();
   const canvas=createRenderCanvas(width,height);
   let renderer:GpuRenderer|null=null;
   try{
     try{renderer=await GpuRenderer.create(canvas,width,height,'webgl2',{webglDesynchronized:false});}
     catch{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
     renderer.setSurfaceStack(layers.map(layer=>layer.surfaceId));
-    if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels,width,height);
+    if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels.filter(layer=>layer.surfaceId!==replacement?.surfaceId),width,height);
     let id=0;
     for(const {surfaceId,record} of strokes){
+      if(surfaceId===replacement?.surfaceId)continue;
+      check();
       const preset={...record.preset,__legacyStarAa:record.engine==='illustro-rt-2.4'};
       renderer.document.append(++id,preset,record.commands,null,surfaceId);
       renderer.document.end(id,preset,surfaceId);
     }
     await renderer.drain();
+    check();
     const accumulator=createTiledPreviewAccumulator(width,height,targetWidth,targetHeight);
     const plainWhite=new Uint8Array(TILE*TILE*4).fill(255);
     const layerBySurface=new Map(layers.map(layer=>[layer.surfaceId,layer]));
@@ -197,9 +206,22 @@ export async function renderFrozenArtworkTiledPreview(
     // every allocation and GPU readback is confined to the current 128px tile.
     for(let ty=0;ty<Math.ceil(height/TILE);ty++){
       for(let tx=0;tx<Math.ceil(width/TILE);tx++){
+        check();
         const composite=new Uint8ClampedArray(TILE*TILE*4),key=tx+','+ty;
         const sourcePixels=new Map<string,Uint8Array|Uint8ClampedArray>();
         const readLayer=async(layer:FrozenExport['layers'][number])=>{
+          if(layer.surfaceId===replacement?.surfaceId){
+            let pixels=sourcePixels.get(layer.surfaceId);
+            if(!pixels){
+              pixels=new Uint8ClampedArray(TILE*TILE*4);
+              for(let y=0;y<TILE&&ty*TILE+y<height;y++){
+                const from=((ty*TILE+y)*width+tx*TILE)*4;
+                pixels.set(replacement.pixels.subarray(from,from+Math.min(TILE,width-tx*TILE)*4),y*TILE*4);
+              }
+              sourcePixels.set(layer.surfaceId,pixels);
+            }
+            return pixels;
+          }
           const pixels=sourcePixels.get(layer.surfaceId)??(layer.baseColor==='white'
             ?plainWhite
             :await renderer!.readTile(layer.surfaceId,key)??new Uint8Array(TILE*TILE*4));
@@ -250,6 +272,7 @@ export async function renderFrozenArtworkTiledPreview(
       // History rendering must leave time for normal pointer input.
       await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
     }
+    check();
     return accumulator.finish();
   }finally{renderer?.destroy();canvas.width=1;canvas.height=1;}
 }

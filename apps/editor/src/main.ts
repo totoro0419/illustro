@@ -93,7 +93,7 @@ import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
 import {compilePreset,layerMaskTile,TILE,type FoundationPreset} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
-import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,type FrozenExport,type ImageFormat,type ImageExportResult} from './export/basicExport';
+import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
@@ -4046,13 +4046,33 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
   if(!pixels)throw Error('変形する絵を読み込めません。');
   const bounds=saved?.bounds??(selection?boundsOfSelection(selection):alphaBounds(pixels,width,height))??{x:0,y:0,width,height};
   const linkedMask=Boolean((saved?saved.linkedMask:target==='layer')&&layer.vectorMask&&layer.vectorMask.linked!==false);
+  const replacementOpacity=transformPreviewReplacementOpacity(artwork.root,layer.id,target);
+  let previewScene:FrozenExport|undefined;
   const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
     controller.selectedLayer.id===layer.id&&(target==='layer'||c06Selection?.active()===activeSelection);
   return {
     width,height,bounds,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
     pixels,selection:target==='boundary'?null:selection,drawing,valid,objectSnap:marks,originalAlphaLocked:!!original.alphaLocked,...(layer.vectorMask?{maskLink:linkedMask}:{}),
-    ...((()=>{const opacity=transformPreviewReplacementOpacity(artwork.root,layer.id,target);
-      return opacity===null?{}:{replacementLayerId:layer.id,replacementOpacity:opacity};})()),
+    ...(replacementOpacity===null?{}:{replacementLayerId:layer.id,replacementOpacity}),
+    ...(target!=='boundary'&&replacementOpacity===null?{compositePreview:async(settings:Transform,originalPixels:Uint8Array,signal:AbortSignal)=>{
+      signal.throwIfAborted();
+      if(!valid())throw Error('作品が変わったため変形の確認表示を終了しました。');
+      previewScene??=captureExport(artwork,undefined,head);
+      // Calculate final layer pixels off-thread only after a pause in handle
+      // movement. Composite all layers tile by tile, then shrink the result.
+      const result=await runTransform({pixels:originalPixels,width,height,settings,selection,
+        outputWidth:width,outputHeight:height,...(saved?.postPaint?{postPaint:saved.postPaint}:{})},signal);
+      const sourceMask=saved?original.vectorMask:layer.vectorMask;
+      const mask=linkedMask&&sourceMask?transformLinkedMask(sourceMask,settings,width,height):layer.vectorMask;
+      const surfaceId=layer.surface.descriptor.surfaceId;
+      const scene={...previewScene,layers:previewScene.layers.map(item=>item.surfaceId===surfaceId
+        ?{...item,...(mask?{mask}:{})}:item)};
+      const scale=Math.min(1,350/Math.max(width,height));
+      const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
+      const composite=await renderFrozenArtworkTiledPreview(scene,w,h,{replacement:{surfaceId,pixels:result},signal});
+      if(!composite||!valid())throw Error('変形の重なりを表示できませんでした。');
+      return new ImageData(new Uint8ClampedArray(composite),w,h);
+    }}:{}),
     guides:guidePreferences.enabled?{
       x:[{value:guidePreferences.x??0,name:'定規の基準 X'}],y:[{value:guidePreferences.y??0,name:'定規の基準 Y'}]
     }:null,
@@ -4197,7 +4217,7 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
     });
     return created!;
   },
-  capture:async(reference,destination,layerIds,needTarget,stored)=>{
+  capture:async(reference,destination,layerIds,needTarget,stored,previewOnly)=>{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
     const drawing=surface,selection=c06Selection?.active()??null;
     if(!drawing)throw Error('作品を開いてください。');
@@ -4212,7 +4232,11 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
     let target:Uint8Array|null=null;
     const {width,height}=root;
     if(referenceRoot.width!==width||referenceRoot.height!==height)throw Error('保存した領域と現在の作品の大きさが違います。解析を更新してください。');
-    await withClipboardAccess(async active=>{
+    if(previewOnly){
+      // Frozen rendering reads committed artwork without taking the drawing
+      // input barrier. A fill gesture can start while these pixels are prepared.
+      if(needTarget&&destination==='active')target=await originalTransformPixels(artwork,layer,head);
+    }else await withClipboardAccess(async active=>{
       if(needTarget&&destination==='active')target=(await active.captureDocumentLayers(new Set([layer.id]))).get(layer.id)??null;
       return 'read';
     });

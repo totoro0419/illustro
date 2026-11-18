@@ -19,6 +19,7 @@ export type TransformSource={
   objectSnap:SnapTargets;guides:SnapTargets|null;originalAlphaLocked?:boolean;
   postPaint?:readonly DeformationBrushPass[];
   replacementLayerId?:LayerId;replacementOpacity?:number;
+  compositePreview?:(settings:Transform,original:Uint8Array,signal:AbortSignal)=>Promise<ImageData>;
   apply:(settings:Transform,pixels:Uint8ClampedArray,editedOriginal?:Uint8Array)=>Promise<void>;
 };
 type Target='layer'|'selected'|'boundary';
@@ -485,6 +486,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         (source.initial?' 仮表示は原本の変形です。上に描いた筆は適用時に同じ位置へ重ねます。':'');
       status.textContent+=source.replacementLayerId
         ?' 元レイヤーを一時的に隠して候補を表示します。拡大時の画素は下の候補欄で確認してください。'
+        :source.compositePreview?' 操作中は軽い仮表示を使い、手を止めると重なりやマスクを反映します。'
         :' キャンバス上の半透明の変形表示は目安です。正確なレイヤー画素は下の候補欄で確認してください。';
       editingHandles=usesHandles(settings.mode);placingPoints=false;refreshHandles();compare.checked=false;
     }finally{busy=false;sync();}
@@ -708,12 +710,23 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
         const rect=current.drawing.viewportRect;
         const quality=progressiveTransformPreviewSize(current.width,current.height,
           rect.width,rect.height,window.devicePixelRatio||1);
-        if(quality.width>outputWidth&&quality.height>=outputHeight){
+        if(current.compositePreview||quality.width>outputWidth&&quality.height>=outputHeight){
           const savedSettings=settings,savedPixels=originalDraft??current.pixels;
           const selection=current.selection,protection=protectionVisible.checked;
           highQualityPreviewTimer=window.setTimeout(()=>{
             highQualityPreviewTimer=null;
             if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal||!current.valid())return;
+            if(current.compositePreview){
+              void current.compositePreview(savedSettings,savedPixels,controller.signal).then(image=>{
+                if(id!==previewId||controller.signal.aborted||source!==current||editingOriginal||!current.valid())return;
+                current.drawing.showArtworkPreview(image,true);
+                status.textContent='変形後のレイヤーの重なり・マスク・合成方法を反映しました。';
+              }).catch(error=>{
+                if(id===previewId&&!controller.signal.aborted)
+                  status.textContent='重なりの確認表示を省略しました。'+(error instanceof Error?error.message:'');
+              });
+              return;
+            }
             void runner.run({
               pixels:savedPixels,width:current.width,height:current.height,
               settings:savedSettings,selection,
