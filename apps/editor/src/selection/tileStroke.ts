@@ -10,7 +10,7 @@ export function validateRasterWorkerTiles(
   throw new Error('画像の区画の大きさが正しくありません。');
  const columns=Math.ceil(width/TILE),rows=Math.ceil(height/TILE),seen=new Set<string>();
  for(const tile of input){
-  if(!tile||typeof tile.key!=='string'||!/^(0|[1-9]\\d*),(0|[1-9]\\d*)$/.test(tile.key)||
+  if(!tile||typeof tile.key!=='string'||!/^(0|[1-9]\d*),(0|[1-9]\d*)$/.test(tile.key)||
     seen.has(tile.key)||!(tile.pixels instanceof Uint8Array)||
     tile.pixels.byteLength!==TILE*TILE*4)
    throw new Error('読み込んだ画素の区画が正しくありません。');
