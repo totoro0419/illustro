@@ -426,9 +426,17 @@ export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:
     if(a.tip&&dx*a.inward.x+dy*a.inward.y>0||b.tip&&dx*b.inward.x+dy*b.inward.y<0)continue;
     let obstruction=false;
     const steps=Math.max(Math.abs(dx),Math.abs(dy));
-    for(let step=1;step<steps;step++){
+    for(let step=1;step<steps&&!obstruction;step++){
       const x=Math.round(a.x+dx*step/steps),y=Math.round(a.y+dy*step/steps);
       if(isInk(x,y)||rejected.has(x+','+y)){obstruction=true;break;}
+      // A nearby third stroke makes this candidate unsafe even if the
+      // candidate's centerline itself is clear. Keep manual boundary tools
+      // available, but do not recommend it as an automatic gap.
+      for(let nearY=y-1;nearY<=y+1&&!obstruction;nearY++)
+        for(let nearX=x-1;nearX<=x+1;nearX++){
+          if(nearX===a.x&&nearY===a.y||nearX===b.x&&nearY===b.y)continue;
+          if(isInk(nearX,nearY)){obstruction=true;break;}
+        }
     }
     if(obstruction)continue;
     const kind=a.junction||b.junction?'junction':a.tip&&b.tip?'tips':a.tip||b.tip?'edge':'near';
