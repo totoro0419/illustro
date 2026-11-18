@@ -1,4 +1,5 @@
 import type {ArtPoint,EditablePath,EditableText} from '@illustro/core';
+import {layoutEditableText} from './textLayout';
 import {addAsset,getAsset,listAssets,type AssetInfo,type AssetEntry} from '../assets/library';
 import type {Font,PathCommand} from 'opentype.js';
 
@@ -80,7 +81,9 @@ function appendCommands(points:ArtPoint[],commands:readonly PathCommand[]){
 
 function vectorize(text:EditableText,font:Font):ArtPoint[]{
   const points:ArtPoint[]=[],ascent=font.ascender*text.size/font.unitsPerEm;
-  const lines=text.text.split('\n');
+  const lines=layoutEditableText(text,characters=>
+    font.getAdvanceWidth(characters,text.size,{kerning:true})+
+      (Array.from(characters).length-1)*text.spacing).lines;
   for(let i=0;i<lines.length;i++){
     const line=lines[i]!,characters=Array.from(line);
     if(text.vertical){
