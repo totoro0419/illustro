@@ -84,6 +84,41 @@ describe('C08-003 incremental region preview',()=>{
   expect([...trace.selected]).toEqual([1]);
   expect(trace.update(graph,[{x:1,y:1},{x:1,y:2},{x:1,y:3}],1,false)).toBe(false);
  });
+ it('replays revised middle segments and removes regions touched only by old geometry',()=>{
+  const trace=new LiveRegionTrace();
+  const points=[{x:1,y:1},{x:4,y:1},{x:1,y:2},{x:1,y:3}];
+  trace.update(graph,points,1,false);
+  expect([...trace.selected].sort()).toEqual([1,2]);
+  // A stabilizer can revise an earlier endpoint, not just the final one.
+  points[1]={x:1,y:2};
+  expect(trace.update(graph,points,1,false)).toBe(true);
+  expect([...trace.selected]).toEqual([1]);
+  expect(trace.update(graph,points,1,false)).toBe(false);
+ });
+ it('retains segment counts when a recent middle point changes during append',()=>{
+  const trace=new LiveRegionTrace();
+  const points=Array.from({length:12},(_,i)=>({x:1,y:i%3}));
+  points[6]={x:4,y:1};
+  trace.update(graph,points,1,false);
+  expect([...trace.selected].sort()).toEqual([1,2]);
+  points[6]={x:1,y:1};
+  points.push({x:1,y:2});
+  expect(trace.update(graph,points,1,false)).toBe(true);
+  expect([...trace.selected]).toEqual([1]);
+  expect(trace.update(graph,points,1,false)).toBe(false);
+ });
+ it('bounds its revision window during a long stable gesture',()=>{
+  const trace=new LiveRegionTrace();
+  const points=Array.from({length:1500},()=>({x:1,y:1}));
+  expect(trace.update(graph,points,1,false)).toBe(true);
+  expect([...trace.selected]).toEqual([1]);
+  points[points.length-8]={x:4,y:1};
+  expect(trace.update(graph,points,1,false)).toBe(true);
+  expect([...trace.selected].sort()).toEqual([1,2]);
+  points[points.length-8]={x:1,y:1};
+  expect(trace.update(graph,points,1,false)).toBe(true);
+  expect([...trace.selected]).toEqual([1]);
+ });
  it('recomputes touched regions after analysis replaces the graph with reused IDs',()=>{
   const trace=new LiveRegionTrace(),points=[{x:1,y:1}];
   expect(trace.update(graph,points,1,false)).toBe(true);
