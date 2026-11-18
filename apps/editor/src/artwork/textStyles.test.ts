@@ -60,6 +60,18 @@ describe('C10-009 partial editable text formatting',()=>{
   expect(laidOut.lines[1]!.glyphs[0]!.color).toBe('#ff0000');
   expect(laidOut.lines[1]!.glyphs[0]!.size).toBe(35);
  });
+ it('preserves more than 512 independent formatting runs without data loss',()=>{
+  const source='あ'.repeat(1400);
+  const ranges=Array.from({length:600},(_,i)=>({
+    start:i*2,end:i*2+1,color:i%2?'#ff0000':'#0000ff'
+  }));
+  const checked=validateEditableArtwork({...base,text:source,styleRanges:ranges});
+  expect(checked?.kind).toBe('text');
+  if(checked?.kind==='text')expect(checked.styleRanges).toHaveLength(600);
+  const inserted=rebaseTextStyles(source,'前'+source,ranges);
+  expect(inserted).toHaveLength(600);
+  expect(inserted.at(-1)!.start).toBe(1199);
+ });
  it('stops a long styled paragraph after the visible frame rows',()=>{
   const text:EditableText={...base,text:'あ'.repeat(2000),boxWidth:40,boxHeight:40,
     styleRanges:[{start:0,end:2000,color:'#ff0000'}]};
