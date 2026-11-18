@@ -37,6 +37,11 @@ export function reverseGradientStops(current:readonly GradientStop[]):GradientSt
   return ordered.reverse().map((stop,index)=>({...stop,at:1-stop.at,
     midpoint:index<ordered.length-1?1-ordered[index+1]!.midpoint:stop.midpoint}));
 }
+/** A new shape and its preview must use the same frozen selection snapshot.
+ * An edited layer instead keeps its existing vector mask in ArtworkActions.save. */
+export function shapeGradientInitialMask(editing:LayerId|undefined,draftMask:LayerMask|null):LayerMask|null|undefined{
+  return editing?undefined:draftMask;
+}
 export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const heading=document.createElement('summary');heading.textContent='図形・グラデーション';
@@ -387,7 +392,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       // to be active when Save ran, even though the preview used draftMask.
       // Existing editable layers keep their own stored vector mask.
       await api.save(content,content.kind==='gradient'?'グラデーション':'図形',editing,
-        editing?undefined:draftMask);
+        shapeGradientInitialMask(editing,draftMask));
       stopHandles();
       status.textContent='作品に反映しました。';
     },status),
