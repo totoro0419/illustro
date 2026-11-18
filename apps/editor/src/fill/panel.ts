@@ -7,6 +7,7 @@ import {runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
 import {sampleFillDetail} from './detailPreview';
 import {addTraceRegions,renderLiveRegionPreview} from './liveRegionPreview';
+import {LiveColorFillPreview} from './liveColorPreview';
 
 export type Reference=LineRegions['reference'];
 export type Destination='active'|'new'|'under'|'color-layer';
@@ -361,30 +362,58 @@ export function installFillPanel(host:HTMLElement,api:{
     finally{analyzing=false;if(analysisAbort===abort)analysisAbort=null;sync();}
   }
   function stopGesture(){gesture?.setCanvasEditGesture(null);gesture=null;}
-  function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false){
+  async function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false){
     stopGesture();
     const drawing=api.drawing();
     if(!drawing)throw Error('作品を開いてください。');
     const graph=liveFill&&method.value==='line'&&confirmed&&currentGraph&&capture?.referenceValid()&&
       value(tolerance)===graphTolerance&&value(gap)===graphGap?currentGraph:null;
+    // The color preview is a 512px guide only; actual fill stays full-resolution.
+    // Do not falsely imply exactness when a selection, target mask or edge
+    // effects must be applied by the final Worker.
+    let liveColor:LiveColorFillPreview|null=null;
+    let colorCapture:FillCapture|null=null;
+    if(liveFill&&method.value==='color'&&condition.value==='all'&&!value(edge)&&!smooth.checked){
+      output.textContent='塗りの仮表示に使う絵を読み込んでいます。';
+      const source=await read(false);
+      if(drawing!==api.drawing()||!source.valid())throw Error('作品が変わったため、塗りの準備を中止しました。');
+      if(!source.selection&&!source.targetMask){
+        colorCapture=source;
+        liveColor=new LiveColorFillPreview(source.source,source.width,source.height,512);
+      }
+    }
     const picked=new Set<number>();
     let processed=0,previewPixels:Uint8ClampedArray<ArrayBuffer>|undefined;
-    gesture=drawing;output.textContent=graph
-      ?label+' なぞった領域を青く仮表示します。正確な結果は指を離した後に計算します。':label;
+    gesture=drawing;
+    output.textContent=graph||liveColor
+      ?label+' 青い仮表示は目安です。正確な結果は指を離した後に計算します。':label;
     drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,
-      ...(graph?{update:(points:readonly Point[])=>{
-        if(points.length<processed){processed=0;picked.clear();}
-        // Process each segment only once; avoid replaying a long 4K trace per frame.
-        const before=picked.size;
-        for(let i=Math.max(0,processed-1);i<points.length;i++){
-          const point=points[i]!,previous=points[Math.max(0,i-1)]!;
-          addTraceRegions(graph,previous,point,value(trace),closedOnly.checked,picked);
+      ...(graph||liveColor?{update:(points:readonly Point[])=>{
+        if(colorCapture&&!colorCapture.valid()){
+          stopGesture();output.textContent='作品が変わったため塗りの入力を終了しました。';
+          return;
         }
-        processed=points.length;
-        if(!picked.size||picked.size===before)return;
-        const image=renderLiveRegionPreview(graph,picked,512,previewPixels);
-        previewPixels=image.pixels;
-        drawing.showFillGesturePreview(new ImageData(image.pixels,image.width,image.height));
+        if(points.length<processed){processed=0;picked.clear();}
+        if(graph){
+          const before=picked.size;
+          for(let i=Math.max(0,processed-1);i<points.length;i++){
+            const point=points[i]!,previous=points[Math.max(0,i-1)]!;
+            addTraceRegions(graph,previous,point,value(trace),closedOnly.checked,picked);
+          }
+          processed=points.length;
+          if(!picked.size||picked.size===before)return;
+          const image=renderLiveRegionPreview(graph,picked,512,previewPixels);
+          previewPixels=image.pixels;
+          drawing.showFillGesturePreview(new ImageData(image.pixels,image.width,image.height));
+        }else if(liveColor){
+          let changed=false;
+          for(let i=Math.max(0,processed-1);i<points.length;i++){
+            const point=points[i]!,previous=points[Math.max(0,i-1)]!;
+            changed=liveColor.add(previous,point,settings())||changed;
+          }
+          processed=points.length;
+          if(changed)drawing.showFillGesturePreview(liveColor.render());
+        }
       }}:{}),
       complete:points=>{
         stopGesture();
