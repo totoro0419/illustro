@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import type {ArtPoint,EditablePath} from '@illustro/core';
-import {appendPathStroke,combineShapes,eraseWholeStroke,joinPaths,sampledPath} from './pathOperations';
+import {appendPathStroke,combineShapes,eraseSegment,eraseWholeStroke,joinPaths,sampledPath} from './pathOperations';
 
 const line=(start:number,end:number):EditablePath=>({
   kind:'path',shape:'polyline',points:[{x:start,y:0},{x:end,y:0}],
@@ -32,6 +32,35 @@ describe('C10 vector editing geometry',()=>{
     expect(joinPaths(line(0,20),line(21,50)).points).toHaveLength(4);
     expect(()=>joinPaths(line(0,20),line(30,50),0)).toThrow();
   });
+  it('joins nearby curves with a straight bridge and merges coincident endpoints without losing original handles',()=>{
+    const first:EditablePath={...line(0,20),shape:'bezier',points:[
+      {x:0,y:0,outX:10,outY:0},{x:20,y:0,inX:10,inY:0,outX:20,outY:100}
+    ]};
+    const second:EditablePath={...line(21,40),shape:'bezier',points:[
+      {x:21,y:0,inX:21,inY:-100,outX:30,outY:0},{x:40,y:0,inX:30,inY:0}
+    ]};
+    const joined=joinPaths(first,second);
+    expect(joined.points).toHaveLength(4);
+    expect(joined.points[1]?.outX).toBeUndefined();
+    expect(joined.points[2]?.inX).toBeUndefined();
+    expect(sampledPath(joined)[0]!.every(p=>Math.abs(p.y)<.001)).toBe(true);
+    expect(first.points[1]?.outY).toBe(100);
+    const exact=joinPaths(first,{...second,points:[{...second.points[0]!,x:20},second.points[1]!]});
+    expect(exact.points).toHaveLength(3);
+    expect(exact.points[1]?.inX).toBe(10);
+    expect(exact.points[1]?.outX).toBe(30);
+  });
+  it('hits a strongly curved 4K stroke that a fixed 16-segment approximation misses',()=>{
+    const path:EditablePath={...line(0,4100),shape:'bezier',points:[
+      {x:0,y:0,outX:0,outY:4000},{x:4000,y:0,inX:4000,inY:4000},{x:4100,y:0}
+    ]};
+    const t=.46875,u=1-t;
+    const target={x:3*u*t*t*4000+t*t*t*4000,y:3*u*u*t*4000+3*u*t*t*4000};
+    const result=eraseSegment(path,target);
+    expect(result.points).toHaveLength(2);
+    expect(result.points[0]?.x).toBe(4000);
+    expect(result.points[1]?.x).toBe(4100);
+  });
   it('samples high-curvature Bézier paths with sub-pixel error',()=>{
     const bezier:EditablePath={...line(0,200),shape:'bezier',
       points:[{x:0,y:0,outX:0,outY:120},{x:200,y:0,inX:200,inY:120}]};
@@ -58,6 +87,9 @@ describe('C10 vector editing geometry',()=>{
     expect(fine[0]!.x).toBe(0);
     expect(fine.at(-1)!.x).toBe(4000);
     expect(fine.at(-1)!.y).toBe(0);
+    // An excessively strict tolerance must fail clearly instead of
+    // returning a visibly inaccurate last segment.
+    expect(()=>sampledPath(longCurve,.00001,8192)).toThrow(/精度/);
   });
   it('preserves the original operands when two closed shapes are combined',async()=>{
     const first=rectangle(0,40),second=rectangle(20,60);

@@ -40,13 +40,16 @@ export function eraseSegment(path:EditablePath,point:ArtPoint){
     const a=path.points[i]!,b=path.points[(i+1)%path.points.length]!;
     let d=segmentDistance(point,a,b);
     if(a.outX!==undefined||b.inX!==undefined){
-      let previous=a;d=Infinity;
-      for(let j=1;j<=16;j++){
-        const t=j/16,u=1-t;
-        const coord=(a:number,b:number,c:number,d:number)=>u**3*a+3*u*u*t*b+3*u*t*t*c+t**3*d;
-        const next={x:coord(a.x,a.outX??a.x,b.inX??b.x,b.x),y:coord(a.y,a.outY??a.y,b.inY??b.y,b.y)};
-        d=Math.min(d,segmentDistance(point,previous,next));previous=next;
-      }
+      // A cubic can bow far away from its end-to-end chord. First reject
+      // segments whose entire control hull is outside the hit radius.
+      const xs=[a.x,a.outX??a.x,b.inX??b.x,b.x];
+      const ys=[a.y,a.outY??a.y,b.inY??b.y,b.y];
+      if(point.x<Math.min(...xs)-best||point.x>Math.max(...xs)+best||
+         point.y<Math.min(...ys)-best||point.y>Math.max(...ys)+best)continue;
+      const samples=sampledPath({...path,shape:'bezier',points:[a,b],closed:false},.5,4096)[0]!;
+      d=Infinity;
+      for(let j=1;j<samples.length;j++)
+        d=Math.min(d,segmentDistance(point,samples[j-1]!,samples[j]!));
     }
     if(d<best){best=d;cut=i;}
   }
@@ -158,10 +161,14 @@ export function sampledPath(path:EditablePath,tolerance=.5,maxPoints=65536):ArtP
       Math.floor((maxPoints-anchors.length)/Math.max(1,anchors.length-1))));
     function flatten(a0:ArtPoint,a1:ArtPoint,a2:ArtPoint,a3:ArtPoint,begin:number,end:number,depth:number){
       const flat=Math.max(segmentDistance(a1,a0,a3),segmentDistance(a2,a0,a3));
-      if(flat<=tolerance||depth>=14||samples>=curveBudget){
+      if(flat<=tolerance){
         group.push({...a3,pressure:(p0.pressure??1)+((p3.pressure??1)-(p0.pressure??1))*end});
         samples++;total++;checkBudget();return;
       }
+      // Never silently replace an inaccurate high-curvature section with
+      // one long straight edge when the safety budget is exhausted.
+      if(depth>=14||samples>=curveBudget)
+        throw Error('曲線の精度を保てる点数を超えました。点を減らすか許容幅を広げてください。');
       const q0=lerp(a0,a1),q1=lerp(a1,a2),q2=lerp(a2,a3);
       const r0=lerp(q0,q1),r1=lerp(q1,q2),mid=lerp(r0,r1),middle=(begin+end)/2;
       flatten(a0,q0,r0,mid,begin,middle,depth+1);
@@ -241,8 +248,17 @@ export function joinPaths(a:EditablePath,b:EditablePath,maxGap=24):EditablePath{
   const {left,right,length}=candidates[0]!;
   if(!Number.isFinite(maxGap)||maxGap<0||length>maxGap)
     throw Error('2本の端が離れています。まず端の点を近づけてください。');
-  if(left.length+right.length>4096)throw Error('接続する線の点が多すぎます。点を減らしてください。');
-  return {...a,shape:'bezier',points:[...left,...right],fill:null,closed:false};
+  const coincident=length<=.000001;
+  if(left.length+right.length-(coincident?1:0)>4096)
+    throw Error('接続する線の点が多すぎます。点を減らしてください。');
+  // Handles on the two sides of a gap belong to the original strokes,
+  // not the new bridge. Otherwise the bridge unexpectedly becomes a loop.
+  const {outX:_outX,outY:_outY,...leftEnd}=left.at(-1)!;
+  const {inX:_inX,inY:_inY,...rightStart}=right[0]!;
+  const points=coincident?
+    [...left.slice(0,-1),{...leftEnd,...(rightStart.outX===undefined?{}:{outX:rightStart.outX,outY:rightStart.outY})},...right.slice(1)]:
+    [...left.slice(0,-1),leftEnd,rightStart,...right.slice(1)];
+  return {...a,shape:'bezier',points,fill:null,closed:false};
 }
 
 export function eraseBetweenIntersections(path:EditablePath,reference:EditablePath,position:ArtPoint):EditablePath{
