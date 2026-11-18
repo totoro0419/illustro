@@ -27,7 +27,10 @@ export function selectedStrokeMayAffectMask(mask:MaskData,records:readonly Strok
     commands++;
   }
   if(!commands||left>=right||top>=bottom)return false;
-  for(let y=top;y<bottom;y++)
+  // Never turn a conservative optimization into another full-frame scan.
+  // Large or diagonal strokes proceed to the existing exact Worker path.
+  if((right-left)*(bottom-top)>1_048_576)return true;
+  for(let y=top;y<bottom;y>
     if(alpha.subarray(y*width+left,y*width+right).some(value=>value!==0))return true;
   return false;
 }
