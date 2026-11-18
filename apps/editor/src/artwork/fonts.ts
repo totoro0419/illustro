@@ -1,5 +1,6 @@
 import type {ArtPoint,EditablePath,EditableText} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
+import {layoutStyledText} from './textStyles';
 import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
 import {verticalGlyphAdjustment} from './verticalGlyph';
 import {addAsset,getAsset,listAssets,type AssetInfo,type AssetEntry} from '../assets/library';
@@ -83,6 +84,37 @@ function appendCommands(points:ArtPoint[],commands:readonly PathCommand[]){
 
 function vectorize(text:EditableText,font:Font):ArtPoint[]{
   const points:ArtPoint[]=[],ascent=font.ascender*text.size/font.unitsPerEm;
+  if(text.styleRanges?.length){
+    if(text.styleRanges.some(range=>range.color&&range.color.toLowerCase()!==text.color.toLowerCase()))
+      throw Error('選択部分に別の色を使う文字は、色を保ったまま単一のパスに変換できません。まず文字色を統一するか、描画用レイヤーへ変換してください。');
+    const lines=layoutStyledText(text,(character,size)=>font.getAdvanceWidth(character,size));
+    for(const line of lines.lines){
+      const x0=alignedTextLineStart(text,line.width);
+      for(const glyph of line.glyphs){
+        if(/^\s$/u.test(glyph.character))continue;
+        const ascent=font.ascender*glyph.size/font.unitsPerEm;
+        if(text.vertical){
+          const placement=verticalGlyphAdjustment(glyph.character,glyph.size);
+          const x=text.origin.x-line.offset+placement.dx;
+          const y=text.origin.y+glyph.position+placement.dy;
+          const width=font.getAdvanceWidth(glyph.character,glyph.size);
+          const commands=font.getPath(glyph.character,0,ascent,glyph.size).commands;
+          const place=(u:number,v:number):[number,number]=>placement.rotate
+            ?[x-(v-glyph.size/2),y+glyph.size/2+(u-width/2)]
+            :[x+u-width/2,y+v];
+          appendCommands(points,commands.map(command=>{
+            const copy={...command};
+            if(command.x!==undefined&&command.y!==undefined)[copy.x,copy.y]=place(command.x,command.y);
+            if(command.x1!==undefined&&command.y1!==undefined)[copy.x1,copy.y1]=place(command.x1,command.y1);
+            if(command.x2!==undefined&&command.y2!==undefined)[copy.x2,copy.y2]=place(command.x2,command.y2);
+            return copy;
+          }));
+        }else appendCommands(points,font.getPath(glyph.character,
+          x0+glyph.position,text.origin.y+line.offset+ascent,glyph.size).commands);
+      }
+    }
+    return points;
+  }
   const lines=layoutEditableText(text,characters=>
     font.getAdvanceWidth(characters,text.size,{kerning:true})+
       (Array.from(characters).length-1)*text.spacing).lines;
