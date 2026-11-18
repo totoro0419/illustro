@@ -1,5 +1,6 @@
 import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText,LayerMask} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
+import {gradientBoundaryDistance} from './gradientDistance';
 import {verticalGlyphAdjustment} from './verticalGlyph';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {sampledPath} from './pathOperations';
@@ -45,30 +46,6 @@ function gradientPosition(gradient:EditableGradient,x:number,y:number){
   const t=(u*dx+v*dy)/den;
   return gradient.mode==='reflected'?Math.abs(t):t;
 }
-function boundaryDistance(alpha:Uint8Array,width:number,height:number){
-  const distances=new Float32Array(alpha.length);
-  const diagonal=Math.SQRT2;
-  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-    const i=y*width+x;
-    if(!alpha[i])continue;
-    distances[i]=Math.min(
-      x?distances[i-1]!+1:1,y?distances[i-width]!+1:1,
-      x&&y?distances[i-width-1]!+diagonal:Infinity,
-      x+1<width&&y?distances[i-width+1]!+diagonal:Infinity
-    );
-  }
-  for(let y=height-1;y>=0;y--)for(let x=width-1;x>=0;x--){
-    const i=y*width+x;
-    if(!alpha[i])continue;
-    distances[i]=Math.min(distances[i]!,
-      x+1<width?distances[i+1]!+1:1,y+1<height?distances[i+width]!+1:1,
-      x+1<width&&y+1<height?distances[i+width+1]!+diagonal:Infinity,
-      x&&y+1<height?distances[i+width-1]!+diagonal:Infinity
-    );
-  }
-  return distances;
-}
-
 function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCanvasElement|OffscreenCanvas){
   const {width,height,outputWidth,outputHeight}=size;
   const output=new Uint8ClampedArray(outputWidth*outputHeight*4);
@@ -93,14 +70,13 @@ function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCan
     }
   }
   const shapeCoverage=alpha;
-  const distance=alpha?boundaryDistance(alpha,outputWidth,outputHeight):null;
+  const distance=alpha?gradientBoundaryDistance(alpha,outputWidth,outputHeight,factorX,factorY):null;
   const spread=Math.max(1,Math.hypot(gradient.end.x-gradient.start.x,gradient.end.y-gradient.start.y));
-  const distanceScale=Math.sqrt(factorX*factorY)/spread;
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
     const index=y*outputWidth+x;
     if(shapeCoverage&&!shapeCoverage[index])continue;
     const sx=(x+.5)*factorX,sy=(y+.5)*factorY;
-    const t=distance?Math.max(0,distance[index]!-1)*distanceScale:gradientPosition(gradient,sx,sy);
+    const t=distance?Math.max(0,distance[index]!-Math.min(factorX,factorY))/spread:gradientPosition(gradient,sx,sy);
     let high=1;
     while(high<stops.length-1&&stops[high]!.at<t)high++;
     const a=stops[high-1]!,b=stops[high]!;
