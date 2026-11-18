@@ -9,6 +9,31 @@ export type CorrectionHold=Readonly<{delay:number;show:()=>void;released:()=>voi
 const shapes=[['polyline','直線'],['ellipse','楕円'],['rectangle','長方形']] as const;
 type CandidateShape=typeof shapes[number][0];
 
+/** The held-pen guide and the final correction use identical shape geometry. */
+export function correctionSuggestedShape(points:readonly ArtPoint[]):CandidateShape{
+  if(points.length<3)return 'polyline';
+  const first=points[0]!,last=points.at(-1)!,middle=points[Math.floor(points.length/2)]!;
+  return Math.hypot(first.x-last.x,first.y-last.y)<
+    Math.hypot(first.x-middle.x,first.y-middle.y)*.7?'ellipse':'polyline';
+}
+export function correctionGeometry(points:readonly ArtPoint[],shape:CandidateShape):ArtPoint[]{
+  if(points.length<2)return [];
+  const first=points[0]!,last=points.at(-1)!;
+  if(shape==='polyline')return [{x:first.x,y:first.y},{x:last.x,y:last.y}];
+  let minX=first.x,maxX=first.x,minY=first.y,maxY=first.y;
+  for(const {x,y} of points){
+    minX=Math.min(x,minX);maxX=Math.max(x,maxX);minY=Math.min(y,minY);maxY=Math.max(y,maxY);
+  }
+  if(shape==='rectangle')return [
+    {x:minX,y:minY},{x:maxX,y:minY},{x:maxX,y:maxY},{x:minX,y:maxY}
+  ];
+  const cx=(minX+maxX)/2,cy=(minY+maxY)/2,w=maxX-minX,h=maxY-minY;
+  return Array.from({length:64},(_,i)=>{
+    const angle=2*Math.PI*i/64;
+    return {x:cx+w/2*Math.cos(angle),y:cy+h/2*Math.sin(angle)};
+  });
+}
+
 function fit(record:StrokeRecord,shape:CandidateShape,width:number,angle:number,scale:number):EditablePath{
   const first=record.raw[0]!,last=record.raw.at(-1)!;
   let minX=first.x,maxX=first.x,minY=first.y,maxY=first.y;
@@ -21,19 +46,8 @@ function fit(record:StrokeRecord,shape:CandidateShape,width:number,angle:number,
     const u=(x-cx)*scale,v=(y-cy)*scale,a=angle*Math.PI/180;
     return {x:cx+u*Math.cos(a)-v*Math.sin(a),y:cy+u*Math.sin(a)+v*Math.cos(a)};
   };
-  let points:ArtPoint[]=[{x:first.x,y:first.y},{x:last.x,y:last.y}];
-  let result:EditablePath['shape']=shape;
-  if(shape==='rectangle'){
-    points=[{x:minX,y:minY},{x:maxX,y:minY},{x:maxX,y:maxY},{x:minX,y:maxY}];
-    result='polyline';
-  }
-  if(shape==='ellipse'){
-    points=Array.from({length:64},(_,i)=>{
-      const a=2*Math.PI*i/64;
-      return {x:cx+w/2*Math.cos(a),y:cy+h/2*Math.sin(a)};
-    });
-    result='polyline';
-  }
+  const points=correctionGeometry(record.raw,shape);
+  const result:EditablePath['shape']='polyline';
   return validateEditableArtwork({kind:'path',shape:result,points:points.map(rotate),closed:shape!=='polyline',
     stroke,fill:null,width,opacity:record.preset.opacity}) as EditablePath;
 }
@@ -72,9 +86,8 @@ export function installStrokeCorrection(host:HTMLElement,api:{
   };
   const open=(latest:CorrectionStroke)=>{
     source=latest;panel.open=true;editor.hidden=false;
-    const {raw,preset}=latest.record,a=raw[0]!,b=raw.at(-1)!;
-    const middle=raw[Math.floor(raw.length/2)]!;
-    shape.value=Math.hypot(a.x-b.x,a.y-b.y)<Math.hypot(a.x-middle.x,a.y-middle.y)*.7?'ellipse':'polyline';
+    const {raw,preset}=latest.record;
+    shape.value=correctionSuggestedShape(raw);
     width.value=String(Math.min(4096,preset.size));angle.value='0';scale.value='100';
     status.textContent='候補を選び、適用すると直前の一筆が置き換わります。';refresh();
   };

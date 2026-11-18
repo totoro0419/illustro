@@ -230,12 +230,15 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       ...(originalStrokeLayer?{originalStrokeLayer}:{})}) as EditablePath;
   }
   function stopHandles(){
+    const wasEditing=editingHandles;
     editingHandles=false;
     ++liveVersion;
     livePending=null;
     liveAbort?.abort();
-    draftDrawing?.showArtworkPreview(null);
-    draftDrawing?.setCanvasEditGesture(null);
+    if(wasEditing){
+      draftDrawing?.showArtworkPreview(null);
+      draftDrawing?.setCanvasEditGesture(null);
+    }
   }
   /** Keep at most one raster preview in flight, coalescing fast pointer events.
    * A small Worker-rendered image follows the drag without allocating 4K RGBA

@@ -1,4 +1,4 @@
-import type {CorrectionHold,CorrectionStroke} from './artwork/strokeCorrection';
+import {correctionGeometry,correctionSuggestedShape,type CorrectionHold,type CorrectionStroke} from './artwork/strokeCorrection';
 import type {ArtworkGuide} from '@illustro/core';
 import {StrokeHandoff,type StrokeReservation} from './strokeHandoff';
 import {nativeBrushSensors} from './brushInput';
@@ -69,7 +69,9 @@ export class BrushSurface{
   private layerOutlineSequence=0;
   private readonly restoredRecords=new WeakMap<object,StrokeRecord>();
   correctionHold:()=>CorrectionHold|null=()=>null;
-  private holdStroke:{settings:CorrectionHold;start:Point;position:Point;timer:number;shown:boolean}|null=null;
+  private holdStroke:{settings:CorrectionHold;start:Point;position:Point;timer:number;shown:boolean;samples:Point[]}|null=null;
+  private holdOutline:SVGSVGElement|null=null;
+  private holdOutlineFrame=0;
   private heldReservations=new WeakMap<StrokeReservation,CorrectionHold>();
   private lastCorrectionStroke:CorrectionStroke|null=null;
   get correctionStroke(){
@@ -84,15 +86,48 @@ export class BrushSurface{
     if(Math.hypot(position.x-hold.start.x,position.y-hold.start.y)>9||hold.timer!==0){
       hold.timer=window.setTimeout(()=>{
         hold.shown=true;
-        this.status('ペンを離すと形状補正の候補を表示します。');
+        this.status('補正候補をキャンバスに仮表示中です。ペンを離すと編集できます。');
         hold.settings.show();
+        this.updateCorrectionHoldOutline();
       },hold.settings.delay);
     }
+  }
+  private queueCorrectionHoldOutline(){
+    if(this.holdOutlineFrame)return;
+    this.holdOutlineFrame=requestAnimationFrame(()=>{
+      this.holdOutlineFrame=0;
+      if(!this.disposed)this.updateCorrectionHoldOutline();
+    });
+  }
+  private updateCorrectionHoldOutline(){
+    const hold=this.holdStroke,view=this.view;
+    if(!hold?.shown||!view||hold.samples.length<2){
+      this.holdOutline?.remove();this.holdOutline=null;return;
+    }
+    const shape=correctionSuggestedShape(hold.samples);
+    const points=correctionGeometry(hold.samples,shape);
+    const svg='http://www.w3.org/2000/svg';
+    if(!this.holdOutline){
+      const overlay=document.createElementNS(svg,'svg');
+      overlay.setAttribute('aria-hidden','true');
+      overlay.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:5';
+      const path=document.createElementNS(svg,'path');
+      path.setAttribute('fill','none');path.setAttribute('stroke','#43bfea');
+      path.setAttribute('stroke-width','3');path.setAttribute('stroke-dasharray','7 4');
+      path.setAttribute('stroke-linejoin','round');
+      overlay.append(path);this.inputViewport.append(overlay);this.holdOutline=overlay;
+    }
+    const screen=points.map(point=>view.screen(point));
+    this.holdOutline.firstElementChild?.setAttribute('d',
+      screen.map((point,i)=>(i?'L':'M')+point.x+' '+point.y).join(' ')+
+      (shape==='polyline'?'':' Z'));
   }
   private endCorrectionHold(){
     const hold=this.holdStroke;
     this.holdStroke=null;
     if(hold)clearTimeout(hold.timer);
+    if(this.holdOutlineFrame){cancelAnimationFrame(this.holdOutlineFrame);this.holdOutlineFrame=0;}
+    this.holdOutline?.remove();this.holdOutline=null;
     return hold?.shown?hold.settings:undefined;
   }
   private recordCorrectionStroke(record:StrokeRecord,layer:LayerId,revision:RevisionId,selection:MaskData|null,hold?:CorrectionHold){
@@ -895,7 +930,8 @@ export class BrushSurface{
       const correction=e.pointerType==='pen'&&!this.strokeSymmetry&&!this.view.seamless&&preset.blend==='normal'?this.correctionHold():null;
       if(correction){
         const position=this.pointerLocation(e);
-        this.holdStroke={settings:correction,start:position,position,timer:0,shown:false};
+        this.holdStroke={settings:correction,start:position,position,timer:0,shown:false,
+          samples:[{x:s.x,y:s.y}]};
       }
       this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
   private move=(e:PointerEvent)=>{
@@ -939,6 +975,15 @@ export class BrushSurface{
      for(let i=0;i<events.length;i++){
       const sample=this.sample(events[i]!);
       actual.push(sample);this.session.accept(sample,i===events.length-1);
+    }
+    if(this.holdStroke&&actual.length){
+      const samples=this.holdStroke.samples;
+      samples.push(...actual.map(sample=>({x:sample.x,y:sample.y})));
+      if(samples.length>512){
+        const last=samples.at(-1)!;
+        this.holdStroke.samples=[samples[0]!,...samples.filter((_,i)=>i>0&&i%2===0),last];
+      }
+      if(this.holdStroke.shown)this.queueCorrectionHoldOutline();
     }
     if(this.strokeSymmetry&&actual.length){
       this.symmetryStrokePoints.push(...actual.map(sample=>({x:sample.x,y:sample.y})));
