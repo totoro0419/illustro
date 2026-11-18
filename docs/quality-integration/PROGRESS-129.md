@@ -14,6 +14,14 @@
 - **未完了**：2件とも部分改善。Android実機、4Kの実測、複雑なレイヤー合成と原寸画素の一致、保存復元・Undo/Redoの独立実機検証は未実施。保存形式・履歴構造は変更していない。
 - **次回**：C10-002/015の高倍率原寸表示と複雑合成の一致（`apps/editor/src/artwork/vectorPanel.ts`、`apps/editor/src/brushSurface.ts`）。競合時はC07-014（`apps/editor/src/transform/`）またはC09-004（`apps/editor/src/artwork/shapeGradient.ts`）。
 
+### 2026-11-19 定期自動開発②｜C03-007の追加改善
+
+- **修正内容**：履歴サムネイルの生成中の同一リビジョンを、完成済み24件のキャッシュが埋まっても共有する。失敗時はキャッシュを残さず再試行可能。LRU更新・同時生成・失敗再試行の3テストを追加。
+- **コード**：[`23c2941d`](https://github.com/totoro0419/illustro/commit/23c2941d6590d73fb7d22fcf0662a6270dc19738)。
+- **検査**：[統合CI #44370789617](https://github.com/totoro0419/illustro/actions/runs/44370789617) と [Core CI #44370804626](https://github.com/totoro0419/illustro/actions/runs/44370804626) は両方成功（テスト・型検査・本番ビルド）。
+- **残件**：C03-007は部分対応のまま。4K履歴比較画像の全画素処理、Android実機の時間・メモリ、保存復元・Undo/Redoの独立検証は未実施。保存形式と履歴構造は変更なし。
+- **次回**：C03-007の履歴比較画像の4K負荷（`apps/editor/src/ui/artworkHistoryView.ts`、`apps/editor/src/export/tiledPreview.ts`）。競合時はC10-002/015の高倍率・複雑合成プレビュー、C07-014の縮小品質へ。
+
 ## 集計
 
 | 記録上の区分 | 件数 | 意味 |
@@ -124,7 +132,7 @@
 | [C03-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C03.md#c03-004) | A/P1 | 保存の成功表示が実際の保存確認を意味しない場合がある | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#76](https://github.com/totoro0419/illustro/pull/76) |
 | [C03-005](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C03.md#c03-005) | A/P2 | 復元候補に古い作品名が表示される条件 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#76](https://github.com/totoro0419/illustro/pull/76) |
 | [C03-006](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C03.md#c03-006) | A/P2 | マスク適用ボタンが使用可能でも処理が拒否される | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#76](https://github.com/totoro0419/illustro/pull/76) |
-| [C03-007](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C03.md#c03-007) | B/P2 | 履歴の小さなプレビューに大きな画像を生成する | **部分対応・コード残件あり** | 履歴プレビューの全画素処理・4Kでの負荷低減は継続 | [#76](https://github.com/totoro0419/illustro/pull/76) |
+| [C03-007](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C03.md#c03-007) | B/P2 | 履歴の小さなプレビューに大きな画像を生成する | **部分対応・コード残件あり** | 履歴サムネイルの生成中処理を完成済みLRUキャッシュから分離。24件の完成済み画像が埋まっても、生成中の同一履歴を重複して4K再描画しない。失敗時は再試行可能。コード [`23c2941d`](https://github.com/totoro0419/illustro/commit/23c2941d6590d73fb7d22fcf0662a6270dc19738)。4K全画素処理の他経路と実機負荷は継続 | [#76](https://github.com/totoro0419/illustro/pull/76) |
 | [C03-008](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C03.md#c03-008) | B/P1 | 終了直前の自動保護は完了が保証されない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#76](https://github.com/totoro0419/illustro/pull/76) |
 | [C03-009](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C03.md#c03-009) | B/P2 | 大きな作品の保存時にデータ複製・全内容照合・読戻しの負担が懸念される | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#76](https://github.com/totoro0419/illustro/pull/76) |
 | [C03-010](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C03.md#c03-010) | B/P2 | 旧形式移行の検証が描線数中心で見た目の一致を証明していない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#76](https://github.com/totoro0419/illustro/pull/76) |
