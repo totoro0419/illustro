@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type LayerId} from '@illustro/core';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -24,6 +24,24 @@ describe('C09-004 mask coverage in shape previews',()=>{
     const unchanged=pixels.slice();
     applyShapePreviewMask(pixels,disabled,4,2,2,1);
     expect(pixels).toEqual(unchanged);
+  });
+});
+
+describe('C09-004 area-averaged rectangular mask previews',()=>{
+  it('retains a narrow selection that falls between preview pixel centers',()=>{
+    const mask={shape:'rectangle',x:1,y:1,width:1,height:1,enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray(2*2*4);
+    for(let i=0;i<4;i++)pixels.set([10,20,30,200],i*4);
+    applyShapePreviewMask(pixels,mask,4,4,2,2);
+    expect([pixels[3],pixels[7],pixels[11],pixels[15]]).toEqual([50,0,0,0]);
+    expect(Array.from(pixels.subarray(0,3))).toEqual([10,20,30]);
+  });
+  it('keeps inverted and fractional-density masks consistent at mixed edges',()=>{
+    const mask={shape:'rectangle',x:1,y:1,width:1,height:1,enabled:true,inverted:false,density:.5} as const;
+    expect(rectanglePreviewCoverage(mask,0,0,2,2)).toBeCloseTo(.625);
+    expect(rectanglePreviewCoverage({...mask,inverted:true},0,0,2,2)).toBeCloseTo(.875);
+    expect(rectanglePreviewCoverage(mask,2,2,4,4)).toBeCloseTo(.5);
+    expect(rectanglePreviewCoverage({...mask,inverted:true},2,2,4,4)).toBeCloseTo(1);
   });
 });
 

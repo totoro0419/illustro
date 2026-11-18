@@ -42,6 +42,17 @@ export function reverseGradientStops(current:readonly GradientStop[]):GradientSt
 export function shapeGradientInitialMask(editing:LayerId|undefined,draftMask:LayerMask|null):LayerMask|null|undefined{
   return editing?undefined:draftMask;
 }
+/** Exact box-average for a rectangular selection in a downscaled preview.
+ * A tiny selection must not disappear just because the output pixel center
+ * happens to fall outside it. Full-resolution rendering is unchanged. */
+export function rectanglePreviewCoverage(
+  mask:Extract<LayerMask,{shape:'rectangle'}>,left:number,top:number,right:number,bottom:number
+):number{
+  const coveredWidth=Math.max(0,Math.min(right,mask.x+mask.width)-Math.max(left,mask.x));
+  const coveredHeight=Math.max(0,Math.min(bottom,mask.y+mask.height)-Math.max(top,mask.y));
+  const inside=(coveredWidth*coveredHeight)/((right-left)*(bottom-top));
+  return mask.inverted?1-mask.density*inside:1-mask.density*(1-inside);
+}
 /** Apply the same vector/pixel mask coverage as the committed layer,
  * sampled at the preview pixel center in original document coordinates. */
 export function applyShapePreviewMask(
@@ -52,7 +63,11 @@ export function applyShapePreviewMask(
   if(!mask?.enabled)return;
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
     const at=(y*outputWidth+x)*4;
-    const coverage=sampleCoverage(mask,(x+.5)*width/outputWidth,(y+.5)*height/outputHeight);
+    const coverage=mask.shape==='rectangle'&&sampleCoverage===layerMaskCoverage&&
+      (outputWidth<width||outputHeight<height)
+      ?rectanglePreviewCoverage(mask,x*width/outputWidth,y*height/outputHeight,
+        (x+1)*width/outputWidth,(y+1)*height/outputHeight)
+      :sampleCoverage(mask,(x+.5)*width/outputWidth,(y+.5)*height/outputHeight);
     pixels[at+3]=Math.round(pixels[at+3]!*coverage);
   }
 }

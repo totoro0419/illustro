@@ -15,6 +15,15 @@ export function snapArtworkPathToGuide<T extends ArtPoint>(
   if(!locked)return [...points];
   return points.map(point=>{
     const next=snapToStraightGuide(point,locked);
-    return {...point,x:next.x,y:next.y};
+    // Bézier handles are part of the curve, not decorative UI markers.
+    // Snap them to the same frozen guide as their anchor to prevent the
+    // committed curve from bending away from the displayed ruler.
+    const input=point.inX!==undefined&&point.inY!==undefined
+      ?snapToStraightGuide({x:point.inX,y:point.inY},locked):null;
+    const output=point.outX!==undefined&&point.outY!==undefined
+      ?snapToStraightGuide({x:point.outX,y:point.outY},locked):null;
+    return {...point,x:next.x,y:next.y,
+      ...(input?{inX:input.x,inY:input.y}:{}),
+      ...(output?{outX:output.x,outY:output.y}:{})};
   });
 }

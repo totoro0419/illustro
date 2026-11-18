@@ -14,6 +14,19 @@ describe('C09-003/016 unified ruler snapping for line and gradient tools',()=>{
     expect(output.map(p=>p.pressure)).toEqual([.4,.7,1]);
     expect(input[1]!.y).toBe(25);
   });
+  it('snaps Bézier control handles together with anchors without mutating the original curve',()=>{
+    const input=[
+      {x:0,y:10,outX:15,outY:30},
+      {x:50,y:20,inX:30,inY:45,outX:70,outY:-5},
+      {x:100,y:0,inX:85,inY:20}
+    ];
+    const result=snapArtworkPathToGuide(input,[],{...DEFAULT_GUIDE_SETTINGS,enabled:true},null);
+    expect(result.map(p=>p.y)).toEqual([10,10,10]);
+    expect(result[0]).toMatchObject({outX:15,outY:10});
+    expect(result[1]).toMatchObject({inX:30,inY:10,outX:70,outY:10});
+    expect(result[2]).toMatchObject({inX:85,inY:10});
+    expect(input[1]!.inY).toBe(45);
+  });
   it('keeps all points unchanged when no guide is enabled',()=>{
     const points=[{x:0,y:1},{x:8,y:14}];
     expect(snapArtworkPathToGuide(points,[],DEFAULT_GUIDE_SETTINGS,null)).toEqual(points);
