@@ -1,7 +1,8 @@
-import {validateEditableArtwork,type EditableText,type LayerId} from '@illustro/core';
+import {validateEditableArtwork,type EditableText,type LayerId,type TextStyleRange} from '@illustro/core';
 import {fontAssets,fontFamily,fontOutlineCapability,importFont,outlineText} from './fonts';
 import {runArtwork} from './run';
 import {layoutEditableText} from './textLayout';
+import {applyTextSelectionStyle,layoutStyledText,rebaseTextStyles} from './textStyles';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
 export function installTextPanel(host:HTMLElement,api:ArtworkActions){
@@ -27,6 +28,17 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   controls.append(frameNote);
   const direction=selectField(controls,'文字の向き',[['horizontal','横書き'],['vertical','縦書き']] as const);
   const color=document.createElement('input');color.type='color';labelledField(controls,'文字の色',color);
+  const partial=document.createElement('details');
+  const partialSummary=document.createElement('summary');
+  partialSummary.textContent='選択した文字だけ色・サイズを変える';
+  const partialControls=document.createElement('div');partialControls.className='c06-clipboard-grid';
+  const partialColor=document.createElement('input');partialColor.type='color';
+  labelledField(partialControls,'選択部分の色',partialColor);
+  const partialSize=numberField(partialControls,'選択部分の文字サイズ（px）',48,1,4096,.5);
+  const partialActions=document.createElement('div');partialActions.className='c06-clipboard-grid';
+  const partialMessage=document.createElement('output');partialMessage.setAttribute('role','status');
+  partial.append(partialSummary,partialControls,partialActions,partialMessage);
+  controls.append(partial);
   const family=selectField(controls,'フォント',[]);
   const systemFont=selectField(controls,'端末のフォント',[
     ['sans-serif','ゴシック'],['serif','明朝'],['monospace','等幅']
@@ -35,6 +47,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   const missing=document.createElement('output');missing.setAttribute('role','status');
   const file=document.createElement('input');file.type='file';file.hidden=true;file.accept='.ttf,.otf,.woff,.woff2';
   let fontId='',editing:LayerId|undefined,previewRequest=0,initialized=false,composing=false,previewScheduled=false;
+  let styleRanges:TextStyleRange[]=[],previousText='';
   const compatibility=document.createElement('output');compatibility.setAttribute('role','status');
 
   async function refreshFonts(){
@@ -57,7 +70,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       vertical:direction.value==='vertical',color:color.value,family:fontId?fontFamily(fontId):systemFont.value,
       ...(fontId?{fontAsset:fontId,...(embed.checked?{embedFont:true}:{})}:{}),
       ...(boxWidth.valueAsNumber>0?{boxWidth:boxWidth.valueAsNumber}:{}),
-      ...(boxHeight.valueAsNumber>0?{boxHeight:boxHeight.valueAsNumber}:{})
+      ...(boxHeight.valueAsNumber>0?{boxHeight:boxHeight.valueAsNumber}:{}),
+      ...(styleRanges.length?{styleRanges}:{} )
     }) as EditableText;
   }
   async function show(content:EditableText|Awaited<ReturnType<typeof outlineText>>,target=preview){
@@ -84,7 +98,10 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       const family=current.family.replace(/["\\\n\r]/g,'');
       const font=['serif','sans-serif','monospace'].includes(family)?family:'"'+family+'", sans-serif';
       context.font=current.size+'px '+font;
-      const layout=layoutEditableText(current,characters=>context.measureText(characters).width+
+      const layout=current.styleRanges?.length?layoutStyledText(current,(character,fontSize)=>{
+        context.font=fontSize+'px '+font;
+        return context.measureText(character).width;
+      }):layoutEditableText(current,characters=>context.measureText(characters).width+
         Math.max(0,Array.from(characters).length-1)*current.spacing);
       if(layout.overflow)
         overflowWarning.textContent='⚠ 文字枠に入りきらない文章があります。枠を広げるか文字サイズを下げてください。元の文章は保存されています。';
@@ -111,6 +128,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     const context=api.context();
     if(!context)throw Error('作品を開いてください。');
     editing=undefined;initialized=true;fontId='';embed.checked=false;text.value='';
+    styleRanges=[];previousText='';partialMessage.textContent='';
     x.value=String(Math.round(context.width/4));y.value=String(Math.round(context.height/4));
     color.value=context.color;direction.value='horizontal';align.value='left';
     size.value='48';spacing.value='0';lineHeight.value='1.25';boxWidth.value='0';boxHeight.value='0';systemFont.value='sans-serif';
@@ -123,7 +141,9 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     return {id:layer.id,name:layer.name,content:layer.content};
   }
   function write(content:EditableText){
-    text.value=content.text;x.value=String(content.origin.x);y.value=String(content.origin.y);
+    text.value=content.text;previousText=content.text;styleRanges=[...(content.styleRanges??[])];
+    partialMessage.textContent=styleRanges.length?'部分書式 '+styleRanges.length+'か所を保持しています。':'';
+    x.value=String(content.origin.x);y.value=String(content.origin.y);
     size.value=String(content.size);boxWidth.value=String(content.boxWidth??0);boxHeight.value=String(content.boxHeight??0);
     align.value=content.align;spacing.value=String(content.spacing);
     lineHeight.value=String(content.lineHeight);direction.value=content.vertical?'vertical':'horizontal';
@@ -137,7 +157,31 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   controls.addEventListener('change',schedulePreview);
   text.addEventListener('compositionstart',()=>{composing=true;previewRequest++;});
   text.addEventListener('compositionend',()=>{composing=false;schedulePreview();});
-  text.oninput=schedulePreview;
+  text.oninput=()=>{
+    const next=text.value.replace(/\r\n?/g,'\n');
+    styleRanges=rebaseTextStyles(previousText,next,styleRanges);
+    previousText=next;
+    schedulePreview();
+  };
+  function selectedTextRange(){
+    const start=text.selectionStart,end=text.selectionEnd;
+    if(start===end)throw Error('文章の一部分を選択してから設定してください。');
+    return {start,end};
+  }
+  function updateSelectedText(patch:{color?:string;size?:number},clear=false){
+    const range=selectedTextRange();
+    styleRanges=applyTextSelectionStyle(text.value,styleRanges,range.start,range.end,patch,clear);
+    if(styleRanges.length>512)throw Error('部分書式が多すぎます。近くの同じ書式をまとめてください。');
+    partialMessage.textContent=clear?'選択部分の個別書式を解除しました。':'選択部分の書式を変更しました。';
+    schedulePreview();
+    text.focus({preventScroll:true});
+    text.setSelectionRange(range.start,range.end);
+  }
+  partialActions.append(
+    button('選択した文字の色を変更',()=>updateSelectedText({color:partialColor.value}),status),
+    button('選択した文字のサイズを変更',()=>updateSelectedText({size:partialSize.valueAsNumber}),status),
+    button('選択部分の書式を解除',()=>updateSelectedText({},true),status)
+  );
   file.onchange=async()=>{
     const selected=file.files?.[0];file.value='';
     if(!selected)return;
