@@ -8,8 +8,34 @@ export type GradientMapDraft=Readonly<{
   source:ImageData;
   coverage:Uint8Array;
   pixelsAt:(x:number,y:number)=>readonly [number,number];
+  /** Original 1:1 document pixels retained only for a small central inspection crop. */
+  exact?:Readonly<{
+    source:ImageData;coverage:Uint8Array;
+    pixelsAt:(x:number,y:number)=>readonly [number,number];
+    x:number;y:number;
+  }>;
   apply:(map:GradientMap)=>Promise<void>;
 }>;
+/** Keep a small 1:1 crop from the already-rendered document, without retaining
+ * the full 4K RGBA buffer after capture. Pixel coordinates are not rescaled. */
+export function extractGradientMapCrop(
+  pixels:Uint8Array|Uint8ClampedArray,width:number,height:number,
+  coverageAt:(x:number,y:number)=>number,size=128
+){
+  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||
+    pixels.length!==width*height*4||!Number.isSafeInteger(size)||size<1||size>256)
+    throw Error('原寸プレビューの画像サイズが正しくありません。');
+  const w=Math.min(width,size),h=Math.min(height,size);
+  const x=Math.floor((width-w)/2),y=Math.floor((height-h)/2);
+  const rgba=new Uint8ClampedArray(w*h*4),coverage=new Uint8Array(w*h);
+  for(let row=0;row<h;row++)for(let col=0;col<w;col++){
+    const px=x+col,py=y+row,to=row*w+col,from=(py*width+px)*4;
+    rgba.set(pixels.subarray(from,from+4),to*4);
+    const amount=coverageAt(px,py);
+    coverage[to]=Math.round(Math.max(0,Math.min(1,Number.isFinite(amount)?amount:0))*255);
+  }
+  return {x,y,width:w,height:h,rgba,coverage};
+}
 const defaults:readonly GradientStop[]=[
   {at:0,color:'#232037',opacity:1,midpoint:.5},
   {at:1,color:'#f5ba72',opacity:1,midpoint:.5}
@@ -34,6 +60,12 @@ export function installGradientMapPanel(host:HTMLElement,api:{
   const stopFields=document.createElement('div');stopFields.className='c06-clipboard-grid';
   const comparison=document.createElement('canvas');
   comparison.style.maxWidth='100%';comparison.setAttribute('aria-label','作品の加工前後のプレビュー');
+  const exactLabel=document.createElement('p');
+  exactLabel.hidden=true;
+  const exactPreview=document.createElement('canvas');
+  exactPreview.hidden=true;
+  exactPreview.style.cssText='max-width:100%;width:384px;image-rendering:pixelated';
+  exactPreview.setAttribute('aria-label','作品中央の原寸画素での加工前後の比較');
   const mappingLabel=document.createElement('p');mappingLabel.textContent='上が元の明るさ、下が置き換わる色';
   const mapping=document.createElement('canvas');
   mapping.style.maxWidth='100%';mapping.setAttribute('aria-label',mappingLabel.textContent);
@@ -70,13 +102,22 @@ export function installGradientMapPanel(host:HTMLElement,api:{
     if(!draft)return;
     try{
       const map=data(),table=gradientMapTable(map);
-      const {source,coverage,pixelsAt}=draft,{width,height}=source;
-      const pixels=new Uint8ClampedArray(source.data);
-      if(view.value!=='before')for(let y=0;y<height;y++)for(let x=view.value==='split'?Math.floor(width/2):0;x<width;x++){
-        const i=y*width+x,[originalX,originalY]=pixelsAt(x,y);
-        mapGradientPixel(pixels,i*4,table,map,originalX,originalY,coverage[i]!/255);
-      }
-      paintPreview(comparison,pixels,width,height);
+      const paintMapped=(target:HTMLCanvasElement,sample:Pick<GradientMapDraft,'source'|'coverage'|'pixelsAt'>)=>{
+        const {source,coverage,pixelsAt}=sample,{width,height}=source;
+        const pixels=new Uint8ClampedArray(source.data);
+        if(view.value!=='before')for(let y=0;y<height;y++)for(let x=view.value==='split'?Math.floor(width/2):0;x<width;x++){
+          const i=y*width+x,[originalX,originalY]=pixelsAt(x,y);
+          mapGradientPixel(pixels,i*4,table,map,originalX,originalY,coverage[i]!/255);
+        }
+        paintPreview(target,pixels,width,height);
+      };
+      paintMapped(comparison,draft);
+      if(draft.exact){
+        paintMapped(exactPreview,draft.exact);
+        exactLabel.textContent='作品中央の原寸 '+draft.exact.source.width+'×'+draft.exact.source.height+
+          ' 画素（左上 '+draft.exact.x+', '+draft.exact.y+'）。拡大して色の段差を確認できます。';
+        exactLabel.hidden=false;exactPreview.hidden=false;
+      }else{exactLabel.hidden=true;exactPreview.hidden=true;}
       const band=new Uint8ClampedArray(256*28*4);
       for(let y=0;y<28;y++)for(let x=0;x<256;x++){
         const offset=(y*256+x)*4;
@@ -118,7 +159,7 @@ export function installGradientMapPanel(host:HTMLElement,api:{
     panel.open=true;
     const id=++sequence;
     status.textContent='元の絵を読み込んでいます。';
-    editor.hidden=true;draft=null;
+    editor.hidden=true;draft=null;exactLabel.hidden=true;exactPreview.hidden=true;
     const next=await api.capture(edit);
     if(id!==sequence)return;
     draft=next;
@@ -127,7 +168,7 @@ export function installGradientMapPanel(host:HTMLElement,api:{
     renderStops();editor.hidden=false;refresh();
   }
   const close=()=>{
-    sequence++;draft=null;editor.hidden=true;
+    sequence++;draft=null;editor.hidden=true;exactLabel.hidden=true;exactPreview.hidden=true;
   };
   actions.append(
     button('調整レイヤーを作る',()=>start(false),status),
@@ -148,7 +189,7 @@ export function installGradientMapPanel(host:HTMLElement,api:{
     },status)
   );
   panel.addEventListener('toggle',()=>{if(!panel.open)close();});
-  editor.append(fields,mappingLabel,mapping,toneSwatch,toneInfo,comparison,stopFields,finish);
+  editor.append(fields,mappingLabel,mapping,toneSwatch,toneInfo,comparison,exactLabel,exactPreview,stopFields,finish);
   panel.append(heading,actions,editor,status);host.append(panel);
   return {show:(edit:boolean)=>{void start(edit).catch(error=>{status.textContent=String(error);});}};
 }

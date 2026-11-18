@@ -26,7 +26,7 @@ import {installRulerPanel} from './artwork/ruler';
 import {installSymmetryPanel} from './artwork/symmetryPanel';
 import {DEFAULT_SYMMETRY,normalizeSymmetry,SYMMETRY_SECTION,SYMMETRY_TYPE,type SymmetrySettings} from './strokeSymmetry';
 import {installShapeGradientPanel} from './artwork/shapeGradient';
-import {installGradientMapPanel} from './artwork/gradientMap';
+import {extractGradientMapCrop,installGradientMapPanel} from './artwork/gradientMap';
 import {installStrokeCorrection} from './artwork/strokeCorrection';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {runArtwork} from './artwork/run';
@@ -4425,8 +4425,17 @@ const gradientMapPanel=installGradientMapPanel(byId('documentBoxBody'),{
       sourcePixels.set(input.subarray(from,from+4),to*4);
       coverage[to]=Math.round(255*layerMaskCoverage(mask,px,py)*(edit?layer.opacity:1));
     }
+    // Capture the true 1:1 pixels before the full-size render is released.
+    // A 128px crop avoids holding another 64MB image while editing a 4K work.
+    const exactCrop=extractGradientMapCrop(input,width,height,
+      (x,y)=>layerMaskCoverage(mask,x,y)*(edit?layer.opacity:1));
     return {
       map,source:new ImageData(sourcePixels,w,h),coverage,pixelsAt,
+      exact:{
+        source:new ImageData(exactCrop.rgba,exactCrop.width,exactCrop.height),
+        coverage:exactCrop.coverage,x:exactCrop.x,y:exactCrop.y,
+        pixelsAt:(x:number,y:number)=>[exactCrop.x+x,exactCrop.y+y] as const
+      },
       apply:async gradientMap=>withClipboardAccess(async()=>{
         if(!valid())throw Error('作品が変わったため、調整を開き直してください。');
         const tx=artwork.begin(edit?'グラデーションマップを編集':'グラデーションマップを追加');
