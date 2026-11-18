@@ -1,7 +1,7 @@
 import {validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {runArtwork} from './run';
-import {movePoint} from './render';
+import {vectorPointDrag,type VectorDragHandle} from './vectorPointDrag';
 import {appendPathStroke,combineShapes,eraseBetweenIntersections,eraseSegment,eraseWholeStroke,joinPaths,simplifyPath,smoothPath,splitPath} from './pathOperations';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
@@ -81,7 +81,54 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       if(request===previewId)paintPreview(preview,pixels,w,h);
     }catch(error){if(request===previewId)status.textContent=error instanceof Error?error.message:String(error);}
   }
-  const stopPoints=()=>{pointDrawing?.setCanvasEditGesture(null);pointDrawing=null;};
+  // Render only the latest drag position. At most one preview render is in flight,
+  // so rapid pointer movement cannot build an unbounded worker queue.
+  type PointPreviewRequest={content:EditablePath;drawing:BrushSurface;version:number;
+    replacement:LayerId|null;width:number;height:number};
+  let pointPreviewRequest:PointPreviewRequest|null=null,pointPreviewRunning=false;
+  let pointPreviewAbort:AbortController|null=null,pointPreviewShown=false,pointPreviewVersion=0;
+  async function pumpPointPreview(){
+    if(pointPreviewRunning)return;
+    pointPreviewRunning=true;
+    try{
+      while(pointPreviewRequest){
+        const request=pointPreviewRequest;
+        pointPreviewRequest=null;
+        const abort=new AbortController();pointPreviewAbort=abort;
+        const scale=Math.min(1,1024/Math.max(request.width,request.height));
+        const width=Math.max(1,Math.round(request.width*scale));
+        const height=Math.max(1,Math.round(request.height*scale));
+        try{
+          const pixels=await runArtwork({content:request.content,width:request.width,height:request.height,
+            outputWidth:width,outputHeight:height},{signal:abort.signal,priority:'interactive'});
+          if(!abort.signal.aborted&&request.version===pointPreviewVersion&&pointDrawing===request.drawing){
+            request.drawing.showArtworkPreview(new ImageData(pixels,width,height),false,request.replacement);
+            pointPreviewShown=true;
+          }
+        }catch(error){
+          if(!abort.signal.aborted&&request.version===pointPreviewVersion&&pointDrawing===request.drawing)
+            status.textContent=error instanceof Error?error.message:String(error);
+        }finally{
+          if(pointPreviewAbort===abort)pointPreviewAbort=null;
+        }
+      }
+    }finally{pointPreviewRunning=false;}
+  }
+  function previewPointDrag(current:EditablePath,picked:number,anchorCount:number,
+    handles:readonly VectorDragHandle[],position:ArtPoint,drawing:BrushSurface,width:number,height:number){
+    try{
+      const content=vectorPointDrag(current,picked,anchorCount,handles,position);
+      pointPreviewRequest={content,drawing,width,height,replacement:editing??null,version:++pointPreviewVersion};
+      void pumpPointPreview();
+    }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+  }
+  const stopPoints=()=>{
+    pointPreviewVersion++;pointPreviewRequest=null;
+    pointPreviewAbort?.abort();pointPreviewAbort=null;
+    if(pointPreviewShown)pointDrawing?.showArtworkPreview(null);
+    pointPreviewShown=false;
+    pointDrawing?.setCanvasEditGesture(null);pointDrawing=null;
+  };
   const closePath=(current:EditablePath)=>current.points.some(p=>p.move||p.close);
   const otherPath=()=>{
     const other=api.context()?.paths.find(layer=>layer.id===secondary.value)?.content;
@@ -130,7 +177,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       if(!context)throw Error('作品を開いてください。');
       if(current.points.length>180)throw Error('点が多いので、「点を減らす」か番号指定で編集してください。');
       const anchors=current.points.map(point=>({x:point.x,y:point.y}));
-      const handles:Array<{index:number;kind:'in'|'out'}>=[];
+      const handles:VectorDragHandle[]=[];
       const points=[...anchors],edges:Array<readonly [number,number]>=[];
       for(let i=1;i<anchors.length;i++)if(!current.points[i]?.move&&!current.points[i-1]?.close)edges.push([i-1,i]);
       if(current.closed)edges.push([anchors.length-1,0]);
@@ -145,19 +192,17 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
         }
       });
       stopPoints();pointDrawing=context.drawing;
-      status.textContent='点やハンドルをドラッグしてください。線の青い補助線は確定後に正しい曲線になります。';
+      status.textContent='点やハンドルをドラッグしてください。曲線の変更をキャンバスに仮表示します（大きな作品では縮小表示）。';
       pointDrawing.setCanvasEditGesture({path:false,width:2,color:'#ffb742',complete:()=>{},
-        pointEdit:{points,edges,closed:false,commit:(picked,position)=>{
-          stopPoints();
-          if(picked<anchors.length){
-            changePoint(picked,movePoint(current.points[picked]!,position.x,position.y));
-          }else{
-            const handle=handles[picked-anchors.length]!,previous=current.points[handle.index]!;
-            const next=handle.kind==='in'?{...previous,inX:position.x,inY:position.y}:
-              {...previous,outX:position.x,outY:position.y};
-            changePoint(handle.index,next);
-          }
-        }}});
+        pointEdit:{points,edges,closed:false,
+          preview:(picked,position)=>previewPointDrag(current,picked,anchors.length,handles,position,
+            context.drawing,context.width,context.height),
+          commit:(picked,position)=>{
+            stopPoints();
+            const updated=vectorPointDrag(current,picked,anchors.length,handles,position);
+            const index=picked<anchors.length?picked:handles[picked-anchors.length]!.index;
+            changePoint(index,updated.points[index]!);
+          }}});
     },status),
     button('選んだ点に曲線ハンドルを付ける',()=>{
       const current=draft(),index=pointNumber(),point=current.points[index];
