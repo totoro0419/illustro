@@ -27,14 +27,16 @@ export function selectedStrokeMayAffectMask(mask:MaskData,records:readonly Strok
     if(top>=bottom)continue;
     const lower=ay!<=y!?{x:ax!,y:ay!}:{x:x!,y:y!};
     const upper=ay!<=y!?{x:x!,y:y!}:{x:ax!,y:ay!};
-    const dy=upper.y-lower.y;
+    const dy=upper.y-lower.y,dx=upper.x-lower.x;
+    if(!Number.isFinite(dy)||!Number.isFinite(dx))return true;
     for(let row=top;row<bottom;row++){
       // Every possible brush point within this row's vertical radius has
       // an X coordinate between these endpoints (including horizontal lines).
       const t0=dy?clamp((row+.5-radius-lower.y)/dy):0;
       const t1=dy?clamp((row+.5+radius-lower.y)/dy):1;
-      const x0=lower.x+(upper.x-lower.x)*t0;
-      const x1=lower.x+(upper.x-lower.x)*t1;
+      const x0=lower.x+dx*t0;
+      const x1=lower.x+dx*t1;
+      if(!Number.isFinite(x0)||!Number.isFinite(x1))return true;
       const left=Math.max(0,Math.floor(Math.min(x0,x1)-radius));
       const right=Math.min(width,Math.ceil(Math.max(x0,x1)+radius));
       if(left>=right)continue;
