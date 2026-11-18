@@ -36,6 +36,36 @@ describe('C03-007 bounded tile compositing',()=>{
     acc.addTile(Uint8Array.of(255,0,0,255,0,0,255,0,0,0,0,0,0,0,0,0),0,0,2);
     expect([...acc.finish()]).toEqual([255,0,0,128]);
   });
+  it('keeps fractional alpha and colors within one byte after float32 accumulation',()=>{
+    const width=5,height=3,targetWidth=2,targetHeight=1,tileSize=2;
+    const pixels=new Uint8Array(width*height*4);
+    for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+      const i=(y*width+x)*4;
+      pixels.set([x*41+y*9,240-x*31,15+y*67,(x*37+y*53)%256],i);
+    }
+    const acc=createTiledPreviewAccumulator(width,height,targetWidth,targetHeight);
+    for(let y=0;y<height;y+=tileSize)for(let x=0;x<width;x+=tileSize){
+      const tile=new Uint8Array(tileSize*tileSize*4);
+      for(let dy=0;dy<tileSize&&y+dy<height;dy++)
+        for(let dx=0;dx<tileSize&&x+dx<width;dx++)
+          tile.set(pixels.subarray(((y+dy)*width+x+dx)*4,((y+dy)*width+x+dx+1)*4),
+            (dy*tileSize+dx)*4);
+      acc.addTile(tile,x,y,tileSize);
+    }
+    const result=acc.finish();
+    for(let ox=0;ox<targetWidth;ox++){
+      let alpha=0,red=0,green=0,blue=0;
+      for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+        const overlap=Math.max(0,Math.min(x+1,(ox+1)*width/targetWidth)-
+          Math.max(x,ox*width/targetWidth))/ (width/targetWidth*height);
+        const i=(y*width+x)*4,a=pixels[i+3]!/255*overlap;
+        alpha+=a;red+=pixels[i]!*a;green+=pixels[i+1]!*a;blue+=pixels[i+2]!*a;
+      }
+      const i=ox*4,expected=[Math.round(red/alpha),Math.round(green/alpha),
+        Math.round(blue/alpha),Math.round(alpha*255)];
+      for(let c=0;c<4;c++)expect(Math.abs(result[i+c]!-expected[c]!)).toBeLessThanOrEqual(1);
+    }
+  });
   it('handles partial edge tiles without bleeding past canvas bounds',()=>{
     const acc=createTiledPreviewAccumulator(3,2,1,1);
     acc.addTile(new Uint8Array(16).fill(255),0,0,2);
@@ -131,6 +161,13 @@ describe('C03-007 bounded tile compositing',()=>{
     expect(canUseTiledHistoryPreview({...simple,layers:[{...layer,clipSurfaceId:'under'}]},160,120)).toBe(true);
     expect(canUseTiledHistoryPreview({...simple,basePixels:[{surfaceId:'ink',pixels:new Uint8Array(4)}]},160,120)).toBe(true);
     expect(canUseTiledHistoryPreview({...simple,layers:[{...layer,isolation:['g']}]},160,120)).toBe(true);
-    expect(canUseTiledHistoryPreview(simple,1600,1200)).toBe(false);
+    // 4K comparison images now use tile replay instead of allocating a
+    // 4000x4000 CPU composite for every visible layer.
+    expect(canUseTiledHistoryPreview(simple,1600,1200)).toBe(true);
+    // Avoid tile overhead for 1:1 images, and bound accumulator allocations.
+    expect(canUseTiledHistoryPreview({...simple,width:1600,height:1200},1600,1200)).toBe(false);
+    expect(canUseTiledHistoryPreview(simple,2000,1200)).toBe(false);
+    expect(canUseTiledHistoryPreview(simple,0,1200)).toBe(false);
+    expect(canUseTiledHistoryPreview({...simple,width:NaN},160,120)).toBe(false);
   });
 });
