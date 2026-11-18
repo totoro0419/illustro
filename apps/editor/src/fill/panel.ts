@@ -368,20 +368,22 @@ export function installFillPanel(host:HTMLElement,api:{
     const graph=liveFill&&method.value==='line'&&confirmed&&currentGraph&&capture?.referenceValid()&&
       value(tolerance)===graphTolerance&&value(gap)===graphGap?currentGraph:null;
     const picked=new Set<number>();
-    let processed=0;
+    let processed=0,previewPixels:Uint8ClampedArray<ArrayBuffer>|undefined;
     gesture=drawing;output.textContent=graph
       ?label+' なぞった領域を青く仮表示します。正確な結果は指を離した後に計算します。':label;
     drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,
       ...(graph?{update:(points:readonly Point[])=>{
         if(points.length<processed){processed=0;picked.clear();}
         // Process each segment only once; avoid replaying a long 4K trace per frame.
+        const before=picked.size;
         for(let i=Math.max(0,processed-1);i<points.length;i++){
           const point=points[i]!,previous=points[Math.max(0,i-1)]!;
           addTraceRegions(graph,previous,point,value(trace),closedOnly.checked,picked);
         }
         processed=points.length;
-        if(!picked.size)return;
-        const image=renderLiveRegionPreview(graph,picked,512);
+        if(!picked.size||picked.size===before)return;
+        const image=renderLiveRegionPreview(graph,picked,512,previewPixels);
+        previewPixels=image.pixels;
         drawing.showFillGesturePreview(new ImageData(image.pixels,image.width,image.height));
       }}:{}),
       complete:points=>{
