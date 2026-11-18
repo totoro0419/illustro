@@ -18,6 +18,17 @@ function rectangle(data:Uint8Array,width:number,x0:number,y0:number,x1:number,y1
   for(let y=y0;y<=y1;y++){setPixel(data,width,x0,y,color);setPixel(data,width,x1,y,color);}
 }
 describe('C08 fill boundaries and destination gating',()=>{
+  it('keeps canonical region topology for a blank large canvas without flood analysis',()=>{
+    const w=257,h=129,graph=buildRegions(image(w,h),w,h,15,0,[]);
+    expect(graph.count).toBe(1);
+    expect(graph.hasInk).toBe(false);
+    expect(Array.from(graph.external)).toEqual([0,1]);
+    expect(Array.from(graph.anchors)).toEqual([0,0]);
+    expect(Array.from(graph.neighborOffsets)).toEqual([0,1,2]);
+    expect(Array.from(graph.neighbors)).toEqual([1,0]);
+    expect(Array.from(graph.depth)).toEqual([0,0]);
+    expect(graph.labels.every(label=>label===1)).toBe(true);
+  });
   it('recognizes bright white line art on an opaque dark background',()=>{
     const data=image(9,9,[12,12,12,255]);
     rectangle(data,9,2,2,6,6,[255,255,255,255]);

@@ -203,6 +203,13 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
 
 export function buildRegions(source:Uint8Array,width:number,height:number,tolerance:number,gap:number,manual:Walls):RegionGraph{
   const count=width*height,{walls,bridges,candidates}=fillBoundaries(source,width,height,tolerance,gap,manual);
+  // A blank image has one outside region. Avoid a 4K flood-fill queue and
+  // two full-canvas topology scans when there are no boundary pixels.
+  if(!walls.some(Boolean)){
+    return {width,height,walls,bridges,labels:new Uint32Array(count).fill(1),
+      external:Uint8Array.of(0,1),count:1,candidates,anchors:Uint32Array.of(0,0),hasInk:false,
+      neighborOffsets:Uint32Array.of(0,1,2),neighbors:Uint32Array.of(1,0),depth:Int32Array.of(0,0)};
+  }
   const labels=new Uint32Array(count),queue=new Uint32Array(count),external:number[]=[0],anchors=[0];
   let regions=0,hasInk=false;
   for(let i=0;i<count;i++){
