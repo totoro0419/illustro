@@ -136,9 +136,9 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
     if(steps<2)return false;
     for(let step=1;step<steps;step++){
       const x=a.x+dx*step,y=a.y+dy*step;
-      if(x<0||y<0||x>=width||y>=height||original[y*width+x])return false;
+      if(x<0||y<0||x>=width||y>=height||original[y*width+x]||bridges[y*width+x])return false;
       for(let ny=y-1;ny<=y+1;ny++)for(let nx=x-1;nx<=x+1;nx++){
-        if(nx<0||ny<0||nx>=width||ny>=height||!original[ny*width+nx])continue;
+        if(nx<0||ny<0||nx>=width||ny>=height||(!original[ny*width+nx]&&!bridges[ny*width+nx]))continue;
         if(nx===a.x&&ny===a.y||nx===b.x&&ny===b.y)continue;
         return false;
       }
@@ -160,10 +160,14 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
           // Parallel strokes, corners and junctions remain open unless manually accepted.
           if(alignment&&distance<=radius+1&&hasClearBridgeCorridor(from,{x,y})&&(!dx||!dy||
             (!original[from.y*width+from.x+dx]&&!original[(from.y+dy)*width+from.x]))){
-            if(candidates.length<4096)candidates.push({from,to:{x,y},length:distance-1,kind:'tips'});
-            for(let step=1;step<steps;step++){
-              const i=(from.y+dy*step)*width+from.x+dx*step;
-              walls[i]=bridges[i]=1;
+            // Never apply a bridge that cannot be represented in the review list.
+            // Otherwise the 4097th gap becomes an invisible, unreviewable wall.
+            if(candidates.length<4096){
+              candidates.push({from,to:{x,y},length:distance-1,kind:'tips'});
+              for(let step=1;step<steps;step++){
+                const i=(from.y+dy*step)*width+from.x+dx*step;
+                walls[i]=bridges[i]=1;
+              }
             }
           }
         }
