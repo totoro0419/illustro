@@ -46,7 +46,7 @@ export function shapeGradientInitialMask(editing:LayerId|undefined,draftMask:Lay
  * A tiny selection must not disappear just because the output pixel center
  * happens to fall outside it. Full-resolution rendering is unchanged. */
 export function rectanglePreviewCoverage(
-  mask:LayerMask&{shape:'rectangle'},left:number,top:number,right:number,bottom:number
+  mask:Readonly<{x:number;y:number;width:number;height:number;density:number;inverted:boolean}>,left:number,top:number,right:number,bottom:number
 ):number{
   const coveredWidth=Math.max(0,Math.min(right,mask.x+mask.width)-Math.max(left,mask.x));
   const coveredHeight=Math.max(0,Math.min(bottom,mask.y+mask.height)-Math.max(top,mask.y));
