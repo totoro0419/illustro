@@ -1,5 +1,6 @@
 import type {ArtPoint,EditablePath,EditableText} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
+import {verticalGlyphAdjustment} from './verticalGlyph';
 import {addAsset,getAsset,listAssets,type AssetInfo,type AssetEntry} from '../assets/library';
 import type {Font,PathCommand} from 'opentype.js';
 
@@ -88,10 +89,12 @@ function vectorize(text:EditableText,font:Font):ArtPoint[]{
     const line=lines[i]!,characters=Array.from(line);
     if(text.vertical){
       for(const [j,character] of characters.entries()){
-        const x=text.origin.x-i*text.size*text.lineHeight;
-        const y=text.origin.y+j*(text.size+text.spacing),width=font.getAdvanceWidth(character,text.size);
+        const placement=verticalGlyphAdjustment(character,text.size);
+        const x=text.origin.x-i*text.size*text.lineHeight+placement.dx;
+        const y=text.origin.y+j*(text.size+text.spacing)+placement.dy;
+        const width=font.getAdvanceWidth(character,text.size);
         const commands=font.getPath(character,0,ascent,text.size).commands;
-        const rotated=/[A-Za-z0-9ー―‐–—]/u.test(character);
+        const rotated=placement.rotate;
         const place=(u:number,v:number):[number,number]=>rotated?[x-(v-text.size/2),y+text.size/2+(u-width/2)]:[x+u-width/2,y+v];
         appendCommands(points,commands.map(command=>{
           const copy={...command};
