@@ -3,6 +3,7 @@ import {layoutEditableText} from './textLayout';
 import {layoutStyledText} from './textStyles';
 import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
 import {gradientBoundaryDistance} from './gradientDistance';
+import {readCanvasAlphaBands} from './alphaBands';
 import {verticalGlyphAdjustment} from './verticalGlyph';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {sampledPath} from './pathOperations';
@@ -67,8 +68,10 @@ function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCan
       if(!ctx)throw Error('図形の内側を取得できません。');
       ctx.scale(1/factorX,1/factorY);
       tracePath(ctx,follow);ctx.fill('evenodd');
-      const pixels=ctx.getImageData(0,0,outputWidth,outputHeight).data;
-      for(let i=0;i<alpha.length;i++)alpha[i]=pixels[i*4+3]!;
+      // Read only a short row band at once: avoid an additional full 4K RGBA
+      // image during full-resolution shape-following gradient rendering.
+      alpha=readCanvasAlphaBands(outputWidth,outputHeight,(row,rows)=>
+        ctx.getImageData(0,row,outputWidth,rows).data);
     }
   }
   const shapeCoverage=alpha;
