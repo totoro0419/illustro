@@ -9,7 +9,9 @@ afterEach(()=>vi.unstubAllGlobals());
 describe('C06-015 editable group copy uses sparse painted tiles',()=>{
  it('copies a small selection without a full-layer GPU readback',async()=>{
   const doc=new CoreDocument({width:256,height:256,ids:createDeterministicIdFactory()});
-  const layer=doc.defaultRasterLayerId;
+  const tx=doc.begin('create drawing layer');
+  const layer=tx.addRasterLayerAbove(doc.defaultRasterLayerId);
+  tx.commit();
   const controller=EditorController.restored(doc,layer);
   const full=vi.fn(async()=>{throw Error('unexpected full-image readback');});
   const region=vi.fn(async()=>new Uint8ClampedArray([
