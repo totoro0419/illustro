@@ -23,6 +23,10 @@ export function renderSelectedStrokeTiles(
   tiles.set(tile.key,tile.pixels);
  }
  let changed=false;
+ // A sparse selection may touch thousands of brush-command tiles while
+ // containing only a few selected pixels. Cache both empty and nonempty
+ // tile masks across records; no persistent mask or snapshot format changes.
+ const maskCache=new Map<string,Uint8Array|null>();
  for(const record of records){
   const commandsByTile=new Map<string,Array<StrokeRecord['commands'][number]>>();
   for(const command of record.commands){
@@ -40,9 +44,23 @@ export function renderSelectedStrokeTiles(
   }
   for(const [key,commands] of commandsByTile){
    const [tx=0,ty=0]=key.split(',').map(Number),x=tx*TILE,y=ty*TILE;
-   const w=Math.min(TILE,width-x),h=Math.min(TILE,height-y),mask=new Uint8Array(w*h);
-   for(let row=0;row<h;row++)mask.set(alpha.subarray((y+row)*width+x,(y+row)*width+x+w),row*w);
-   if(!mask.some(Boolean))continue;
+   const w=Math.min(TILE,width-x),h=Math.min(TILE,height-y);
+   if(!maskCache.has(key)){
+    let selected=false;
+    for(let row=0;row<h;row++)
+     if(alpha.subarray((y+row)*width+x,(y+row)*width+x+w).some(Boolean)){
+      selected=true;break;
+     }
+    if(!selected)maskCache.set(key,null);
+    else{
+     const mask=new Uint8Array(w*h);
+     for(let row=0;row<h;row++)
+      mask.set(alpha.subarray((y+row)*width+x,(y+row)*width+x+w),row*w);
+     maskCache.set(key,mask);
+    }
+   }
+   const mask=maskCache.get(key);
+   if(!mask)continue;
    const current=tiles.get(key),base=new Uint8ClampedArray(w*h*4);
    if(current)for(let row=0;row<h;row++)
     base.set(current.subarray(row*TILE*4,row*TILE*4+w*4),row*w*4);
