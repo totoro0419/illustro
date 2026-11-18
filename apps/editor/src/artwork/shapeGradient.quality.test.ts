@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type LayerId} from '@illustro/core';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -148,5 +148,29 @@ describe('C09-005/015 live handle geometry',()=>{
     const points=[{x:1,y:2},{x:3,y:4}];
     expect(moveShapeAnchor(points,1,{x:8,y:9})).toEqual([{x:1,y:2},{x:8,y:9}]);
     expect(moveShapeAnchor(points,99,{x:5,y:6})).toEqual(points);
+  });
+});
+
+describe('C09-009 precise gradient stop editing',()=>{
+  it('maps touch and pen coordinates to the same 0.1% grid as the numeric field',()=>{
+    expect(gradientStopPointerPosition(125,100,100)).toBe(.25);
+    expect(gradientStopPointerPosition(50,100,100)).toBe(0);
+    expect(gradientStopPointerPosition(250,100,100)).toBe(1);
+    expect(gradientStopPointerPosition(133.34,100,100)).toBe(.333);
+  });
+  it('ignores invalid pointer geometry instead of corrupting the stop position',()=>{
+    expect(gradientStopPointerPosition(120,100,0)).toBeNull();
+    expect(gradientStopPointerPosition(NaN,100,100)).toBeNull();
+    expect(gradientStopPointerPosition(120,Infinity,100)).toBeNull();
+  });
+  it('supports keyboard fine steps, accelerated steps, and range boundaries',()=>{
+    expect(gradientStopKeyboardPosition(.5,'ArrowLeft')).toBe(.499);
+    expect(gradientStopKeyboardPosition(.5,'ArrowRight',true)).toBe(.51);
+    expect(gradientStopKeyboardPosition(0,'ArrowLeft')).toBe(0);
+    expect(gradientStopKeyboardPosition(1,'ArrowRight')).toBe(1);
+    expect(gradientStopKeyboardPosition(.2,'Home')).toBe(0);
+    expect(gradientStopKeyboardPosition(.2,'End')).toBe(1);
+    expect(gradientStopKeyboardPosition(.5,'Escape')).toBeNull();
+    expect(gradientStopKeyboardPosition(NaN,'ArrowRight')).toBeNull();
   });
 });
