@@ -99,6 +99,34 @@ describe('C08 fill boundaries and destination gating',()=>{
       graph.neighborOffsets[center],graph.neighborOffsets[center+1]));
     expect(innerNeighbors).not.toContain(0);
   });
+  it('classifies three nested boundaries as alternating closed areas and enclosed holes',()=>{
+    const w=19,h=19,data=image(w,h);
+    rectangle(data,w,2,2,16,16,[0,0,0,255]);
+    rectangle(data,w,5,5,13,13,[0,0,0,255]);
+    rectangle(data,w,8,8,10,10,[0,0,0,255]);
+    const graph=buildRegions(data,w,h,15,0,[]);
+    const outside=graph.labels[0]!,first=graph.labels[3*w+3]!,
+      hole=graph.labels[6*w+6]!,center=graph.labels[9*w+9]!;
+    expect(new Set([outside,first,hole,center]).size).toBe(4);
+    expect([graph.depth[first],graph.depth[hole],graph.depth[center]]).toEqual([1,2,3]);
+    expect([graph.external[first],graph.external[hole],graph.external[center]]).toEqual([0,0,0]);
+    for(const id of [first,hole,center]){
+      const neighbors=Array.from(graph.neighbors.subarray(graph.neighborOffsets[id],graph.neighborOffsets[id+1]));
+      expect(neighbors).not.toContain(0);
+    }
+  });
+  it('keeps disconnected enclosed regions distinct even if they share a background',()=>{
+    const w=23,h=13,data=image(w,h);
+    rectangle(data,w,2,2,8,10,[255,255,255,255]);
+    rectangle(data,w,13,2,20,10,[255,255,255,255]);
+    const graph=buildRegions(data,w,h,15,0,[]);
+    const first=graph.labels[5*w+5]!,second=graph.labels[5*w+16]!;
+    expect(first).toBeGreaterThan(0);
+    expect(second).toBeGreaterThan(0);
+    expect(first).not.toBe(second);
+    expect(graph.depth[first]).toBe(1);
+    expect(graph.depth[second]).toBe(1);
+  });
   it('adds a soft border only when the optional smooth-boundary mode is requested',()=>{
     const w=9,h=9,source=image(w,h,[255,255,255,255]);
     const points=[{x:2,y:2},{x:6,y:2},{x:6,y:6},{x:2,y:6}];
