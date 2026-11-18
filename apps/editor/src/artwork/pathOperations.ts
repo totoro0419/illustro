@@ -123,9 +123,14 @@ export function sampledPath(path:EditablePath,tolerance=.5,maxPoints=65536):ArtP
     const p0=a,p1={x:a.outX??a.x,y:a.outY??a.y},p2={x:b.inX??b.x,y:b.inY??b.y},p3=b;
     const lerp=(l:ArtPoint,r:ArtPoint)=>({x:(l.x+r.x)/2,y:(l.y+r.y)/2});
     let samples=0;
+    // The former 255-segment cap could force the last part of a complex curve
+    // into one visibly straight edge. Expand it only when the overall point
+    // budget allows, retaining a strict upper bound for 4K operations.
+    const curveBudget=Math.min(2048,Math.max(255,
+      Math.floor((maxPoints-anchors.length)/Math.max(1,anchors.length-1))));
     function flatten(a0:ArtPoint,a1:ArtPoint,a2:ArtPoint,a3:ArtPoint,begin:number,end:number,depth:number){
       const flat=Math.max(segmentDistance(a1,a0,a3),segmentDistance(a2,a0,a3));
-      if(flat<=tolerance||depth>=12||samples>=255){
+      if(flat<=tolerance||depth>=14||samples>=curveBudget){
         group.push({...a3,pressure:(p0.pressure??1)+((p3.pressure??1)-(p0.pressure??1))*end});
         samples++;total++;checkBudget();return;
       }
