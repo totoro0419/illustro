@@ -3,10 +3,11 @@ import {CanvasNavigation} from '../canvasNavigation';
 import {CanvasView} from '../canvasView';
 import {captureExport,renderFrozenArtwork,renderFrozenArtworkTiledPreview,encodePng} from '../export/basicExport';
 import {HistoryPreviewQueue} from './historyPreviewQueue';
+import {HistoryThumbnailCache} from './historyThumbnailCache';
 
 // Reuse both completed and in-flight thumbnails. A 4000px preview can otherwise
 // allocate several full-resolution pixel buffers for duplicate concurrent calls.
-const cachedThumbnails=new WeakMap<CoreDocument,Map<RevisionId,Promise<Blob>>>();
+const cachedThumbnails=new WeakMap<CoreDocument,HistoryThumbnailCache<RevisionId,Blob>>();
 const historyPreviewQueue=new HistoryPreviewQueue();
 export function historyPreviewDimensions(width:number,height:number,maxWidth:number,maxHeight:number){
   if(![width,height,maxWidth,maxHeight].every(Number.isFinite)||[width,height,maxWidth,maxHeight].some(v=>v<1))
@@ -43,16 +44,13 @@ export function historyComparisonPreview(artwork:CoreDocument,revision:RevisionI
   return historyPreviewQueue.run(()=>renderHistoryPreview(artwork,revision,1600,1200),'foreground');
 }
 
-export async function historyThumbnail(artwork:CoreDocument,revision:RevisionId){
+export function historyThumbnail(artwork:CoreDocument,revision:RevisionId):Promise<Blob>{
   let cache=cachedThumbnails.get(artwork);
-  if(!cache){cache=new Map();cachedThumbnails.set(artwork,cache);}
-  const cached=cache.get(revision);
-  if(cached)return cached;
-  const thumbnail=historyPreviewQueue.run(()=>renderHistoryPreview(artwork,revision,160,120).then(result=>result.blob));
-  if(cache.size>=24)cache.delete(cache.keys().next().value!);
-  cache.set(revision,thumbnail);
-  try{return await thumbnail;}
-  catch(error){if(cache.get(revision)===thumbnail)cache.delete(revision);throw error;}
+  if(!cache){cache=new HistoryThumbnailCache<RevisionId,Blob>(24);cachedThumbnails.set(artwork,cache);}
+  // Pending renders are tracked separately from the bounded completed cache.
+  // Scrolling through many revisions cannot evict and duplicate an in-flight 4K replay.
+  return cache.get(revision,()=>historyPreviewQueue.run(
+    ()=>renderHistoryPreview(artwork,revision,160,120).then(result=>result.blob)));
 }
 
 export function createHistoryComparison(url:string,caption:string,width:number,height:number){
