@@ -47,7 +47,7 @@ describe('C08-003 incremental region preview',()=>{
    const cleared=renderLiveRegionPreview(graph,new Set([2]),512,buffer);
    expect(cleared.pixels).toBe(buffer);
    expect(cleared.pixels[3]).toBe(0);
-   expect(cleared.pixels[(4*6+5)*4+3]).toBeGreaterThan(0);
+   expect(cleared.pixels[(3*6+5)*4+3]).toBeGreaterThan(0);
  });
  it('does not include absent or non-finite pointer seeds',()=>{
   const picked=new Set<number>();
