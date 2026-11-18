@@ -44,7 +44,7 @@ export function installFillPanel(host:HTMLElement,api:{
   const gapZoom=document.createElement('canvas');
   gapZoom.hidden=true;gapZoom.width=144;gapZoom.height=144;gapZoom.style.cssText='max-width:100%;border:1px solid currentColor';
   gapZoom.setAttribute('aria-label','隙間候補の拡大表示');
-  let gesture:BrushSurface|null=null,running=false,currentGraph:RegionGraph|null=null,previous:RegionGraph|null=null;
+  let gesture:BrushSurface|null=null,gestureEpoch=0,running=false,currentGraph:RegionGraph|null=null,previous:RegionGraph|null=null;
   let capture:FillCapture|null=null,previousCapture:FillCapture|null=null,graphTolerance=0,graphGap=0,confirmed=false;
   let saved:Entry|undefined,candidate:Candidate|null=null,lastFill:Candidate|null=null,excludedGap=-1,inspectedRegion=0;
   let pending:Awaited<ReturnType<typeof runFill>>|null=null;
@@ -361,9 +361,10 @@ export function installFillPanel(host:HTMLElement,api:{
     }
     finally{analyzing=false;if(analysisAbort===abort)analysisAbort=null;sync();}
   }
-  function stopGesture(){gesture?.setCanvasEditGesture(null);gesture=null;}
+  function stopGesture(){gestureEpoch++;gesture?.setCanvasEditGesture(null);gesture=null;}
   function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false){
     stopGesture();
+    const epoch=gestureEpoch;
     const drawing=api.drawing();
     if(!drawing)throw Error('作品を開いてください。');
     const graph=liveFill&&method.value==='line'&&confirmed&&currentGraph&&capture?.referenceValid()&&
@@ -416,13 +417,14 @@ export function installFillPanel(host:HTMLElement,api:{
       }});
     if(previewColor){
       void read(false).then(source=>{
-        if(gesture!==drawing||drawing!==api.drawing()||!source.valid()||
+        if(epoch!==gestureEpoch||gesture!==drawing||drawing!==api.drawing()||!source.valid()||
            source.selection||source.targetMask)return;
         colorValid=source.valid;
         liveColor=new LiveColorFillPreview(source.source,source.width,source.height,512);
         if(latestPoints.length)update(latestPoints);
       }).catch(()=>{
-        if(gesture===drawing)output.textContent='仮表示の準備は省略しました。塗りの確定はそのまま利用できます。';
+        if(epoch===gestureEpoch&&gesture===drawing)
+          output.textContent='仮表示の準備は省略しました。塗りの確定はそのまま利用できます。';
       });
     }
   }
