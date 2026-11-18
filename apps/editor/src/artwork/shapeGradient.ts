@@ -42,6 +42,19 @@ export function reverseGradientStops(current:readonly GradientStop[]):GradientSt
 export function shapeGradientInitialMask(editing:LayerId|undefined,draftMask:LayerMask|null):LayerMask|null|undefined{
   return editing?undefined:draftMask;
 }
+/** Apply the same vector/pixel mask coverage as the committed layer,
+ * sampled at the preview pixel center in original document coordinates. */
+export function applyShapePreviewMask(
+  pixels:Uint8ClampedArray,mask:LayerMask|null|undefined,
+  width:number,height:number,outputWidth:number,outputHeight:number
+):void{
+  if(!mask?.enabled)return;
+  for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
+    const at=(y*outputWidth+x)*4;
+    const coverage=layerMaskCoverage(mask,(x+.5)*width/outputWidth,(y+.5)*height/outputHeight);
+    pixels[at+3]=Math.round(pixels[at+3]!*coverage);
+  }
+}
 export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const heading=document.createElement('summary');heading.textContent='図形・グラデーション';
@@ -301,10 +314,8 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         const pixels=base??followed!;
         // The shared renderer does not mask editable paths at preview size.
         // Apply the same layer-mask coverage here to avoid showing paint outside the selection.
-        if(type.value==='shape'&&size.mask?.enabled)for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
-          const at=(y*outputWidth+x)*4,coverage=layerMaskCoverage(size.mask,(x+.5)*current.width/outputWidth,(y+.5)*current.height/outputHeight);
-          pixels[at+3]=Math.round(pixels[at+3]!*coverage);
-        }
+        if(type.value==='shape')
+          applyShapePreviewMask(pixels,size.mask,current.width,current.height,outputWidth,outputHeight);
         if(base&&followed)for(let y=0;y<outputHeight;y++){
           const start=(y*outputWidth+Math.floor(outputWidth/2))*4;
           base.set(followed.subarray(start,(y+1)*outputWidth*4),start);
