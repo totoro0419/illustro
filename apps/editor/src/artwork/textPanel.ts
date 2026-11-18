@@ -30,7 +30,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   const color=document.createElement('input');color.type='color';labelledField(controls,'文字の色',color);
   const partial=document.createElement('details');
   const partialSummary=document.createElement('summary');
-  partialSummary.textContent='選択した文字だけ色・サイズを変える';
+  partialSummary.textContent='選択した文字だけ色・サイズ・太字・斜体を変える';
   const partialControls=document.createElement('div');partialControls.className='c06-clipboard-grid';
   const partialColor=document.createElement('input');partialColor.type='color';
   labelledField(partialControls,'選択部分の色',partialColor);
@@ -168,7 +168,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     if(start===end)throw Error('文章の一部分を選択してから設定してください。');
     return {start,end};
   }
-  function updateSelectedText(patch:{color?:string;size?:number},clear=false){
+  function updateSelectedText(patch:{color?:string;size?:number;bold?:boolean;italic?:boolean},clear=false){
     const range=selectedTextRange();
     const next=applyTextSelectionStyle(text.value,styleRanges,range.start,range.end,patch,clear);
     if(next.length>text.value.length)throw Error('部分書式が多すぎます。近くの同じ書式をまとめてください。');
@@ -181,6 +181,10 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   partialActions.append(
     button('選択した文字の色を変更',()=>updateSelectedText({color:partialColor.value}),status),
     button('選択した文字のサイズを変更',()=>updateSelectedText({size:partialSize.valueAsNumber}),status),
+    button('選択した文字を太字に',()=>updateSelectedText({bold:true}),status),
+    button('選択した文字の太字を解除',()=>updateSelectedText({bold:false}),status),
+    button('選択した文字を斜体に',()=>updateSelectedText({italic:true}),status),
+    button('選択した文字の斜体を解除',()=>updateSelectedText({italic:false}),status),
     button('選択部分の書式を解除',()=>updateSelectedText({},true),status)
   );
   file.onchange=async()=>{
