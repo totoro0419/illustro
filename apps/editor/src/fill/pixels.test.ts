@@ -85,7 +85,7 @@ describe('C08 fill boundaries and destination gating',()=>{
     const w=15,h=9,data=image(w,h);
     for(const x of [1,2,3,9,10,11])setPixel(data,w,x,4,[0,0,0,255]);
     setPixel(data,w,6,3,[0,0,0,255]); // not adjacent to either end
-    const result=fillBoundaries(data,w,h,15,12);
+    const result=fillBoundaries(data,w,h,15,6);
     for(let x=4;x<=8;x++)expect(result.bridges[4*w+x]).toBe(0);
     expect(result.walls[3*w+6]).toBe(1);
   });
@@ -93,7 +93,7 @@ describe('C08 fill boundaries and destination gating',()=>{
     const w=21,h=21,data=image(w,h);
     for(const x of [2,3,4,16,17,18])setPixel(data,w,x,10,[0,0,0,255]);
     for(const y of [4,5,6,14,15,16])setPixel(data,w,10,y,[0,0,0,255]);
-    const result=fillBoundaries(data,w,h,15,6);
+    const result=fillBoundaries(data,w,h,15,12);
     const horizontal=Array.from({length:11},(_,i)=>i+5).every(x=>result.bridges[10*w+x]===1);
     const vertical=Array.from({length:7},(_,i)=>i+7).every(y=>result.bridges[y*w+10]===1);
     expect(Number(horizontal)+Number(vertical)).toBe(1);
