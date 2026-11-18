@@ -1,5 +1,20 @@
 import {describe,expect,it} from 'vitest';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask} from './shapeGradient';
+
+describe('C09-004 shape selection snapshot',()=>{
+  it('commits the mask used for a new shape preview even if the active selection changes',()=>{
+    const original={shape:'rectangle',x:12,y:20,width:100,height:60,enabled:true,inverted:false,density:1} as const;
+    const changed={...original,x:300};
+    const snapshot=original;
+    expect(shapeGradientInitialMask(undefined,snapshot)).toBe(original);
+    expect(shapeGradientInitialMask(undefined,snapshot)).not.toBe(changed);
+  });
+  it('preserves an explicitly empty selection and existing editable-layer masks',()=>{
+    const mask={shape:'ellipse',x:0,y:0,width:20,height:20,enabled:true,inverted:false,density:.5} as const;
+    expect(shapeGradientInitialMask(undefined,null)).toBeNull();
+    expect(shapeGradientInitialMask('existing-layer',mask)).toBeUndefined();
+  });
+});
 
 describe('C09 editable shape geometry',()=>{
   it('generates a closed eight-anchor rounded rectangle with tangent handles',()=>{
