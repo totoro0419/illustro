@@ -62,7 +62,10 @@ export function rebaseTextStyles(
  const result:TextStyleRange[]=[];
  for(const r of ranges){
    if(r.start<prefix)result.push({...r,end:Math.min(r.end,prefix)});
-   if(newEnd>prefix&&r.start<=prefix&&r.end>prefix){
+   // Pure insertion at the *start* of a formatted span belongs before it.
+   // Replacement of selected formatted text inherits the replaced style.
+   if(newEnd>prefix&&r.end>prefix&&
+      (r.start<prefix||(r.start===prefix&&oldEnd>prefix))){
      result.push({...r,start:prefix,end:newEnd});
    }
    if(r.end>oldEnd){
