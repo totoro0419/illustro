@@ -89,6 +89,24 @@ describe('C08 fill boundaries and destination gating',()=>{
     for(let x=4;x<=8;x++)expect(result.bridges[4*w+x]).toBe(0);
     expect(result.walls[3*w+6]).toBe(1);
   });
+  it('rejects 45-degree false repairs between perpendicular line tips',()=>{
+    const w=15,h=15,data=image(w,h);
+    for(const x of [1,2,3,9,10,11])setPixel(data,w,x,7,[0,0,0,255]);
+    for(const y of [2,3,4,10,11,12])setPixel(data,w,6,y,[0,0,0,255]);
+    const result=fillBoundaries(data,w,h,15,6);
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates.every(g=>g.from.x===g.to.x||g.from.y===g.to.y)).toBe(true);
+    expect(suggestLocalGaps(buildRegions(data,w,h,15,0,[]),{x:6,y:7},6,[])
+      .every(g=>g.from.x===g.to.x||g.from.y===g.to.y)).toBe(true);
+  });
+  it('preserves a genuine diagonal repair between aligned diagonal tips',()=>{
+    const w=11,h=11,data=image(w,h);
+    for(const [x,y] of [[1,1],[2,2],[3,3],[6,6],[7,7],[8,8]])
+      setPixel(data,w,x,y,[0,0,0,255]);
+    const result=fillBoundaries(data,w,h,15,4);
+    expect(result.bridges[4*w+4]).toBe(1);
+    expect(result.bridges[5*w+5]).toBe(1);
+  });
   it('does not auto-connect two gaps that cross an already proposed bridge',()=>{
     const w=21,h=21,data=image(w,h);
     for(const x of [2,3,4,16,17,18])setPixel(data,w,x,10,[0,0,0,255]);
