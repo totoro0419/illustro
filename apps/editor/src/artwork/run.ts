@@ -2,11 +2,12 @@ import type {ArtworkJob} from './worker';
 import {renderArtwork} from './render';
 import {ensureFont} from './fonts';
 import {canRenderTextInArtworkWorker} from './textWorkerSafety';
+import {artworkQueuePosition,type ArtworkPriority} from './workerQueuePolicy';
 
 // Keep a small number of drawing workers alive. Creating one for every preview
 // causes repeated startup and can overload the browser during rapid edits.
 type ArtworkPixels=Uint8ClampedArray<ArrayBuffer>;
-type ArtworkTask={job:ArtworkJob;resolve:(pixels:ArtworkPixels)=>void;reject:(error:Error)=>void;signal?:AbortSignal;abortHandler?:()=>void};
+type ArtworkTask={job:ArtworkJob;resolve:(pixels:ArtworkPixels)=>void;reject:(error:Error)=>void;signal?:AbortSignal;abortHandler?:()=>void;priority:ArtworkPriority};
 type WorkerSlot={worker:Worker;active:ArtworkTask|null};
 const MAX_WORKERS=2;
 const pending:ArtworkTask[]=[];
@@ -79,7 +80,7 @@ function pumpArtwork(){
   }
 }
 
-export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortSignal}>={}):Promise<ArtworkPixels>{
+export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortSignal;priority?:ArtworkPriority}>={}):Promise<ArtworkPixels>{
   const signal=options.signal;
   if(signal?.aborted)throw abortError();
   if(job.content.kind==='text'&&job.content.fontAsset)await ensureFont(job.content.fontAsset);
@@ -92,13 +93,13 @@ export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortS
     return renderArtwork(job.content,job,mainCanvas);
   }
   return new Promise<ArtworkPixels>((resolve,reject)=>{
-    const task:ArtworkTask={job,resolve,reject,...(signal?{signal}:{})};
+    const task:ArtworkTask={job,resolve,reject,priority:options.priority??'interactive',...(signal?{signal}:{})};
     if(signal){
       task.abortHandler=()=>cancelTask(task);
       signal.addEventListener('abort',task.abortHandler,{once:true});
       if(signal.aborted){cancelTask(task);return;}
     }
-    pending.push(task);
+    pending.splice(artworkQueuePosition(pending.map(item=>item.priority),task.priority),0,task);
     pumpArtwork();
   }).catch(error=>{
     if(!genericText||signal?.aborted)throw error;
