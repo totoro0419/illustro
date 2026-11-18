@@ -13,6 +13,8 @@ export type EditablePath=Readonly<{
   points:readonly ArtPoint[];closed:boolean;stroke:string;fill:string|null;width:number;
   lineStyle?:'solid'|'dashed'|'dotted'|'pressure';
   opacity?:number; originalStrokeLayer?:string;
+  /** Ordered painted glyph groups; indices refer to complete point ranges. */
+  fillRuns?:readonly Readonly<{start:number;end:number;color:string}>[];
   /** Original operands remain editable; points store the rendered result for legacy readers. */
   booleanOperands?:Readonly<{mode:'union'|'intersection'|'difference'|'xor';a:EditablePath;b:EditablePath}>;
 }>;
@@ -72,13 +74,27 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
       ...(spread!==undefined?{spread}:{}),...(typeof radialRatio==='number'?{radialRatio}:{}),
       ...(follow?{follow}:{})});
   }else if(value.kind==='path'){
-    const {shape,points,closed,stroke,fill,width,lineStyle,opacity,originalStrokeLayer,booleanOperands}=value;
+    const {shape,points,closed,stroke,fill,width,lineStyle,opacity,originalStrokeLayer,booleanOperands,fillRuns}=value;
     if(shape!=='rectangle'&&shape!=='ellipse'&&shape!=='polyline'&&shape!=='bezier'&&shape!=='freehand')throw invalid();
     if(!Array.isArray(points)||points.length<2||points.length>4096||typeof closed!=='boolean'||!color(stroke)||
       (opacity!==undefined&&!numeric(opacity,0,1))||
       (originalStrokeLayer!==undefined&&(typeof originalStrokeLayer!=='string'||!originalStrokeLayer||originalStrokeLayer.length>128))||
       (fill!==null&&!color(fill))||!numeric(width,0,4096)||
       (lineStyle!==undefined&&lineStyle!=='solid'&&lineStyle!=='dashed'&&lineStyle!=='dotted'&&lineStyle!=='pressure'))throw invalid();
+    let paints:EditablePath['fillRuns'];
+    if(fillRuns!==undefined){
+      if(!Array.isArray(fillRuns)||!fillRuns.length||fillRuns.length>points.length/2||shape==='rectangle'||shape==='ellipse')throw invalid();
+      let previous=0;
+      paints=Object.freeze(fillRuns.map(run=>{
+        if(!field(run)||!Number.isSafeInteger(run.start)||!Number.isSafeInteger(run.end)||
+          run.start!==previous||(run.end as number)<previous+2||(run.end as number)>points.length||!color(run.color))throw invalid();
+        if(previous>0&&!field(points[previous]))throw invalid();
+        if(previous>0&&!(points[previous] as Record<string,unknown>).move)throw invalid();
+        previous=run.end as number;
+        return Object.freeze({start:run.start as number,end:previous,color:run.color});
+      }));
+      if(previous!==points.length)throw invalid();
+    }
     let construction:EditablePath['booleanOperands'];
     if(booleanOperands!==undefined){
       if(!field(booleanOperands)||!['union','intersection','difference','xor'].includes(String(booleanOperands.mode))||
@@ -90,7 +106,7 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
     }
     checked=Object.freeze({kind:'path',shape,points:Object.freeze(points.map(point)),closed,stroke,fill,width,...(lineStyle?{lineStyle}:{}),
       ...(typeof opacity==='number'?{opacity}:{}),...(typeof originalStrokeLayer==='string'?{originalStrokeLayer}:{}),
-      ...(construction?{booleanOperands:construction}:{})});
+      ...(construction?{booleanOperands:construction}:{}),...(paints?{fillRuns:paints}:{})});
   }else if(value.kind==='text'){
     const {text,origin,vertical,size,family,align,spacing,lineHeight,fontAsset,embedFont,boxWidth,boxHeight,styleRanges}=value;
     if(typeof text!=='string'||!text.trim()||text.length>8192||typeof vertical!=='boolean'||!numeric(size,1,4096)||

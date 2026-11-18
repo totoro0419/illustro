@@ -180,7 +180,15 @@ export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTM
   else{
     ctx.globalAlpha=content.opacity??1;
     tracePath(ctx,content);
-    if(content.fill){ctx.fillStyle=content.fill;ctx.fill('evenodd');}
+    if(content.fill){
+      if(content.fillRuns?.length){
+        for(const run of content.fillRuns){
+          tracePath(ctx,{...content,points:content.points.slice(run.start,run.end),closed:false});
+          ctx.fillStyle=run.color;ctx.fill('evenodd');
+        }
+        tracePath(ctx,content);
+      }else{ctx.fillStyle=content.fill;ctx.fill('evenodd');}
+    }
     if(content.width){
       ctx.lineWidth=content.width;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=content.stroke;
       if(content.lineStyle==='dashed')ctx.setLineDash([content.width*4,content.width*2]);

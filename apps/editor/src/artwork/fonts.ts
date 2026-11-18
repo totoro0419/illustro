@@ -1,6 +1,6 @@
 import type {ArtPoint,EditablePath,EditableText} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
-import {layoutStyledText} from './textStyles';
+import {layoutStyledText,textFontAssetIds} from './textStyles';
 import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
 import {verticalGlyphAdjustment} from './verticalGlyph';
 import {addAsset,getAsset,listAssets,type AssetInfo,type AssetEntry} from '../assets/library';
@@ -101,43 +101,6 @@ function appendCommands(points:ArtPoint[],commands:readonly PathCommand[]){
 
 function vectorize(text:EditableText,font:Font):ArtPoint[]{
   const points:ArtPoint[]=[],ascent=font.ascender*text.size/font.unitsPerEm;
-  if(text.styleRanges?.length){
-    if(text.styleRanges.some(range=>range.fontAsset&&range.fontAsset!==text.fontAsset))
-      throw Error('異なるフォントを含む文字の輪郭化には未対応です。見た目を保つには画像化してください。');
-    if(text.styleRanges.some(range=>!range.fontAsset&&range.family&&range.family!==text.family))
-      throw Error('異なる書体を含む文字の輪郭化には未対応です。見た目を保つには画像化してください。');
-    if(text.styleRanges.some(range=>range.color&&range.color.toLowerCase()!==text.color.toLowerCase()))
-      throw Error('選択部分に別の色を使う文字は、色を保ったまま単一のパスに変換できません。まず文字色を統一するか、描画用レイヤーへ変換してください。');
-    if(text.styleRanges.some(range=>range.bold||range.italic))
-      throw Error('部分的な太字・斜体はこのフォントの輪郭化で再現できません。元の書式を保つには描画用レイヤーへ変換してください。');
-    const lines=layoutStyledText(text,(character,size)=>font.getAdvanceWidth(character,size));
-    for(const line of lines.lines){
-      const x0=alignedTextLineStart(text,line.width);
-      for(const glyph of line.glyphs){
-        if(/^\s$/u.test(glyph.character))continue;
-        const ascent=font.ascender*glyph.size/font.unitsPerEm;
-        if(text.vertical){
-          const placement=verticalGlyphAdjustment(glyph.character,glyph.size);
-          const x=text.origin.x-line.offset+placement.dx;
-          const y=text.origin.y+glyph.position+placement.dy;
-          const width=font.getAdvanceWidth(glyph.character,glyph.size);
-          const commands=font.getPath(glyph.character,0,ascent,glyph.size).commands;
-          const place=(u:number,v:number):[number,number]=>placement.rotate
-            ?[x-(v-glyph.size/2),y+glyph.size/2+(u-width/2)]
-            :[x+u-width/2,y+v];
-          appendCommands(points,commands.map(command=>{
-            const copy={...command};
-            if(command.x!==undefined&&command.y!==undefined)[copy.x,copy.y]=place(command.x,command.y);
-            if(command.x1!==undefined&&command.y1!==undefined)[copy.x1,copy.y1]=place(command.x1,command.y1);
-            if(command.x2!==undefined&&command.y2!==undefined)[copy.x2,copy.y2]=place(command.x2,command.y2);
-            return copy;
-          }));
-        }else appendCommands(points,font.getPath(glyph.character,
-          x0+glyph.position,text.origin.y+line.offset+ascent,glyph.size).commands);
-      }
-    }
-    return points;
-  }
   const lines=layoutEditableText(text,characters=>
     font.getAdvanceWidth(characters,text.size,{kerning:true})+
       (Array.from(characters).length-1)*text.spacing).lines;
@@ -172,11 +135,61 @@ function vectorize(text:EditableText,font:Font):ArtPoint[]{
   }
   return points;
 }
+export function outlineStyledText(text:EditableText,fonts:ReadonlyMap<string,Font>):EditablePath{
+  if(text.styleRanges?.some(range=>range.bold||range.italic))
+    throw Error('端末が合成した太字・斜体の輪郭化には未対応です。対応する太字・斜体のフォントを読み込むか画像化してください。');
+  const getFont=(family:string)=>{
+    const font=fonts.get(family);
+    if(!font)throw Error('端末専用の書体は輪郭を取得できません。各部分に読み込んだフォントを指定してください。');
+    return font;
+  };
+  const layout=layoutStyledText(text,(character,size,_bold,_italic,family)=>getFont(family).getAdvanceWidth(character,size));
+  const points:ArtPoint[]=[],fillRuns:Array<{start:number;end:number;color:string}>=[];
+  for(const line of layout.lines){
+    const x0=alignedTextLineStart(text,line.width);
+    for(const glyph of line.glyphs){
+      if(/^\s$/u.test(glyph.character))continue;
+      const font=getFont(glyph.family);
+      if(!font.charToGlyphIndex(glyph.character))throw Error('このフォントには一部の文字がありません。文字を含むフォントを選んでください。');
+      const ascent=font.ascender*glyph.size/font.unitsPerEm,start=points.length;
+      if(text.vertical){
+        const placement=verticalGlyphAdjustment(glyph.character,glyph.size);
+        const x=text.origin.x-line.offset+placement.dx,y=text.origin.y+glyph.position+placement.dy;
+        const width=font.getAdvanceWidth(glyph.character,glyph.size);
+        const place=(u:number,v:number):[number,number]=>placement.rotate?
+          [x-(v-glyph.size/2),y+glyph.size/2+(u-width/2)]:[x+u-width/2,y+v];
+        appendCommands(points,font.getPath(glyph.character,0,ascent,glyph.size).commands.map(command=>{
+          const copy={...command};
+          if(command.x!==undefined&&command.y!==undefined)[copy.x,copy.y]=place(command.x,command.y);
+          if(command.x1!==undefined&&command.y1!==undefined)[copy.x1,copy.y1]=place(command.x1,command.y1);
+          if(command.x2!==undefined&&command.y2!==undefined)[copy.x2,copy.y2]=place(command.x2,command.y2);
+          return copy;
+        }));
+      }else appendCommands(points,font.getPath(glyph.character,x0+glyph.position,text.origin.y+line.offset+ascent,glyph.size).commands);
+      if(points.length-start<2)throw Error('この文字の輪郭を取得できません。見た目を保つには画像化してください。');
+      fillRuns.push({start,end:points.length,color:glyph.color});
+    }
+  }
+  if(points.length<2||points.length>4096)throw Error('文字を短く分けてから、輪郭へ変換してください。');
+  const multipleColors=new Set(fillRuns.map(run=>run.color.toLowerCase())).size>1;
+  const color=fillRuns[0]?.color??text.color;
+  return {kind:'path',shape:'bezier',points,closed:false,stroke:color,fill:color,width:0,
+    ...(multipleColors?{fillRuns}:{})};
+}
 export async function outlineText(text:EditableText):Promise<EditablePath>{
   if(!text.fontAsset)throw Error('パスへ変換するには、読み込んだフォントを文字レイヤーに適用してください。');
   const font=await getAsset(text.fontAsset);
   if(!font||font.deleted||font.kind!=='font')throw Error('輪郭を取得するフォントが見つかりません。');
   const parsed=await outlineFont(font);
+  if(text.styleRanges?.length){
+    const fonts=new Map<string,Font>([[text.family,parsed],[fontFamily(text.fontAsset),parsed]]);
+    for(const id of textFontAssetIds(text))if(id!==text.fontAsset){
+      const asset=await getAsset(id);
+      if(!asset||asset.deleted||asset.kind!=='font')throw Error('部分書式のフォントが見つかりません。フォントを選び直してください。');
+      fonts.set(fontFamily(id),await outlineFont(asset));
+    }
+    return outlineStyledText(text,fonts);
+  }
   if(Array.from(text.text).some(character=>!/^\s$/u.test(character)&&!parsed.charToGlyphIndex(character)))
     throw Error('このフォントには一部の文字がありません。文字を含むフォントを選んでください。');
   const points=vectorize(text,parsed);

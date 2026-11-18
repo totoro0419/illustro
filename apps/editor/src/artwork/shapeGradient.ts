@@ -357,6 +357,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       stopHandles();
       const current=api.context(),selected=current?.selected.content;
       if(!current||!selected||selected.kind==='text')throw Error('図形かグラデーションのレイヤーを選んでください。');
+      if(selected.kind==='path'&&selected.fillRuns)throw Error('複数色の文字輪郭は「ベクター線・点の編集」で点や色を調整してください。');
       editing=current.selected.id;draftDrawing=current.drawing;
       editedOpacity=selected.kind==='path'?selected.opacity:undefined;
       originalStrokeLayer=selected.kind==='path'?selected.originalStrokeLayer:undefined;

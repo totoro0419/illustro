@@ -40,7 +40,9 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
   let combinedSourceIds:readonly LayerId[]|null=null;
   function draft(){
     if(!path)throw Error('線を描くか、ベクターレイヤーを選んでください。');
-    return validateEditableArtwork({...path,stroke:color.value,fill:filled.checked?fill.value:null,
+    const picked=pointNumber();
+    const fillRuns=path.fillRuns?.map(run=>picked>=run.start&&picked<run.end?{...run,color:fill.value}:run);
+    return validateEditableArtwork({...path,...(fillRuns?{fillRuns}:{}),stroke:color.value,fill:filled.checked?(path.fillRuns?(path.fill??fill.value):fill.value):null,
       closed:closed.checked,width:thickness.valueAsNumber,lineStyle:lineStyle.value}) as EditablePath;
   }
   const pointNumber=()=>Math.round(pointIndex.valueAsNumber)-1;
@@ -49,6 +51,8 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     pointIndex.max=String(path?.points.length??1);pointIndex.value=String(index+1);
     const p=path?.points[index];
     if(!p)return;
+    const paint=path?.fillRuns?.find(run=>index>=run.start&&index<run.end);
+    if(paint)fill.value=paint.color;
     for(const [input,value] of [[pointX,p.x],[pointY,p.y],[inX,p.inX??p.x],[inY,p.inY??p.y],[outX,p.outX??p.x],[outY,p.outY??p.y]] as const)
       input.value=String(Math.round(value*100)/100);
     status.textContent=`${path?.points.length} 点・編集中の点 ${index+1}`;
@@ -85,6 +89,11 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     return other;
   };
   tools.append(
+    button('全体の塗りをこの色にそろえる',()=>{
+      const current=draft(),{fillRuns:_colors,...uniform}=current;
+      readPath({...uniform,fill:filled.checked?fill.value:null},editing);
+      status.textContent='すべての輪郭の塗り色をそろえました。「作品に反映」で保存できます。';
+    },status),
     button('新しいベクター線を描く',()=>{
       const context=api.context();
       if(!context)throw Error('作品を開いてください。');
@@ -268,7 +277,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     },status)
   );
   pointIndex.onchange=syncPoint;
-  appearance.onchange=()=>void refresh();
+  appearance.onchange=()=>{if(path)path=draft();void refresh();};
   panel.ontoggle=()=>{if(!panel.open)stopPoints();};
   panel.append(title,appearance,coordinates,tools,preview,status);host.append(panel);
 }

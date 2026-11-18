@@ -1,6 +1,9 @@
 import type {ArtPoint,EditablePath} from '@illustro/core';
 
 const distance=(a:ArtPoint,b:ArtPoint)=>Math.hypot(a.x-b.x,a.y-b.y);
+function requireUniformFill(path:EditablePath){
+  if(path.fillRuns)throw Error('複数色の輪郭は点・ハンドルと部分色を編集できます。線の分割や図形演算をするには先に単色にそろえてください。');
+}
 function segmentDistance(p:ArtPoint,a:ArtPoint,b:ArtPoint){
   const dx=b.x-a.x,dy=b.y-a.y,len=dx*dx+dy*dy;
   const u=len?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/len)):0;
@@ -29,6 +32,7 @@ export function smoothPath(points:readonly ArtPoint[],closed:boolean,amount:numb
   });
 }
 export function eraseSegment(path:EditablePath,point:ArtPoint){
+  requireUniformFill(path);
   if(path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(p=>p.move||p.close))
     throw Error('この形は区間消去に対応していません。レイヤーの削除か点の編集を使ってください。');
   let best=Math.max(10,path.width*2),cut=-1;
@@ -56,6 +60,7 @@ export function eraseSegment(path:EditablePath,point:ArtPoint){
 
 /** Combine independent strokes without changing the native, backwards-compatible path format. */
 export function appendPathStroke(base:EditablePath,stroke:EditablePath):EditablePath{
+  requireUniformFill(base);requireUniformFill(stroke);
   if(base.booleanOperands||stroke.booleanOperands)throw Error('図形演算の元データを含む形には追加できません。');
   if(base.shape==='rectangle'||base.shape==='ellipse'||stroke.shape==='rectangle'||stroke.shape==='ellipse'||
     base.closed||stroke.closed||base.points.some(point=>point.close)||stroke.points.some(point=>point.close))
@@ -71,6 +76,29 @@ export function appendPathStroke(base:EditablePath,stroke:EditablePath):Editable
 
 /** Remove the nearest complete subpath; null means the layer itself must be removed atomically. */
 export function eraseWholeStroke(path:EditablePath,position:ArtPoint):EditablePath|null{
+  if(path.fillRuns){
+    let nearest=-1,best=Math.max(10,path.width*2);
+    path.fillRuns.forEach((run,index)=>{
+      const contours=sampledPath({...path,points:path.points.slice(run.start,run.end),closed:false},.5,8192);
+      let inside=false,distanceToEdge=Infinity;
+      for(const line of contours)for(let i=1;i<line.length;i++){
+        const a=line[i-1]!,b=line[i]!;
+        distanceToEdge=Math.min(distanceToEdge,segmentDistance(position,a,b));
+        if((a.y>position.y)!==(b.y>position.y)&&position.x<(b.x-a.x)*(position.y-a.y)/(b.y-a.y)+a.x)inside=!inside;
+      }
+      const score=path.fill&&inside?0:distanceToEdge;
+      if(score<=best){best=score;nearest=index;}
+    });
+    if(nearest<0)throw Error('消したい文字の輪郭の近くを指定してください。');
+    if(path.fillRuns.length===1)return null;
+    const cut=path.fillRuns[nearest]!,length=cut.end-cut.start;
+    const remaining=path.fillRuns.filter((_,i)=>i!==nearest).map(run=>run.start>=cut.end?
+      {...run,start:run.start-length,end:run.end-length}:run);
+    const points=[...path.points.slice(0,cut.start),...path.points.slice(cut.end)];
+    const {fillRuns:_old,...rest}=path;
+    const colors=new Set(remaining.map(run=>run.color.toLowerCase()));
+    return {...rest,points,fill:path.fill?remaining[0]!.color:null,...(colors.size>1?{fillRuns:remaining}:{})};
+  }
   const groups:ArtPoint[][]=[];
   if(path.shape==='rectangle'||path.shape==='ellipse')groups.push([...path.points]);
   else{
@@ -160,6 +188,7 @@ type Coordinate=[number,number];
 type Polygon=Coordinate[][];
 type ShapeMode='union'|'intersection'|'difference'|'xor';
 export async function combineShapes(current:EditablePath,other:EditablePath,mode:ShapeMode):Promise<EditablePath>{
+  requireUniformFill(current);requireUniformFill(other);
   const polygon=(input:EditablePath):Polygon=>{
     const result=sampledPath(input,.25,8192);
     if(!result.length||result.some(ring=>ring.length<4||distance(ring[0]!,ring.at(-1)!)>.00001))
@@ -187,6 +216,7 @@ export async function combineShapes(current:EditablePath,other:EditablePath,mode
 }
 
 export function splitPath(path:EditablePath,index:number):EditablePath{
+  requireUniformFill(path);
   if(path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(p=>p.move||p.close)||index<1||index>=path.points.length-1)
     throw Error('開いた線の途中にある点を選んでください。');
   if(path.closed)throw Error('先に線を開いてから分割してください。');
@@ -201,6 +231,7 @@ function reversePath(points:readonly ArtPoint[]){
   });
 }
 export function joinPaths(a:EditablePath,b:EditablePath,maxGap=24):EditablePath{
+  requireUniformFill(a);requireUniformFill(b);
   for(const path of [a,b])if(path.closed||path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(point=>point.move||point.close))
     throw Error('接続するには開いた線を2本選んでください。');
   const paths=[[a.points,b.points],[a.points,reversePath(b.points)],
@@ -215,6 +246,7 @@ export function joinPaths(a:EditablePath,b:EditablePath,maxGap=24):EditablePath{
 }
 
 export function eraseBetweenIntersections(path:EditablePath,reference:EditablePath,position:ArtPoint):EditablePath{
+  requireUniformFill(path);
   if(path.closed||path.shape==='ellipse'||path.shape==='rectangle'||path.points.some(p=>p.move||p.close))
     throw Error('交点まで消すには、開いた1本の線を選んでください。');
   const subject=sampledPath(path)[0]!,edges=sampledPath(reference);
