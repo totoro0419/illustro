@@ -1,4 +1,5 @@
 import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText,LayerMask} from '@illustro/core';
+import {layoutEditableText} from './textLayout';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {sampledPath} from './pathOperations';
 
@@ -119,7 +120,10 @@ function drawText(ctx:Context,text:EditableText){
   const font=['serif','sans-serif','monospace'].includes(family)?family:`"${family}", sans-serif`;
   ctx.font=`${text.size}px ${font}`;
   ctx.fillStyle=text.color;ctx.textBaseline='top';
-  const lines=text.text.split('\n');
+  const lines=layoutEditableText(text,characters=>{
+    const width=ctx.measureText(characters).width;
+    return text.spacing?width+Math.max(0,Array.from(characters).length-1)*text.spacing:width;
+  }).lines;
   if(text.vertical){
     ctx.textAlign='center';
     for(let line=0;line<lines.length;line++){
