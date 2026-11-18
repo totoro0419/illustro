@@ -121,6 +121,24 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
     });
     return neighbors.length===1?neighbors[0]:null;
   };
+  /** Reject bridges that graze a third stroke or a separate closed contour.
+   * The only nearby ink allowed is the two selected tip pixels. This avoids
+   * automatically sealing a narrow corridor alongside another line. */
+  const hasClearBridgeCorridor=(a:Point,b:Point)=>{
+    const dx=Math.sign(b.x-a.x),dy=Math.sign(b.y-a.y);
+    const steps=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y));
+    if(steps<2)return false;
+    for(let step=1;step<steps;step++){
+      const x=a.x+dx*step,y=a.y+dy*step;
+      if(x<0||y<0||x>=width||y>=height||original[y*width+x])return false;
+      for(let ny=y-1;ny<=y+1;ny++)for(let nx=x-1;nx<=x+1;nx++){
+        if(nx<0||ny<0||nx>=width||ny>=height||!original[ny*width+nx])continue;
+        if(nx===a.x&&ny===a.y||nx===b.x&&ny===b.y)continue;
+        return false;
+      }
+    }
+    return true;
+  };
   const connect=(x:number,y:number,dx:number,dy:number)=>{
     let from:Point|null=null,steps=0;
     while(x>=0&&y>=0&&x<width&&y<height){
@@ -134,7 +152,7 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
             ((from.x-x)*last[0]+(from.y-y)*last[1])/distance<=-.7;
           // Automatic repairs are restricted to two opposing, unambiguous tips.
           // Parallel strokes, corners and junctions remain open unless manually accepted.
-          if(alignment&&distance<=radius+1&&(!dx||!dy||
+          if(alignment&&distance<=radius+1&&hasClearBridgeCorridor(from,{x,y})&&(!dx||!dy||
             (!original[from.y*width+from.x+dx]&&!original[(from.y+dy)*width+from.x]))){
             if(candidates.length<4096)candidates.push({from,to:{x,y},length:distance-1,kind:'tips'});
             for(let step=1;step<steps;step++){
