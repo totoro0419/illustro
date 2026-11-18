@@ -622,3 +622,15 @@ GitHubの各PRメタデータ、全12件の変更ファイル、各HEADに結び
 - 最新HEADに紐づく [Core CI #44196806326](https://github.com/totoro0419/illustro/actions/runs/44196806326) は **success**（verifyジョブ）。一方、**同HEADのBrush/Editorテスト・型検査・本番ビルドを含む統合CIの成功は確認できない**ため、統合全体PASS・実機合格とはしない。旧 `prep:check` は元の未分類ドキュメントで失敗する既知事項として維持し、PASSに数えない。
 - 11月18日作成の新規PRは0件。既存12担当PRの統合済み12/12を維持し、PR #75と独立調査PR #73はDraft・未マージ。調査原本9ファイル、129件の既存問題IDと元A/B/C分類は変更しない。比較した `main` は従来の `bdc7135b` から変更なし。
 - **独立解決確認0/129**。Androidのペン・指操作、旧作品保存/復元、4K作品の応答性、変形・塗り・図形・ベクターの画素一致は未検証。新規PRの受入・マージなし。次回は最新HEADの統合CI、共有ファイル変更とC07〜C10の回帰を確認する。
+
+
+## 2026-11-18 10時台 JST — C08/C09ライブ仮表示・C10文字組み追加の統合監視
+
+- 前回記録コミット `ecdc38d2` から最新確認HEAD [`d50ec20c`](https://github.com/totoro0419/illustro/commit/d50ec20caee704cfe5990f604ba58c05c29f88a7) まで、GitHub比較で **26コミット・14ファイル変更**（ahead=26、behind=0）。既存の統合ブランチへの追加変更であり、**新規実装PRのマージではない**。
+- **C08**：`fill/liveRegionPreview.ts` と `fill/panel.ts`、`brushSurface.ts` に塗り領域のブラシ移動中の軽量仮表示を追加。最大512pxを標準とする縮小表示を再利用し、塗り確定のWorkerを正本とする。マスク・アンチエイリアスを含む最終画素と仮表示の一致は未検証。
+- **C09**：`symmetryStrokePreview.ts` と `brushSurface.ts` に対称筆跡の近似仮線を追加。入力中の複製ガイドと確定時のブラシ再生は別処理であり、画素完全一致は未確認。共有表示面の競合を避けるため既存C07変形Canvasとは別の一時表示を使用。
+- **C10文字**：`artwork/textLayout.ts`・`verticalGlyph.ts` と関連テストを追加。テキスト枠内の折返し・表示行数制限、縦書きの句読点・小書き仮名・一部記号の配置補助を導入。保存済み文字列は変更しない。フォント差・旧作品・Androidでの実表示は未検証。
+- 今回の比較には **`apps/editor/src/main.ts` の変更なし**。`brushSurface.ts`・`artwork/render.ts`・`packages/core/src/editableArtwork.ts` の横断差分は確認したため、C07変形、C08塗り、C09対称、C10文字、保存・Undo/Redoの相互回帰は継続。
+- 最新HEAD `d50ec20c` の [統合CI #44211817176](https://github.com/totoro0419/illustro/actions/runs/44211817176) は **success**。ジョブのCore・Brush・Editorテスト、型検査、Editor本番ビルドの各ステップ成功を確認。[Core CI #44211825207](https://github.com/totoro0419/illustro/actions/runs/44211825207) もsuccess。旧`prep:check`の未分類文書に起因する既知の診断失敗は **PASSではない**（統合CI内で診断扱い）。
+- 2026-11-18作成の新規PRは **0件**。既存12担当PRは **12/12統合済み**、PR #75とPR #73はDraft・未マージ。`main` は `bdc7135b` から変更なし。調査原本9ファイル、既存129問題ID、A/B/C分類を保持し、**独立解決確認0/129**。Androidペン/指・4K応答性・保存復元・画素一致は未検証。
+- [Issue #74の共有表示変更報告](https://github.com/totoro0419/illustro/issues/74#issuecomment-6965685729) は既に記録されているため、同内容の重複コメントは行わない。新規PRの統合・mainへの変更なし。
