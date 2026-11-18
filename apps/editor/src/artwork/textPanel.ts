@@ -18,6 +18,11 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   const align=selectField(controls,'横書きの揃え方',[['left','左'],['center','中央'],['right','右']] as const);
   const spacing=numberField(controls,'文字間隔（px）',0,-4096,4096,.5);
   const lineHeight=numberField(controls,'行間（文字サイズに対する倍率）',1.25,.2,8,.05);
+  const boxWidth=numberField(controls,'文字枠の幅（px、0で制限なし）',0,0,32768,1);
+  const boxHeight=numberField(controls,'文字枠の高さ（px、0で制限なし）',0,0,32768,1);
+  const frameNote=document.createElement('small');
+  frameNote.textContent='枠に合わせて自動改行します。枠に入りきらない文字も文章データには残ります。';
+  controls.append(frameNote);
   const direction=selectField(controls,'文字の向き',[['horizontal','横書き'],['vertical','縦書き']] as const);
   const color=document.createElement('input');color.type='color';labelledField(controls,'文字の色',color);
   const family=selectField(controls,'フォント',[]);
@@ -48,7 +53,9 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       kind:'text',text:text.value.replace(/\r\n?/g,'\n'),origin:{x:x.valueAsNumber,y:y.valueAsNumber},
       size:size.valueAsNumber,align:align.value,spacing:spacing.valueAsNumber,lineHeight:lineHeight.valueAsNumber,
       vertical:direction.value==='vertical',color:color.value,family:fontId?fontFamily(fontId):systemFont.value,
-      ...(fontId?{fontAsset:fontId,...(embed.checked?{embedFont:true}:{})}:{})
+      ...(fontId?{fontAsset:fontId,...(embed.checked?{embedFont:true}:{})}:{}),
+      ...(boxWidth.valueAsNumber>0?{boxWidth:boxWidth.valueAsNumber}:{}),
+      ...(boxHeight.valueAsNumber>0?{boxHeight:boxHeight.valueAsNumber}:{})
     }) as EditableText;
   }
   async function show(content:EditableText|Awaited<ReturnType<typeof outlineText>>,target=preview){
@@ -89,7 +96,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     editing=undefined;initialized=true;fontId='';embed.checked=false;text.value='';
     x.value=String(Math.round(context.width/4));y.value=String(Math.round(context.height/4));
     color.value=context.color;direction.value='horizontal';align.value='left';
-    size.value='48';spacing.value='0';lineHeight.value='1.25';systemFont.value='sans-serif';
+    size.value='48';spacing.value='0';lineHeight.value='1.25';boxWidth.value='0';boxHeight.value='0';systemFont.value='sans-serif';
     compatibility.textContent='';previewRequest++;preview.hidden=true;originalPreview.hidden=true;previewCaption.textContent='';
     status.textContent='新しい文字を入力してください。';
   }
@@ -100,7 +107,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   }
   function write(content:EditableText){
     text.value=content.text;x.value=String(content.origin.x);y.value=String(content.origin.y);
-    size.value=String(content.size);align.value=content.align;spacing.value=String(content.spacing);
+    size.value=String(content.size);boxWidth.value=String(content.boxWidth??0);boxHeight.value=String(content.boxHeight??0);
+    align.value=content.align;spacing.value=String(content.spacing);
     lineHeight.value=String(content.lineHeight);direction.value=content.vertical?'vertical':'horizontal';
     color.value=content.color;fontId=content.fontAsset??'';embed.checked=content.embedFont===true;
     if(!fontId)systemFont.value=content.family;
