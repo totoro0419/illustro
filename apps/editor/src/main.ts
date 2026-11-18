@@ -4323,6 +4323,18 @@ const artworkActions:ArtworkActions={
       return 'edit';
     });
   },
+  remove:async id=>withClipboardAccess(async()=>{
+    const artwork=controller.document,root=artwork.root;
+    if(controller.selectedLayer.id!==id||root.getLayer(id).editable?.kind!=='path')
+      throw Error('消すベクターレイヤーを選び直してください。');
+    const tx=artwork.begin('ベクター線をまるごと消す');
+    if(!tx.deleteRasterLayers(new Set([id]))){
+      tx.cancel();throw Error('削除できるベクターレイヤーがありません。');
+    }
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    controller.reconcileSelection(root.rootLayerIds);
+    return 'edit';
+  }),
   rasterize:async id=>withClipboardAccess(async()=>{
     const artwork=controller.document,layer=artwork.root.getLayer(id);
     if(!layer.editable||artwork.root.isLayerContentLocked(id))throw Error('編集できるロックされていないレイヤーを選んでください。');

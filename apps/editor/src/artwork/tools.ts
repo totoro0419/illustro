@@ -14,6 +14,8 @@ export type ArtworkActions=Readonly<{
   context:()=>ArtworkContext|null;
   save:(content:EditableArtwork,name:string,id?:LayerId,initialMask?:LayerMask|null,hideSourcePaths?:readonly LayerId[])=>Promise<void>;
   rasterize:(id:LayerId)=>Promise<void>;
+  /** Remove an editable vector layer in the same undoable transaction as its final stroke. */
+  remove?:(id:LayerId)=>Promise<void>;
 }>;
 export function button(text:string,run:()=>void|Promise<void>,output:HTMLOutputElement){
   const control=document.createElement('button');control.type='button';control.textContent=text;

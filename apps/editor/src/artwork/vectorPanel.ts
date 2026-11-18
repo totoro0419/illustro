@@ -205,11 +205,30 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       const current=draft(),context=api.context();
       if(!context)throw Error('作品を開いてください。');
       stopPoints();status.textContent='消す線をキャンバスでタップしてください。';
-      locate(context.drawing,points=>{
+      locate(context.drawing,async points=>{
         try{
           const remaining=eraseWholeStroke(current,points[0]!);
-          if(!remaining)throw Error('このレイヤーには線が1本だけあります。レイヤー一覧から削除してください。');
-          readPath(remaining,editing);status.textContent='指定した線を取り除きました。「作品に反映」で保存できます。';
+          if(remaining){
+            readPath(remaining,editing);
+            status.textContent='指定した線を取り除きました。「作品に反映」で保存できます。';
+            return;
+          }
+          // Unsaved strokes have no layer to delete. Never erase the currently selected
+          // document layer on behalf of a new, uncommitted draft.
+          if(!editing){
+            path=null;previewId++;preview.hidden=true;
+            status.textContent='最後の未保存の線を取り消しました。';
+            return;
+          }
+          if(!api.remove)throw Error('レイヤーの削除処理を利用できません。');
+          if(!window.confirm('このレイヤーの最後の線を消します。レイヤーも削除しますか？（Undoで戻せます）')){
+            status.textContent='線の削除を取り消しました。';
+            return;
+          }
+          await api.remove(editing);
+          path=null;editing=undefined;sourceEdit=null;combinedSourceIds=null;
+          previewId++;preview.hidden=true;hideOperands.parentElement!.hidden=true;
+          status.textContent='最後の線とレイヤーを削除しました。Undoで戻せます。';
         }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
       });
     },status),
