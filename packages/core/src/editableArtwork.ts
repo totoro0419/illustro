@@ -13,11 +13,15 @@ export type EditablePath=Readonly<{
   /** Original operands remain editable; points store the rendered result for legacy readers. */
   booleanOperands?:Readonly<{mode:'union'|'intersection'|'difference'|'xor';a:EditablePath;b:EditablePath}>;
 }>;
+/** UTF-16 offsets match textarea.selectionStart/End, including emoji. */
+export type TextStyleRange=Readonly<{start:number;end:number;color?:string;size?:number}>;
 export type EditableText=Readonly<{
   kind:'text';text:string;origin:ArtPoint;vertical:boolean;size:number;family:string;color:string;
   align:'left'|'center'|'right';spacing:number;lineHeight:number;fontAsset?:string;embedFont?:boolean;
   /** Optional editable text frame; absent fields retain legacy unbounded text. */
   boxWidth?:number;boxHeight?:number;
+  /** Optional non-overlapping overrides; old documents have no ranges. */
+  styleRanges?:readonly TextStyleRange[];
 }>;
 export type EditableArtwork=EditableGradient|EditablePath|EditableText;
 
@@ -81,7 +85,7 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
       ...(typeof opacity==='number'?{opacity}:{}),...(typeof originalStrokeLayer==='string'?{originalStrokeLayer}:{}),
       ...(construction?{booleanOperands:construction}:{})});
   }else if(value.kind==='text'){
-    const {text,origin,vertical,size,family,align,spacing,lineHeight,fontAsset,embedFont,boxWidth,boxHeight}=value;
+    const {text,origin,vertical,size,family,align,spacing,lineHeight,fontAsset,embedFont,boxWidth,boxHeight,styleRanges}=value;
     if(typeof text!=='string'||!text.trim()||text.length>8192||typeof vertical!=='boolean'||!numeric(size,1,4096)||
       typeof family!=='string'||!family.trim()||family.length>128||!color(value.color)||
       (align!=='left'&&align!=='center'&&align!=='right')||!numeric(spacing,-4096,4096)||!numeric(lineHeight,.2,8)||
@@ -89,9 +93,30 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
       (embedFont!==undefined&&typeof embedFont!=='boolean')||
       (boxWidth!==undefined&&!numeric(boxWidth,1,32768))||
       (boxHeight!==undefined&&!numeric(boxHeight,1,32768)))throw invalid();
+    const styles:TextStyleRange[]=[];
+    if(styleRanges!==undefined){
+      if(!Array.isArray(styleRanges)||styleRanges.length>512)throw invalid();
+      let previousEnd=0;
+      const boundary=(offset:number)=>offset===0||offset===text.length||
+        !(text.charCodeAt(offset-1)>=0xd800&&text.charCodeAt(offset-1)<=0xdbff&&
+          text.charCodeAt(offset)>=0xdc00&&text.charCodeAt(offset)<=0xdfff);
+      for(const item of styleRanges){
+        if(!field(item)||!Number.isSafeInteger(item.start)||!Number.isSafeInteger(item.end)||
+          (item.start as number)<previousEnd||(item.end as number)<=(item.start as number)||
+          (item.end as number)>text.length||!boundary(item.start as number)||!boundary(item.end as number)||
+          (item.color===undefined&&item.size===undefined)||
+          (item.color!==undefined&&!color(item.color))||
+          (item.size!==undefined&&!numeric(item.size,1,4096)))throw invalid();
+        const start=item.start as number,end=item.end as number;
+        styles.push(Object.freeze({start,end,...(item.color!==undefined?{color:item.color as string}:{}),
+          ...(item.size!==undefined?{size:item.size as number}:{})}));
+        previousEnd=end;
+      }
+    }
     checked=Object.freeze({kind:'text',text,origin:point(origin),vertical,size,family,align,spacing,lineHeight,
       color:value.color,...(typeof fontAsset==='string'?{fontAsset,...(embedFont?{embedFont:true}:{})}:{}),
-      ...(typeof boxWidth==='number'?{boxWidth}:{}),...(typeof boxHeight==='number'?{boxHeight}:{})});
+      ...(typeof boxWidth==='number'?{boxWidth}:{}),...(typeof boxHeight==='number'?{boxHeight}:{}),
+      ...(styles.length?{styleRanges:Object.freeze(styles)}:{})});
   }else throw invalid();
   known.add(checked);
   return checked;
