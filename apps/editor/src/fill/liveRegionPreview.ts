@@ -62,15 +62,26 @@ export class LiveRegionTrace{
  private processed=0;
  private optionKey='';
  private previousGraph:RegionGraph|null=null;
+ private previousLabels:RegionGraph['labels']|null=null;
+ private previousExternal:RegionGraph['external']|null=null;
+ private previousWidth=0;
+ private previousHeight=0;
 
  update(graph:RegionGraph,points:readonly Point[],width:number,closedOnly:boolean):boolean{
    const optionKey=width+':'+closedOnly;
    let changed=false;
-   if(graph!==this.previousGraph||points.length<this.processed||optionKey!==this.optionKey){
+   // Some incremental analyzers keep the graph wrapper while replacing
+   // its label/exterior arrays. Reused region IDs must not keep old highlights.
+   if(graph!==this.previousGraph||graph.labels!==this.previousLabels||
+      graph.external!==this.previousExternal||
+      graph.width!==this.previousWidth||graph.height!==this.previousHeight||
+      points.length<this.processed||optionKey!==this.optionKey){
      changed=this.selected.size>0;
      this.selected.clear();this.counts.clear();
      this.recentSegments.clear();this.recentPoints.clear();
      this.processed=0;this.optionKey=optionKey;this.previousGraph=graph;
+     this.previousLabels=graph.labels;this.previousExternal=graph.external;
+     this.previousWidth=graph.width;this.previousHeight=graph.height;
    }else{
      let restart=this.processed;
      for(const [index,old] of this.recentPoints){

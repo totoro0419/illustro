@@ -148,6 +148,21 @@ describe('C08-003 incremental region preview',()=>{
   expect(trace.update(graph,points,1,false)).toBe(true);
   expect([...trace.selected]).toEqual([1]);
  });
+ it('invalidates region highlights when a reused graph wrapper replaces its arrays',()=>{
+  const trace=new LiveRegionTrace();
+  const reused={...graph,labels:new Uint32Array(graph.labels),external:new Uint8Array(graph.external)};
+  const points=[{x:1,y:1}];
+  expect(trace.update(reused,points,1,true)).toBe(true);
+  expect([...trace.selected]).toEqual([1]);
+  reused.labels=new Uint32Array(reused.labels);
+  reused.labels[1*reused.width+1]=2;
+  expect(trace.update(reused,points,1,true)).toBe(true);
+  expect(trace.selected.size).toBe(0); // Region 2 is exterior.
+  reused.external=new Uint8Array([1,0,0]);
+  expect(trace.update(reused,points,1,true)).toBe(true);
+  expect([...trace.selected]).toEqual([2]);
+  expect(trace.update(reused,points,1,true)).toBe(false);
+ });
  it('does not include absent or non-finite pointer seeds',()=>{
   const picked=new Set<number>();
   addTraceRegions(graph,{x:NaN,y:0},{x:Infinity,y:0},1,false,picked);
