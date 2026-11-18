@@ -334,11 +334,13 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
   // as the default: on the current layer a soft edge can otherwise tint ink.
   if(settings.antialias&&alpha.some(Boolean))
     alpha=roundedEdge({width,height,alpha},1,true);
+  // Parse the source-match color once, not once for every filled 4K pixel.
+  const matchRgb=settings.condition==='color'?colorChannels(settings.matchColor??settings.color):undefined;
   for(let i=0;i<length;i++){
     if(!alpha[i])continue;
     if(selection)alpha[i]=Math.round(alpha[i]!*selection.alpha[i]!/255);
     // The reference controls geometry; the destination controls pixel conditions.
-    if(!destinationEligible(destination,i,settings))alpha[i]=0;
+    if(!destinationEligible(destination,i,settings,matchRgb))alpha[i]=0;
   }
   return {width,height,alpha};
 }
@@ -360,10 +362,10 @@ function applyColor(result:Uint8ClampedArray,p:number,rgb:readonly number[],a:nu
   result[p+3]=total*255;
 }
 const colorChannels=(color:string)=>[1,3,5].map(offset=>parseInt(color.slice(offset,offset+2),16));
-function destinationEligible(destination:Uint8Array|null|undefined,index:number,settings:FillSettings){
+function destinationEligible(destination:Uint8Array|null|undefined,index:number,settings:FillSettings,matchRgb?:readonly number[]){
   if(settings.condition==='transparent')return !(destination?.[index*4+3]??0);
   if(settings.condition==='color'){
-    const p=index*4,rgb=colorChannels(settings.matchColor??settings.color);
+    const p=index*4,rgb=matchRgb??colorChannels(settings.matchColor??settings.color);
     return !!destination?.[p+3]&&
       Math.hypot(destination[p]!-rgb[0]!,destination[p+1]!-rgb[1]!,destination[p+2]!-rgb[2]!)<=settings.tolerance*4.42;
   }
@@ -399,11 +401,12 @@ export function paintColorHints(graph:RegionGraph,hints:readonly ColorHint[],tar
   }
   if(!assignments.size)throw Error('色指示が塗れる領域に触れていません。');
   const alpha=new Uint8Array(labels.length),pixels=target?new Uint8ClampedArray(target):new Uint8ClampedArray(labels.length*4);
+  const matchRgb=settings.condition==='color'?colorChannels(settings.matchColor??settings.color):undefined;
   for(let i=0;i<labels.length;i++){
     const id=assignments.get(labels[i]!);
     if(id===undefined)continue;
     const color=colors[id]!,selected=selection?.alpha[i]??255,value=selected*settings.opacity/255;
-    if(!value||!destinationEligible(target,i,settings))continue;
+    if(!value||!destinationEligible(target,i,settings,matchRgb))continue;
     alpha[i]=selected;
     applyColor(pixels,i*4,color.channels,value,color.erase,alphaLocked);
   }

@@ -200,6 +200,16 @@ describe('C08 fill boundaries and destination gating',()=>{
     expect(mask.alpha[2*w+2]).toBeGreaterThan(0);
     expect(mask.alpha[3*w+3]).toBe(0);
   });
+  it('uses the original match color for color hints while painting a different output color',()=>{
+    const w=9,h=9,source=image(w,h);
+    rectangle(source,w,2,2,6,6,[0,0,0,255]);
+    const graph=buildRegions(source,w,h,15,0,[]),target=image(w,h,[0,0,255,255]);
+    setPixel(target,w,4,4,[255,0,0,255]);
+    const result=paintColorHints(graph,[{color:'#00ff00',width:1,points:[{x:4,y:4}]}],
+      target,null,{...settings,condition:'color',matchColor:'#0000ff',tolerance:1},false);
+    expect(Array.from(result.pixels.slice((4*w+4)*4,(4*w+4)*4+4))).toEqual([255,0,0,255]);
+    expect(Array.from(result.pixels.slice((3*w+4)*4,(3*w+4)*4+4))).toEqual([0,255,0,255]);
+  });
   it('allows alpha and RGB tolerances to be independently controlled',()=>{
     const w=3,h=1,source=image(w,h,[70,80,90,255]);
     setPixel(source,w,1,0,[70,80,90,100]);
