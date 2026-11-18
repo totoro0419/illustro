@@ -1,6 +1,7 @@
 import {validateEditableArtwork,type EditableText,type LayerId} from '@illustro/core';
 import {fontAssets,fontFamily,fontOutlineCapability,importFont,outlineText} from './fonts';
 import {runArtwork} from './run';
+import {layoutEditableText} from './textLayout';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
 export function installTextPanel(host:HTMLElement,api:ArtworkActions){
@@ -12,6 +13,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   const preview=document.createElement('canvas');preview.hidden=true;preview.style.maxWidth='100%';
   const originalPreview=document.createElement('canvas');originalPreview.hidden=true;originalPreview.style.maxWidth='100%';
   const previewCaption=document.createElement('output');previewCaption.setAttribute('role','status');
+  const overflowWarning=document.createElement('output');overflowWarning.setAttribute('role','status');
   const text=document.createElement('textarea');text.rows=4;text.maxLength=8192;labelledField(controls,'文字を入力',text);
   const x=numberField(controls,'配置 X',0,-8192,16384,.5),y=numberField(controls,'配置 Y',0,-8192,16384,.5);
   const size=numberField(controls,'文字サイズ（px）',48,1,4096,.5);
@@ -69,9 +71,23 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     }catch(error){if(request===previewRequest){target.hidden=true;throw error;}}
   }
   async function refresh(){
-    originalPreview.hidden=true;previewCaption.textContent='';
+    originalPreview.hidden=true;previewCaption.textContent='';overflowWarning.textContent='';
     if(composing||!text.value.trim()){previewRequest++;preview.hidden=true;return;}
-    try{await show(draft());}catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+    const current=draft(),request=previewRequest+1;
+    try{
+      await show(current);
+      if(request!==previewRequest)return;
+      if(current.boxWidth===undefined&&current.boxHeight===undefined)return;
+      const context=preview.getContext('2d');
+      if(!context)return;
+      const family=current.family.replace(/["\\\n\r]/g,'');
+      const font=['serif','sans-serif','monospace'].includes(family)?family:'"'+family+'", sans-serif';
+      context.font=current.size+'px '+font;
+      const layout=layoutEditableText(current,characters=>context.measureText(characters).width+
+        Math.max(0,Array.from(characters).length-1)*current.spacing);
+      if(layout.overflow)
+        overflowWarning.textContent='⚠ 文字枠に入りきらない文章があります。枠を広げるか文字サイズを下げてください。元の文章は保存されています。';
+    }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   }
   // Group rapid keystrokes into one preview per animation frame.
   function schedulePreview(){
@@ -176,5 +192,5 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     if(!initialized&&api.context())reset();
     void refreshFonts().catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});
   };
-  panel.append(title,controls,compatibility,actions,file,originalPreview,preview,previewCaption,missing,status);host.append(panel);
+  panel.append(title,controls,compatibility,actions,file,overflowWarning,originalPreview,preview,previewCaption,missing,status);host.append(panel);
 }
