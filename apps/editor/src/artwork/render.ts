@@ -100,8 +100,8 @@ function drawText(ctx:Context,text:EditableText){
   ctx.font=`${text.size}px ${font}`;
   ctx.fillStyle=text.color;ctx.textBaseline='top';
   if(text.styleRanges?.length){
-    const laidOut=layoutStyledText(text,(character,size)=>{
-      ctx.font=size+'px '+font;
+    const laidOut=layoutStyledText(text,(character,size,bold,italic)=>{
+      ctx.font=(italic?'italic ':'')+(bold?'bold ':'')+size+'px '+font;
       return ctx.measureText(character).width;
     });
     ctx.textAlign='left';
@@ -109,7 +109,7 @@ function drawText(ctx:Context,text:EditableText){
       const left=alignedTextLineStart(text,line.width);
       for(const glyph of line.glyphs){
         ctx.save();
-        ctx.font=glyph.size+'px '+font;
+        ctx.font=(glyph.italic?'italic ':'')+(glyph.bold?'bold ':'')+glyph.size+'px '+font;
         ctx.fillStyle=glyph.color;
         if(text.vertical){
           const cell={x:text.origin.x-line.offset,y:text.origin.y+glyph.position};
