@@ -141,10 +141,9 @@ function sampleAreaQuad(source:Uint8Array,width:number,height:number,quad:readon
  const y0=Math.max(0,Math.floor(minY)),y1=Math.min(height,Math.ceil(maxY));
  if(x0>=x1||y0>=y1)return empty;
  const sign=Math.sign(signedArea);
- const edges=quad.map((p,i)=>{
-   const q=quad[(i+1)%quad.length]!,dx=q.x-p.x,dy=q.y-p.y;
-   return {a:-dy*sign,b:dx*sign,c:(dy*p.x-dx*p.y)*sign};
- });
+ // Most 4K artwork tiles are transparent. Avoid constructing four edge
+ // objects for every empty output footprint; initialize on first ink.
+ let edges:ReadonlyArray<{a:number;b:number;c:number}>|null=null;
  const clip=(points:readonly Point[],axis:'x'|'y',bound:number,greater:boolean)=>{
    const out:Point[]=[];
    for(let i=0;i<points.length;i++){
@@ -163,6 +162,10 @@ function sampleAreaQuad(source:Uint8Array,width:number,height:number,quad:readon
  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
    const at=y*width+x,opacity=source[at*4+3]!/255*(mask?mask.alpha[at]!/255:1);
    if(!opacity)continue;
+   if(!edges)edges=quad.map((p,i)=>{
+     const q=quad[(i+1)%quad.length]!,dx=q.x-p.x,dy=q.y-p.y;
+     return {a:-dy*sign,b:dx*sign,c:(dy*p.x-dx*p.y)*sign};
+   });
    let full=true,outside=false;
    for(const {a,b,c} of edges){
      const max=a*(a>=0?x+1:x)+b*(b>=0?y+1:y)+c;

@@ -57,6 +57,21 @@ describe('C07-014: exact area sampling for strong axis-aligned reduction',()=>{
 });
 
 describe('C07-014 exact affine coverage with rotation and shear',()=>{
+ it('keeps transparent and sparse rotated footprints stable',()=>{
+  const source=new Uint8Array(8*8*4);
+  const transform={...initialTransform,interpolation:'area' as const,
+   angle:27,sx:.65,sy:.8,cx:4,cy:4,shear:.12};
+  const empty=transformRaster(source,8,8,transform);
+  expect(empty.every(v=>v===0)).toBe(true);
+  source.set([120,80,240,255],(4*8+4)*4);
+  const ink=transformRaster(source,8,8,transform);
+  expect(ink.some((value,index)=>index%4===3&&value>0)).toBe(true);
+  for(let i=0;i<ink.length;i+=4)if(ink[i+3]){
+   expect(ink[i]).toBe(120);
+   expect(ink[i+1]).toBe(80);
+   expect(ink[i+2]).toBe(240);
+  }
+ });
  it('keeps all thin stripes at 32x reduction with a quarter-turn',()=>{
    const width=64,height=64,source=new Uint8Array(width*height*4);
    for(let y=0;y<height;y++)for(let x=0;x<width;x++){

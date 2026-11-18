@@ -16,9 +16,9 @@ export class LiveSelectionBrushPreview{
  }
  render(points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings,maxDimension=512):SelectionBrushPreviewRaster{
   const key=JSON.stringify(settings),{width,height}=this.prior;
-  // Coalesced pointer samples may revise several recent points without
-  // changing the array length. Inspect a fixed-size tail, not the entire
-  // long stroke on every frame, and replay when any sample was revised.
+  // Coalesced pointer samples can revise more than the last eight points.
+  // Inspect the last 32 without scanning the entire stroke every frame;
+  // replay from the immutable original if any of those samples changed.
   const changed=this.recentPoints.some((saved,index)=>{
    const point=points[this.recentStart+index];
    return !point||point.x!==saved.x||point.y!==saved.y||point.pressure!==saved.pressure;
@@ -37,7 +37,7 @@ export class LiveSelectionBrushPreview{
    this.maxX=Math.max(this.maxX,point.x);this.maxY=Math.max(this.maxY,point.y);
   }
   this.processed=points.length;
-  this.recentStart=Math.max(0,points.length-8);
+  this.recentStart=Math.max(0,points.length-32);
   this.recentPoints=points.slice(this.recentStart).map(point=>({...point}));
   const radius=settings.size/2+2;
   const left=Math.max(0,Math.min(width,Math.floor(this.minX-radius)));

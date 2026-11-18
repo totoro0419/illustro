@@ -22,7 +22,8 @@ export function composeGroupAffine(previous:Transform,next:Transform):Transform{
  const c=n.c*p.a+n.d*p.c,d=n.c*p.b+n.d*p.d;
  const x=n.a*p.x+n.b*p.y+n.x,y=n.c*p.x+n.d*p.y+n.y;
  const sx=Math.hypot(a,c),sy=(a*d-b*c)/sx;
- if(![a,b,c,d,x,y,sx,sy].every(Number.isFinite)||Math.abs(sx*sy)<1e-12)
+ if(![a,b,c,d,x,y,sx,sy].every(Number.isFinite)||
+   Math.abs(sx)<.001||Math.abs(sy)<.001||Math.abs(sx*sy)<1e-12)
    throw Error('変形の倍率が小さすぎます。');
  const cx=previous.cx,cy=previous.cy;
  if(Math.abs(sx)>16||Math.abs(sy)>16||Math.abs((a*b+c*d)/sx)>4)

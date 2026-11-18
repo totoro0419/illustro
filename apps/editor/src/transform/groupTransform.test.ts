@@ -71,6 +71,14 @@ describe('C07-003 group transformation geometry',()=>{
     }
   }
   expect(()=>composeGroupAffine(initialTransform,{...next,sx:0})).toThrow();
+  // Each individual edit is allowed, but the composed scale must not
+  // silently become too small for stable inverse mapping.
+  expect(()=>composeGroupAffine(
+    {...initialTransform,sx:.01},{...initialTransform,sx:.01}
+  )).toThrow('倍率');
+  expect(()=>composeGroupAffine(
+    {...initialTransform,sy:.01},{...initialTransform,sy:.01}
+  )).toThrow('倍率');
   expect(()=>composeGroupAffine({...initialTransform,sx:16},{...next,sx:16})).toThrow('上限');
  });
 });
