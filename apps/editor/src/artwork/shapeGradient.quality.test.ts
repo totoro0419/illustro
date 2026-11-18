@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type LayerId} from '@illustro/core';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -172,5 +172,27 @@ describe('C09-009 precise gradient stop editing',()=>{
     expect(gradientStopKeyboardPosition(.2,'End')).toBe(1);
     expect(gradientStopKeyboardPosition(.5,'Escape')).toBeNull();
     expect(gradientStopKeyboardPosition(NaN,'ArrowRight')).toBeNull();
+  });
+});
+
+describe('C09-005/015 full-precision handle coordinates',()=>{
+  it('keeps subpixel anchor positions unchanged between preview and numeric fields',()=>{
+    const points=[{x:10.125,y:20.875},{x:35.0625,y:40.9375}];
+    expect(shapeAnchorFieldValues(points)).toEqual([10.125,20.875,35.0625,40.9375]);
+    const moved=moveShapeAnchor(points,0,{x:10.0625,y:20.8125});
+    expect(shapeAnchorFieldValues(moved)).toEqual([10.0625,20.8125,35.0625,40.9375]);
+  });
+  it('retains zero and does not invent positions for an empty path',()=>{
+    expect(shapeAnchorFieldValues([{x:0,y:0}])).toEqual([0,0,0,0]);
+    expect(shapeAnchorFieldValues([])).toEqual([0,0,0,0]);
+  });
+});
+describe('C09-009 numeric stop edits',()=>{
+  it('rejects temporary invalid values instead of storing NaN',()=>{
+    expect(safeGradientStopValue(NaN,0,1,.35)).toBe(.35);
+    expect(safeGradientStopValue(Infinity,0,1,.75)).toBe(.75);
+    expect(safeGradientStopValue(-.5,0,1,.35)).toBe(0);
+    expect(safeGradientStopValue(1.5,0,1,.35)).toBe(1);
+    expect(safeGradientStopValue(.5,.01,.99,.25)).toBe(.5);
   });
 });

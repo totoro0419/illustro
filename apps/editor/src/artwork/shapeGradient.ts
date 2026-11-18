@@ -95,9 +95,9 @@ export function applyShapePreviewMask(
   sampleCoverage:(mask:LayerMask,x:number,y:number)=>number=layerMaskCoverage
 ):void{
   if(!mask?.enabled)return;
+  const downscaled=sampleCoverage===layerMaskCoverage&&(outputWidth<width||outputHeight<height);
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
     const at=(y*outputWidth+x)*4;
-    const downscaled=sampleCoverage===layerMaskCoverage&&(outputWidth<width||outputHeight<height);
     const left=x*width/outputWidth,top=y*height/outputHeight;
     const right=(x+1)*width/outputWidth,bottom=(y+1)*height/outputHeight;
     const coverage=downscaled&&mask.shape==='rectangle'
@@ -124,6 +124,16 @@ export function gradientStopKeyboardPosition(current:number,key:string,shift=fal
 }
 /** Keep the control handles attached to an anchor while moving it.
  * Both the live preview and the eventual commit use this same geometry. */
+/** Keep full floating-point coordinates between the on-canvas handle preview
+ * and the final saved artwork. Rounding here causes a visible jump at zoom. */
+export function shapeAnchorFieldValues(points:readonly ArtPoint[]):[number,number,number,number]{
+  const a=points[0],b=points.at(-1);
+  return [a?.x??0,a?.y??0,b?.x??0,b?.y??0];
+}
+/** Invalid or temporarily blank numeric fields must not poison saved stops. */
+export function safeGradientStopValue(value:number,min:number,max:number,fallback:number):number{
+  return Math.max(min,Math.min(max,Number.isFinite(value)?value:fallback));
+}
 export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:ArtPoint):ArtPoint[]{
   const point=points[index];
   if(!point)return [...points];
@@ -218,8 +228,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   function setPoints(next:readonly ArtPoint[]){
     points=[...next];
     if(!points.length)return;
-    const [a,b]=[points[0]!,points.at(-1)!];
-    [a.x,a.y,b.x,b.y].forEach((value,index)=>{coords[index]!.value=String(Math.round(value*10)/10);});
+    shapeAnchorFieldValues(points).forEach((value,index)=>{coords[index]!.value=String(value);});
   }
   function data(follow=applied.checked){
     const [x,y,endX,endY]=coords.map(i=>i.valueAsNumber);
@@ -382,16 +391,18 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       marker.setAttribute('aria-label',marker.title);
       marker.style.cssText='position:absolute;top:4px;transform:translateX(-50%);width:17px;height:24px;border:2px solid white;border-radius:5px;background:'+stop.color+';box-shadow:0 0 0 1px #252525;cursor:ew-resize;touch-action:none;padding:0';
       let dragging:number|null=null,positionBeforeDrag=stop.at;
-      const setPosition=(at:number)=>{
+      const setPosition=(at:number):boolean=>{
+        if(stops[index]!.at===at)return false;
         stops[index]={...stops[index]!,at};
         const field=stopsArea.querySelectorAll<HTMLInputElement>('input[data-stop-position]')[index];
         if(field)field.value=String(Math.round(at*1000)/10);
         updateMarkers();updateBar();
+        return true;
       };
       const move=(clientX:number)=>{
         const rect=bar.getBoundingClientRect();
         const at=gradientStopPointerPosition(clientX,rect.left,rect.width);
-        if(at!==null)setPosition(at);
+        if(at!==null&&setPosition(at))void refresh();
       };
       marker.onpointerdown=event=>{
         if(event.button!==0)return;
@@ -428,8 +439,12 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       const opacity=numberField(row,'不透明度（%）',stop.opacity*100,0,100,.1);
       const midpoint=numberField(row,'次の色との中間（%）',stop.midpoint*100,1,99,.1);
       row.onchange=()=>{
-        stops[index]={at:Math.max(0,Math.min(1,position.valueAsNumber/100)),color:color.value,
-          opacity:Math.max(0,Math.min(1,opacity.valueAsNumber/100)),midpoint:Math.max(.01,Math.min(.99,midpoint.valueAsNumber/100))};
+        const previous=stops[index]!;
+        const at=safeGradientStopValue(position.valueAsNumber/100,0,1,previous.at);
+        const alpha=safeGradientStopValue(opacity.valueAsNumber/100,0,1,previous.opacity);
+        const middle=safeGradientStopValue(midpoint.valueAsNumber/100,.01,.99,previous.midpoint);
+        stops[index]={at,color:color.value,opacity:alpha,midpoint:middle};
+        position.value=String(at*100);opacity.value=String(alpha*100);midpoint.value=String(middle*100);
         markers[index]!.style.background=color.value;updateMarkers();updateBar();
         void refresh();
       };
