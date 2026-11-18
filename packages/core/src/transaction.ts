@@ -296,7 +296,7 @@ export class DocumentTransaction{
       if(seen.has(entry.id))throw Error('同じレイヤーが重複しています。');
       seen.add(entry.id);
       const layer=this.editableRaster(entry.id);
-      if(layer.baseColor==='white'||layer.imageLink||layer.editable||layer.deformation||layer.lineRegions||
+      if(layer.baseColor==='white'||layer.imageLink||layer.editable||layer.lineRegions||
         this.rootValue.isLayerPositionLocked(entry.id))
         throw Error('まとめて変形できないレイヤーが含まれています。');
       if(entry.pixels.length!==expected||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
@@ -305,6 +305,12 @@ export class DocumentTransaction{
       if(!deformation||!this.doc.hasRevision(deformation.sourceRevision)||
         !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId??entry.id))
         throw Error('変形前の画像の履歴が見つかりません。');
+      const saved=layer.deformation;
+      if(saved&&(saved.enabled===false||deformation.enabled===false||saved.mode!=='affine'||deformation.mode!=='affine'||saved.selection||deformation.selection||
+        saved.postPaint?.length||deformation.postPaint?.length||
+        saved.sourceRevision!==deformation.sourceRevision||
+        (saved.sourceLayerId??entry.id)!==(deformation.sourceLayerId??entry.id)))
+        throw Error('元画像を保った移動・回転・拡縮だけをまとめて再編集できます。');
       return {id:entry.id,layer,pixels:entry.pixels,deformation};
     });
     for(const {id,layer,pixels,deformation} of candidates){

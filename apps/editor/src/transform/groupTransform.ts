@@ -7,6 +7,31 @@ export type GroupTransformOptions=Readonly<{
 export type GroupBounds=Readonly<{x:number;y:number;width:number;height:number}>;
 export type GroupItem=Readonly<{id:string;bounds:GroupBounds}>;
 export type GroupOutline=Readonly<{id:string;before:GroupBounds;after:readonly {x:number;y:number}[]}>;
+/** Compose from the original image rather than filtering already resampled
+ * pixels again. Rotation + two scales + X shear represents any invertible 2D
+ * affine matrix, including mirrored layers. */
+export function composeGroupAffine(previous:Transform,next:Transform):Transform{
+ if(previous.mode!=='affine'||next.mode!=='affine')throw Error('この変形は移動・回転・拡縮ではありません。');
+ const matrix=(t:Transform)=>{
+   const angle=t.angle*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+   const a=c*t.sx,b=c*t.shear-s*t.sy,d=s*t.shear+c*t.sy,e=s*t.sx;
+   return {a,b,c:e,d,x:t.cx+t.dx-a*t.cx-b*t.cy,y:t.cy+t.dy-e*t.cx-d*t.cy};
+ };
+ const p=matrix(previous),n=matrix(next);
+ const a=n.a*p.a+n.b*p.c,b=n.a*p.b+n.b*p.d;
+ const c=n.c*p.a+n.d*p.c,d=n.c*p.b+n.d*p.d;
+ const x=n.a*p.x+n.b*p.y+n.x,y=n.c*p.x+n.d*p.y+n.y;
+ const sx=Math.hypot(a,c),sy=(a*d-b*c)/sx;
+ if(![a,b,c,d,x,y,sx,sy].every(Number.isFinite)||Math.abs(sx*sy)<1e-12)
+   throw Error('変形の倍率が小さすぎます。');
+ const cx=previous.cx,cy=previous.cy;
+ if(Math.abs(sx)>16||Math.abs(sy)>16||Math.abs((a*b+c*d)/sx)>4)
+   throw Error('重ねた変形が倍率・傾きの上限を超えます。変形量を小さくしてください。');
+ return {...initialTransform,mode:'affine',cx,cy,
+   dx:x+a*cx+b*cy-cx,dy:y+c*cx+d*cy-cy,sx,sy,
+   angle:Math.atan2(c,a)*180/Math.PI,shear:(a*b+c*d)/sx,
+   interpolation:next.interpolation};
+}
 /** All layers share the same group center and the same transform, so their
  * relative alignment is preserved. No layer's pixels are merged or flattened. */
 export function groupTransformPlan(

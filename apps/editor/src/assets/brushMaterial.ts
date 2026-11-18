@@ -19,6 +19,12 @@ export function materialResource(
    alpha.push(Math.round(value*255)/255);
  }
  if(kind==='tip'&&!alpha.some(value=>value>0))throw Error('ブラシ先端に使える形がありません。');
+ if(kind==='tip'&&width!==height){
+   const side=Math.max(width,height),padded=new Array<number>(side*side).fill(0);
+   const left=Math.floor((side-width)/2),top=Math.floor((side-height)/2);
+   for(let y=0;y<height;y++)for(let x=0;x<width;x++)padded[(y+top)*side+x+left]=alpha[y*width+x]!;
+   return {kind:'mask',width:side,height:side,alpha:padded,label:label.slice(0,100)};
+ }
  return {kind:kind==='tip'?'mask':'texture',width,height,alpha,label:label.slice(0,100)};
 }
 
@@ -54,6 +60,11 @@ export function withBrushMaterial(source:FoundationPreset,kind:BrushMaterialKind
      rotation:0,followDirection:false,invert:false,aa:true};
  }
  if(preset.renderer==='continuous'||preset.renderer==='sweep')preset.renderer='auto';
+ // Applying a new library material to a previously customized brush must not
+ // accumulate orphan pixel arrays with each application.
+ const references=new Set([preset.tip.resource,...Object.values(preset.texture).map(layer=>layer.resource)]);
+ for(const key of Object.keys(preset.resources))
+   if(/^library-(tip|texture)(-\d+)?$/.test(key)&&!references.has(key))delete preset.resources[key];
  compilePreset(preset,{forceFadeGeometry:'adaptive-v1'});
  return preset;
 }

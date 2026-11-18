@@ -39,7 +39,7 @@ import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
 import {transformPreviewReplacementOpacity} from './transform/previewReplacement';
 import {installLayoutPanel} from './transform/layoutPanel';
-import {groupTransformPlan} from './transform/groupTransform';
+import {groupTransformPlan,composeGroupAffine} from './transform/groupTransform';
 import {layerEditingStates,layerEditingTargets} from './transform/layerEditingStates';
 import {installImageLinkPanel} from './transform/imageLinkPanel';
 import {chooseLinkedImage,decodeLinkedImage,placedImage,readLinkedFile,rememberImageHandle,forgetImageHandle,nextLinkedImageFileKey} from './assets/linkedImages';
@@ -3940,19 +3940,29 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
     // Compute one layer at a time. No flattened group image is created.
     for(const item of items){
       const layer=root.getLayer(item.id);
-      if(item.fixed||layer.editable||layer.lineRegions||layer.imageLink||layer.deformation)
+      if(root.isLayerContentLocked(item.id)||root.isLayerPositionLocked(item.id)||layer.baseColor||layer.editable||layer.lineRegions||layer.imageLink)
         throw Error('「'+layer.name+'」はこのまとめて変形で安全に編集できません。通常の描画レイヤーを選んでください。');
-      const transformed=await runTransform({pixels:pixels.get(item.id)!,width,height,settings,
+      const saved=layer.deformation;
+      if(saved&&(saved.enabled===false||saved.mode!=='affine'||saved.selection||saved.postPaint?.length))
+        throw Error('「'+layer.name+'」には範囲付き・ゆがみ・変形後の描画があります。個別に変形してください。');
+      const linked=!!(layer.vectorMask&&layer.vectorMask.linked!==false);
+      if(saved&&(saved.linkedMask!==linked||linked&&saved.maskDigest&&
+        await digestLayerMask(layer.vectorMask!)!==saved.maskDigest))
+        throw Error('「'+layer.name+'」のマスクが変形後に変更されています。先に個別の変形を確認してください。');
+      const combined=saved?composeGroupAffine(savedTransformSettings(saved),settings):settings;
+      const original=saved?artwork.revision(saved.sourceRevision).root.getLayer(saved.sourceLayerId??item.id):null;
+      const input=saved&&original?await originalTransformPixels(artwork,original,saved.sourceRevision):pixels.get(item.id)!;
+      const transformed=await runTransform({pixels:input,width,height,settings:combined,
         selection:null,outputWidth:width,outputHeight:height});
       if(!valid())throw Error('変形の計算中に作品または選択が変更されました。');
-      const linked=!!(layer.vectorMask&&layer.vectorMask.linked!==false);
       const mask=linked?transformLinkedMask(layer.vectorMask!,settings,width,height):null;
       const maskDigest=mask?await digestLayerMask(mask):undefined;
       const deformation:LayerDeformation={
-        version:1,sourceRevision:head,bounds:item.bounds,mode:'affine',
+        version:1,sourceRevision:saved?.sourceRevision??head,bounds:saved?.bounds??item.bounds,mode:'affine',
+        ...(saved?.sourceLayerId?{sourceLayerId:saved.sourceLayerId}:{}),
         interpolation:settings.interpolation,selection:null,linkedMask:linked,
-        affine:{dx:settings.dx,dy:settings.dy,sx:settings.sx,sy:settings.sy,
-          angle:settings.angle,shear:settings.shear,cx:settings.cx,cy:settings.cy},
+        affine:{dx:combined.dx,dy:combined.dy,sx:combined.sx,sy:combined.sy,
+          angle:combined.angle,shear:combined.shear,cx:combined.cx,cy:combined.cy},
         ...(maskDigest?{maskDigest}:{})
       };
       changes.push({id:item.id,pixels:transformed,deformation,mask});

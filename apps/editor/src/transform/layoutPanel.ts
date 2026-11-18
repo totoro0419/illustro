@@ -65,7 +65,7 @@ export function installLayoutPanel(host:HTMLElement,capture:()=>Promise<LayoutSo
   const groupPreview=document.createElement('canvas');groupPreview.hidden=true;
   groupPreview.style.maxWidth='100%';
   const groupHelp=document.createElement('p');
-  groupHelp.textContent='1回の操作でまとめて移動・拡縮・回転します。破線は変更前、実線は変更後の位置です。文字・画像リンク・編集中の変形があるレイヤーには適用できません。';
+  groupHelp.textContent='1回の操作でまとめて移動・拡縮・回転します。破線は変更前、実線は変更後の位置です。移動・回転・拡縮は元画像から繰り返し編集できます。文字・画像リンク・ゆがみ・変形後に描いた線があるレイヤーは個別に編集してください。';
   groupFields.append(groupControls,groupHelp);
   preview.setAttribute('aria-label','青は移動先、破線は現位置');
   let source:LayoutSource|null=null,moves:readonly LayoutMove[]=[];

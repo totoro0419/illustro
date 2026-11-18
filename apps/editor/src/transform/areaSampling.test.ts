@@ -55,3 +55,39 @@ describe('C07-014: exact area sampling for strong axis-aligned reduction',()=>{
   expect(result[0]).toBe(255);
  });
 });
+
+describe('C07-014 exact affine coverage with rotation and shear',()=>{
+ it('keeps all thin stripes at 32x reduction with a quarter-turn',()=>{
+   const width=64,height=64,source=new Uint8Array(width*height*4);
+   for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+     const i=(y*width+x)*4,level=x%4===3?255:0;
+     source.set([level,level,level,255],i);
+   }
+   const result=transformRaster(source,width,height,{
+     ...initialTransform,interpolation:'area',angle:90,sx:1/32,sy:1/32,cx:32,cy:32
+   });
+   expect(result[(31*width+31)*4]).toBe(64);
+   expect(result[(31*width+31)*4+3]).toBe(255);
+ });
+ it('matches the analytic intersection of equal squares rotated by 45 degrees',()=>{
+   const source=new Uint8Array(4*4*4);
+   for(let i=0;i<16;i++)source.set([200,50,20,255],i*4);
+   const result=transformRaster(source,4,4,{
+     ...initialTransform,interpolation:'area',angle:45,sx:.25,sy:.25,cx:2,cy:2,dx:.5,dy:.5
+   });
+   const at=(2*4+2)*4;
+   expect(result[at+3]).toBe(Math.round((2*Math.SQRT2-2)*255));
+   expect(Array.from(result.subarray(at,at+3))).toEqual([200,50,20]);
+ });
+ it('conserves the covered area for mirrored/sheared rotated images',()=>{
+   const source=new Uint8Array(32*32*4).fill(255);
+   for(const sx of [.25,-.25]){
+     const result=transformRaster(source,32,32,{
+       ...initialTransform,interpolation:'area',sx,sy:.25,angle:27,shear:.15,cx:16,cy:16
+     });
+     let area=0;
+     for(let i=3;i<result.length;i+=4)area+=result[i]!/255;
+     expect(Math.abs(area-64)).toBeLessThan(.08);
+   }
+ });
+});

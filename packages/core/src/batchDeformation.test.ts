@@ -42,6 +42,31 @@ describe('C07-003 multi-layer non-destructive one-step transform',()=>{
   expect(restored.readPixel(b,25,20)).toEqual([20,100,220,255]);
   expect(restored.root.getLayer(a).deformation?.sourceRevision).toBe(sourceRevision);
   expect(root.getLayer(a).deformation).toBeFalsy();
+  // Re-edit both layers from the SAME original snapshot, not the already
+  // shifted pixels. One Undo must restore the first group transform.
+  const firstGroup=doc.head;
+  tx=doc.begin('re-edit batch');
+  tx.replaceLayerDeformationsBatch(([[a,rgbaA],[b,rgbaB]] as const).map(([id,pixels])=>({
+    id,pixels:shift(pixels,9),deformation:{
+      ...doc.root.getLayer(id).deformation!,mode:'affine' as const,
+      affine:{dx:9,dy:0,sx:1,sy:1,angle:0,shear:0,cx:32,cy:32}
+    }
+  })));
+  tx.commit();
+  expect(doc.readPixel(a,17,8)).toEqual([200,20,30,255]);
+  expect(doc.root.getLayer(a).deformation?.sourceRevision).toBe(sourceRevision);
+  doc.undo();expect(doc.head).toBe(firstGroup);
+  expect(doc.readPixel(a,13,8)).toEqual([200,20,30,255]);
+  doc.redo();
+  const secondState=doc.capturePersistenceSnapshot();
+  const secondRestore=CoreDocument.restore({snapshot:JSON.parse(JSON.stringify(secondState)),blockPayloads:doc.persistenceBlockPayloads(secondState)});
+  expect(secondRestore.readPixel(b,29,20)).toEqual([20,100,220,255]);
+  expect(secondRestore.root.getLayer(b).deformation?.sourceRevision).toBe(sourceRevision);
+  const bad=doc.begin('reject changed original');
+  expect(()=>bad.replaceLayerDeformationsBatch(([a,b] as const).map(id=>({
+    id,pixels:rgbaA,deformation:{...doc.root.getLayer(id).deformation!,sourceRevision:firstGroup}
+  })))).toThrow('元画像');
+  bad.cancel();
  });
 });
 

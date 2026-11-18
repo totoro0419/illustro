@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
-import {groupTransformPlan} from './groupTransform';
-import {inverseTransform} from './geometry';
+import {groupTransformPlan,composeGroupAffine} from './groupTransform';
+import {inverseTransform,initialTransform} from './geometry';
 const items=[
  {id:'first',bounds:{x:20,y:30,width:40,height:30}},
  {id:'second',bounds:{x:100,y:40,width:50,height:60}}
@@ -38,5 +38,20 @@ describe('C07-003 group transformation geometry',()=>{
   expect(()=>groupTransformPlan([items[0]!],400,300,valid)).toThrow('2枚以上');
   expect(()=>groupTransformPlan(items,400,300,{...valid,sx:0})).toThrow('値');
   expect(()=>groupTransformPlan(items,400,300,{...valid,dy:NaN})).toThrow('値');
+ });
+ it('composes repeated rotations, mirroring, nonuniform scales and shear from the same original',()=>{
+  const next={...initialTransform,dx:19,dy:-7,sx:.6,sy:1.4,angle:37,cx:85,cy:65};
+  for(const sx of [-1.2,1.2]){
+    const previous={...initialTransform,dx:-3,dy:12,sx,sy:.8,shear:.25,angle:-18,cx:20,cy:30};
+    const combined=composeGroupAffine(previous,next);
+    const before=inverseTransform(previous,400,300),after=inverseTransform(next,400,300);
+    const all=inverseTransform(combined,400,300);
+    for(const point of [{x:0,y:0},{x:120,y:70},{x:399,y:299}]){
+      const second=after(point.x,point.y),expected=before(second.x,second.y),actual=all(point.x,point.y);
+      expect(actual.x).toBeCloseTo(expected.x,8);expect(actual.y).toBeCloseTo(expected.y,8);
+    }
+  }
+  expect(()=>composeGroupAffine(initialTransform,{...next,sx:0})).toThrow();
+  expect(()=>composeGroupAffine({...initialTransform,sx:16},{...next,sx:16})).toThrow('上限');
  });
 });

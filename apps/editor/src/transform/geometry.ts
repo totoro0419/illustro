@@ -110,13 +110,76 @@ function sampleAreaBox(source:Uint8Array,width:number,height:number,
  }
  return [red,green,blue,alpha];
 }
+
+function polygonArea(points:readonly Point[]){
+ if(points.length<3)return 0;
+ const origin=points[0]!;
+ let twice=0;
+ for(let i=1;i<points.length-1;i++){
+   const a=points[i]!,b=points[i+1]!;
+   twice+=(a.x-origin.x)*(b.y-origin.y)-(a.y-origin.y)*(b.x-origin.x);
+ }
+ return twice/2;
+}
+/** Exact source-pixel coverage of an affine output pixel (a parallelogram).
+ * Unlike a fixed sampling grid this cannot skip repeating stripes at strong
+ * reductions. Fully covered cells avoid polygon clipping and allocations. */
+function sampleAreaQuad(source:Uint8Array,width:number,height:number,quad:readonly Point[],mask:MaskData|null):Pixel{
+ const signedArea=polygonArea(quad),area=Math.abs(signedArea);
+ if(!Number.isFinite(area)||area<=0)return empty;
+ const x0=Math.max(0,Math.floor(Math.min(...quad.map(p=>p.x))));
+ const x1=Math.min(width,Math.ceil(Math.max(...quad.map(p=>p.x))));
+ const y0=Math.max(0,Math.floor(Math.min(...quad.map(p=>p.y))));
+ const y1=Math.min(height,Math.ceil(Math.max(...quad.map(p=>p.y))));
+ if(x0>=x1||y0>=y1)return empty;
+ const sign=Math.sign(signedArea);
+ const edges=quad.map((p,i)=>{
+   const q=quad[(i+1)%quad.length]!,dx=q.x-p.x,dy=q.y-p.y;
+   return {a:-dy*sign,b:dx*sign,c:(dy*p.x-dx*p.y)*sign};
+ });
+ const clip=(points:readonly Point[],axis:'x'|'y',bound:number,greater:boolean)=>{
+   const out:Point[]=[];
+   for(let i=0;i<points.length;i++){
+     const a=points[i]!,b=points[(i+1)%points.length]!;
+     const inside=greater?a[axis]>=bound:a[axis]<=bound;
+     const next=greater?b[axis]>=bound:b[axis]<=bound;
+     if(inside)out.push(a);
+     if(inside!==next){
+       const t=(bound-a[axis])/(b[axis]-a[axis]);
+       out.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
+     }
+   }
+   return out;
+ };
+ let red=0,green=0,blue=0,alpha=0;
+ for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+   const at=y*width+x,opacity=source[at*4+3]!/255*(mask?mask.alpha[at]!/255:1);
+   if(!opacity)continue;
+   let full=true,outside=false;
+   for(const {a,b,c} of edges){
+     const max=a*(a>=0?x+1:x)+b*(b>=0?y+1:y)+c;
+     if(max<=0){outside=true;break;}
+     const min=a*(a>=0?x:x+1)+b*(b>=0?y:y+1)+c;
+     if(min<0)full=false;
+   }
+   if(outside)continue;
+   const coverage=full?1:Math.min(1,Math.abs(polygonArea(
+     clip(clip(clip(clip(quad,'x',x,true),'x',x+1,false),'y',y,true),'y',y+1,false)
+   )));
+   const contribution=coverage/area*opacity;
+   red+=source[at*4]!*contribution;green+=source[at*4+1]!*contribution;
+   blue+=source[at*4+2]!*contribution;alpha+=contribution;
+ }
+ return [red,green,blue,alpha];
+}
 export function transformRaster(source:Uint8Array,width:number,height:number,t:Transform,selection:MaskData|null=null,
   previewWidth=width,previewHeight=height,showProtection=false){
   if(source.length!==width*height*4)throw Error('変形する画像の大きさが一致しません。');
   const warp=t.mode==='liquify'?liquifyMapping(t.liquify??[]):null;
   const inverse=warp?.inverse??inverseTransform(t,width,height),out=new Uint8ClampedArray(previewWidth*previewHeight*4);
   const sx=width/previewWidth,sy=height/previewHeight;
-  const exactArea=t.interpolation==='area'&&t.mode==='affine'&&t.angle%360===0&&t.shear===0;
+  const affineArea=t.interpolation==='area'&&t.mode==='affine';
+  const exactArea=affineArea&&t.angle%90===0&&t.shear===0;
   const read=(x:number,y:number):Pixel=>{
     if(!Number.isFinite(x)||!Number.isFinite(y))return empty;
     if(t.interpolation==='nearest')return sample(source,width,height,x,y,selection);
@@ -138,6 +201,12 @@ export function transformRaster(source:Uint8Array,width:number,height:number,t:T
     if(exactArea){
       const topLeft=inverse(px-sx/2,py-sy/2),bottomRight=inverse(px+sx/2,py+sy/2);
       const value=sampleAreaBox(source,width,height,topLeft.x,topLeft.y,bottomRight.x,bottomRight.y,selection);
+      red=value[0];green=value[1];blue=value[2];alpha=value[3];
+    }else if(affineArea){
+      const value=sampleAreaQuad(source,width,height,[
+        inverse(px-sx/2,py-sy/2),inverse(px+sx/2,py-sy/2),
+        inverse(px+sx/2,py+sy/2),inverse(px-sx/2,py+sy/2)
+      ],selection);
       red=value[0];green=value[1];blue=value[2];alpha=value[3];
     }else{
       for(const oy of area)for(const ox of area){
