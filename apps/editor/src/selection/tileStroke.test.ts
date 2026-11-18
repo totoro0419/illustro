@@ -79,3 +79,22 @@ describe('C06-002 pixel-equivalence against the full-canvas CPU reference',()=>{
     ': tiles='+actual[i]+' full='+expected[i]);
  });
 });
+
+describe('C06-002 sparse mask cache regression',()=>{
+ it('matches repeated CPU brush passes on the same tile and leaves empty tiles untouched',()=>{
+  const width=270,height=140,alpha=new Uint8Array(width*height);
+  for(let y=30;y<70;y++)for(let x=115;x<145;x++)
+   alpha[y*width+x]=(x%3===0?128:255);
+  const first=stroke([[118,40,0],[135,50,10]]);
+  const second=stroke([[130,48,0],[142,52,10]]);
+  const outside=stroke([[240,100,0],[255,100,10]]);
+  const expected0=new Uint8ClampedArray(width*height*4);
+  const expected1=cpuReference(first,width,height,expected0,alpha);
+  const expected2=cpuReference(second,width,height,expected1,alpha);
+  const expected3=cpuReference(outside,width,height,expected2,alpha);
+  const actual=renderSelectedStrokeTiles(width,height,alpha,[],[first,second,outside]);
+  expect(actual).not.toBeNull();
+  expect(spread(actual!,width,height)).toEqual(new Uint8Array(expected3));
+  expect(actual!.every(tile=>tile.key==='0,0'||tile.key==='1,0')).toBe(true);
+ });
+});
