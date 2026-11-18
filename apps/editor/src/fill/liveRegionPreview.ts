@@ -40,33 +40,48 @@ export function addTraceRegions(
 export class LiveRegionTrace{
  readonly selected=new Set<number>();
  private readonly counts=new Map<number,number>();
- private lastSegment=new Set<number>();
+ // Keep a bounded undo window for input stabilizers that revise more than
+ // the most recent endpoint. Old, committed segments keep only their counts.
+ private readonly recentSegments=new Map<number,Set<number>>();
+ private readonly recentPoints=new Map<number,Point>();
  private processed=0;
- private tail:Point|null=null;
  private optionKey='';
  private previousGraph:RegionGraph|null=null;
 
  update(graph:RegionGraph,points:readonly Point[],width:number,closedOnly:boolean):boolean{
    const optionKey=width+':'+closedOnly;
    let changed=false;
-   // A new graph can reuse numeric region IDs for different shapes. Keeping
-   // old IDs would show stale paint even if the pointer has not moved.
    if(graph!==this.previousGraph||points.length<this.processed||optionKey!==this.optionKey){
      changed=this.selected.size>0;
-     this.selected.clear();this.counts.clear();this.lastSegment.clear();
-     this.processed=0;this.tail=null;this.optionKey=optionKey;
-     this.previousGraph=graph;
-   }else if(this.processed>0&&this.tail){
-     const oldTail=points[this.processed-1];
-     if(oldTail&&(oldTail.x!==this.tail.x||oldTail.y!==this.tail.y)){
-       // The previous last segment is no longer valid, even when a new
-       // point was appended in the same update.
-       for(const id of this.lastSegment){
-         const count=(this.counts.get(id)??0)-1;
-         if(count<=0){this.counts.delete(id);this.selected.delete(id);changed=true;}
-         else this.counts.set(id,count);
+     this.selected.clear();this.counts.clear();
+     this.recentSegments.clear();this.recentPoints.clear();
+     this.processed=0;this.optionKey=optionKey;this.previousGraph=graph;
+   }else{
+     let restart=this.processed;
+     for(const [index,old] of this.recentPoints){
+       const point=points[index];
+       if(point&&(point.x!==old.x||point.y!==old.y))
+         restart=Math.min(restart,index);
+     }
+     if(restart<this.processed){
+       for(let i=restart;i<this.processed;i++){
+         const segment=this.recentSegments.get(i);
+         if(!segment){
+           // An unexpected cache gap must never leave stale highlights.
+           changed=this.selected.size>0||changed;
+           this.selected.clear();this.counts.clear();
+           this.recentSegments.clear();this.recentPoints.clear();
+           this.processed=0;
+           break;
+         }
+         for(const id of segment){
+           const count=(this.counts.get(id)??0)-1;
+           if(count<=0){this.counts.delete(id);this.selected.delete(id);changed=true;}
+           else this.counts.set(id,count);
+         }
+         this.recentSegments.delete(i);this.recentPoints.delete(i);
        }
-       this.processed--;
+       if(this.processed!==0)this.processed=restart;
      }
    }
    for(let i=this.processed;i<points.length;i++){
@@ -77,10 +92,16 @@ export class LiveRegionTrace{
        this.counts.set(id,count+1);
        if(!count){this.selected.add(id);changed=true;}
      }
-     this.lastSegment=segment;
+     this.recentSegments.set(i,segment);
+     this.recentPoints.set(i,{...points[i]!});
    }
    this.processed=points.length;
-   this.tail=points.length?{...points[points.length-1]!}:null;
+   // The last 16 points can be revised without replaying a 4K-length trace.
+   // A change to point i also changes segment i+1, both retained here.
+   const cutoff=Math.max(0,this.processed-16);
+   for(const index of this.recentPoints.keys())if(index<cutoff){
+     this.recentPoints.delete(index);this.recentSegments.delete(index);
+   }
    return changed;
  }
 }
