@@ -372,13 +372,13 @@ export function installFillPanel(host:HTMLElement,api:{
     // Do not falsely imply exactness when a selection, target mask or edge
     // effects must be applied by the final Worker.
     let liveColor:LiveColorFillPreview|null=null;
-    let colorCapture:FillCapture|null=null;
+    let colorValid:(()=>boolean)|null=null;
     if(liveFill&&method.value==='color'&&condition.value==='all'&&!value(edge)&&!smooth.checked){
       output.textContent='塗りの仮表示に使う絵を読み込んでいます。';
       const source=await read(false);
       if(drawing!==api.drawing()||!source.valid())throw Error('作品が変わったため、塗りの準備を中止しました。');
       if(!source.selection&&!source.targetMask){
-        colorCapture=source;
+        colorValid=source.valid;
         liveColor=new LiveColorFillPreview(source.source,source.width,source.height,512);
       }
     }
@@ -389,7 +389,7 @@ export function installFillPanel(host:HTMLElement,api:{
       ?label+' 青い仮表示は目安です。正確な結果は指を離した後に計算します。':label;
     drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,
       ...(graph||liveColor?{update:(points:readonly Point[])=>{
-        if(colorCapture&&!colorCapture.valid()){
+        if(colorValid&&!colorValid()){
           stopGesture();output.textContent='作品が変わったため塗りの入力を終了しました。';
           return;
         }
