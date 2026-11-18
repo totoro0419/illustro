@@ -12,6 +12,16 @@ export function canUseTiledHistoryPreview(
   return true;
 }
 
+/** Yield between costly history tiles even when the tab is hidden.
+ * requestAnimationFrame can be suspended in background tabs indefinitely. */
+export function yieldHistoryRender():Promise<void>{
+  return new Promise(resolve=>{
+    if(typeof document!=='undefined'&&document.visibilityState==='hidden'||
+       typeof requestAnimationFrame!=='function')setTimeout(resolve,0);
+    else requestAnimationFrame(()=>resolve());
+  });
+}
+
 export function createTiledPreviewAccumulator(
   sourceWidth:number,sourceHeight:number,targetWidth:number,targetHeight:number,
 ){

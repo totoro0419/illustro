@@ -1,6 +1,6 @@
 import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId} from '@illustro/core';
 import {blendArtworkPixel,gradientMapTable,mapGradientPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
-import {canUseTiledHistoryPreview,createTiledPreviewAccumulator} from './tiledPreview';
+import {canUseTiledHistoryPreview,createTiledPreviewAccumulator,yieldHistoryRender} from './tiledPreview';
 
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
@@ -158,7 +158,7 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
       const pixels=await readLayer(layer);
       compositeLayer(destination,pixels,layer.opacity,clip?{pixels:await readLayer(clip),opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,{width,...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
       // Let pointer input and normal drawing frames execute between layers.
-      await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+      await yieldHistoryRender();
     }
     while(groups.length)closeGroup();
     return composite;
@@ -270,7 +270,7 @@ export async function renderFrozenArtworkTiledPreview(
         accumulator.addTile(composite,tx*TILE,ty*TILE,TILE);
       }
       // History rendering must leave time for normal pointer input.
-      await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+      await yieldHistoryRender();
     }
     check();
     return accumulator.finish();

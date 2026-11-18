@@ -1,6 +1,25 @@
-import {describe,it,expect} from 'vitest';
-import {createTiledPreviewAccumulator,canUseTiledHistoryPreview} from './tiledPreview';
+import {describe,it,expect,vi,afterEach} from 'vitest';
+import {createTiledPreviewAccumulator,canUseTiledHistoryPreview,yieldHistoryRender} from './tiledPreview';
 import {compositeLayer} from './basicExport';
+
+afterEach(()=>vi.unstubAllGlobals());
+
+describe('C03-007 background history rendering',()=>{
+  it('keeps progressing when the browser suspends animation frames',async()=>{
+    const frame=vi.fn();
+    vi.stubGlobal('document',{visibilityState:'hidden'});
+    vi.stubGlobal('requestAnimationFrame',frame);
+    await yieldHistoryRender();
+    expect(frame).not.toHaveBeenCalled();
+  });
+  it('yields to animation frames when the document is visible',async()=>{
+    const frame=vi.fn((callback:FrameRequestCallback)=>{callback(0);return 1;});
+    vi.stubGlobal('document',{visibilityState:'visible'});
+    vi.stubGlobal('requestAnimationFrame',frame);
+    await yieldHistoryRender();
+    expect(frame).toHaveBeenCalledOnce();
+  });
+});
 
 describe('C03-007 bounded tile compositing',()=>{
   it('downsamples opaque checker tiles without allocating a full-size destination',()=>{
