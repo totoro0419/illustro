@@ -1,5 +1,5 @@
 import {describe,it,expect,vi} from 'vitest';
-import {captureSelectedLayerTiles,type InspectableDrawingRenderer} from './tileCapture';
+import {captureSelectedLayerTiles,tileHasPixelData,type InspectableDrawingRenderer} from './tileCapture';
 
 function fakeRenderer(tiles:readonly [string,string,number][]=[],bad=false){
  const inventory=new Map(tiles.map(([surfaceKey,key])=>[surfaceKey+'\\0'+key,{surfaceKey,key}]));
@@ -26,6 +26,17 @@ describe('C06-002 bounded GPU inventory capture',()=>{
   expect(readTiles).toHaveBeenCalledTimes(1);
   expect(readTiles.mock.calls[0]?.[0]?.length).toBe(2);
   expect(renderer.inspect).toHaveBeenCalledTimes(1);
+ });
+ it('detects transparent RGB and unaligned tile buffers without changing pixel data',()=>{
+  const empty=new Uint8Array(128*128*4);
+  expect(tileHasPixelData(empty)).toBe(false);
+  empty[3]=0;empty[2]=7;
+  expect(tileHasPixelData(empty)).toBe(true);
+  expect(empty[2]).toBe(7);
+  const unaligned=new Uint8Array(new ArrayBuffer(empty.length+1),1,empty.length);
+  expect(tileHasPixelData(unaligned)).toBe(false);
+  unaligned[unaligned.length-1]=1;
+  expect(tileHasPixelData(unaligned)).toBe(true);
  });
  it('stops without reading if the document changes after inventory refresh',async()=>{
   const {renderer,readTiles}=fakeRenderer([['L','0,0',255]]);
