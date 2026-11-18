@@ -27,6 +27,20 @@ describe('C06-007 original-resolution long selection-brush preview',()=>{
   const subtract={...settings,size:42,mode:'subtract' as const};
   verify(prior,live,450,subtract);verify(prior,live,10,subtract);
  });
+ it('recalculates an updated last point instead of leaving a stale stroke',()=>{
+  const prior={width,height,alpha:new Uint8Array(width*height)};
+  const live=new LiveSelectionBrushPreview(prior);
+  const first=points.slice(0,100);
+  live.render(first,settings,512);
+  const moved=[...first.slice(0,-1),{...first[99]!,x:95,y:70}];
+  const preview=live.render(moved,settings,512);
+  const expected=brushSelection(prior,moved,settings).alpha;
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const actual=x>=preview.x&&y>=preview.y&&x<preview.x+preview.width&&y<preview.y+preview.height
+    ?preview.alpha[(y-preview.y)*preview.width+x-preview.x]:0;
+   expect(actual).toBe(expected[y*width+x]);
+  }
+ });
  it('reduces only display coverage and preserves the entire long-stroke bounds',()=>{
   const prior={width:4000,height:40,alpha:new Uint8Array(4000*40)},live=new LiveSelectionBrushPreview(prior);
   const preview=live.render([{x:8,y:20,pressure:1},{x:3990,y:20,pressure:1}],settings,512);

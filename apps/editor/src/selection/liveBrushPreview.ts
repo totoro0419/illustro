@@ -7,24 +7,38 @@ export class LiveSelectionBrushPreview{
  private result:MaskData;
  private processed=0;
  private settingsKey='';
+ private lastPoint:SelectionBrushPoint|null=null;
+ private minX=Infinity;private minY=Infinity;
+ private maxX=-Infinity;private maxY=-Infinity;
  constructor(private readonly prior:MaskData){
   this.result={...prior,alpha:prior.alpha.slice()};
  }
  render(points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings,maxDimension=512):SelectionBrushPreviewRaster{
   const key=JSON.stringify(settings),{width,height}=this.prior;
-  if(this.settingsKey&&key!==this.settingsKey||points.length<this.processed){
+  // Pointer coalescing may replace the latest point without increasing
+  // the count. Replaying only the appended suffix would leave stale paint.
+  const old=points[this.processed-1],last=this.lastPoint;
+  const changed=!!last&&(!old||old.x!==last.x||old.y!==last.y||old.pressure!==last.pressure);
+  if((this.settingsKey&&key!==this.settingsKey)||points.length<this.processed||changed){
    this.result={...this.prior,alpha:this.prior.alpha.slice()};this.processed=0;
+   this.minX=this.minY=Infinity;this.maxX=this.maxY=-Infinity;
   }
   this.settingsKey=key;
   paintSelectionBrush(this.result,points,settings,this.processed);
-  this.processed=points.length;
-  const radius=settings.size/2+2;
-  let left=width,top=height,right=0,bottom=0;
-  for(const point of points){
-   left=Math.min(left,Math.floor(point.x-radius));top=Math.min(top,Math.floor(point.y-radius));
-   right=Math.max(right,Math.ceil(point.x+radius));bottom=Math.max(bottom,Math.ceil(point.y+radius));
+  // Update bounds only for new points. Scanning the entire long stroke on
+  // every pointer event otherwise makes a 4K preview quadratic in length.
+  for(let i=this.processed;i<points.length;i++){
+   const point=points[i]!;
+   this.minX=Math.min(this.minX,point.x);this.minY=Math.min(this.minY,point.y);
+   this.maxX=Math.max(this.maxX,point.x);this.maxY=Math.max(this.maxY,point.y);
   }
-  left=Math.max(0,left);top=Math.max(0,top);right=Math.min(width,right);bottom=Math.min(height,bottom);
+  this.processed=points.length;
+  this.lastPoint=points.length?{...points[points.length-1]!}:null;
+  const radius=settings.size/2+2;
+  const left=Math.max(0,Math.min(width,Math.floor(this.minX-radius)));
+  const top=Math.max(0,Math.min(height,Math.floor(this.minY-radius)));
+  const right=Math.max(0,Math.min(width,Math.ceil(this.maxX+radius)));
+  const bottom=Math.max(0,Math.min(height,Math.ceil(this.maxY+radius)));
   const w=Math.max(1,right-left),h=Math.max(1,bottom-top);
   const scale=Math.min(1,maxDimension/Math.max(w,h));
   const columns=Math.max(1,Math.round(w*scale)),rows=Math.max(1,Math.round(h*scale));
