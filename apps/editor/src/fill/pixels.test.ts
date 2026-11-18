@@ -99,6 +99,22 @@ describe('C08 fill boundaries and destination gating',()=>{
     expect(Number(horizontal)+Number(vertical)).toBe(1);
     expect(result.candidates).toHaveLength(1);
   });
+  it('does not suggest a second gap through an already repaired bridge',()=>{
+    const w=15,h=15,data=image(w,h);
+    for(const x of [1,2,3,9,10,11])setPixel(data,w,x,7,[0,0,0,255]);
+    for(const y of [2,3,4,10,11,12])setPixel(data,w,6,y,[0,0,0,255]);
+    const graph=buildRegions(data,w,h,15,6,[]);
+    const suggestions=suggestLocalGaps(graph,{x:6,y:7},6,[]);
+    for(const gap of suggestions){
+      const dx=gap.to.x-gap.from.x,dy=gap.to.y-gap.from.y;
+      const steps=Math.max(Math.abs(dx),Math.abs(dy));
+      for(let step=1;step<steps;step++){
+        const x=Math.round(gap.from.x+dx*step/steps);
+        const y=Math.round(gap.from.y+dy*step/steps);
+        expect(graph.bridges[y*w+x]).toBe(0);
+      }
+    }
+  });
   it('never applies untracked bridges after the 4096-candidate review limit',()=>{
     const w=12,lines=4100,h=lines*4+3,data=image(w,h);
     for(let line=0;line<lines;line++){
