@@ -1,5 +1,5 @@
 import {describe,it,expect,vi} from 'vitest';
-import {captureSelectedLayerTiles,tileHasPixelData,type InspectableDrawingRenderer} from './tileCapture';
+import {captureSelectedLayerTiles,captureLayerRegion,tileHasPixelData,type InspectableDrawingRenderer} from './tileCapture';
 
 function fakeRenderer(tiles:readonly [string,string,number][]=[],bad=false){
  const inventory=new Map(tiles.map(([surfaceKey,key])=>[surfaceKey+'\\0'+key,{surfaceKey,key}]));
@@ -53,6 +53,24 @@ describe('C06-002 bounded GPU inventory capture',()=>{
   expect(readTiles.mock.calls.every(([requests])=>requests.length<=16)).toBe(true);
   expect(result.map(tile=>tile.key)).toEqual(
    tiles.filter(([, ,value])=>value!==0).map(([,key])=>key));
+ });
+ it('copies a tiny selected rectangle without reading unrelated 4K tiles',async()=>{
+  const {renderer,readTiles}=fakeRenderer([
+   ['L','0,0',75],['L','1,1',180],['L','31,31',255]]);
+  const pixels=await captureLayerRegion(renderer,'L',4000,4000,
+   {x:128,y:128,width:3,height:2},()=>true);
+  expect(pixels).toHaveLength(3*2*4);
+  expect(pixels[0]).toBe(180);
+  expect(pixels.subarray(1).every(value=>value===0)).toBe(true);
+  expect(readTiles).toHaveBeenCalledTimes(1);
+  expect(readTiles.mock.calls[0]?.[0]).toEqual([{surfaceId:'L',key:'1,1'}]);
+ });
+ it('rejects out-of-canvas region requests before GPU access',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',255]]);
+  await expect(captureLayerRegion(renderer,'L',4000,4000,
+   {x:3999,y:3999,width:2,height:2},()=>true)).rejects.toThrow('範囲');
+  expect(renderer.drain).not.toHaveBeenCalled();
+  expect(readTiles).not.toHaveBeenCalled();
  });
  it('rejects invalid dimensions before touching the renderer',async()=>{
   const {renderer,readTiles}=fakeRenderer([['L','0,0',255]]);

@@ -106,6 +106,7 @@ export class ArtworkClipboard {
     if(opts.selectionOnly&&!selection)throw Error('先に選択範囲を作成してください。');
     const area=safeRect(selection,root.width,root.height);
     let source:Uint8Array|Uint8ClampedArray,editable:ClipboardItem['editable'];
+    let regionPixels:Uint8ClampedArray|null=null;
     const selectedLayer=controller.selectedLayer;
     const group=opts.group?root.groupsForLayer(selectedLayer.id).at(-1):undefined;
     if(opts.group&&!group)throw Error('コピーするグループ内のレイヤーを選んでください。');
@@ -126,12 +127,16 @@ export class ArtworkClipboard {
       // Normal group layers are copied as occupied tiles. Geometry-aware
       // layers (deformation, line-regions, white paper) retain their full
       // compatible capture; they have additional reconstruction semantics.
+      if(selection&&!group&&layer.baseColor!=='white'&&!layer.deformation&&
+        !layer.lineRegions&&!layer.imageLink&&typeof drawing.captureDocumentLayerRegion==='function')
+        regionPixels=await drawing.captureDocumentLayerRegion(layer.id,area);
       const sparseIds=group&&!selection?new Set([...ids].filter(id=>{
         const candidate=root.getLayer(id);
         return candidate.baseColor!=='white'&&!candidate.deformation&&!candidate.lineRegions;
       })):null;
       const sparse= sparseIds?.size?await drawing.captureDocumentLayerTiles(sparseIds):null;
-      const fullIds=sparse?new Set([...ids].filter(id=>!sparseIds!.has(id))):ids;
+      const fullIds=regionPixels?new Set<LayerId>():
+        sparse?new Set([...ids].filter(id=>!sparseIds!.has(id))):ids;
       const captured=fullIds.size?await drawing.captureDocumentLayers(fullIds):new Map<LayerId,Uint8Array>();
       if(!selection&&layer.baseColor!=='white'){
         const operations=document.rasterReplayPlan(head).operations;
@@ -170,7 +175,7 @@ export class ArtworkClipboard {
       }
       if(group)source=new Uint8Array(0); // A group preview uses its outline; no merged 4K image.
       else{
-        const pixels=captured.get(layer.id);
+        const pixels=regionPixels??captured.get(layer.id);
         if(!pixels)throw Error('レイヤーを読み込めませんでした。');
         source=pixels;
       }
@@ -180,7 +185,8 @@ export class ArtworkClipboard {
     // source and a 16 MiB alpha mask to a Worker just to keep 12px.
     const selectedMask=this.selectionMask&&this.selectionMask.width===root.width&&
       this.selectionMask.height===root.height&&selection?this.selectionMask:null;
-    const clipped=group?new Uint8ClampedArray(0):crop(source,root.width,area);
+    const clipped=group?new Uint8ClampedArray(0):
+      regionPixels??crop(source,root.width,area);
     const pixels=selectedMask&&!group
       ?await runMaskedPixelJob(clipped,cropSelectionMask(selectedMask,area),'copy'):clipped;
     if(document.head!==head)throw Error('コピー中に作品が変更されました。');

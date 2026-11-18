@@ -7,6 +7,27 @@ import {createDeterministicIdFactory} from '../../../../packages/core/src/ids';
 
 afterEach(()=>vi.unstubAllGlobals());
 describe('C06-015 editable group copy uses sparse painted tiles',()=>{
+ it('copies a small selection without a full-layer GPU readback',async()=>{
+  const doc=new CoreDocument({width:256,height:256,ids:createDeterministicIdFactory()});
+  const layer=doc.defaultRasterLayerId;
+  const controller=EditorController.restored(doc,layer);
+  const full=vi.fn(async()=>{throw Error('unexpected full-image readback');});
+  const region=vi.fn(async()=>new Uint8ClampedArray([
+   12,34,56,255,0,0,0,0,0,0,0,0,0,0,0,0
+  ]));
+  const drawing={
+   selectedRectangle:{x:20,y:30,width:2,height:2},
+   captureDocumentLayers:full,captureDocumentLayerRegion:region
+  } as unknown as BrushSurface;
+  const clipboard=new ArtworkClipboard();
+  await clipboard.copy(controller,drawing,{merged:false,selectionOnly:true});
+  expect(region).toHaveBeenCalledOnce();
+  expect(region.mock.calls[0]?.[1]).toEqual({x:20,y:30,width:2,height:2});
+  expect(full).not.toHaveBeenCalled();
+  expect(clipboard.preview()?.pixels?.slice(0,4)).toEqual(
+   new Uint8ClampedArray([12,34,56,255]));
+ });
+
  it('copies a 4000px group without any per-layer full-raster readback; paste and Undo/Redo preserve contents',async()=>{
   const doc=new CoreDocument({width:4000,height:4000,ids:createDeterministicIdFactory()});
   const base=doc.defaultRasterLayerId;

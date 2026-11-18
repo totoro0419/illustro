@@ -7,7 +7,7 @@ import {penEraserInput} from './stylusButtons';
 import {EmptyStrokeError} from './strokeCommit';
 import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
-import {captureSelectedLayerTiles} from './selection/tileCapture';
+import {captureSelectedLayerTiles,captureLayerRegion,type TileCaptureArea} from './selection/tileCapture';
 import {selectedStrokeMayAffectMask} from './selection/maskStrokeBounds';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {originalVisibleWithTransformPreview} from './transform/previewReplacement';
@@ -1270,6 +1270,17 @@ export class BrushSurface{
     }
     if(this.busy||this.disposed)throw new Error('Thumbnail became stale');
     return output.convertToBlob({type:'image/png'});
+  }
+  /** Small selection clipboard copy without a full-size GPU readback. */
+  async captureDocumentLayerRegion(id:LayerId,area:TileCaptureArea):Promise<Uint8ClampedArray|null>{
+    if(!this.renderer||this.busy||this.disposed)throw Error('コピー中に画像を変更できません。');
+    const host=this.renderer as unknown as Parameters<typeof captureLayerRegion>[0];
+    if(typeof host.inspect!=='function'||typeof host.backend?.readTiles!=='function')return null;
+    const root=this.controller.document.root,revision=this.controller.document.head;
+    if(!root.hasLayer(id))throw Error('コピー対象のレイヤーが見つかりません。');
+    const valid=()=>!this.disposed&&!this.busy&&this.controller.document.head===revision;
+    return captureLayerRegion(host,root.getLayer(id).surface.descriptor.surfaceId,
+      root.width,root.height,area,valid);
   }
   /** Read an editable group without one full canvas RGBA buffer per layer.
    * Unsupported renderer implementations still use captureDocumentLayers. */

@@ -7,6 +7,7 @@ type TileBackend={
  tiles:Map<string,RendererTile>;
  readTiles:(requests:readonly TileReadRequest[])=>Promise<unknown>;
 };
+export type TileCaptureArea=Readonly<{x:number;y:number;width:number;height:number}>;
 export type InspectableDrawingRenderer={
  drain:(finalFrame?:boolean)=>Promise<unknown>;
  inspect:()=>Promise<unknown>;
@@ -27,10 +28,15 @@ export function tileHasPixelData(pixels:Uint8Array):boolean{
  * brush strokes when producing the new layer.snapshot. The selected stroke
  * worker then creates newly touched tiles without scanning blank canvas. */
 export async function captureSelectedLayerTiles(
- renderer:InspectableDrawingRenderer,surfaceId:string,width:number,height:number,valid:()=>boolean
+ renderer:InspectableDrawingRenderer,surfaceId:string,width:number,height:number,valid:()=>boolean,
+ area?:TileCaptureArea
 ):Promise<RasterWorkerTile[]>{
  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1)
   throw new Error('選択描画の作品サイズが正しくありません。');
+ if(area&&(![area.x,area.y,area.width,area.height].every(Number.isSafeInteger)||
+   area.x<0||area.y<0||area.width<1||area.height<1||
+   area.x+area.width>width||area.y+area.height>height))
+  throw new Error('読み取る画像の範囲が正しくありません。');
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
  await renderer.drain();
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
@@ -54,7 +60,12 @@ export async function captureSelectedLayerTiles(
   if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||
    tx>=Math.ceil(width/TILE)||ty>=Math.ceil(height/TILE))
    throw new Error('描画区画が作品の外にあります。');
-  seen.add(key);requests.push({surfaceId,key});
+  seen.add(key);
+  // A clipboard selection only needs overlapping tiles, while a selected
+  // brush still requests the complete existing snapshot (area omitted).
+  if(area&&(tx*TILE>=area.x+area.width||ty*TILE>=area.y+area.height||
+    (tx+1)*TILE<=area.x||(ty+1)*TILE<=area.y))continue;
+  requests.push({surfaceId,key});
  }
  const result:RasterWorkerTile[]=[];
  for(let offset=0;offset<requests.length;offset+=16){
@@ -69,4 +80,29 @@ export async function captureSelectedLayerTiles(
  }
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
  return result;
+}
+
+/** Read a small clipboard rectangle directly from occupied GPU tiles.
+ * This never allocates a full 4000×4000 RGBA source for a 12px selection.
+ * Transparent gaps and edge tiles retain their original RGBA values. */
+export async function captureLayerRegion(
+ renderer:InspectableDrawingRenderer,surfaceId:string,width:number,height:number,
+ area:TileCaptureArea,valid:()=>boolean
+):Promise<Uint8ClampedArray>{
+ const tiles=await captureSelectedLayerTiles(renderer,surfaceId,width,height,valid,area);
+ const output=new Uint8ClampedArray(area.width*area.height*4);
+ for(const tile of tiles){
+  const [tx,ty]=tile.key.split(',').map(Number);
+  const tileX=tx!*TILE,tileY=ty!*TILE;
+  const left=Math.max(area.x,tileX),top=Math.max(area.y,tileY);
+  const right=Math.min(area.x+area.width,tileX+TILE);
+  const bottom=Math.min(area.y+area.height,tileY+TILE);
+  for(let y=top;y<bottom;y++){
+   const start=((y-tileY)*TILE+left-tileX)*4;
+   output.set(tile.pixels.subarray(start,start+(right-left)*4),
+    ((y-area.y)*area.width+left-area.x)*4);
+  }
+ }
+ if(!valid())throw new Error('コピー中に作品が変更されました。');
+ return output;
 }
