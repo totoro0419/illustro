@@ -495,8 +495,19 @@ export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:
   }
   proposals.sort((a,b)=>a.score-b.score);
   const output:GapCandidate[]=[];
+  const same=(a:Point,b:Point)=>a.x===b.x&&a.y===b.y;
+  const orient=(a:Point,b:Point,c:Point)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+  const conflicts=(a:GapCandidate,b:GapCandidate)=>{
+    // One tip must not be committed to two competing repairs.
+    if([a.from,a.to].some(p=>[b.from,b.to].some(q=>same(p,q))))return true;
+    // Crossing suggestions are mutually exclusive; offering both could
+    // close a genuine corridor even if each tip pair looks plausible alone.
+    const ab1=orient(a.from,a.to,b.from),ab2=orient(a.from,a.to,b.to);
+    const ba1=orient(b.from,b.to,a.from),ba2=orient(b.from,b.to,a.to);
+    return ab1*ab2<0&&ba1*ba2<0;
+  };
   for(const {candidate} of proposals){
-    if(output.some(other=>other.kind===candidate.kind&&
+    if(output.some(other=>conflicts(other,candidate)||other.kind===candidate.kind&&
       Math.hypot(other.from.x-candidate.from.x,other.from.y-candidate.from.y)+
       Math.hypot(other.to.x-candidate.to.x,other.to.y-candidate.to.y)<4))continue;
     output.push(candidate);
