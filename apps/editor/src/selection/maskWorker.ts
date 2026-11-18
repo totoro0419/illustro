@@ -1,16 +1,27 @@
 /** C06 bounded asynchronous mask jobs. The input thread never waits for pixel loops. */
 import {rasterizeSelection,combineSelection,featherMask,growOrShrink,selectionBorder,brushSelection,type SelectionBrushPoint,type SelectionBrushSettings,type SelectionShape,type MaskData,type CombineMode} from './mask';
 import {selectFromPixels,type AnalyzeOptions} from './autoSelect';
-type Reply=Readonly<{id:number;ok:boolean;alpha?:Uint8Array;error?:string}>;
+import type {SelectionBrushPreviewRaster} from './brushPreview';
+type Reply=Readonly<{id:number;ok:boolean;alpha?:Uint8Array;preview?:SelectionBrushPreviewRaster;error?:string}>;
 export class MaskRasterWorker{
   private worker:Worker|null=null;
   private nextId=0;
   private pending=new Map<number,{resolve:(value:MaskData)=>void;reject:(reason:Error)=>void;width:number;height:number}>();
+  private previews=new Map<number,{resolve:(value:SelectionBrushPreviewRaster)=>void;reject:(reason:Error)=>void}>();
+  private liveKey:string|null=null;
   constructor(){
     try{
       this.worker=new Worker(new URL('./mask.worker.ts',import.meta.url),{type:'module'});
       this.worker.onmessage=(event:MessageEvent<Reply>)=>{
-        const message=event.data,item=this.pending.get(message.id);
+        const message=event.data,preview=this.previews.get(message.id);
+        if(preview){
+          this.previews.delete(message.id);
+          if(message.ok&&message.preview&&message.preview.alpha.length===message.preview.width*message.preview.height)
+            preview.resolve(message.preview);
+          else preview.reject(Error(message.error??'選択ブラシの途中表示を作れませんでした。'));
+          return;
+        }
+        const item=this.pending.get(message.id);
         if(!item)return;
         this.pending.delete(message.id);
         if(message.ok&&message.alpha?.length===item.width*item.height)
@@ -19,6 +30,8 @@ export class MaskRasterWorker{
       };
       this.worker.onerror=event=>{
         for(const item of this.pending.values())item.reject(Error(event.message||'選択範囲の計算に失敗しました。'));
+        for(const item of this.previews.values())item.reject(Error(event.message||'選択ブラシの途中表示に失敗しました。'));
+        this.previews.clear();this.liveKey=null;
         this.pending.clear();this.worker?.terminate();this.worker=null;
       };
     }catch{this.worker=null;}
@@ -69,6 +82,23 @@ export class MaskRasterWorker{
   brush(previous:MaskData|null,width:number,height:number,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings){
     return this.execute(width,height,'brush',{previous,brushPoints:points,brushSettings:settings});
   }
+  brushPreview(liveKey:string,previous:MaskData|null,width:number,height:number,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings){
+    if(!this.worker)return Promise.reject(Error('選択ブラシの途中計算を使えません。'));
+    const id=++this.nextId,initialize=this.liveKey!==liveKey;
+    return new Promise<SelectionBrushPreviewRaster>((resolve,reject)=>{
+      this.previews.set(id,{resolve,reject});
+      try{
+        this.worker!.postMessage({id,action:'brush-preview',liveKey,initialize,width,height,
+          brushPoints:points,brushSettings:settings,...(initialize&&previous?{previous:previous.alpha}:{})});
+        this.liveKey=liveKey;
+      }catch(error){this.previews.delete(id);reject(error);}
+    });
+  }
+  endBrushPreview(liveKey:string){
+    if(this.liveKey!==liveKey)return;
+    this.liveKey=null;
+    this.worker?.postMessage({action:'brush-preview-end',liveKey});
+  }
   analyze(pixels:Uint8ClampedArray,options:AnalyzeOptions):Promise<MaskData>{
     if(pixels.length!==options.width*options.height*4)
       return Promise.reject(Error('選択に必要な画素が不足しています。'));
@@ -86,5 +116,7 @@ export class MaskRasterWorker{
     this.worker?.terminate();this.worker=null;
     for(const pending of this.pending.values())pending.reject(Error('選択範囲の処理を中止しました。'));
     this.pending.clear();
+    for(const pending of this.previews.values())pending.reject(Error('選択ブラシの途中表示を終了しました。'));
+    this.previews.clear();this.liveKey=null;
   }
 }

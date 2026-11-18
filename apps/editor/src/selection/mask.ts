@@ -170,14 +170,23 @@ export type SelectionBrushSettings=Readonly<{
 export function brushSelection(
   mask:MaskData,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings
 ):MaskData{
+  const result={...mask,alpha:mask.alpha.slice()};
+  paintSelectionBrush(result,points,settings);
+  return result;
+}
+/** Mutates an owned scratch mask. Preview workers append only new segments;
+ * the committed brush uses the same kernel with a fresh mask and from=0. */
+export function paintSelectionBrush(
+  mask:MaskData,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings,from=0
+):void{
   const {width,height}=mask;
   if(mask.alpha.length!==width*height||points.length>10000||
+    !Number.isInteger(from)||from<0||from>points.length||
     !Number.isFinite(settings.size)||settings.size<1||settings.size>800||
     !Number.isFinite(settings.opacity)||settings.opacity<0||settings.opacity>1||
     !Number.isFinite(settings.hardness)||settings.hardness<0||settings.hardness>1)
     throw Error('選択ブラシの設定か入力が正しくありません。');
-  const out=mask.alpha.slice();
-  if(points.length===0)return {width,height,alpha:out};
+  const out=mask.alpha;
   const paint=(x:number,y:number,pressure:number)=>{
     const radius=Math.max(.5,settings.size*(.25+.75*limit(pressure,0,1))*.5);
     const inner=radius*settings.hardness;
@@ -196,7 +205,7 @@ export function brushSelection(
   };
   // Interpolate dots to avoid gaps when events are sparse or sampling is delayed.
   const step=Math.max(1,settings.size*.23);
-  for(let i=0;i<points.length;i++){
+  for(let i=from;i<points.length;i++){
     const current=points[i]!;
     if(!Number.isFinite(current.x)||!Number.isFinite(current.y)||!Number.isFinite(current.pressure))
       throw Error('選択ブラシの位置が正しくありません。');
@@ -207,5 +216,4 @@ export function brushSelection(
       paint(prior.x+(current.x-prior.x)*t,prior.y+(current.y-prior.y)*t,prior.pressure+(current.pressure-prior.pressure)*t);
     }
   }
-  return {width,height,alpha:out};
 }

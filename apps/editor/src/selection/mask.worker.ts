@@ -1,11 +1,26 @@
 import {rasterizeSelection,combineSelection,featherMask,growOrShrink,selectionBorder,brushSelection,boundsOfSelection,type SelectionBrushPoint,type SelectionBrushSettings,type MaskData,type SelectionShape,type CombineMode} from './mask';
 import {selectFromPixels,type AnalyzeOptions} from './autoSelect';
-type Request={id:number;action:'shape'|'feather'|'grow'|'shrink'|'border'|'analyze'|'brush';width:number;height:number;pixels?:Uint8ClampedArray;analyze?:AnalyzeOptions;
+import {LiveSelectionBrushPreview} from './liveBrushPreview';
+type Request={id:number;action:'shape'|'feather'|'grow'|'shrink'|'border'|'analyze'|'brush'|'brush-preview'|'brush-preview-end';width:number;height:number;pixels?:Uint8ClampedArray;analyze?:AnalyzeOptions;
+  liveKey?:string;initialize?:boolean;
   shape?:SelectionShape;previous?:Uint8Array;mode?:CombineMode;radius?:number;
   brushPoints?:readonly SelectionBrushPoint[];brushSettings?:SelectionBrushSettings;};
+let live:{key:string;preview:LiveSelectionBrushPreview}|null=null;
 self.onmessage=(event:MessageEvent<Request>)=>{
   const input=event.data;
   try{
+    if(input.action==='brush-preview-end'){
+      if(live?.key===input.liveKey)live=null;
+      return;
+    }
+    if(input.action==='brush-preview'&&input.liveKey&&input.brushPoints&&input.brushSettings){
+      if(input.initialize)live={key:input.liveKey,preview:new LiveSelectionBrushPreview({width:input.width,height:input.height,
+        alpha:input.previous??new Uint8Array(input.width*input.height)})};
+      if(live?.key!==input.liveKey)throw Error('選択ブラシの途中表示を準備できませんでした。');
+      const preview=live.preview.render(input.brushPoints,input.brushSettings);
+      (self as unknown as Worker).postMessage({id:input.id,ok:true,preview},[preview.alpha.buffer as ArrayBuffer]);
+      return;
+    }
     let result:MaskData;
     if(input.action==='shape'&&input.shape){
       const fresh=rasterizeSelection(input.shape,input.width,input.height);

@@ -4,7 +4,7 @@ import {rasterizeSelection,combineSelection,invertSelection,fullSelection,transl
   type SelectionShape,type MaskData,type CombineMode,type SelectionBrushPoint} from './mask';
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection,storeCurrentSelection,loadCurrentSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
-import {selectionBrushPreviewDabs,selectionBrushPreviewRaster} from './brushPreview';
+import {selectionBrushPreviewDabs,selectionBrushPreviewRaster,type SelectionBrushPreviewRaster} from './brushPreview';
 import {SelectionOverlay} from './overlay';
 import {snapMagneticPoint} from './magnetic';
 import type {AnalyzeOptions} from './autoSelect';
@@ -184,11 +184,38 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     path.setAttribute('d',d);preview.setAttribute('data-empty','false');
   }
   let brushPreviewFrame=0;
+  let liveBrushKey='',liveBrushRequest='',liveBrushSettings='',liveBrushDocument='';
+  let liveBrushPrior:MaskData|null=null,liveBrushImage:SelectionBrushPreviewRaster|null=null,liveBrushRunning=false;
+  function stopBrushPreview(){
+    if(liveBrushKey)raster.endBrushPreview(liveBrushKey);
+    liveBrushKey=liveBrushRequest=liveBrushSettings=liveBrushDocument='';
+    liveBrushImage=null;liveBrushPrior=null;liveBrushRunning=false;
+  }
+  function workerBrushPreview(doc:{id:string;width:number;height:number},settings:Parameters<MaskRasterWorker['brush']>[4]){
+    if(liveBrushKey&&(liveBrushPrior!==active||liveBrushDocument!==doc.id))stopBrushPreview();
+    if(!liveBrushKey){liveBrushKey=crypto.randomUUID();liveBrushPrior=active;liveBrushDocument=doc.id;}
+    const key=liveBrushKey,prior=active,options=JSON.stringify(settings);
+    const request=brushPoints.length+':'+options;
+    if(!liveBrushRunning&&request!==liveBrushRequest){
+      liveBrushRunning=true;liveBrushRequest=request;
+      void raster.brushPreview(key,prior,doc.width,doc.height,brushPoints,settings).then(image=>{
+        if(liveBrushKey===key&&active===prior&&callbacks.getDocument()?.id===doc.id){
+          liveBrushImage=image;liveBrushSettings=options;
+        }
+      }).catch(()=>{
+        // Unsupported worker environments retain the bounded raster/SVG guide.
+      }).finally(()=>{
+        if(liveBrushKey===key){liveBrushRunning=false;brushOverlayPath();}
+      });
+    }
+    return liveBrushSettings===options?liveBrushImage:null;
+  }
   function paintBrushOverlay(){
     brushPreviewFrame=0;
     const drawingSurface=callbacks.getSurface();
     if(!drawingSurface||!brushPoints.length||
       !(tool==='brushAdd'||tool==='brushSubtract')){
+      stopBrushPreview();
       brushGuide.setAttribute('d','');
       brushTrace.replaceChildren(brushGuide);
       brushRaster.hidden=true;
@@ -208,7 +235,8 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const hardness=Number(brushHardness.value)/100;
     const doc=callbacks.getDocument();
     const settings={size,opacity,hardness,mode:tool==='brushAdd'?'add' as const:'subtract' as const};
-    const exact=doc?selectionBrushPreviewRaster(active,brushPoints,settings,doc.width,doc.height):null;
+    const short=doc&&!liveBrushKey?selectionBrushPreviewRaster(active,brushPoints,settings,doc.width,doc.height):null;
+    const exact=short??(doc?workerBrushPreview(doc,settings):null);
     if(exact&&showSelection.checked){
       if(brushRaster.width!==exact.width)brushRaster.width=exact.width;
       if(brushRaster.height!==exact.height)brushRaster.height=exact.height;
@@ -227,8 +255,8 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
         }
         context.putImageData(image,0,0);
         const topLeft=drawingSurface.documentToScreen({x:exact.x,y:exact.y});
-        const horizontal=drawingSurface.documentToScreen({x:exact.x+1,y:exact.y});
-        const vertical=drawingSurface.documentToScreen({x:exact.x,y:exact.y+1});
+        const horizontal=drawingSurface.documentToScreen({x:exact.x+(exact.scaleX??1),y:exact.y});
+        const vertical=drawingSurface.documentToScreen({x:exact.x,y:exact.y+(exact.scaleY??1)});
         brushRaster.style.transform='matrix('+[
           horizontal.x-topLeft.x,horizontal.y-topLeft.y,
           vertical.x-topLeft.x,vertical.y-topLeft.y,

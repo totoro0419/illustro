@@ -39,7 +39,7 @@ export function selectionBrushPreviewDabs(
  * alpha was not equivalent to the committed selection). A strict work budget
  * leaves long/large strokes on the existing cheap geometric preview. */
 export type SelectionBrushPreviewRaster=Readonly<{
-  x:number;y:number;width:number;height:number;alpha:Uint8Array;
+  x:number;y:number;width:number;height:number;alpha:Uint8Array;scaleX?:number;scaleY?:number;
 }>;
 export function selectionBrushPreviewRaster(
  prior:MaskData|null,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings,
