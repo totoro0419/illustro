@@ -84,6 +84,19 @@ describe('C08-003 incremental region preview',()=>{
   expect([...trace.selected]).toEqual([1]);
   expect(trace.update(graph,[{x:1,y:1},{x:1,y:2},{x:1,y:3}],1,false)).toBe(false);
  });
+ it('recomputes touched regions after analysis replaces the graph with reused IDs',()=>{
+  const trace=new LiveRegionTrace(),points=[{x:1,y:1}];
+  expect(trace.update(graph,points,1,false)).toBe(true);
+  expect([...trace.selected]).toEqual([1]);
+  const changedLabels=new Uint32Array(graph.labels);
+  changedLabels[1*graph.width+1]=2;
+  const changedGraph={...graph,labels:changedLabels};
+  expect(trace.update(changedGraph,points,1,false)).toBe(true);
+  expect([...trace.selected]).toEqual([2]);
+  expect(trace.update(changedGraph,points,1,false)).toBe(false);
+  expect(trace.update(graph,points,1,false)).toBe(true);
+  expect([...trace.selected]).toEqual([1]);
+ });
  it('does not include absent or non-finite pointer seeds',()=>{
   const picked=new Set<number>();
   addTraceRegions(graph,{x:NaN,y:0},{x:Infinity,y:0},1,false,picked);
