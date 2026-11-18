@@ -37,7 +37,7 @@
 - **C06-002（部分改善）**：4Kの長い斜め線について、選択外判定を外接四角形の走査から保守的な線分領域の走査へ変更。選択範囲に届かない筆跡ではGPU読戻しを開始しない。複数筆跡の選択タイルマスクをWorker内で再利用し、未選択タイルの確保を省略。数値異常は安全側で従来処理へ戻す。回帰テストで斜線・水平線・縦線・巨大座標・複数筆跡とCPU参照画素の一致を検証。既存タイル全読戻しは残る。
 - **C06-007（部分改善）**：選択ブラシの入力点が最後の点だけでなく直近8点の範囲で変更された場合、古い仮表示を残さず原寸マスクを再計算。長い線で全点を毎フレーム走査しない構造は維持。Worker非対応の長い線とAndroid実機は未確認。
 - **C07-003（部分改善）**：多数レイヤーの一括変形の境界計算で引数展開をなくし、数値上限に近い座標でも中心の加算オーバーフローを避け、非有限の出力を確定前に拒否。複数レイヤー・異常値の回帰テスト追加。特殊レイヤー・非アフィン一括変形は未実装。
-- **コードコミット**：[`907574fe`](https://github.com/totoro0419/illustro/commit/907574fe98837561c186bbdd559e1f9f39fa6c85) から [`bae83ac9`](https://github.com/totoro0419/illustro/commit/bae83ac9dc8db232c73760765ffac869919d7789) まで（コード・テスト計10コミット）。最終コードHEAD `bae83ac9`。
+- **コードコミット**：[`907574fe`](https://github.com/totoro0419/illustro/commit/907574fe98837561c186bbdd559e1f9f39fa6c85) から [`bae83ac9`](https://github.com/totoro0419/illustro/commit/bae83ac9dc8db232c73760765ffac869919d7789) まで（コード・テスト計11コミット）。最終コードHEAD `bae83ac9`。
 - **検証**：最終コードHEADの[統合CI #44364855747](https://github.com/totoro0419/illustro/actions/runs/44364855747) **completed/success**（Core・Brush・Editorテスト、型検査、本番ビルド）、[Core CI #44364872995](https://github.com/totoro0419/illustro/actions/runs/44364872995) **completed/success**。Android実機、4K時間・メモリ、保存復元・Undo/Redoの実機独立確認は未実施。保存形式・履歴構造は変更なし。
 - **残件・次回**：3件とも部分対応のまま。記録上の部分対応37件・根拠未確認0件・修正記録あり完了未認定92件を維持。次回は **C06-001/002**（選択付き消しゴム・特殊合成の仮表示、選択内GPU読戻し削減）を優先。関連 `apps/editor/src/brushSurface.ts`、`apps/editor/src/selection/tileCapture.ts`、`packages/brush-rt/src/stroke-overlay.mjs`。競合時は **C07-003** の特殊レイヤー対応（`apps/editor/src/transform/`）か **C08-003/015**（`apps/editor/src/fill/`）へ。
 
