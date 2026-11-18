@@ -154,8 +154,8 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
           // Diagonal scanning must find a real gap, not bridge a corner around an existing line.
           const first=tipDirection(from),last=tipDirection({x,y});
           const alignment=first&&last&&
-            ((x-from.x)*first[0]+(y-from.y)*first[1])/distance<=-.7&&
-            ((from.x-x)*last[0]+(from.y-y)*last[1])/distance<=-.7;
+            ((x-from.x)*first[0]+(y-from.y)*first[1])/distance<=-.9&&
+            ((from.x-x)*last[0]+(from.y-y)*last[1])/distance<=-.9;
           // Automatic repairs are restricted to two opposing, unambiguous tips.
           // Parallel strokes, corners and junctions remain open unless manually accepted.
           if(alignment&&distance<=radius+1&&hasClearBridgeCorridor(from,{x,y})&&(!dx||!dy||
@@ -473,8 +473,8 @@ export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:
     // Both stroke tangents must point away from their own ink and toward
     // the other tip. Reject perpendicular hairs and misleading corners.
     if(!aLength||!bLength||
-      -(dx*a.inward.x+dy*a.inward.y)<.7*length*aLength||
-      (dx*b.inward.x+dy*b.inward.y)<.7*length*bLength)continue;
+      -(dx*a.inward.x+dy*a.inward.y)<.9*length*aLength||
+      (dx*b.inward.x+dy*b.inward.y)<.9*length*bLength)continue;
     let obstruction=false;
     const steps=Math.max(Math.abs(dx),Math.abs(dy));
     for(let step=1;step<steps&&!obstruction;step++){
