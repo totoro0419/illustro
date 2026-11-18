@@ -87,6 +87,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     replacement:LayerId|null;width:number;height:number};
   let pointPreviewRequest:PointPreviewRequest|null=null,pointPreviewRunning=false;
   let pointPreviewAbort:AbortController|null=null,pointPreviewShown=false,pointPreviewVersion=0;
+  let lastDrag:Readonly<{picked:number;x:number;y:number}>|null=null;
   async function pumpPointPreview(){
     if(pointPreviewRunning)return;
     pointPreviewRunning=true;
@@ -116,19 +117,29 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
   }
   function previewPointDrag(current:EditablePath,picked:number,anchorCount:number,
     handles:readonly VectorDragHandle[],position:ArtPoint,drawing:BrushSurface,width:number,height:number){
+    if(lastDrag&&lastDrag.picked===picked&&lastDrag.x===position.x&&lastDrag.y===position.y)return;
+    lastDrag={picked,x:position.x,y:position.y};
     try{
       const content=vectorPointDrag(current,picked,anchorCount,handles,position);
       pointPreviewRequest={content,drawing,width,height,replacement:editing??null,version:++pointPreviewVersion};
       void pumpPointPreview();
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   }
-  const stopPoints=()=>{
-    pointPreviewVersion++;pointPreviewRequest=null;
+  function clearPointPreview(){
+    pointPreviewVersion++;pointPreviewRequest=null;lastDrag=null;
     pointPreviewAbort?.abort();pointPreviewAbort=null;
     if(pointPreviewShown)pointDrawing?.showArtworkPreview(null);
     pointPreviewShown=false;
+  }
+  const stopPoints=()=>{
+    clearPointPreview();
     pointDrawing?.setCanvasEditGesture(null);pointDrawing=null;
   };
+  // Escape cancels a drag inside BrushSurface without ending point-edit mode.
+  // Clear its asynchronous artwork overlay too, or a stale curve can remain.
+  window.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&pointDrawing)clearPointPreview();
+  });
   const closePath=(current:EditablePath)=>current.points.some(p=>p.move||p.close);
   const otherPath=()=>{
     const other=api.context()?.paths.find(layer=>layer.id===secondary.value)?.content;
