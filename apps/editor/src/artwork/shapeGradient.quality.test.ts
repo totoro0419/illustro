@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import type {LayerId} from '@illustro/core';
+import {vectorMaskCoverage,type LayerId} from '@illustro/core';
 import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
@@ -7,7 +7,7 @@ describe('C09-004 mask coverage in shape previews',()=>{
     const pixels=new Uint8ClampedArray(4*4*4);
     for(let i=0;i<16;i++)pixels.set([21,42,63,200],i*4);
     const mask={shape:'rectangle',x:1,y:1,width:2,height:2,enabled:true,inverted:false,density:1} as const;
-    applyShapePreviewMask(pixels,mask,4,4,4,4);
+    applyShapePreviewMask(pixels,mask,4,4,4,4,(_mask,x,y)=>vectorMaskCoverage(mask,x,y));
     for(let y=0;y<4;y++)for(let x=0;x<4;x++){
       const i=(y*4+x)*4;
       expect(Array.from(pixels.subarray(i,i+3))).toEqual([21,42,63]);
@@ -17,7 +17,7 @@ describe('C09-004 mask coverage in shape previews',()=>{
   it('uses document coordinates when preview is scaled and respects mask density',()=>{
     const pixels=new Uint8ClampedArray([12,34,56,201,12,34,56,201]);
     const mask={shape:'rectangle',x:0,y:0,width:2,height:2,enabled:true,inverted:false,density:.5} as const;
-    applyShapePreviewMask(pixels,mask,4,2,2,1);
+    applyShapePreviewMask(pixels,mask,4,2,2,1,(_mask,x,y)=>vectorMaskCoverage(mask,x,y));
     expect(pixels[3]).toBe(201);
     expect(pixels[7]).toBe(101);
     const disabled={...mask,enabled:false};
