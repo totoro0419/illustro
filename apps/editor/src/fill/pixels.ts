@@ -409,7 +409,7 @@ export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:
   const isInk=(x:number,y:number)=>x>=0&&y>=0&&x<width&&y<height&&
     !!walls[y*width+x]&&!bridges[y*width+x];
   const directions=[[-1,0],[-1,-1],[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1]] as const;
-  const nodes=[];
+  const nodes:Array<{x:number;y:number;inward:Point;tip:boolean;junction:boolean}>=[];
   for(let y=Math.max(0,Math.ceil(at.y-extent));y<=Math.min(height-1,Math.floor(at.y+extent));y++){
     for(let x=Math.max(0,Math.ceil(at.x-extent));x<=Math.min(width-1,Math.floor(at.x+extent));x++){
       if(!isInk(x,y))continue;
