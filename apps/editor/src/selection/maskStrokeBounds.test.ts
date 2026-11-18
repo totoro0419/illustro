@@ -34,6 +34,10 @@ describe('C06-002 selected-stroke early rejection',()=>{
    const selection=mask(64,64,50,50);
    expect(selectedStrokeMayAffectMask(selection,[stroke([[NaN,10,3]])])).toBe(true);
    expect(selectedStrokeMayAffectMask({...selection,alpha:new Uint8Array(3)},[stroke([[1,1,3]])])).toBe(true);
+   const extreme=new Array<number>(20).fill(0);
+   extreme[0]=1e308;extreme[1]=30;extreme[2]=2;
+   extreme[16]=-1e308;extreme[17]=30;extreme[19]=1;
+   expect(selectedStrokeMayAffectMask(selection,[stroke([extreme])])).toBe(true);
  });
  it('bounds main-thread work for a diagonal across a 4K canvas',()=>{
    const selection=mask(4000,4000,200,3900);
