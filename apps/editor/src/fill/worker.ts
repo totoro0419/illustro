@@ -1,4 +1,4 @@
-import {buildRegions,colorMask,fillBoundaries,fillMask,hasFillPixelChanges,paintColorHints,sharedBoundary,suggestLocalGaps,unpaintedFillEdges,type FillSettings,type RegionGraph,type Walls} from './pixels';
+import {buildRegions,colorMask,fillBoundaries,fillGuaranteedUnchanged,fillMask,hasFillPixelChanges,paintColorHints,sharedBoundary,suggestLocalGaps,unpaintedFillEdges,type FillSettings,type RegionGraph,type Walls} from './pixels';
 import type {ColorHint} from '@illustro/core';
 import type {MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
@@ -63,10 +63,11 @@ self.onmessage=({data}:MessageEvent<FillJob|{type:'live-end';id:string}>)=>{
     if(data.output==='selection'){
       post.postMessage({mask},[mask.alpha.buffer as ArrayBuffer]);return;
     }
-    const pixels=colorMask(data.target,mask,settings,data.alphaLocked);
-    const changed=hasFillPixelChanges(pixels,data.target,mask);
+    const skipOutput=!data.diagnostics&&fillGuaranteedUnchanged(mask,settings,data.alphaLocked,data.target);
+    const pixels=skipOutput?null:colorMask(data.target,mask,settings,data.alphaLocked);
+    const changed=pixels!==null&&hasFillPixelChanges(pixels,data.target,mask);
     const transfer=[mask.alpha.buffer as ArrayBuffer];
-    if(changed)transfer.push(pixels.buffer);
+    if(changed&&pixels)transfer.push(pixels.buffer);
     let diagnostics;
     if(data.diagnostics){
       const bounds=repairs??fillBoundaries(source,width,height,settings.tolerance,0);

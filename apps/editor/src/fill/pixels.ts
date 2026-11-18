@@ -382,6 +382,14 @@ export function colorMask(target:Uint8Array|null,mask:MaskData,settings:FillSett
   return result;
 }
 
+/** Skip allocating a full 4K RGBA output for operations that cannot paint.
+ * Diagnostics still use the ordinary path to preserve their exact output. */
+export function fillGuaranteedUnchanged(mask:MaskData,settings:Pick<FillSettings,'opacity'|'erase'>,
+ alphaLocked:boolean,target:Uint8Array|null):boolean{
+ return settings.opacity===0||(settings.erase&&(alphaLocked||target===null))||
+   !mask.alpha.some(Boolean);
+}
+
 /** Only pixels inside the fill mask can differ from the original layer.
  * Avoid a four-channel full-canvas comparison for every 4K fill operation. */
 export function hasFillPixelChanges(result:Uint8ClampedArray,target:Uint8Array|null,mask:MaskData):boolean{

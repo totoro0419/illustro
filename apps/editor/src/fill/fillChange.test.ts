@@ -1,10 +1,21 @@
 import {describe,expect,it} from 'vitest';
-import {colorMask,hasFillPixelChanges,type FillSettings} from './pixels';
+import {colorMask,fillGuaranteedUnchanged,hasFillPixelChanges,type FillSettings} from './pixels';
 
 const settings:FillSettings={method:'color',tolerance:0,gap:0,opacity:1,
  color:'#ff0000',erase:false,contiguous:true,closedOnly:false};
 
 describe('C08-011 masked pixel-change detection',()=>{
+ it('skips a full RGBA allocation only for guaranteed no-op fills',()=>{
+  const blank={width:1,height:1,alpha:Uint8Array.of(0)};
+  const painted={width:1,height:1,alpha:Uint8Array.of(255)};
+  const target=Uint8Array.of(1,2,3,255);
+  expect(fillGuaranteedUnchanged(blank,settings,false,target)).toBe(true);
+  expect(fillGuaranteedUnchanged(painted,{...settings,opacity:0},false,target)).toBe(true);
+  expect(fillGuaranteedUnchanged(painted,{...settings,erase:true},true,target)).toBe(true);
+  expect(fillGuaranteedUnchanged(painted,{...settings,erase:true},false,null)).toBe(true);
+  expect(fillGuaranteedUnchanged(painted,settings,false,target)).toBe(false);
+  expect(fillGuaranteedUnchanged(painted,{...settings,erase:true},false,target)).toBe(false);
+ });
  it('detects a changed pixel without requiring a full RGBA scan',()=>{
   const mask={width:2,height:1,alpha:Uint8Array.of(0,255)};
   const pixels=colorMask(null,mask,settings,false);
