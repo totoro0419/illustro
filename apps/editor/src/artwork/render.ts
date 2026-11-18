@@ -1,5 +1,6 @@
 import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText,LayerMask} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
+import {layoutStyledText} from './textStyles';
 import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
 import {gradientBoundaryDistance} from './gradientDistance';
 import {verticalGlyphAdjustment} from './verticalGlyph';
@@ -98,6 +99,31 @@ function drawText(ctx:Context,text:EditableText){
   const font=['serif','sans-serif','monospace'].includes(family)?family:`"${family}", sans-serif`;
   ctx.font=`${text.size}px ${font}`;
   ctx.fillStyle=text.color;ctx.textBaseline='top';
+  if(text.styleRanges?.length){
+    const laidOut=layoutStyledText(text,(character,size)=>{
+      ctx.font=size+'px '+font;
+      return ctx.measureText(character).width;
+    });
+    ctx.textAlign='left';
+    for(const line of laidOut.lines){
+      const left=alignedTextLineStart(text,line.width);
+      for(const glyph of line.glyphs){
+        ctx.save();
+        ctx.font=glyph.size+'px '+font;
+        ctx.fillStyle=glyph.color;
+        if(text.vertical){
+          const cell={x:text.origin.x-line.offset,y:text.origin.y+glyph.position};
+          const placement=verticalGlyphAdjustment(glyph.character,glyph.size);
+          ctx.textAlign='center';
+          ctx.translate(cell.x+placement.dx,cell.y+placement.dy+glyph.size/2);
+          if(placement.rotate)ctx.rotate(Math.PI/2);
+          ctx.fillText(glyph.character,0,-glyph.size/2);
+        }else ctx.fillText(glyph.character,left+glyph.position,text.origin.y+line.offset);
+        ctx.restore();
+      }
+    }
+    return;
+  }
   const lines=layoutEditableText(text,characters=>{
     const width=ctx.measureText(characters).width;
     return text.spacing?width+Math.max(0,Array.from(characters).length-1)*text.spacing:width;
