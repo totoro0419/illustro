@@ -167,6 +167,9 @@ export function applyShapePreviewMask(
   }
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
     const at=(y*outputWidth+x)*4;
+    // An already transparent shape pixel cannot become visible through a
+    // selection mask. Avoid costly 4K mask tile lookups for empty canvas area.
+    if(pixels[at+3]===0)continue;
     const left=x*width/outputWidth,top=y*height/outputHeight;
     const right=(x+1)*width/outputWidth,bottom=(y+1)*height/outputHeight;
     const coverage=downscaled&&mask.shape==='rectangle'
