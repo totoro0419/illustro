@@ -1,10 +1,20 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`bae83ac9dc8d`](https://github.com/totoro0419/illustro/commit/bae83ac9dc8db232c73760765ffac869919d7789)
+**照合対象のコードHEAD:** [`ac290d9e`](https://github.com/totoro0419/illustro/commit/ac290d9ecfb3cd5e961cc9342188844855c8f03f)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
+
+### 2026-11-19 定期自動開発①｜C08-001・C08-011・C08-014の追加改善
+
+- **C08-001（隙間の誤接続）**：自動補完を近い方向に向き合う毛先に限定（向きの一致基準を0.7から0.9へ）。既に自動接続した線との交差・接触を拒否。4096件の候補上限に達した後は、候補一覧に載らない壁を生成しない。正しい斜め線の隙間補完は保持。
+- **C08-014（候補提示の誤接続）**：修復済みの橋をまたぐ候補、同じ毛先を二重使用する候補、互いに交差する候補を除外。曖昧な交差部は自動で閉じず、手動操作に委ねる。
+- **C08-011（高解像度の処理量）**：gap=1では距離条件を満たす斜め隙間が存在しないため、不要な斜め4方向の全画面走査を省略。候補上限到達後も追加走査を打ち切る。4K実測値は未取得。
+- **コード・テスト**：[`75354135`](https://github.com/totoro0419/illustro/commit/75354135bedff7a5443283cf189cc92b10a84096) から [`ac290d9e`](https://github.com/totoro0419/illustro/commit/ac290d9ecfb3cd5e961cc9342188844855c8f03f) まで。交差候補、斜め毛先、候補4096件上限、gap=1と正しい斜め補完の回帰テストを追加。
+- **検証**：最終コードHEAD `ac290d9e` の[統合CI #44377199432](https://github.com/totoro0419/illustro/actions/runs/44377199432) と [Core CI #44377207606](https://github.com/totoro0419/illustro/actions/runs/44377207606) は両方 completed/success。Core・Brush・Editorテスト、型検査、本番ビルド成功。既存の文書分類診断には従来からの警告が残る。
+- **残件**：3件とも部分対応のまま。複雑な線画の自動接続精度、4K実測、Android実機、旧作品の保存復元・Undo/Redoの独立実機検証は未完了。保存形式・履歴構造は変更していない。全体の記録上の部分対応37件、根拠未確認0件、修正記録あり・個別完了未認定92件を維持。
+- **次回着手**：C06-001/002（`apps/editor/src/brushSurface.ts`、`apps/editor/src/selection/tileCapture.ts`、`packages/brush-rt/src/stroke-overlay.mjs`）の選択付き消しゴム・特殊合成の仮表示とGPU読戻し。競合時はC08-003/015（`apps/editor/src/fill/liveRegionPreview.ts`、`apps/editor/src/fill/incrementalBoundary.ts`）。
 
 ### 2026-11-19 定期自動開発②｜C10-002・C10-015の追加改善
 
@@ -207,7 +217,7 @@
 | [C07-014](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-014) | B/P2 | 縮小用の画素平均が固定分割で画質が変わる可能性 | **部分対応・コード残件あり** | 非アフィンも固定点サンプルを撤去し、曲がりに応じた分割と画素面積の積分へ変更。強い曲がりで分割上限に達する場合の誤差・4K負荷は未確認 | [#86](https://github.com/totoro0419/illustro/pull/86) |
 | [C07-015](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-015) | C/P2 | イラストの種類別に画素補間方法をおすすめする案 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#86](https://github.com/totoro0419/illustro/pull/86) |
 | [C07-016](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-016) | C/P2 | レイヤー一覧から変形・リンク・マスク状態を理解できる案 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#86](https://github.com/totoro0419/illustro/pull/86) |
-| [C08-001](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-001) | A/P1 | 隙間補完が線端を確認せず近接する黒い画素を接続し細い通路もふさぐ | **部分対応・コード残件あり** | 毛先や交差等での隙間接続精度の追加改善余地 | [#81](https://github.com/totoro0419/illustro/pull/81) |
+| [C08-001](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-001) | A/P1 | 隙間補完が線端を確認せず近接する黒い画素を接続し細い通路もふさぐ | **部分対応・コード残件あり** | 毛先や交差等での隙間接続精度の追加改善余地。追加：毛先方向の一致基準を強化し、交差する自動橋と未記録の4097件目以降の橋を抑止。コード [`ac290d9e`](https://github.com/totoro0419/illustro/commit/ac290d9ecfb3cd5e961cc9342188844855c8f03f)。複雑線画の精度は未確認 | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C08-002](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-002) | A/P1 | 透明画素だけ塗る条件が塗り先ではなく参照画像の透明度を見る | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C08-003](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-003) | A/P1 | ドラッグ塗りで操作中に塗る領域が逐次仮表示されない | **部分対応・コード残件あり** | 通常色塗りは原寸の確定用判定をWorkerで共有。線画領域は確定用筆跡の2倍サンプル、最大4点の縮小被覆、細い領域の表示保証、移動中の終点差替えに対応。線画の原寸マスク完全一致・囲いの途中表示は未完成 | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C08-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-004) | A/P1 | 線画領域を最大420px程度に縮めるため細部の確認が難しい | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#81](https://github.com/totoro0419/illustro/pull/81) |
@@ -217,10 +227,10 @@
 | [C08-008](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-008) | A/P2 | 元の色と塗り替える色を別々に指定できない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C08-009](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-009) | A/P2 | 統合表示から特定レイヤーのみ除外して塗り参照に使えない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C08-010](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-010) | A/P2 | 保存した色指示線の位置や色を直接再編集する入口がない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#81](https://github.com/totoro0419/illustro/pull/81) |
-| [C08-011](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-011) | B/P1 | 塗り候補の再計算ごとに新しいWorkerと画像の複製が必要になる懸念 | **部分対応・コード残件あり** | 通常色塗りの途中表示は参照画像をWorkerで再利用。隙間補完なしの壁複製を回避し、塗りマスクの画素だけで結果を比較。確実な無変更操作では4K結果画像の確保を省略。通常の巨大候補や他方式の複製削減は継続 | [#81](https://github.com/totoro0419/illustro/pull/81) |
+| [C08-011](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-011) | B/P1 | 塗り候補の再計算ごとに新しいWorkerと画像の複製が必要になる懸念 | **部分対応・コード残件あり** | 通常色塗りの途中表示は参照画像をWorkerで再利用。隙間補完なしの壁複製を回避し、塗りマスクの画素だけで結果を比較。確実な無変更操作では4K結果画像の確保を省略。通常の巨大候補や他方式の複製削減は継続。追加：gap=1の不要な斜め全画面走査と候補上限後の追加走査を省略。コード [`ac290d9e`](https://github.com/totoro0419/illustro/commit/ac290d9ecfb3cd5e961cc9342188844855c8f03f)。4K実測・通常の大規模候補は継続 | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C08-012](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-012) | B/P1 | 塗り計算を途中で中断できず処理停止時の復帰が難しい懸念 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C08-013](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-013) | B/P2 | 複雑な線で閉領域の穴と外側の分類が正しいか未検証 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#81](https://github.com/totoro0419/illustro/pull/81) |
-| [C08-014](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-014) | B/P2 | 隙間候補の点数付けが毛先や交差部を誤接続する可能性 | **部分対応・コード残件あり** | 候補を交差部から離れた、互いに向き合う毛先に限定。垂直の毛先・交差を誤接続する候補を除外。複雑な線画での正解率と実機操作は未検証 | [#81](https://github.com/totoro0419/illustro/pull/81) |
+| [C08-014](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-014) | B/P2 | 隙間候補の点数付けが毛先や交差部を誤接続する可能性 | **部分対応・コード残件あり** | 候補を交差部から離れた、互いに向き合う毛先に限定。垂直の毛先・交差を誤接続する候補を除外。複雑な線画での正解率と実機操作は未検証。追加：交差・同一毛先の競合候補と修復済み橋への再接続を拒否。コード [`ac290d9e`](https://github.com/totoro0419/illustro/commit/ac290d9ecfb3cd5e961cc9342188844855c8f03f)。複雑線画・Androidは未確認 | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C08-015](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-015) | C/P2 | 線画の変更部分だけ再解析する構造改善案 | **部分対応・コード残件あり** | 空白線画の全領域探索を省略し、部分変更の番号付けを統合。実際に壁が変わらない操作はグラフを再利用。複雑な変更では全体再解析・番号付けが残る | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C08-016](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C08.md#c08-016) | C/P2 | 通常塗りと高度な線画管理を分けるUI設計案 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#81](https://github.com/totoro0419/illustro/pull/81) |
 | [C09-001](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-001) | A/P1 | 二点・三点透視定規で描きたい消失点方向を自動選択できない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#89](https://github.com/totoro0419/illustro/pull/89) |
