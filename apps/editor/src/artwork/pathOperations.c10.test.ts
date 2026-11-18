@@ -91,6 +91,14 @@ describe('C10 vector editing geometry',()=>{
     // returning a visibly inaccurate last segment.
     expect(()=>sampledPath(longCurve,.00001,8192)).toThrow(/精度/);
   });
+  it('honors the requested error and point budget for large ellipses and rectangles',()=>{
+    const ellipse:EditablePath={...rectangle(0,4000),shape:'ellipse',
+      points:[{x:0,y:0},{x:4000,y:4000}]};
+    expect(sampledPath(ellipse,.5,2049)[0]!.length).toBeGreaterThan(40);
+    expect(()=>sampledPath(ellipse,.000001,8192)).toThrow(/精度/);
+    expect(()=>sampledPath(ellipse,.5,8)).toThrow(/点数/);
+    expect(()=>sampledPath(rectangle(0,40),.5,4)).toThrow(/点数/);
+  });
   it('preserves the original operands when two closed shapes are combined',async()=>{
     const first=rectangle(0,40),second=rectangle(20,60);
     const combined=await combineShapes(first,second,'union');

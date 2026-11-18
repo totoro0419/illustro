@@ -139,10 +139,20 @@ export function eraseWholeStroke(path:EditablePath,position:ArtPoint):EditablePa
  */
 export function sampledPath(path:EditablePath,tolerance=.5,maxPoints=65536):ArtPoint[][]{
   const anchors=path.points,first=anchors[0]!,last=anchors.at(-1)!;
-  if(path.shape==='rectangle')return [[first,{x:last.x,y:first.y},last,{x:first.x,y:last.y},first]];
+  if(path.shape==='rectangle'){
+    if(maxPoints<5)throw Error('図形の輪郭に必要な点数を確保できません。');
+    return [[first,{x:last.x,y:first.y},last,{x:first.x,y:last.y},first]];
+  }
   if(path.shape==='ellipse'){
     const cx=(first.x+last.x)/2,cy=(first.y+last.y)/2,rx=Math.abs(first.x-last.x)/2,ry=Math.abs(first.y-last.y)/2;
-    const count=Math.min(2048,Math.max(40,Math.ceil(Math.PI*Math.sqrt(Math.max(rx,ry)/(2*Math.max(.05,tolerance))))));
+    const radius=Math.max(rx,ry);
+    const count=Math.min(2048,Math.max(40,Math.ceil(Math.PI*Math.sqrt(radius/(2*Math.max(.05,tolerance))))));
+    // The maximum sagitta of each elliptical arc is bounded by that of a
+    // circle with the major radius. Never silently exceed the caller's
+    // tolerance or point budget when converting a large ellipse to edges.
+    if(count+1>maxPoints)throw Error('図形の輪郭に必要な点数を確保できません。');
+    if(radius*(1-Math.cos(Math.PI/count))>tolerance)
+      throw Error('楕円の精度を保てる点数を超えました。許容幅を広げてください。');
     return [Array.from({length:count+1},(_,i)=>{const t=i*2*Math.PI/count;return {x:cx+Math.cos(t)*rx,y:cy+Math.sin(t)*ry};})];
   }
   const groups:ArtPoint[][]=[];
