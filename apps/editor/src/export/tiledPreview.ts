@@ -6,10 +6,15 @@ export function canUseTiledHistoryPreview(
   frozen:Pick<FrozenExport,'width'|'height'|'layers'|'basePixels'>,
   targetWidth:number,targetHeight:number,
 ):boolean{
-  if(!Number.isSafeInteger(targetWidth)||!Number.isSafeInteger(targetHeight)||
-     targetWidth<1||targetHeight<1||targetWidth>frozen.width||targetHeight>frozen.height||
-     targetWidth*targetHeight>128_000||!frozen.layers.length)return false;
-  return true;
+  if(!Number.isSafeInteger(frozen.width)||!Number.isSafeInteger(frozen.height)||
+     !Number.isSafeInteger(targetWidth)||!Number.isSafeInteger(targetHeight)||
+     frozen.width<1||frozen.height<1||targetWidth<1||targetHeight<1||
+     targetWidth>frozen.width||targetHeight>frozen.height||!frozen.layers.length)return false;
+  const targetPixels=targetWidth*targetHeight;
+  // Comparison images can be 1600x1200. Keep their pixel accumulator bounded,
+  // and use tiled replay only when it avoids a substantially larger full image.
+  return targetPixels<=2_000_000&&
+    (targetPixels<=128_000||frozen.width*frozen.height>=targetPixels*2);
 }
 
 /** Yield between costly history tiles even when the tab is hidden.
@@ -30,7 +35,12 @@ export function createTiledPreviewAccumulator(
      targetWidth>sourceWidth||targetHeight>sourceHeight)
     throw Error('縮小画像の大きさが正しくありません。');
   // Only thumbnail-resolution accumulators are held, not a 4000px RGBA image.
-  const sum=new Float64Array(targetWidth*targetHeight*4);
+  if(!Number.isSafeInteger(targetWidth)||!Number.isSafeInteger(targetHeight)||
+     targetWidth*targetHeight>2_000_000)throw Error('縮小画像が大きすぎます。');
+  // Four float32 accumulators hold premultiplied RGB and alpha. Each target
+  // pixel receives at most unit area, so float32 avoids the 61 MB float64
+  // accumulator for 1600x1200 comparisons without changing source precision.
+  const sum=new Float32Array(targetWidth*targetHeight*4);
   const scaleX=targetWidth/sourceWidth,scaleY=targetHeight/sourceHeight;
   function addTile(tile:Uint8Array|Uint8ClampedArray,originX:number,originY:number,tileSize:number){
     if(tile.byteLength!==tileSize*tileSize*4||!Number.isSafeInteger(originX)||!Number.isSafeInteger(originY))
