@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type LayerId} from '@illustro/core';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,moveShapeAnchor} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -131,5 +131,22 @@ describe('C09-004 area-averaged elliptical selection',()=>{
     expect(fraction).toBeGreaterThan(.75);
     expect(fraction).toBeLessThan(.8);
     expect(ellipsePreviewCoverage({...mask,inverted:true},0,0,2,2)).toBeCloseTo(1-fraction,8);
+  });
+});
+describe('C09-005/015 live handle geometry',()=>{
+  it('moves a cubic anchor and both tangent handles without changing its neighbors',()=>{
+    const points=[
+      {x:10,y:20,inX:7,inY:18,outX:13,outY:22},
+      {x:40,y:50,inX:37,inY:45,outX:42,outY:55}
+    ];
+    const next=moveShapeAnchor(points,0,{x:20,y:35});
+    expect(next[0]).toEqual({x:20,y:35,inX:17,inY:33,outX:23,outY:37});
+    expect(next[1]).toEqual(points[1]);
+    expect(points[0]).toEqual({x:10,y:20,inX:7,inY:18,outX:13,outY:22});
+  });
+  it('keeps plain anchors free of synthesized handles and ignores stale indices',()=>{
+    const points=[{x:1,y:2},{x:3,y:4}];
+    expect(moveShapeAnchor(points,1,{x:8,y:9})).toEqual([{x:1,y:2},{x:8,y:9}]);
+    expect(moveShapeAnchor(points,99,{x:5,y:6})).toEqual(points);
   });
 });

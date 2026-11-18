@@ -108,6 +108,17 @@ export function applyShapePreviewMask(
     pixels[at+3]=Math.round(pixels[at+3]!*coverage);
   }
 }
+/** Keep the control handles attached to an anchor while moving it.
+ * Both the live preview and the eventual commit use this same geometry. */
+export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:ArtPoint):ArtPoint[]{
+  const point=points[index];
+  if(!point)return [...points];
+  const dx=next.x-point.x,dy=next.y-point.y;
+  const moved={...point,x:next.x,y:next.y,
+    ...(point.inX===undefined?{}:{inX:point.inX+dx,inY:point.inY!+dy}),
+    ...(point.outX===undefined?{}:{outX:point.outX+dx,outY:point.outY!+dy})};
+  return points.map((candidate,i)=>i===index?moved:candidate);
+}
 export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const heading=document.createElement('summary');heading.textContent='図形・グラデーション';
@@ -163,6 +174,10 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   let editing:LayerId|undefined,previewId=0,lineStyle:NonNullable<EditablePath['lineStyle']>='solid';
   let previewRunning=false,previewPending=false,editingHandles=false;
   let previewAbort:AbortController|null=null;
+  let liveVersion=0,liveRunning=false,liveAbort:AbortController|null=null;
+  type LiveCandidate={content:EditablePath|EditableGradient;mask:LayerMask|null|undefined;
+    context:NonNullable<ReturnType<ArtworkActions['context']>>;version:number;replacement:LayerId|undefined};
+  let livePending:LiveCandidate|null=null;
   let editedOpacity:number|undefined,originalStrokeLayer:string|undefined;
   let draftDrawing:NonNullable<ReturnType<ArtworkActions['context']>>['drawing']|undefined;
   let draftMask:LayerMask|null=null,savedBoundary:EditablePath|undefined;
@@ -215,13 +230,50 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       ...(originalStrokeLayer?{originalStrokeLayer}:{})}) as EditablePath;
   }
   function stopHandles(){
-    if(editingHandles)draftDrawing?.setCanvasEditGesture(null);
     editingHandles=false;
+    ++liveVersion;
+    livePending=null;
+    liveAbort?.abort();
+    draftDrawing?.showArtworkPreview(null);
+    draftDrawing?.setCanvasEditGesture(null);
+  }
+  /** Keep at most one raster preview in flight, coalescing fast pointer events.
+   * A small Worker-rendered image follows the drag without allocating 4K RGBA
+   * on the UI thread; stale results are never published after release/cancel. */
+  async function pumpLive(){
+    if(liveRunning)return;
+    liveRunning=true;
+    try{
+      while(editingHandles&&livePending){
+        const task=livePending;livePending=null;
+        const {context,content,mask,version,replacement}=task;
+        if(typeof OffscreenCanvas==='undefined')continue;
+        const scale=Math.min(1,512/Math.max(context.width,context.height));
+        const outputWidth=Math.max(1,Math.round(context.width*scale));
+        const outputHeight=Math.max(1,Math.round(context.height*scale));
+        const abort=new AbortController();liveAbort=abort;
+        try{
+          const pixels=await runArtwork({width:context.width,height:context.height,
+            outputWidth,outputHeight,mask,previewMask:true,content},
+            {signal:abort.signal,priority:'preview'});
+          if(abort.signal.aborted||version!==liveVersion||!editingHandles||
+            draftDrawing!==context.drawing||api.context()?.drawing!==context.drawing)continue;
+          if(content.kind==='path')
+            applyShapePreviewMask(pixels,mask,context.width,context.height,outputWidth,outputHeight);
+          context.drawing.showArtworkPreview(new ImageData(pixels,outputWidth,outputHeight),
+            false,replacement??null);
+        }catch(error){
+          if(!abort.signal.aborted&&version===liveVersion)
+            status.textContent=error instanceof Error?error.message:String(error);
+        }
+      }
+    }finally{liveRunning=false;liveAbort=null;}
   }
   /** Show editable points on the actual canvas; the drawing engine owns the live drag outline. */
   function editOnCanvas(){
     const current=api.context();
     if(!current||current.drawing!==draftDrawing)throw Error('作品を開き直したため、編集をやり直してください。');
+    stopHandles();
     // A generated preset must become editable path points before the first handle drag;
     // otherwise each preview would regenerate the preset and discard edited vertices.
     if(type.value==='shape'&&(shape.value==='rounded'||shape.value==='polygon')){
@@ -234,23 +286,21 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       }
     }
     const content=data();
-    const edits:Array<{point:ArtPoint;change:(point:ArtPoint)=>void}>=[];
+    const edits:Array<{point:ArtPoint;change:(point:ArtPoint)=>void;
+      preview:(point:ArtPoint)=>EditablePath|EditableGradient}>=[];
     const edges:Array<[number,number]>=[];
     if(content.kind==='gradient'){
       const start=content.start,end=content.end;
-      edits.push({point:start,change:point=>setPoints([point,end])},
-        {point:end,change:point=>setPoints([start,point])});
+      edits.push({point:start,change:point=>setPoints([point,end]),
+        preview:point=>({...content,start:point})},
+        {point:end,change:point=>setPoints([start,point]),
+        preview:point=>({...content,end:point})});
       edges.push([0,1]);
     }else{
       if(content.points.length>128)throw Error('編集点が128個を超えています。必要な点を減らしてから調整してください。');
       for(const [index,point] of content.points.entries()){
-        edits.push({point,change:next=>{
-          const dx=next.x-point.x,dy=next.y-point.y;
-          const moved={...point,x:next.x,y:next.y,
-            ...(point.inX===undefined?{}:{inX:point.inX+dx,inY:point.inY!+dy}),
-            ...(point.outX===undefined?{}:{outX:point.outX+dx,outY:point.outY!+dy})};
-          setPoints(content.points.map((p,i)=>i===index?moved:p));
-        }});
+        edits.push({point,change:next=>setPoints(moveShapeAnchor(content.points,index,next)),
+          preview:next=>({...content,points:moveShapeAnchor(content.points,index,next)})});
         if(index)edges.push([index-1,index]);
       }
       if(content.closed&&content.points.length>2)edges.push([content.points.length-1,0]);
@@ -259,23 +309,35 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
           const i=edits.length;
           edits.push({point:{x:point.inX,y:point.inY},change:next=>{
             setPoints(content.points.map((p,k)=>k===index?{...p,inX:next.x,inY:next.y}:p));
-          }});edges.push([index,i]);
+          },preview:next=>({...content,points:content.points.map((p,k)=>
+            k===index?{...p,inX:next.x,inY:next.y}:p)})});edges.push([index,i]);
         }
         if(point.outX!==undefined&&point.outY!==undefined){
           const i=edits.length;
           edits.push({point:{x:point.outX,y:point.outY},change:next=>{
             setPoints(content.points.map((p,k)=>k===index?{...p,outX:next.x,outY:next.y}:p));
-          }});edges.push([index,i]);
+          },preview:next=>({...content,points:content.points.map((p,k)=>
+            k===index?{...p,outX:next.x,outY:next.y}:p)})});edges.push([index,i]);
         }
       }
     }
     if(edits.length>256)throw Error('表示する編集点が多すぎます。');
     current.drawing.setCanvasEditGesture({path:false,width:2,color:'#43bfea',complete:()=>{},
-      pointEdit:{points:edits.map(item=>item.point),edges,closed:false,commit:(index,point)=>{
-        edits[index]?.change(point);
-        void refresh();
-        editOnCanvas();
-      }}});
+      cancel:()=>{++liveVersion;livePending=null;liveAbort?.abort();current.drawing.showArtworkPreview(null);},
+      pointEdit:{points:edits.map(item=>item.point),edges,closed:false,
+        preview:(index,point)=>{
+          const candidate=edits[index]?.preview(point);
+          if(!candidate||!editingHandles)return;
+          livePending={content:candidate,mask:getMask(),context:current,
+            version:++liveVersion,replacement:editing};
+          void pumpLive();
+        },
+        commit:(index,point)=>{
+          stopHandles();
+          edits[index]?.change(point);
+          void refresh();
+          editOnCanvas();
+        }}});
     editingHandles=true;
     status.textContent='丸い編集点を直接ドラッグできます。位置を確認してから「適用」を押してください。';
   }

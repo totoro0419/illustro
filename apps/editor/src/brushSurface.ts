@@ -45,7 +45,10 @@ type CanvasEditGesture=Readonly<{
   cancel?:()=>void;
   /** At most once per animation frame while tracing a canvas interaction. */
   update?:(points:readonly MaskStrokePoint[])=>void;
-  pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;commit:(index:number,point:MaskPoint)=>void}>;
+  pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;
+    /** Called at most once per animation frame while a handle is dragged. */
+    preview?:(index:number,point:MaskPoint)=>void;
+    commit:(index:number,point:MaskPoint)=>void}>;
 }>;
 
 export class BrushSurface{
@@ -713,6 +716,12 @@ export class BrushSurface{
         dot.setAttribute('cy',String(points[i]!.y));
         dot.setAttribute('r',i===this.editPointIndex?'8':'6');
         dot.setAttribute('fill',gesture.pointEdit.fixed?.[i]?'#303640':'#fff');
+      }
+      // Geometry is rendered separately from the guide, so dragging never
+      // modifies the committed artwork or creates history transactions.
+      if(this.editPointIndex!==null&&this.editPoints.length){
+        const point=this.editPoints.at(-1)!;
+        gesture.pointEdit.preview?.(this.editPointIndex,{x:point.x,y:point.y});
       }
       return;
     }
