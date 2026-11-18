@@ -7,7 +7,8 @@ export class LiveSelectionBrushPreview{
  private result:MaskData;
  private processed=0;
  private settingsKey='';
- private lastPoint:SelectionBrushPoint|null=null;
+ private recentPoints:SelectionBrushPoint[]=[];
+ private recentStart=0;
  private minX=Infinity;private minY=Infinity;
  private maxX=-Infinity;private maxY=-Infinity;
  constructor(private readonly prior:MaskData){
@@ -15,10 +16,13 @@ export class LiveSelectionBrushPreview{
  }
  render(points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings,maxDimension=512):SelectionBrushPreviewRaster{
   const key=JSON.stringify(settings),{width,height}=this.prior;
-  // Pointer coalescing may replace the latest point without increasing
-  // the count. Replaying only the appended suffix would leave stale paint.
-  const old=points[this.processed-1],last=this.lastPoint;
-  const changed=!!last&&(!old||old.x!==last.x||old.y!==last.y||old.pressure!==last.pressure);
+  // Coalesced pointer samples may revise several recent points without
+  // changing the array length. Inspect a fixed-size tail, not the entire
+  // long stroke on every frame, and replay when any sample was revised.
+  const changed=this.recentPoints.some((saved,index)=>{
+   const point=points[this.recentStart+index];
+   return !point||point.x!==saved.x||point.y!==saved.y||point.pressure!==saved.pressure;
+  });
   if((this.settingsKey&&key!==this.settingsKey)||points.length<this.processed||changed){
    this.result={...this.prior,alpha:this.prior.alpha.slice()};this.processed=0;
    this.minX=this.minY=Infinity;this.maxX=this.maxY=-Infinity;
@@ -33,7 +37,8 @@ export class LiveSelectionBrushPreview{
    this.maxX=Math.max(this.maxX,point.x);this.maxY=Math.max(this.maxY,point.y);
   }
   this.processed=points.length;
-  this.lastPoint=points.length?{...points[points.length-1]!}:null;
+  this.recentStart=Math.max(0,points.length-8);
+  this.recentPoints=points.slice(this.recentStart).map(point=>({...point}));
   const radius=settings.size/2+2;
   const left=Math.max(0,Math.min(width,Math.floor(this.minX-radius)));
   const top=Math.max(0,Math.min(height,Math.floor(this.minY-radius)));
