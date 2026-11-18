@@ -42,6 +42,13 @@ export function reverseGradientStops(current:readonly GradientStop[]):GradientSt
 export function shapeGradientInitialMask(editing:LayerId|undefined,draftMask:LayerMask|null):LayerMask|null|undefined{
   return editing?undefined:draftMask;
 }
+/** Preserve the original layer mask in a preview when selection changes. */
+export function shapeGradientPreviewMask(
+  editing:LayerId|undefined,selected:Readonly<{id:LayerId;mask:LayerMask|null}>|null|undefined,
+  originalMask:LayerMask|null,draftMask:LayerMask|null
+):LayerMask|null{
+  return editing?(selected?.id===editing?selected.mask:originalMask):draftMask;
+}
 /** Exact box-average for a rectangular selection in a downscaled preview.
  * A tiny selection must not disappear just because the output pixel center
  * happens to fall outside it. Full-resolution rendering is unchanged. */
@@ -293,11 +300,8 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   let livePending:LiveCandidate|null=null;
   let editedOpacity:number|undefined,originalStrokeLayer:string|undefined;
   let draftDrawing:NonNullable<ReturnType<ArtworkActions['context']>>['drawing']|undefined;
-  let draftMask:LayerMask|null=null,savedBoundary:EditablePath|undefined;
-  const getMask=()=>{
-    const selected=api.context()?.selected;
-    return editing?(selected?.id===editing?selected.mask:null):draftMask;
-  };
+  let draftMask:LayerMask|null=null,editingMask:LayerMask|null=null,savedBoundary:EditablePath|undefined;
+  const getMask=()=>shapeGradientPreviewMask(editing,api.context()?.selected,editingMask,draftMask);
   const closedPaths=()=>api.context()?.paths.filter(item=>item.content.kind==='path'&&
     (item.content.closed||item.content.shape==='rectangle'||item.content.shape==='ellipse'))??[];
   function loadBoundaries(){
@@ -590,7 +594,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     stopHandles();
     const current=api.context();
     if(!current)throw Error('作品を開いてください。');
-    editing=undefined;editedOpacity=undefined;originalStrokeLayer=undefined;stroke.value=current.color;lineStyle='solid';
+    editing=undefined;editingMask=null;editedOpacity=undefined;originalStrokeLayer=undefined;stroke.value=current.color;lineStyle='solid';
     draftDrawing=current.drawing;draftMask=current.selectionMask();savedBoundary=undefined;loadBoundaries();
     applied.checked=false;view.value='normal';
     setPoints([{x:current.width*.22,y:current.height*.25},{x:current.width*.78,y:current.height*.75}]);
@@ -633,7 +637,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       const current=api.context(),selected=current?.selected.content;
       if(!current||!selected||selected.kind==='text')throw Error('図形かグラデーションのレイヤーを選んでください。');
       if(selected.kind==='path'&&selected.fillRuns)throw Error('複数色の文字輪郭は「ベクター線・点の編集」で点や色を調整してください。');
-      editing=current.selected.id;draftDrawing=current.drawing;
+      editing=current.selected.id;editingMask=current.selected.mask;draftDrawing=current.drawing;
       editedOpacity=selected.kind==='path'?selected.opacity:undefined;
       originalStrokeLayer=selected.kind==='path'?selected.originalStrokeLayer:undefined;
       if(selected.kind==='gradient'){
@@ -670,7 +674,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     },status),
     button('変更を取り消す',()=>{
       stopHandles();
-      ++previewId;editing=undefined;points=[];draftDrawing=undefined;draftMask=null;
+      ++previewId;editing=undefined;editingMask=null;points=[];draftDrawing=undefined;draftMask=null;
       preview.hidden=true;panel.open=false;status.textContent='変更を取り消しました。';
     },status)
   );
