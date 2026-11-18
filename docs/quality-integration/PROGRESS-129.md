@@ -1,19 +1,20 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`865e72e3`](https://github.com/totoro0419/illustro/commit/865e72e3a5b84de4711fd0c15404cf67f2cba5b0)
+**照合対象のコードHEAD:** [`08ed2e4d`](https://github.com/totoro0419/illustro/commit/08ed2e4dc328b9dbbd28b31debf4dd9a966007ea)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
 
-### 2026-11-19 定期自動開発②｜C09-004・C09-005・C09-009・C09-015（4 ID、連続修正）
+### 2026-11-19 定期自動開発②｜C09-004・C09-005・C09-009・C09-011・C09-015（5 ID、連続修正）
 
-- **C09-005 / C09-015（部分改善）**：図形・グラデーションの編集点を動かす途中表示で、`OffscreenCanvas` が使えないブラウザーでは描画を丸ごと省略していた条件を撤去。既存の通常Canvas描画へ切り替え、画面上の仮表示を復帰。通常倍率は最大512px、拡大時は768/1024pxまで細部を増やし、通常Canvasへの切替時は最大256pxに抑えて入力の重さを抑制。古い結果の表示抑止は維持。
-- **C09-009（部分改善）**：グラデーションの色帯とドラッグ用の色マーカーに、各停止点の不透明度を反映。透明部分には市松模様を敷き、透明度0の色も見分けられるように変更。保存データは変更しない。
-- **C09-004（部分改善）**：密度0の選択マスクでは、仮表示の全画素走査とマスク画像の読み取りを省略。色・透明度は変更しない。
-- **コード・回帰テスト**：[`ff17a630`](https://github.com/totoro0419/illustro/commit/ff17a63016fc43a19b78bd539baea5c8af0b863d) → [`d017ee89`](https://github.com/totoro0419/illustro/commit/d017ee891564aa75cb4f421a10e78c858572e669) → [`865e72e3`](https://github.com/totoro0419/illustro/commit/865e72e3a5b84de4711fd0c15404cf67f2cba5b0)（3コミット、回帰テスト5件追加）。ローカルの純粋な計算関数についてTypeScript strictと9境界ケースを実行。
-- **検証**：最終コードHEAD `865e72e3` の[統合CI #44413039292](https://github.com/totoro0419/illustro/actions/runs/44413039292)・[Core CI #44413049497](https://github.com/totoro0419/illustro/actions/runs/44413049497)は両方 **completed/success**。Core/Brush/Editorテスト、型検査、本番ビルドを通過。Android実機、実際のWorker非対応ブラウザー、高倍率の複雑なレイヤー表示、4K処理時間、旧作品の保存復元・Undo/Redoの独立実機検証は未実施。保存形式・履歴構造は変更なし。
-- **残件・次回**：4件とも追加改善であり完全解決とは認定しない。記録上の部分対応37件・実装根拠未確認0件・修正記録あり個別完了未認定92件を維持。次回は **C09-005/015** の実機での仮表示と複雑なレイヤー合成、**C09-004** の縮小時の小さなパス・画素マスク精度（`apps/editor/src/artwork/shapeGradient.ts`、`apps/editor/src/artwork/render.ts`）。タスク①と競合する場合は **C07-003** の特殊レイヤー変形へ切り替える。main・PR #73は変更せず、PR #75はDraft維持。
+- **C09-005 / C09-015（部分改善）**：図形・グラデーション編集点の途中表示で、`OffscreenCanvas` 非対応ブラウザーでは描画を省略していた条件を撤去。既存の通常Canvas描画へ切り替える。通常倍率は最大512px、拡大時は768/1024px、通常Canvasへの切替時は最大256pxに制限。古い結果の表示抑止を維持。
+- **C09-009（部分改善）**：グラデーションの色帯とドラッグ用マーカーへ各停止点の不透明度を反映。透明色には市松模様を敷き、表示と保存値の違いを減らす。
+- **C09-004（部分改善）**：密度0の選択マスクでは仮表示の全画素走査とマスク画像の読み取りを省略。元画像・透明度を変更しない。
+- **C09-011（部分改善）**：背景描画Workerの起動・描画が失敗したとき、図形・グラデーションも通常Canvas描画へ切り替える。以前は文字以外でWorker失敗をそのまま返していた。中止済みの描画は再実行せず、文字のフォント互換性判定を維持。Worker不在の実機での挙動・処理時間は未検証。
+- **コード・回帰テスト**：[`ff17a630`](https://github.com/totoro0419/illustro/commit/ff17a63016fc43a19b78bd539baea5c8af0b863d) → [`d017ee89`](https://github.com/totoro0419/illustro/commit/d017ee891564aa75cb4f421a10e78c858572e669) → [`865e72e3`](https://github.com/totoro0419/illustro/commit/865e72e3a5b84de4711fd0c15404cf67f2cba5b0) → [`08ed2e4d`](https://github.com/totoro0419/illustro/commit/08ed2e4dc328b9dbbd28b31debf4dd9a966007ea)（4コミット、回帰テスト7件追加）。純粋な計算・判定関数はローカルでTypeScript strictと15境界ケースを実行。
+- **検証**：最終コードHEAD `08ed2e4d` の[統合CI #44413518333](https://github.com/totoro0419/illustro/actions/runs/44413518333)・[Core CI #44413527360](https://github.com/totoro0419/illustro/actions/runs/44413527360)は両方 **completed/success**。Core/Brush/Editorテスト、型検査、本番ビルドを通過。Android実機、実際のWorker非対応ブラウザー、複雑なレイヤーの高倍率表示、4K処理時間、旧作品の保存復元・Undo/Redoの独立実機検証は未実施。保存形式・履歴構造は変更なし。
+- **残件・次回**：5件とも追加改善であり完全解決認定なし。記録上の部分対応37件・実装根拠未確認0件・修正記録あり個別完了未認定92件を維持。次回は **C09-005/015** の実機での仮表示と複雑レイヤーの合成、**C09-004** の縮小時の小さなパス・画素マスク精度（`apps/editor/src/artwork/shapeGradient.ts`、`apps/editor/src/artwork/render.ts`）。競合時は **C07-003** の特殊レイヤー変形へ。main・PR #73は変更せず、PR #75はDraft維持。
 
 ### 2026-11-19 定期自動開発①｜C06-002・C06-007・C06-015・C08-015（4 ID、連続修正）
 
