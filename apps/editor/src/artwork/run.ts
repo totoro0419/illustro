@@ -1,6 +1,7 @@
 import type {ArtworkJob} from './worker';
 import {renderArtwork} from './render';
 import {ensureFont} from './fonts';
+import {canRenderTextInArtworkWorker} from './textWorkerSafety';
 
 // Keep a small number of drawing workers alive. Creating one for every preview
 // causes repeated startup and can overload the browser during rapid edits.
@@ -83,9 +84,10 @@ export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortS
   if(signal?.aborted)throw abortError();
   if(job.content.kind==='text'&&job.content.fontAsset)await ensureFont(job.content.fontAsset);
   if(signal?.aborted)throw abortError();
-  // A font loaded on the document is not guaranteed to exist in a worker.
-  // Preserve text rendering compatibility; reuse the main-thread canvas.
-  if(job.content.kind==='text'||typeof OffscreenCanvas==='undefined'){
+  // Imported and named fonts stay on the document thread; browser Workers
+  // cannot be assumed to share the document's loaded FontFaceSet.
+  const genericText=canRenderTextInArtworkWorker(job.content);
+  if((job.content.kind==='text'&&!genericText)||typeof OffscreenCanvas==='undefined'){
     mainCanvas??=document.createElement('canvas');
     return renderArtwork(job.content,job,mainCanvas);
   }
@@ -98,5 +100,11 @@ export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortS
     }
     pending.push(task);
     pumpArtwork();
+  }).catch(error=>{
+    if(!genericText||signal?.aborted)throw error;
+    // Some browsers do not make generic font faces available in workers.
+    // Fall back to the original compatible main-thread renderer.
+    mainCanvas??=document.createElement('canvas');
+    return renderArtwork(job.content,job,mainCanvas);
   });
 }
