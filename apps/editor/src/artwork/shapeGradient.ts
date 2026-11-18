@@ -108,6 +108,20 @@ export function applyShapePreviewMask(
     pixels[at+3]=Math.round(pixels[at+3]!*coverage);
   }
 }
+/** The color-stop bar also works with a pen, touch, and keyboard. Keep
+ * the displayed position on the same 0.1% grid as its numeric field. */
+export function gradientStopPointerPosition(clientX:number,left:number,width:number):number|null{
+  if(!Number.isFinite(clientX)||!Number.isFinite(left)||!Number.isFinite(width)||width<=0)return null;
+  return Math.round(Math.max(0,Math.min(1,(clientX-left)/width))*1000)/1000;
+}
+export function gradientStopKeyboardPosition(current:number,key:string,shift=false):number|null{
+  if(!Number.isFinite(current))return null;
+  if(key==='Home')return 0;
+  if(key==='End')return 1;
+  if(key!=='ArrowLeft'&&key!=='ArrowRight')return null;
+  const delta=(shift?10:1)*(key==='ArrowRight'?1:-1);
+  return Math.max(0,Math.min(1000,Math.round(current*1000)+delta))/1000;
+}
 /** Keep the control handles attached to an anchor while moving it.
  * Both the live preview and the eventual commit use this same geometry. */
 export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:ArtPoint):ArtPoint[]{
@@ -326,7 +340,11 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     }
     if(edits.length>256)throw Error('表示する編集点が多すぎます。');
     current.drawing.setCanvasEditGesture({path:false,width:2,color:'#43bfea',complete:()=>{},
-      cancel:()=>{++liveVersion;livePending=null;liveAbort?.abort();current.drawing.showArtworkPreview(null);},
+      cancel:()=>{
+        editingHandles=false;++liveVersion;livePending=null;liveAbort?.abort();
+        current.drawing.showArtworkPreview(null);
+        status.textContent='編集点の移動を取り消しました。';
+      },
       pointEdit:{points:edits.map(item=>item.point),edges,closed:false,
         preview:(index,point)=>{
           const candidate=edits[index]?.preview(point);
@@ -363,18 +381,22 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       marker.type='button';marker.title='色 '+(index+1)+' をドラッグして位置を調整';
       marker.setAttribute('aria-label',marker.title);
       marker.style.cssText='position:absolute;top:4px;transform:translateX(-50%);width:17px;height:24px;border:2px solid white;border-radius:5px;background:'+stop.color+';box-shadow:0 0 0 1px #252525;cursor:ew-resize;touch-action:none;padding:0';
-      let dragging:number|null=null;
+      let dragging:number|null=null,positionBeforeDrag=stop.at;
+      const setPosition=(at:number)=>{
+        stops[index]={...stops[index]!,at};
+        const field=stopsArea.querySelectorAll<HTMLInputElement>('input[data-stop-position]')[index];
+        if(field)field.value=String(Math.round(at*1000)/10);
+        updateMarkers();updateBar();
+      };
       const move=(clientX:number)=>{
         const rect=bar.getBoundingClientRect();
-        if(rect.width<=0)return;
-        stops[index]={...stops[index]!,at:Math.round(Math.max(0,Math.min(1,(clientX-rect.left)/rect.width))*1000)/1000};
-        const field=stopsArea.querySelectorAll<HTMLInputElement>('input[data-stop-position]')[index];
-        if(field)field.value=String(Math.round(stops[index]!.at*1000)/10);
-        updateMarkers();updateBar();
+        const at=gradientStopPointerPosition(clientX,rect.left,rect.width);
+        if(at!==null)setPosition(at);
       };
       marker.onpointerdown=event=>{
         if(event.button!==0)return;
-        event.preventDefault();dragging=event.pointerId;marker.setPointerCapture(event.pointerId);move(event.clientX);
+        event.preventDefault();positionBeforeDrag=stops[index]!.at;
+        dragging=event.pointerId;marker.setPointerCapture(event.pointerId);move(event.clientX);
       };
       marker.onpointermove=event=>{if(dragging===event.pointerId)move(event.clientX);};
       const finish=(event:PointerEvent)=>{
@@ -384,7 +406,17 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         void refresh();
       };
       marker.onpointerup=finish;
-      marker.onpointercancel=event=>{if(dragging!==event.pointerId)return;dragging=null;void refresh();};
+      marker.onpointercancel=event=>{
+        if(dragging!==event.pointerId)return;
+        dragging=null;setPosition(positionBeforeDrag);
+        if(marker.hasPointerCapture(event.pointerId))marker.releasePointerCapture(event.pointerId);
+        void refresh();
+      };
+      marker.onkeydown=event=>{
+        const at=gradientStopKeyboardPosition(stops[index]!.at,event.key,event.shiftKey);
+        if(at===null)return;
+        event.preventDefault();setPosition(at);void refresh();
+      };
       markers.push(marker);bar.append(marker);
     }
     updateMarkers();stopsArea.append(bar);
