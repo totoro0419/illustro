@@ -257,7 +257,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         const abort=new AbortController();liveAbort=abort;
         try{
           const pixels=await runArtwork({width:context.width,height:context.height,
-            outputWidth,outputHeight,mask,previewMask:true,content},
+            outputWidth,outputHeight,mask:mask??null,previewMask:true,content},
             {signal:abort.signal,priority:'preview'});
           if(abort.signal.aborted||version!==liveVersion||!editingHandles||
             draftDrawing!==context.drawing||api.context()?.drawing!==context.drawing)continue;
