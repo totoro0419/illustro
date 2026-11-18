@@ -634,3 +634,15 @@ GitHubの各PRメタデータ、全12件の変更ファイル、各HEADに結び
 - 最新HEAD `d50ec20c` の [統合CI #44211817176](https://github.com/totoro0419/illustro/actions/runs/44211817176) は **success**。ジョブのCore・Brush・Editorテスト、型検査、Editor本番ビルドの各ステップ成功を確認。[Core CI #44211825207](https://github.com/totoro0419/illustro/actions/runs/44211825207) もsuccess。旧`prep:check`の未分類文書に起因する既知の診断失敗は **PASSではない**（統合CI内で診断扱い）。
 - 2026-11-18作成の新規PRは **0件**。既存12担当PRは **12/12統合済み**、PR #75とPR #73はDraft・未マージ。`main` は `bdc7135b` から変更なし。調査原本9ファイル、既存129問題ID、A/B/C分類を保持し、**独立解決確認0/129**。Androidペン/指・4K応答性・保存復元・画素一致は未検証。
 - [Issue #74の共有表示変更報告](https://github.com/totoro0419/illustro/issues/74#issuecomment-6965685729) は既に記録されているため、同内容の重複コメントは行わない。新規PRの統合・mainへの変更なし。
+
+
+## 2026-11-18 11時台 JST — C08/C09/C10追加差分の再確認・統合CI照合
+
+- 前回台帳更新コミット [`3bf39b93`](https://github.com/totoro0419/illustro/commit/3bf39b937b045857075a82df58f178137ad15822) から、今回の確認HEAD [`0970cb1b`](https://github.com/totoro0419/illustro/commit/0970cb1b9eb993785f8cbbc512d0e8f77aebb5c3) まで、GitHub比較で **16コミット・11ファイル変更**（ahead=16、behind=0）。この追加は既存の統合ブランチへの直接コミットであり、新しい実装PRのマージではない。
+- **C08**：`fill/liveColorPreview.ts` と `fill/panel.ts` に色塗りライブ仮表示を接続。準備を非同期化し、古い結果を操作識別子で破棄する設計。確定画像との画素一致、Androidでの遅延は未検証。
+- **C09**：`artwork/gradientMap.ts` に階調確認表示、`gradientToneInspection.ts` と単体テストを追加。グラデーションの実機画質は未検証。
+- **C10**：`artwork/run.ts` と `textWorkerSafety.ts` に標準フォントに限定したWorker描画経路を追加。カスタム文字は従来のCanvas処理を維持。`artwork/pathOperations.ts` はAdaptive Bézierの点数予算内での折れ線化を改善。保存・Undo/Redoと旧作品の実データ互換性は未検証。
+- 変更ファイル11件は `gradientMap.ts`、`gradientToneInspection.ts/.test.ts`、`pathOperations.ts/.c10.test.ts`、`run.ts`、`textWorkerSafety.ts/.test.ts`、`fill/liveColorPreview.ts/.test.ts`、`fill/panel.ts`。今回の比較に **`apps/editor/src/main.ts` と `docs/quality-audit/` の変更なし**。共通描画・保存・履歴の回帰を引き続き要確認。
+- 最終HEAD `0970cb1b9eb993785f8cbbc512d0e8f77aebb5c3` の [統合CI #44219244865](https://github.com/totoro0419/illustro/actions/runs/44219244865) は **success**。ジョブのCore/Brush/Editorテスト、型検査、Editor本番ビルドの各ステップもsuccess。[Core CI #44219251079](https://github.com/totoro0419/illustro/actions/runs/44219251079) もsuccess。ただし旧`prep:check`は従来の未分類ドキュメントに起因する診断失敗を含み、**prep:check自体のPASSとは扱わない**。
+- 11月18日作成の新規PRは **0件**。12担当PRは既に **12/12統合済み**、PR #75と原調査PR #73は **Draft・未マージ**。PR #73の原調査9ファイル・129件のID・A/B/C確度（81/29/19）は改変しない。`main` のHEADは `bdc7135b51033982d90ea5dad104bb04fc107df2` から変更なし。
+- **独立解決確認0/129件**。Androidペン/指、4000×4000、画素一致、旧作品の保存復元は未検証。今回の新規PRマージはなし。共有変更の内容と検査は [Issue #74の既存報告](https://github.com/totoro0419/illustro/issues/74#issuecomment-6966672250) に記録済みのため重複コメントは行わない。
