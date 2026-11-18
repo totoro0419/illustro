@@ -72,3 +72,46 @@ export function tryIncrementalBoundaryAddition(
  for(const index of changes){nextWalls[index]=1;nextLabels[index]=0;}
  return {...graph,walls:nextWalls,labels:nextLabels,hasInk:true};
 }
+
+/** Remove a local wall only if each added open pixel joins exactly one region.
+ * All four wall-separated scanline neighbors must also belong to that region;
+ * this preserves the topology metadata used by nested-region filling. */
+export function tryIncrementalBoundaryRemoval(graph:RegionGraph,points:readonly Point[]):RegionGraph|null{
+ if(!points.length||graph.candidates.length||!graph.count)return null;
+ const {width,height,walls,bridges,labels}=graph;
+ if(width<5||height<5||walls.length!==width*height||labels.length!==walls.length||bridges.length!==walls.length)return null;
+ const removed=new Map<number,number>();
+ const labelAt=(at:number)=>removed.get(at)??labels[at]!;
+ const wallAt=(at:number)=>!!walls[at]&&!removed.has(at);
+ for(let i=0;i<points.length;i++){
+   const a=points[Math.max(0,i-1)]!,b=points[i]!;
+   const length=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y));
+   if(!Number.isFinite(length)||length>8192)return null;
+   const steps=Math.max(1,Math.ceil(length*2));
+   for(let j=0;j<=steps;j++){
+     const x=Math.floor(a.x+(b.x-a.x)*j/steps),y=Math.floor(a.y+(b.y-a.y)*j/steps);
+     if(x<=1||y<=1||x>=width-2||y>=height-2)return null;
+     const at=y*width+x;
+     if(!wallAt(at))continue;
+     if(bridges[at]||removed.size>=8192)return null;
+     const adjacent=[at-1,at+1,at-width,at+width].filter(index=>!wallAt(index));
+     const id=adjacent.length?labelAt(adjacent[0]!):0;
+     if(!id||adjacent.some(index=>labelAt(index)!==id))return null;
+     // The graph's topology is built from horizontal/vertical label runs.
+     // Bound this local search; long walls safely use the full analyzer.
+     for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]] as const){
+       let nx=x+dx,ny=y+dy,steps=0;
+       while(nx>=0&&nx<width&&ny>=0&&ny<height&&wallAt(ny*width+nx)){
+         if(++steps>64)return null;
+         nx+=dx;ny+=dy;
+       }
+       if(nx<0||nx>=width||ny<0||ny>=height||labelAt(ny*width+nx)!==id)return null;
+     }
+     removed.set(at,id);
+   }
+ }
+ if(!removed.size)return null;
+ const nextWalls=walls.slice(),nextLabels=labels.slice();
+ for(const [at,id] of removed){nextWalls[at]=0;nextLabels[at]=id;}
+ return {...graph,walls:nextWalls,labels:nextLabels,hasInk:nextWalls.some(Boolean)};
+}

@@ -21,4 +21,10 @@ describe('C10-011 compatibility-preserving worker text policy',()=>{
    stroke:'#000000',fill:null,width:2,closed:false};
   expect(canRenderTextInArtworkWorker(vector)).toBe(false);
  });
+ it('allows an imported font only after its exact family has been prepared',()=>{
+  const imported={...base,fontAsset:'asset-1',family:'IllustroFont-asset-1'};
+  expect(canRenderTextInArtworkWorker(imported,'IllustroFont-asset-1')).toBe(true);
+  expect(canRenderTextInArtworkWorker(imported,'IllustroFont-other')).toBe(false);
+  expect(canRenderTextInArtworkWorker({...imported,family:'serif'},'IllustroFont-asset-1')).toBe(false);
+ });
 });

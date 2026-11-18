@@ -81,4 +81,26 @@ describe('C10-009 partial editable text formatting',()=>{
   expect(laidOut.lines.length).toBeLessThanOrEqual(2);
   expect(calls).toBeLessThan(12);
  });
+ it('preserves mixed font families through formatting, editing, validation and layout',()=>{
+  const text='ABCD',ranges=applyTextSelectionStyle(text,[],1,3,{family:'serif'});
+  const styled=applyTextSelectionStyle(text,ranges,2,3,{bold:true});
+  expect(styled).toEqual([{start:1,end:2,family:'serif'},{start:2,end:3,family:'serif',bold:true}]);
+  const checked=validateEditableArtwork({...base,text,styleRanges:styled}) as EditableText;
+  const families:string[]=[];
+  const layout=layoutStyledText(checked,(_c,size,_b,_i,family)=>{
+    families.push(family);return family==='serif'?size*2:size;
+  });
+  expect(families).toEqual(['sans-serif','serif','serif','sans-serif']);
+  expect(layout.lines[0]!.width).toBe(120);
+  const inserted=rebaseTextStyles(text,'AXBCD',styled);
+  const roundTrip=validateEditableArtwork(JSON.parse(JSON.stringify({...base,text:'AXBCD',styleRanges:inserted}))) as EditableText;
+  expect(roundTrip.styleRanges).toEqual([{start:2,end:3,family:'serif'},{start:3,end:4,family:'serif',bold:true}]);
+  expect(()=>validateEditableArtwork({...base,text,styleRanges:[{start:0,end:1,family:'unknown-font'}]})).toThrow();
+ });
+ it('does not split a Unicode character when different characters share a low surrogate',()=>{
+  const before='\uD800\uDC00後',after='\uD801\uDC00後';
+  const styles=rebaseTextStyles(before,after,[{start:0,end:2,family:'serif'}]);
+  expect(styles).toEqual([{start:0,end:2,family:'serif'}]);
+  expect(()=>validateEditableArtwork({...base,text:after,styleRanges:styles})).not.toThrow();
+ });
 });

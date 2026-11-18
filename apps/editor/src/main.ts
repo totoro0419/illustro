@@ -14,6 +14,7 @@ import {installColorPanel} from './color/panel';
 import {installEyedropperSettings,sampleSourceLabel} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
+import {readBrushMaterial,withBrushMaterial,type BrushMaterialKind} from './assets/brushMaterial';
 import {installReferenceBoard,referenceUnavailableSection,type ReferenceBoardService} from './assets/referenceBoard';
 import {copyReferenceBoard} from './assets/referenceBoardStore';
 import {exportFonts,importFonts} from './artwork/fontAttachments';
@@ -3627,6 +3628,19 @@ c05ReferenceBoard=c05References;
 installAssetPanel({
   openReference:assetId=>c05References.add(assetId),
   flushReferences:()=>c05References.flush(),
+  applyBrushMaterial:async asset=>{
+    const drawing=surface,source=drawing?.preset;
+    if(!drawing||!source||drawing.busy)throw Error('描画が終わってからブラシを選んでください。');
+    if(!['tip','paper','texture','pattern'].includes(asset.kind))throw Error('ブラシ用の素材ではありません。');
+    const kind=asset.kind as BrushMaterialKind;
+    const resource=await readBrushMaterial(asset.data,kind,asset.name);
+    if(surface!==drawing||drawing.busy||drawing.preset!==source)
+      throw Error('ブラシや作品が変わりました。もう一度適用してください。');
+    const prepared=withBrushMaterial(source,kind,resource);
+    const copy=brushPresets.duplicate(prepared,(source.name+' · '+asset.name).slice(0,100));
+    refreshBrushCatalog(copy.id);
+    brushMessage('素材を使う自作ブラシを保存しました。');
+  },
   placeImage:async file=>{
     if(!documentReady||!surface)throw Error('作品を開いてください。');
     await c06Clipboard.importImage(file,file.name);

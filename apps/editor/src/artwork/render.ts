@@ -1,8 +1,8 @@
 import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText,LayerMask} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
-import {layoutStyledText} from './textStyles';
+import {layoutStyledText,textCanvasFont} from './textStyles';
 import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
-import {gradientBoundaryDistance} from './gradientDistance';
+import {gradientBoundaryField} from './gradientDistance';
 import {readCanvasAlphaBands} from './alphaBands';
 import {verticalGlyphAdjustment} from './verticalGlyph';
 import {layerMaskCoverage} from '@illustro/brush-rt';
@@ -75,13 +75,15 @@ function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCan
     }
   }
   const shapeCoverage=alpha;
-  const distance=alpha?gradientBoundaryDistance(alpha,outputWidth,outputHeight,factorX,factorY):null;
+  const distance=alpha?gradientBoundaryField(alpha,outputWidth,outputHeight,factorX,factorY):null;
   const spread=Math.max(1,Math.hypot(gradient.end.x-gradient.start.x,gradient.end.y-gradient.start.y));
-  for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
+  const fieldLeft=distance?.left??0,top=distance?.top??0;
+  const right=fieldLeft+(distance?.width??outputWidth),bottom=top+(distance?.height??outputHeight);
+  for(let y=top;y<bottom;y++)for(let x=fieldLeft;x<right;x++){
     const index=y*outputWidth+x;
     if(shapeCoverage&&!shapeCoverage[index])continue;
     const sx=(x+.5)*factorX,sy=(y+.5)*factorY;
-    const t=distance?Math.max(0,distance[index]!-Math.min(factorX,factorY))/spread:gradientPosition(gradient,sx,sy);
+    const t=distance?Math.max(0,distance.values[(y-top)*distance.width+x-fieldLeft]!-Math.min(factorX,factorY))/spread:gradientPosition(gradient,sx,sy);
     let high=1;
     while(high<stops.length-1&&stops[high]!.at<t)high++;
     const a=stops[high-1]!,b=stops[high]!;
@@ -103,8 +105,8 @@ function drawText(ctx:Context,text:EditableText){
   ctx.font=`${text.size}px ${font}`;
   ctx.fillStyle=text.color;ctx.textBaseline='top';
   if(text.styleRanges?.length){
-    const laidOut=layoutStyledText(text,(character,size,bold,italic)=>{
-      ctx.font=(italic?'italic ':'')+(bold?'bold ':'')+size+'px '+font;
+    const laidOut=layoutStyledText(text,(character,size,bold,italic,family)=>{
+      ctx.font=textCanvasFont(family,size,bold,italic);
       return ctx.measureText(character).width;
     });
     ctx.textAlign='left';
@@ -112,7 +114,7 @@ function drawText(ctx:Context,text:EditableText){
       const left=alignedTextLineStart(text,line.width);
       for(const glyph of line.glyphs){
         ctx.save();
-        ctx.font=(glyph.italic?'italic ':'')+(glyph.bold?'bold ':'')+glyph.size+'px '+font;
+        ctx.font=textCanvasFont(glyph.family,glyph.size,glyph.bold,glyph.italic);
         ctx.fillStyle=glyph.color;
         if(text.vertical){
           const cell={x:text.origin.x-line.offset,y:text.origin.y+glyph.position};

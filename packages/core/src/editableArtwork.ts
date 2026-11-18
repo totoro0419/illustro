@@ -14,7 +14,7 @@ export type EditablePath=Readonly<{
   booleanOperands?:Readonly<{mode:'union'|'intersection'|'difference'|'xor';a:EditablePath;b:EditablePath}>;
 }>;
 /** UTF-16 offsets match textarea.selectionStart/End, including emoji. */
-export type TextStyleRange=Readonly<{start:number;end:number;color?:string;size?:number;bold?:boolean;italic?:boolean}>;
+export type TextStyleRange=Readonly<{start:number;end:number;color?:string;size?:number;bold?:boolean;italic?:boolean;family?:'sans-serif'|'serif'|'monospace'}>;
 export type EditableText=Readonly<{
   kind:'text';text:string;origin:ArtPoint;vertical:boolean;size:number;family:string;color:string;
   align:'left'|'center'|'right';spacing:number;lineHeight:number;fontAsset?:string;embedFont?:boolean;
@@ -104,16 +104,18 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
         if(!field(item)||!Number.isSafeInteger(item.start)||!Number.isSafeInteger(item.end)||
           (item.start as number)<previousEnd||(item.end as number)<=(item.start as number)||
           (item.end as number)>text.length||!boundary(item.start as number)||!boundary(item.end as number)||
-          (item.color===undefined&&item.size===undefined&&item.bold===undefined&&item.italic===undefined)||
+          (item.color===undefined&&item.size===undefined&&item.bold===undefined&&item.italic===undefined&&item.family===undefined)||
           (item.color!==undefined&&!color(item.color))||
           (item.size!==undefined&&!numeric(item.size,1,4096))||
           (item.bold!==undefined&&typeof item.bold!=='boolean')||
-          (item.italic!==undefined&&typeof item.italic!=='boolean'))throw invalid();
+          (item.italic!==undefined&&typeof item.italic!=='boolean')||
+          (item.family!==undefined&&item.family!=='sans-serif'&&item.family!=='serif'&&item.family!=='monospace'))throw invalid();
         const start=item.start as number,end=item.end as number;
         styles.push(Object.freeze({start,end,...(item.color!==undefined?{color:item.color as string}:{}),
           ...(item.size!==undefined?{size:item.size as number}:{}),
           ...(typeof item.bold==='boolean'?{bold:item.bold}:{}),
-          ...(typeof item.italic==='boolean'?{italic:item.italic}:{})}));
+          ...(typeof item.italic==='boolean'?{italic:item.italic}:{}),
+          ...(item.family!==undefined?{family:item.family as NonNullable<TextStyleRange['family']>}:{})}));
         previousEnd=end;
       }
     }

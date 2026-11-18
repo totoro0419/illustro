@@ -2,7 +2,7 @@ import {validateEditableArtwork,type EditableText,type LayerId,type TextStyleRan
 import {fontAssets,fontFamily,fontOutlineCapability,importFont,outlineText} from './fonts';
 import {runArtwork} from './run';
 import {layoutEditableText} from './textLayout';
-import {applyTextSelectionStyle,layoutStyledText,rebaseTextStyles} from './textStyles';
+import {applyTextSelectionStyle,layoutStyledText,rebaseTextStyles,textCanvasFont,type TextStylePatch} from './textStyles';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
 export function installTextPanel(host:HTMLElement,api:ArtworkActions){
@@ -30,11 +30,14 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   const color=document.createElement('input');color.type='color';labelledField(controls,'文字の色',color);
   const partial=document.createElement('details');
   const partialSummary=document.createElement('summary');
-  partialSummary.textContent='選択した文字だけ色・サイズ・太字・斜体を変える';
+  partialSummary.textContent='選択した文字だけ書式を変える';
   const partialControls=document.createElement('div');partialControls.className='c06-clipboard-grid';
   const partialColor=document.createElement('input');partialColor.type='color';
   labelledField(partialControls,'選択部分の色',partialColor);
   const partialSize=numberField(partialControls,'選択部分の文字サイズ（px）',48,1,4096,.5);
+  const partialFamily=selectField(partialControls,'選択部分の書体',[
+    ['sans-serif','ゴシック'],['serif','明朝'],['monospace','等幅']
+  ] as const);
   const partialActions=document.createElement('div');partialActions.className='c06-clipboard-grid';
   const partialMessage=document.createElement('output');partialMessage.setAttribute('role','status');
   partial.append(partialSummary,partialControls,partialActions,partialMessage);
@@ -98,8 +101,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       const family=current.family.replace(/["\\\n\r]/g,'');
       const font=['serif','sans-serif','monospace'].includes(family)?family:'"'+family+'", sans-serif';
       context.font=current.size+'px '+font;
-      const layout=current.styleRanges?.length?layoutStyledText(current,(character,fontSize,bold,italic)=>{
-        context.font=(italic?'italic ':'')+(bold?'bold ':'')+fontSize+'px '+font;
+      const layout=current.styleRanges?.length?layoutStyledText(current,(character,fontSize,bold,italic,family)=>{
+        context.font=textCanvasFont(family,fontSize,bold,italic);
         return context.measureText(character).width;
       }):layoutEditableText(current,characters=>context.measureText(characters).width+
         Math.max(0,Array.from(characters).length-1)*current.spacing);
@@ -168,7 +171,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     if(start===end)throw Error('文章の一部分を選択してから設定してください。');
     return {start,end};
   }
-  function updateSelectedText(patch:{color?:string;size?:number;bold?:boolean;italic?:boolean},clear=false){
+  function updateSelectedText(patch:TextStylePatch,clear=false){
+    if(composing)throw Error('変換中の文字を確定してください。');
     const range=selectedTextRange();
     const next=applyTextSelectionStyle(text.value,styleRanges,range.start,range.end,patch,clear);
     if(next.length>text.value.length)throw Error('部分書式が多すぎます。近くの同じ書式をまとめてください。');
@@ -181,6 +185,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   partialActions.append(
     button('選択した文字の色を変更',()=>updateSelectedText({color:partialColor.value}),status),
     button('選択した文字のサイズを変更',()=>updateSelectedText({size:partialSize.valueAsNumber}),status),
+    button('選択した文字の書体を変更',()=>updateSelectedText({family:partialFamily.value as NonNullable<TextStyleRange['family']>}),status),
     button('選択した文字を太字に',()=>updateSelectedText({bold:true}),status),
     button('選択した文字の太字を解除',()=>updateSelectedText({bold:false}),status),
     button('選択した文字を斜体に',()=>updateSelectedText({italic:true}),status),

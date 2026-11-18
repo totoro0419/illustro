@@ -1,13 +1,14 @@
-import type {ArtworkJob} from './worker';
+import type {ArtworkJob,ArtworkWorkerJob} from './worker';
 import {renderArtwork} from './render';
-import {ensureFont} from './fonts';
+import {ensureFont,artworkWorkerFont} from './fonts';
+import type {ArtworkWorkerFont} from './workerFonts';
 import {canRenderTextInArtworkWorker} from './textWorkerSafety';
 import {artworkQueuePosition,type ArtworkPriority} from './workerQueuePolicy';
 
 // Keep a small number of drawing workers alive. Creating one for every preview
 // causes repeated startup and can overload the browser during rapid edits.
 type ArtworkPixels=Uint8ClampedArray<ArrayBuffer>;
-type ArtworkTask={job:ArtworkJob;resolve:(pixels:ArtworkPixels)=>void;reject:(error:Error)=>void;signal?:AbortSignal;abortHandler?:()=>void;priority:ArtworkPriority};
+type ArtworkTask={job:ArtworkWorkerJob;resolve:(pixels:ArtworkPixels)=>void;reject:(error:Error)=>void;signal?:AbortSignal;abortHandler?:()=>void;priority:ArtworkPriority};
 type WorkerSlot={worker:Worker;active:ArtworkTask|null};
 const MAX_WORKERS=2;
 const pending:ArtworkTask[]=[];
@@ -85,15 +86,18 @@ export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortS
   if(signal?.aborted)throw abortError();
   if(job.content.kind==='text'&&job.content.fontAsset)await ensureFont(job.content.fontAsset);
   if(signal?.aborted)throw abortError();
-  // Imported and named fonts stay on the document thread; browser Workers
-  // cannot be assumed to share the document's loaded FontFaceSet.
-  const genericText=canRenderTextInArtworkWorker(job.content);
-  if((job.content.kind==='text'&&!genericText)||typeof OffscreenCanvas==='undefined'){
+  let font:ArtworkWorkerFont|undefined;
+  if(job.content.kind==='text'&&job.content.fontAsset&&typeof OffscreenCanvas!=='undefined'){
+    try{font=await artworkWorkerFont(job.content.fontAsset);}catch{/* Preserve the document's already loaded face. */}
+  }
+  if(signal?.aborted)throw abortError();
+  const workerText=canRenderTextInArtworkWorker(job.content,font?.family);
+  if((job.content.kind==='text'&&!workerText)||typeof OffscreenCanvas==='undefined'){
     mainCanvas??=document.createElement('canvas');
     return renderArtwork(job.content,job,mainCanvas);
   }
   return new Promise<ArtworkPixels>((resolve,reject)=>{
-    const task:ArtworkTask={job,resolve,reject,priority:options.priority??'interactive',...(signal?{signal}:{})};
+    const task:ArtworkTask={job:font?{...job,font}:job,resolve,reject,priority:options.priority??'interactive',...(signal?{signal}:{})};
     if(signal){
       task.abortHandler=()=>cancelTask(task);
       signal.addEventListener('abort',task.abortHandler,{once:true});
@@ -102,8 +106,9 @@ export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortS
     pending.splice(artworkQueuePosition(pending.map(item=>item.priority),task.priority),0,task);
     pumpArtwork();
   }).catch(error=>{
-    if(!genericText||signal?.aborted)throw error;
-    // Some browsers do not make generic font faces available in workers.
+    if(!workerText||signal?.aborted)throw error;
+    // Unsupported worker FontFace loading falls back to the already loaded
+    // document face, never to a substitute font.
     // Fall back to the original compatible main-thread renderer.
     mainCanvas??=document.createElement('canvas');
     return renderArtwork(job.content,job,mainCanvas);

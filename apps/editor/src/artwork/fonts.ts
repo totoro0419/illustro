@@ -5,6 +5,7 @@ import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement'
 import {verticalGlyphAdjustment} from './verticalGlyph';
 import {addAsset,getAsset,listAssets,type AssetInfo,type AssetEntry} from '../assets/library';
 import type {Font,PathCommand} from 'opentype.js';
+import type {ArtworkWorkerFont} from './workerFonts';
 
 const familyName=(id:string)=>'IllustroFont-'+id;
 const liveFonts=new Map<string,Promise<FontFace>>();
@@ -37,6 +38,15 @@ export async function ensureFont(id:string){
   try{return await loading;}catch(error){liveFonts.delete(id);throw error;}
 }
 export function fontFamily(id:string){return familyName(id);}
+
+export async function artworkWorkerFont(id:string):Promise<ArtworkWorkerFont>{
+  const asset=await getAsset(id);
+  if(!asset||asset.deleted||asset.kind!=='font'||!asset.data.size||asset.data.size>24*1024*1024)
+    throw Error('描画用フォントのデータを読み取れません。');
+  // Blob cloning shares immutable bytes; no extra full ArrayBuffer is needed
+  // on the UI thread for each preview.
+  return {family:familyName(id),data:asset.data};
+}
 
 // A browser can display WOFF2 through FontFace even though opentype.js cannot trace it.
 // Check the file signature, not only the filename: extensions can be renamed.
@@ -85,6 +95,8 @@ function appendCommands(points:ArtPoint[],commands:readonly PathCommand[]){
 function vectorize(text:EditableText,font:Font):ArtPoint[]{
   const points:ArtPoint[]=[],ascent=font.ascender*text.size/font.unitsPerEm;
   if(text.styleRanges?.length){
+    if(text.styleRanges.some(range=>range.family&&range.family!==text.family))
+      throw Error('異なる書体を含む文字の輪郭化には未対応です。見た目を保つには画像化してください。');
     if(text.styleRanges.some(range=>range.color&&range.color.toLowerCase()!==text.color.toLowerCase()))
       throw Error('選択部分に別の色を使う文字は、色を保ったまま単一のパスに変換できません。まず文字色を統一するか、描画用レイヤーへ変換してください。');
     if(text.styleRanges.some(range=>range.bold||range.italic))

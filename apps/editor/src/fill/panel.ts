@@ -7,7 +7,7 @@ import {runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
 import {colorHintCenter,moveColorHint} from './colorHintPlacement';
 import {isManualBoundaryNoop} from './manualChangeEffect';
-import {tryIncrementalBoundaryAddition} from './incrementalBoundary';
+import {tryIncrementalBoundaryAddition,tryIncrementalBoundaryRemoval} from './incrementalBoundary';
 import {sampleFillDetail} from './detailPreview';
 import {addTraceRegions,renderLiveRegionPreview} from './liveRegionPreview';
 import {LiveColorFillPreview} from './liveColorPreview';
@@ -356,10 +356,10 @@ export function installFillPanel(host:HTMLElement,api:{
       }
       const unchangedSource=!!points&&!!reusable&&!!currentGraph&&source===capture&&
         current.tolerance===graphTolerance&&current.gap===graphGap;
-      const patched=unchangedSource&&!remove&&!preserveInk
-        ?tryIncrementalBoundaryAddition(currentGraph!,points!):null;
-      // A patch is used only when a new wall is mathematically guaranteed not
-      // to split an existing region. Every uncertain case runs the original
+      const patched=unchangedSource&&!preserveInk
+        ?(remove?tryIncrementalBoundaryRemoval(currentGraph!,points!):tryIncrementalBoundaryAddition(currentGraph!,points!)):null;
+      // A patch is used only when the wall edit preserves region connectivity
+      // and topology. Every uncertain case runs the original
       // full Worker analysis without a change in behavior.
       const response=patched?{graph:patched}:await runFill({
         type:'graph',source:source.source,width:source.width,height:source.height,
