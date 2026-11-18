@@ -34,7 +34,7 @@
 
 ### 2026-11-18 追加コード修正
 
-- **C10-008**：最後のベクター線を消す操作を、レイヤーのUndo可能な削除処理へ接続。未保存の新規候補は作品に触れず破棄。既存のロック・最低1描画レイヤー保護を維持。コード: [`1c51309fd678`](https://github.com/totoro0419/illustro/commit/1c51309fd6788451e9d012a0b745430a08d2aa85)。検査: GitHub Actions実行中（結果未確定）。
+- **C10-008**：最後のベクター線を消す操作を、レイヤーのUndo可能な削除処理へ接続。未保存の新規候補は作品に触れず破棄。既存のロック・最低1描画レイヤー保護を維持。コード: [`1c51309fd678`](https://github.com/totoro0419/illustro/commit/1c51309fd6788451e9d012a0b745430a08d2aa85)。検査: [統合CI #44321070832](https://github.com/totoro0419/illustro/actions/runs/44321070832)、[Core CI #44321084276](https://github.com/totoro0419/illustro/actions/runs/44321084276)ともsuccess（Core/Brush/Editor検査、型確認、本番ビルド）。Android実機は未確認。
 - **次回最初の対象**：C06-001/002/015（選択中の消しゴム・特殊合成の仮線、画素読戻し、貼り付け）。関係箇所: `apps/editor/src/selection/`、`apps/editor/src/brushSurface.ts`、`apps/editor/src/main.ts`。並行実行との競合を先に確認する。
 
 ## 129件の一覧
