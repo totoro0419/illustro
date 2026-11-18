@@ -101,6 +101,9 @@ function sampleAreaBox(source:Uint8Array,width:number,height:number,
    if(overlapX<=0||overlapY<=0)continue;
    const index=y*width+x,at=index*4;
    const a=source[at+3]!/255*(mask?mask.alpha[index]!/255:1);
+   // Sparse line art and masked-out pixels are common in 4K transforms.
+   // They contribute nothing to the exact area integral.
+   if(a<=0)continue;
    const contribution=overlapX*overlapY*inverseArea*a;
    red+=source[at]!*contribution;
    green+=source[at+1]!*contribution;
