@@ -1,5 +1,6 @@
 import type {ArtPoint,EditablePath,EditableText} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
+import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
 import {verticalGlyphAdjustment} from './verticalGlyph';
 import {addAsset,getAsset,listAssets,type AssetInfo,type AssetEntry} from '../assets/library';
 import type {Font,PathCommand} from 'opentype.js';
@@ -90,8 +91,8 @@ function vectorize(text:EditableText,font:Font):ArtPoint[]{
     if(text.vertical){
       for(const [j,character] of characters.entries()){
         const placement=verticalGlyphAdjustment(character,text.size);
-        const x=text.origin.x-i*text.size*text.lineHeight+placement.dx;
-        const y=text.origin.y+j*(text.size+text.spacing)+placement.dy;
+        const cell=textVerticalCell(text,i,j);
+        const x=cell.x+placement.dx,y=cell.y+placement.dy;
         const width=font.getAdvanceWidth(character,text.size);
         const commands=font.getPath(character,0,ascent,text.size).commands;
         const rotated=placement.rotate;
@@ -106,10 +107,10 @@ function vectorize(text:EditableText,font:Font):ArtPoint[]{
       }
       continue;
     }
-    const y=text.origin.y+i*text.size*text.lineHeight+ascent;
+    const y=textRowTop(text,i)+ascent;
     const widths=characters.map(character=>font.getAdvanceWidth(character,text.size)+text.spacing);
     const width=text.spacing?widths.reduce((sum,w)=>sum+w,0)-text.spacing:font.getAdvanceWidth(line,text.size,{kerning:true});
-    let x=text.origin.x-(text.align==='center'?width/2:text.align==='right'?width:0);
+    let x=alignedTextLineStart(text,width);
     if(text.spacing){
       characters.forEach((character,j)=>{appendCommands(points,font.getPath(character,x,y,text.size).commands);x+=widths[j]!;});
     }else appendCommands(points,font.getPath(line,x,y,text.size,{kerning:true}).commands);
