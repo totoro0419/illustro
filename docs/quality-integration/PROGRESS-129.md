@@ -1,7 +1,7 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`39b905590144`](https://github.com/totoro0419/illustro/commit/39b90559014488acdcc8cba639fc89a4bcd58a8e)
+**照合対象のコードHEAD:** [`bae83ac9dc8d`](https://github.com/totoro0419/illustro/commit/bae83ac9dc8db232c73760765ffac869919d7789)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
@@ -31,6 +31,15 @@
 ## 直ちに着手するコード残件
 
 優先順位は「作品の安全性と操作中の確定／仮表示の一致」→「4Kの応答性能」→「その他」。特に **C06-001/002/007/015、C07-001/003/014、C08-003/015、C09-004/006/010/011、C10-009/015** を複数まとめて実装。C05-020は素材ごとの適用仕様に照らして不足を解消。修正に伴い対象IDを更新し、テストとコミットのリンクを残す。
+
+### 2026-11-19 定期自動開発①｜C06-002・C06-007・C07-003の追加改善
+
+- **C06-002（部分改善）**：4Kの長い斜め線について、選択外判定を外接四角形の走査から保守的な線分領域の走査へ変更。選択範囲に届かない筆跡ではGPU読戻しを開始しない。複数筆跡の選択タイルマスクをWorker内で再利用し、未選択タイルの確保を省略。数値異常は安全側で従来処理へ戻す。回帰テストで斜線・水平線・縦線・巨大座標・複数筆跡とCPU参照画素の一致を検証。既存タイル全読戻しは残る。
+- **C06-007（部分改善）**：選択ブラシの入力点が最後の点だけでなく直近8点の範囲で変更された場合、古い仮表示を残さず原寸マスクを再計算。長い線で全点を毎フレーム走査しない構造は維持。Worker非対応の長い線とAndroid実機は未確認。
+- **C07-003（部分改善）**：多数レイヤーの一括変形の境界計算で引数展開をなくし、数値上限に近い座標でも中心の加算オーバーフローを避け、非有限の出力を確定前に拒否。複数レイヤー・異常値の回帰テスト追加。特殊レイヤー・非アフィン一括変形は未実装。
+- **コードコミット**：[`907574fe`](https://github.com/totoro0419/illustro/commit/907574fe98837561c186bbdd559e1f9f39fa6c85) から [`bae83ac9`](https://github.com/totoro0419/illustro/commit/bae83ac9dc8db232c73760765ffac869919d7789) まで（コード・テスト計10コミット）。最終コードHEAD `bae83ac9`。
+- **検証**：最終コードHEADの[統合CI #44364855747](https://github.com/totoro0419/illustro/actions/runs/44364855747) **completed/success**（Core・Brush・Editorテスト、型検査、本番ビルド）、[Core CI #44364872995](https://github.com/totoro0419/illustro/actions/runs/44364872995) **completed/success**。Android実機、4K時間・メモリ、保存復元・Undo/Redoの実機独立確認は未実施。保存形式・履歴構造は変更なし。
+- **残件・次回**：3件とも部分対応のまま。記録上の部分対応37件・根拠未確認0件・修正記録あり完了未認定92件を維持。次回は **C06-001/002**（選択付き消しゴム・特殊合成の仮表示、選択内GPU読戻し削減）を優先。関連 `apps/editor/src/brushSurface.ts`、`apps/editor/src/selection/tileCapture.ts`、`packages/brush-rt/src/stroke-overlay.mjs`。競合時は **C07-003** の特殊レイヤー対応（`apps/editor/src/transform/`）か **C08-003/015**（`apps/editor/src/fill/`）へ。
 
 ### 2026-11-18 追加コード修正
 
@@ -150,12 +159,12 @@
 | [C05-019](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C05.md#c05-019) | C/P2 | 参考資料上の直接採色と全体表示の切替を改善できる | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#82](https://github.com/totoro0419/illustro/pull/82) |
 | [C05-020](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C05.md#c05-020) | C/P2 | 素材種別ごとの実際の利用方法を統一できる | **部分対応・コード残件あり** | 素材別適用を追加したが、色・質感・サイズ等の表現制限が残る | [#77](https://github.com/totoro0419/illustro/pull/77) |
 | [C06-001](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-001) | A/P1 | 選択中のブラシの仮表示に選択範囲が反映されない経路 | **部分対応・コード残件あり** | 消しゴム・特殊合成・下層描画の選択マスク付き仮線が未完成 | [#90](https://github.com/totoro0419/illustro/pull/90) |
-| [C06-002](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-002) | A/P1 | 選択中の一筆が通常の描画より大きな処理を要求する | **部分対応・コード残件あり** | 選択外の一筆のGPU読戻しを省略。選択内の読戻し総量と非Worker経路の最適化は継続 | [#90](https://github.com/totoro0419/illustro/pull/90) |
+| [C06-002](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-002) | A/P1 | 選択中の一筆が通常の描画より大きな処理を要求する | **部分対応・コード残件あり** | 4K斜め線の選択外判定を細い線分領域で検査し、巨大な外接四角形の走査・不要なGPU読戻しを回避。Worker内では選択のないタイルを早期除外し、同じタイルのマスクを複数の筆跡で再利用。コード [`bae83ac9`](https://github.com/totoro0419/illustro/commit/bae83ac9dc8db232c73760765ffac869919d7789) まで。選択内の既存タイル全読戻しと非Worker経路は継続 | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-003](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-003) | A/P1 | 選択がない状態で減算・交差を使うと新しい選択範囲ができる | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-004) | A/P2 | 複雑な選択範囲でも四角い外枠が表示される | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-005](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-005) | A/P1 | Ctrl+Vが端末の画像貼り付けと連動していない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-006](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-006) | A/P1 | 保存選択範囲の件数と作品ファイルの容量制限が矛盾する | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
-| [C06-007](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-007) | A/P1 | 選択ブラシで描いている途中の形が仮表示されない | **部分対応・コード残件あり** | 長い線・大きな選択ブラシも原寸の共通計算をWorkerで継続し、古い部分を保持して途中表示。表示用だけ縮小。Worker非対応時は短い線の厳密表示／SVGの目安へ戻る。Android/4Kの待ち時間は未確認 | [#90](https://github.com/totoro0419/illustro/pull/90) |
+| [C06-007](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-007) | A/P1 | 選択ブラシで描いている途中の形が仮表示されない | **部分対応・コード残件あり** | 選択ブラシのWorker仮表示で、ペンの同時入力処理により直近8点のうち最後以外が差し替わっても原寸結果を再計算し、古い線が残る条件を改善。コード [`8d3ad847`](https://github.com/totoro0419/illustro/commit/8d3ad8473ea999ae73a90bd84c32964dc40f7d1c)。Worker非対応時の長い線、Android/4K応答時間は継続 | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-008](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-008) | A/P1 | 選択した絵を作品外へ移動すると外にはみ出した画素が失われる | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-009](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-009) | A/P2 | 名前付き選択範囲の既存項目への上書き保存とサムネイルがない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-010](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-010) | A/P2 | 磁気投げ縄が実装されていない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
@@ -168,7 +177,7 @@
 | [C06-017](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-017) | C/P2 | 貼り付け画像を半透明の仮表示で動かし位置確認後に確定する案 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C07-001](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-001) | A/P1 | 変形結果が制作キャンバス上でなく小さな別プレビューに表示される | **部分対応・コード残件あり** | 停止後に原寸の変形結果を差し替え、既存のタイル合成で上下関係・マスク・複雑合成を反映。操作中の軽量表示は近似のまま | [#86](https://github.com/totoro0419/illustro/pull/86) |
 | [C07-002](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-002) | A/P1 | 変形前の元画像を編集する画面が小さな専用キャンバスに限定される | **部分対応・コード残件あり** | 縮小表示時の描画中仮線は原寸の確定結果と未一致 | [#86](https://github.com/totoro0419/illustro/pull/86) |
-| [C07-003](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-003) | A/P1 | 複数のレイヤー・グループを一括して変形できない | **部分対応・コード残件あり** | 非アフィン・特殊レイヤー・範囲付き一括変形が未対応 | [#86](https://github.com/totoro0419/illustro/pull/86) |
+| [C07-003](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-003) | A/P1 | 複数のレイヤー・グループを一括して変形できない | **部分対応・コード残件あり** | 複数レイヤーの一括変形計画で大量の境界配列を引数展開せず計算し、巨大な座標の数値オーバーフロー・非有限の確定形状を拒否。コード [`16d0dd3b`](https://github.com/totoro0419/illustro/commit/16d0dd3b067904a05c2b47ab3d29323acd01a1e4)。非アフィン・特殊レイヤー・範囲付き一括変形は未対応 | [#86](https://github.com/totoro0419/illustro/pull/86) |
 | [C07-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-004) | A/P1 | 変形後に描いた筆がセッション中の変形プレビューに反映されない | **部分対応・コード残件あり** | 停止後の全体合成は原寸の後描き筆跡を含む。操作中の縮小仮表示は近似のまま | [#86](https://github.com/totoro0419/illustro/pull/86) |
 | [C07-005](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-005) | A/P1 | 一般的なファイル選択で外部参照を登録すると後から更新できない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#86](https://github.com/totoro0419/illustro/pull/86) |
 | [C07-006](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C07.md#c07-006) | A/P1 | リンク画像の再選択時に元の古い参照ハンドルが残る条件 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#86](https://github.com/totoro0419/illustro/pull/86) |
