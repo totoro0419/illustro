@@ -87,6 +87,55 @@ export function ellipsePreviewCoverage(
   const inside=Math.max(0,Math.min(1,covered/area));
   return mask.inverted?1-mask.density*inside:1-mask.density*(1-inside);
 }
+/** Integrate a small polygon against a preview pixel using the same even-odd
+ * fill rule as the committed path mask. Sampling only the pixel center can
+ * erase a tiny selection completely at fit-to-screen zoom.
+ * Use this only for paths spanning at most two preview pixels per axis:
+ * large/complex paths retain the bounded-cost existing mask sampler. */
+export function smallPathPreviewCoverage(
+  mask:Extract<LayerMask,{shape:'path'}>,left:number,top:number,right:number,bottom:number
+):number{
+  const points=mask.points,n=points.length;
+  const breaks=[top,bottom];
+  const addY=(y:number)=>{if(y>top&&y<bottom)breaks.push(y);};
+  for(let i=0;i<n;i++){
+    const a=points[i]!,b=points[(i+1)%n]!;
+    addY(a.y);
+    if(a.x!==b.x)for(const x of [left,right]){
+      const t=(x-a.x)/(b.x-a.x);
+      if(t>0&&t<1)addY(a.y+t*(b.y-a.y));
+    }
+  }
+  // A self-intersecting path uses even-odd fill. Split where edges cross so
+  // the occupied horizontal span is linear between consecutive breakpoints.
+  for(let i=0;i<n;i++){
+    const a=points[i]!,b=points[(i+1)%n]!,ax=b.x-a.x,ay=b.y-a.y;
+    for(let j=i+1;j<n;j++){
+      const c=points[j]!,d=points[(j+1)%n]!,bx=d.x-c.x,by=d.y-c.y;
+      const determinant=ax*by-ay*bx;
+      if(!determinant)continue;
+      const dx=c.x-a.x,dy=c.y-a.y;
+      const t=(dx*by-dy*bx)/determinant,u=(dx*ay-dy*ax)/determinant;
+      if(t>0&&t<1&&u>0&&u<1)addY(a.y+t*ay);
+    }
+  }
+  breaks.sort((a,b)=>a-b);
+  let covered=0;
+  for(let i=1;i<breaks.length;i++){
+    const y0=breaks[i-1]!,y1=breaks[i]!;
+    if(y1<=y0)continue;
+    const y=(y0+y1)/2,xs:number[]=[];
+    for(let j=0;j<n;j++){
+      const a=points[j]!,b=points[(j+1)%n]!;
+      if((a.y>y)!==(b.y>y))xs.push(a.x+(y-a.y)*(b.x-a.x)/(b.y-a.y));
+    }
+    xs.sort((a,b)=>a-b);
+    for(let j=0;j+1<xs.length;j+=2)
+      covered+=(y1-y0)*Math.max(0,Math.min(right,xs[j+1]!)-Math.max(left,xs[j]!));
+  }
+  const inside=Math.max(0,Math.min(1,covered/((right-left)*(bottom-top))));
+  return mask.inverted?1-mask.density*inside:1-mask.density*(1-inside);
+}
 /** Apply the same vector/pixel mask coverage as the committed layer,
  * sampled at the preview pixel center in original document coordinates. */
 export function applyShapePreviewMask(
@@ -97,6 +146,18 @@ export function applyShapePreviewMask(
   // A zero-density mask cannot change any pixel; skip even the mask tile lookup.
   if(!mask?.enabled||mask.density===0)return;
   const downscaled=sampleCoverage===layerMaskCoverage&&(outputWidth<width||outputHeight<height);
+  // Only small polygons use the exact area integral. This keeps the usual
+  // 4K path preview on its existing fast raster-tile path.
+  let tinyPathBounds:[number,number,number,number]|null=null;
+  if(downscaled&&mask.shape==='path'&&mask.points.length<=64){
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    for(const point of mask.points){
+      minX=Math.min(minX,point.x);minY=Math.min(minY,point.y);
+      maxX=Math.max(maxX,point.x);maxY=Math.max(maxY,point.y);
+    }
+    if(maxX-minX<=2*width/outputWidth&&maxY-minY<=2*height/outputHeight)
+      tinyPathBounds=[minX,minY,maxX,maxY];
+  }
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
     const at=(y*outputWidth+x)*4;
     const left=x*width/outputWidth,top=y*height/outputHeight;
@@ -105,7 +166,12 @@ export function applyShapePreviewMask(
       ?rectanglePreviewCoverage(mask,left,top,right,bottom)
       :downscaled&&mask.shape==='ellipse'
         ?ellipsePreviewCoverage(mask,left,top,right,bottom)
-        :sampleCoverage(mask,(left+right)/2,(top+bottom)/2);
+        :tinyPathBounds&&mask.shape==='path'
+          ?(right<=tinyPathBounds[0]||bottom<=tinyPathBounds[1]||
+            left>=tinyPathBounds[2]||top>=tinyPathBounds[3]
+            ?(mask.inverted?1:1-mask.density)
+            :smallPathPreviewCoverage(mask,left,top,right,bottom))
+          :sampleCoverage(mask,(left+right)/2,(top+bottom)/2);
     pixels[at+3]=Math.round(pixels[at+3]!*coverage);
   }
 }
