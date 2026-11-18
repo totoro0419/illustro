@@ -96,6 +96,29 @@ describe('C08 fill boundaries and destination gating',()=>{
     const risky=suggestLocalGaps(buildRegions(clean,w,h,15,0,[]),{x:6,y:4},6,[]);
     expect(risky.some(fromTo)).toBe(false);
   });
+  it('rejects perpendicular hairs even when both endpoints look like tips',()=>{
+    const w=15,h=11,data=image(w,h);
+    for(const x of [1,2,3])setPixel(data,w,x,4,[0,0,0,255]);
+    for(const y of [4,5,6])setPixel(data,w,9,y,[0,0,0,255]);
+    const gaps=suggestLocalGaps(buildRegions(data,w,h,15,0,[]),{x:6,y:4},6,[]);
+    expect(gaps.some(g=>g.from.x===3&&g.from.y===4&&g.to.x===9&&g.to.y===4)).toBe(false);
+  });
+  it('does not suggest bridging a genuine crossing as if it were a line tip',()=>{
+    const w=15,h=11,data=image(w,h);
+    for(const x of [1,2,3,9,10,11])setPixel(data,w,x,5,[0,0,0,255]);
+    for(let y=2;y<=8;y++)setPixel(data,w,9,y,[0,0,0,255]);
+    const gaps=suggestLocalGaps(buildRegions(data,w,h,15,0,[]),{x:6,y:5},6,[]);
+    expect(gaps.some(g=>g.from.x===3&&g.to.x===9&&g.from.y===5&&g.to.y===5)).toBe(false);
+    expect(gaps.every(g=>g.kind==='tips')).toBe(true);
+  });
+  it('preserves existing ink when a manual erase requests preserveInk without automatic gap repair',()=>{
+    const w=9,h=9,data=image(w,h);
+    for(const x of [2,3,4,5])setPixel(data,w,x,4,[0,0,0,255]);
+    const kept=fillBoundaries(data,w,h,15,0,[{remove:true,preserveInk:true,points:[{x:3,y:4}]}]);
+    const erased=fillBoundaries(data,w,h,15,0,[{remove:true,preserveInk:false,points:[{x:3,y:4}]}]);
+    expect(kept.walls[4*w+3]).toBe(1);
+    expect(erased.walls[4*w+3]).toBe(0);
+  });
   it('does not falsely connect an inner hole to the canvas outside',()=>{
     const data=image(13,13);
     rectangle(data,13,2,2,10,10,[0,0,0,255]);

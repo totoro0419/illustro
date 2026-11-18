@@ -74,7 +74,11 @@ export function updateChangedRegions(graph:RegionGraph,points:readonly Point[],r
  const remap=new Uint32Array(temporary+1),nextAnchors=new Uint32Array(components.length+1);
  const nextExternal=new Uint8Array(components.length+1);
  components.forEach((part,i)=>{remap[part.label]=i+1;nextAnchors[i+1]=part.anchor;nextExternal[i+1]=part.outside;});
- for(let at=0;at<n;at++)if(labels[at])labels[at]=remap[labels[at]!]!;
+ let hasInk=false;
+ for(let at=0;at<n;at++){
+   if(walls[at])hasInk=true;
+   if(labels[at])labels[at]=remap[labels[at]!]!;
+ }
  return {...graph,walls,labels,count:components.length,anchors:nextAnchors,external:nextExternal,
-   hasInk:walls.some(Boolean),...regionTopology(labels,width,height,nextExternal)};
+   hasInk,...regionTopology(labels,width,height,nextExternal)};
 }

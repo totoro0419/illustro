@@ -112,7 +112,13 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
       if(colorDifference*alpha/255>=threshold||alpha<240&&240-alpha>=threshold)walls[i]=1;
     }
   }
-  const radius=Math.round(limit(gap,0,12)),original=walls.slice(),bridges=new Uint8Array(count),candidates:GapCandidate[]=[];
+  // The unmodified wall snapshot is only needed for automatic bridges or
+  // preserve-ink erasure. Most fills have gap=0 and no such edits: avoid
+  // allocating a second 4000x4000 wall buffer in that common case.
+  const radius=Math.round(limit(gap,0,12));
+  const needsOriginal=radius>0||manual.some(edit=>edit.remove&&edit.preserveInk);
+  const original=needsOriginal?walls.slice():walls;
+  const bridges=new Uint8Array(count),candidates:GapCandidate[]=[];
   const directions=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]] as const;
   const tipDirection=(at:Point)=>{
     const neighbors=directions.filter(([dx,dy])=>{
@@ -198,15 +204,16 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
 export function buildRegions(source:Uint8Array,width:number,height:number,tolerance:number,gap:number,manual:Walls):RegionGraph{
   const count=width*height,{walls,bridges,candidates}=fillBoundaries(source,width,height,tolerance,gap,manual);
   const labels=new Uint32Array(count),queue=new Uint32Array(count),external:number[]=[0],anchors=[0];
-  let regions=0;
+  let regions=0,hasInk=false;
   for(let i=0;i<count;i++){
-    if(walls[i]||labels[i])continue;
+    if(walls[i]){hasInk=true;continue;}
+    if(labels[i])continue;
     regions++;anchors.push(i);
     const outside=flood(width,height,i,j=>!walls[j]&&!labels[j],j=>{labels[j]=regions;},queue);
     external.push(outside?1:0);
   }
   const externalFlags=Uint8Array.from(external);
-  return {width,height,walls,bridges,labels,external:externalFlags,count:regions,candidates,anchors:Uint32Array.from(anchors),hasInk:walls.some(Boolean),
+  return {width,height,walls,bridges,labels,external:externalFlags,count:regions,candidates,anchors:Uint32Array.from(anchors),hasInk,
     ...regionTopology(labels,width,height,externalFlags)};
 }
 
@@ -414,16 +421,25 @@ export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:
       nodes.push({x,y,inward,tip:ink<=3&&branches===1,junction:branches>=3});
     }
   }
+  // Only offer unambiguous, outward-facing tips. Junctions and stroke edges
+  // remain available to the manual bridge tool, but are unsafe guesses.
+  const tips=nodes.filter(node=>node.tip&&!nodes.some(other=>other.junction&&
+    Math.hypot(node.x-other.x,node.y-other.y)<=2));
   const proposals:Array<{candidate:GapCandidate;score:number}>=[];
   const rejected=new Set(manual.filter(edit=>edit.remove&&edit.preserveInk)
     .flatMap(edit=>edit.points.filter(point=>Math.hypot(point.x-at.x,point.y-at.y)<=extent*2)
       .map(point=>Math.round(point.x)+','+Math.round(point.y))));
-  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
-    const a=nodes[i]!,b=nodes[j]!,dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy);
+  for(let i=0;i<tips.length;i++)for(let j=i+1;j<tips.length;j++){
+    const a=tips[i]!,b=tips[j]!,dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy);
     if(length<1.99||length>radius+1)continue;
     const midpoint=Math.hypot((a.x+b.x)/2-at.x,(a.y+b.y)/2-at.y);
     if(midpoint>radius*.8+1)continue;
-    if(a.tip&&dx*a.inward.x+dy*a.inward.y>0||b.tip&&dx*b.inward.x+dy*b.inward.y<0)continue;
+    const aLength=Math.hypot(a.inward.x,a.inward.y),bLength=Math.hypot(b.inward.x,b.inward.y);
+    // Both stroke tangents must point away from their own ink and toward
+    // the other tip. Reject perpendicular hairs and misleading corners.
+    if(!aLength||!bLength||
+      -(dx*a.inward.x+dy*a.inward.y)<.7*length*aLength||
+      (dx*b.inward.x+dy*b.inward.y)<.7*length*bLength)continue;
     let obstruction=false;
     const steps=Math.max(Math.abs(dx),Math.abs(dy));
     for(let step=1;step<steps&&!obstruction;step++){
@@ -439,9 +455,8 @@ export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:
         }
     }
     if(obstruction)continue;
-    const kind=a.junction||b.junction?'junction':a.tip&&b.tip?'tips':a.tip||b.tip?'edge':'near';
-    const score=length+midpoint*(kind==='tips'?.7:1.1)+(kind==='near'?4:kind==='junction'?2:0);
-    proposals.push({candidate:{from:{x:a.x,y:a.y},to:{x:b.x,y:b.y},length:length-1,kind},score});
+    const score=length+midpoint*.7;
+    proposals.push({candidate:{from:{x:a.x,y:a.y},to:{x:b.x,y:b.y},length:length-1,kind:'tips'},score});
   }
   proposals.sort((a,b)=>a.score-b.score);
   const output:GapCandidate[]=[];
