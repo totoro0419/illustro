@@ -73,8 +73,9 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   async function refresh(){
     originalPreview.hidden=true;previewCaption.textContent='';overflowWarning.textContent='';
     if(composing||!text.value.trim()){previewRequest++;preview.hidden=true;return;}
-    const current=draft(),request=previewRequest+1;
+    const request=previewRequest+1;
     try{
+      const current=draft();
       await show(current);
       if(request!==previewRequest)return;
       if(current.boxWidth===undefined&&current.boxHeight===undefined)return;
