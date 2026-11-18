@@ -40,6 +40,15 @@ describe('C08-003 incremental region preview',()=>{
   expect(preview.height).toBe(512);
   expect(preview.pixels.length).toBe(512*512*4);
  });
+ it('reuses and clears its small pixel buffer as region highlights change',()=>{
+   const original=renderLiveRegionPreview(graph,new Set([1]),512);
+   const buffer=original.pixels;
+   expect(buffer[3]).toBeGreaterThan(0);
+   const cleared=renderLiveRegionPreview(graph,new Set([2]),512,buffer);
+   expect(cleared.pixels).toBe(buffer);
+   expect(cleared.pixels[3]).toBe(0);
+   expect(cleared.pixels[(4*6+5)*4+3]).toBeGreaterThan(0);
+ });
  it('does not include absent or non-finite pointer seeds',()=>{
   const picked=new Set<number>();
   addTraceRegions(graph,{x:NaN,y:0},{x:Infinity,y:0},1,false,picked);
