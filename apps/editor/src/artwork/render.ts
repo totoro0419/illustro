@@ -44,7 +44,11 @@ function gradientPosition(gradient:EditableGradient,x:number,y:number){
   const dx=gradient.end.x-gradient.start.x,dy=gradient.end.y-gradient.start.y;
   const u=x-gradient.start.x,v=y-gradient.start.y,den=dx*dx+dy*dy;
   if(!den)return 0;
-  if(gradient.mode==='radial')return Math.hypot(u,v)/Math.sqrt(den);
+  if(gradient.mode==='radial'){
+    if(gradient.radialRatio===undefined||gradient.radialRatio===1)return Math.hypot(u,v)/Math.sqrt(den);
+    const along=(u*dx+v*dy)/den,across=(-u*dy+v*dx)/den;
+    return Math.hypot(along,across/gradient.radialRatio);
+  }
   if(gradient.mode==='angular')return wrap((Math.atan2(v,u)-Math.atan2(dy,dx))/(2*Math.PI));
   const t=(u*dx+v*dy)/den;
   return gradient.mode==='reflected'?Math.abs(t):t;
@@ -83,7 +87,11 @@ function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCan
     const index=y*outputWidth+x;
     if(shapeCoverage&&!shapeCoverage[index])continue;
     const sx=(x+.5)*factorX,sy=(y+.5)*factorY;
-    const t=distance?Math.max(0,distance.values[(y-top)*distance.width+x-fieldLeft]!-Math.min(factorX,factorY))/spread:gradientPosition(gradient,sx,sy);
+    let t=distance?Math.max(0,distance.values[(y-top)*distance.width+x-fieldLeft]!-Math.min(factorX,factorY))/spread:gradientPosition(gradient,sx,sy);
+    if(gradient.spread==='repeat')t=wrap(t);
+    else if(gradient.spread==='reflect'){
+      const period=wrap(t/2)*2;t=period<=1?period:2-period;
+    }
     let high=1;
     while(high<stops.length-1&&stops[high]!.at<t)high++;
     const a=stops[high-1]!,b=stops[high]!;

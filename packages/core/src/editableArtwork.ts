@@ -4,6 +4,9 @@ export type EditableGradient=Readonly<{
   kind:'gradient';mode:'linear'|'radial'|'reflected'|'angular';start:ArtPoint;end:ArtPoint;
   stops:readonly GradientStop[];
   follow?:'mask'|EditablePath;
+  spread?:'pad'|'repeat'|'reflect';
+  /** Radius perpendicular to start→end, relative to the primary radius. */
+  radialRatio?:number;
 }>;
 export type EditablePath=Readonly<{
   kind:'path';shape:'rectangle'|'ellipse'|'polyline'|'bezier'|'freehand';
@@ -48,6 +51,9 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
   if(value.kind==='gradient'){
     const mode=value.mode;
     if(mode!=='linear'&&mode!=='radial'&&mode!=='reflected'&&mode!=='angular')throw invalid();
+    const {spread,radialRatio}=value;
+    if((spread!==undefined&&spread!=='pad'&&spread!=='repeat'&&spread!=='reflect')||
+       (radialRatio!==undefined&&!numeric(radialRatio,.01,100)))throw invalid();
     if(!Array.isArray(value.stops)||value.stops.length<2||value.stops.length>64)throw invalid();
     const stops:GradientStop[]=value.stops.map(stop=>{
       if(!field(stop)||!numeric(stop.at,0,1)||!color(stop.color)||!numeric(stop.opacity,0,1)||!numeric(stop.midpoint,.01,.99))throw invalid();
@@ -63,6 +69,7 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
       follow=boundary;
     }
     checked=Object.freeze({kind:'gradient',mode,start:point(value.start),end:point(value.end),stops:Object.freeze(stops),
+      ...(spread!==undefined?{spread}:{}),...(typeof radialRatio==='number'?{radialRatio}:{}),
       ...(follow?{follow}:{})});
   }else if(value.kind==='path'){
     const {shape,points,closed,stroke,fill,width,lineStyle,opacity,originalStrokeLayer,booleanOperands}=value;

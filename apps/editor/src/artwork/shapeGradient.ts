@@ -70,6 +70,11 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   const mode=selectField(gradientFields,'広がり方',[
     ['linear','直線'],['radial','放射'],['reflected','反射'],['angular','角度']
   ] as const);
+  const spread=selectField(gradientFields,'色の繰り返し',[
+    ['pad','端の色を延ばす'],['repeat','同じ並びを繰り返す'],['reflect','往復して繰り返す']
+  ] as const);
+  const radialRatio=numberField(gradientFields,'放射の縦横比（%、100で円）',100,1,10000,1);
+  mode.onchange=()=>{radialRatio.parentElement!.hidden=mode.value!=='radial';};
   const followFields=document.createElement('div');followFields.className='c06-clipboard-grid';
   gradientFields.append(followFields);
   const boundary=selectField(followFields,'形状追従に使う範囲',[
@@ -119,7 +124,10 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   function data(follow=applied.checked){
     const [x,y,endX,endY]=coords.map(i=>i.valueAsNumber);
     const start={x:x??0,y:y??0},end={x:endX??0,y:endY??0};
-    if(type.value==='gradient')return validateEditableArtwork({kind:'gradient',mode:mode.value,start,end,stops,...(follow?{follow:getBoundary()}:{})}) as EditableGradient;
+    if(type.value==='gradient')return validateEditableArtwork({kind:'gradient',mode:mode.value,start,end,stops,
+      ...(spread.value==='pad'?{}:{spread:spread.value}),
+      ...(radialRatio.valueAsNumber===100?{}:{radialRatio:radialRatio.valueAsNumber/100}),
+      ...(follow?{follow:getBoundary()}:{})}) as EditableGradient;
     let result=points.length>=2?[...points]:[start,end];
     result[0]={...result[0],...start};
     result[result.length-1]={...result.at(-1),...end};
@@ -313,7 +321,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     setPoints([{x:current.width*.22,y:current.height*.25},{x:current.width*.78,y:current.height*.75}]);
     status.textContent='新しいレイヤーに作ります。';void refresh();
   }
-  function updateFields(){shapeFields.hidden=type.value!=='shape';gradientFields.hidden=type.value!=='gradient';shape.onchange?.(new Event('change'));redrawStops();}
+  function updateFields(){shapeFields.hidden=type.value!=='shape';gradientFields.hidden=type.value!=='gradient';shape.onchange?.(new Event('change'));mode.onchange?.(new Event('change'));redrawStops();}
   shape.onchange=()=>{
     radius.parentElement!.hidden=shape.value!=='rounded';
     sides.parentElement!.hidden=shape.value!=='polygon';
@@ -354,6 +362,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       originalStrokeLayer=selected.kind==='path'?selected.originalStrokeLayer:undefined;
       if(selected.kind==='gradient'){
         type.value='gradient';mode.value=selected.mode;stops=[...selected.stops];setPoints([selected.start,selected.end]);
+        spread.value=selected.spread??'pad';radialRatio.value=String((selected.radialRatio??1)*100);
         savedBoundary=typeof selected.follow==='object'?selected.follow:undefined;loadBoundaries();
         boundary.value=savedBoundary?'saved':'mask';applied.checked=!!selected.follow;
         view.value=applied.checked?'follow':'normal';
