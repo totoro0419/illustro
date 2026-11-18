@@ -11,7 +11,7 @@ export function layoutEditableText(
  const lines:string[]=[];
  if(text.vertical){
    const columnSize=text.boxHeight===undefined?Infinity:
-     Math.max(1,Math.floor((text.boxHeight-text.size)/(text.size+text.spacing))+1);
+     Math.max(1,Math.floor((text.boxHeight-text.size)/Math.max(1,text.size+text.spacing))+1);
    for(const paragraph of paragraphs){
      const chars=Array.from(paragraph);
      if(!chars.length){lines.push('');continue;}
