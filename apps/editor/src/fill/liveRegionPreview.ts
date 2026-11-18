@@ -3,6 +3,21 @@ import type {RegionGraph} from './pixels';
 
 export type LiveRegionPreview=Readonly<{width:number;height:number;pixels:Uint8ClampedArray<ArrayBuffer>}>;
 
+// A brush gesture can visit thousands of cells on a 4K canvas. Reuse the
+// same 13 discrete circular footprints instead of testing dx²+dy² on each
+// sampled cell of every segment.
+const traceFootprints=new Map<number,readonly (readonly [number,number])[]>();
+function traceFootprint(radius:number):readonly (readonly [number,number])[]{
+ let offsets=traceFootprints.get(radius);
+ if(!offsets){
+   const next:Array<readonly [number,number]>=[];
+   for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++)
+     if(dx*dx+dy*dy<=radius*radius)next.push([dx,dy]);
+   offsets=next;traceFootprints.set(radius,offsets);
+ }
+ return offsets;
+}
+
 /** Collect only the regions touched by the new portion of a brush gesture.
  * This is deliberately a preview: final fill conditions, masks and
  * antialiasing are still determined by the fill worker at pen-up. */
@@ -10,6 +25,7 @@ export function addTraceRegions(
   graph:RegionGraph,from:Point,to:Point,width:number,closedOnly:boolean,selected:Set<number>
 ):void{
   const radius=Math.max(0,Math.min(12,Math.round(width/2-.5)));
+  const footprint=traceFootprint(radius);
   // Match fillMask's two samples per dominant-axis pixel. The old
   // Euclidean one-sample trace skipped thin regions on diagonal gestures.
   const length=Math.max(Math.abs(to.x-from.x),Math.abs(to.y-from.y));
@@ -24,8 +40,7 @@ export function addTraceRegions(
     // strokes, without selecting any additional regions.
     if(x===previousX&&y===previousY)continue;
     previousX=x;previousY=y;
-    for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){
-      if(dx*dx+dy*dy>radius*radius)continue;
+    for(const [dx,dy] of footprint){
       const sx=x+dx,sy=y+dy;
       if(sx<0||sy<0||sx>=graph.width||sy>=graph.height)continue;
       const id=graph.labels[sy*graph.width+sx]??0;
