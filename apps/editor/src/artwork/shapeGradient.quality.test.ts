@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type LayerId} from '@illustro/core';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -79,6 +79,18 @@ describe('C09-004 exact small path coverage at low zoom',()=>{
     expect(smallPathPreviewCoverage({...mask,inverted:true,density:.5},0,0,2,2)).toBeCloseTo(.75,9);
     expect(smallPathPreviewCoverage(mask,3,3,4,4)).toBe(0);
     expect(smallPathPreviewCoverage({...mask,inverted:true},3,3,4,4)).toBe(1);
+  });
+});
+
+describe('C09-004/C09-015 mask stability while editing',()=>{
+  it('retains the edited layer mask if selection moves to another layer',()=>{
+    const original={shape:'rectangle',x:1,y:2,width:5,height:7,enabled:true,inverted:false,density:1} as const;
+    const other={...original,x:100};
+    const editing='original' as LayerId;
+    expect(shapeGradientPreviewMask(editing,{id:editing,mask:original},original,null)).toBe(original);
+    expect(shapeGradientPreviewMask(editing,{id:'other' as LayerId,mask:other},original,null)).toBe(original);
+    expect(shapeGradientPreviewMask(editing,null,original,null)).toBe(original);
+    expect(shapeGradientPreviewMask(undefined,{id:editing,mask:original},original,other)).toBe(other);
   });
 });
 
