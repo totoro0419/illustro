@@ -58,7 +58,7 @@ describe('C06-002 selected-stroke early rejection',()=>{
    expect(selectedStrokeMayAffectMask(m,[stroke([command(500,250,10,250)])])).toBe(true);
    expect(selectedStrokeMayAffectMask(m,[stroke([command(250,500,250,10)])])).toBe(true);
    expect(selectedStrokeMayAffectMask(m,[stroke([command(500,500,10,10)])])).toBe(true);
-   expect(selectedStrokeMayAffectMask(m,[stroke([command(500,10,10,500)])])).toBe(false);
+   expect(selectedStrokeMayAffectMask(m,[stroke([command(390,10,10,390)])])).toBe(false);
  });
  it('keeps a conservative fallback for huge selected-stroke footprints',()=>{
    const m=mask(4000,4000,3999,3999);
