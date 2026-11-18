@@ -46,12 +46,13 @@ export function shapeGradientInitialMask(editing:LayerId|undefined,draftMask:Lay
  * sampled at the preview pixel center in original document coordinates. */
 export function applyShapePreviewMask(
   pixels:Uint8ClampedArray,mask:LayerMask|null|undefined,
-  width:number,height:number,outputWidth:number,outputHeight:number
+  width:number,height:number,outputWidth:number,outputHeight:number,
+  sampleCoverage:(mask:LayerMask,x:number,y:number)=>number=layerMaskCoverage
 ):void{
   if(!mask?.enabled)return;
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
     const at=(y*outputWidth+x)*4;
-    const coverage=layerMaskCoverage(mask,(x+.5)*width/outputWidth,(y+.5)*height/outputHeight);
+    const coverage=sampleCoverage(mask,(x+.5)*width/outputWidth,(y+.5)*height/outputHeight);
     pixels[at+3]=Math.round(pixels[at+3]!*coverage);
   }
 }
