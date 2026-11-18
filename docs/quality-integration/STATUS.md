@@ -656,3 +656,14 @@ GitHubの各PRメタデータ、全12件の変更ファイル、各HEADに結び
 - 新規実装PR **0件**、既存12担当PRは **12/12件統合済み**。PR #75とPR #73はDraft・未マージ。PR #73の原調査9ファイル、129件の問題ID、元A/B/C確度を保護。 `main` は `bdc7135b` のまま。
 - **独立解決確認0/129件**。Androidペン/指、4000×4000画素、プレビューと確定画素の一致、旧作品の保存復元・Undo/Redo実機検査は未完了。今回の差分は自動検査成功までで、全件解決とは判定しない。
 - [Issue #74の既存コメント](https://github.com/totoro0419/illustro/issues/74#issuecomment-6971098992) と [Issue #92の実装報告](https://github.com/totoro0419/illustro/issues/92#issuecomment-6971092787) に同一HEADの変更・検査・未完了条件が記録済みのため、重複投稿は行わない。追加PRマージ、`main`・公開アプリ・過去ブランチの変更なし。
+
+## 2026-11-18 18時台 JST — C08〜C10追加実装の統合監視
+
+- 前回台帳更新HEAD [`83eba03d`](https://github.com/totoro0419/illustro/commit/83eba03d77c487bbe3227d72d6984c34e2d94092) から確認時の最新実装HEAD [`9cad0f13`](https://github.com/totoro0419/illustro/commit/9cad0f13761b3e36374f3295e5dacafed8fa6a5c) まで **23コミット・16ファイル変更**（GitHub compare: ahead=23、behind=0）。新規実装PRのマージではなく、統合ブランチへの直接追加実装。変更ファイルはC08 `fill/`、C09 `artwork/run.ts`・`shapeGradient.ts`・`workerQueuePolicy.ts`、C10 `artwork/text*`・`fonts.ts`・`render.ts`、Core `editableArtwork.ts`・`index.ts`。比較範囲に `apps/editor/src/main.ts`、`docs/quality-integration/`、`docs/quality-audit/` の変更なし。
+- **C08-010**：色指示線の形を保つ平行移動とキャンバス上の直接ドラッグを追加。**C08-015**：境界変更なしの場合の再解析省略・安全条件下での元画像再利用を追加。ただし変更がある場合の領域全体再解析は残る。
+- **C09-011**：描画Workerキューで正式確定をプレビューより優先し、古い図形/グラデーションプレビューを中断可能にした。4K全画素生成量の削減と実機応答測定は未完了。
+- **C10-009**：旧作品互換の任意 `styleRanges`（UTF-16範囲・色・サイズ）を導入し、文字の部分書式、編集時の範囲更新、表示・単色の輪郭化に接続。異なる文字色を一本のベクターパスにする操作は色消失を防ぐため拒否。最後のコミットで600個の部分書式範囲を保持する回帰テストを追加。AndroidのIME・文字選択、フォント差・最終画素一致は未確認。
+- 最新HEAD `9cad0f13761b3e36374f3295e5dacafed8fa6a5c` の [統合CI #44265743415](https://github.com/totoro0419/illustro/actions/runs/44265743415) はジョブとCore/Brush/Editorテスト・Editor型検査・本番ビルドの各ステップが **success**。[Core CI #44265754348](https://github.com/totoro0419/illustro/actions/runs/44265754348) も同一HEADで **success**。旧 `prep:check` は元の未分類ドキュメントに起因する既知の不一致を診断扱いしており、`prep:check` 自体をPASSと認定しない。
+- 新規実装PR **0件**。12担当PR（#76/#77/#80/#81/#82/#83/#84/#86/#88/#89/#90/#97）は個別に再取得し、全件が指定統合ブランチをbaseとして **12/12マージ済み**。PR #75・調査PR #73は **Draft・未マージ**、調査PR #73の原調査9ファイル・129件の既存ID・A/B/C確度を維持。`main` は `bdc7135b` から変更なし。
+- **独立解決確認0/129件**。Androidのペン/指・IME、4000×4000の遅延/メモリ、旧作品保存/復元・Undo/Redo、プレビューと確定画素の一致は未検証。C08-015の真の差分再解析、C09-011の全画素コスト、C10-009の多様な部分書式も残る。**新規PRの受入・追加マージなし**。
+- [Issue #74の既存コメント](https://github.com/totoro0419/illustro/issues/74#issuecomment-6973072810) に同一HEADの共有ファイル変更・検査・未解決条件が記録済みのため、重複コメントは行わない。PR #73原本、`main`、公開アプリ、過去ブランチは変更しない。
