@@ -32,7 +32,7 @@ function flood(width:number,height:number,seed:number,hit:(index:number)=>boolea
   return touchesEdge;
 }
 
-function regionTopology(labels:Uint32Array,width:number,height:number,external:Uint8Array){
+export function regionTopology(labels:Uint32Array,width:number,height:number,external:Uint8Array){
   // Consecutive labels separated by a wall share a boundary. Label 0 is
   // outside the canvas and accounts for strokes touching the canvas edge.
   const contacts=new Map<number,Set<number>>();

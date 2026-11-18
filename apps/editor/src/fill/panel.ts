@@ -358,10 +358,11 @@ export function installFillPanel(host:HTMLElement,api:{
         current.tolerance===graphTolerance&&current.gap===graphGap;
       const patched=unchangedSource&&!preserveInk
         ?(remove?tryIncrementalBoundaryRemoval(currentGraph!,points!):tryIncrementalBoundaryAddition(currentGraph!,points!)):null;
-      // A patch is used only when the wall edit preserves region connectivity
-      // and topology. Every uncertain case runs the original
-      // full Worker analysis without a change in behavior.
-      const response=patched?{graph:patched}:await runFill({
+      // Simple edits stay local; splits/merges relabel affected components in
+      // the worker. Unsupported bridge changes retain the full analyzer.
+      let response:Awaited<ReturnType<typeof runFill>>=patched?{graph:patched}:unchangedSource&&!preserveInk
+        ?await runFill({type:'graph-edit',graph:currentGraph!,points:points!,remove},abort.signal):{};
+      if(!response.graph)response=await runFill({
         type:'graph',source:source.source,width:source.width,height:source.height,
         settings:current,manual
       },abort.signal);
