@@ -1,10 +1,18 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`c6cd161e`](https://github.com/totoro0419/illustro/commit/c6cd161ef6f4931b00abc143f101e5c2ea10945f)
+**照合対象のコードHEAD:** [`6517d63e`](https://github.com/totoro0419/illustro/commit/6517d63eb6908e3491bbe4917ab0a466a864faca)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
+
+### 2026-11-19 定期自動開発②｜C09-005・C09-009・C09-015の精度・中断安全性改善（3 ID）
+
+- **C09-005 / C09-015（部分改善）**：キャンバス上で動かした編集点の小数座標を数値欄で0.1pxへ丸めず、仮表示と確定に同じ値を使用。数値欄は細かな座標を受け入れる。非有限座標を拒否し、非同期保存が始まる前に編集点の操作を終了して、保存中に別の位置が表示される競合を防止。図形・グラデーション共通の仮表示マスクで、縮小判定の繰り返しも削減。
+- **C09-009（追加改善、個別完了未認定）**：色停止点のドラッグ中に縮小プレビューを更新し、同じ位置では不要な再計算を省略。数値欄が空欄・不正値のときは直前の正常値を保持。ポインターの捕捉が突然失われた場合はドラッグ前の位置に戻す。
+- **コード・テスト**：[d9487cea](https://github.com/totoro0419/illustro/commit/d9487cead5d88c8002b7e3bdd6eb93b99b2fc450) → [6517d63e](https://github.com/totoro0419/illustro/commit/6517d63eb6908e3491bbe4917ab0a466a864faca)（2コミット）。小数座標保持、無効な色停止点数値、非有限ドラッグ座標の回帰テストを追加。
+- **検証**：最終コードHEAD `6517d63e` の[統合CI #44402844450](https://github.com/totoro0419/illustro/actions/runs/44402844450) は **completed/success**（Core・Brush・Editorテスト、型検査、本番ビルド）。先行コード `d9487cea` の[統合CI #44402653682](https://github.com/totoro0419/illustro/actions/runs/44402653682) と[Core CI #44402666026](https://github.com/totoro0419/illustro/actions/runs/44402666026) も成功。Android実機・4K実測・保存復元/Undo/Redoの独立実機確認は未実施。保存形式・履歴構造は変更なし。
+- **残件・次回**：C09-005/015は部分対応を維持。C09-009も個別完了未認定のまま。記録上の部分対応37件・根拠未確認0件・修正記録あり個別完了未認定92件を維持。次回は **C09-005/015** の高倍率原寸プレビューとWorker非対応時の表示（`apps/editor/src/artwork/shapeGradient.ts`、`apps/editor/src/artwork/run.ts`）を優先。競合時は **C07-003** 特殊レイヤー一括変形（`apps/editor/src/transform/`）または **C09-004** 自由形状の縮小マスク精度。main・PR #73は変更せず、PR #75はDraft維持。
 
 ### 2026-11-19 定期自動開発①｜C06-002・C07-014・C08-003の連続改善（3 ID）
 
