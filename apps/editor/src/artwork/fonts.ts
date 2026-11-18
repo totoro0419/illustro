@@ -87,6 +87,8 @@ function vectorize(text:EditableText,font:Font):ArtPoint[]{
   if(text.styleRanges?.length){
     if(text.styleRanges.some(range=>range.color&&range.color.toLowerCase()!==text.color.toLowerCase()))
       throw Error('選択部分に別の色を使う文字は、色を保ったまま単一のパスに変換できません。まず文字色を統一するか、描画用レイヤーへ変換してください。');
+    if(text.styleRanges.some(range=>range.bold||range.italic))
+      throw Error('部分的な太字・斜体はこのフォントの輪郭化で再現できません。元の書式を保つには描画用レイヤーへ変換してください。');
     const lines=layoutStyledText(text,(character,size)=>font.getAdvanceWidth(character,size));
     for(const line of lines.lines){
       const x0=alignedTextLineStart(text,line.width);
