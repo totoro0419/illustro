@@ -49,6 +49,16 @@ describe('C10 vector editing geometry',()=>{
     expect(error).toBeLessThan(.6);
     expect(()=>sampledPath(bezier,.1,3)).toThrow();
   });
+  it('can refine a long high-curvature 4K Bézier beyond the former 255-point cap',()=>{
+    const longCurve:EditablePath={...line(0,4000),shape:'bezier',
+      points:[{x:0,y:0,outX:0,outY:4000},{x:4000,y:0,inX:4000,inY:4000}]};
+    const fine=sampledPath(longCurve,.002,8192)[0]!;
+    expect(fine.length).toBeGreaterThan(256);
+    expect(fine.length).toBeLessThanOrEqual(2050);
+    expect(fine[0]!.x).toBe(0);
+    expect(fine.at(-1)!.x).toBe(4000);
+    expect(fine.at(-1)!.y).toBe(0);
+  });
   it('preserves the original operands when two closed shapes are combined',async()=>{
     const first=rectangle(0,40),second=rectangle(20,60);
     const combined=await combineShapes(first,second,'union');
