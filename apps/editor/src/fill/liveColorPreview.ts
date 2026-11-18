@@ -87,14 +87,15 @@ export class LiveColorFillPreview{
    if(y+1<this.height)visit(at+this.width);
   }
  }
- render():ImageData{
+ renderPixels():Uint8ClampedArray<ArrayBuffer>{
   for(let i=0;i<this.filled.length;i++){
    const at=i*4;
    this.pixels[at]=43;this.pixels[at+1]=161;this.pixels[at+2]=238;
    this.pixels[at+3]=this.filled[i]?112:0;
   }
-  return new ImageData(this.pixels,this.width,this.height);
+  return this.pixels;
  }
+ render():ImageData{return new ImageData(this.renderPixels(),this.width,this.height);}
  /** Allows pure tests without requiring an actual canvas. */
  coverage():Uint8Array<ArrayBuffer>{return this.filled.slice();}
 }
