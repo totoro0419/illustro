@@ -362,63 +362,69 @@ export function installFillPanel(host:HTMLElement,api:{
     finally{analyzing=false;if(analysisAbort===abort)analysisAbort=null;sync();}
   }
   function stopGesture(){gesture?.setCanvasEditGesture(null);gesture=null;}
-  async function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false){
+  function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false){
     stopGesture();
     const drawing=api.drawing();
     if(!drawing)throw Error('作品を開いてください。');
     const graph=liveFill&&method.value==='line'&&confirmed&&currentGraph&&capture?.referenceValid()&&
       value(tolerance)===graphTolerance&&value(gap)===graphGap?currentGraph:null;
-    // The color preview is a 512px guide only; actual fill stays full-resolution.
-    // Do not falsely imply exactness when a selection, target mask or edge
-    // effects must be applied by the final Worker.
+    const previewColor=liveFill&&method.value==='color'&&condition.value==='all'&&!value(edge)&&!smooth.checked;
+    const previewSettings=settings();
     let liveColor:LiveColorFillPreview|null=null;
     let colorValid:(()=>boolean)|null=null;
-    if(liveFill&&method.value==='color'&&condition.value==='all'&&!value(edge)&&!smooth.checked){
-      output.textContent='塗りの仮表示に使う絵を読み込んでいます。';
-      const source=await read(false);
-      if(drawing!==api.drawing()||!source.valid())throw Error('作品が変わったため、塗りの準備を中止しました。');
-      if(!source.selection&&!source.targetMask){
-        colorValid=source.valid;
-        liveColor=new LiveColorFillPreview(source.source,source.width,source.height,512);
-      }
-    }
+    let latestPoints:readonly Point[]=[];
     const picked=new Set<number>();
     let processed=0,previewPixels:Uint8ClampedArray<ArrayBuffer>|undefined;
+    const update=(points:readonly Point[])=>{
+      latestPoints=points;
+      if(colorValid&&!colorValid()){
+        stopGesture();output.textContent='作品が変わったため塗りの入力を終了しました。';
+        return;
+      }
+      if(points.length<processed){processed=0;picked.clear();}
+      if(graph){
+        const before=picked.size;
+        for(let i=Math.max(0,processed-1);i<points.length;i++){
+          const point=points[i]!,previous=points[Math.max(0,i-1)]!;
+          addTraceRegions(graph,previous,point,value(trace),closedOnly.checked,picked);
+        }
+        processed=points.length;
+        if(!picked.size||picked.size===before)return;
+        const image=renderLiveRegionPreview(graph,picked,512,previewPixels);
+        previewPixels=image.pixels;
+        drawing.showFillGesturePreview(new ImageData(image.pixels,image.width,image.height));
+      }else if(liveColor){
+        let changed=false;
+        for(let i=Math.max(0,processed-1);i<points.length;i++){
+          const point=points[i]!,previous=points[Math.max(0,i-1)]!;
+          changed=liveColor.add(previous,point,previewSettings)||changed;
+        }
+        processed=points.length;
+        if(changed)drawing.showFillGesturePreview(liveColor.render());
+      }
+    };
     gesture=drawing;
-    output.textContent=graph||liveColor
+    output.textContent=graph||previewColor
       ?label+' 青い仮表示は目安です。正確な結果は指を離した後に計算します。':label;
+    // Admit pointer input immediately. Capturing a 4K reference image must
+    // never hold the gesture setup hostage; a late preview is simply skipped.
     drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,
-      ...(graph||liveColor?{update:(points:readonly Point[])=>{
-        if(colorValid&&!colorValid()){
-          stopGesture();output.textContent='作品が変わったため塗りの入力を終了しました。';
-          return;
-        }
-        if(points.length<processed){processed=0;picked.clear();}
-        if(graph){
-          const before=picked.size;
-          for(let i=Math.max(0,processed-1);i<points.length;i++){
-            const point=points[i]!,previous=points[Math.max(0,i-1)]!;
-            addTraceRegions(graph,previous,point,value(trace),closedOnly.checked,picked);
-          }
-          processed=points.length;
-          if(!picked.size||picked.size===before)return;
-          const image=renderLiveRegionPreview(graph,picked,512,previewPixels);
-          previewPixels=image.pixels;
-          drawing.showFillGesturePreview(new ImageData(image.pixels,image.width,image.height));
-        }else if(liveColor){
-          let changed=false;
-          for(let i=Math.max(0,processed-1);i<points.length;i++){
-            const point=points[i]!,previous=points[Math.max(0,i-1)]!;
-            changed=liveColor.add(previous,point,settings())||changed;
-          }
-          processed=points.length;
-          if(changed)drawing.showFillGesturePreview(liveColor.render());
-        }
-      }}:{}),
+      ...(graph||previewColor?{update}:{}),
       complete:points=>{
         stopGesture();
         if(points.length)void work(()=>complete(points));
       }});
+    if(previewColor){
+      void read(false).then(source=>{
+        if(gesture!==drawing||drawing!==api.drawing()||!source.valid()||
+           source.selection||source.targetMask)return;
+        colorValid=source.valid;
+        liveColor=new LiveColorFillPreview(source.source,source.width,source.height,512);
+        if(latestPoints.length)update(latestPoints);
+      }).catch(()=>{
+        if(gesture===drawing)output.textContent='仮表示の準備は省略しました。塗りの確定はそのまま利用できます。';
+      });
+    }
   }
   const candidateValid=(item:Candidate)=>item.adjustment?item.source.canAdjust():item.source.valid();
   async function refreshCandidate(){
