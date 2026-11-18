@@ -40,18 +40,43 @@ export function tracePath(ctx:Context,path:EditablePath){
 
 function rgba(color:string){return [1,3,5].map(i=>parseInt(color.slice(i,i+2),16));}
 const wrap=(t:number)=>((t%1)+1)%1;
-function gradientPosition(gradient:EditableGradient,x:number,y:number){
-  const dx=gradient.end.x-gradient.start.x,dy=gradient.end.y-gradient.start.y;
-  const u=x-gradient.start.x,v=y-gradient.start.y,den=dx*dx+dy*dy;
-  if(!den)return 0;
+/** Prepare canvas-invariant gradient math once, rather than for every
+ * pixel of a 4K raster (especially the angular atan2 and radial sqrt). */
+export function gradientPositionSampler(gradient:EditableGradient):(x:number,y:number)=>number{
+  const {x:startX,y:startY}=gradient.start;
+  const dx=gradient.end.x-startX,dy=gradient.end.y-startY,den=dx*dx+dy*dy;
+  if(!den)return ()=>0;
   if(gradient.mode==='radial'){
-    if(gradient.radialRatio===undefined||gradient.radialRatio===1)return Math.hypot(u,v)/Math.sqrt(den);
-    const along=(u*dx+v*dy)/den,across=(-u*dy+v*dx)/den;
-    return Math.hypot(along,across/gradient.radialRatio);
+    if(gradient.radialRatio===undefined||gradient.radialRatio===1){
+      const radius=1/Math.sqrt(den);
+      return (x,y)=>Math.hypot(x-startX,y-startY)*radius;
+    }
+    const ratio=gradient.radialRatio;
+    return (x,y)=>{
+      const u=x-startX,v=y-startY;
+      return Math.hypot((u*dx+v*dy)/den,(-u*dy+v*dx)/den/ratio);
+    };
   }
-  if(gradient.mode==='angular')return wrap((Math.atan2(v,u)-Math.atan2(dy,dx))/(2*Math.PI));
-  const t=(u*dx+v*dy)/den;
-  return gradient.mode==='reflected'?Math.abs(t):t;
+  if(gradient.mode==='angular'){
+    const angle=Math.atan2(dy,dx),inverse=1/(2*Math.PI);
+    return (x,y)=>wrap((Math.atan2(y-startY,x-startX)-angle)*inverse);
+  }
+  const inverse=1/den;
+  return gradient.mode==='reflected'
+    ?(x,y)=>Math.abs(((x-startX)*dx+(y-startY)*dy)*inverse)
+    :(x,y)=>((x-startX)*dx+(y-startY)*dy)*inverse;
+}
+
+/** Lower bound for the first stop at or after t, clamped to [1,last].
+ * A binary search avoids up to 63 comparisons per pixel for 64-stop gradients.
+ * Equality and duplicate stop positions preserve the previous linear scan. */
+export function gradientStopUpperIndex(stops:readonly {at:number}[],t:number):number{
+  let low=1,high=stops.length-1;
+  while(low<high){
+    const mid=(low+high)>>>1;
+    if(stops[mid]!.at<t)low=mid+1;else high=mid;
+  }
+  return low;
 }
 function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCanvasElement|OffscreenCanvas){
   const {width,height,outputWidth,outputHeight}=size;
@@ -81,19 +106,19 @@ function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCan
   const shapeCoverage=alpha;
   const distance=alpha?gradientBoundaryField(alpha,outputWidth,outputHeight,factorX,factorY):null;
   const spread=Math.max(1,Math.hypot(gradient.end.x-gradient.start.x,gradient.end.y-gradient.start.y));
+  const position=distance?null:gradientPositionSampler(gradient);
   const fieldLeft=distance?.left??0,top=distance?.top??0;
   const right=fieldLeft+(distance?.width??outputWidth),bottom=top+(distance?.height??outputHeight);
   for(let y=top;y<bottom;y++)for(let x=fieldLeft;x<right;x++){
     const index=y*outputWidth+x;
     if(shapeCoverage&&!shapeCoverage[index])continue;
     const sx=(x+.5)*factorX,sy=(y+.5)*factorY;
-    let t=distance?Math.max(0,distance.values[(y-top)*distance.width+x-fieldLeft]!-Math.min(factorX,factorY))/spread:gradientPosition(gradient,sx,sy);
+    let t=distance?Math.max(0,distance.values[(y-top)*distance.width+x-fieldLeft]!-Math.min(factorX,factorY))/spread:position!(sx,sy);
     if(gradient.spread==='repeat')t=wrap(t);
     else if(gradient.spread==='reflect'){
       const period=wrap(t/2)*2;t=period<=1?period:2-period;
     }
-    let high=1;
-    while(high<stops.length-1&&stops[high]!.at<t)high++;
+    const high=gradientStopUpperIndex(stops,t);
     const a=stops[high-1]!,b=stops[high]!;
     const u=b.at===a.at?Number(t>=b.at):Math.max(0,Math.min(1,(t-a.at)/(b.at-a.at)));
     const weight=u<=a.midpoint?u/(2*a.midpoint):.5+(u-a.midpoint)/(2*(1-a.midpoint));
