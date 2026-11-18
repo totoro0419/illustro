@@ -76,6 +76,19 @@ describe('C08-015 safe incremental region walls',()=>{
     expect(tryIncrementalBoundaryRemoval(before,[{x:NaN,y:3}])).toBeNull();
     expect(tryIncrementalBoundaryRemoval(before,[])).toBeNull();
   });
+  it('defers local edits next to a generated gap bridge to the full analyzer',()=>{
+    const w=13,h=13;
+    const source=inkImage(w,h,[[5,5],[6,5]]);
+    const before=region(source,w,h);
+    const bridges=before.bridges.slice();
+    bridges[5*w+6]=1;
+    const graph={...before,bridges};
+    // The edited cell is not itself a bridge, but the adjacent bridge
+    // could be invalidated by the change.
+    expect(tryIncrementalBoundaryRemoval(graph,[{x:5,y:5}])).toBeNull();
+    expect(tryIncrementalBoundaryAddition(graph,[{x:5,y:6}])).toBeNull();
+    expect(graph.walls).toEqual(before.walls);
+  });
   it('clears the ink flag when removing the last local wall',()=>{
     const before=region(inkImage(11,11,[[5,5]]),11,11);
     const result=tryIncrementalBoundaryRemoval(before,[{x:5,y:5}]);
