@@ -40,9 +40,25 @@ describe('C06-002 selected-stroke early rejection',()=>{
    const connected=new Array<number>(20).fill(0);
    connected[0]=3990;connected[1]=3990;connected[2]=6;
    connected[16]=10;connected[17]=10;connected[19]=1;
-   // Conservative true is intentional: never scan the entire 4K mask
-   // merely to decide whether GPU readback can be skipped.
-   expect(selectedStrokeMayAffectMask(selection,[stroke([connected])])).toBe(true);
+   // The narrow segment envelope avoids scanning the 16-million-pixel box.
+   expect(selectedStrokeMayAffectMask(selection,[stroke([connected])])).toBe(false);
+   expect(selectedStrokeMayAffectMask(mask(4000,4000,2100,2100),[stroke([connected])])).toBe(true);
+ });
+ it('keeps horizontal, vertical and reversed diagonal selected strokes',()=>{
+   const m=mask(512,512,250,250);
+   const command=(x:number,y:number,ax:number,ay:number)=>{
+     const c=new Array<number>(20).fill(0);
+     c[0]=x;c[1]=y;c[2]=8;c[16]=ax;c[17]=ay;c[19]=1;
+     return c;
+   };
+   expect(selectedStrokeMayAffectMask(m,[stroke([command(500,250,10,250)])])).toBe(true);
+   expect(selectedStrokeMayAffectMask(m,[stroke([command(250,500,250,10)])])).toBe(true);
+   expect(selectedStrokeMayAffectMask(m,[stroke([command(500,500,10,10)])])).toBe(true);
+   expect(selectedStrokeMayAffectMask(m,[stroke([command(500,10,10,500)])])).toBe(false);
+ });
+ it('keeps a conservative fallback for huge selected-stroke footprints',()=>{
+   const m=mask(4000,4000,3999,3999);
+   expect(selectedStrokeMayAffectMask(m,[stroke([[1000,1000,4000]])])).toBe(true);
  });
  it('honors a later stroke in a multi-record batch',()=>{
    const selection=mask(128,128,100,100);
