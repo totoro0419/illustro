@@ -27,9 +27,12 @@ export function applyTextSelectionStyle(
  const splits=new Set<number>([start,end]);
  for(const r of ranges){splits.add(r.start);splits.add(r.end);}
  const sorted=[...splits].sort((a,b)=>a-b),result:TextStyleRange[]=[];
+ let pointer=0;
  for(let i=1;i<sorted.length;i++){
    const a=sorted[i-1]!,b=sorted[i]!;
-   const old=ranges.find(r=>r.start<=a&&r.end>=b);
+   while(pointer<ranges.length&&ranges[pointer]!.end<=a)pointer++;
+   const candidate=ranges[pointer];
+   const old=candidate&&candidate.start<=a&&candidate.end>=b?candidate:undefined;
    const covered=a>=start&&b<=end;
    if(!old&&!covered)continue;
    const next:Readonly<{color?:string;size?:number}>=covered?(clear?{}:{...old,...patch}):old??{};
@@ -65,7 +68,7 @@ export function rebaseTextStyles(
    }
  }
  const sorted=result.filter(r=>r.start<r.end).sort((a,b)=>a.start-b.start||a.end-b.end);
- return compact(sorted).slice(0,512);
+ return compact(sorted);
 }
 
 export type StyledGlyph=Readonly<{
