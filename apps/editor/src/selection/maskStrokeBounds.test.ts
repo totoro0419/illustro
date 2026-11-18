@@ -35,6 +35,15 @@ describe('C06-002 selected-stroke early rejection',()=>{
    expect(selectedStrokeMayAffectMask(selection,[stroke([[NaN,10,3]])])).toBe(true);
    expect(selectedStrokeMayAffectMask({...selection,alpha:new Uint8Array(3)},[stroke([[1,1,3]])])).toBe(true);
  });
+ it('bounds main-thread work for a diagonal across a 4K canvas',()=>{
+   const selection=mask(4000,4000,200,3900);
+   const connected=new Array<number>(20).fill(0);
+   connected[0]=3990;connected[1]=3990;connected[2]=6;
+   connected[16]=10;connected[17]=10;connected[19]=1;
+   // Conservative true is intentional: never scan the entire 4K mask
+   // merely to decide whether GPU readback can be skipped.
+   expect(selectedStrokeMayAffectMask(selection,[stroke([connected])])).toBe(true);
+ });
  it('honors a later stroke in a multi-record batch',()=>{
    const selection=mask(128,128,100,100);
    expect(selectedStrokeMayAffectMask(selection,[stroke([[10,10,4]]),stroke([[100,100,4]])])).toBe(true);
