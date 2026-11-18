@@ -14,7 +14,7 @@ describe('C06-015 editable group copy uses sparse painted tiles',()=>{
   tx.commit();
   const controller=EditorController.restored(doc,layer);
   const full=vi.fn(async()=>{throw Error('unexpected full-image readback');});
-  const region=vi.fn(async()=>new Uint8ClampedArray([
+  const region=vi.fn(async (_id:string,_area:{x:number;y:number;width:number;height:number})=>new Uint8ClampedArray([
    12,34,56,255,0,0,0,0,0,0,0,0,0,0,0,0
   ]));
   const drawing={
