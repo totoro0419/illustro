@@ -6,6 +6,7 @@ import type {FillSettings,GapCandidate,RegionGraph,Walls} from './pixels';
 import {runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
 import {colorHintCenter,moveColorHint} from './colorHintPlacement';
+import {isManualBoundaryNoop} from './manualChangeEffect';
 import {sampleFillDetail} from './detailPreview';
 import {addTraceRegions,renderLiveRegionPreview} from './liveRegionPreview';
 import {LiveColorFillPreview} from './liveColorPreview';
@@ -339,9 +340,19 @@ export function installFillPanel(host:HTMLElement,api:{
     analyzing=true;analysisError=null;sync();
     output.textContent='線画を解析しています。';
     try{
-      const source=await read(false,stored),old=restoring?stored?.manual??[]:manuals.get(source.key)??stored?.manual??[];
+      // A manual brush edit changes boundary geometry, not the reference
+      // artwork. Reuse its validated capture instead of recapturing 4K pixels.
+      const reusable=!!points&&!stored&&capture?.valid()&&capture.referenceValid()?capture:null;
+      const source=reusable??await read(false,stored);
+      const old=restoring?stored?.manual??[]:manuals.get(source.key)??stored?.manual??[];
       const manual=points?[...old,{points,remove,...(preserveInk?{preserveInk:true}:{})}]:old;
       const current=settings();
+      if(points&&reusable&&currentGraph&&source===capture&&
+         current.tolerance===graphTolerance&&current.gap===graphGap&&
+         isManualBoundaryNoop(currentGraph,points,remove,preserveInk)){
+        output.textContent='ここはすでに同じ境界になっています。再解析は不要です。';
+        return;
+      }
       const response=await runFill({type:'graph',source:source.source,width:source.width,height:source.height,settings:current,manual},abort.signal);
       if(!source.valid()||!response.graph)throw Error('参照元が変わりました。もう一度解析してください。');
       manuals.set(source.key,manual);
