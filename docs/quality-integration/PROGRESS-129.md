@@ -6,6 +6,14 @@
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
 
+### 2026-11-19 定期自動開発②｜C10-002・C10-015の追加改善
+
+- **修正内容**：ベクターの点・曲線ハンドルのドラッグ中に、確定時と共通の点移動計算を使ってキャンバスへ仮表示。連続入力を最新位置へ集約し、古い非同期結果を表示しない。Escapeで取消した場合の表示残り、同じ座標の重複計算も改善。
+- **コード・テスト**：[`db5b08bb`](https://github.com/totoro0419/illustro/commit/db5b08bb5df3c4d92024c1cc434420241858d91c) → [`51db81f7`](https://github.com/totoro0419/illustro/commit/51db81f730150ae945bf425d01e37d5c14d07543)。ベクター点移動の3回帰テストを追加。
+- **検査**：最終コード [統合CI #44370308188](https://github.com/totoro0419/illustro/actions/runs/44370308188) と [Core CI #44370324539](https://github.com/totoro0419/illustro/actions/runs/44370324539) は両方成功。Core/Brush/Editorテスト、型検査、本番ビルドを通過。
+- **未完了**：2件とも部分改善。Android実機、4Kの実測、複雑なレイヤー合成と原寸画素の一致、保存復元・Undo/Redoの独立実機検証は未実施。保存形式・履歴構造は変更していない。
+- **次回**：C10-002/015の高倍率原寸表示と複雑合成の一致（`apps/editor/src/artwork/vectorPanel.ts`、`apps/editor/src/brushSurface.ts`）。競合時はC07-014（`apps/editor/src/transform/`）またはC09-004（`apps/editor/src/artwork/shapeGradient.ts`）。
+
 ## 集計
 
 | 記録上の区分 | 件数 | 意味 |
@@ -224,7 +232,7 @@
 | [C09-015](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-015) | C/P2 | 制作キャンバス上の定規・図形・グラデーション共通編集ハンドルの設計案 | **部分対応・コード残件あり** | 図形・グラデーションの点移動中に縮小した結果画像をキャンバスへ非同期表示。定規との完全共通化・原寸一致は未完成 | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-016](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-016) | C/P2 | 通常ブラシ・図形・グラデーションの共通吸着基盤への再設計案 | **部分対応・コード残件あり** | ベジェ曲線の制御ハンドルも同じ定規に吸着するよう改善。図形全種類の吸着・解除操作の全経路は未確認 | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C10-001](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-001) | A/P1 | 自由ベクター線の一筆ごとに新規レイヤーを作り、同じ層に複数パスを保持できない | **部分対応・コード残件あり** | 自由ベクター描画から既存パスへの自動追記が未完成 | [#88](https://github.com/totoro0419/illustro/pull/88) |
-| [C10-002](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-002) | A/P1 | ベジェ曲線の制御ハンドルをキャンバスでドラッグできず数値編集が中心 | **部分対応・コード残件あり** | 制御点を動かす途中の正式曲線と一致する仮表示が未完成 | [#88](https://github.com/totoro0419/illustro/pull/88) |
+| [C10-002](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-002) | A/P1 | ベジェ曲線の制御ハンドルをキャンバスでドラッグできず数値編集が中心 | **部分対応・コード残件あり** | キャンバス上の点・曲線ハンドル移動中に、確定時と同じ点移動計算を用いた曲線をWorkerで仮表示。最新入力だけを順次処理し、Escape時の古い仮表示を解除。コード [`db5b08bb`](https://github.com/totoro0419/illustro/commit/db5b08bb5df3c4d92024c1cc434420241858d91c)、[`51db81f7`](https://github.com/totoro0419/illustro/commit/51db81f730150ae945bf425d01e37d5c14d07543)。4K縮小仮表示の原寸画素・複雑合成の一致とAndroid操作は未確認 | [#88](https://github.com/totoro0419/illustro/pull/88) |
 | [C10-003](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-003) | A/P1 | 文字の輪郭化後も元文字レイヤーが表示され重なって外観が変わる | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#84](https://github.com/totoro0419/illustro/pull/84) |
 | [C10-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-004) | A/P1 | 文字枠の幅・高さと枠に応じた自動改行がない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#84](https://github.com/totoro0419/illustro/pull/84) |
 | [C10-005](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-005) | A/P1 | 図形演算を別レイヤーに追加しても元の図形が見えたままで結果を隠す | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#88](https://github.com/totoro0419/illustro/pull/88) |
@@ -237,7 +245,7 @@
 | [C10-012](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-012) | B/P1 | 通常表示と輪郭化で別々の文字配置計算を用い外観の一致が未検証 | 修正記録あり・個別完了未認定 | 部分書式の通常表示と輪郭化で同じ文字配置を利用し、色付き輪郭を同一レイヤーで保持。端末の字形表示との実機比較は未確認 | [#84](https://github.com/totoro0419/illustro/pull/84) |
 | [C10-013](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-013) | B/P2 | ベクター曲線を図形演算時に有限個の折れ線へ分割することで曲線精度が落ちる懸念 | **部分対応・コード残件あり** | 曲線・楕円の点数上限で不正確な折れ線を黙って返さず停止するよう修正 [`39b90559`](https://github.com/totoro0419/illustro/commit/39b90559014488acdcc8cba639fc89a4bcd58a8e)。極端な曲線の編集継続、4K実測は未確認 | [#88](https://github.com/totoro0419/illustro/pull/88) |
 | [C10-014](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-014) | B/P2 | 取り込めるフォントでも輪郭化に使えない形式がある可能性 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#84](https://github.com/totoro0419/illustro/pull/84) |
-| [C10-015](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-015) | C/P2 | 線を直接選択し点・ハンドル・線幅を操作する共通UIの設計案 | **部分対応・コード残件あり** | ベクター制御点の編集中仮表示と確定線の一致が未完成 | [#88](https://github.com/totoro0419/illustro/pull/88) |
+| [C10-015](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-015) | C/P2 | 線を直接選択し点・ハンドル・線幅を操作する共通UIの設計案 | **部分対応・コード残件あり** | 点と曲線ハンドルのドラッグ表示を共通化し、連続入力をまとめて古いWorker結果を捨てる。操作取消・同じ座標の重複再計算も抑制。コード [`db5b08bb`](https://github.com/totoro0419/illustro/commit/db5b08bb5df3c4d92024c1cc434420241858d91c)、[`51db81f7`](https://github.com/totoro0419/illustro/commit/51db81f730150ae945bf425d01e37d5c14d07543)。原寸画素一致・レイヤー特殊合成・Android実機は未確認 | [#88](https://github.com/totoro0419/illustro/pull/88) |
 | [C10-016](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-016) | C/P2 | ベクター・文字の表示を編集した領域だけ再計算する設計案 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#84](https://github.com/totoro0419/illustro/pull/84) |
 
 ## 判定・更新方法
