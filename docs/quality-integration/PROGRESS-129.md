@@ -1,7 +1,7 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`1c51309fd678`](https://github.com/totoro0419/illustro/commit/1c51309fd6788451e9d012a0b745430a08d2aa85)
+**照合対象のコードHEAD:** [`434f6261700d`](https://github.com/totoro0419/illustro/commit/434f6261700dbca4c02e88d8f11776dea6da6040)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
@@ -44,6 +44,16 @@
 - **C03-007（部分改善）**：履歴画像の生成中、アプリが背景タブにあると画面更新待ちで止まり続ける可能性を解消。表示中は従来の画面更新に合わせ、背景では短い待機で処理を継続する。履歴画像の色・合成方法・保存形式は変更なし。表示中／背景のテストを追加。コミット [`e03757fa`](https://github.com/totoro0419/illustro/commit/e03757fa30d5c1a5cb66c4f190e5040b0b1d6416)。
 - **検査**：前2コミットはそれぞれ統合CIとCore CIがsuccess。最終コードHEAD `e03757fa` のCore CI [#44326327749](https://github.com/totoro0419/illustro/actions/runs/44326327749) はsuccess。統合CI [#44326315905](https://github.com/totoro0419/illustro/actions/runs/44326315905) もcompleted/success（Core・Brush・Editorテスト、型確認、本番ビルド）。Android実機と4K性能の実測は未実施。
 - **残件と次回**：3 IDとも既存の「部分対応」を維持。C03-007の高度な履歴画像での全画素処理、C06-007のWorker非対応時の長い線、C06-015の特殊グループ貼り付け・巨大コピー元の課題は残る。次回は **C06-001/002**（選択付き消しゴム・特殊合成の途中表示と読戻し）を最優先。関連ファイル：`apps/editor/src/brushSurface.ts`、`apps/editor/src/selection/`。競合する場合は **C09-004**（図形の選択マスク付き仮表示）、`apps/editor/src/artwork/shapeGradient.ts` へ切り替える。
+
+### 2026-11-19 定期自動開発①｜3 IDを追加改善（コードHEAD `434f6261`）
+
+- **C06-002（部分改善）**：選択付きの一筆が選択範囲の画素に届かないと保守的に判定できる場合、描画済みレイヤーの全GPUタイル読戻しとWorkerへの転送を開始せず終了。接続した筆跡、複数の対称コピー、選択の透明度、4K座標に対応。判定が不確実な場合や検査範囲が広い場合は従来の正確な処理へ戻す。対象: `selection/maskStrokeBounds.ts`、`brushSurface.ts`。全タイル読戻しの一般的な削減、非Worker経路は未完成。
+- **C09-004（部分改善）**：新規図形の仮表示に使った選択マスクを、選択状態が後から変わっても保存時に同じ値で渡す。既存図形の編集ではそのレイヤーの保存済みマスクを維持。原寸・縮小表示のマスク計算と透明度の回帰テストを追加。小さな選択領域を縮小する際の面積平均・実機での完全一致は未確認。
+- **C09-011（部分改善）**：グラデーションの方向・距離・角度に依存する不変計算を描画前に1回だけ実行し、最大64個の色停止点を各画素で順番に調べる方式から二分探索へ変更。既存の線形・放射・楕円・角度・反射の位置計算、重複停止点の区間判定を回帰テストで照合。4Kの最終画像全画素生成とメモリ確保は引き続き残る。
+- **コミット**：[図形マスク `dc8d2186`](https://github.com/totoro0419/illustro/commit/dc8d21867043a0d15e580e53fe0f767bed9e85f8) / [グラデーション高速化 `e54737a4`](https://github.com/totoro0419/illustro/commit/e54737a40a41d3b985aec0a51486c49ba9bc4086) / [選択付き筆の読戻し削減 `e71b0dc4`](https://github.com/totoro0419/illustro/commit/e71b0dc47667b1949e67e228d6f6fe15a9cd691b) / [テスト修正を含む最終 `434f6261`](https://github.com/totoro0419/illustro/commit/434f6261700dbca4c02e88d8f11776dea6da6040)。中間のテスト失敗（Node DOM依存・4K配列の巨大比較・構文誤り）を修正し、最終HEADで再検証。
+- **検査**：[統合CI #44332262101](https://github.com/totoro0419/illustro/actions/runs/44332262101) **success**（Core、Brush、Editorテスト、型検査、本番ビルド）。[Core CI #44332277362](https://github.com/totoro0419/illustro/actions/runs/44332277362) **success**。Android実機、4K実測、Undo/Redo・保存復元の実機独立検証は未実施。保存形式や履歴構造は変更なし。
+- **集計**：3 IDとも部分対応を維持。既知の部分対応36件、根拠未確認1件、修正記録あり・個別完了未認定92件という記録上の分類は変更しない。
+- **次回**：C06-001（選択付き消しゴム・特殊合成の途中表示）、C06-002（実際に重なる筆のGPU読戻し削減）、C07-003（特殊レイヤーの一括変形）。関連: `apps/editor/src/brushSurface.ts`、`apps/editor/src/selection/`、`apps/editor/src/transform/`。競合時はC09-006（ペン保持中の図形補正仮表示）へ。
 
 ## 129件の一覧
 
@@ -98,7 +108,7 @@
 | [C05-019](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C05.md#c05-019) | C/P2 | 参考資料上の直接採色と全体表示の切替を改善できる | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#82](https://github.com/totoro0419/illustro/pull/82) |
 | [C05-020](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C05.md#c05-020) | C/P2 | 素材種別ごとの実際の利用方法を統一できる | **部分対応・コード残件あり** | 素材別適用を追加したが、色・質感・サイズ等の表現制限が残る | [#77](https://github.com/totoro0419/illustro/pull/77) |
 | [C06-001](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-001) | A/P1 | 選択中のブラシの仮表示に選択範囲が反映されない経路 | **部分対応・コード残件あり** | 消しゴム・特殊合成・下層描画の選択マスク付き仮線が未完成 | [#90](https://github.com/totoro0419/illustro/pull/90) |
-| [C06-002](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-002) | A/P1 | 選択中の一筆が通常の描画より大きな処理を要求する | **部分対応・コード残件あり** | 高密度画像の読戻し総量と非Worker経路の最適化が残る | [#90](https://github.com/totoro0419/illustro/pull/90) |
+| [C06-002](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-002) | A/P1 | 選択中の一筆が通常の描画より大きな処理を要求する | **部分対応・コード残件あり** | 選択外の一筆のGPU読戻しを省略。選択内の読戻し総量と非Worker経路の最適化は継続 | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-003](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-003) | A/P1 | 選択がない状態で減算・交差を使うと新しい選択範囲ができる | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-004) | A/P2 | 複雑な選択範囲でも四角い外枠が表示される | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
 | [C06-005](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C06.md#c06-005) | A/P1 | Ctrl+Vが端末の画像貼り付けと連動していない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#90](https://github.com/totoro0419/illustro/pull/90) |
@@ -149,14 +159,14 @@
 | [C09-001](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-001) | A/P1 | 二点・三点透視定規で描きたい消失点方向を自動選択できない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-002](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-002) | A/P1 | 透視定規の候補距離が0になりやすくほかの定規を押しのける | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-003](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-003) | A/P1 | 図形の位置指定にブラシ用の定規吸着が適用されない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#89](https://github.com/totoro0419/illustro/pull/89) |
-| [C09-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-004) | A/P1 | 選択範囲内の図形プレビューに確定時のマスクが反映されない | **部分対応・コード残件あり** | 図形の仮表示と確定画像の一致が未完成 | [#89](https://github.com/totoro0419/illustro/pull/89) |
+| [C09-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-004) | A/P1 | 選択範囲内の図形プレビューに確定時のマスクが反映されない | **部分対応・コード残件あり** | 新規図形のマスクを仮表示と保存で固定。縮小時の面積平均・実機での一致は未確認 | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-005](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-005) | A/P1 | 図形やグラデーションの編集点を制作キャンバス上で直接操作できない | **部分対応・コード残件あり** | 編集点操作中のキャンバス上の全体仮表示が未完成 | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-006](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-006) | A/P1 | ペン保持中に整えた図形が仮表示されず、離してから補正候補が出る | **実装根拠未確認** | ペン保持中の図形補正候補のライブ表示について、実装完了の根拠が最新記録にない | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-007](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-007) | A/P2 | 角丸長方形・多角形・RasterとVector出力先の選択などが不足 | **部分対応・コード残件あり** | 図形出力先の選択など一部操作が未実装 | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-008](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-008) | A/P2 | グラデーションの反転・繰り返し・楕円状放射が不足 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-009](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-009) | A/P2 | グラデーションの色停止点を色帯上でドラッグ調整できない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-010](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-010) | B/P1 | 対称描画のコピー線がペンを離してから生成され描画中に見えない懸念 | **部分対応・コード残件あり** | 対称コピー仮線は本線の筆圧・質感と一致しない | [#89](https://github.com/totoro0419/illustro/pull/89) |
-| [C09-011](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-011) | B/P1 | 図形とグラデーション確定時に作品全サイズの画素を生成し負荷が高い懸念 | **部分対応・コード残件あり** | 4K最終画像本体の計算量・確保メモリ削減が残る | [#89](https://github.com/totoro0419/illustro/pull/89) |
+| [C09-011](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-011) | B/P1 | 図形とグラデーション確定時に作品全サイズの画素を生成し負荷が高い懸念 | **部分対応・コード残件あり** | グラデーション定数計算・色停止点探索を改善。4K最終画像本体の計算量・メモリ削減は継続 | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-012](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-012) | B/P2 | グラデーション調整のたびに新Workerを生成し古い計算を取消できない懸念 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-013](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-013) | B/P2 | 形状追従グラデーションの縮小プレビューと確定後の外観が一致するか未検証 | **部分対応・コード残件あり** | グラデーションの原寸と縮小仮表示の画素一致が未確認 | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-014](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-014) | B/P2 | グラデーションマップの比較画像が最大320px程度で原寸の色の段差を確認できるか未検証 | **部分対応・コード残件あり** | 実際の作品原寸画素の比較表示が未完成 | [#89](https://github.com/totoro0419/illustro/pull/89) |
