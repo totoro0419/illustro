@@ -1,6 +1,7 @@
 import {validateGradientMap,type GradientMap,type GradientStop} from '@illustro/core';
 import {gradientMapIndex,gradientMapTable,mapGradientPixel} from '@illustro/brush-rt';
 import {button,labelledField,numberField,paintPreview,selectField} from './tools';
+import {gradientToneInspection} from './gradientToneInspection';
 
 export type GradientMapDraft=Readonly<{
   map:GradientMap|null;
@@ -36,6 +37,12 @@ export function installGradientMapPanel(host:HTMLElement,api:{
   const mappingLabel=document.createElement('p');mappingLabel.textContent='上が元の明るさ、下が置き換わる色';
   const mapping=document.createElement('canvas');
   mapping.style.maxWidth='100%';mapping.setAttribute('aria-label',mappingLabel.textContent);
+  const tone=document.createElement('input');tone.type='range';tone.min='0';tone.max='255';tone.step='1';tone.value='128';
+  labelledField(fields,'元の明るさを1段階ずつ確認',tone);
+  const toneInfo=document.createElement('output');toneInfo.setAttribute('role','status');
+  const toneSwatch=document.createElement('canvas');toneSwatch.width=64;toneSwatch.height=64;
+  toneSwatch.style.cssText='width:64px;height:64px;border:1px solid currentColor';
+  toneSwatch.setAttribute('aria-label','選んだ明るさに対応する出力色の拡大表示');
   let draft:GradientMapDraft|null=null,sequence=0;
   let stops=[...defaults];
 
@@ -43,6 +50,22 @@ export function installGradientMapPanel(host:HTMLElement,api:{
     return validateGradientMap({stops,levels:levels.valueAsNumber,dither:dither.checked});
   }
 
+  function refreshTone(){
+    if(!draft)return;
+    const map=data();
+    const detail=gradientToneInspection(map,tone.valueAsNumber);
+    const [r,g,b,a]=detail.rgba;
+    const ctx=toneSwatch.getContext('2d');
+    if(ctx){
+      ctx.clearRect(0,0,64,64);
+      ctx.fillStyle='rgba('+[r,g,b,a!/255].join(',')+')';
+      ctx.fillRect(0,0,64,64);
+    }
+    toneInfo.textContent='入力 '+detail.tone+'/255 → 出力 RGB ('+[r,g,b].join(',')+
+      ')・透明度 '+a+'/255。隣の明るさとの差は前 '+detail.previousDifference+
+      '、後 '+detail.nextDifference+'。全256段階で色が変わる境目は '+detail.transitions+'か所です。'+
+      (map.dither?'実際の作品では位置による色の散らし方も反映されます。':'');
+  }
   function refresh(){
     if(!draft)return;
     try{
@@ -62,7 +85,7 @@ export function installGradientMapPanel(host:HTMLElement,api:{
         band.set(table.subarray(index,index+4),offset);
       }
       paintPreview(mapping,band,256,28);
-      status.textContent='';
+      refreshTone();status.textContent='';
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   }
 
@@ -89,6 +112,7 @@ export function installGradientMapPanel(host:HTMLElement,api:{
     },status));
   }
   fields.onchange=refresh;
+  tone.oninput=()=>{try{refreshTone();}catch(error){status.textContent=String(error);}};
 
   async function start(edit:boolean){
     panel.open=true;
@@ -124,7 +148,7 @@ export function installGradientMapPanel(host:HTMLElement,api:{
     },status)
   );
   panel.addEventListener('toggle',()=>{if(!panel.open)close();});
-  editor.append(fields,mappingLabel,mapping,comparison,stopFields,finish);
+  editor.append(fields,mappingLabel,mapping,toneSwatch,toneInfo,comparison,stopFields,finish);
   panel.append(heading,actions,editor,status);host.append(panel);
   return {show:(edit:boolean)=>{void start(edit).catch(error=>{status.textContent=String(error);});}};
 }
