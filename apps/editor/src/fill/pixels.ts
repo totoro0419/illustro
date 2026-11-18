@@ -442,6 +442,7 @@ export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:
   const radius=Math.max(3,Math.min(12,reach)),extent=radius+3;
   const isInk=(x:number,y:number)=>x>=0&&y>=0&&x<width&&y<height&&
     !!walls[y*width+x]&&!bridges[y*width+x];
+  const isBridge=(x:number,y:number)=>x>=0&&y>=0&&x<width&&y<height&&!!bridges[y*width+x];
   const directions=[[-1,0],[-1,-1],[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1]] as const;
   const nodes:Array<{x:number;y:number;inward:Point;tip:boolean;junction:boolean}>=[];
   for(let y=Math.max(0,Math.ceil(at.y-extent));y<=Math.min(height-1,Math.floor(at.y+extent));y++){
@@ -478,14 +479,14 @@ export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:
     const steps=Math.max(Math.abs(dx),Math.abs(dy));
     for(let step=1;step<steps&&!obstruction;step++){
       const x=Math.round(a.x+dx*step/steps),y=Math.round(a.y+dy*step/steps);
-      if(isInk(x,y)||rejected.has(x+','+y)){obstruction=true;break;}
+      if(isInk(x,y)||isBridge(x,y)||rejected.has(x+','+y)){obstruction=true;break;}
       // A nearby third stroke makes this candidate unsafe even if the
       // candidate's centerline itself is clear. Keep manual boundary tools
       // available, but do not recommend it as an automatic gap.
       for(let nearY=y-1;nearY<=y+1&&!obstruction;nearY++)
         for(let nearX=x-1;nearX<=x+1;nearX++){
           if(nearX===a.x&&nearY===a.y||nearX===b.x&&nearY===b.y)continue;
-          if(isInk(nearX,nearY)){obstruction=true;break;}
+          if(isInk(nearX,nearY)||isBridge(nearX,nearY)){obstruction=true;break;}
         }
     }
     if(obstruction)continue;
