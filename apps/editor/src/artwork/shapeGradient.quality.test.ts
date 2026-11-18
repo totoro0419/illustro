@@ -27,6 +27,20 @@ describe('C09-004 mask coverage in shape previews',()=>{
   });
 });
 
+describe('C09-004/C09-005 transparent preview fast path',()=>{
+  it('skips mask sampling for transparent shape pixels without changing RGB',()=>{
+    const mask={shape:'rectangle',x:0,y:0,width:2,height:2,enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray([40,50,60,0,70,80,90,200]);
+    const samples:number[]=[];
+    applyShapePreviewMask(pixels,mask,2,1,2,1,(_mask,x)=>{
+      samples.push(x);
+      return .5;
+    });
+    expect(samples).toEqual([1.5]);
+    expect(Array.from(pixels)).toEqual([40,50,60,0,70,80,90,100]);
+  });
+});
+
 describe('C09-004 empty-density mask fast path',()=>{
   it('does not rasterize an inactive path mask or change preview colors',()=>{
     const mask={shape:'path',points:[{x:0,y:0},{x:2,y:0},{x:0,y:2}],
