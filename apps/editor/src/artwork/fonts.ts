@@ -48,18 +48,25 @@ export async function artworkWorkerFont(id:string):Promise<ArtworkWorkerFont>{
   return {family:familyName(id),data:asset.data};
 }
 
-// A browser can display WOFF2 through FontFace even though opentype.js cannot trace it.
-// Check the file signature, not only the filename: extensions can be renamed.
+const outlineFonts=new Map<string,{stamp:string;value:Promise<Font>}>();
 async function outlineFont(asset:AssetEntry):Promise<Font>{
-  const head=new Uint8Array(await asset.data.slice(0,4).arrayBuffer());
-  if(String.fromCharCode(...head)==='wOF2')
-    throw Error('WOFF2は表示できますが、輪郭化には未対応です。輪郭化する場合はTTF・OTF・WOFF版のフォントを読み込んでください。');
-  try{
-    const {parse}=await import('opentype.js');
-    return parse(await asset.data.arrayBuffer());
-  }catch{
-    throw Error('このフォントは表示できますが、輪郭化のための形状を読み取れません。TTF・OTF・WOFF形式をお試しください。');
-  }
+  if(!asset.data.size||asset.data.size>24*1024*1024)throw Error('フォントのサイズが正しくありません。');
+  const stamp=[asset.version,asset.updatedAt,asset.data.size].join(':');
+  const existing=outlineFonts.get(asset.id);
+  if(existing?.stamp===stamp){outlineFonts.delete(asset.id);outlineFonts.set(asset.id,existing);return existing.value;}
+  const value=(async()=>{
+    try{
+      const buffer=await asset.data.arrayBuffer(),head=new Uint8Array(buffer,0,Math.min(4,buffer.byteLength));
+      if(String.fromCharCode(...head)==='wOF2'){
+        const {parseWoff2Outline}=await import('./woff2Outline');
+        return await parseWoff2Outline(new Uint8Array(buffer));
+      }
+      const {parse}=await import('opentype.js');return parse(buffer);
+    }catch{throw Error('このフォントの輪郭を読み取れません。別のフォントを選ぶか、描画用レイヤーへ変換してください。');}
+  })();
+  const entry={stamp,value};outlineFonts.set(asset.id,entry);
+  while(outlineFonts.size>4)outlineFonts.delete(outlineFonts.keys().next().value!);
+  try{return await value;}catch(error){if(outlineFonts.get(asset.id)===entry)outlineFonts.delete(asset.id);throw error;}
 }
 
 export async function fontOutlineCapability(id:string):Promise<string|null>{
@@ -95,7 +102,9 @@ function appendCommands(points:ArtPoint[],commands:readonly PathCommand[]){
 function vectorize(text:EditableText,font:Font):ArtPoint[]{
   const points:ArtPoint[]=[],ascent=font.ascender*text.size/font.unitsPerEm;
   if(text.styleRanges?.length){
-    if(text.styleRanges.some(range=>range.family&&range.family!==text.family))
+    if(text.styleRanges.some(range=>range.fontAsset&&range.fontAsset!==text.fontAsset))
+      throw Error('異なるフォントを含む文字の輪郭化には未対応です。見た目を保つには画像化してください。');
+    if(text.styleRanges.some(range=>!range.fontAsset&&range.family&&range.family!==text.family))
       throw Error('異なる書体を含む文字の輪郭化には未対応です。見た目を保つには画像化してください。');
     if(text.styleRanges.some(range=>range.color&&range.color.toLowerCase()!==text.color.toLowerCase()))
       throw Error('選択部分に別の色を使う文字は、色を保ったまま単一のパスに変換できません。まず文字色を統一するか、描画用レイヤーへ変換してください。');

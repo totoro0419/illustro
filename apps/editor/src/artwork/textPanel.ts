@@ -55,13 +55,17 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
 
   async function refreshFonts(){
     const assets=await fontAssets();
+    const partialChoice=partialFamily.value;
+    partialFamily.replaceChildren(new Option('ゴシック','sans-serif'),new Option('明朝','serif'),new Option('等幅','monospace'),
+      ...assets.map(asset=>new Option(asset.name,'asset:'+asset.id)));
+    partialFamily.value=[...partialFamily.options].some(option=>option.value===partialChoice)?partialChoice:'sans-serif';
     family.replaceChildren(new Option('端末のフォントを使う',''),...assets.map(asset=>new Option(asset.name,asset.id)));
     if(fontId&&!assets.some(asset=>asset.id===fontId)){
       family.add(new Option('不足しているフォント',fontId));
       status.textContent='元のフォントがこの端末にありません。保存済みの外観を保持しています。編集を適用する前にフォントを選び直してください。';
     }
     family.value=fontId;
-    systemFont.disabled=!!fontId;embed.disabled=!fontId;
+    systemFont.disabled=!!fontId;embed.disabled=!fontId&&!styleRanges.some(range=>range.fontAsset);
     const ids=new Set(assets.map(asset=>asset.id));
     const layers=api.context()?.missingFontCandidates.filter(layer=>!ids.has(layer.assetId))??[];
     missing.textContent=layers.length?'不足しているフォントを使うレイヤー '+layers.map(layer=>layer.name).join('、'):'';
@@ -71,7 +75,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       kind:'text',text:text.value.replace(/\r\n?/g,'\n'),origin:{x:x.valueAsNumber,y:y.valueAsNumber},
       size:size.valueAsNumber,align:align.value,spacing:spacing.valueAsNumber,lineHeight:lineHeight.valueAsNumber,
       vertical:direction.value==='vertical',color:color.value,family:fontId?fontFamily(fontId):systemFont.value,
-      ...(fontId?{fontAsset:fontId,...(embed.checked?{embedFont:true}:{})}:{}),
+      ...(fontId?{fontAsset:fontId}:{}),...(embed.checked?{embedFont:true}:{}),
       ...(boxWidth.valueAsNumber>0?{boxWidth:boxWidth.valueAsNumber}:{}),
       ...(boxHeight.valueAsNumber>0?{boxHeight:boxHeight.valueAsNumber}:{}),
       ...(styleRanges.length?{styleRanges}:{} )
@@ -154,7 +158,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     if(!fontId)systemFont.value=content.family;
   }
   family.onchange=()=>{
-    fontId=family.value;systemFont.disabled=!!fontId;embed.disabled=!fontId;embed.checked=false;
+    fontId=family.value;systemFont.disabled=!!fontId;embed.disabled=!fontId&&!styleRanges.some(range=>range.fontAsset);embed.checked=false;
     schedulePreview();void inspectFont().catch(error=>{compatibility.textContent=error instanceof Error?error.message:String(error);});
   };
   controls.addEventListener('change',schedulePreview);
@@ -177,6 +181,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     const next=applyTextSelectionStyle(text.value,styleRanges,range.start,range.end,patch,clear);
     if(next.length>text.value.length)throw Error('部分書式が多すぎます。近くの同じ書式をまとめてください。');
     styleRanges=next;
+    embed.disabled=!fontId&&!styleRanges.some(range=>range.fontAsset);
+    if(embed.disabled)embed.checked=false;
     partialMessage.textContent=clear?'選択部分の個別書式を解除しました。':'選択部分の書式を変更しました。';
     schedulePreview();
     text.focus({preventScroll:true});
@@ -185,7 +191,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   partialActions.append(
     button('選択した文字の色を変更',()=>updateSelectedText({color:partialColor.value}),status),
     button('選択した文字のサイズを変更',()=>updateSelectedText({size:partialSize.valueAsNumber}),status),
-    button('選択した文字の書体を変更',()=>updateSelectedText({family:partialFamily.value as NonNullable<TextStyleRange['family']>}),status),
+    button('選択した文字の書体を変更',()=>updateSelectedText(partialFamily.value.startsWith('asset:')?
+      {fontAsset:partialFamily.value.slice(6)}:{family:partialFamily.value as NonNullable<TextStyleRange['family']>,fontAsset:null}),status),
     button('選択した文字を太字に',()=>updateSelectedText({bold:true}),status),
     button('選択した文字の太字を解除',()=>updateSelectedText({bold:false}),status),
     button('選択した文字を斜体に',()=>updateSelectedText({italic:true}),status),

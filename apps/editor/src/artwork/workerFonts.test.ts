@@ -14,6 +14,13 @@ function environment(failFirst=false){
 }
 const source=(name:string)=>({family:'IllustroFont-'+name,data:new Blob(['font data'])});
 describe('C10-011 imported fonts in artwork workers',()=>{
+ it('keeps every face used by a mixed-font text active until drawing ends',async()=>{
+   const env=environment(),cache=new ArtworkWorkerFonts();
+   const value=await cache.withFonts(['A','B','C','D','E','F'].map(source),env.fonts,()=>{
+     expect(env.faces.size).toBe(6);return 'drawn';
+   });
+   expect(value).toBe('drawn');expect(env.faces.size).toBe(4);
+ });
  it('awaits font loading once and reuses the prepared face',async()=>{
    const env=environment(),cache=new ArtworkWorkerFonts();
    await cache.ensure(source('A'),env.fonts);await cache.ensure(source('A'),env.fonts);

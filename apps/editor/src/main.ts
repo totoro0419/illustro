@@ -19,6 +19,7 @@ import {installReferenceBoard,referenceUnavailableSection,type ReferenceBoardSer
 import {copyReferenceBoard} from './assets/referenceBoardStore';
 import {exportFonts,importFonts} from './artwork/fontAttachments';
 import {installTextPanel} from './artwork/textPanel';
+import {textFontAssetIds} from './artwork/textStyles';
 import {installVectorPanel} from './artwork/vectorPanel';
 import {installArtworkPresets} from './artwork/presets';
 import {installRulerPanel} from './artwork/ruler';
@@ -4264,8 +4265,8 @@ const artworkActions:ArtworkActions={
       selected:{id:layer.id,name:layer.name,content:layer.editable??null,mask:layer.vectorMask??null},
       selectionMask:()=>{const selection=c06Selection?.active();return selection?selectionAsLayerMask(selection):null;},
       paths:controller.layers.flatMap(item=>item.editable?.kind==='path'?[{id:item.id,name:item.name,content:item.editable}]:[]),
-      missingFontCandidates:controller.layers.flatMap(item=>item.editable?.kind==='text'&&item.editable.fontAsset
-        ?[{name:item.name,assetId:item.editable.fontAsset}]:[])};
+      missingFontCandidates:controller.layers.flatMap(item=>item.editable?.kind==='text'
+        ?textFontAssetIds(item.editable).map(assetId=>({name:item.name,assetId})):[])};
   },
   save:async(content,name,editing,initialMask,hideSourcePaths)=>{
     const artwork=controller.document,head=artwork.head,drawing=surface,selection=c06Selection?.active();

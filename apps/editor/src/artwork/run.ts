@@ -2,6 +2,7 @@ import type {ArtworkJob,ArtworkWorkerJob} from './worker';
 import {renderArtwork} from './render';
 import {ensureFont,artworkWorkerFont} from './fonts';
 import type {ArtworkWorkerFont} from './workerFonts';
+import {textFontAssetIds} from './textStyles';
 import {canRenderTextInArtworkWorker} from './textWorkerSafety';
 import {artworkQueuePosition,type ArtworkPriority} from './workerQueuePolicy';
 
@@ -84,20 +85,20 @@ function pumpArtwork(){
 export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortSignal;priority?:ArtworkPriority}>={}):Promise<ArtworkPixels>{
   const signal=options.signal;
   if(signal?.aborted)throw abortError();
-  if(job.content.kind==='text'&&job.content.fontAsset)await ensureFont(job.content.fontAsset);
+  if(job.content.kind==='text')await Promise.all(textFontAssetIds(job.content).map(ensureFont));
   if(signal?.aborted)throw abortError();
-  let font:ArtworkWorkerFont|undefined;
-  if(job.content.kind==='text'&&job.content.fontAsset&&typeof OffscreenCanvas!=='undefined'){
-    try{font=await artworkWorkerFont(job.content.fontAsset);}catch{/* Preserve the document's already loaded face. */}
+  let fonts:ArtworkWorkerFont[]=[];
+  if(job.content.kind==='text'&&typeof OffscreenCanvas!=='undefined'){
+    try{fonts=await Promise.all(textFontAssetIds(job.content).map(artworkWorkerFont));}catch{/* Preserve the document's already loaded faces. */}
   }
   if(signal?.aborted)throw abortError();
-  const workerText=canRenderTextInArtworkWorker(job.content,font?.family);
+  const workerText=canRenderTextInArtworkWorker(job.content,fonts.map(font=>font.family));
   if((job.content.kind==='text'&&!workerText)||typeof OffscreenCanvas==='undefined'){
     mainCanvas??=document.createElement('canvas');
     return renderArtwork(job.content,job,mainCanvas);
   }
   return new Promise<ArtworkPixels>((resolve,reject)=>{
-    const task:ArtworkTask={job:font?{...job,font}:job,resolve,reject,priority:options.priority??'interactive',...(signal?{signal}:{})};
+    const task:ArtworkTask={job:fonts.length?{...job,fonts}:job,resolve,reject,priority:options.priority??'interactive',...(signal?{signal}:{})};
     if(signal){
       task.abortHandler=()=>cancelTask(task);
       signal.addEventListener('abort',task.abortHandler,{once:true});

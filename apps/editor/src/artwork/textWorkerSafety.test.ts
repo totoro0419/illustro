@@ -6,6 +6,12 @@ const base:EditableText={
  origin:{x:2,y:3},align:'left',vertical:false,spacing:0,lineHeight:1.2
 };
 describe('C10-011 compatibility-preserving worker text policy',()=>{
+ it('requires every imported partial font and supports generic text with imported ranges',()=>{
+  const mixed={...base,fontAsset:'a',family:'IllustroFont-a',styleRanges:[{start:0,end:1,fontAsset:'b'}]};
+  expect(canRenderTextInArtworkWorker(mixed,['IllustroFont-a'])).toBe(false);
+  expect(canRenderTextInArtworkWorker(mixed,['IllustroFont-a','IllustroFont-b'])).toBe(true);
+  expect(canRenderTextInArtworkWorker({...base,styleRanges:[{start:0,end:1,fontAsset:'b'}]},['IllustroFont-b'])).toBe(true);
+ });
  it('allows only standard system-generic families without imported font attachments',()=>{
   expect(canRenderTextInArtworkWorker(base)).toBe(true);
   expect(canRenderTextInArtworkWorker({...base,family:'serif'})).toBe(true);

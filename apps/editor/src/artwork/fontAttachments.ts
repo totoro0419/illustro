@@ -3,6 +3,7 @@ import {addAsset,getAsset} from '../assets/library';
 import type {PreservedPortableData} from '../persistence/portable';
 import type {PortableSectionInput} from '../persistence/format';
 import {fontFamily,registerLoadedFont} from './fonts';
+import {textFontAssetIds} from './textStyles';
 
 const PREFIX='c10.font.',TYPE='font.asset.v1',LIMIT=48*1024*1024;
 const validId=(id:string)=>/^[a-f0-9-]{36}$/i.test(id);
@@ -12,7 +13,7 @@ export async function exportFonts(root:DocumentRoot,preserved?:PreservedPortable
   const ids=new Set<string>();
   for(const id of root.rootLayerIds){
     const editable=root.getLayer(id).editable;
-    if(editable?.kind==='text'&&editable.embedFont&&editable.fontAsset&&validId(editable.fontAsset))ids.add(editable.fontAsset);
+    if(editable?.kind==='text'&&editable.embedFont)for(const fontId of textFontAssetIds(editable))if(validId(fontId))ids.add(fontId);
   }
   const sections:PortableSectionInput[]=[];
   let total=0;
@@ -41,7 +42,7 @@ export async function importFonts(root:DocumentRoot,preserved:PreservedPortableD
   const ids=new Set<string>();
   for(const id of root.rootLayerIds){
     const editable=root.getLayer(id).editable;
-    if(editable?.kind==='text'&&editable.fontAsset&&validId(editable.fontAsset))ids.add(editable.fontAsset);
+    if(editable?.kind==='text')for(const fontId of textFontAssetIds(editable))if(validId(fontId))ids.add(fontId);
   }
   let total=0;
   for(const id of ids){
