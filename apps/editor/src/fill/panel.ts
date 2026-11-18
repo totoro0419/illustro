@@ -7,6 +7,7 @@ import {runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
 import {colorHintCenter,moveColorHint} from './colorHintPlacement';
 import {isManualBoundaryNoop} from './manualChangeEffect';
+import {tryIncrementalBoundaryAddition} from './incrementalBoundary';
 import {sampleFillDetail} from './detailPreview';
 import {addTraceRegions,renderLiveRegionPreview} from './liveRegionPreview';
 import {LiveColorFillPreview} from './liveColorPreview';
@@ -353,7 +354,17 @@ export function installFillPanel(host:HTMLElement,api:{
         output.textContent='ここはすでに同じ境界になっています。再解析は不要です。';
         return;
       }
-      const response=await runFill({type:'graph',source:source.source,width:source.width,height:source.height,settings:current,manual},abort.signal);
+      const unchangedSource=!!points&&!!reusable&&!!currentGraph&&source===capture&&
+        current.tolerance===graphTolerance&&current.gap===graphGap;
+      const patched=unchangedSource&&!remove&&!preserveInk
+        ?tryIncrementalBoundaryAddition(currentGraph!,points!):null;
+      // A patch is used only when a new wall is mathematically guaranteed not
+      // to split an existing region. Every uncertain case runs the original
+      // full Worker analysis without a change in behavior.
+      const response=patched?{graph:patched}:await runFill({
+        type:'graph',source:source.source,width:source.width,height:source.height,
+        settings:current,manual
+      },abort.signal);
       if(!source.valid()||!response.graph)throw Error('参照元が変わりました。もう一度解析してください。');
       manuals.set(source.key,manual);
       previous=capture?.key===source.key?currentGraph:null;
