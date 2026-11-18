@@ -1,5 +1,6 @@
 import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText,LayerMask} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
+import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
 import {gradientBoundaryDistance} from './gradientDistance';
 import {verticalGlyphAdjustment} from './verticalGlyph';
 import {layerMaskCoverage} from '@illustro/brush-rt';
@@ -107,8 +108,8 @@ function drawText(ctx:Context,text:EditableText){
       let row=0;
       for(const character of Array.from(lines[line]!)){
         const placement=verticalGlyphAdjustment(character,text.size);
-        const x=text.origin.x-line*text.size*text.lineHeight+placement.dx;
-        const y=text.origin.y+row*(text.size+text.spacing)+placement.dy;
+        const cell=textVerticalCell(text,line,row);
+        const x=cell.x+placement.dx,y=cell.y+placement.dy;
         ctx.save();
         ctx.translate(x,y+text.size/2);
         if(placement.rotate)ctx.rotate(Math.PI/2);
@@ -120,11 +121,11 @@ function drawText(ctx:Context,text:EditableText){
     return;
   }
   for(let row=0;row<lines.length;row++){
-    const line=lines[row]!,y=text.origin.y+row*text.size*text.lineHeight;
-    if(!text.spacing){ctx.textAlign=text.align;ctx.fillText(line,text.origin.x,y);continue;}
+    const line=lines[row]!,y=textRowTop(text,row);
+    if(!text.spacing){ctx.textAlign='left';ctx.fillText(line,alignedTextLineStart(text,ctx.measureText(line).width),y);continue;}
     const characters=Array.from(line),widths=characters.map(character=>ctx.measureText(character).width+text.spacing);
     const total=widths.reduce((sum,w)=>sum+w,0)-text.spacing;
-    let x=text.origin.x-(text.align==='center'?total/2:text.align==='right'?total:0);
+    let x=alignedTextLineStart(text,total);
     ctx.textAlign='left';
     characters.forEach((character,i)=>{ctx.fillText(character,x,y);x+=widths[i]!;});
   }
