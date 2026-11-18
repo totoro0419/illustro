@@ -25,6 +25,8 @@ export function tileHasPixelData(pixels:Uint8Array):boolean{
 export async function captureSelectedLayerTiles(
  renderer:InspectableDrawingRenderer,surfaceId:string,width:number,height:number,valid:()=>boolean
 ):Promise<RasterWorkerTile[]>{
+ if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1)
+  throw new Error('選択描画の作品サイズが正しくありません。');
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
  await renderer.drain();
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
@@ -52,7 +54,11 @@ export async function captureSelectedLayerTiles(
   const batch=await readGpuTiles(backend,requests.slice(offset,offset+16),valid);
   for(const tile of batch)if(tileHasPixelData(tile.pixels))
    result.push({key:tile.key,pixels:tile.pixels});
-  if(offset+16<requests.length)await new Promise<void>(resolve=>setTimeout(resolve,0));
+  // GPU batches are already asynchronous. Yield a full browser task every
+  // four batches instead of every batch, keeping 4K capture responsive
+  // without adding dozens of timer delays to a single stroke.
+  if((offset/16)%4===3&&offset+16<requests.length)
+   await new Promise<void>(resolve=>setTimeout(resolve,0));
  }
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
  return result;

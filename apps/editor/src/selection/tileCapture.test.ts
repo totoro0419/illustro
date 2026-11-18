@@ -44,6 +44,22 @@ describe('C06-002 bounded GPU inventory capture',()=>{
   await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>valid)).rejects.toThrow(/切り替わりました/);
   expect(readTiles).not.toHaveBeenCalled();
  });
+ it('keeps 4K captures in 1 MiB batches while preserving occupied tiles',async()=>{
+  const tiles:Array<[string,string,number]>=Array.from({length:80},(_,i)=>
+   ['L',(i%32)+','+Math.floor(i/32),i%3===0?255:0]);
+  const {renderer,readTiles}=fakeRenderer(tiles);
+  const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true);
+  expect(readTiles).toHaveBeenCalledTimes(5);
+  expect(readTiles.mock.calls.every(([requests])=>requests.length<=16)).toBe(true);
+  expect(result.map(tile=>tile.key)).toEqual(
+   tiles.filter(([, ,value])=>value!==0).map(([,key])=>key));
+ });
+ it('rejects invalid dimensions before touching the renderer',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',255]]);
+  await expect(captureSelectedLayerTiles(renderer,'L',NaN,4000,()=>true)).rejects.toThrow('サイズ');
+  expect(renderer.drain).not.toHaveBeenCalled();
+  expect(readTiles).not.toHaveBeenCalled();
+ });
  it('safely rejects a broken tile inventory',async()=>{
   const {renderer}=fakeRenderer([['L','32,0',255]]);
   await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true)).rejects.toThrow(/作品の外/);

@@ -130,10 +130,15 @@ function polygonArea(points:readonly Point[]){
 function sampleAreaQuad(source:Uint8Array,width:number,height:number,quad:readonly Point[],mask:MaskData|null):Pixel{
  const signedArea=polygonArea(quad),area=Math.abs(signedArea);
  if(!Number.isFinite(area)||area<=0)return empty;
- const x0=Math.max(0,Math.floor(Math.min(...quad.map(p=>p.x))));
- const x1=Math.min(width,Math.ceil(Math.max(...quad.map(p=>p.x))));
- const y0=Math.max(0,Math.floor(Math.min(...quad.map(p=>p.y))));
- const y1=Math.min(height,Math.ceil(Math.max(...quad.map(p=>p.y))));
+ // One bounds pass per output pixel avoids four short-lived arrays during
+ // rotated/sheared 4K area resampling, without changing coverage math.
+ let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+ for(const point of quad){
+  minX=Math.min(minX,point.x);maxX=Math.max(maxX,point.x);
+  minY=Math.min(minY,point.y);maxY=Math.max(maxY,point.y);
+ }
+ const x0=Math.max(0,Math.floor(minX)),x1=Math.min(width,Math.ceil(maxX));
+ const y0=Math.max(0,Math.floor(minY)),y1=Math.min(height,Math.ceil(maxY));
  if(x0>=x1||y0>=y1)return empty;
  const sign=Math.sign(signedArea);
  const edges=quad.map((p,i)=>{
