@@ -39,7 +39,8 @@ describe('C10-009 partial editable text formatting',()=>{
  it('preserves UTF-16 emoji boundaries when applying a selection',()=>{
   const start=base.text.indexOf('🙂');
   const styled=applyTextSelectionStyle(base.text,[],start+1,start+2,{size:30});
-  expect(styled).toEqual([]);
+  // A selection starting inside a surrogate pair expands to the intact emoji.
+  expect(styled).toEqual([{start,end:start+2,size:30}]);
   const entire=applyTextSelectionStyle(base.text,[],start,start+2,{size:30});
   expect(entire).toEqual([{start,end:start+2,size:30}]);
  });
