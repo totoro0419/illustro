@@ -39,6 +39,25 @@ describe('C07-003 group transformation geometry',()=>{
   expect(()=>groupTransformPlan(items,400,300,{...valid,sx:0})).toThrow('値');
   expect(()=>groupTransformPlan(items,400,300,{...valid,dy:NaN})).toThrow('値');
  });
+ it('rejects finite but unrepresentable transformed bounds before publishing a group edit',()=>{
+  const valid={dx:0,dy:0,sx:16,sy:16,angle:0,interpolation:'bilinear' as const};
+  const extreme=[
+   {id:'left',bounds:{x:-1e308,y:0,width:1e300,height:10}},
+   {id:'right',bounds:{x:1e308,y:0,width:1e300,height:10}}
+  ];
+  expect(()=>groupTransformPlan(extreme,4000,4000,valid)).toThrow('座標');
+ });
+ it('plans many grouped layers without spreading their bounds as function arguments',()=>{
+  const many=Array.from({length:12000},(_,i)=>({
+   id:'layer-'+i,bounds:{x:i%4000,y:Math.floor(i/4000),width:1,height:1}
+  }));
+  const plan=groupTransformPlan(many,4000,4000,{
+   dx:2,dy:3,sx:1,sy:1,angle:0,interpolation:'nearest'
+  });
+  expect(plan.outlines).toHaveLength(12000);
+  expect(plan.settings.cx).toBe(2000);
+  expect(plan.settings.cy).toBe(1.5);
+ });
  it('composes repeated rotations, mirroring, nonuniform scales and shear from the same original',()=>{
   const next={...initialTransform,dx:19,dy:-7,sx:.6,sy:1.4,angle:37,cx:85,cy:65};
   for(const sx of [-1.2,1.2]){
