@@ -12,6 +12,13 @@ export type InspectableDrawingRenderer={
  inspect:()=>Promise<unknown>;
  backend:TileBackend;
 };
+/** Detect occupied RGBA tiles without allocating a copy. Check all four
+ * channels, including RGB under zero alpha, to preserve existing artwork. */
+export function tileHasPixelData(pixels:Uint8Array):boolean{
+ if(pixels.byteOffset%4===0&&pixels.byteLength%4===0)
+   return new Uint32Array(pixels.buffer,pixels.byteOffset,pixels.byteLength/4).some(word=>word!==0);
+ return pixels.some(byte=>byte!==0);
+}
 /** Capture all occupied tiles of one layer, in batches, to preserve its old
  * brush strokes when producing the new layer.snapshot. The selected stroke
  * worker then creates newly touched tiles without scanning blank canvas. */
@@ -43,7 +50,7 @@ export async function captureSelectedLayerTiles(
  const result:RasterWorkerTile[]=[];
  for(let offset=0;offset<requests.length;offset+=16){
   const batch=await readGpuTiles(backend,requests.slice(offset,offset+16),valid);
-  for(const tile of batch)if(tile.pixels.some(value=>value!==0))
+  for(const tile of batch)if(tileHasPixelData(tile.pixels))
    result.push({key:tile.key,pixels:tile.pixels});
   if(offset+16<requests.length)await new Promise<void>(resolve=>setTimeout(resolve,0));
  }
