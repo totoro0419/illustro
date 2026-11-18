@@ -31,6 +31,14 @@ describe('C10-004 editable text frame',()=>{
    const boxed={...base,vertical:true,boxHeight:20,boxWidth:20};
    expect(layoutEditableText(boxed,measure)).toEqual({lines:['あい','うえ'],overflow:true});
  });
+ it('does not repeatedly measure the full string when long text overflows a small frame',()=>{
+   let measurements=0;
+   const long={...base,text:'あ'.repeat(8192),boxWidth:30,boxHeight:20};
+   const layout=layoutEditableText(long,part=>{measurements++;return measure(part);});
+   expect(layout.lines).toEqual(['あああ','あああ']);
+   expect(layout.overflow).toBe(true);
+   expect(measurements).toBeLessThan(100);
+ });
  it('rejects invalid sizes and cannot loop forever when spacing is negative',()=>{
    expect(()=>validateEditableArtwork({...base,boxWidth:0})).toThrow('正しくありません');
    expect(()=>validateEditableArtwork({...base,boxHeight:Infinity})).toThrow('正しくありません');
