@@ -60,6 +60,11 @@ describe('C06-002 bounded GPU inventory capture',()=>{
   expect(renderer.drain).not.toHaveBeenCalled();
   expect(readTiles).not.toHaveBeenCalled();
  });
+ it('rejects noncanonical coordinates rather than accepting duplicate physical tiles',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','00,0',255]]);
+  await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true)).rejects.toThrow(/一覧が壊れています/);
+  expect(readTiles).not.toHaveBeenCalled();
+ });
  it('safely rejects a broken tile inventory',async()=>{
   const {renderer}=fakeRenderer([['L','32,0',255]]);
   await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true)).rejects.toThrow(/作品の外/);

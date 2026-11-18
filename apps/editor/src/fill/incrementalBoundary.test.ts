@@ -89,6 +89,15 @@ describe('C08-015 safe incremental region walls',()=>{
     expect(tryIncrementalBoundaryAddition(graph,[{x:5,y:6}])).toBeNull();
     expect(graph.walls).toEqual(before.walls);
   });
+  it('preserves the ink flag when only a distant wall survives local removal',()=>{
+    const w=17,h=17,source=inkImage(w,h,[[4,4],[12,12]]);
+    const before=region(source,w,h);
+    const fast=tryIncrementalBoundaryRemoval(before,[{x:4,y:4}]);
+    expect(fast).not.toBeNull();
+    expect(fast?.hasInk).toBe(true);
+    expect(fast?.walls[12*w+12]).toBe(1);
+    expect(before.walls[4*w+4]).toBe(1);
+  });
   it('clears the ink flag when removing the last local wall',()=>{
     const before=region(inkImage(11,11,[[5,5]]),11,11);
     const result=tryIncrementalBoundaryRemoval(before,[{x:5,y:5}]);

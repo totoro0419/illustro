@@ -42,7 +42,9 @@ export function selectedStrokeMayAffectMask(mask:MaskData,records:readonly Strok
       if(left>=right)continue;
       examined+=right-left;
       if(examined>budget)return true; // Never replace GPU work with a full-frame scan.
-      if(alpha.subarray(row*width+left,row*width+right).some(value=>value!==0))return true;
+      // Scan in place: a 4K diagonal should not allocate one subarray per row.
+      const start=row*width+left,end=row*width+right;
+      for(let index=start;index<end;index++)if(alpha[index]!==0)return true;
     }
   }
   return false;

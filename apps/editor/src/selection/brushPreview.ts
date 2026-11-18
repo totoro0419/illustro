@@ -45,7 +45,7 @@ export function selectionBrushPreviewRaster(
  prior:MaskData|null,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings,
  width:number,height:number
 ):SelectionBrushPreviewRaster|null{
- if(!points.length||points.length>96||!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||
+ if(!points.length||points.length>384||!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||
     width<1||height<1||prior&&(prior.width!==width||prior.height!==height))return null;
  const size=settings.size;
  if(!Number.isFinite(size)||size<1||size>800||

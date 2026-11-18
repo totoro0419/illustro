@@ -15,9 +15,13 @@ export type InspectableDrawingRenderer={
 /** Detect occupied RGBA tiles without allocating a copy. Check all four
  * channels, including RGB under zero alpha, to preserve existing artwork. */
 export function tileHasPixelData(pixels:Uint8Array):boolean{
- if(pixels.byteOffset%4===0&&pixels.byteLength%4===0)
-   return new Uint32Array(pixels.buffer,pixels.byteOffset,pixels.byteLength/4).some(word=>word!==0);
- return pixels.some(byte=>byte!==0);
+ if(pixels.byteOffset%4===0&&pixels.byteLength%4===0){
+   const words=new Uint32Array(pixels.buffer,pixels.byteOffset,pixels.byteLength/4);
+   for(let i=0;i<words.length;i++)if(words[i]!==0)return true;
+   return false;
+ }
+ for(let i=0;i<pixels.length;i++)if(pixels[i]!==0)return true;
+ return false;
 }
 /** Capture all occupied tiles of one layer, in batches, to preserve its old
  * brush strokes when producing the new layer.snapshot. The selected stroke

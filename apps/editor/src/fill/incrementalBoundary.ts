@@ -121,5 +121,14 @@ export function tryIncrementalBoundaryRemoval(graph:RegionGraph,points:readonly 
  if(!removed.size)return null;
  const nextWalls=walls.slice(),nextLabels=labels.slice();
  for(const [at,id] of removed){nextWalls[at]=0;nextLabels[at]=id;}
- return {...graph,walls:nextWalls,labels:nextLabels,hasInk:nextWalls.some(Boolean)};
+ // A neighboring wall proves ink remains without scanning all 16M pixels.
+ // Isolated erasures still take the exact full-scan fallback for the last wall.
+ let nearbyInk=false;
+ for(const at of removed.keys()){
+   for(const other of [at-1,at+1,at-width,at+width]){
+     if(walls[other]&&!removed.has(other)){nearbyInk=true;break;}
+   }
+   if(nearbyInk)break;
+ }
+ return {...graph,walls:nextWalls,labels:nextLabels,hasInk:nearbyInk||nextWalls.some(Boolean)};
 }

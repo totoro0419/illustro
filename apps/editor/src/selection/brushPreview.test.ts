@@ -60,6 +60,20 @@ describe('C06-007 exact bounded selection preview',()=>{
    expect(actual).toBe(255-committed.alpha[y*width+x]!);
   }
  });
+ it('keeps exact alpha previews for moderately long, narrow strokes',()=>{
+  const width=100,height=30,prior={width,height,alpha:new Uint8Array(width*height).fill(90)};
+  const points=Array.from({length:120},(_,i)=>({x:10+i*.4,y:12,pressure:.5}));
+  const small={...settings,size:6};
+  const preview=selectionBrushPreviewRaster(prior,points,small,width,height);
+  expect(preview).not.toBeNull();
+  const committed=brushSelection(prior,points,small);
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const actual=preview&&x>=preview.x&&x<preview.x+preview.width&&
+    y>=preview.y&&y<preview.y+preview.height
+      ?preview.alpha[(y-preview.y)*preview.width+x-preview.x]:0;
+   expect(actual).toBe(Math.abs(committed.alpha[y*width+x]!-prior.alpha[y*width+x]!));
+  }
+ });
  it('falls back to lightweight SVG when live processing would exceed the budget',()=>{
   const points=Array.from({length:500},(_,i)=>({x:10+i*.5,y:100,pressure:.75}));
   expect(selectionBrushPreviewRaster(null,points,settings,4000,4000)).toBeNull();
