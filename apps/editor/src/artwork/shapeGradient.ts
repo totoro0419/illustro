@@ -382,8 +382,12 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       if(api.context()?.drawing!==draftDrawing)throw Error('作品を開き直したため、「新しく作る」か「選んだレイヤーを編集」を選んでください。');
       const content=data();
       previewAbort?.abort();
+      // Commit the exact selection mask shown in the preview. Without this
+      // snapshot, a newly created path would use whichever selection happened
+      // to be active when Save ran, even though the preview used draftMask.
+      // Existing editable layers keep their own stored vector mask.
       await api.save(content,content.kind==='gradient'?'グラデーション':'図形',editing,
-        content.kind==='gradient'?draftMask:undefined);
+        editing?undefined:draftMask);
       stopHandles();
       status.textContent='作品に反映しました。';
     },status),
