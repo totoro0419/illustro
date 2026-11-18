@@ -86,6 +86,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   let stops:GradientStop[]=[{at:0,color:'#23252d',opacity:1,midpoint:.5},{at:1,color:'#f5a950',opacity:1,midpoint:.5}];
   let editing:LayerId|undefined,previewId=0,lineStyle:NonNullable<EditablePath['lineStyle']>='solid';
   let previewRunning=false,previewPending=false,editingHandles=false;
+  let previewAbort:AbortController|null=null;
   let editedOpacity:number|undefined,originalStrokeLayer:string|undefined;
   let draftDrawing:NonNullable<ReturnType<ArtworkActions['context']>>['drawing']|undefined;
   let draftMask:LayerMask|null=null,savedBoundary:EditablePath|undefined;
@@ -265,21 +266,24 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   }
   async function refresh(){
     ++previewId;
-    // Coalesce rapid edits: never start another pair of image workers while an older preview runs.
+    previewAbort?.abort();
+    // Coalesce rapid edits: cancel stale work so a full-size save is not
+    // blocked behind a slow thumbnail on a 4000px canvas.
     if(previewRunning){previewPending=true;return;}
     previewRunning=true;
     do{
       previewPending=false;
       const current=api.context(),id=previewId;
       if(!current)break;
+      const abort=new AbortController();previewAbort=abort;
       try{
         const scale=Math.min(1,260/Math.max(current.width,current.height));
         const outputWidth=Math.max(1,Math.round(current.width*scale)),outputHeight=Math.max(1,Math.round(current.height*scale));
         const size={width:current.width,height:current.height,outputWidth,outputHeight,mask:getMask(),previewMask:true};
         const compare=type.value==='gradient'?view.value:'normal';
         const [base,followed]=await Promise.all([
-          compare==='follow'?null:runArtwork({...size,content:data(false)}),
-          compare==='normal'?null:runArtwork({...size,content:data(true)})
+          compare==='follow'?null:runArtwork({...size,content:data(false)},{signal:abort.signal,priority:'preview'}),
+          compare==='normal'?null:runArtwork({...size,content:data(true)},{signal:abort.signal,priority:'preview'})
         ]);
         const pixels=base??followed!;
         // The shared renderer does not mask editable paths at preview size.
@@ -297,7 +301,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);
       }}
     }while(previewPending&&panel.open);
-    previewRunning=false;
+    previewRunning=false;previewAbort=null;
   }
   function reset(){
     stopHandles();
@@ -367,6 +371,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     button('適用',async()=>{
       if(api.context()?.drawing!==draftDrawing)throw Error('作品を開き直したため、「新しく作る」か「選んだレイヤーを編集」を選んでください。');
       const content=data();
+      previewAbort?.abort();
       await api.save(content,content.kind==='gradient'?'グラデーション':'図形',editing,
         content.kind==='gradient'?draftMask:undefined);
       stopHandles();
@@ -379,7 +384,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     },status)
   );
   panel.ontoggle=()=>{
-    if(!panel.open){stopHandles();++previewId;}
+    if(!panel.open){stopHandles();++previewId;previewAbort?.abort();}
     else if(api.context()&&(!points.length||draftDrawing!==api.context()?.drawing))reset();
   };
   updateFields();
