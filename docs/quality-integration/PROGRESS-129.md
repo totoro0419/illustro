@@ -35,7 +35,15 @@
 ### 2026-11-18 追加コード修正
 
 - **C10-008**：最後のベクター線を消す操作を、レイヤーのUndo可能な削除処理へ接続。未保存の新規候補は作品に触れず破棄。既存のロック・最低1描画レイヤー保護を維持。コード: [`1c51309fd678`](https://github.com/totoro0419/illustro/commit/1c51309fd6788451e9d012a0b745430a08d2aa85)。検査: [統合CI #44321070832](https://github.com/totoro0419/illustro/actions/runs/44321070832)、[Core CI #44321084276](https://github.com/totoro0419/illustro/actions/runs/44321084276)ともsuccess（Core/Brush/Editor検査、型確認、本番ビルド）。Android実機は未確認。
-- **次回最初の対象**：C06-001/002/015（選択中の消しゴム・特殊合成の仮線、画素読戻し、貼り付け）。関係箇所: `apps/editor/src/selection/`、`apps/editor/src/brushSurface.ts`、`apps/editor/src/main.ts`。並行実行との競合を先に確認する。
+- **次回最初の対象（定期自動開発②の追加修正後）**：C06-001/002（選択付き消しゴム・特殊合成の途中表示、画素読戻し）。関係箇所: `apps/editor/src/selection/`、`apps/editor/src/brushSurface.ts`。並行作業と重なる場合はC09-004へ切り替える。
+
+### 2026-11-18 定期自動開発②｜追加の連続修正（3 ID）
+
+- **C06-015（部分改善）**：貼り付け時に空白タイルを毎回確保・破棄する処理を見直し、元画像の全RGBA画素を調べて空白と分かったタイルは確保しない。透明画素に残るRGB情報も捨てず、画素データの互換性を維持。4Kの大きな余白と透明RGBの回帰テストを追加。コミット [`35529a5a`](https://github.com/totoro0419/illustro/commit/35529a5a472b9fed43f41b8c4ef8c073a7506a42)。
+- **C06-007（部分改善）**：選択ブラシの途中表示で、最後のペン位置が同じ点数のまま変更されたときも原寸の結果を再計算。長い線の表示範囲は新しく増えた点だけを調べる方式に変更し、入力が増えるほど無駄な全点走査が繰り返される問題を抑制。確定用の筆跡計算・Undo/Redo・保存形式は変更なし。回帰テストを追加。コミット [`bae35851`](https://github.com/totoro0419/illustro/commit/bae35851bb080b35fbad686fd8d140464a887214)。
+- **C03-007（部分改善）**：履歴画像の生成中、アプリが背景タブにあると画面更新待ちで止まり続ける可能性を解消。表示中は従来の画面更新に合わせ、背景では短い待機で処理を継続する。履歴画像の色・合成方法・保存形式は変更なし。表示中／背景のテストを追加。コミット [`e03757fa`](https://github.com/totoro0419/illustro/commit/e03757fa30d5c1a5cb66c4f190e5040b0b1d6416)。
+- **検査**：前2コミットはそれぞれ統合CIとCore CIがsuccess。最終コードHEAD `e03757fa` のCore CI [#44326327749](https://github.com/totoro0419/illustro/actions/runs/44326327749) はsuccess。統合CI [#44326315905](https://github.com/totoro0419/illustro/actions/runs/44326315905) は確認時点で実行中。Android実機と4K性能の実測は未実施。
+- **残件と次回**：3 IDとも既存の「部分対応」を維持。C03-007の高度な履歴画像での全画素処理、C06-007のWorker非対応時の長い線、C06-015の特殊グループ貼り付け・巨大コピー元の課題は残る。次回は **C06-001/002**（選択付き消しゴム・特殊合成の途中表示と読戻し）を最優先。関連ファイル：`apps/editor/src/brushSurface.ts`、`apps/editor/src/selection/`。競合する場合は **C09-004**（図形の選択マスク付き仮表示）、`apps/editor/src/artwork/shapeGradient.ts` へ切り替える。
 
 ## 129件の一覧
 
