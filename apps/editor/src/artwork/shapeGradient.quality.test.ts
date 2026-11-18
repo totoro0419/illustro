@@ -27,6 +27,18 @@ describe('C09-004 mask coverage in shape previews',()=>{
   });
 });
 
+describe('C09-004 empty-density mask fast path',()=>{
+  it('does not rasterize an inactive path mask or change preview colors',()=>{
+    const mask={shape:'path',points:[{x:0,y:0},{x:2,y:0},{x:0,y:2}],
+      enabled:true,inverted:false,density:0} as const;
+    const pixels=new Uint8ClampedArray([10,20,30,200]);
+    applyShapePreviewMask(pixels,mask,4000,4000,1,1,()=>{
+      throw Error('Zero-density masks must not trigger a pixel-mask lookup.');
+    });
+    expect(Array.from(pixels)).toEqual([10,20,30,200]);
+  });
+});
+
 describe('C09-004 area-averaged rectangular mask previews',()=>{
   it('retains a narrow selection that falls between preview pixel centers',()=>{
     const mask={shape:'rectangle',x:1,y:1,width:1,height:1,enabled:true,inverted:false,density:1} as const;

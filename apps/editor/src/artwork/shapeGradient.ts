@@ -94,7 +94,8 @@ export function applyShapePreviewMask(
   width:number,height:number,outputWidth:number,outputHeight:number,
   sampleCoverage:(mask:LayerMask,x:number,y:number)=>number=layerMaskCoverage
 ):void{
-  if(!mask?.enabled)return;
+  // A zero-density mask cannot change any pixel; skip even the mask tile lookup.
+  if(!mask?.enabled||mask.density===0)return;
   const downscaled=sampleCoverage===layerMaskCoverage&&(outputWidth<width||outputHeight<height);
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
     const at=(y*outputWidth+x)*4;
