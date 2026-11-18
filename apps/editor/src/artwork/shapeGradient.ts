@@ -136,7 +136,7 @@ export function safeGradientStopValue(value:number,min:number,max:number,fallbac
 }
 export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:ArtPoint):ArtPoint[]{
   const point=points[index];
-  if(!point)return [...points];
+  if(!point||!Number.isFinite(next.x)||!Number.isFinite(next.y))return [...points];
   const dx=next.x-point.x,dy=next.y-point.y;
   const moved={...point,x:next.x,y:next.y,
     ...(point.inX===undefined?{}:{inX:point.inX+dx,inY:point.inY!+dy}),
@@ -193,6 +193,9 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   labelledField(followFields,'形状に沿う候補を採用する',applied);
   const coords=(['始点 X','始点 Y','終点 X','終点 Y'] as const)
     .map(label=>numberField(controls,label,0,-8192,16384,.5));
+  // Programmatic handle drags may land between 0.5px increments.
+  // Let numeric fields preserve that exact value for the final commit.
+  coords.forEach(field=>{field.step='any';});
   let points:ArtPoint[]=[];
   let stops:GradientStop[]=[{at:0,color:'#23252d',opacity:1,midpoint:.5},{at:1,color:'#f5a950',opacity:1,midpoint:.5}];
   let editing:LayerId|undefined,previewId=0,lineStyle:NonNullable<EditablePath['lineStyle']>='solid';
@@ -423,6 +426,12 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         if(marker.hasPointerCapture(event.pointerId))marker.releasePointerCapture(event.pointerId);
         void refresh();
       };
+      // Capture can be lost without a pointercancel (for example, when the
+      // browser interrupts the gesture). Never leave a half-dragged stop.
+      marker.onlostpointercapture=()=>{
+        if(dragging===null)return;
+        dragging=null;setPosition(positionBeforeDrag);void refresh();
+      };
       marker.onkeydown=event=>{
         const at=gradientStopKeyboardPosition(stops[index]!.at,event.key,event.shiftKey);
         if(at===null)return;
@@ -563,13 +572,15 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       if(api.context()?.drawing!==draftDrawing)throw Error('作品を開き直したため、「新しく作る」か「選んだレイヤーを編集」を選んでください。');
       const content=data();
       previewAbort?.abort();
+      // Freeze the handle position before the asynchronous save. A second
+      // pointer move must not change the preview while older data is saved.
+      stopHandles();
       // Commit the exact selection mask shown in the preview. Without this
       // snapshot, a newly created path would use whichever selection happened
       // to be active when Save ran, even though the preview used draftMask.
       // Existing editable layers keep their own stored vector mask.
       await api.save(content,content.kind==='gradient'?'グラデーション':'図形',editing,
         shapeGradientInitialMask(editing,draftMask));
-      stopHandles();
       status.textContent='作品に反映しました。';
     },status),
     button('変更を取り消す',()=>{

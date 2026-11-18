@@ -196,3 +196,12 @@ describe('C09-009 numeric stop edits',()=>{
     expect(safeGradientStopValue(.5,.01,.99,.25)).toBe(.5);
   });
 });
+
+describe('C09-005/015 invalid pointer geometry',()=>{
+  it('ignores non-finite drag coordinates without corrupting saved anchors',()=>{
+    const points=[{x:1.25,y:2.75,inX:1,inY:2},{x:9.5,y:10.5}];
+    expect(moveShapeAnchor(points,0,{x:Infinity,y:5})).toEqual(points);
+    expect(moveShapeAnchor(points,1,{x:3,y:NaN})).toEqual(points);
+    expect(points[0]).toEqual({x:1.25,y:2.75,inX:1,inY:2});
+  });
+});
