@@ -5,6 +5,7 @@ import type {Point} from '../transform/geometry';
 import type {FillSettings,GapCandidate,RegionGraph,Walls} from './pixels';
 import {runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
+import {colorHintCenter,moveColorHint} from './colorHintPlacement';
 import {sampleFillDetail} from './detailPreview';
 import {addTraceRegions,renderLiveRegionPreview} from './liveRegionPreview';
 import {LiveColorFillPreview} from './liveColorPreview';
@@ -601,17 +602,37 @@ export function installFillPanel(host:HTMLElement,api:{
     onCanvas('色指示を置きたい中心をタップしてください。',async points=>{
       const current=hints[index];
       if(!current||!points.length)return;
-      const cx=current.points.reduce((sum,point)=>sum+point.x,0)/current.points.length;
-      const cy=current.points.reduce((sum,point)=>sum+point.y,0)/current.points.length;
-      const dx=points[0]!.x-cx,dy=points[0]!.y-cy;
-      const next=current.points.map(point=>({
-        x:Math.min(graph.width-1,Math.max(0,point.x+dx)),
-        y:Math.min(graph.height-1,Math.max(0,point.y+dy))
-      }));
-      hints=hints.map((hint,i)=>i===index?{...hint,points:next}:hint);
+      const moved=moveColorHint(current,points[0]!,graph.width,graph.height);
+      hints=hints.map((hint,i)=>i===index?moved:hint);
       candidate=null;pending=null;paint();
       output.textContent='色指示を移動しました。「色指示だけを保存」で作品に反映できます。';
     });
+  });
+  button('選んだ色指示をキャンバスで直接ドラッグ',()=>{
+    const index=Number(hintList.value),graph=currentGraph,drawing=api.drawing();
+    if(!graph||!drawing||!Number.isInteger(index)||index<0||index>=hints.length)
+      throw Error('動かす色指示を選び、線画領域を解析してください。');
+    stopGesture();gesture=drawing;
+    const installHandle=()=>{
+      const item=hints[index];
+      if(!item||gesture!==drawing||graph!==currentGraph)return;
+      const center=colorHintCenter(item);
+      drawing.setCanvasEditGesture({
+        path:false,width:2,color:'#43bfea',complete:()=>{},
+        pointEdit:{points:[center],commit:(_index,next)=>{
+          if(gesture!==drawing||graph!==currentGraph||!hints[index]){
+            stopGesture();return;
+          }
+          hints=hints.map((hint,i)=>i===index?
+            moveColorHint(hint,next,graph.width,graph.height):hint);
+          candidate=null;pending=null;lastFill=null;
+          paint();installHandle();
+          output.textContent='色指示を動かしました。「色指示だけを保存」で作品に反映できます。';
+        }}
+      });
+    };
+    installHandle();
+    output.textContent='キャンバス上の青い丸をドラッグして移動してください。終了は「キャンバス操作をやめる」です。';
   });
   const removeHint=button('選んだ色指示を取り消す',()=>{
     hints=hints.filter((_hint,index)=>index!==Number(hintList.value));
