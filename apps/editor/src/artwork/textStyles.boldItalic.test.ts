@@ -51,6 +51,11 @@ describe('C10-009 bold/italic partial text',()=>{
     expect(rebaseTextStyles('abcd','aXbcd',range)).toEqual([
       {start:2,end:4,bold:true,italic:true}
     ]);
+    // Replacing the first styled letter should keep its style, unlike
+    // inserting *before* it.
+    expect(rebaseTextStyles('abcd','aXcd',range)).toEqual([
+      {start:1,end:3,bold:true,italic:true}
+    ]);
     const merged=applyTextSelectionStyle('abcd',range,0,1,{bold:true,italic:true});
     expect(merged).toEqual([{start:0,end:3,bold:true,italic:true}]);
   });
