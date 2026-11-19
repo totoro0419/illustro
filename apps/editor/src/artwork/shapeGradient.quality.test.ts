@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type EditableGradient,type LayerId} from '@illustro/core';
 import {renderArtwork} from './render';
+import {layerMaskCoverage} from '@illustro/brush-rt';
 import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
@@ -58,6 +59,26 @@ describe('C09-004/C09-005/C09-015 shared gradient and path preview masking',()=>
     const pixels=renderUnmasked(),original=pixels.slice();
     applyShapePreviewMask(pixels,null,4,4,2,2);
     expect(pixels).toEqual(original);
+  });
+});
+
+
+describe('C09-004/C09-005 pixel-mask preview direct sampling',()=>{
+  it('matches the committed mask coverage across source tiles and fractional mask transforms',()=>{
+    const original=new Uint8ClampedArray(4*2*4);
+    for(let i=0;i<8;i++)original.set([10,20,30,201],i*4);
+    for(const inverted of [false,true]){
+      const mask={shape:'pixels',x:.25,y:.5,scaleX:2,scaleY:1.5,
+        tiles:{'0,0':'80','1,0':'40'},enabled:true,inverted,density:.5} as const;
+      const pixels=original.slice();
+      const expected=original.slice();
+      for(let y=0;y<2;y++)for(let x=0;x<4;x++){
+        const at=(y*4+x)*4,docX=(x+.5)*64,docY=(y+.5)*2;
+        expected[at+3]=Math.round(201*layerMaskCoverage(mask,docX,docY));
+      }
+      applyShapePreviewMask(pixels,mask,256,4,4,2);
+      expect(pixels).toEqual(expected);
+    }
   });
 });
 
