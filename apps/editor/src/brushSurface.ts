@@ -45,6 +45,7 @@ type CanvasEditGesture=Readonly<{
   completeSamples?:(samples:readonly Sample[])=>void;
   updateSamples?:(samples:readonly Sample[])=>void;
   cancel?:()=>void;
+  continuous?:boolean;end?:()=>void;
   /** At most once per animation frame while tracing a canvas interaction. */
   update?:(points:readonly MaskStrokePoint[])=>void;
   pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;
@@ -155,7 +156,9 @@ export class BrushSurface{
   private get inputViewport(){return this.canvas.closest<HTMLElement>('.surface')??this.canvas;}
   private layoutRect(){return this.inputViewport.getBoundingClientRect();}
   get viewportRect(){return this.layoutRect();}
-  readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;barrelErases=false;palmGuard=true;panTool=false;rotationSnap=false;
+  readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;barrelErases=false;palmGuard=true;private panningTool=false;rotationSnap=false;
+  get panTool(){return this.panningTool;}
+  set panTool(value:boolean){if(value&&this.editGesture?.continuous)this.setCanvasEditGesture(null);this.panningTool=value;}
   eraserPreset:()=>FoundationPreset|null=()=>null;
   private suppressedTouches=new Set<number>();
   private commonStabilization=0.25;
@@ -311,6 +314,9 @@ export class BrushSurface{
     return this.navigation?.active?'navigation':this.pointer!==null||this.editPointer!==null?'drawing':'idle';
   }
   private keyNavigation=(e:KeyboardEvent)=>{
+    if(e.type==='keydown'&&e.key==='Escape'&&this.editGesture?.continuous){
+      this.setCanvasEditGesture(null);e.preventDefault();return;
+    }
     if(e.type==='keydown'&&e.key==='Escape'&&this.editPointer!==null){
       this.clearCanvasEditGestureStroke();
       if(this.editGesture?.pointEdit)this.updateEditStrokeOutline();
@@ -346,6 +352,7 @@ export class BrushSurface{
   get selectionIsVisible(){return this.selectionVisible;}
   get selectingRectangle(){return this.selectionMode;}
   setSelectionMode(enabled:boolean){
+    if(this.editGesture?.continuous)this.setCanvasEditGesture(null);
     if(this.inputActive)return;
     this.selectionMode=enabled;this.onSelectionChanged();
   }
@@ -670,8 +677,10 @@ export class BrushSurface{
   setCanvasEditGesture(gesture:CanvasEditGesture|null){
     this.showFillGesturePreview(null);
     this.clearCanvasEditGestureStroke();
-    this.editGesture=gesture;
+    const previous=this.editGesture;this.editGesture=gesture;
+    if(previous!==gesture)previous?.end?.();
     if(gesture?.pointEdit)this.updateEditStrokeOutline();
+    return ()=>{if(this.editGesture===gesture)this.setCanvasEditGesture(null);};
   }
   showCanvasEditTrace(visible:boolean){
     this.editTraceVisible=visible;
@@ -1505,6 +1514,7 @@ export class BrushSurface{
   }
   get samplingColor(){return this.eyedropperPointer!==null||this.commitSamplePending;}
   setEyedropper(enabled:boolean,source:'composite'|'layer'|'specific'='composite'){
+    if(enabled&&this.editGesture?.continuous)this.setCanvasEditGesture(null);
     if(!enabled&&this.eyedropperPointer!==null){
       this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);
     }
@@ -1602,7 +1612,7 @@ export class BrushSurface{
     if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];
     (this.renderer as any)?.proxy?.prepare(this.preset);
   }
-  select(index:number){const p=this.brushes[index];if(p){this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}}selectById(id:string){const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024){this.preset.size=value;(this.renderer as any)?.proxy?.prepare(this.preset);}}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
+  select(index:number){const p=this.brushes[index];if(p){this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}}selectById(id:string){if(this.editGesture?.continuous)this.setCanvasEditGesture(null);const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024){this.preset.size=value;(this.renderer as any)?.proxy?.prepare(this.preset);}}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
   setPerformanceEnabled(enabled:boolean){this.renderer?.setPerformanceEnabled(enabled);}
   handoffProbe(){return {renderer:this.renderer,session:this.session,controller:this.controller};}
   get performanceDiagnostics(){const r=this.renderer as any;return {...this.renderer?.performanceSummary(),handoff:{inputAttempts:this.traceHandoff?this.inputAttempts:[],accepted:this.handoffAccepted,rejected:this.handoffRejected,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,pendingEntries:this.handoff?.diagnostics,historyVisibility:this.historyTraces,protectionQueue:this.protectionQueueLength,fault:this.handoffFault,traces:this.traceHandoff?this.handoffTraces:[]},frameState:{lastFrameAt:this.lastFrameAt,disposed:this.disposed,operationMode:this.operationMode,pointer:this.pointer,finishing:this.finishing,historySyncing:this.historySyncing,inputBarrier:this.inputBarrier,pendingRawCount:this.session?.pendingRawCount??0,formalCommands:r?.document.count??0,inflight:r?.inflight,viewPending:r?.viewPending,navigationActive:r?.navigationActive,navigationUntil:r?.navigationUntil,guardPreparing:r?.guardPreparing,overlayViewPending:!!r?.overlayViewPending,overlayPending:r?.proxy?.pending.size,overlayFinalizations:r?.proxy?.finalizations.size,viewFence:!!r?.backend.viewFence,viewSubmission:!!r?.backend.viewSubmission,cancellingStroke:!!r?.cancellingStroke,needsFrame:r?.needsFrame,jobs:r?.document.jobs.length,presentationHeld:r?.backend.presentationHeld,glFence:!!r?.backend.fence,pending:!!r?.backend.pending,errors:r?.errors,sessionErrors:this.session?.errors},checkpoint:{...this.checkpointMetrics},strokeReplayFallbacks:this.historyReplayFallbacks,fullDocumentRebuilds:this.session?.fullDocumentRebuilds??0,fullReplayStrokes:this.session?.fullReplayStrokes??0,cancelledStrokeCount:this.session?.cancelledStrokeCount??0,projectionRestoreMode:this._projectionRestoreMode};}

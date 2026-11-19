@@ -4336,7 +4336,7 @@ const artworkActions:ArtworkActions={
     const drawing=surface,layer=controller.selectedLayer;
     if(!drawing||!documentReady)return null;
     const {width,height}=controller.document.root;
-    return {width,height,color:hex(foreground.current),drawing,
+    return {width,height,color:hex(foreground.current),drawing,documentKey:controller.document,
       snapGuidedPath:points=>snapArtworkPathToGuide(points,controller.document.root.artworkGuides,
         guidePreferences,drawing.preferredArtworkGuideId),
       selected:{id:layer.id,name:layer.name,content:layer.editable??null,mask:layer.vectorMask??null},
@@ -4345,7 +4345,7 @@ const artworkActions:ArtworkActions={
       missingFontCandidates:controller.layers.flatMap(item=>item.editable?.kind==='text'
         ?textFontAssetIds(item.editable).map(assetId=>({name:item.name,assetId})):[])};
   },
-  save:async(content,name,editing,initialMask,hideSourcePaths,output='vector',sourceOf)=>{
+  save:async(content,name,editing,initialMask,hideSourcePaths,output='vector',sourceOf,signal)=>{
     const artwork=controller.document,head=artwork.head,drawing=surface,selection=c06Selection?.active();
     if(!drawing||!documentReady)throw Error('作品を開いてください。');
     const {width,height}=artwork.root,reference=controller.selectedLayer.id;
@@ -4373,7 +4373,9 @@ const artworkActions:ArtworkActions={
       linkedPixels.push({...update,pixels:await runArtwork({content:update.content,width,height,
         outputWidth:width,outputHeight:height,mask:layer.vectorMask??null})});
     }
+    if(signal?.aborted)throw Error('ベクター描画を取り消しました。');
     await withClipboardAccess(async()=>{
+      if(signal?.aborted)throw Error('ベクター描画を取り消しました。');
       if(surface!==drawing||controller.document!==artwork||artwork.head!==head||controller.selectedLayer.id!==reference)
         throw Error('作品が変更されたため中止しました。');
       const tx=artwork.begin(editing?'図形・文字などを編集':'編集できるレイヤーを追加');

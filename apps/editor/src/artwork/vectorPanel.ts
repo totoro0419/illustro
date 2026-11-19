@@ -1,5 +1,6 @@
 import {validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
+import {continuousVectorSession} from './continuousVector';
 import {runArtwork} from './run';
 import {vectorPointDrag,type VectorDragHandle} from './vectorPointDrag';
 import {booleanOperandSave} from './linkedBooleans';
@@ -134,7 +135,9 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     if(pointPreviewShown)pointDrawing?.showArtworkPreview(null);
     pointPreviewShown=false;
   }
+  let stopDrawing:(()=>void)|null=null;
   const stopPoints=()=>{
+    stopDrawing?.();stopDrawing=null;
     clearPointPreview();
     pointDrawing?.setCanvasEditGesture(null);pointDrawing=null;
   };
@@ -149,38 +152,35 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     if(other?.kind!=='path')throw Error('組み合わせるベクターレイヤーを選んでください。');
     return other;
   };
+  function startDrawing(newLayer:boolean){
+    const context=api.context();if(!context)throw Error('作品を開いてください。');
+    stopPoints();sourceEdit=null;
+    context.drawing.setSelectionMode(false);context.drawing.setEyedropper(false);context.drawing.panTool=false;
+    const session=continuousVectorSession(api,newLayer,(content,id)=>{
+      readPath(content,id);status.textContent='線を保存しました。続けて描けます。';
+    });
+    const release=locate(context.drawing,points=>{
+      if(points.length<2)return;
+      const latest=api.context();if(!latest){stopPoints();return;}
+      const stroke:EditablePath={kind:'path',shape:'freehand',points:[...points],closed:false,
+        stroke:latest.color,fill:null,width:thickness.valueAsNumber,lineStyle:lineStyle.value as NonNullable<EditablePath['lineStyle']>};
+      status.textContent='線を作品に反映しています…';
+      try{void session.append(stroke).catch(error=>{
+        release();status.textContent=error instanceof Error?error.message:String(error);
+      });}catch(error){release();status.textContent=error instanceof Error?error.message:String(error);}
+    },{continuous:true,end:()=>session.stop()});
+    stopDrawing=release;
+    status.textContent='続けて線を描けます。1本ごとに保存します。終了ボタン・道具切替・Escapeで終了します。';
+  }
   tools.append(
     button('全体の塗りをこの色にそろえる',()=>{
       const current=draft(),{fillRuns:_colors,...uniform}=current;
       readPath({...uniform,fill:filled.checked?fill.value:null},editing);
       status.textContent='すべての輪郭の塗り色をそろえました。「作品に反映」で保存できます。';
     },status),
-    button('新しいベクター線を描く',()=>{
-      const context=api.context();
-      if(!context)throw Error('作品を開いてください。');
-      stopPoints();status.textContent='キャンバスに線を描いてください。';
-      locate(context.drawing,points=>{
-        if(points.length<2)return;
-        sourceEdit=null;pointIndex.value='1';
-        readPath({kind:'path',shape:'freehand',points:simplifyPath(points,.65),closed:false,
-          stroke:context.color,fill:null,width:5,lineStyle:'pressure'});
-      });
-    },status),
-    button('選んだレイヤーに線を追加',()=>{
-      const context=api.context(),layer=context?.selected;
-      if(layer?.content?.kind!=='path'||!context)throw Error('線を追加するベクターレイヤーを選んでください。');
-      const base=validateEditableArtwork(layer.content) as EditablePath;
-      stopPoints();sourceEdit=null;
-      status.textContent='キャンバスに追加する線を描いてください。元の線は残ります。';
-      locate(context.drawing,points=>{
-        if(points.length<2){status.textContent='2点以上の線を描いてください。';return;}
-        try{
-          const stroke:EditablePath={...base,points:simplifyPath(points,.65),closed:false};
-          readPath(appendPathStroke(base,stroke),layer.id);
-          status.textContent='線を追加しました。「作品に反映」でまとめて保存できます。';
-        }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
-      });
-    },status),
+    button('選んだレイヤーに連続して描く',()=>startDrawing(false),status),
+    button('新しいレイヤーに連続して描く',()=>startDrawing(true),status),
+    button('連続作画を終了',()=>{stopPoints();status.textContent='連続作画を終了しました。';},status),
     button('選んだベクターを編集',()=>{
       const context=api.context(),layer=context?.selected;
       if(layer?.content?.kind!=='path')throw Error('ベクター線や図形のレイヤーを選んでください。');
