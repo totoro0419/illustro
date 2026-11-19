@@ -375,12 +375,13 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         const abort=new AbortController();liveAbort=abort;
         try{
           const pixels=await runArtwork({width:context.width,height:context.height,
-            outputWidth,outputHeight,mask:mask??null,previewMask:true,content},
+            outputWidth,outputHeight,mask:mask??null,previewMask:false,content},
             {signal:abort.signal,priority:'preview'});
           if(abort.signal.aborted||version!==liveVersion||!editingHandles||
             draftDrawing!==context.drawing||api.context()?.drawing!==context.drawing)continue;
-          if(content.kind==='path')
-            applyShapePreviewMask(pixels,mask,context.width,context.height,outputWidth,outputHeight);
+          // Apply the same area-aware selection coverage to both paths and gradients.
+          // The renderer must not pre-apply a center-sampled mask to gradients.
+          applyShapePreviewMask(pixels,mask,context.width,context.height,outputWidth,outputHeight);
           context.drawing.showArtworkPreview(new ImageData(pixels,outputWidth,outputHeight),
             false,replacement??null);
         }catch(error){
@@ -571,21 +572,20 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       try{
         const scale=Math.min(1,260/Math.max(current.width,current.height));
         const outputWidth=Math.max(1,Math.round(current.width*scale)),outputHeight=Math.max(1,Math.round(current.height*scale));
-        const size={width:current.width,height:current.height,outputWidth,outputHeight,mask:getMask(),previewMask:true};
+        const size={width:current.width,height:current.height,outputWidth,outputHeight,mask:getMask(),previewMask:false};
         const compare=type.value==='gradient'?view.value:'normal';
         const [base,followed]=await Promise.all([
           compare==='follow'?null:runArtwork({...size,content:data(false)},{signal:abort.signal,priority:'preview'}),
           compare==='normal'?null:runArtwork({...size,content:data(true)},{signal:abort.signal,priority:'preview'})
         ]);
         const pixels=base??followed!;
-        // The shared renderer does not mask editable paths at preview size.
-        // Apply the same layer-mask coverage here to avoid showing paint outside the selection.
-        if(type.value==='shape')
-          applyShapePreviewMask(pixels,size.mask,current.width,current.height,outputWidth,outputHeight);
+        // Combine unmasked comparison halves first; then apply the same
+        // area-averaged selection mask exactly once to either artwork kind.
         if(base&&followed)for(let y=0;y<outputHeight;y++){
           const start=(y*outputWidth+Math.floor(outputWidth/2))*4;
           base.set(followed.subarray(start,(y+1)*outputWidth*4),start);
         }
+        applyShapePreviewMask(pixels,size.mask,current.width,current.height,outputWidth,outputHeight);
         if(id===previewId)paintPreview(preview,pixels,outputWidth,outputHeight);
       }catch(error){if(id===previewId){
         preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);
