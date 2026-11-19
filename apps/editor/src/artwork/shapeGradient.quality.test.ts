@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type EditableGradient,type LayerId} from '@illustro/core';
 import {renderArtwork} from './render';
 import {layerMaskCoverage} from '@illustro/brush-rt';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,shapeLiveMaskOnMainThread,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -79,6 +79,16 @@ describe('C09-004/C09-005 pixel-mask preview direct sampling',()=>{
       applyShapePreviewMask(pixels,mask,256,4,4,2);
       expect(pixels).toEqual(expected);
     }
+  });
+});
+
+
+describe('C09-005/C09-015 live gradient preview responsiveness',()=>{
+  it('keeps large gradient mask work in the renderer and avoids a second UI pass',()=>{
+    expect(shapeLiveMaskOnMainThread('gradient',1024,1024)).toBe(false);
+    expect(shapeLiveMaskOnMainThread('gradient',512,512)).toBe(false);
+    expect(shapeLiveMaskOnMainThread('gradient',260,260)).toBe(true);
+    expect(shapeLiveMaskOnMainThread('path',1024,1024)).toBe(true);
   });
 });
 
