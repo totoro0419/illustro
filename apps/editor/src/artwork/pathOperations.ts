@@ -1,4 +1,4 @@
-import type {ArtPoint,EditablePath} from '@illustro/core';
+import {mapArtworkPoint,inverseArtworkAffine,composeArtworkAffine,type ArtPoint,type EditablePath} from '@illustro/core';
 
 const distance=(a:ArtPoint,b:ArtPoint)=>Math.hypot(a.x-b.x,a.y-b.y);
 function requireUniformFill(path:EditablePath){
@@ -32,6 +32,7 @@ export function smoothPath(points:readonly ArtPoint[],closed:boolean,amount:numb
   });
 }
 export function eraseSegment(path:EditablePath,point:ArtPoint){
+  if(path.transform)point=mapArtworkPoint(point,inverseArtworkAffine(path.transform));
   requireUniformFill(path);
   if(path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(p=>p.move||p.close))
     throw Error('この形は区間消去に対応していません。レイヤーの削除か点の編集を使ってください。');
@@ -63,13 +64,20 @@ export function eraseSegment(path:EditablePath,point:ArtPoint){
 
 /** Combine independent strokes without changing the native, backwards-compatible path format. */
 export function appendPathStroke(base:EditablePath,stroke:EditablePath):EditablePath{
+  if(base.transform||stroke.transform){
+    const relative=composeArtworkAffine(base.transform?inverseArtworkAffine(base.transform):{a:1,b:0,c:0,d:1,e:0,f:0},stroke.transform);
+    const {transform:_old,...local}=stroke;
+    stroke={...local,points:stroke.points.map(p=>({...mapArtworkPoint(p,relative),
+      ...(p.inX===undefined?{}:{inX:mapArtworkPoint({x:p.inX,y:p.inY!},relative).x,inY:mapArtworkPoint({x:p.inX,y:p.inY!},relative).y}),
+      ...(p.outX===undefined?{}:{outX:mapArtworkPoint({x:p.outX,y:p.outY!},relative).x,outY:mapArtworkPoint({x:p.outX,y:p.outY!},relative).y})}))};
+  }
   requireUniformFill(base);requireUniformFill(stroke);
   if(base.booleanOperands||stroke.booleanOperands)throw Error('図形演算の元データを含む形には追加できません。');
   if(base.shape==='rectangle'||base.shape==='ellipse'||stroke.shape==='rectangle'||stroke.shape==='ellipse'||
     base.closed||stroke.closed||base.points.some(point=>point.close)||stroke.points.some(point=>point.close))
     throw Error('別の線を追加するには、閉じていないベクター線を選んでください。');
   if(base.fill||stroke.fill)throw Error('線を追加する前に内側の塗りをオフにしてください。');
-  if(base.stroke!==stroke.stroke||base.width!==stroke.width||base.lineStyle!==stroke.lineStyle||
+  if(base.stroke.toLowerCase()!==stroke.stroke.toLowerCase()||base.width!==stroke.width||(base.lineStyle??'solid')!==(stroke.lineStyle??'solid')||
     (base.opacity??1)!==(stroke.opacity??1))
     throw Error('同じレイヤーに追加する線は、色・太さ・線の種類をそろえてください。');
   if(base.points.length+stroke.points.length>4096)throw Error('このレイヤーの点が4096個を超えます。別のレイヤーに描いてください。');
@@ -79,6 +87,7 @@ export function appendPathStroke(base:EditablePath,stroke:EditablePath):Editable
 
 /** Remove the nearest complete subpath; null means the layer itself must be removed atomically. */
 export function eraseWholeStroke(path:EditablePath,position:ArtPoint):EditablePath|null{
+  if(path.transform)position=mapArtworkPoint(position,inverseArtworkAffine(path.transform));
   if(path.fillRuns){
     let nearest=-1,best=Math.max(10,path.width*2);
     path.fillRuns.forEach((run,index)=>{
@@ -212,7 +221,7 @@ export async function combineShapes(current:EditablePath,other:EditablePath,mode
     if(!result.length||result.some(ring=>ring.length<4||distance(ring[0]!,ring.at(-1)!)>.00001))
       throw Error('形状演算には面を持つ閉じた形を選んでください。');
     // The source's even-odd fill can contain separate island outlines as well as holes.
-    return result.map(ring=>ring.map(p=>[p.x,p.y]));
+    return result.map(ring=>ring.map(p=>{const world=mapArtworkPoint(p,input.transform);return [world.x,world.y];}));
   };
   const a=polygon(current),b=polygon(other);
   const imported=await import('polygon-clipping');
@@ -235,7 +244,7 @@ export async function combineShapes(current:EditablePath,other:EditablePath,mode
   if(points.length>4096)throw Error('演算結果の点が多すぎます。元の形の点数を減らしてください。');
   // Keep copies of both input shapes for later re-editing, without changing how older renderers display the result.
   const {booleanOperands:_ignoredA,...left}=current,{booleanOperands:_ignoredB,...right}=other;
-  const {empty:_empty,...style}=current;
+  const {empty:_empty,transform:_transform,...style}=current;
   return {...style,shape:'polyline',closed:false,points,fill:current.fill??current.stroke,
     ...(empty?{empty:true}:{}),booleanOperands:{mode,a:left,b:right}};
 }
@@ -256,6 +265,7 @@ function reversePath(points:readonly ArtPoint[]){
   });
 }
 export function joinPaths(a:EditablePath,b:EditablePath,maxGap=24):EditablePath{
+  if(JSON.stringify(a.transform)!==JSON.stringify(b.transform))throw Error('異なる変形を持つ線は、そのまま接続できません。');
   requireUniformFill(a);requireUniformFill(b);
   for(const path of [a,b])if(path.closed||path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(point=>point.move||point.close))
     throw Error('接続するには開いた線を2本選んでください。');
@@ -280,6 +290,7 @@ export function joinPaths(a:EditablePath,b:EditablePath,maxGap=24):EditablePath{
 }
 
 export function eraseBetweenIntersections(path:EditablePath,reference:EditablePath,position:ArtPoint):EditablePath{
+  if(path.transform||reference.transform)throw Error('変形を保持した線の交点消去にはまだ対応していません。線全体か区間の消去を使ってください。');
   requireUniformFill(path);
   if(path.closed||path.shape==='ellipse'||path.shape==='rectangle'||path.points.some(p=>p.move||p.close))
     throw Error('交点まで消すには、開いた1本の線を選んでください。');

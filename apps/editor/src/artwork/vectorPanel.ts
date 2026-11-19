@@ -1,4 +1,4 @@
-import {validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} from '@illustro/core';
+import {mapArtworkPoint,validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {continuousVectorSession} from './continuousVector';
 import {runArtwork} from './run';
@@ -22,6 +22,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
   const lineStyle=selectField(appearance,'線の見た目',[
     ['solid','実線'],['dashed','破線'],['dotted','点線'],['pressure','筆圧で太さを変える']
   ] as const);
+  lineStyle.value='pressure';
   const pointIndex=numberField(coordinates,'編集する点の番号',1,1,4096);
   const pointX=numberField(coordinates,'点の X',0,-8192,16384,.1),pointY=numberField(coordinates,'点の Y',0,-8192,16384,.1);
   const inX=numberField(coordinates,'前の曲線ハンドル X',0,-8192,16384,.1),inY=numberField(coordinates,'前の曲線ハンドル Y',0,-8192,16384,.1);
@@ -208,7 +209,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       stopPoints();pointDrawing=context.drawing;
       status.textContent='点やハンドルをドラッグしてください。曲線の変更をキャンバスに仮表示します（大きな作品では縮小表示）。';
       pointDrawing.setCanvasEditGesture({path:false,width:2,color:'#ffb742',complete:()=>{},
-        pointEdit:{points,edges,closed:false,
+        pointEdit:{points:points.map(p=>mapArtworkPoint(p,current.transform)),edges,closed:false,
           preview:(picked,position)=>previewPointDrag(current,picked,anchors.length,handles,position,
             context.drawing,context.width,context.height),
           commit:(picked,position)=>{

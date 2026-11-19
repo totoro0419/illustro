@@ -97,6 +97,7 @@ function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCan
       const ctx=canvas.getContext('2d') as Context|null;
       if(!ctx)throw Error('図形の内側を取得できません。');
       ctx.scale(1/factorX,1/factorY);
+      if(follow.transform){const t=follow.transform;ctx.transform(t.a,t.b,t.c,t.d,t.e,t.f);}
       tracePath(ctx,follow);ctx.fill('evenodd');
       // Read only a short row band at once: avoid an additional full 4K RGBA
       // image during full-resolution shape-following gradient rendering.
@@ -229,6 +230,7 @@ export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTM
   const ctx=canvas.getContext('2d') as Context|null;
   if(!ctx)throw Error('表示用画像を作れません。');
   ctx.scale(size.outputWidth/size.width,size.outputHeight/size.height);
+  if(content.transform){const t=content.transform;ctx.transform(t.a,t.b,t.c,t.d,t.e,t.f);}
   if(content.kind==='text')drawText(ctx,content);
   else{
     ctx.globalAlpha=content.opacity??1;

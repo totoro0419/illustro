@@ -1,3 +1,20 @@
+/** Canvas-order affine matrix; original points and text stay editable. */
+export type ArtworkAffine=Readonly<{a:number;b:number;c:number;d:number;e:number;f:number}>;
+export const identityArtworkAffine:ArtworkAffine={a:1,b:0,c:0,d:1,e:0,f:0};
+export function composeArtworkAffine(next:ArtworkAffine,previous:ArtworkAffine=identityArtworkAffine):ArtworkAffine{
+  return {a:next.a*previous.a+next.c*previous.b,b:next.b*previous.a+next.d*previous.b,
+    c:next.a*previous.c+next.c*previous.d,d:next.b*previous.c+next.d*previous.d,
+    e:next.a*previous.e+next.c*previous.f+next.e,f:next.b*previous.e+next.d*previous.f+next.f};
+}
+export function inverseArtworkAffine(t:ArtworkAffine):ArtworkAffine{
+  const det=t.a*t.d-t.b*t.c;
+  if(!Number.isFinite(det)||Math.abs(det)<1e-12)throw Error('変形の倍率が小さすぎます。');
+  return {a:t.d/det,b:-t.b/det,c:-t.c/det,d:t.a/det,
+    e:(t.c*t.f-t.d*t.e)/det,f:(t.b*t.e-t.a*t.f)/det};
+}
+export function mapArtworkPoint<T extends {x:number;y:number}>(p:T,t?:ArtworkAffine):T{
+  return t?{...p,x:t.a*p.x+t.c*p.y+t.e,y:t.b*p.x+t.d*p.y+t.f}:p;
+}
 export type ArtPoint=Readonly<{x:number;y:number;inX?:number;inY?:number;outX?:number;outY?:number;pressure?:number;move?:boolean;close?:boolean}>;
 export type GradientStop=Readonly<{at:number;color:string;opacity:number;midpoint:number}>;
 export type EditableGradient=Readonly<{
@@ -9,6 +26,7 @@ export type EditableGradient=Readonly<{
   radialRatio?:number;
 }>;
 export type EditablePath=Readonly<{
+  transform?:ArtworkAffine;
   kind:'path';shape:'rectangle'|'ellipse'|'polyline'|'bezier'|'freehand';
   points:readonly ArtPoint[];closed:boolean;stroke:string;fill:string|null;width:number;
   lineStyle?:'solid'|'dashed'|'dotted'|'pressure';
@@ -25,6 +43,7 @@ export type EditablePath=Readonly<{
 /** UTF-16 offsets match textarea.selectionStart/End, including emoji. */
 export type TextStyleRange=Readonly<{start:number;end:number;color?:string;size?:number;bold?:boolean;italic?:boolean;family?:'sans-serif'|'serif'|'monospace';fontAsset?:string|null}>;
 export type EditableText=Readonly<{
+  transform?:ArtworkAffine;
   kind:'text';text:string;origin:ArtPoint;vertical:boolean;size:number;family:string;color:string;
   align:'left'|'center'|'right';spacing:number;lineHeight:number;fontAsset?:string;embedFont?:boolean;
   /** Optional editable text frame; absent fields retain legacy unbounded text. */
@@ -162,11 +181,20 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
       ...(typeof boxWidth==='number'?{boxWidth}:{}),...(typeof boxHeight==='number'?{boxHeight}:{}),
       ...(styles.length?{styleRanges:Object.freeze(styles)}:{})});
   }else throw invalid();
+  if(value.transform!==undefined){
+    if(checked.kind==='gradient'||!field(value.transform))throw invalid();
+    const t=value.transform;
+    if(!['a','b','c','d','e','f'].every(key=>coordinate(t[key])))throw invalid();
+    const transform={a:t.a as number,b:t.b as number,c:t.c as number,d:t.d as number,e:t.e as number,f:t.f as number};
+    inverseArtworkAffine(transform);
+    checked=Object.freeze({...checked,transform:Object.freeze(transform)});
+  }
   known.add(checked);
   return checked;
 }
 
 export function moveEditableArtwork(content:EditableArtwork,dx:number,dy:number):EditableArtwork{
+  if(content.kind!=='gradient'&&content.transform)return validateEditableArtwork({...content,transform:composeArtworkAffine({a:1,b:0,c:0,d:1,e:dx,f:dy},content.transform)})!;
   const move=(point:ArtPoint):ArtPoint=>({
     x:point.x+dx,y:point.y+dy,...(point.pressure!==undefined?{pressure:point.pressure}:{}),...(point.move?{move:true}:{}),...(point.close?{close:true}:{}),
     ...(point.inX!==undefined&&point.inY!==undefined?{inX:point.inX+dx,inY:point.inY+dy}:{}),
@@ -180,8 +208,8 @@ export function moveEditableArtwork(content:EditableArtwork,dx:number,dy:number)
   if(content.kind==='text')return {...content,origin:move(content.origin)};
   const operands=content.booleanOperands;
   return {...content,points:content.points.map(move),...(operands?{booleanOperands:{
-    mode:operands.mode,
-    a:{...operands.a,points:operands.a.points.map(move)},
-    b:{...operands.b,points:operands.b.points.map(move)}
+    ...operands,
+    a:moveEditableArtwork(operands.a,dx,dy) as EditablePath,
+    b:moveEditableArtwork(operands.b,dx,dy) as EditablePath
   }}:{})};
 }

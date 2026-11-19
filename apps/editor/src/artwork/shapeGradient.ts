@@ -1,4 +1,4 @@
-import {validateEditableArtwork,type ArtPoint,type EditableGradient,type EditablePath,type GradientStop,type LayerId,type LayerMask} from '@illustro/core';
+import {mapArtworkPoint,inverseArtworkAffine,validateEditableArtwork,type ArtPoint,type EditableGradient,type EditablePath,type GradientStop,type LayerId,type LayerMask} from '@illustro/core';
 import {layerMaskCoverage,samplePixelMask} from '@illustro/brush-rt';
 import {runArtwork} from './run';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
@@ -451,13 +451,14 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     }
     const path=boundary.value==='saved'?savedBoundary:closedPaths().find(item=>item.id===boundary.value)?.content;
     if(path?.kind!=='path')throw Error('内側が閉じた図形を選んでください。');
-    return {kind:'path',shape:path.shape,points:path.points,closed:path.closed,stroke:path.stroke,fill:path.fill,width:path.width};
+    return {...(path.transform?{transform:path.transform}:{}),kind:'path',shape:path.shape,points:path.points,closed:path.closed,stroke:path.stroke,fill:path.fill,width:path.width};
   }
   function setPoints(next:readonly ArtPoint[]){
     points=[...next];
     if(!points.length)return;
     shapeAnchorFieldValues(points).forEach((value,index)=>{coords[index]!.value=String(value);});
   }
+  let editedTransform:EditablePath['transform'];
   function data(follow=applied.checked){
     const [x,y,endX,endY]=coords.map(i=>i.valueAsNumber);
     const start={x:x??0,y:y??0},end={x:endX??0,y:endY??0};
@@ -475,7 +476,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     const shapeKind=shape.value==='rounded'?'bezier':shape.value==='polygon'?'polyline':shape.value;
     if(shape.value==='rounded')result=roundedRectanglePoints(start,result.at(-1)!,radius.valueAsNumber);
     if(shape.value==='polygon')result=regularPolygonPoints(start,result.at(-1)!,sides.valueAsNumber);
-    return validateEditableArtwork({kind:'path',shape:shapeKind,points:result,
+    return validateEditableArtwork({...(editedTransform?{transform:editedTransform}:{}),kind:'path',shape:shapeKind,points:result,
       closed:shape.value==='rounded'||shape.value==='polygon'||closed.checked,lineStyle,stroke:stroke.value,fill:filled.checked?fill.value:null,width:width.valueAsNumber,
       ...(editedOpacity===undefined?{}:{opacity:editedOpacity}),
       ...(originalStrokeLayer?{originalStrokeLayer}:{})}) as EditablePath;
@@ -588,9 +589,10 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         current.drawing.showArtworkPreview(null);
         status.textContent='編集点の移動を取り消しました。';
       },
-      pointEdit:{points:edits.map(item=>item.point),edges,closed:false,
+      pointEdit:{points:edits.map(item=>mapArtworkPoint(item.point,content.kind==='path'?content.transform:undefined)),edges,closed:false,
         preview:(index,point)=>{
-          const candidate=edits[index]?.preview(point);
+          const local=content.kind==='path'&&content.transform?mapArtworkPoint(point,inverseArtworkAffine(content.transform)):point;
+          const candidate=edits[index]?.preview(local);
           if(!candidate||!editingHandles)return;
           livePending={content:candidate,mask:getMask(),context:current,
             version:++liveVersion,replacement:editing};
@@ -603,7 +605,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         },
         commit:(index,point)=>{
           stopHandles();
-          edits[index]?.change(point);
+          edits[index]?.change(content.kind==='path'&&content.transform?mapArtworkPoint(point,inverseArtworkAffine(content.transform)):point);
           void refresh();
           editOnCanvas();
         }}});
@@ -740,7 +742,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     stopHandles();
     const current=api.context();
     if(!current)throw Error('作品を開いてください。');
-    editing=undefined;editingMask=null;editedOpacity=undefined;originalStrokeLayer=undefined;stroke.value=current.color;lineStyle='solid';
+    editing=undefined;editedTransform=undefined;editingMask=null;editedOpacity=undefined;originalStrokeLayer=undefined;stroke.value=current.color;lineStyle='solid';
     draftDrawing=current.drawing;draftMask=current.selectionMask();savedBoundary=undefined;loadBoundaries();
     applied.checked=false;view.value='normal';
     setPoints([{x:current.width*.22,y:current.height*.25},{x:current.width*.78,y:current.height*.75}]);
@@ -785,6 +787,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       if(selected.kind==='path'&&selected.fillRuns)throw Error('複数色の文字輪郭は「ベクター線・点の編集」で点や色を調整してください。');
       editing=current.selected.id;editingMask=current.selected.mask;draftDrawing=current.drawing;output.value='vector';
       editedOpacity=selected.kind==='path'?selected.opacity:undefined;
+      editedTransform=selected.kind==='path'?selected.transform:undefined;
       originalStrokeLayer=selected.kind==='path'?selected.originalStrokeLayer:undefined;
       if(selected.kind==='gradient'){
         type.value='gradient';mode.value=selected.mode;stops=[...selected.stops];setPoints([selected.start,selected.end]);

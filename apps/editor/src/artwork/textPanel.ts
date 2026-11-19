@@ -1,4 +1,4 @@
-import {validateEditableArtwork,type EditableText,type LayerId,type TextStyleRange} from '@illustro/core';
+import {mapArtworkPoint,inverseArtworkAffine,validateEditableArtwork,type EditableText,type LayerId,type TextStyleRange} from '@illustro/core';
 import {fontAssets,fontFamily,fontOutlineCapability,importFont,outlineText} from './fonts';
 import {runArtwork} from './run';
 import {layoutEditableText} from './textLayout';
@@ -72,8 +72,10 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     const layers=api.context()?.missingFontCandidates.filter(layer=>!ids.has(layer.assetId))??[];
     missing.textContent=layers.length?'不足しているフォントを使うレイヤー '+layers.map(layer=>layer.name).join('、'):'';
   }
+  let editedTransform:EditableText['transform'];
   function draft():EditableText{
     return validateEditableArtwork({
+      ...(editedTransform?{transform:editedTransform}:{}),
       kind:'text',text:text.value.replace(/\r\n?/g,'\n'),origin:{x:x.valueAsNumber,y:y.valueAsNumber},
       size:size.valueAsNumber,align:align.value,spacing:spacing.valueAsNumber,lineHeight:lineHeight.valueAsNumber,
       vertical:direction.value==='vertical',color:color.value,family:fontId?fontFamily(fontId):systemFont.value,
@@ -137,7 +139,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   function reset(){
     const context=api.context();
     if(!context)throw Error('作品を開いてください。');
-    editing=undefined;initialized=true;fontId='';embed.checked=false;text.value='';
+    editing=undefined;editedTransform=undefined;initialized=true;fontId='';embed.checked=false;text.value='';
     styleRanges=[];previousText='';partialMessage.textContent='';
     x.value=String(Math.round(context.width/4));y.value=String(Math.round(context.height/4));
     color.value=context.color;direction.value='horizontal';align.value='left';
@@ -151,6 +153,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     return {id:layer.id,name:layer.name,content:layer.content};
   }
   function write(content:EditableText){
+    editedTransform=content.transform;
     text.value=content.text;previousText=content.text;styleRanges=[...(content.styleRanges??[])];
     partialMessage.textContent=styleRanges.length?'部分書式 '+styleRanges.length+'か所を保持しています。':'';
     x.value=String(content.origin.x);y.value=String(content.origin.y);
@@ -224,7 +227,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       if(!context)throw Error('作品を開いてください。');
       status.textContent='文字を置く場所をタップしてください。';
       locate(context.drawing,points=>{
-        x.value=String(Math.round(points[0]!.x));y.value=String(Math.round(points[0]!.y));void refresh();
+        const point=editedTransform?mapArtworkPoint(points[0]!,inverseArtworkAffine(editedTransform)):points[0]!;
+        x.value=String(point.x);y.value=String(point.y);void refresh();
       });
     },status),
     button('フォントを読み込む',()=>file.click(),status),

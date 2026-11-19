@@ -1,4 +1,4 @@
-import type {ArtPoint,EditablePath} from '@illustro/core';
+import {mapArtworkPoint,inverseArtworkAffine,type ArtPoint,type EditablePath} from '@illustro/core';
 
 export type VectorDragHandle=Readonly<{index:number;kind:'in'|'out'}>;
 
@@ -7,6 +7,7 @@ export function vectorPointDrag(path:EditablePath,picked:number,anchorCount:numb
   handles:readonly VectorDragHandle[],position:Readonly<{x:number;y:number}>):EditablePath{
   if(!Number.isFinite(position.x)||!Number.isFinite(position.y))
     throw Error('点の位置が正しくありません。');
+  if(path.transform)position=mapArtworkPoint(position,inverseArtworkAffine(path.transform));
   const points:ArtPoint[]=[...path.points];
   if(picked>=0&&picked<anchorCount){
     const previous=points[picked];

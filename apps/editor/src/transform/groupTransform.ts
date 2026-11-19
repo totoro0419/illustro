@@ -1,3 +1,4 @@
+import {composeArtworkAffine,validateEditableArtwork,type EditableArtwork,type ArtworkAffine} from '@illustro/core';
 import {initialTransform,type Transform} from './geometry';
 
 export type GroupTransformOptions=Readonly<{
@@ -82,4 +83,17 @@ export function groupTransformPlan(
  if(outlines.some(item=>item.after.some(point=>!Number.isFinite(point.x)||!Number.isFinite(point.y))))
   throw Error('変形後のレイヤー座標が正しくありません。');
  return {settings,outlines};
+}
+
+/** Same world-space affine used by image resampling, applied to native geometry. */
+export function editableGroupTransform(content:EditableArtwork,settings:Transform):EditableArtwork{
+ if(content.kind==='gradient')throw Error('グラデーションは色の広がりを保つため、専用画面で個別に編集してください。');
+ if(content.kind==='path'&&content.booleanOperands?.sourceLayerIds)
+   throw Error('連動する図形演算の結果は、元の図形を選んで変形してください。');
+ if(settings.mode!=='affine')throw Error('図形と文字をまとめて編集できるのは移動・回転・拡縮です。');
+ const angle=settings.angle*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+ const a=c*settings.sx,b=s*settings.sx,cc=c*settings.shear-s*settings.sy,d=s*settings.shear+c*settings.sy;
+ const matrix:ArtworkAffine={a,b,c:cc,d,e:settings.cx+settings.dx-a*settings.cx-cc*settings.cy,
+   f:settings.cy+settings.dy-b*settings.cx-d*settings.cy};
+ return validateEditableArtwork({...content,transform:composeArtworkAffine(matrix,content.transform)})!;
 }

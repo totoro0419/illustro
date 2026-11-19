@@ -214,7 +214,7 @@ export function outlineStyledText(text:EditableText,fonts:ReadonlyMap<string,Fon
   if(points.length<2||points.length>limit)throw Error('文字を短く分けてから、輪郭へ変換してください。');
   const multipleColors=new Set(fillRuns.map(run=>run.color.toLowerCase())).size>1;
   const color=fillRuns[0]?.color??text.color;
-  return {kind:'path',shape:'bezier',points,closed:false,stroke:color,fill:color,width:0,
+  return {...(text.transform?{transform:text.transform}:{}),kind:'path',shape:'bezier',points,closed:false,stroke:color,fill:color,width:0,
     ...(multipleColors?{fillRuns}:{})};
 }
 export async function outlineText(text:EditableText,limit=4096):Promise<EditablePath>{
@@ -239,7 +239,7 @@ export async function outlineText(text:EditableText,limit=4096):Promise<Editable
     throw Error('このフォントには一部の文字がありません。文字を含むフォントを選んでください。');
   const points=vectorize(text,parsed,native);
   if(points.length<2||points.length>limit)throw Error('文字を短く分けてから、輪郭へ変換してください。');
-  return {kind:'path',shape:'bezier',points,closed:false,stroke:text.color,fill:text.color,width:0};
+  return {...(text.transform?{transform:text.transform}:{}),kind:'path',shape:'bezier',points,closed:false,stroke:text.color,fill:text.color,width:0};
 }
 /** Transient outline for native vertical painting. The saved layer remains
  * editable text. Display and outline export use the same glyph placements. */

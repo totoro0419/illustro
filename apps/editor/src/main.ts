@@ -34,7 +34,7 @@ import {snapArtworkPathToGuide} from './artwork/guidedPath';
 import {validatedBooleanSourceVisibility} from './artwork/booleanSourceVisibility';
 import {saveArtworkSnapshot} from './artwork/saveSnapshot';
 import {linkedBooleanUpdates} from './artwork/linkedBooleans';
-import type {EditablePath} from '@illustro/core';
+import type {EditablePath,EditableArtwork} from '@illustro/core';
 import {selectionAsLayerMask} from './artwork/selectionMask';
 import {selectionCanCreateMask,explicitSaveStatus,maskApplyAllowed} from './artwork/c03UiGuards';
 import type {ArtworkActions} from './artwork/tools';
@@ -43,7 +43,7 @@ import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
 import {transformPreviewReplacementOpacity} from './transform/previewReplacement';
 import {installLayoutPanel} from './transform/layoutPanel';
-import {groupTransformPlan,composeGroupAffine} from './transform/groupTransform';
+import {groupTransformPlan,composeGroupAffine,editableGroupTransform} from './transform/groupTransform';
 import {layerEditingStates,layerEditingTargets} from './transform/layerEditingStates';
 import {installImageLinkPanel} from './transform/imageLinkPanel';
 import {chooseLinkedImage,decodeLinkedImage,placedImage,readLinkedFile,rememberImageHandle,forgetImageHandle,nextLinkedImageFileKey} from './assets/linkedImages';
@@ -3974,18 +3974,32 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
     if(!valid())throw Error('作品または選択レイヤーが変更されました。');
     const {settings}=groupTransformPlan(items,width,height,options);
     const changes:Array<{
-      id:LayerId;pixels:Uint8ClampedArray;deformation:LayerDeformation;
+      id:LayerId;pixels:Uint8ClampedArray;deformation?:LayerDeformation;content?:EditableArtwork;
       mask:LayerMask|null
     }>=[];
+    // Reject unsupported metadata before rendering or writing ANY selected layer.
+    for(const item of items){
+      const layer=root.getLayer(item.id),prefix='「'+layer.name+'」';
+      if(root.isLayerContentLocked(item.id)||root.isLayerPositionLocked(item.id))throw Error(prefix+'のロックを解除してください。');
+      if(layer.baseColor)throw Error(prefix+'は白背景です。描画レイヤーを選んでください。');
+      if(layer.imageLink)throw Error(prefix+'は元画像の配置情報を持っています。参照先を保つため、画像の専用画面で個別に編集してください。');
+      if(layer.lineRegions)throw Error(prefix+'は線画の領域番号を持っています。領域の対応を保つため、まとめて変形できません。');
+      if(layer.editable)editableGroupTransform(layer.editable,settings);
+    }
     // Compute one layer at a time. No flattened group image is created.
     for(const item of items){
       const layer=root.getLayer(item.id);
-      if(root.isLayerContentLocked(item.id)||root.isLayerPositionLocked(item.id)||layer.baseColor||layer.editable||layer.lineRegions||layer.imageLink)
-        throw Error('「'+layer.name+'」はこのまとめて変形で安全に編集できません。通常の描画レイヤーを選んでください。');
+      const linked=!!(layer.vectorMask&&layer.vectorMask.linked!==false);
+      const mask=linked?transformLinkedMask(layer.vectorMask!,settings,width,height):null;
+      if(layer.editable){
+        const content=editableGroupTransform(layer.editable,settings);
+        const transformed=await runArtwork({content,width,height,outputWidth:width,outputHeight:height});
+        if(!valid())throw Error('変形の計算中に作品または選択が変更されました。');
+        changes.push({id:item.id,pixels:transformed,content,mask});continue;
+      }
       const saved=layer.deformation;
       if(saved&&(saved.enabled===false||saved.mode!=='affine'||saved.selection||saved.postPaint?.length))
         throw Error('「'+layer.name+'」には範囲付き・ゆがみ・変形後の描画があります。個別に変形してください。');
-      const linked=!!(layer.vectorMask&&layer.vectorMask.linked!==false);
       if(saved&&(saved.linkedMask!==linked||linked&&saved.maskDigest&&
         await digestLayerMask(layer.vectorMask!)!==saved.maskDigest))
         throw Error('「'+layer.name+'」のマスクが変形後に変更されています。先に個別の変形を確認してください。');
@@ -3995,7 +4009,6 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
       const transformed=await runTransform({pixels:input,width,height,settings:combined,
         selection:null,outputWidth:width,outputHeight:height});
       if(!valid())throw Error('変形の計算中に作品または選択が変更されました。');
-      const mask=linked?transformLinkedMask(layer.vectorMask!,settings,width,height):null;
       const maskDigest=mask?await digestLayerMask(mask):undefined;
       const deformation:LayerDeformation={
         version:1,sourceRevision:saved?.sourceRevision??head,bounds:saved?.bounds??item.bounds,mode:'affine',
@@ -4007,11 +4020,24 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
       };
       changes.push({id:item.id,pixels:transformed,deformation,mask});
     }
+    // A transformed source also updates linked results outside the selection.
+    const changedPaths=new Map(changes.flatMap(change=>change.content?.kind==='path'?[[change.id,change.content] as const]:[]));
+    const first=changedPaths.entries().next().value;
+    if(first){
+      const dependents=await linkedBooleanUpdates(root.rootLayerIds.flatMap(id=>{
+        const content=root.getLayer(id).editable;return content?.kind==='path'?[{id,content}]:[];
+      }),first[0],first[1],changedPaths);
+      for(const update of dependents){
+        const mask=root.getLayer(update.id).vectorMask??null;
+        changes.push({id:update.id,content:update.content,mask:null,pixels:await runArtwork({
+          content:update.content,width,height,outputWidth:width,outputHeight:height,mask})});
+      }
+    }
     await withClipboardAccess(async()=>{
       if(!valid())throw Error('作品が変更されました。変形をやり直してください。');
       const tx=artwork.begin('複数レイヤーをまとめて変形');
       try{
-        tx.replaceLayerDeformationsBatch(changes.map(({id,pixels,deformation})=>({id,pixels,deformation})));
+        tx.replaceLayerDeformationsBatch(changes.map(({mask:_mask,...entry})=>entry));
         for(const change of changes)if(change.mask)tx.setVectorLayerMask(change.id,change.mask);
         controller.lastPersistenceHandoff=tx.commit().persistence;
       }catch(error){tx.cancel();throw error;}

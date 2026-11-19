@@ -1,4 +1,4 @@
-import {CoreDocument,type CorePersistenceSnapshotV1,type LayerId,type RevisionId} from '@illustro/core';
+import {CoreDocument,type CorePersistenceSnapshotV1,type EditableArtwork,type LayerId,type RevisionId} from '@illustro/core';
 import {validateRecord} from '@illustro/brush-rt';
 import {decodeIllustroFile,encodeIllustroFile,type DecodedPortableFile,type PortableSectionInput} from './format';
 import type {ProjectionCache} from './projectionCache';
@@ -9,7 +9,8 @@ const CORE_SECTION='document';
 const EDITOR_SECTION='editor-state';
 const CORE_TYPE='document.core.v1',BLOCK_TYPE='raster.block.v1',EDITOR_TYPE='editor.state.v2';
 const PARTIAL_RASTER_TYPE='document.partial-raster.v1',PARTIAL_RASTER_SECTION='partial-raster-support';
-const KNOWN_REQUIRED_TYPES=new Set([CORE_TYPE,BLOCK_TYPE,PARTIAL_RASTER_TYPE]);
+const EDITABLE_AFFINE_TYPE='document.editable-affine.v1',EDITABLE_AFFINE_SECTION='editable-affine-support';
+const KNOWN_REQUIRED_TYPES=new Set([CORE_TYPE,BLOCK_TYPE,PARTIAL_RASTER_TYPE,EDITABLE_AFFINE_TYPE]);
 const textEncoder=new TextEncoder(),textDecoder=new TextDecoder('utf-8',{fatal:true});
 
 export type PreservedPortableData=Readonly<{
@@ -32,6 +33,7 @@ export async function createPortableDocument(input:Readonly<{
   // silently interpreting a partial snapshot as an entire-layer replacement.
   if(hasPartialRasterSnapshots(snapshot))sections.push(Object.freeze({id:PARTIAL_RASTER_SECTION,
     type:PARTIAL_RASTER_TYPE,required:true,bytes:Uint8Array.of(1)}));
+  if(hasEditableAffine(snapshot))sections.push(Object.freeze({id:EDITABLE_AFFINE_SECTION,type:EDITABLE_AFFINE_TYPE,required:true,bytes:Uint8Array.of(1)}));
   for(const block of snapshot.blocks){const bytes=blocks.get(block.id as never);if(!bytes)throw new Error('save block dependency missing');sections.push(Object.freeze({id:blockSectionId(block.id),type:BLOCK_TYPE,required:true,bytes}));}
   const selected=input.document.revision(revisionId).root.hasLayer(input.selectedLayerId)?input.selectedLayerId:input.document.revision(revisionId).root.rootLayerIds[0];
   if(!selected)throw new Error('save snapshot has no selectable layer');
@@ -55,6 +57,8 @@ export function openDecodedPortableDocument(decoded:DecodedPortableFile):Portabl
   const partial=decoded.sections.get(PARTIAL_RASTER_SECTION);
   if(hasPartialRasterSnapshots(snapshot)&&!partial||partial&&(!partial.descriptor.required||partial.descriptor.type!==PARTIAL_RASTER_TYPE||
     partial.bytes.length!==1||partial.bytes[0]!==1))throw Error('作品の区画保存情報を確認できません。');
+  const affine=decoded.sections.get(EDITABLE_AFFINE_SECTION);
+  if(hasEditableAffine(snapshot)&&!affine||affine&&(!affine.descriptor.required||affine.descriptor.type!==EDITABLE_AFFINE_TYPE||affine.bytes.length!==1||affine.bytes[0]!==1))throw Error('図形と文字の変形情報を確認できません。');
   const target=(snapshot.revisions as readonly {id:string;root:{documentId:string}}[]).find(r=>r.id===snapshot.snapshotRevisionId);if(!target||target.root.documentId!==decoded.manifest.documentId)throw new Error('document identity manifest mismatch');
   const blocks=new Map<string,Uint8Array>();if(!Array.isArray(snapshot.blocks))throw new Error('invalid core block list');
   const expectedBlockSections=new Set<string>();
@@ -88,13 +92,23 @@ export function openDecodedPortableDocument(decoded:DecodedPortableFile):Portabl
   if(!selectedLayerId)throw new Error('opened document has no selectable layer');
   const preview=decoded.sections.get('render-preview'),previewImage=preview&&preview.descriptor.type==='render.preview.png.v1'&&!preview.descriptor.required&&isPngPreview(preview.bytes)?preview.bytes.slice():undefined;
   const optionalSections:PortableSectionInput[]=[];
-  for(const {descriptor,bytes:sectionBytes} of decoded.sections.values()){if(descriptor.id===CORE_SECTION||descriptor.id===EDITOR_SECTION||descriptor.type===BLOCK_TYPE||descriptor.id===PARTIAL_RASTER_SECTION&&descriptor.type===PARTIAL_RASTER_TYPE||descriptor.type==='render.cache.index.v1'||descriptor.type==='render.cache.layer.v1'||descriptor.type==='render.cache.index.v2'||descriptor.type==='render.cache.tile.v2'||(descriptor.id==='render-preview'&&descriptor.type==='render.preview.png.v1'))continue;if(descriptor.required)throw new Error('unknown required section');
+  for(const {descriptor,bytes:sectionBytes} of decoded.sections.values()){if(descriptor.id===CORE_SECTION||descriptor.id===EDITOR_SECTION||descriptor.type===BLOCK_TYPE||descriptor.id===EDITABLE_AFFINE_SECTION&&descriptor.type===EDITABLE_AFFINE_TYPE||descriptor.id===PARTIAL_RASTER_SECTION&&descriptor.type===PARTIAL_RASTER_TYPE||descriptor.type==='render.cache.index.v1'||descriptor.type==='render.cache.layer.v1'||descriptor.type==='render.cache.index.v2'||descriptor.type==='render.cache.tile.v2'||(descriptor.id==='render-preview'&&descriptor.type==='render.preview.png.v1'))continue;if(descriptor.required)throw new Error('unknown required section');
     optionalSections.push(Object.freeze({id:descriptor.id,type:descriptor.type,required:false,codec:descriptor.codec,bytes:sectionBytes.slice(),descriptorExtras:descriptor.extras}));}
   const preserved=Object.freeze({manifestExtras:decoded.manifest.extras,optionalSections:Object.freeze(optionalSections)});
   return Object.freeze({document,selectedLayerId,selection,preserved,generationId:decoded.manifest.generationId,snapshotRevisionId:decoded.manifest.snapshotRevisionId as RevisionId,...(legacyEditorState?{legacyEditorState}:{}),...(previewImage?{previewImage}:{})});
 }
 
 export async function verifyPortableDocument(bytes:Uint8Array){await openPortableDocument(bytes);return true;}
+
+function hasEditableAffine(snapshot:CorePersistenceSnapshotV1){
+  const transformed=(content:EditableArtwork|null|undefined):boolean=>{
+    if(!content)return false;
+    if(content.kind==='gradient')return typeof content.follow==='object'&&transformed(content.follow);
+    return !!content.transform||content.kind==='path'&&!!content.booleanOperands&&
+      (transformed(content.booleanOperands.a)||transformed(content.booleanOperands.b));
+  };
+  return snapshot.revisions.some(revision=>revision.root.layers.some(layer=>transformed(layer.editable)));
+}
 
 function hasPartialRasterSnapshots(snapshot:CorePersistenceSnapshotV1){
   return snapshot.revisions.some(revision=>revision.command?.operations.some(op=>op.kind==='layer.snapshot'&&op.parameters.partialRaster===true));

@@ -359,7 +359,7 @@ export class DocumentTransaction{
    * revision. Ordinary replaceLayerDeformation deliberately stays
    * standalone; this explicit API validates every target before writing. */
   replaceLayerDeformationsBatch(entries:readonly Readonly<{
-    id:LayerId;pixels:Uint8Array|Uint8ClampedArray;deformation:LayerDeformation
+    id:LayerId;pixels:Uint8Array|Uint8ClampedArray;deformation?:LayerDeformation;content?:EditableArtwork
   }>[]) {
     this.open();
     if(this.slotsValue.length||entries.length<2)throw Error('複数レイヤーをまとめて変形するには2枚以上指定してください。');
@@ -368,11 +368,18 @@ export class DocumentTransaction{
       if(seen.has(entry.id))throw Error('同じレイヤーが重複しています。');
       seen.add(entry.id);
       const layer=this.editableRaster(entry.id);
-      if(layer.baseColor==='white'||layer.imageLink||layer.editable||layer.lineRegions||
+      if(layer.baseColor==='white'||layer.imageLink||layer.lineRegions||
         this.rootValue.isLayerPositionLocked(entry.id))
         throw Error('まとめて変形できないレイヤーが含まれています。');
       if(entry.pixels.length!==expected||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
         throw Error('変形結果の画素データが作品と一致しません。');
+      if(entry.content){
+        if(!layer.editable||layer.deformation||entry.deformation)throw Error('編集情報を保って変形できません。');
+        const content=validateEditableArtwork(entry.content);
+        if(!content||content.kind==='gradient'||content.kind!==layer.editable.kind)throw Error('編集できるレイヤーの種類を変更できません。');
+        return {id:entry.id,layer,pixels:entry.pixels,content,deformation:null};
+      }
+      if(layer.editable)throw Error('図形や文字の元の編集情報が必要です。');
       const deformation=validateLayerDeformation(entry.deformation);
       if(!deformation||!this.doc.hasRevision(deformation.sourceRevision)||
         !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId??entry.id))
@@ -383,12 +390,12 @@ export class DocumentTransaction{
         saved.sourceRevision!==deformation.sourceRevision||
         (saved.sourceLayerId??entry.id)!==(deformation.sourceLayerId??entry.id)))
         throw Error('元画像を保った移動・回転・拡縮だけをまとめて再編集できます。');
-      return {id:entry.id,layer,pixels:entry.pixels,deformation};
+      return {id:entry.id,layer,pixels:entry.pixels,deformation,content:null};
     });
-    for(const {id,layer,pixels,deformation} of candidates){
+    for(const {id,layer,pixels,deformation,content} of candidates){
       this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
-      this.seedRasterPixels(id,pixels,true,deformation.sourceRevision);
-      this.meta(id,{deformation});
+      this.seedRasterPixels(id,pixels,true,deformation?.sourceRevision);
+      if(content)this.meta(id,{editable:content});else this.meta(id,{deformation});
     }
     return true;
   }

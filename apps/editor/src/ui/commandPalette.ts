@@ -198,6 +198,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   const find=(id:string)=>{
     const found=dynamicCommands().find(command=>command.id===id);
     if(found)return found;
+    // A saved brush remains usable while the visible catalog is filtered.
+    const brushRun=id.startsWith('brush:')?execution?.resolve(id):null;
+    if(brushRun)return {id,label:id.slice(6),category:'ブラシ',aliases:'',availability:()=>null,completion:true,execute:brushRun};
     // Stored macros keep exact colors even after they leave the recent palette.
     const color=id.startsWith('color:')?fromHex(id.slice(6)):null;
     return color?{id,label:'描画色 '+id.slice(6),category:'色',aliases:'',availability:()=>null,

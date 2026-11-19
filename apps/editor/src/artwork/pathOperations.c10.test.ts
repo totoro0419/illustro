@@ -27,6 +27,12 @@ describe('C10 vector editing geometry',()=>{
     expect(eraseWholeStroke(line(0,30),{x:10,y:0})).toBeNull();
     expect(()=>appendPathStroke(line(0,30),{...line(35,40),stroke:'#ffffff'})).toThrow();
   });
+  it('appends legacy solid paths with the same color written in a different hex case',()=>{
+    const original={...line(0,30),stroke:'#abcdef'};
+    const appended=appendPathStroke(original,{...line(40,60),stroke:'#ABCDEF',lineStyle:'solid'});
+    expect(appended.points[2]?.move).toBe(true);expect(appended.stroke).toBe(original.stroke);
+    expect(appended.points).toHaveLength(4);
+  });
   it('rejects distant endpoints instead of silently creating a bridge',()=>{
     expect(()=>joinPaths(line(0,20),line(150,170))).toThrow();
     expect(joinPaths(line(0,20),line(21,50)).points).toHaveLength(4);
