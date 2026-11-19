@@ -46,9 +46,11 @@ export function selectionBrushPreviewRaster(
  width:number,height:number
 ):SelectionBrushPreviewRaster|null{
  if(!points.length||points.length>384||!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||
-    width<1||height<1||prior&&(prior.width!==width||prior.height!==height))return null;
+    width<1||height<1||prior&&(prior.width!==width||prior.height!==height||
+      !(prior.alpha instanceof Uint8Array)||prior.alpha.length!==width*height))return null;
  const size=settings.size;
- if(!Number.isFinite(size)||size<1||size>800||
+ if((settings.mode!=='add'&&settings.mode!=='subtract')||
+    !Number.isFinite(size)||size<1||size>800||
     !Number.isFinite(settings.opacity)||settings.opacity<0||settings.opacity>1||
     !Number.isFinite(settings.hardness)||settings.hardness<0||settings.hardness>1)return null;
  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,steps=0;

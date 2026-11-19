@@ -74,6 +74,15 @@ describe('C06-007 exact bounded selection preview',()=>{
    expect(actual).toBe(Math.abs(committed.alpha[y*width+x]!-prior.alpha[y*width+x]!));
   }
  });
+ it('rejects corrupt saved masks and unsupported modes instead of previewing wrong pixels',()=>{
+  const points=[{x:12,y:12,pressure:1}],alpha=new Uint8Array(32*32);
+  expect(selectionBrushPreviewRaster({width:32,height:32,alpha:new Uint8Array(5)},
+    points,settings,32,32)).toBeNull();
+  expect(selectionBrushPreviewRaster({width:32,height:32,alpha},
+    points,{...settings,mode:'invalid' as 'add'},32,32)).toBeNull();
+  expect(selectionBrushPreviewRaster({width:32,height:32,alpha},
+    points,settings,32,32)).not.toBeNull();
+ });
  it('falls back to lightweight SVG when live processing would exceed the budget',()=>{
   const points=Array.from({length:500},(_,i)=>({x:10+i*.5,y:100,pressure:.75}));
   expect(selectionBrushPreviewRaster(null,points,settings,4000,4000)).toBeNull();
