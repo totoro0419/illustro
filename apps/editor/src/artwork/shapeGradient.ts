@@ -297,11 +297,23 @@ export function safeGradientStopValue(value:number,min:number,max:number,fallbac
 }
 export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:ArtPoint):ArtPoint[]{
   const point=points[index];
-  if(!point||!Number.isFinite(next.x)||!Number.isFinite(next.y))return [...points];
+  if(!point||![point.x,point.y,next.x,next.y].every(Number.isFinite))return [...points];
   const dx=next.x-point.x,dy=next.y-point.y;
+  if(!Number.isFinite(dx)||!Number.isFinite(dy))return [...points];
+  // An incomplete or non-finite legacy cubic handle must not turn a live
+  // drag into NaN geometry or poison the eventual saved artwork.
+  const handles=[point.inX,point.inY,point.outX,point.outY];
+  if((handles[0]===undefined)!==(handles[1]===undefined)||
+    (handles[2]===undefined)!==(handles[3]===undefined)||
+    handles.some(value=>value!==undefined&&!Number.isFinite(value)))return [...points];
+  const inX=point.inX===undefined?undefined:point.inX+dx;
+  const inY=point.inY===undefined?undefined:point.inY+dy;
+  const outX=point.outX===undefined?undefined:point.outX+dx;
+  const outY=point.outY===undefined?undefined:point.outY+dy;
+  if([inX,inY,outX,outY].some(value=>value!==undefined&&!Number.isFinite(value)))return [...points];
   const moved={...point,x:next.x,y:next.y,
-    ...(point.inX===undefined?{}:{inX:point.inX+dx,inY:point.inY!+dy}),
-    ...(point.outX===undefined?{}:{outX:point.outX+dx,outY:point.outY!+dy})};
+    ...(inX===undefined?{}:{inX,inY}),
+    ...(outX===undefined?{}:{outX,outY})};
   return points.map((candidate,i)=>i===index?moved:candidate);
 }
 /** Keep the live on-canvas preview light at fit zoom, but use more detail
