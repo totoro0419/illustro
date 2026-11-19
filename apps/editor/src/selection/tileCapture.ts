@@ -1,6 +1,7 @@
 import {TILE} from '@illustro/brush-rt';
 import {readGpuTiles,type TileReadRequest} from '../gpuReadback';
 import type {RasterWorkerTile} from './tileStroke';
+import type {MaskData} from './mask';
 
 type RendererTile={surfaceKey:string;key:string};
 type TileBackend={
@@ -24,12 +25,40 @@ export function tileHasPixelData(pixels:Uint8Array):boolean{
  for(let i=0;i<pixels.length;i++)if(pixels[i]!==0)return true;
  return false;
 }
+/** Check only the pixels actually requested by a small clipboard rectangle.
+ * A tile containing paint elsewhere must not cause a 128x128 scan/copy. */
+function tileHasPixelDataInArea(tile:RasterWorkerTile,area:TileCaptureArea):boolean{
+ const [tx=0,ty=0]=tile.key.split(',').map(Number);
+ const tileX=tx*TILE,tileY=ty*TILE;
+ const left=Math.max(area.x,tileX),top=Math.max(area.y,tileY);
+ const right=Math.min(area.x+area.width,tileX+TILE);
+ const bottom=Math.min(area.y+area.height,tileY+TILE);
+ for(let y=top;y<bottom;y++){
+  const start=((y-tileY)*TILE+left-tileX)*4;
+  const end=start+(right-left)*4;
+  for(let offset=start;offset<end;offset++)
+   if(tile.pixels[offset]!==0)return true;
+ }
+ return false;
+}
+/** An eraser cannot alter a layer whose allocated GPU tiles contain no
+ * selected pixels. A positive result is deliberately conservative: an
+ * allocated tile might itself be empty, in which case normal capture runs. */
+function tileIntersectsSelection(mask:MaskData,tx:number,ty:number):boolean{
+ const left=tx*TILE,top=ty*TILE;
+ const right=Math.min(mask.width,left+TILE),bottom=Math.min(mask.height,top+TILE);
+ for(let y=top;y<bottom;y++){
+  const start=y*mask.width+left,end=y*mask.width+right;
+  for(let index=start;index<end;index++)if(mask.alpha[index]!==0)return true;
+ }
+ return false;
+}
 /** Capture all occupied tiles of one layer, in batches, to preserve its old
  * brush strokes when producing the new layer.snapshot. The selected stroke
  * worker then creates newly touched tiles without scanning blank canvas. */
 export async function captureSelectedLayerTiles(
  renderer:InspectableDrawingRenderer,surfaceId:string,width:number,height:number,valid:()=>boolean,
- area?:TileCaptureArea
+ area?:TileCaptureArea,eraseMask?:MaskData
 ):Promise<RasterWorkerTile[]>{
  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1)
   throw new Error('選択描画の作品サイズが正しくありません。');
@@ -37,6 +66,9 @@ export async function captureSelectedLayerTiles(
    area.x<0||area.y<0||area.width<1||area.height<1||
    area.x+area.width>width||area.y+area.height>height))
   throw new Error('読み取る画像の範囲が正しくありません。');
+ if(eraseMask&&(area||eraseMask.width!==width||eraseMask.height!==height||
+   !(eraseMask.alpha instanceof Uint8Array)||eraseMask.alpha.length!==width*height))
+  throw new Error('消しゴムの選択マスクが作品に一致しません。');
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
  await renderer.drain();
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
@@ -49,6 +81,7 @@ export async function captureSelectedLayerTiles(
   throw new Error('選択範囲の区画読み取りを利用できません。');
  const requests:TileReadRequest[]=[];
  const seen=new Set<string>();
+ let eraseCanChange=!eraseMask;
  for(const item of backend.tiles.values()){
   if(!item||typeof item.surfaceKey!=='string'||typeof item.key!=='string')
    throw new Error('描画区画の一覧が壊れています。');
@@ -66,11 +99,18 @@ export async function captureSelectedLayerTiles(
   if(area&&(tx*TILE>=area.x+area.width||ty*TILE>=area.y+area.height||
     (tx+1)*TILE<=area.x||(ty+1)*TILE<=area.y))continue;
   requests.push({surfaceId,key});
+  if(eraseMask&&!eraseCanChange&&tileIntersectsSelection(eraseMask,tx,ty))
+   eraseCanChange=true;
  }
+ // Keep every existing tile for snapshot reconstruction when any selected
+ // tile is allocated. Only the proven no-op eraser avoids all GPU readback.
+ if(!eraseCanChange)return [];
  const result:RasterWorkerTile[]=[];
  for(let offset=0;offset<requests.length;offset+=16){
   const batch=await readGpuTiles(backend,requests.slice(offset,offset+16),valid);
-  for(const tile of batch)if(tileHasPixelData(tile.pixels))
+  for(const tile of batch)if(area
+    ?tileHasPixelDataInArea(tile,area)
+    :tileHasPixelData(tile.pixels))
    result.push({key:tile.key,pixels:tile.pixels});
   // GPU batches are already asynchronous. Yield a full browser task every
   // four batches instead of every batch, keeping 4K capture responsive

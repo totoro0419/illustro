@@ -104,3 +104,51 @@ describe('C06-002 empty selected eraser capture safeguards',()=>{
   expect(tiles[0]!.pixels[3]).toBe(0);
  });
 });
+
+describe('C06-002 selected eraser GPU no-op preflight',()=>{
+ it('skips every GPU read when selection is disjoint from allocated layer tiles',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',255],['L','1,1',190],['OTHER','30,30',240]]);
+  const alpha=new Uint8Array(4000*4000);
+  alpha[3900*4000+3900]=255;
+  const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+    undefined,{width:4000,height:4000,alpha});
+  expect(result).toEqual([]);
+  expect(renderer.inspect).toHaveBeenCalledTimes(1);
+  expect(readTiles).not.toHaveBeenCalled();
+ });
+ it('preserves the full occupied snapshot when any allocated tile touches the selection',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',255],['L','1,1',190]]);
+  const alpha=new Uint8Array(4000*4000);
+  alpha[129*4000+129]=128;
+  const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+    undefined,{width:4000,height:4000,alpha});
+  expect(result.map(tile=>tile.key)).toEqual(['0,0','1,1']);
+  expect(readTiles.mock.calls[0]?.[0]).toHaveLength(2);
+ });
+ it('rejects invalid eraser masks before inspecting or reading GPU data',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',255]]);
+  await expect(captureSelectedLayerTiles(renderer,'L',300,300,()=>true,
+    undefined,{width:300,height:300,alpha:new Uint8Array(3)}))
+    .rejects.toThrow(/選択マスク/);
+  expect(renderer.drain).not.toHaveBeenCalled();
+  expect(readTiles).not.toHaveBeenCalled();
+ });
+});
+
+describe('C06-015 clipboard sub-tile occupancy',()=>{
+ it('ignores paint outside the copied rectangle even within the same GPU tile',async()=>{
+  const {renderer}=fakeRenderer([['L','0,0',255]]);
+  const tiles=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+    {x:127,y:127,width:1,height:1});
+  expect(tiles).toEqual([]);
+  const pixels=await captureLayerRegion(renderer,'L',4000,4000,
+    {x:127,y:127,width:1,height:1},()=>true);
+  expect(Array.from(pixels)).toEqual([0,0,0,0]);
+ });
+ it('retains selected nonzero RGB even when the alpha channel is transparent',async()=>{
+  const {renderer}=fakeRenderer([['L','1,1',42]]);
+  const pixels=await captureLayerRegion(renderer,'L',4000,4000,
+    {x:128,y:128,width:1,height:1},()=>true);
+  expect(Array.from(pixels)).toEqual([42,0,0,0]);
+ });
+});

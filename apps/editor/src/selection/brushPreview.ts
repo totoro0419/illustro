@@ -81,10 +81,11 @@ export function selectionBrushPreviewRaster(
  return {x:x0,y:y0,width:w,height:h,alpha:delta};
 }
 
-/** A bounded fingerprint for the live preview request. Pointer coalescing can
- * revise a sample without changing the stroke length. Count-only keys leave
- * the old image visible even after the worker has completed its calculation. */
+/** A bounded identity for the live preview request. The exact raster preview
+ * can use up to 384 samples; limiting this to the last 64 misses corrections
+ * to older samples of a still-exact stroke. Long strokes use a bounded SVG
+ * tail, so retaining the latest 384 samples avoids unbounded serialization. */
 export function selectionBrushPreviewRequestKey(points:readonly SelectionBrushPoint[],settingsKey:string):string{
- const tail=points.slice(-64).map(p=>[p.x,p.y,p.pressure]);
+ const tail=points.slice(-384).map(p=>[p.x,p.y,p.pressure]);
  return points.length+':'+settingsKey+':'+JSON.stringify(tail);
 }

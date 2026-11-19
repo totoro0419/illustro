@@ -94,6 +94,17 @@ describe('C06-007 coalesced-pointer preview request identity',()=>{
   expect(selectionBrushPreviewRequestKey(moved,settings)).not.toBe(first);
   expect(selectionBrushPreviewRequestKey(points,settings)).toBe(first);
  });
+ it('invalidates corrections to the first sample of a 100-point exact preview',()=>{
+  const first=selectionBrushPreviewRequestKey(points,settings);
+  const moved=points.map(p=>({...p}));
+  moved[0]={...moved[0]!,y:75};
+  expect(selectionBrushPreviewRequestKey(moved,settings)).not.toBe(first);
+  const longer=Array.from({length:350},(_,i)=>({x:i,y:1,pressure:.5}));
+  const earlier=longer.map(p=>({...p}));
+  earlier[3]={...earlier[3]!,pressure:.2};
+  expect(selectionBrushPreviewRequestKey(earlier,settings))
+   .not.toBe(selectionBrushPreviewRequestKey(longer,settings));
+ });
  it('invalidates on append and settings changes while keeping a bounded input window',()=>{
   const first=selectionBrushPreviewRequestKey(points,settings);
   expect(selectionBrushPreviewRequestKey([...points,{x:100,y:0,pressure:1}],settings)).not.toBe(first);
