@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {selectionBrushPreviewDabs,selectionBrushPreviewRaster} from './brushPreview';
+import {selectionBrushPreviewDabs,selectionBrushPreviewRaster,selectionBrushPreviewRequestKey} from './brushPreview';
 import {brushSelection,type SelectionBrushPoint} from './mask';
 
 describe('C06-007 live selection-brush footprint',()=>{
@@ -79,5 +79,25 @@ describe('C06-007 exact bounded selection preview',()=>{
   expect(selectionBrushPreviewRaster(null,points,settings,4000,4000)).toBeNull();
   expect(selectionBrushPreviewRaster(null,[{x:200,y:200,pressure:1}],
     {...settings,size:800},4000,4000)).toBeNull();
+ });
+});
+
+describe('C06-007 coalesced-pointer preview request identity',()=>{
+ const settings='size:12;opacity:.5';
+ const points=Array.from({length:100},(_,i)=>({x:i,y:i%13,pressure:.5}));
+ it('changes the request when a recent point moves without changing the point count',()=>{
+  const first=selectionBrushPreviewRequestKey(points,settings);
+  const moved=points.map(p=>({...p}));
+  moved[48]={...moved[48]!,x:90};
+  expect(selectionBrushPreviewRequestKey(moved,settings)).not.toBe(first);
+  moved[48]={...points[48]!,pressure:.8};
+  expect(selectionBrushPreviewRequestKey(moved,settings)).not.toBe(first);
+  expect(selectionBrushPreviewRequestKey(points,settings)).toBe(first);
+ });
+ it('invalidates on append and settings changes while keeping a bounded input window',()=>{
+  const first=selectionBrushPreviewRequestKey(points,settings);
+  expect(selectionBrushPreviewRequestKey([...points,{x:100,y:0,pressure:1}],settings)).not.toBe(first);
+  expect(selectionBrushPreviewRequestKey(points,'size:15;opacity:.5')).not.toBe(first);
+  expect(selectionBrushPreviewRequestKey(points.map(p=>({...p})),settings)).toBe(first);
  });
 });

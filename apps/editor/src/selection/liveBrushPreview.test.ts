@@ -79,3 +79,22 @@ describe('C06-007 original-resolution long selection-brush preview',()=>{
   expect(preview.alpha.filter(Boolean).length).toBeGreaterThan(400);
  });
 });
+
+describe('C06-007 revised coalesced input within a longer gesture',()=>{
+ it('replays a corrected point 45 samples behind the latest without leaving old alpha',()=>{
+  const width=180,height=120,prior={width,height,alpha:new Uint8Array(width*height)};
+  const settings={size:12,opacity:.6,hardness:.4,mode:'add' as const};
+  const points=Array.from({length:100},(_,i)=>({x:15+i,y:35,pressure:.6}));
+  const live=new LiveSelectionBrushPreview(prior);
+  live.render(points,settings,512);
+  const revised=points.map(p=>({...p}));
+  revised[55]={...revised[55]!,x:75,y:85,pressure:1};
+  const preview=live.render(revised,settings,512);
+  const committed=brushSelection(prior,revised,settings).alpha;
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const actual=x>=preview.x&&y>=preview.y&&x<preview.x+preview.width&&y<preview.y+preview.height
+    ?preview.alpha[(y-preview.y)*preview.width+x-preview.x]:0;
+   expect(actual).toBe(committed[y*width+x]);
+  }
+ });
+});

@@ -4,7 +4,7 @@ import {rasterizeSelection,combineSelection,invertSelection,fullSelection,transl
   type SelectionShape,type MaskData,type CombineMode,type SelectionBrushPoint} from './mask';
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection,storeCurrentSelection,loadCurrentSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
-import {selectionBrushPreviewDabs,selectionBrushPreviewRaster,type SelectionBrushPreviewRaster} from './brushPreview';
+import {selectionBrushPreviewDabs,selectionBrushPreviewRaster,selectionBrushPreviewRequestKey,type SelectionBrushPreviewRaster} from './brushPreview';
 import {SelectionOverlay} from './overlay';
 import {snapMagneticPoint} from './magnetic';
 import type {AnalyzeOptions} from './autoSelect';
@@ -184,23 +184,24 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     path.setAttribute('d',d);preview.setAttribute('data-empty','false');
   }
   let brushPreviewFrame=0;
-  let liveBrushKey='',liveBrushRequest='',liveBrushSettings='',liveBrushDocument='';
+  let liveBrushKey='',liveBrushRequest='',liveBrushImageRequest='',liveBrushSettings='',liveBrushDocument='';
   let liveBrushPrior:MaskData|null=null,liveBrushImage:SelectionBrushPreviewRaster|null=null,liveBrushRunning=false;
   function stopBrushPreview(){
     if(liveBrushKey)raster.endBrushPreview(liveBrushKey);
-    liveBrushKey=liveBrushRequest=liveBrushSettings=liveBrushDocument='';
+    liveBrushKey=liveBrushRequest=liveBrushImageRequest=liveBrushSettings=liveBrushDocument='';
     liveBrushImage=null;liveBrushPrior=null;liveBrushRunning=false;
   }
   function workerBrushPreview(doc:{id:string;width:number;height:number},settings:Parameters<MaskRasterWorker['brush']>[4]){
     if(liveBrushKey&&(liveBrushPrior!==active||liveBrushDocument!==doc.id))stopBrushPreview();
     if(!liveBrushKey){liveBrushKey=crypto.randomUUID();liveBrushPrior=active;liveBrushDocument=doc.id;}
     const key=liveBrushKey,prior=active,options=JSON.stringify(settings);
-    const request=brushPoints.length+':'+options;
+    const request=selectionBrushPreviewRequestKey(brushPoints,options);
     if(!liveBrushRunning&&request!==liveBrushRequest){
       liveBrushRunning=true;liveBrushRequest=request;
       void raster.brushPreview(key,prior,doc.width,doc.height,brushPoints,settings).then(image=>{
-        if(liveBrushKey===key&&active===prior&&callbacks.getDocument()?.id===doc.id){
-          liveBrushImage=image;liveBrushSettings=options;
+        if(liveBrushKey===key&&active===prior&&callbacks.getDocument()?.id===doc.id&&
+          request===selectionBrushPreviewRequestKey(brushPoints,options)){
+          liveBrushImage=image;liveBrushSettings=options;liveBrushImageRequest=request;
         }
       }).catch(()=>{
         // Unsupported worker environments retain the bounded raster/SVG guide.
@@ -208,7 +209,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
         if(liveBrushKey===key){liveBrushRunning=false;brushOverlayPath();}
       });
     }
-    return liveBrushSettings===options?liveBrushImage:null;
+    return liveBrushSettings===options&&liveBrushImageRequest===request?liveBrushImage:null;
   }
   function paintBrushOverlay(){
     brushPreviewFrame=0;

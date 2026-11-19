@@ -80,3 +80,11 @@ export function selectionBrushPreviewRaster(
  for(let i=0;i<delta.length;i++)delta[i]=Math.abs(result[i]!-original[i]!);
  return {x:x0,y:y0,width:w,height:h,alpha:delta};
 }
+
+/** A bounded fingerprint for the live preview request. Pointer coalescing can
+ * revise a sample without changing the stroke length. Count-only keys leave
+ * the old image visible even after the worker has completed its calculation. */
+export function selectionBrushPreviewRequestKey(points:readonly SelectionBrushPoint[],settingsKey:string):string{
+ const tail=points.slice(-64).map(p=>[p.x,p.y,p.pressure]);
+ return points.length+':'+settingsKey+':'+JSON.stringify(tail);
+}
