@@ -1,7 +1,7 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`b7e06b24`](https://github.com/totoro0419/illustro/commit/b7e06b24e4670bc005ded483a0b5a94c3dff2f49)＋本節の操作経路修正
+**照合対象のコードHEAD:** [`c57bc53b`](https://github.com/totoro0419/illustro/commit/c57bc53bb5e272923dbd144df957cce3777f31ff)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
@@ -14,8 +14,8 @@
 - **C10-010**：読み込んだフォントの`vert`/`vrt2`字形、GPOSの位置、VORGの原点、vmtxの位置情報を利用。情報がない/壊れているフォント、端末専用フォント、合成太字/斜体では従来処理へ戻る。表示と輪郭化で同じ位置を使用。2桁数字の縦中横を明示選択でき、異なる部分書式をまたいで結合しない。文字枠・間隔・部分書式・保存復元を維持。
 - **縦書きの実描画比較**：Noto Sans CJK Regular / Noto Serif CJK Regular、文章「縦書き、。\n小さいゃっー「」（）\n英A12数字」、通常/部分色・サイズ変更の4条件。260×460 RGBA、各478,400 bytesで表示用と輪郭化後の差 **0 bytes**。ローカルCanvasで描画し画像も確認。自作の異なる縦書きフォント2種のGSUB/vmtx試験も成功。Android/ブラウザの実機比較ではない。
 - **確認**：Core 66 / Brush 266 / Editor 689 tests、Core型検査・Editor型検査/本番ビルド成功。実フォント描画比較は追加の環境依存試験1本で実行し、上記の通常テスト数に含めない。Chromiumの画面操作試験は、起動時のソケット作成が環境で許可されず**実行不能**。GPU時間・ブラウザ操作・Androidは合格扱いしない。
-- **実装保存**：`4072bd5c`（C06）、`c0b45cbd`（C09）、`0b8ab28b`（C10連動）、`b7e06b24`（縦書き・選択Worker・整列）＋後続の元形状編集操作修正（確定SHAはIssue #92にも記録）。main・PR #73未変更、PR #75 Draft維持。
-- **確認済みCI**：`b7e06b24` の[統合 #44475566767](https://github.com/totoro0419/illustro/actions/runs/44475566767)・[Core #44475576878](https://github.com/totoro0419/illustro/actions/runs/44475576878)はいずれもcompleted/success。後続の操作経路修正は別コミットで確認する。
+- **実装保存**：`4072bd5c`（C06）、`c0b45cbd`（C09）、`0b8ab28b`（C10連動）、`b7e06b24`（縦書き・選択Worker・整列）→ `c57bc53b`（元形状編集操作）。[Issue #92の確定報告](https://github.com/totoro0419/illustro/issues/92#issuecomment-7002185003)。main・PR #73未変更、PR #75 Draft維持。
+- **確認済みCI**：最新コード `c57bc53b` の[統合 #44476129762](https://github.com/totoro0419/illustro/actions/runs/44476129762)・[Core #44476135205](https://github.com/totoro0419/illustro/actions/runs/44476135205)はいずれもcompleted/success。進捗記録のみの後続更新はコードを変更しない。
 - **次**：C06-002の初回読み取りを、保存形式と履歴の安全性を維持して減らす。独立検査待ち7件は再現結果を受けて判断。任意提案5件の大規模変更は行っていない。
 
 ### 2026-11-19｜C10-006 元レイヤーと演算結果の自動連動
