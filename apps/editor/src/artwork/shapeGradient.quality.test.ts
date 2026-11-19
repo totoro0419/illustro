@@ -200,23 +200,23 @@ describe('C09-005/C09-015 live gradient preview responsiveness',()=>{
 });
 
 describe('C09-005/C09-015 worker path mask raster consistency',()=>{
-  it('masks large path preview pixels using committed document coordinates',()=>{
-    const mask={shape:'rectangle',x:0,y:0,width:2,height:2,
-      enabled:true,inverted:false,density:1} as const;
+  it('masks path preview pixels using committed document coordinates',()=>{
+    const mask={shape:'pixels',x:0,y:0,scaleX:1,scaleY:1,
+      tiles:{'0,0':'00'},enabled:true,inverted:false,density:1} as const;
     const pixels=new Uint8ClampedArray(2*2*4);
     for(let i=0;i<4;i++)pixels.set([12,34,56,200],i*4);
-    applyRenderedPathMask(pixels,mask,4,4,2,2);
-    expect([pixels[3],pixels[7],pixels[11],pixels[15]]).toEqual([200,0,0,0]);
+    applyRenderedPathMask(pixels,mask,128,128,2,2);
+    expect([pixels[3],pixels[7],pixels[11],pixels[15]]).toEqual([0,200,200,200]);
     expect(Array.from(pixels.subarray(0,3))).toEqual([12,34,56]);
   });
   it('retains alpha density and ignores disabled masks',()=>{
-    const mask={shape:'rectangle',x:0,y:0,width:2,height:2,
-      enabled:true,inverted:false,density:.5} as const;
+    const mask={shape:'pixels',x:0,y:0,scaleX:1,scaleY:1,
+      tiles:{'0,0':'00'},enabled:true,inverted:false,density:.5} as const;
     const pixels=new Uint8ClampedArray([10,20,30,200,10,20,30,200]);
-    applyRenderedPathMask(pixels,mask,4,2,2,1);
-    expect([pixels[3],pixels[7]]).toEqual([200,100]);
+    applyRenderedPathMask(pixels,mask,128,64,2,1);
+    expect([pixels[3],pixels[7]]).toEqual([100,200]);
     const copy=pixels.slice();
-    applyRenderedPathMask(pixels,{...mask,enabled:false},4,2,2,1);
+    applyRenderedPathMask(pixels,{...mask,enabled:false},128,64,2,1);
     expect(pixels).toEqual(copy);
   });
 });
