@@ -6,7 +6,13 @@
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
 
-### 2026-11-20 JST｜C06-002 保存済み画素の再利用（部分対応）
+### 2026-11-19｜C09-007 図形の画像/編集可能出力
+
+- 図形パネルに「形を後から直せる図形」「ブラシで描き直せる画像」を追加。同じ描画・保存処理を通し、画像出力だけ編集用データを付けず通常レイヤーに保存。新規は新しいレイヤー、既存図形の画像化は元レイヤーのマスク・設定を維持する。グラデーションの既存出力は維持。
+- `artwork/shapeGradient.ts`・`tools.ts`・`saveSnapshot.ts`・`main.ts`。長方形/角丸/楕円/多角形/折線/ベジェ ×2出力の12試験で画素・編集情報・マスク・Undo/Redo・保存復元・画像の通常画素編集を確認。関連54試験とEditor型検査/本番ビルド成功。
+- C09-007：コード上の不足を修正済み。ブラウザでの見た目比較・Android操作は独立確認待ち。
+
+### 2026-11-19 JST｜C06-002 保存済み画素の再利用（部分対応）
 
 - 保存スナップショットの128px区画を再利用し、その後の通常筆跡が触れた区画と、再利用できない区画だけGPUから取得。全区画を組み合わせて従来の完全なsnapshotを保存する。変形・編集可能図形・参照画像では従来経路。作品/選択レイヤー/履歴が変わったら反映中止。
 - 自動試験：4000×4000、1024区画の模擬GPUで転送要求 **1024→1区画、67,108,864→65,536 bytes**。全RGBA同一、消しゴム・透明RGB・不正バッファ・中断検査成功。これはプロトコル試験であり、実GPU速度の測定ではない。
@@ -396,7 +402,7 @@
 | [C09-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-004) | A/P1 | 選択範囲内の図形プレビューに確定時のマスクが反映されない | **部分対応・コード残件あり** | 長方形と楕円の縮小マスクを面積評価。自由形状・画素マスクの縮小精度と実機一致は未確認 追加：129タイル超も実読取画素数1,048,576以内なら面積平均を維持。密集マスクの厳密縮小・実機は残る。コード c69a5055。 | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-005](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-005) | A/P1 | 図形やグラデーションの編集点を制作キャンバス上で直接操作できない | **部分対応・コード残件あり** | 編集点をドラッグ中、Workerの縮小画像を制作キャンバスへ重ねて更新。原寸画素一致・Worker非対応時の表示は未完成 追加：制御ハンドルの異常値を仮表示・確定で共通拒否。大規模パスのマスクをWorkerで処理。コード c69a5055。 | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-006](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-006) | A/P1 | ペン保持中に整えた図形が仮表示されず、離してから補正候補が出る | **部分対応・コード残件あり** | ペン保持中に直線・楕円の補正候補を制作キャンバスへ非破壊のSVG仮表示。筆圧・質感の一致とAndroid実機は未確認 | [#89](https://github.com/totoro0419/illustro/pull/89) |
-| [C09-007](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-007) | A/P2 | 角丸長方形・多角形・RasterとVector出力先の選択などが不足 | **部分対応・コード残件あり** | 図形出力先の選択など一部操作が未実装 | [#89](https://github.com/totoro0419/illustro/pull/89) |
+| [C09-007](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-007) | A/P2 | 角丸長方形・多角形・RasterとVector出力先の選択などが不足 | **コード上の不足を修正済み** | 画像/編集可能図形の出力選択を共通保存処理に接続。12ケースで保存復元・Undo/Redo確認。実機独立確認待ち（冒頭記録） | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-008](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-008) | A/P2 | グラデーションの反転・繰り返し・楕円状放射が不足 | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-009](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-009) | A/P2 | グラデーションの色停止点を色帯上でドラッグ調整できない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#89](https://github.com/totoro0419/illustro/pull/89) |
 | [C09-010](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C09.md#c09-010) | B/P1 | 対称描画のコピー線がペンを離してから生成され描画中に見えない懸念 | **部分対応・コード残件あり** | 対称コピー仮線は本線の筆圧・質感と一致しない | [#89](https://github.com/totoro0419/illustro/pull/89) |

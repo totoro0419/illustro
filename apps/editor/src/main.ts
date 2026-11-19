@@ -32,6 +32,7 @@ import {layerMaskCoverage} from '@illustro/brush-rt';
 import {runArtwork} from './artwork/run';
 import {snapArtworkPathToGuide} from './artwork/guidedPath';
 import {validatedBooleanSourceVisibility} from './artwork/booleanSourceVisibility';
+import {saveArtworkSnapshot} from './artwork/saveSnapshot';
 import {selectionAsLayerMask} from './artwork/selectionMask';
 import {selectionCanCreateMask,explicitSaveStatus,maskApplyAllowed} from './artwork/c03UiGuards';
 import type {ArtworkActions} from './artwork/tools';
@@ -4292,7 +4293,7 @@ const artworkActions:ArtworkActions={
       missingFontCandidates:controller.layers.flatMap(item=>item.editable?.kind==='text'
         ?textFontAssetIds(item.editable).map(assetId=>({name:item.name,assetId})):[])};
   },
-  save:async(content,name,editing,initialMask,hideSourcePaths)=>{
+  save:async(content,name,editing,initialMask,hideSourcePaths,output='vector')=>{
     const artwork=controller.document,head=artwork.head,drawing=surface,selection=c06Selection?.active();
     if(!drawing||!documentReady)throw Error('作品を開いてください。');
     const {width,height}=artwork.root,reference=controller.selectedLayer.id;
@@ -4309,12 +4310,7 @@ const artworkActions:ArtworkActions={
       if(surface!==drawing||controller.document!==artwork||artwork.head!==head||controller.selectedLayer.id!==reference)
         throw Error('作品が変更されたため中止しました。');
       const tx=artwork.begin(editing?'図形・文字などを編集':'編集できるレイヤーを追加');
-      const id=editing??tx.addRasterSnapshotAbove(reference,pixels,name);
-      if(editing)tx.replaceLayerRaster(id,pixels,undefined,content);
-      else{
-        tx.setEditableArtwork(id,content);
-        if(mask)tx.setVectorLayerMask(id,mask);
-      }
+      const id=saveArtworkSnapshot(tx,reference,pixels,content,name,editing,mask,output);
       // Keep the operands for future edits, but show only the boolean result.
       // Source visibility and result creation must share a single Undo step.
       for(const sourceId of sources)tx.setLayerVisibility(sourceId,false);

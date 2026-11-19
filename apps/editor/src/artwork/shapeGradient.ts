@@ -385,6 +385,9 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     ['rectangle','長方形'],['rounded','角丸長方形'],['polygon','多角形'],
     ['ellipse','楕円'],['polyline','直線・折れ線'],['bezier','ベジェ曲線']
   ] as const);
+  const output=selectField(shapeFields,'保存する形式',[
+    ['vector','形を後から直せる図形'],['raster','ブラシで描き直せる画像']
+  ] as const);
   const width=numberField(shapeFields,'線幅（px）',8,0,4096);
   const radius=numberField(shapeFields,'角の丸み（px）',24,0,4096,.5);
   const sides=numberField(shapeFields,'角の数',6,3,64);
@@ -780,7 +783,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       const current=api.context(),selected=current?.selected.content;
       if(!current||!selected||selected.kind==='text')throw Error('図形かグラデーションのレイヤーを選んでください。');
       if(selected.kind==='path'&&selected.fillRuns)throw Error('複数色の文字輪郭は「ベクター線・点の編集」で点や色を調整してください。');
-      editing=current.selected.id;editingMask=current.selected.mask;draftDrawing=current.drawing;
+      editing=current.selected.id;editingMask=current.selected.mask;draftDrawing=current.drawing;output.value='vector';
       editedOpacity=selected.kind==='path'?selected.opacity:undefined;
       originalStrokeLayer=selected.kind==='path'?selected.originalStrokeLayer:undefined;
       if(selected.kind==='gradient'){
@@ -812,8 +815,10 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
       // to be active when Save ran, even though the preview used draftMask.
       // Existing editable layers keep their own stored vector mask.
       await api.save(content,content.kind==='gradient'?'グラデーション':'図形',editing,
-        shapeGradientInitialMask(editing,draftMask));
-      status.textContent='作品に反映しました。';
+        shapeGradientInitialMask(editing,draftMask),undefined,
+        content.kind==='path'?output.value as 'vector'|'raster':'vector');
+      status.textContent=content.kind==='path'&&output.value==='raster'
+        ?'画像として反映しました。ブラシや消しゴムで編集できます。':'作品に反映しました。';
     },status),
     button('変更を取り消す',()=>{
       stopHandles();
