@@ -195,6 +195,22 @@ function drawText(ctx:Context,text:EditableText){
   }
 }
 
+/** Apply the committed layer-mask raster rule inside the artwork Worker.
+ * Large path previews must not do a second full-image pass on the UI thread. */
+export function applyRenderedPathMask(
+  pixels:Uint8ClampedArray,mask:LayerMask|null|undefined,
+  width:number,height:number,outputWidth:number,outputHeight:number
+):void{
+  if(!mask?.enabled||mask.density===0)return;
+  const factorX=width/outputWidth,factorY=height/outputHeight;
+  for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
+    const at=(y*outputWidth+x)*4;
+    if(pixels[at+3]===0)continue;
+    pixels[at+3]=Math.round(pixels[at+3]!*
+      layerMaskCoverage(mask,(x+.5)*factorX,(y+.5)*factorY));
+  }
+}
+
 export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTMLCanvasElement|OffscreenCanvas){
   if(content.kind==='gradient')return gradientPixels(content,size,canvas);
   canvas.width=size.outputWidth;canvas.height=size.outputHeight;
@@ -238,7 +254,10 @@ export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTM
   // avoids a second full-canvas allocation and copy (64 MB / about 61 MiB at 4000×4000).
   const pixels=ctx.getImageData(0,0,size.outputWidth,size.outputHeight).data;
   // A new typed-array view shares the ImageData buffer without copying its bytes.
-  return new Uint8ClampedArray(pixels.buffer as ArrayBuffer,pixels.byteOffset,pixels.byteLength);
+  const result=new Uint8ClampedArray(pixels.buffer as ArrayBuffer,pixels.byteOffset,pixels.byteLength);
+  if(size.previewMask&&content.kind==='path')
+    applyRenderedPathMask(result,size.mask,size.width,size.height,size.outputWidth,size.outputHeight);
+  return result;
 }
 
 export function movePoint(point:ArtPoint,x:number,y:number):ArtPoint{
