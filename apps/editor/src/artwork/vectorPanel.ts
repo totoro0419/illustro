@@ -2,6 +2,7 @@ import {validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} fr
 import type {BrushSurface} from '../brushSurface';
 import {runArtwork} from './run';
 import {vectorPointDrag,type VectorDragHandle} from './vectorPointDrag';
+import {booleanOperandSave} from './linkedBooleans';
 import {appendPathStroke,combineShapes,eraseBetweenIntersections,eraseSegment,eraseWholeStroke,joinPaths,simplifyPath,smoothPath,splitPath} from './pathOperations';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
@@ -77,7 +78,9 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     try{
       const scale=Math.min(1,260/Math.max(context.width,context.height));
       const w=Math.max(1,Math.round(context.width*scale)),h=Math.max(1,Math.round(context.height*scale));
-      const pixels=await runArtwork({content:draft(),width:context.width,height:context.height,outputWidth:w,outputHeight:h});
+      const candidate=draft(),operands=sourceEdit?.operands,side=sourceEdit?.side;
+      const content=operands?await combineShapes(side==='a'?candidate:operands.a,side==='b'?candidate:operands.b,operands.mode,true):candidate;
+      const pixels=await runArtwork({content,width:context.width,height:context.height,outputWidth:w,outputHeight:h});
       if(request===previewId)paintPreview(preview,pixels,w,h);
     }catch(error){if(request===previewId)status.textContent=error instanceof Error?error.message:String(error);}
   }
@@ -320,15 +323,12 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       const side=sourceSide.value as 'a'|'b';
       sourceEdit={operands,side};
       readPath(operands[side],editing);
-      status.textContent='元の形の点を編集したら「元の形から演算を更新」を押してください。';
+      status.textContent='元の形を編集すると演算候補も更新します。「作品に反映」でまとめて保存します。';
     },status),
     button('元の形から演算を更新',async()=>{
       if(!sourceEdit)throw Error('先に「演算前の形を直す」を選んでください。');
-      const {operands,side}=sourceEdit;
-      const a=side==='a'?draft():operands.a,b=side==='b'?draft():operands.b;
-      const result=await combineShapes(a,b,operands.mode);
-      sourceEdit=null;readPath(result,editing);
-      status.textContent='元の図形を再計算しました。「作品に反映」で結果を保存できます。';
+      await refresh();
+      status.textContent='演算候補を更新しました。「作品に反映」で元の形と結果をまとめて保存します。';
     },status),
     button('2つの形を組み合わせる',async()=>{
       const originalId=editing,otherId=secondary.value as LayerId;
@@ -342,9 +342,16 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       }else status.textContent='演算結果を新しいレイヤーに作ります。元の形はそのまま残ります。';
     },status),
     button('作品に反映',async()=>{
-      if(sourceEdit)throw Error('元の形を編集中です。先に「元の形から演算を更新」を押してください。');
-      stopPoints();await api.save(draft(),'ベクター線',editing,undefined,
-        hideOperands.checked?combinedSourceIds??undefined:undefined);
+      const context=api.context(),candidate=draft();
+      const request=sourceEdit?await booleanOperandSave(sourceEdit.operands,sourceEdit.side,candidate,editing,
+        context?.paths.flatMap(entry=>entry.content.kind==='path'?[{id:entry.id,content:entry.content}]:[])??[]):{content:candidate,id:editing,sourceOf:undefined};
+      stopPoints();await api.save(request.content,'ベクター線',request.id,undefined,
+        hideOperands.checked?combinedSourceIds??undefined:undefined,'vector',request.sourceOf);
+      sourceEdit=null;
+      if(request.sourceOf){
+        const result=api.context()?.selected;
+        if(result?.content?.kind==='path')readPath(result.content,result.id);
+      }
       combinedSourceIds=null;hideOperands.parentElement!.hidden=true;
       status.textContent='ベクター線を保存しました。';
     },status),

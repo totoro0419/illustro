@@ -38,3 +38,15 @@ export async function linkedBooleanUpdates(
  for(const id of paths.keys())await visit(id);
  return updates;
 }
+
+/** Existing operand-edit UI and direct source editing share the same atomic
+ * save route. Old documents without live IDs keep their embedded operands. */
+export async function booleanOperandSave(
+ operands:NonNullable<EditablePath['booleanOperands']>,side:'a'|'b',content:EditablePath,
+ resultId:LayerId|undefined,live:readonly Entry[]
+):Promise<{content:EditablePath;id:LayerId|undefined;sourceOf?:LayerId}>{
+ const source=operands.sourceLayerIds?.[side==='a'?0:1] as LayerId|undefined;
+ if(resultId&&source&&live.some(entry=>entry.id===source))return {content,id:source,sourceOf:resultId};
+ const result=await combineShapes(side==='a'?content:operands.a,side==='b'?content:operands.b,operands.mode,true);
+ return {content:operands.sourceLayerIds?{...result,booleanOperands:{...result.booleanOperands!,sourceLayerIds:operands.sourceLayerIds}}:result,id:resultId};
+}

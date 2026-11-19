@@ -4309,11 +4309,15 @@ const artworkActions:ArtworkActions={
       missingFontCandidates:controller.layers.flatMap(item=>item.editable?.kind==='text'
         ?textFontAssetIds(item.editable).map(assetId=>({name:item.name,assetId})):[])};
   },
-  save:async(content,name,editing,initialMask,hideSourcePaths,output='vector')=>{
+  save:async(content,name,editing,initialMask,hideSourcePaths,output='vector',sourceOf)=>{
     const artwork=controller.document,head=artwork.head,drawing=surface,selection=c06Selection?.active();
     if(!drawing||!documentReady)throw Error('作品を開いてください。');
     const {width,height}=artwork.root,reference=controller.selectedLayer.id;
-    if(editing&&reference!==editing)throw Error('編集するレイヤーを選び直してください。');
+    if(editing&&reference!==editing){
+      const result=sourceOf===reference?artwork.root.getLayer(reference).editable:null;
+      if(result?.kind!=='path'||!result.booleanOperands?.sourceLayerIds?.includes(editing))
+        throw Error('編集するレイヤーを選び直してください。');
+    }
     const sources=validatedBooleanSourceVisibility(artwork.root,hideSourcePaths??[],editing);
     const selected=editing?artwork.root.getLayer(editing):null;
     const previous=selected?.editable??null;
@@ -4345,7 +4349,7 @@ const artworkActions:ArtworkActions={
       // Source visibility and result creation must share a single Undo step.
       for(const sourceId of sources)tx.setLayerVisibility(sourceId,false);
       controller.lastPersistenceHandoff=tx.commit().persistence;
-      controller.selectLayer(id);
+      controller.selectLayer(sourceOf??id);
       return 'edit';
     });
   },

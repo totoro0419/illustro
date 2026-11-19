@@ -12,7 +12,7 @@ export type ArtworkContext=Readonly<{
 }>;
 export type ArtworkActions=Readonly<{
   context:()=>ArtworkContext|null;
-  save:(content:EditableArtwork,name:string,id?:LayerId,initialMask?:LayerMask|null,hideSourcePaths?:readonly LayerId[],output?:'vector'|'raster')=>Promise<void>;
+  save:(content:EditableArtwork,name:string,id?:LayerId,initialMask?:LayerMask|null,hideSourcePaths?:readonly LayerId[],output?:'vector'|'raster',sourceOf?:LayerId)=>Promise<void>;
   rasterize:(id:LayerId)=>Promise<void>;
   /** Remove an editable vector layer in the same undoable transaction as its final stroke. */
   remove?:(id:LayerId)=>Promise<void>;

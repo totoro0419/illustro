@@ -68,3 +68,24 @@ it('C10-006 recomputes once from both final sources in a simultaneous alignment'
  expect(updates).toHaveLength(1);
  expect(updates[0]!.content.points).toEqual((await combineShapes(movedA,movedB,'union')).points);
 });
+
+it('C10-006 existing operand-edit action saves live sources and recomputes legacy results directly',async()=>{
+ const {booleanOperandSave}=await import('./linkedBooleans');
+ const a=rect(0,20),b=rect(10,30),result=await link(a,b,'union',['a','b']),changed=rect(0,25);
+ const live=await booleanOperandSave(result.booleanOperands!,'a',changed,id('r'),[{id:id('a'),content:a},{id:id('b'),content:b}]);
+ expect(live).toEqual({content:changed,id:'a',sourceOf:'r'});
+ const old=await combineShapes(a,b,'union');
+ const legacy=await booleanOperandSave(old.booleanOperands!,'a',changed,id('r'),[]);
+ expect(legacy.id).toBe('r');expect(legacy.sourceOf).toBeUndefined();
+ expect(legacy.content.points).toEqual((await combineShapes(changed,b,'union')).points);
+ const deleted=await booleanOperandSave(result.booleanOperands!,'a',changed,id('r'),[{id:id('b'),content:b}]);
+ expect(deleted.content.booleanOperands?.sourceLayerIds).toEqual(['a','b']);
+ expect(deleted.content.booleanOperands?.a).toEqual(changed);
+});
+
+it('C10-006 handles valid extreme coordinates without nonfinite or out-of-range geometry',async()=>{
+ const a=rect(999940,999980),b=rect(999960,1000000),r=await link(a,b,'union',['a','b']);
+ const updates=await linkedBooleanUpdates([{id:id('a'),content:a},{id:id('b'),content:b},{id:id('r'),content:r}],id('a'),rect(999950,999990));
+ expect(updates).toHaveLength(1);
+ expect(updates[0]!.content.points.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&Math.abs(p.x)<=1000000)).toBe(true);
+});
