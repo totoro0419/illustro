@@ -197,35 +197,42 @@ export function applyShapePreviewMask(
     outputWidth*outputHeight<=100000&&directPixelMask.scaleX>0&&directPixelMask.scaleY>0&&
     directPixelMask.scaleX<=4&&directPixelMask.scaleY<=4){
     const entries=Object.entries(directPixelMask.tiles).filter(([,value])=>value!=='ff');
-    // Index each changed 64px source tile by the preview pixels it touches.
-    // This avoids scanning every tile for every output pixel, allowing larger
-    // sparse 4K masks to retain area coverage without blocking pointer input.
-    if(entries.length<=128){
-      const tiles=entries.map(([key])=>{
-        const [tx,ty]=key.split(',').map(Number);
-        const left=directPixelMask.x+tx!*64*directPixelMask.scaleX;
-        const top=directPixelMask.y+ty!*64*directPixelMask.scaleY;
-        return {tx:tx!,ty:ty!,left,top,
-          right:left+64*directPixelMask.scaleX,bottom:top+64*directPixelMask.scaleY};
-      });
-      if(tiles.every(tile=>[tile.left,tile.top,tile.right,tile.bottom].every(Number.isFinite))){
-        const buckets=new Map<number,SparseMaskTile[]>();
-        let assignments=0,withinBudget=true;
-        for(const tile of tiles){
-          const x0=Math.max(0,Math.floor(tile.left*outputWidth/width));
-          const x1=Math.min(outputWidth,Math.ceil(tile.right*outputWidth/width));
-          const y0=Math.max(0,Math.floor(tile.top*outputHeight/height));
-          const y1=Math.min(outputHeight,Math.ceil(tile.bottom*outputHeight/height));
-          assignments+=Math.max(0,x1-x0)*Math.max(0,y1-y0);
-          if(assignments>100000){withinBudget=false;break;}
-          for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-            const key=y*outputWidth+x,existing=buckets.get(key);
-            if(existing)existing.push(tile);
-            else buckets.set(key,[tile]);
-          }
+    // A fixed 128-tile limit dropped exact previews even when most changed
+    // tiles were offscreen. Bound actual source-pixel work instead.
+    const tiles:SparseMaskTile[]=[];
+    let sourcePixels=0,withinBudget=true;
+    for(const [key] of entries){
+      if(!/^-?\d+,-?\d+$/.test(key)){withinBudget=false;break;}
+      const [tx,ty]=key.split(',').map(Number);
+      if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)){withinBudget=false;break;}
+      const left=directPixelMask.x+tx!*64*directPixelMask.scaleX;
+      const top=directPixelMask.y+ty!*64*directPixelMask.scaleY;
+      const right=left+64*directPixelMask.scaleX,bottom=top+64*directPixelMask.scaleY;
+      if(![left,top,right,bottom].every(Number.isFinite)){withinBudget=false;break;}
+      const x0=Math.max(0,Math.floor(left)),x1=Math.min(width,Math.ceil(right));
+      const y0=Math.max(0,Math.floor(top)),y1=Math.min(height,Math.ceil(bottom));
+      if(x0>=x1||y0>=y1)continue;
+      sourcePixels+=(x1-x0)*(y1-y0);
+      if(sourcePixels>1048576){withinBudget=false;break;}
+      tiles.push({tx:tx!,ty:ty!,left,top,right,bottom});
+    }
+    if(withinBudget){
+      const buckets=new Map<number,SparseMaskTile[]>();
+      let assignments=0;
+      for(const tile of tiles){
+        const x0=Math.max(0,Math.floor(tile.left*outputWidth/width));
+        const x1=Math.min(outputWidth,Math.ceil(tile.right*outputWidth/width));
+        const y0=Math.max(0,Math.floor(tile.top*outputHeight/height));
+        const y1=Math.min(outputHeight,Math.ceil(tile.bottom*outputHeight/height));
+        assignments+=Math.max(0,x1-x0)*Math.max(0,y1-y0);
+        if(assignments>100000){withinBudget=false;break;}
+        for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+          const key=y*outputWidth+x,existing=buckets.get(key);
+          if(existing)existing.push(tile);
+          else buckets.set(key,[tile]);
         }
-        if(withinBudget)sparsePixelBuckets=buckets;
       }
+      if(withinBudget)sparsePixelBuckets=buckets;
     }
   }
   // Only small polygons use the exact area integral. This keeps the usual
@@ -314,6 +321,18 @@ export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:Art
   const moved={...point,x:next.x,y:next.y,
     ...(inX===undefined||inY===undefined?{}:{inX,inY}),
     ...(outX===undefined||outY===undefined?{}:{outX,outY})};
+  return points.map((candidate,i)=>i===index?moved:candidate);
+}
+/** Validate cubic control-handle movement for both live preview and commit. */
+export function moveShapeHandle(
+  points:readonly ArtPoint[],index:number,handle:'in'|'out',next:ArtPoint
+):ArtPoint[]{
+  const point=points[index];
+  if(!point||![point.x,point.y,next.x,next.y].every(Number.isFinite))return [...points];
+  const oldX=handle==='in'?point.inX:point.outX;
+  const oldY=handle==='in'?point.inY:point.outY;
+  if(oldX===undefined||oldY===undefined||![oldX,oldY].every(Number.isFinite))return [...points];
+  const moved=handle==='in'?{...point,inX:next.x,inY:next.y}:{...point,outX:next.x,outY:next.y};
   return points.map((candidate,i)=>i===index?moved:candidate);
 }
 /** Keep the live on-canvas preview light at fit zoom, but use more detail
@@ -546,16 +565,14 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         if(point.inX!==undefined&&point.inY!==undefined){
           const i=edits.length;
           edits.push({point:{x:point.inX,y:point.inY},change:next=>{
-            setPoints(content.points.map((p,k)=>k===index?{...p,inX:next.x,inY:next.y}:p));
-          },preview:next=>({...content,points:content.points.map((p,k)=>
-            k===index?{...p,inX:next.x,inY:next.y}:p)})});edges.push([index,i]);
+            setPoints(moveShapeHandle(content.points,index,'in',next));
+          },preview:next=>({...content,points:moveShapeHandle(content.points,index,'in',next)})});edges.push([index,i]);
         }
         if(point.outX!==undefined&&point.outY!==undefined){
           const i=edits.length;
           edits.push({point:{x:point.outX,y:point.outY},change:next=>{
-            setPoints(content.points.map((p,k)=>k===index?{...p,outX:next.x,outY:next.y}:p));
-          },preview:next=>({...content,points:content.points.map((p,k)=>
-            k===index?{...p,outX:next.x,outY:next.y}:p)})});edges.push([index,i]);
+            setPoints(moveShapeHandle(content.points,index,'out',next));
+          },preview:next=>({...content,points:moveShapeHandle(content.points,index,'out',next)})});edges.push([index,i]);
         }
       }
     }
