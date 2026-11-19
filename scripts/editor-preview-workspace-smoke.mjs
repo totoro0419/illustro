@@ -73,6 +73,15 @@ async function run(label, full = false, touch = false) {
   const click = selector => page.locator(selector).click();
   const state = () => canvas.evaluate(el => ({ ...el.dataset }));
   const snapshot = () => surface.screenshot({ animations: 'disabled' });
+  // A history revision can become current before its replacement reaches
+  // the visible canvas. Check the pixels independently within a fixed budget.
+  async function waitForPixels(color, matches, timeout = 3500) {
+    const deadline = performance.now() + timeout;
+    do {
+      if (matches(countPixels(await snapshot(), color))) return true;
+    } while (performance.now() < deadline);
+    return false;
+  }
   const check = (name, condition) => {
     assert.ok(condition, name);
     report.checks.push(`${label}: ${name}`);
@@ -147,7 +156,7 @@ async function run(label, full = false, touch = false) {
     });
     await waitStrokes(1);
     await idle();
-    const committedInk = countPixels(await snapshot(), dark) > beforeInk + 20;
+    const committedInk = await waitForPixels(dark, count => count > beforeInk + 20, baseline ? 250 : 3500);
     if (!baseline) check('line remains after release', committedInk);
     report.timings.push({
       label, homeReadyMs: Math.round(homeReady), clickToEditorMs: Math.round(editorReady),
@@ -203,11 +212,11 @@ async function run(label, full = false, touch = false) {
     await click('#undo');
     await page.waitForFunction(id => document.querySelector('#canvas').dataset.revisionId === id, beforeErase);
     await idle();
-    check('Undo restores the erased pixels', countPixels(await snapshot(), red) > redBeforeErase - 30);
+    check('Undo restores the erased pixels', await waitForPixels(red, count => count > redBeforeErase - 30));
     await click('#redo');
     await page.waitForFunction(id => document.querySelector('#canvas').dataset.revisionId === id, erased);
     await idle();
-    check('Redo removes the same ink', countPixels(await snapshot(), red) < redBeforeErase - 30);
+    check('Redo removes the same ink', await waitForPixels(red, count => count < redBeforeErase - 30));
 
     await click('#c04ContextLayer');
     const layerCount = Number((await state()).layerCount);
@@ -253,16 +262,18 @@ async function run(label, full = false, touch = false) {
 }
 
 try {
-  if (before && !process.env.PREVIEW_SMOKE_URL) {
-    root = before;
-    try {
-      for (let trial = 0; trial < 3; trial++) await run('before-' + (trial + 1));
-    } catch (error) {
-      report.baselineError = String(error);
+  for (let trial = 1; trial <= 3; trial++) {
+    if (before && !process.env.PREVIEW_SMOKE_URL) {
+      root = before;
+      try {
+        await run('before-' + trial);
+      } catch (error) {
+        (report.baselineErrors ??= []).push(String(error));
+      }
     }
+    root = after;
+    await run('after-' + trial, trial === 3);
   }
-  root = after;
-  for (let trial = 0; trial < 3; trial++) await run('after-' + (trial + 1), trial === 2);
   await run('after-phone-touch', true, true);
 } finally {
   console.log(JSON.stringify(report, null, 2));
