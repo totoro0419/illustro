@@ -9,13 +9,26 @@ import {icon,type IconName} from './icons';
 export type CommandDefinition=Readonly<{
   id:string;label:string;category:string;aliases:string;
   availability:()=>string|null;execute:()=>void|Promise<void>;
+  completion?:boolean;
 }>;
+/** Execute the actual handler and observe its declared completion, never a DOM dispatch. */
+export async function invokeCommandAsync(command:CommandDefinition,contextKey?:()=>unknown){
+  const reason=command.availability();
+  if(reason)return {ok:false,reason,settled:false};
+  try{
+    const context=contextKey?.();
+    await command.execute();
+    if(contextKey&&contextKey()!==context)throw Error('作品が切り替わったため操作を停止しました。');
+    return {ok:true,reason:null,settled:command.completion!==false};
+  }catch(error){return {ok:false,reason:error instanceof Error?error.message:String(error),settled:false};}
+}
 export type CommandService=Readonly<{
   list:()=>readonly Readonly<{id:string;label:string;category:string}>[];
   invoke:(id:string)=>Readonly<{ok:boolean;reason:string|null}>;
   invokeAsync:(id:string)=>Promise<Readonly<{ok:boolean;reason:string|null;settled:boolean}>>;
   registerProvider:(provider:()=>readonly CommandDefinition[])=>()=>void;
   refresh:()=>void;
+  contextKey?: (()=>unknown)|undefined;
 }>;
 export type LayerCommandSource=Readonly<{
   layers:()=>readonly Readonly<{id:string;name:string;visible:boolean}>[];
@@ -65,7 +78,9 @@ const parseRecents=():string[]=>{
   try{const raw=JSON.parse(read(RECENTS_KEY)||'[]') as unknown;return Array.isArray(raw)?raw.filter((s):s is string=>typeof s==='string').slice(0,24):[];}catch{return [];}
 };
 
-export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>,colorState:ForegroundColor,layerSource:LayerCommandSource):CommandService{
+export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>,colorState:ForegroundColor,layerSource:LayerCommandSource,execution?:Readonly<{
+  resolve:(id:string)=>(()=>void|Promise<void>)|null;contextKey:()=>unknown;
+}>):CommandService{
   const actions:Array<readonly [string,string,string,string]>= [
     ['undo','元に戻す','履歴','Undo 取り消し'],
     ['redo','やり直す','履歴','Redo'],
@@ -121,7 +136,8 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   const known:CommandDefinition[]=actions.map(([id,label,category,aliases])=>({
     id,label,category,aliases,
     availability:()=>disabledReason(id),
-    execute:()=>el<HTMLButtonElement>(id)?.click(),
+    completion:!!execution?.resolve(id),
+    execute:()=>{const run=execution?.resolve(id);if(run)return run();el<HTMLButtonElement>(id)?.click();},
   }));
   for(const [id,label,section] of [
     ['workspace:brush','ブラシの一覧','brushBox'],
@@ -159,7 +175,8 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       commands.push({
         id,label:option.textContent||option.value,category:'ブラシ',aliases:'筆 ペン プリセット',
         availability:()=>brush.disabled?'ブラシを選べる作品を開いてください。':null,
-        execute:()=>{shell.openBox('brushBox');brush.value=option.value;brush.dispatchEvent(new Event('change',{bubbles:true}));},
+        completion:!!execution?.resolve(id),
+        execute:()=>{shell.openBox('brushBox');const run=execution?.resolve(id);if(run)return run();brush.value=option.value;brush.dispatchEvent(new Event('change',{bubbles:true}));},
       });
     }
     // Includes hidden, filtered, collapsed and unmounted layers. No DOM lookup
@@ -178,7 +195,14 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     }catch{return {names:Array(SLOT_COUNT).fill('') as string[],groups:Array(SLOT_COUNT).fill('') as string[]};}
   })();
   const savePins=()=>write(PIN_KEY,JSON.stringify({version:1,slots,names:pinMeta.names,groups:pinMeta.groups}));
-  const find=(id:string)=>dynamicCommands().find(command=>command.id===id);
+  const find=(id:string)=>{
+    const found=dynamicCommands().find(command=>command.id===id);
+    if(found)return found;
+    // Stored macros keep exact colors even after they leave the recent palette.
+    const color=id.startsWith('color:')?fromHex(id.slice(6)):null;
+    return color?{id,label:'描画色 '+id.slice(6),category:'色',aliases:'',availability:()=>null,
+      execute:()=>colorState.choose(color)}:undefined;
+  };
   const remember=(id:string)=>{
     recents=[id,...recents.filter(key=>key!==id)].slice(0,24);
     write(RECENTS_KEY,JSON.stringify(recents));
@@ -455,7 +479,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       providers.push(provider);refresh();
       return ()=>{const i=providers.indexOf(provider);if(i>=0)providers.splice(i,1);refresh();};
     },
-    refresh,
+    refresh,contextKey:execution?.contextKey,
     invoke:(id:string)=>{
       const command=find(id);
       if(!command)return {ok:false,reason:'この機能はまだ利用できません。'};
@@ -473,19 +497,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     invokeAsync:async(id:string)=>{
       const command=find(id);
       if(!command)return {ok:false,reason:'この機能はまだ利用できません。',settled:false};
-      const reason=command.availability();
-      if(reason)return {ok:false,reason,settled:false};
-      try{
-        const outcome=command.execute();
-        if(outcome instanceof Promise)await outcome;
-        remember(id);renderQuick();
-        // DOM click handlers may start work in the background. Only explicit
-        // completion promises and local UI state count as observed completion.
-        const settled=outcome instanceof Promise||id.startsWith('workspace:')||id.startsWith('color:')||
-          id.startsWith('brush:')||['paint','erase','eyedropper','colorPage','brushPage',
-            'workspaceToggle','c04FocusToggle'].includes(id);
-        return {ok:true,reason:null,settled};
-      }catch(error){return {ok:false,reason:error instanceof Error?error.message:'実行できませんでした。',settled:false};}
+      const result=await invokeCommandAsync(command,execution?.contextKey);
+      if(result.ok){remember(id);renderQuick();}
+      return result;
     },
   };
 }

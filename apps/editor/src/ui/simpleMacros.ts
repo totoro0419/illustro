@@ -40,15 +40,26 @@ export function parseSimpleMacroFile(input:unknown):SimpleMacro[]{
   }
   return result;
 }
+const activeSequences=new WeakSet<CommandService['invokeAsync']>();
 /** Await every declared command completion and report dispatch-only steps honestly. */
 export async function invokeMacroSequence(
   steps:readonly string[],
-  invoke:CommandService['invokeAsync']
+  invoke:CommandService['invokeAsync'],
+  options:Readonly<{contextKey?: (()=>unknown)|undefined;signal?:AbortSignal}>={}
 ):Promise<Readonly<{ok:boolean;reason:string|null;failedStep:number|null;unfinished:boolean}>>{
+  if(activeSequences.has(invoke))return {ok:false,reason:'ほかの操作セットが実行中です。',failedStep:null,unfinished:false};
+  activeSequences.add(invoke);
+  const context=options.contextKey?.();
+  const stopped=()=>options.signal?.aborted?'操作セットを取り消しました。':
+    options.contextKey&&options.contextKey()!==context?'作品が切り替わったため操作を停止しました。':null;
   let unfinished=false;
+  try{
   for(const [i,id] of steps.entries()){
+    const reason=stopped();if(reason)return {ok:false,reason,failedStep:i+1,unfinished};
     if(!permitted(id))return {ok:false,reason:'対応していない操作が含まれています。',failedStep:i+1,unfinished};
-    const result=await invoke(id);
+    let result:Awaited<ReturnType<CommandService['invokeAsync']>>;
+    try{result=await invoke(id);}catch(error){return {ok:false,reason:error instanceof Error?error.message:String(error),failedStep:i+1,unfinished};}
+    const after=stopped();if(after)return {ok:false,reason:after,failedStep:i+1,unfinished:!result.settled};
     if(!result.ok)return {ok:false,reason:result.reason??'現在は使えません。',failedStep:i+1,unfinished};
     if(!result.settled){
       unfinished=true;
@@ -61,6 +72,7 @@ export async function invokeMacroSequence(
     }
   }
   return {ok:true,reason:null,failedStep:null,unfinished};
+  }finally{activeSequences.delete(invoke);}
 }
 const read=():SimpleMacro[]=>{
   try{
@@ -89,6 +101,7 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
   const workspace=document.getElementById('workspaceBoxBody');
   if(!workspace)return null;
   let macros=read(),playing=false,steps:string[]=[],selectedId:string|null=null;
+  let playback:AbortController|null=null;
   const root=document.createElement('details');root.className='c04-simple-macros';
   const summary=document.createElement('summary');summary.textContent='よく使う操作をまとめる';
   const help=document.createElement('p');
@@ -104,7 +117,10 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
   save.textContent='保存';run.textContent='実行';reset.textContent='新しく作る';remove.textContent='削除';
   const status=document.createElement('output');status.setAttribute('role','status');
   const actions=document.createElement('div');actions.className='c04-workspace-actions';
-  actions.append(add,save,run,reset,remove);
+  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='実行を中止';cancel.disabled=true;
+  cancel.onclick=()=>playback?.abort();
+  window.addEventListener('keydown',event=>{if(event.key==='Escape')playback?.abort();});
+  actions.append(add,save,run,cancel,reset,remove);
   root.append(summary,help,select,name,commandSelect,stepsList,actions,status);
   workspace.append(root);
 
@@ -182,22 +198,23 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
   };
   async function play(macro:SimpleMacro):Promise<void>{
     if(playing){status.textContent='ほかの操作セットが実行中です。';return;}
-    playing=true;run.disabled=true;
+    playing=true;run.disabled=true;cancel.disabled=false;playback=new AbortController();
     try{
-      const result=await invokeMacroSequence(macro.steps,commands.invokeAsync);
+      const result=await invokeMacroSequence([...macro.steps],commands.invokeAsync,{contextKey:commands.contextKey,signal:playback.signal});
       if(!result.ok){
         status.textContent=result.failedStep+'番目の操作で停止しました。'+result.reason;
-        return;
+        throw Error(status.textContent);
       }
       status.textContent=result.unfinished
         ?'「'+macro.name+'」の操作を送りました。履歴や描画の完了はまだ確認できていません。'
         :'「'+macro.name+'」の操作を実行しました。';
     }catch(error){
       status.textContent=error instanceof Error?error.message:'操作セットの実行に失敗しました。';
-    }finally{playing=false;refreshSteps();}
+      throw error;
+    }finally{playing=false;playback=null;cancel.disabled=true;refreshSteps();}
   }
   run.onclick=()=>{
-    if(steps.length)play({id:selectedId??'preview',name:name.value.trim()||'仮の操作セット',steps});
+    if(steps.length)void play({id:selectedId??'preview',name:name.value.trim()||'仮の操作セット',steps}).catch(()=>{});
   };
   const provider=():readonly CommandDefinition[]=>macros.map(macro=>({
     id:'macro:'+macro.id,label:macro.name,category:'マクロ',

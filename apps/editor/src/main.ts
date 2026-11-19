@@ -3580,6 +3580,42 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 
 // C04 command entries forward to the installed real controls; do not duplicate their logic.
 installFocusMode();
+// These synchronous controls return from their real handler; history exposes
+// its queue barrier instead of treating DOM click dispatch as completion.
+const macroSynchronousControls=new Set(['paint','erase','eyedropper','fitView','view100','actualPixels',
+  'resetRotation','flipH','flipV','zoomIn','zoomOut','panView','selection','selectionClear',
+  'layer','colorPage','brushPage','workspaceToggle','c04FocusToggle','layerSoloToggle','layerAlphaLock','layerClipping']);
+function macroExecutor(id:string):(()=>void|Promise<void>)|null{
+  const ready=()=>{
+    if(!documentReady||!surface||surface.busy||historyPending||geometryBusy||documentActivationPending)
+      throw Error('今の操作が終わってから操作セットを実行してください。');
+  };
+  if(id==='undo'||id==='redo')return async()=>{
+    ready();const drawing=surface!,artwork=controller.document;
+    if(performHistory(id)!=='accepted')throw Error('この履歴操作は現在実行できません。');
+    await historyNavigation!.barrier();await drawing.settleStrokes();
+    if(controller.document!==artwork||surface!==drawing)throw Error('作品が切り替わりました。');
+  };
+  if(id.startsWith('brush:'))return ()=>{
+    ready();const preset=id.slice(6);
+    if(!surface!.brushes.some(brush=>brush.id===preset))throw Error('このブラシはもうありません。');
+    selectPreset(preset);
+    if(surface!.brushId!==preset)throw Error('ブラシを切り替えられませんでした。');
+  };
+  if(id==='guideEnabled')return ()=>{
+    ready();const field=byId<HTMLInputElement>(id);field.checked=!field.checked;refreshGuideSettings();
+  };
+  if(!macroSynchronousControls.has(id))return null;
+  return ()=>{
+    ready();const control=byId<HTMLButtonElement>(id),handler=control.onclick;
+    if(!handler)throw Error('この操作はまだ準備できていません。');
+    const head=controller.document.head;
+    const result=handler.call(control,new PointerEvent('click')) as unknown;
+    if(result instanceof Promise)return result;
+    if((id==='layerAlphaLock'||id==='layerClipping')&&controller.document.head===head)
+      throw Error(byId('status').textContent||'レイヤーを変更できませんでした。');
+  };
+}
 const c04Commands=installCommandPalette(shellUi,foreground,{
   layers:()=>{
     if(!documentReady)return [];
@@ -3604,7 +3640,7 @@ const c04Commands=installCommandPalette(shellUi,foreground,{
       ?'を選びました。':'を選びました。描くにはレイヤーを表示してください。');
     if(!qaMode)await persistence.selectWorkLayer(selectedId);
   },
-});
+},{resolve:macroExecutor,contextKey:()=>documentReady&&!documentActivationPending?controller.document:null});
 const c04MacroService=installSimpleMacros(c04Commands);
 installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();

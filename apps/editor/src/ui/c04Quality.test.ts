@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
-import {quickPinTarget} from './commandPalette';
-import {invokeMacroSequence} from './simpleMacros';
+import {quickPinTarget,invokeCommandAsync,type CommandDefinition} from './commandPalette';
+import {HistoryNavigation} from '../historyNavigation';
+import {invokeMacroSequence,parseSimpleMacroFile} from './simpleMacros';
 import {holdRestoreAllowed,validateShortcutSettings} from './shortcutSettings';
 import {validateWorkspaceProfiles} from './workspaceProfiles';
 
@@ -109,5 +110,59 @@ describe('C04 imported workspace and shortcut validation',()=>{
     ]),['right.layers'])).toThrow();
     expect(()=>validateShortcutSettings(shortcuts([validBinding,validBinding]))).toThrow();
     expect(()=>validateShortcutSettings({schema:'invalid',version:1,bindings:[]})).toThrow();
+  });
+});
+
+
+describe('C04-002 completed macro operations',()=>{
+  const command=(id:string,execute:CommandDefinition['execute']):CommandDefinition=>({
+    id,label:id,category:'test',aliases:'',availability:()=>null,execute
+  });
+  it('waits for real Undo presentation before admitting Redo',async()=>{
+    const events:string[]=[];let release!:()=>void;
+    const history=new HistoryNavigation({prepare:async()=>{},state:()=>{},failed:()=>{},
+      apply:async steps=>{events.push(steps[0]!);if(steps[0]==='undo')await new Promise<void>(r=>release=r);events.push(steps[0]+' complete');}});
+    const invoke=async(id:string)=>invokeCommandAsync(command(id,async()=>{
+      history.enqueue(id as 'undo'|'redo');await history.barrier();
+    }));
+    const running=invokeMacroSequence(['undo','redo'],invoke);
+    await Promise.resolve();await Promise.resolve();
+    expect(events).toEqual(['undo']);release();
+    expect((await running).ok).toBe(true);
+    expect(events).toEqual(['undo','undo complete','redo','redo complete']);
+  });
+  it('keeps brush, saved exact color and tool operations in order',async()=>{
+    const events:string[]=[];
+    const file=parseSimpleMacroFile({schema:'illustro.macros.simple',version:1,items:[{
+      id:'legacy',name:'旧セット',steps:['brush:pen','color:#123456','erase']}]});
+    const result=await invokeMacroSequence(file[0]!.steps,async id=>invokeCommandAsync(command(id,()=>{events.push(id);})));
+    expect(result.ok).toBe(true);expect(events).toEqual(file[0]!.steps);
+  });
+  it('stops on thrown or rejected command errors and releases the execution lock',async()=>{
+    const calls:string[]=[];
+    const invoke=async(id:string)=>{calls.push(id);throw Error('failed');};
+    expect((await invokeMacroSequence(['undo','redo'],invoke)).ok).toBe(false);
+    expect(calls).toEqual(['undo']);
+    await invokeMacroSequence(['redo'],invoke);expect(calls).toEqual(['undo','redo']);
+  });
+  it('refuses a second macro while the first command is pending',async()=>{
+    let release!:()=>void;
+    const invoke=async()=>{await new Promise<void>(r=>release=r);return succeed(true);};
+    const running=invokeMacroSequence(['undo'],invoke);
+    expect((await invokeMacroSequence(['redo'],invoke)).reason).toMatch(/実行中/);
+    release();expect((await running).ok).toBe(true);
+  });
+  it.each(['cancel','work'] as const)('stops after a pending operation on %s',async mode=>{
+    const abort=new AbortController();let work:unknown={};let release!:()=>void;
+    const calls:string[]=[];
+    const invoke=async(id:string)=>{calls.push(id);await new Promise<void>(r=>release=r);return succeed(true);};
+    const running=invokeMacroSequence(['undo','redo'],invoke,{contextKey:()=>work,signal:abort.signal});
+    if(mode==='cancel')abort.abort();else work={};
+    release();expect((await running).ok).toBe(false);expect(calls).toEqual(['undo']);
+  });
+  it('does not report a command as complete if its work changed',async()=>{
+    let work:unknown={};
+    const result=await invokeCommandAsync(command('undo',()=>{work={};}),()=>work);
+    expect(result.ok).toBe(false);expect(result.settled).toBe(false);
   });
 });
