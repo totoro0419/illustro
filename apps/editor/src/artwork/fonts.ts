@@ -2,10 +2,12 @@ import type {ArtPoint,EditablePath,EditableText} from '@illustro/core';
 import {layoutEditableText} from './textLayout';
 import {layoutStyledText,textFontAssetIds} from './textStyles';
 import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
-import {verticalGlyphAdjustment} from './verticalGlyph';
+import {verticalGlyphAdjustment,verticalTextUnits,isCombinedVerticalDigits} from './verticalGlyph';
 import {addAsset,getAsset,listAssets,type AssetInfo,type AssetEntry} from '../assets/library';
 import type {Font,PathCommand} from 'opentype.js';
 import type {ArtworkWorkerFont} from './workerFonts';
+import type {OutlineFont} from 'fontkit';
+import {nativeVerticalGlyph} from './verticalFont';
 
 const familyName=(id:string)=>'IllustroFont-'+id;
 const liveFonts=new Map<string,Promise<FontFace>>();
@@ -49,6 +51,21 @@ export async function artworkWorkerFont(id:string):Promise<ArtworkWorkerFont>{
 }
 
 const outlineFonts=new Map<string,{stamp:string;value:Promise<Font>}>();
+const verticalFonts=new Map<string,{stamp:string;value:Promise<OutlineFont|null>}>();
+async function verticalFont(asset:AssetEntry):Promise<OutlineFont|null>{
+  const stamp=[asset.version,asset.updatedAt,asset.data.size].join(':');
+  const old=verticalFonts.get(asset.id);
+  if(old?.stamp===stamp)return old.value;
+  const value=(async()=>{
+    try{
+      const {create}=await import('fontkit'),font=create(new Uint8Array(await asset.data.arrayBuffer()));
+      return 'layout' in font&&font.vmtx&&font.availableFeatures?.some(tag=>tag==='vert'||tag==='vrt2')?font:null;
+    }catch{return null;}
+  })();
+  verticalFonts.set(asset.id,{stamp,value});
+  while(verticalFonts.size>4)verticalFonts.delete(verticalFonts.keys().next().value!);
+  return value;
+}
 async function outlineFont(asset:AssetEntry):Promise<Font>{
   if(!asset.data.size||asset.data.size>24*1024*1024)throw Error('フォントのサイズが正しくありません。');
   const stamp=[asset.version,asset.updatedAt,asset.data.size].join(':');
@@ -99,22 +116,27 @@ function appendCommands(points:ArtPoint[],commands:readonly PathCommand[]){
   }
 }
 
-function vectorize(text:EditableText,font:Font):ArtPoint[]{
+function vectorize(text:EditableText,font:Font,native?:OutlineFont|null):ArtPoint[]{
   const points:ArtPoint[]=[],ascent=font.ascender*text.size/font.unitsPerEm;
   const lines=layoutEditableText(text,characters=>
     font.getAdvanceWidth(characters,text.size,{kerning:true})+
       (Array.from(characters).length-1)*text.spacing).lines;
   for(let i=0;i<lines.length;i++){
-    const line=lines[i]!,characters=Array.from(line);
+    const line=lines[i]!,characters=text.vertical?verticalTextUnits(line,text.combineDigits):Array.from(line);
     if(text.vertical){
       for(const [j,character] of characters.entries()){
-        const placement=verticalGlyphAdjustment(character,text.size);
-        const cell=textVerticalCell(text,i,j);
+        const cell=textVerticalCell(text,i,j),vertical=native&&nativeVerticalGlyph(native,character,text.size);
+        if(vertical){
+          appendCommands(points,translateCommands(vertical,cell.x,cell.y));continue;
+        }
+        const combined=isCombinedVerticalDigits(character),placement=combined?{dx:0,dy:0,rotate:false}:verticalGlyphAdjustment(character,text.size);
         const x=cell.x+placement.dx,y=cell.y+placement.dy;
         const width=font.getAdvanceWidth(character,text.size);
         const commands=font.getPath(character,0,ascent,text.size).commands;
+        const digitCell=combined?combinedDigitBounds(commands,text.size):null;
         const rotated=placement.rotate;
-        const place=(u:number,v:number):[number,number]=>rotated?[x-(v-text.size/2),y+text.size/2+(u-width/2)]:[x+u-width/2,y+v];
+        const scaleX=combined?Math.min(1,text.size/Math.max(1,width)):1;
+        const place=(u:number,v:number):[number,number]=>rotated?[x-(v-text.size/2),y+text.size/2+(u-width/2)]:[x+(u-width/2)*scaleX,y+(digitCell?text.size/2+(v-digitCell.center)*digitCell.scale:v)];
         appendCommands(points,commands.map(command=>{
           const copy={...command};
           if(command.x!==undefined&&command.y!==undefined)[copy.x,copy.y]=place(command.x,command.y);
@@ -135,7 +157,18 @@ function vectorize(text:EditableText,font:Font):ArtPoint[]{
   }
   return points;
 }
-export function outlineStyledText(text:EditableText,fonts:ReadonlyMap<string,Font>):EditablePath{
+function combinedDigitBounds(commands:readonly PathCommand[],size:number){
+  const ys=commands.flatMap(c=>[c.y,c.y1,c.y2]).filter((n):n is number=>n!==undefined&&Number.isFinite(n));
+  const min=Math.min(...ys),max=Math.max(...ys);
+  return {center:(min+max)/2,scale:Math.min(1,size/Math.max(1,max-min))};
+}
+function translateCommands(commands:readonly PathCommand[],x:number,y:number):PathCommand[]{
+  return commands.map(command=>({...command,
+    ...(command.x===undefined?{}:{x:command.x+x,y:command.y!+y}),
+    ...(command.x1===undefined?{}:{x1:command.x1+x,y1:command.y1!+y}),
+    ...(command.x2===undefined?{}:{x2:command.x2+x,y2:command.y2!+y})}));
+}
+export function outlineStyledText(text:EditableText,fonts:ReadonlyMap<string,Font>,nativeFonts:ReadonlyMap<string,OutlineFont>=new Map(),limit=4096):EditablePath{
   if(text.styleRanges?.some(range=>range.bold||range.italic))
     throw Error('端末が合成した太字・斜体の輪郭化には未対応です。対応する太字・斜体のフォントを読み込むか画像化してください。');
   const getFont=(family:string)=>{
@@ -153,12 +186,20 @@ export function outlineStyledText(text:EditableText,fonts:ReadonlyMap<string,Fon
       if(!font.charToGlyphIndex(glyph.character))throw Error('このフォントには一部の文字がありません。文字を含むフォントを選んでください。');
       const ascent=font.ascender*glyph.size/font.unitsPerEm,start=points.length;
       if(text.vertical){
-        const placement=verticalGlyphAdjustment(glyph.character,glyph.size);
+        const native=nativeFonts.get(glyph.family),vertical=native&&nativeVerticalGlyph(native,glyph.character,glyph.size);
+        if(vertical){
+          appendCommands(points,translateCommands(vertical,text.origin.x-line.offset,text.origin.y+glyph.position));
+          fillRuns.push({start,end:points.length,color:glyph.color});continue;
+        }
+        const combined=isCombinedVerticalDigits(glyph.character),placement=combined?{dx:0,dy:0,rotate:false}:verticalGlyphAdjustment(glyph.character,glyph.size);
         const x=text.origin.x-line.offset+placement.dx,y=text.origin.y+glyph.position+placement.dy;
         const width=font.getAdvanceWidth(glyph.character,glyph.size);
+        const scaleX=combined?Math.min(1,glyph.size/Math.max(1,width)):1;
+        const commands=font.getPath(glyph.character,0,ascent,glyph.size).commands;
+        const digitCell=combined?combinedDigitBounds(commands,glyph.size):null;
         const place=(u:number,v:number):[number,number]=>placement.rotate?
-          [x-(v-glyph.size/2),y+glyph.size/2+(u-width/2)]:[x+u-width/2,y+v];
-        appendCommands(points,font.getPath(glyph.character,0,ascent,glyph.size).commands.map(command=>{
+          [x-(v-glyph.size/2),y+glyph.size/2+(u-width/2)]:[x+(u-width/2)*scaleX,y+(digitCell?glyph.size/2+(v-digitCell.center)*digitCell.scale:v)];
+        appendCommands(points,commands.map(command=>{
           const copy={...command};
           if(command.x!==undefined&&command.y!==undefined)[copy.x,copy.y]=place(command.x,command.y);
           if(command.x1!==undefined&&command.y1!==undefined)[copy.x1,copy.y1]=place(command.x1,command.y1);
@@ -170,29 +211,44 @@ export function outlineStyledText(text:EditableText,fonts:ReadonlyMap<string,Fon
       fillRuns.push({start,end:points.length,color:glyph.color});
     }
   }
-  if(points.length<2||points.length>4096)throw Error('文字を短く分けてから、輪郭へ変換してください。');
+  if(points.length<2||points.length>limit)throw Error('文字を短く分けてから、輪郭へ変換してください。');
   const multipleColors=new Set(fillRuns.map(run=>run.color.toLowerCase())).size>1;
   const color=fillRuns[0]?.color??text.color;
   return {kind:'path',shape:'bezier',points,closed:false,stroke:color,fill:color,width:0,
     ...(multipleColors?{fillRuns}:{})};
 }
-export async function outlineText(text:EditableText):Promise<EditablePath>{
+export async function outlineText(text:EditableText,limit=4096):Promise<EditablePath>{
   if(!text.fontAsset)throw Error('パスへ変換するには、読み込んだフォントを文字レイヤーに適用してください。');
   const font=await getAsset(text.fontAsset);
   if(!font||font.deleted||font.kind!=='font')throw Error('輪郭を取得するフォントが見つかりません。');
   const parsed=await outlineFont(font);
+  const native=text.vertical?await verticalFont(font):null;
   if(text.styleRanges?.length){
     const fonts=new Map<string,Font>([[text.family,parsed],[fontFamily(text.fontAsset),parsed]]);
+    const natives=new Map<string,OutlineFont>(native?[[text.family,native],[fontFamily(text.fontAsset),native]]:[]);
     for(const id of textFontAssetIds(text))if(id!==text.fontAsset){
       const asset=await getAsset(id);
       if(!asset||asset.deleted||asset.kind!=='font')throw Error('部分書式のフォントが見つかりません。フォントを選び直してください。');
       fonts.set(fontFamily(id),await outlineFont(asset));
+      const vertical=text.vertical?await verticalFont(asset):null;
+      if(vertical)natives.set(fontFamily(id),vertical);
     }
-    return outlineStyledText(text,fonts);
+    return outlineStyledText(text,fonts,natives,limit);
   }
   if(Array.from(text.text).some(character=>!/^\s$/u.test(character)&&!parsed.charToGlyphIndex(character)))
     throw Error('このフォントには一部の文字がありません。文字を含むフォントを選んでください。');
-  const points=vectorize(text,parsed);
-  if(points.length<2||points.length>4096)throw Error('文字を短く分けてから、輪郭へ変換してください。');
+  const points=vectorize(text,parsed,native);
+  if(points.length<2||points.length>limit)throw Error('文字を短く分けてから、輪郭へ変換してください。');
   return {kind:'path',shape:'bezier',points,closed:false,stroke:text.color,fill:text.color,width:0};
+}
+/** Transient outline for native vertical painting. The saved layer remains
+ * editable text. Display and outline export use the same glyph placements. */
+export async function verticalTextForRendering(text:EditableText):Promise<EditablePath|null>{
+  if(!text.vertical||!text.fontAsset||text.styleRanges?.some(range=>range.bold||range.italic||range.family||range.fontAsset===null))return null;
+  try{
+    const assets=await Promise.all(textFontAssetIds(text).map(getAsset));
+    const natives=await Promise.all(assets.map(asset=>asset&&asset.kind==='font'&&!asset.deleted?verticalFont(asset):null));
+    if(!natives.some(Boolean))return null;
+    return await outlineText(text,262144);
+  }catch{return null;}
 }

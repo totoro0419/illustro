@@ -60,3 +60,11 @@ describe('C10-006 live non-destructive boolean dependencies',()=>{
   expect(()=>bad.replaceEditableArtworkBatch([{id:a,content:changed,pixels},{id:r,content:result,pixels:new Uint8Array(4)}])).toThrow('更新');bad.cancel();expect(restored.head).toBe(head);
  });
 });
+
+it('C10-006 recomputes once from both final sources in a simultaneous alignment',async()=>{
+ const a=rect(0,20),b=rect(10,30),r=await link(a,b,'union',['a','b']);
+ const movedA=rect(2,22),movedB=rect(15,35),changes=new Map([[id('a'),movedA],[id('b'),movedB]]);
+ const updates=await linkedBooleanUpdates([{id:id('a'),content:a},{id:id('b'),content:b},{id:id('r'),content:r}],id('a'),movedA,changes);
+ expect(updates).toHaveLength(1);
+ expect(updates[0]!.content.points).toEqual((await combineShapes(movedA,movedB,'union')).points);
+});

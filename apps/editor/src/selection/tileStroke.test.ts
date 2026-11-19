@@ -125,3 +125,42 @@ describe('C06-002/C06-015 selection Worker payload safety',()=>{
   }
  });
 });
+
+describe('C06-002 transfer only affected tiles, retain the complete snapshot',()=>{
+ for(const erase of [false,true])it(`matches all RGBA bytes after a small 4K ${erase?'eraser':'brush'} stroke`,async()=>{
+  const {partitionSelectedStrokeTiles}=await import('./tileStroke');
+  const width=4000,height=4000,alpha=new Uint8Array(width*height);
+  for(let y=160;y<180;y++)for(let x=160;x<180;x++)alpha[y*width+x]=128;
+  const tiles=Array.from({length:256},(_,index)=>{
+   const pixels=new Uint8Array(TILE*TILE*4);pixels.set([10,20,30,255],(40*TILE+40)*4);
+   return {key:`${index%16},${Math.floor(index/16)}`,pixels};
+  });
+  const original=stroke([[167,167,0],[172,169,10]]);
+  const record=erase?{...original,preset:{...original.preset,blend:'erase' as const}}:original;
+  const expected=renderSelectedStrokeTiles(width,height,alpha,tiles.map(t=>({...t,pixels:t.pixels.slice()})),[record])!;
+  const {affected,untouched}=partitionSelectedStrokeTiles(width,height,tiles,[record]);
+  expect(affected.map(t=>t.key)).toEqual(['1,1']);expect(untouched).toHaveLength(255);
+  const result=renderSelectedStrokeTiles(width,height,alpha,affected,[record])!;
+  const merged=new Map([...untouched,...result].map(tile=>[tile.key,tile.pixels]));
+  expect(expected.every(tile=>tile.pixels.every((value,i)=>value===merged.get(tile.key)![i]))).toBe(true);
+  expect(untouched.every(tile=>tile.pixels.byteLength===TILE*TILE*4)).toBe(true);
+ });
+ it('uses the original full transfer for an unknown footprint',async()=>{
+  const {partitionSelectedStrokeTiles}=await import('./tileStroke');
+  const tile={key:'0,0',pixels:new Uint8Array(TILE*TILE*4)};
+  const record=stroke([[10,10,0],[20,20,10]]),commands=record.commands.map(c=>[...c]);commands[0]![0]=NaN;
+  const result=partitionSelectedStrokeTiles(4000,4000,[tile],[{...record,commands}]);
+  expect(result.affected).toEqual([tile]);expect(result.untouched).toEqual([]);
+ });
+});
+
+it('C06-002 keeps untouched tiles alive when readback tiles share an ArrayBuffer',async()=>{
+ const {partitionSelectedStrokeTiles}=await import('./tileStroke');
+ const buffer=new ArrayBuffer(TILE*TILE*4*2),first=new Uint8Array(buffer,0,TILE*TILE*4),second=new Uint8Array(buffer,TILE*TILE*4,TILE*TILE*4);
+ second[0]=75;
+ const split=partitionSelectedStrokeTiles(4000,4000,[{key:'1,1',pixels:first},{key:'2,2',pixels:second}],[stroke([[167,167,0],[172,169,10]])]);
+ expect(split.affected[0]!.pixels.buffer).not.toBe(buffer);
+ structuredClone(split.affected,{transfer:uniqueTransferableTileBuffers(split.affected)});
+ expect(split.untouched[0]!.pixels.byteLength).toBe(TILE*TILE*4);
+ expect(split.untouched[0]!.pixels[0]).toBe(75);
+});

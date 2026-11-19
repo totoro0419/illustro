@@ -29,6 +29,8 @@ export type EditableText=Readonly<{
   align:'left'|'center'|'right';spacing:number;lineHeight:number;fontAsset?:string;embedFont?:boolean;
   /** Optional editable text frame; absent fields retain legacy unbounded text. */
   boxWidth?:number;boxHeight?:number;
+  /** Optional two-digit horizontal cells within Japanese vertical text. */
+  combineDigits?:true;
   /** Optional non-overlapping overrides; old documents have no ranges. */
   styleRanges?:readonly TextStyleRange[];
 }>;
@@ -117,12 +119,13 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
       ...(typeof opacity==='number'?{opacity}:{}),...(typeof originalStrokeLayer==='string'?{originalStrokeLayer}:{}),
       ...(construction?{booleanOperands:construction}:{}),...(paints?{fillRuns:paints}:{}),...(empty?{empty:true as const}:{})});
   }else if(value.kind==='text'){
-    const {text,origin,vertical,size,family,align,spacing,lineHeight,fontAsset,embedFont,boxWidth,boxHeight,styleRanges}=value;
+    const {text,origin,vertical,size,family,align,spacing,lineHeight,fontAsset,embedFont,boxWidth,boxHeight,styleRanges,combineDigits}=value;
     if(typeof text!=='string'||!text.trim()||text.length>8192||typeof vertical!=='boolean'||!numeric(size,1,4096)||
       typeof family!=='string'||!family.trim()||family.length>128||!color(value.color)||
       (align!=='left'&&align!=='center'&&align!=='right')||!numeric(spacing,-4096,4096)||!numeric(lineHeight,.2,8)||
       (fontAsset!==undefined&&(typeof fontAsset!=='string'||fontAsset.length>128))||
       (embedFont!==undefined&&typeof embedFont!=='boolean')||
+      (combineDigits!==undefined&&combineDigits!==true)||
       (boxWidth!==undefined&&!numeric(boxWidth,1,32768))||
       (boxHeight!==undefined&&!numeric(boxHeight,1,32768)))throw invalid();
     const styles:TextStyleRange[]=[];
@@ -155,6 +158,7 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
     }
     checked=Object.freeze({kind:'text',text,origin:point(origin),vertical,size,family,align,spacing,lineHeight,
       color:value.color,...(typeof fontAsset==='string'?{fontAsset}:{}),...(embedFont?{embedFont:true}:{}),
+      ...(combineDigits?{combineDigits:true as const}:{}),
       ...(typeof boxWidth==='number'?{boxWidth}:{}),...(typeof boxHeight==='number'?{boxHeight}:{}),
       ...(styles.length?{styleRanges:Object.freeze(styles)}:{})});
   }else throw invalid();

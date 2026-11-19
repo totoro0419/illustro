@@ -1046,7 +1046,7 @@ export class BrushSurface{
       }
       const host=renderer as unknown as Parameters<typeof captureSelectedLayerTiles>[0];
       const sparse=typeof host.inspect==='function'&&typeof host.backend?.readTiles==='function';
-      const valid=()=>!this.disposed&&this.controller.document===artwork&&
+      const valid=()=>!this.disposed&&this.renderer===renderer&&this.controller.document===artwork&&
         this.controller.selectedLayer.id===target.layerId&&artwork.head===target.baseRevision;
       if(!valid())return;
       const layer=artwork.root.getLayer(target.layerId),plan=artwork.rasterReplayPlan();
@@ -1058,7 +1058,7 @@ export class BrushSurface{
         const dirty=new Set(plan.operations.flatMap(operation=>
           operation.kind==='brush.stroke'&&operation.targetEntityIds[0]===target.layerId
             ?this.runtimeKeys(operation):[]));
-        reusable=artwork.readBaseRasterTiles(target.layerId).filter(tile=>!dirty.has(tile.key));
+        reusable=artwork.readBaseRasterTiles(target.layerId,artwork.head,true).filter(tile=>!dirty.has(tile.key));
       }
       // Keep the compatible full-frame path for a non-Worker renderer. On the
       // normal drawing worker path, capture existing GPU tiles in <=1 MiB

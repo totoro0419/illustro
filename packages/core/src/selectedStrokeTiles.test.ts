@@ -51,3 +51,20 @@ describe('C06-002 sparse selection snapshot (128px GPU to 256px Core)',()=>{
   doc.undo();expect(doc.readPixel(id,20,20)).toEqual([60,70,80,255]);
  });
 });
+
+it('C06-002 safely omits pending semantic blocks when reusing a saved snapshot',()=>{
+ const doc=new CoreDocument({width:4000,height:4000,ids:createDeterministicIdFactory()}),id=doc.defaultRasterLayerId;
+ let tx=doc.begin('baseline');tx.replaceLayerRasterTiles(id,[
+  {key:'0,0',pixels:block(0,0,[1,2,3,255])},
+  {key:'1,0',pixels:block(0,0,[4,5,6,255])},
+  {key:'3,3',pixels:block(0,0,[7,8,9,128])}
+ ]);tx.commit();
+ tx=doc.begin('ordinary brush after snapshot');
+ tx.recordRasterOperation(id,{kind:'brush.stroke',schemaVersion:1,parameters:{}},[
+  {tileX:0,tileY:0,bounds:{x0:0,y0:0,x1:20,y1:20},workUnits:1,commandIndices:[0]}
+ ]);tx.commit();
+ expect(()=>doc.readBaseRasterTiles(id)).toThrow('materialization');
+ const reusable=doc.readBaseRasterTiles(id,doc.head,true);
+ expect(reusable.map(tile=>tile.key)).toEqual(['3,3']);
+ expect(Array.from(reusable[0]!.pixels.slice(0,4))).toEqual([7,8,9,128]);
+});

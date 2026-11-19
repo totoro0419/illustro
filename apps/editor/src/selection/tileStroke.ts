@@ -1,6 +1,26 @@
 import {cpuReference,TILE,type StrokeRecord} from '@illustro/brush-rt';
+import {selectedStrokeProbeBounds} from './maskStrokeBounds';
 
 export type RasterWorkerTile={key:string;pixels:Uint8Array};
+
+/** Only transfer existing pixels that the brush can read or change. The
+ * complete untouched snapshot stays owned by the UI and is joined afterwards.
+ * Unknown footprints use the original full-snapshot path. */
+export function partitionSelectedStrokeTiles(width:number,height:number,tiles:readonly RasterWorkerTile[],records:readonly StrokeRecord[]){
+ validateRasterWorkerTiles(width,height,tiles);
+ const bounds=selectedStrokeProbeBounds(records,width,height);
+ if(!bounds)return {affected:[...tiles],untouched:[] as RasterWorkerTile[]};
+ const affected:RasterWorkerTile[]=[],untouched:RasterWorkerTile[]=[];
+ for(const tile of tiles){
+  const [x=0,y=0]=tile.key.split(',').map(Number);
+  const overlaps=x*TILE<bounds.x+bounds.width&&y*TILE<bounds.y+bounds.height&&
+    (x+1)*TILE>bounds.x&&(y+1)*TILE>bounds.y;
+  (overlaps?affected:untouched).push(tile);
+ }
+ const retainedBuffers=new Set(untouched.map(tile=>tile.pixels.buffer));
+ return {affected:affected.map(tile=>retainedBuffers.has(tile.pixels.buffer)
+   ?{key:tile.key,pixels:tile.pixels.slice()}:tile),untouched};
+}
 
 /** Validate Worker tile replies before they can replace a saved layer snapshot. */
 export function validateRasterWorkerTiles(

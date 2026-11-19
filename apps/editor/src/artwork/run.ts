@@ -1,6 +1,6 @@
 import type {ArtworkJob,ArtworkWorkerJob} from './worker';
 import {renderArtwork} from './render';
-import {ensureFont,artworkWorkerFont} from './fonts';
+import {ensureFont,artworkWorkerFont,verticalTextForRendering} from './fonts';
 import type {ArtworkWorkerFont} from './workerFonts';
 import {textFontAssetIds} from './textStyles';
 import {canRenderTextInArtworkWorker} from './textWorkerSafety';
@@ -86,6 +86,10 @@ export async function runArtwork(job:ArtworkJob,options:Readonly<{signal?:AbortS
   const signal=options.signal;
   if(signal?.aborted)throw abortError();
   if(job.content.kind==='text')await Promise.all(textFontAssetIds(job.content).map(ensureFont));
+  if(job.content.kind==='text'&&job.content.vertical){
+    const vertical=await verticalTextForRendering(job.content);
+    if(vertical)job={...job,content:vertical};
+  }
   if(signal?.aborted)throw abortError();
   let fonts:ArtworkWorkerFont[]=[];
   if(job.content.kind==='text'&&typeof OffscreenCanvas!=='undefined'){

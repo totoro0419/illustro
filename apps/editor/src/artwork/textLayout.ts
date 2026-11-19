@@ -1,4 +1,5 @@
 import type {EditableText} from '@illustro/core';
+import {verticalTextUnits} from './verticalGlyph';
 
 /** A shared, bounded text layout for Canvas painting and font outlines.
  * The saved text remains unchanged; only the displayed rows/columns are
@@ -13,7 +14,7 @@ export function layoutEditableText(
    const columnSize=text.boxHeight===undefined?Infinity:
      Math.max(1,Math.floor((text.boxHeight-text.size)/Math.max(1,text.size+text.spacing))+1);
    for(const paragraph of paragraphs){
-     const chars=Array.from(paragraph);
+     const chars=verticalTextUnits(paragraph,text.combineDigits);
      if(!chars.length){lines.push('');continue;}
      for(let i=0;i<chars.length;i+=columnSize)lines.push(chars.slice(i,i+columnSize).join(''));
    }

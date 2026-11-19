@@ -1,7 +1,7 @@
 import type {StrokeRecord} from '@illustro/brush-rt';
 import type {DeformationBrushPass} from '@illustro/core';
 import type {MaskData} from './mask';
-import {validateRasterWorkerTiles,uniqueTransferableTileBuffers,type RasterWorkerTile} from './tileStroke';
+import {validateRasterWorkerTiles,uniqueTransferableTileBuffers,partitionSelectedStrokeTiles,type RasterWorkerTile} from './tileStroke';
 
 type Job={pixels?:Uint8Array;tiles?:RasterWorkerTile[];[key:string]:unknown};
 type Result=Uint8Array|RasterWorkerTile[]|null;
@@ -110,9 +110,13 @@ export async function applySelectedStroke(mask:MaskData,pixels:Uint8Array,record
 }
 /** Worker owns incoming tiles after transfer; returning null means no pixel changed. */
 export async function applySelectedStrokeTiles(mask:MaskData,tiles:RasterWorkerTile[],records:readonly StrokeRecord[]){
-  const result=await runBrushWorker({width:mask.width,height:mask.height,alpha:mask.alpha,tiles,records});
+  const {affected,untouched}=partitionSelectedStrokeTiles(mask.width,mask.height,tiles,records);
+  const result=await runBrushWorker({width:mask.width,height:mask.height,alpha:mask.alpha,tiles:affected,records});
   if(result!==null&&!Array.isArray(result))throw Error('選択範囲の描画結果に問題があります。');
-  return result;
+  if(result===null)return null;
+  const complete=[...untouched,...result];
+  validateRasterWorkerTiles(mask.width,mask.height,complete);
+  return complete;
 }
 export async function replayBrushPasses(
   passes:readonly DeformationBrushPass[],width:number,height:number,pixels:Uint8Array

@@ -3992,6 +3992,20 @@ installLayoutPanel(byId('documentBoxBody'),async()=>{
         ?transformLayerMask(layer.vectorMask,1,1,move.dx,move.dy):layer.vectorMask??null;
       return {id,pixels:rgba,editable,mask};
     }));
+    const movedPaths=new Map(updates.flatMap(update=>update.editable?.kind==='path'
+      ?[[update.id,update.editable] as const]:[]));
+    const first=movedPaths.entries().next().value;
+    if(first){
+      const dependents=await linkedBooleanUpdates(root.rootLayerIds.flatMap(id=>{
+        const content=root.getLayer(id).editable;
+        return content?.kind==='path'?[{id,content}]:[];
+      }),first[0],first[1],movedPaths);
+      for(const dependent of dependents){
+        const mask=root.getLayer(dependent.id).vectorMask??null;
+        updates.push({id:dependent.id,editable:dependent.content,mask,pixels:await runArtwork({
+          content:dependent.content,width,height,outputWidth:width,outputHeight:height,mask})});
+      }
+    }
     await withClipboardAccess(async()=>{
       if(!valid())throw Error('計算中に作品が変わりました。');
       const tx=artwork.begin('レイヤーの整列・均等配置');

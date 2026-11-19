@@ -6,11 +6,13 @@ type Entry=Readonly<{id:LayerId;content:EditablePath}>;
  * retain their last embedded editable shape, so the saved result stays valid.
  * No rasterization or destructive source edits occur here. */
 export async function linkedBooleanUpdates(
- entries:readonly Entry[],changedId:LayerId,next:EditablePath
+ entries:readonly Entry[],changedId:LayerId,next:EditablePath,
+ additionalChanges:ReadonlyMap<LayerId,EditablePath>=new Map()
 ):Promise<Entry[]>{
  const paths=new Map(entries.map(entry=>[entry.id,entry.content]));
  paths.set(changedId,validateEditableArtwork(next) as EditablePath);
- const state=new Map<LayerId,'visiting'|'done'>(),affected=new Set<LayerId>([changedId]);
+ for(const [id,content] of additionalChanges)paths.set(id,validateEditableArtwork(content) as EditablePath);
+ const state=new Map<LayerId,'visiting'|'done'>(),affected=new Set<LayerId>([changedId,...additionalChanges.keys()]);
  const updates:Entry[]=[];
  const visit=async(id:LayerId):Promise<void>=>{
   if(state.get(id)==='visiting')throw Error('図形の参照が循環しています。演算の元を選び直してください。');
@@ -19,7 +21,7 @@ export async function linkedBooleanUpdates(
   const path=paths.get(id)!,operands=path.booleanOperands,ids=operands?.sourceLayerIds;
   if(ids){
    for(const source of ids)if(paths.has(source as LayerId))await visit(source as LayerId);
-   if(id!==changedId&&ids.some(source=>affected.has(source as LayerId))){
+   if(id!==changedId&&!additionalChanges.has(id)&&ids.some(source=>affected.has(source as LayerId))){
     const a=paths.get(ids[0] as LayerId)??operands.a;
     const b=paths.get(ids[1] as LayerId)??operands.b;
     // An empty intersection/difference is a valid intermediate state. Keep

@@ -27,6 +27,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   frameNote.textContent='枠に合わせて自動改行します。枠に入りきらない文字も文章データには残ります。';
   controls.append(frameNote);
   const direction=selectField(controls,'文字の向き',[['horizontal','横書き'],['vertical','縦書き']] as const);
+  const combineDigits=document.createElement('input');combineDigits.type='checkbox';
+  labelledField(controls,'縦書きの2桁数字を横に並べる',combineDigits);
   const color=document.createElement('input');color.type='color';labelledField(controls,'文字の色',color);
   const partial=document.createElement('details');
   const partialSummary=document.createElement('summary');
@@ -75,6 +77,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       kind:'text',text:text.value.replace(/\r\n?/g,'\n'),origin:{x:x.valueAsNumber,y:y.valueAsNumber},
       size:size.valueAsNumber,align:align.value,spacing:spacing.valueAsNumber,lineHeight:lineHeight.valueAsNumber,
       vertical:direction.value==='vertical',color:color.value,family:fontId?fontFamily(fontId):systemFont.value,
+      ...(combineDigits.checked?{combineDigits:true}:{}),
       ...(fontId?{fontAsset:fontId}:{}),...(embed.checked?{embedFont:true}:{}),
       ...(boxWidth.valueAsNumber>0?{boxWidth:boxWidth.valueAsNumber}:{}),
       ...(boxHeight.valueAsNumber>0?{boxHeight:boxHeight.valueAsNumber}:{}),
@@ -154,6 +157,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     size.value=String(content.size);boxWidth.value=String(content.boxWidth??0);boxHeight.value=String(content.boxHeight??0);
     align.value=content.align;spacing.value=String(content.spacing);
     lineHeight.value=String(content.lineHeight);direction.value=content.vertical?'vertical':'horizontal';
+    combineDigits.checked=content.combineDigits===true;
     color.value=content.color;fontId=content.fontAsset??'';embed.checked=content.embedFont===true;
     if(!fontId)systemFont.value=content.family;
   }

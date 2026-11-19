@@ -1,4 +1,5 @@
 import type {EditableText,TextStyleRange} from '@illustro/core';
+import {verticalTextUnits} from './verticalGlyph';
 
 const safeBoundary=(text:string,offset:number)=>offset>0&&offset<text.length&&
   text.charCodeAt(offset-1)>=0xd800&&text.charCodeAt(offset-1)<=0xdbff&&
@@ -117,7 +118,9 @@ export function layoutStyledText(
    glyphs=[];length=0;crossSize=text.size;
    return true;
  };
- for(const character of Array.from(text.text)){
+ const units=text.vertical?verticalTextUnits(text.text,text.combineDigits,
+   text.styleRanges?.flatMap(range=>[range.start,range.end])):Array.from(text.text);
+ for(const character of units){
    if(character==='\n'){
      if(!flush())break;
      index+=character.length;continue;

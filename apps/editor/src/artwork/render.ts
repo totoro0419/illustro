@@ -4,7 +4,7 @@ import {layoutStyledText,textCanvasFont} from './textStyles';
 import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
 import {gradientBoundaryField} from './gradientDistance';
 import {readCanvasAlphaBands} from './alphaBands';
-import {verticalGlyphAdjustment} from './verticalGlyph';
+import {verticalGlyphAdjustment,verticalTextUnits,isCombinedVerticalDigits} from './verticalGlyph';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {sampledPath} from './pathOperations';
 
@@ -152,11 +152,16 @@ function drawText(ctx:Context,text:EditableText){
         ctx.fillStyle=glyph.color;
         if(text.vertical){
           const cell={x:text.origin.x-line.offset,y:text.origin.y+glyph.position};
-          const placement=verticalGlyphAdjustment(glyph.character,glyph.size);
+          const combined=isCombinedVerticalDigits(glyph.character),placement=combined?{dx:0,dy:0,rotate:false}:verticalGlyphAdjustment(glyph.character,glyph.size);
           ctx.textAlign='center';
           ctx.translate(cell.x+placement.dx,cell.y+placement.dy+glyph.size/2);
           if(placement.rotate)ctx.rotate(Math.PI/2);
-          ctx.fillText(glyph.character,0,-glyph.size/2);
+          if(combined){
+            ctx.textBaseline='alphabetic';
+            const metrics=ctx.measureText(glyph.character);
+            ctx.scale(Math.min(1,glyph.size/Math.max(1,metrics.width)),1);
+            ctx.fillText(glyph.character,0,((metrics.actualBoundingBoxAscent??glyph.size*.8)-(metrics.actualBoundingBoxDescent??0))/2);
+          }else ctx.fillText(glyph.character,0,-glyph.size/2);
         }else ctx.fillText(glyph.character,left+glyph.position,text.origin.y+line.offset);
         ctx.restore();
       }
@@ -171,14 +176,19 @@ function drawText(ctx:Context,text:EditableText){
     ctx.textAlign='center';
     for(let line=0;line<lines.length;line++){
       let row=0;
-      for(const character of Array.from(lines[line]!)){
-        const placement=verticalGlyphAdjustment(character,text.size);
+      for(const character of verticalTextUnits(lines[line]!,text.combineDigits)){
+        const combined=isCombinedVerticalDigits(character),placement=combined?{dx:0,dy:0,rotate:false}:verticalGlyphAdjustment(character,text.size);
         const cell=textVerticalCell(text,line,row);
         const x=cell.x+placement.dx,y=cell.y+placement.dy;
         ctx.save();
         ctx.translate(x,y+text.size/2);
         if(placement.rotate)ctx.rotate(Math.PI/2);
-        ctx.fillText(character,0,-text.size/2);
+        if(combined){
+          ctx.textBaseline='alphabetic';
+          const metrics=ctx.measureText(character);
+          ctx.scale(Math.min(1,text.size/Math.max(1,metrics.width)),1);
+          ctx.fillText(character,0,((metrics.actualBoundingBoxAscent??text.size*.8)-(metrics.actualBoundingBoxDescent??0))/2);
+        }else ctx.fillText(character,0,-text.size/2);
         ctx.restore();
         row++;
       }
@@ -213,6 +223,7 @@ export function applyRenderedPathMask(
 }
 
 export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTMLCanvasElement|OffscreenCanvas){
+  if(content.kind==='path'&&content.empty)return new Uint8ClampedArray(size.outputWidth*size.outputHeight*4);
   if(content.kind==='gradient')return gradientPixels(content,size,canvas);
   canvas.width=size.outputWidth;canvas.height=size.outputHeight;
   const ctx=canvas.getContext('2d') as Context|null;

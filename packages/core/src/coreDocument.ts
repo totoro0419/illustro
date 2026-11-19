@@ -147,7 +147,7 @@ export class CoreDocument{
   /** Lossless sparse renderer tiles for a materialized baseline.
    * Splits 256px Core blocks into 128px display-worker tiles without ever
    * allocating the full canvas-sized RGBA image. */
-  readBaseRasterTiles(layerId:LayerId,revisionId:RevisionId=this.head){
+  readBaseRasterTiles(layerId:LayerId,revisionId:RevisionId=this.head,unmodifiedOnly=false){
     const root=this.revision(revisionId).root,layer=root.getLayer(layerId);
     if(layer.baseColor==='white')throw new Error('White background needs the ordinary geometry seed');
     if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('unsupported encoding');
@@ -155,7 +155,12 @@ export class CoreDocument{
     if(canonical%size!==0)throw new Error('unsupported sparse seed tile size');
     for(const [key,value] of layer.surface.tiles.entries()){
       if(!value.baseBlockId)continue;
-      if(value.mutations.length)throw new Error('strict raster materialization pending');
+      if(value.mutations.length){
+        // Reuse callers may omit pending blocks and read their final pixels
+        // from the renderer. Ordinary snapshot readers still reject them.
+        if(unmodifiedOnly)continue;
+        throw new Error('strict raster materialization pending');
+      }
       const [tileX,tileY]=parseTileKey(key),left=tileX*canonical,top=tileY*canonical;
       if(left<0||top<0||left>=root.width||top>=root.height)continue;
       const block=this.storeValue.readCopy(value.baseBlockId);
