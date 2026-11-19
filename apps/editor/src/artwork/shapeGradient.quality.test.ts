@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type EditableGradient,type LayerId} from '@illustro/core';
-import {renderArtwork} from './render';
+import {renderArtwork,applyRenderedPathMask} from './render';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,moveShapeHandle,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,shapeLiveMaskOnMainThread,shouldCancelStaleShapePreview,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
 
@@ -194,7 +194,30 @@ describe('C09-005/C09-015 live gradient preview responsiveness',()=>{
     expect(shapeLiveMaskOnMainThread('gradient',1024,1024)).toBe(false);
     expect(shapeLiveMaskOnMainThread('gradient',512,512)).toBe(false);
     expect(shapeLiveMaskOnMainThread('gradient',260,260)).toBe(true);
-    expect(shapeLiveMaskOnMainThread('path',1024,1024)).toBe(true);
+    expect(shapeLiveMaskOnMainThread('path',1024,1024)).toBe(false);
+    expect(shapeLiveMaskOnMainThread('path',260,260)).toBe(true);
+  });
+});
+
+describe('C09-005/C09-015 worker path mask raster consistency',()=>{
+  it('masks large path preview pixels using committed document coordinates',()=>{
+    const mask={shape:'rectangle',x:0,y:0,width:2,height:2,
+      enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray(2*2*4);
+    for(let i=0;i<4;i++)pixels.set([12,34,56,200],i*4);
+    applyRenderedPathMask(pixels,mask,4,4,2,2);
+    expect([pixels[3],pixels[7],pixels[11],pixels[15]]).toEqual([200,0,0,0]);
+    expect(Array.from(pixels.subarray(0,3))).toEqual([12,34,56]);
+  });
+  it('retains alpha density and ignores disabled masks',()=>{
+    const mask={shape:'rectangle',x:0,y:0,width:2,height:2,
+      enabled:true,inverted:false,density:.5} as const;
+    const pixels=new Uint8ClampedArray([10,20,30,200,10,20,30,200]);
+    applyRenderedPathMask(pixels,mask,4,2,2,1);
+    expect([pixels[3],pixels[7]]).toEqual([200,100]);
+    const copy=pixels.slice();
+    applyRenderedPathMask(pixels,{...mask,enabled:false},4,2,2,1);
+    expect(pixels).toEqual(copy);
   });
 });
 
