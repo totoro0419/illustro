@@ -1,0 +1,106 @@
+name: Illustro operability audit preview (frozen C03-C10)
+on:
+  push:
+    branches: ['qa/operability-2026-11-19']
+    paths:
+      - '.github/workflows/qa-operability-preview.yml'
+      - 'docs/qa/OPERABILITY_AUDIT_2026-11-19.md'
+      - 'scripts/qa-operability-smoke.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: illustro-operability-20261119
+  cancel-in-progress: true
+
+jobs:
+  publish-and-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact QA branch
+        uses: actions/checkout@v4
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build brush runtime
+        run: npm run brush:build
+      - name: Type-check editor
+        run: npm --workspace @illustro/editor exec -- tsc --noEmit
+      - name: Build editor for relative hosting
+        run: npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Stamp frozen source identity
+        env:
+          SOURCE_SHA: 58ac1410009606b568343a5fa95d4ac4c36aa47a
+        run: |
+          printf '{"sourceCommit":"%s","auditBuildCommit":"%s","auditBranch":"qa/operability-2026-11-19","purpose":"UI-operability-only"}\n' "$SOURCE_SHA" "$GITHUB_SHA" > apps/editor/dist/audit-build.json
+          test -f apps/editor/dist/index.html
+          test -f apps/editor/dist/audit-build.json
+      - name: Checkout current public Pages branch (preserve all other paths)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+          persist-credentials: true
+      - name: Replace only the operability audit preview
+        run: |
+          set -euo pipefail
+          mkdir -p site/qa/c03-c10-operability
+          find site/qa/c03-c10-operability -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          cp -a apps/editor/dist/. site/qa/c03-c10-operability/
+          touch site/.nojekyll
+      - name: Publish isolated QA page without modifying production preview
+        working-directory: site
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add qa/c03-c10-operability .nojekyll
+          if git diff --cached --quiet; then
+            echo "Identical audit preview already published."
+          else
+            git commit -m "qa: publish frozen C03-C10 operability preview"
+            git push origin HEAD:gh-pages
+          fi
+      - name: Start local preview for browser smoke
+        run: |
+          npm --workspace @illustro/editor exec -- vite preview --host 127.0.0.1 --port 4173 --strictPort > /tmp/illustro-audit-vite.log 2>&1 &
+          echo $! > /tmp/illustro-audit-vite.pid
+          for i in $(seq 1 25); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/illustro-audit-vite.log
+          exit 1
+      - name: Install Chromium browser for executable smoke
+        run: |
+          npm install --prefix /tmp/illustro-audit-pw playwright@1.62.1 --no-audit --no-fund
+          /tmp/illustro-audit-pw/node_modules/.bin/playwright install --with-deps chromium
+      - name: Exercise home, create dialog and editor in browser (non-blocking evidence)
+        id: smoke
+        continue-on-error: true
+        env:
+          AUDIT_PLAYWRIGHT: /tmp/illustro-audit-pw/node_modules/playwright
+          AUDIT_URL: http://127.0.0.1:4173/
+          AUDIT_OUTPUT: artifacts/operability
+        run: node scripts/qa-operability-smoke.mjs
+      - name: Upload screenshot and button inventory evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c03-c10-operability-first-browser-evidence
+          path: artifacts/operability/
+          if-no-files-found: warn
+      - name: Summarize source and public preview
+        if: always()
+        run: |
+          echo '## C03-C10 frozen UI operability preview' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Intended URL: https://totoro0419.github.io/illustro/qa/c03-c10-operability/' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Frozen app source: `58ac1410009606b568343a5fa95d4ac4c36aa47a`' >> "$GITHUB_STEP_SUMMARY"
+          echo '- QA workflow commit: `' "$GITHUB_SHA" '`' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Browser smoke result: ${{ steps.smoke.outcome }} (does not replace Work full interactive audit)' >> "$GITHUB_STEP_SUMMARY"
