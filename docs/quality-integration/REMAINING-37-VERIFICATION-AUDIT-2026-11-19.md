@@ -1,5 +1,8 @@
 # Illustro｜残37件の詳細コード検査・受入試験仕様（2026-11-19）
 
+> **重要：元の調査PR #73との再照合で訂正しました。** この文書は追加検査候補の履歴です。元問題の定義、現行の実装状況、必要な修正かどうかは[全37件の元調査／最新コードの照合結果](https://github.com/totoro0419/illustro/blob/quality/C03-C10-integration/docs/quality-integration/SOURCE-RECHECK-37-2026-11-19.md)を最優先に参照してください。特に C06-015 は「貼り付け」、C10-009 は「部分文字書式」であり、この2件に別の機能改修を割り当てないでください。
+
+
 **検査対象:** `totoro0419/illustro` / `quality/C03-C10-integration`  **基準ソース:** `ffdc51c8ddfb38bff6288a3b6e39e149ffb9f170`  
 **対象原本:** [37件の実装指示書](https://github.com/totoro0419/illustro/blob/quality/C03-C10-integration/docs/quality-integration/REMAINING-37-EXECUTION-PLAN-2026-11-19.md) / [129件台帳](https://github.com/totoro0419/illustro/blob/quality/C03-C10-integration/docs/quality-integration/PROGRESS-129.md) / [Issue #92](https://github.com/totoro0419/illustro/issues/92)
 
@@ -80,14 +83,14 @@
 - **追加する再現検査:** Worker有/無で700〜2000点の筆跡、同時入力補正で45点前の移動、筆圧とサイズ変更を再現。
 - **合格条件:** 最終マスクの全ピクセルが確定結果に一致するか、不一致範囲を数値化。古い仮線が残らない。
 
-#### C06-015｜P1/性能
+#### C06-015｜元分類B/P2・小範囲の貼り付け
 
-**コード:** [`selection/clipboard.ts:106-195`](https://github.com/totoro0419/illustro/blob/ffdc51c8ddfb38bff6288a3b6e39e149ffb9f170/apps/editor/src/selection/clipboard.ts#L106-L195) ／ **既存テスト:** [`selection/clipboardSparse.test.ts`](https://github.com/totoro0419/illustro/blob/ffdc51c8ddfb38bff6288a3b6e39e149ffb9f170/apps/editor/src/selection/clipboardSparse.test.ts)
+**コード:** [`selection/clipboard.ts:255-346`](https://github.com/totoro0419/illustro/blob/9b726852bcad78ab3e1985cc07249339d8520ae6/apps/editor/src/selection/clipboard.ts#L255-L346) ／ **既存テスト:** [`selection/clipboardSparse.test.ts`](https://github.com/totoro0419/illustro/blob/9b726852bcad78ab3e1985cc07249339d8520ae6/apps/editor/src/selection/clipboardSparse.test.ts)
 
-- **コード検査:** 確認済み：通常の小範囲コピーは局所読出しを用いるが、合成と特殊グループは `renderFrozenArtwork` や全レイヤー取得へ進む。
-- **追加する再現検査:** 4000×4000で12×12選択、通常レイヤー/特殊レイヤー/グループ/合成コピーを比較。メモリ転送量と貼り付け後のRGBAを計測。
-- **合格条件:** コピーの内容・レイヤー構造・履歴は正しく、範囲が小さい場合の全画面配列割当は改善対象の経路で発生しない。
-
+- **元指摘:** 小さい選択範囲を貼り付ける際、作品全体の画素配列を生成する懸念。
+- **現在のコード:** `paste` は `forEachPastedTile` で交差するタイルのみ確保。全4K宛先の新規配列は作らない構造。
+- **ここで必要な検査:** 4000×4000へ12×12画素を貼り付け、実際の生成タイル数・最大割当・RGBA・Undo/Redoを確認。
+- **分類上の注意:** 先の「小範囲のコピー」「合成コピー」の最適化は別課題でありC06-015の未完了根拠にしない。
 
 ### C07（6件）
 
@@ -225,13 +228,14 @@
 - **追加する再現検査:** 角丸/多角形/楕円/直線をRasterとVectorへ出力する選択操作を試す。ラスタ出力はピクセル編集、ベクターは点編集。
 - **合格条件:** 各出力先の保存結果とUndoが正しい。既存の図形種を重複実装しない。
 
-#### C09-010｜P1/描画
+#### C09-010｜元分類B/P1・対称コピー線の描画中表示
 
-**コード:** [`symmetryStrokePreview.ts:7-16`](https://github.com/totoro0419/illustro/blob/ffdc51c8ddfb38bff6288a3b6e39e149ffb9f170/apps/editor/src/symmetryStrokePreview.ts#L7-L16) ／ **既存テスト:** [`symmetryStrokePreview.test.ts`](https://github.com/totoro0419/illustro/blob/ffdc51c8ddfb38bff6288a3b6e39e149ffb9f170/apps/editor/src/symmetryStrokePreview.test.ts)
+**コード:** [`brushSurface.ts:449-482`](https://github.com/totoro0419/illustro/blob/9b726852bcad78ab3e1985cc07249339d8520ae6/apps/editor/src/brushSurface.ts#L449-L482) ／ **既存テスト:** [`symmetryStrokePreview.test.ts`](https://github.com/totoro0419/illustro/blob/9b726852bcad78ab3e1985cc07249339d8520ae6/apps/editor/src/symmetryStrokePreview.test.ts)
 
-- **コード検査:** 確認済み：現在のコピー線は点列を対称変換する幾何表示で、確定ブラシの画素合成と同じではない。
-- **追加する再現検査:** ミラー/放射/回転対称、筆圧変化/色混合/消しゴムでブラシを動かし、コピー線の仮像と確定像を比較。
-- **合格条件:** 本線と対称線が同時に追従し、確定時の欠け/ちらつき/色ずれを抑制。
+- **元指摘:** 対称複製線がペンを離すまで表示されない懸念。
+- **現在のコード:** ペン移動中の点列からコピー線SVGを生成・更新する経路がある。
+- **ここで必要な検査:** 対称描画中にコピー線の視認性・追従・キャンセル後の残像を実機で確認。
+- **分類上の注意:** 実ブラシの質感・筆圧まで再現する高品質仮表示は、元のB指摘を超える追加改善。
 
 #### C09-011｜P1/性能
 
@@ -249,13 +253,14 @@
 - **追加する再現検査:** 非凸形状・穴・半透明マスク・複数停止点・反転/繰返しを含む4K参照画像と縮小版を比較。
 - **合格条件:** 同一パラメータで範囲/色/透明度が一致し、違いがある場合は許容誤差を測って表示。
 
-#### C09-014｜P2/機能
+#### C09-014｜元分類B/P2・原寸の色差比較
 
-**コード:** [`artwork/gradientMap.ts:21-37`](https://github.com/totoro0419/illustro/blob/ffdc51c8ddfb38bff6288a3b6e39e149ffb9f170/apps/editor/src/artwork/gradientMap.ts#L21-L37) ／ **既存テスト:** [`artwork/gradientMapExactCrop.test.ts`](https://github.com/totoro0419/illustro/blob/ffdc51c8ddfb38bff6288a3b6e39e149ffb9f170/apps/editor/src/artwork/gradientMapExactCrop.test.ts)
+**コード:** [`artwork/gradientMap.ts:21-37`](https://github.com/totoro0419/illustro/blob/9b726852bcad78ab3e1985cc07249339d8520ae6/apps/editor/src/artwork/gradientMap.ts#L21-L37) ／ **既存テスト:** [`artwork/gradientMapExactCrop.test.ts`](https://github.com/totoro0419/illustro/blob/9b726852bcad78ab3e1985cc07249339d8520ae6/apps/editor/src/artwork/gradientMapExactCrop.test.ts)
 
-- **コード検査:** 確認済み：`extractGradientMapCrop` は中心128pxのみを切り出す。端やユーザー指定位置の操作は未実装。
-- **追加する再現検査:** 左上(0,0)、右下(3999,3999)、中央、選択位置などから128×128を切出し、座標/元RGBAを確認。
-- **合格条件:** 四隅では作品外を読まず、任意位置の1:1比較ができる。マップ確定の作品画素は変わらない。
+- **元指摘:** 最大320px程度の比較画像で原寸の色段差を見られるか未確認。
+- **現在のコード:** 中央128×128を1:1で比較する `extractGradientMapCrop` が既存。画面にも原寸比較欄が存在。
+- **ここで必要な検査:** 1:1のRGBAと加工前後の差分を比較、キャンセル時に元作品不変か確認。
+- **分類上の注意:** 任意座標を原寸比較するUIは追加改善案であり元IDの必須条件と断定しない。
 
 #### C09-015｜P2/UI
 
@@ -300,13 +305,14 @@
 - **追加する再現検査:** 和/差/交差/XORの元図形を変更、Undo、元レイヤー削除、保存復元、旧ファイル読込を再現。
 - **合格条件:** どのデータを「元」と見なすか決めたうえで安全に自動再計算。循環参照・元消失時は作品を壊さない。
 
-#### C10-009｜P1/互換
+#### C10-009｜元分類A/P2・選択文字だけの書式設定
 
-**コード:** [`artwork/fonts.ts:138-199`](https://github.com/totoro0419/illustro/blob/ffdc51c8ddfb38bff6288a3b6e39e149ffb9f170/apps/editor/src/artwork/fonts.ts#L138-L199) ／ **既存テスト:** [`artwork/textStyles.boldItalic.test.ts`](https://github.com/totoro0419/illustro/blob/ffdc51c8ddfb38bff6288a3b6e39e149ffb9f170/apps/editor/src/artwork/textStyles.boldItalic.test.ts)
+**コード:** [`artwork/textPanel.ts:163-200`](https://github.com/totoro0419/illustro/blob/9b726852bcad78ab3e1985cc07249339d8520ae6/apps/editor/src/artwork/textPanel.ts#L163-L200) ／ **既存テスト:** [`artwork/textStyles.test.ts`](https://github.com/totoro0419/illustro/blob/9b726852bcad78ab3e1985cc07249339d8520ae6/apps/editor/src/artwork/textStyles.test.ts)
 
-- **コード検査:** 確認済み：読み込んだ書体の文字輪郭は対応。端末システム書体や合成太字/斜体の同一形状を抽出できることは未保証。
-- **追加する再現検査:** 1行中に3フォント/2色/太字・斜体を混ぜる。文字表示と輪郭化を並べてRGBA差を測る。
-- **合格条件:** 取得可能な書体では外観一致。取得不能な端末書体は無言で代用せず、利用可能な書体の選択/ラスタ保持を案内。
+- **元指摘:** 選択した文章の一部分に別の書式を設定できない。
+- **現在のコード:** 部分範囲を選び色・大きさ・書体・太字・斜体を編集できる。UTF-16文字境界や保存データの既存テストも存在。
+- **ここで必要な検査:** 日本語・絵文字を混ぜた文を部分選択し、非選択部分不変・保存再読込・Undo/Redoを確認。
+- **分類上の注意:** 文字の輪郭化・端末フォント形状の再現は別機能でありC10-009の元問題ではない。
 
 #### C10-010｜P2/文字
 
