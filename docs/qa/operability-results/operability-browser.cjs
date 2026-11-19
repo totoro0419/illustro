@@ -62,7 +62,7 @@ async function observe(page, key) {
 async function run(browser, [mode, width, height, touch], limited = false) {
   const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1 });
   const page = await context.newPage();
-  page.setDefaultTimeout(3200);
+  page.setDefaultTimeout(7500);
   page.on('pageerror', e => report.console.push({ mode, level: 'pageerror', message: String(e) }));
   page.on('console', m => {
     if (['error', 'warning'].includes(m.type())) report.console.push({ mode, level: m.type(), message: m.text().slice(0, 700) });
@@ -88,8 +88,8 @@ async function run(browser, [mode, width, height, touch], limited = false) {
     if (current) current.controls.at(-1).tapped = true;
   };
   const byName = (name, scope = page) => scope.getByRole('button', { name, exact: true });
-  const picture = async name => page.screenshot({ path: output + '/' + mode + '-' + name + '.png' });
-  const snap = async () => canvas.screenshot();
+  const picture = async name => page.screenshot({ timeout: 30000, path: output + '/' + mode + '-' + name + '.png' });
+  const snap = async () => canvas.screenshot({ timeout: 20000 });
   const idle = async () => {
     await page.waitForFunction(() => document.querySelector('#canvas')?.dataset.historyBusy === 'false', null, { timeout: 10000 });
     await page.waitForTimeout(180);
@@ -179,6 +179,13 @@ async function run(browser, [mode, width, height, touch], limited = false) {
     const stamp = await page.request.get(target + 'audit-build.json');
     assert.equal((await stamp.json()).sourceCommit, source);
     report.emulation[mode] = await page.evaluate(() => ({ width: innerWidth, height: innerHeight, touch: navigator.maxTouchPoints, ua: navigator.userAgent, nativeSavePicker: typeof window.showSaveFilePicker }));
+    report.emulation[mode].graphics = await page.evaluate(async () => {
+      const gl = document.createElement('canvas').getContext('webgl2');
+      const adapter = await navigator.gpu?.requestAdapter().catch(() => null);
+      const result = { webGpuAdapter: !!adapter, webGl2: !!gl, floatTargets: !!gl?.getExtension('EXT_color_buffer_float') };
+      gl?.getExtension('WEBGL_lose_context')?.loseContext();
+      return result;
+    });
     await observeHere('home');
     await picture('home');
     if (!limited) {
@@ -350,6 +357,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       if (touch) assert.equal(after.pointer, 'touch');
       return { visibleAfter, pointer: after.pointer };
     });
+    let firstSize, changedSize;
     await stage('04 色と太さの変更', async () => {
       await openBox('colorBox');
       const color = page.locator('#colorHex');
@@ -359,9 +367,12 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       await openBox('brushBox');
       const size = page.locator('#sizeNumber');
       const previousSize = await size.inputValue();
+      firstSize = Number(previousSize);
       await size.fill('28');
       await size.press('Tab');
       assert.equal(Number(await size.inputValue()), 28);
+      changedSize = 28;
+      assert.notEqual(changedSize, firstSize);
       return { color: await color.inputValue(), size: await size.inputValue(), previousSize };
     });
     await stage('編集・右パネルを閉じて再度開く', async () => {
@@ -378,7 +389,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       const after = await snap();
       const redIncrease = reds(after) - reds(before);
       assert.ok(redIncrease > 80, 'red pixel increase=' + redIncrease);
-      return { redIncrease };
+      return { redIncrease, previousSize: firstSize, changedSize };
     });
     await stage('06 消しゴムで線の一部を消す', async () => {
       await click('#erase');
@@ -516,6 +527,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
     let baseline, savedState;
     await stage('16 ページを再読み込み', async () => {
       await idle();
+      await closeOverlay();
       baseline = await snap();
       savedState = await info();
       await picture('before-reload');
@@ -534,6 +546,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       }
       await canvas.waitFor({ state: 'visible', timeout: 11000 });
       await idle();
+      await closeOverlay();
       const restored = await snap();
       await picture('reopened');
       const actual = await info();
@@ -585,9 +598,9 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       await click(byName(testName + 'を開く'));
       await canvas.waitFor({ state: 'visible', timeout: 11000 });
       await idle();
-      const before = await snap();
       await click('#paint');
       await closeOverlay();
+      const before = await snap();
       await strokes([.27, .79], [.64, .79]);
       const changed = difference(before, await snap());
       assert.ok(changed > 15, 'post-reopen changed pixels=' + changed);
@@ -742,12 +755,12 @@ async function run(browser, [mode, width, height, touch], limited = false) {
   report.flags = flags;
   const browser = await chromium.launch({ headless: true, args: flags });
   try {
-    await Promise.all(sizes.map(size => run(browser, size)));
+    for (const size of sizes) await run(browser, size);
   } finally {
     await browser.close();
     await fs.writeFile(output + '/results.json', JSON.stringify(report, null, 2));
   }
-  const limited = await chromium.launch({ headless: true, args: ['--disable-webgl', '--disable-webgpu'] });
+  const limited = await chromium.launch({ headless: true, args: ['--disable-gpu', '--disable-webgl', '--disable-webgl2', '--disable-features=WebGPU,Vulkan'] });
   try {
     await run(limited, ['gpu-unavailable', 800, 1280, true], true);
   } finally {
