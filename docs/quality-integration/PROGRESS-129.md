@@ -1,7 +1,7 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`c57bc53b`](https://github.com/totoro0419/illustro/commit/c57bc53bb5e272923dbd144df957cce3777f31ff)
+**照合対象のコードHEAD:** [`c0436a2f`](https://github.com/totoro0419/illustro/commit/c0436a2fe97bde8f43112c336084af671499ec07)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
@@ -14,7 +14,8 @@
 - **保存互換**：従来の全体保存・旧作品を継続して読み込む。部分保存も既存のCore履歴/画像ブロックに収め、保存復元・途中復旧を検査。新しい部分保存を含む`.illustro`には必須の対応情報を付け、旧アプリが全体保存と取り違えて開くことを防止。現在のアプリで再読込した画素は一致。
 - **4K比較**：4000×4000、保存済み画素0・正規の旧筆跡1024件/GPU区画1024個から開始。小さな選択付き描画/消しゴムで読取り **1024→4区画、67,108,864→262,144 bytes（99.609375%削減）**。確定保存するCoreブロックは1個。半透明マスク、対角の離れた対称コピー、端の区画、不正/欠落/重複入力、通常筆跡の追加→再度の部分保存→全体保存を検査。全RGBA、Undo/Redo、Core保存、`.illustro`保存、途中復旧が一致。
 - **測定の範囲**：ローカルの模擬GPU読み取り試験で、描画142.69→2.79ms、消去201.46→2.02msの測定例。これはデータ取得処理の比較であり、実GPU/Androidの応答時間ではない。実機性能・操作は未検査のままにする。
-- **自動検証**：Core 69 / Brush 268 / Editor 694 tests成功、Core型検査・Editor型検査/本番ビルド成功。実行コマンドは既存CIのCore/Brush/Editor検査。実機検査の失敗/未実施を自動試験の合格へ混ぜない。最新コミットのCI確定結果はIssue #92へ追記する。
+- **自動検証**：Core 69 / Brush 268 / Editor 694 tests成功、Core型検査・Editor型検査/本番ビルド成功。実行コマンドは既存CIのCore/Brush/Editor検査。実機検査の失敗/未実施を自動試験の合格へ混ぜない。対象コード `c0436a2f` の[統合 #44483364270](https://github.com/totoro0419/illustro/actions/runs/44483364270)・[Core #44483371977](https://github.com/totoro0419/illustro/actions/runs/44483371977)ともcompleted/successを取得して確認。
+- **修正コミット**：[`c0436a2f`](https://github.com/totoro0419/illustro/commit/c0436a2fe97bde8f43112c336084af671499ec07)。[Issue #92の確定記録](https://github.com/totoro0419/illustro/issues/92#issuecomment-7003216164)。後続の記録更新はコードを変更しない。
 - **主な変更**：`selection/tileStroke.ts`・`tileCapture.ts`・`brushSurface.ts`、Core `transaction.ts`・`commit.ts`・`coreDocument.ts`、`rasterReplayKeys.ts`・`export/basicExport.ts`・`persistence/portable.ts`、描画Worker/Sessionと関連テスト。共有ファイルは最新HEADを確認し、main・PR #73は変更しない。PR #75 Draft維持。
 - **残る区分**：主要実装あり21件・実測待ち7件・採否未決の改善案5件。今回の確定不足4件にコード実装の持越しはない。新しい不具合が確認された場合は独立した再現結果に基づいて対応する。
 
