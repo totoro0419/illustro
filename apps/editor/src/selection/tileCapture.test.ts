@@ -174,3 +174,34 @@ describe('C06-015 clipboard sub-tile occupancy',()=>{
   expect(Array.from(pixels)).toEqual([42,0,0,0]);
  });
 });
+
+describe('C06-002 stroke-bounded selected eraser readback',()=>{
+ it('reads the affected selected tile first and retains every other painted tile on change',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',90],['L','1,1',180]]);
+  const alpha=new Uint8Array(4000*4000);
+  alpha[0]=255;alpha[128*4000+128]=255;
+  const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+    undefined,{width:4000,height:4000,alpha},{x:128,y:128,width:12,height:12});
+  expect(result.map(t=>t.key)).toEqual(['0,0','1,1']);
+  expect(readTiles.mock.calls.map(([requests])=>requests.map(r=>r.key)))
+   .toEqual([['1,1'],['0,0']]);
+ });
+ it('does not read distant selected paint when the eraser footprint is empty',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',90],['L','1,1',180]]);
+  const alpha=new Uint8Array(4000*4000);
+  alpha[0]=255;alpha[129*4000+129]=255;
+  const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+    undefined,{width:4000,height:4000,alpha},{x:129,y:129,width:1,height:1});
+  expect(result).toEqual([]);
+  expect(readTiles.mock.calls.map(([requests])=>requests.map(r=>r.key)))
+   .toEqual([['1,1']]);
+ });
+ it('rejects an invalid probe area before any GPU access',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',90]]);
+  const alpha=new Uint8Array(4000*4000);
+  await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+    undefined,{width:4000,height:4000,alpha},{x:3999,y:3999,width:2,height:2}))
+   .rejects.toThrow('範囲');
+  expect(readTiles).not.toHaveBeenCalled();
+ });
+});
