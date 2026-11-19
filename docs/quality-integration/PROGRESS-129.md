@@ -1,10 +1,19 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`6927b66a`](https://github.com/totoro0419/illustro/commit/6927b66a727b1e2dc9b6100fe7642bbd3c79cf2a)
+**照合対象のコードHEAD:** [`f16cae82`](https://github.com/totoro0419/illustro/commit/f16cae823ba546354196b47d80c4ddebe0655ca2)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
+
+### 2026-11-19 定期自動開発②｜C09-004・C09-005・C09-015｜細線・画素マスク・仮表示遅延（3 ID、2段階）
+
+- **C09-004（部分改善）**：縮小表示で細長い自由形状の選択範囲が画素中心から外れて消える場合、16点以下の細長いパスを面積平均で表示。小さい多角形は128点まで正確な面積計算に拡張。4K相当の長い細線・80点小図形の回帰テスト追加。大きく複雑なパスは高速な従来経路を維持。
+- **C09-004（部分改善）**：縮小倍率が縦横とも4倍以上で、変更された画素マスクタイルが16個以下・倍率が4倍以下の場合、元の整数画素のマスクを面積平均して表示。64pxタイルを越える大きな縮小表示で小さい透明領域が消える問題を改善。変更のないタイルは一括して扱い、4K全画素走査を回避。反転・半透明・小数位置と倍率の回帰テスト追加。密集した大きな画素マスクの厳密縮小は残る。
+- **C09-005 / C09-015（部分改善）**：編集点ドラッグ中の描画Workerが120ms以上古い結果を処理している場合のみ中断し、最新の位置を優先。高速な連続入力では毎回中断しない。最新の描画に失敗したときは、古い仮表示を残さず消す。中断判定の境界テスト追加。Android実機の応答性・複雑レイヤー合成一致は未確認。
+- **コード・回帰テスト（2コミット）**：[d229508d](https://github.com/totoro0419/illustro/commit/d229508d4edfb78da782a3486d40a2df80245256) → [f16cae82](https://github.com/totoro0419/illustro/commit/f16cae823ba546354196b47d80c4ddebe0655ca2)。変更は `apps/editor/src/artwork/shapeGradient.ts`、`shapeGradient.quality.test.ts`。保存形式・履歴構造は変更なし。
+- **検証**：最終コード `f16cae82` の[統合CI #44437294965](https://github.com/totoro0419/illustro/actions/runs/44437294965)と[Core CI #44437301975](https://github.com/totoro0419/illustro/actions/runs/44437301975)は両方 **completed/success**。統合CIのCoreテスト・型検査、Brush回帰、Editorテスト、Editor TypeScript・本番ビルドの各ステップ成功。Android実機、4K実測、旧作品保存復元・Undo/Redoの独立実機検証は未実施。
+- **残件・次回**：3 IDとも部分改善で完全解決認定なし。記録上の部分対応37件・実装根拠未確認0件・個別完了未認定92件を維持。次回は **C09-004** の多数タイル画素マスク・大きな複雑パスの縮小表示（`apps/editor/src/artwork/shapeGradient.ts`）、**C09-005/015** の複雑レイヤー合成・実機仮表示（`apps/editor/src/artwork/render.ts`）。競合時は **C07-003** 特殊レイヤー一括変形（`apps/editor/src/transform/`）。main・PR #73変更なし、PR #75 Draft維持。
 
 ### 2026-11-19 定期自動開発①｜C06-002・C06-007・C06-015｜選択消しゴム・コピー・仮表示（3 ID）
 
