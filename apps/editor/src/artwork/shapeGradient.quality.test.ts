@@ -98,6 +98,30 @@ describe('C09-004 sparse pixel-mask area coverage at 4K fit zoom',()=>{
     applyShapePreviewMask(half,{...mask,density:.5},256,256,1,1);
     expect(half[3]).toBe(247);
   });
+  it('area-averages more than 16 sparse source tiles without losing subpixel edges',()=>{
+    const tiles=Object.fromEntries(Array.from({length:17},(_,i)=>[i+',0','00']));
+    const mask={shape:'pixels',x:60,y:0,scaleX:1,scaleY:1,
+      tiles,enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray(32*16*4);
+    for(let i=0;i<32*16;i++)pixels[i*4+3]=255;
+    applyShapePreviewMask(pixels,mask,2048,1024,32,16);
+    // The first changed tile only covers 4 of this output pixel's 64 columns.
+    // Center sampling would incorrectly leave it fully opaque.
+    expect(pixels[3]).toBe(239);
+    expect(pixels[7]).toBe(0);
+    expect(pixels[(16)*4+3]).toBe(0);
+    const inverted=new Uint8ClampedArray([10,20,30,255]);
+    applyShapePreviewMask(inverted,{...mask,inverted:true},2048,1024,1,1);
+    expect(inverted[3]).toBeGreaterThan(0);
+    expect(inverted[3]).toBeLessThan(255);
+  });
+  it('ignores changed tiles outside the document when indexing preview cells',()=>{
+    const mask={shape:'pixels',x:60,y:0,scaleX:1,scaleY:1,
+      tiles:{'0,0':'00','99,99':'00'},enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray([10,20,30,255]);
+    applyShapePreviewMask(pixels,mask,64,64,1,1);
+    expect(pixels[3]).toBe(239);
+  });
   it('uses the committed integer source-pixel coverage under fractional transforms',()=>{
     const mask={shape:'pixels',x:.25,y:.25,scaleX:.5,scaleY:.5,
       tiles:{'0,0':'00'},enabled:true,inverted:false,density:1} as const;
