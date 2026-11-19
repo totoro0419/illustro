@@ -205,3 +205,43 @@ describe('C06-002 stroke-bounded selected eraser readback',()=>{
   expect(readTiles).not.toHaveBeenCalled();
  });
 });
+
+describe('C06-002 lossless baseline reuse',()=>{
+ it('reduces a 4K capture from 1024 tiles to one changed tile with identical RGBA',async()=>{
+  const inventory:Array<[string,string,number]>=Array.from({length:1024},(_,i)=>
+   ['L',`${i%32},${Math.floor(i/32)}`,i%254+1]);
+  const before=fakeRenderer(inventory),after=fakeRenderer(inventory);
+  const expected=await captureSelectedLayerTiles(before.renderer,'L',4000,4000,()=>true);
+  // The caller excludes the old brush footprint: tile 1,0 is not reusable.
+  const baseline=expected.filter(tile=>tile.key!=='1,0').map(tile=>
+   ({key:tile.key,pixels:tile.pixels.slice()}));
+  const result=await captureSelectedLayerTiles(after.renderer,'L',4000,4000,()=>true,
+   undefined,undefined,undefined,baseline);
+  expect(result.map(tile=>tile.key)).toEqual(expected.map(tile=>tile.key));
+  expect(result.every((tile,i)=>tile.pixels.every((byte,j)=>byte===expected[i]!.pixels[j]))).toBe(true);
+  expect(before.readTiles.mock.calls.flatMap(([items])=>items)).toHaveLength(1024);
+  expect(after.readTiles.mock.calls.flatMap(([items])=>items)).toEqual([{surfaceId:'L',key:'1,0'}]);
+ });
+ it('uses reusable bytes for selected eraser preflight and preserves distant paint',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',70],['L','1,1',80]]);
+  const alpha=new Uint8Array(4000*4000);alpha[0]=128;
+  const pixels=new Uint8Array(128*128*4);pixels[0]=70;
+  const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+   undefined,{width:4000,height:4000,alpha},undefined,[{key:'0,0',pixels}]);
+  expect(result.map(tile=>tile.key)).toEqual(['0,0','1,1']);
+  expect(readTiles.mock.calls.flatMap(([items])=>items)).toEqual([{surfaceId:'L',key:'1,1'}]);
+ });
+ it('rejects stale reusable-only captures even when there is no asynchronous readback',async()=>{
+  const {renderer}=fakeRenderer([['L','0,0',70]]);
+  let calls=0;
+  const pixels=new Uint8Array(128*128*4);pixels[0]=70;
+  await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>++calls<4,
+   undefined,undefined,undefined,[{key:'0,0',pixels}])).rejects.toThrow('切り替わりました');
+ });
+ it('rejects corrupt baseline buffers before touching the renderer',async()=>{
+  const {renderer}=fakeRenderer([['L','0,0',70]]);
+  await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+   undefined,undefined,undefined,[{key:'0,0',pixels:new Uint8Array(3)}])).rejects.toThrow();
+  expect(renderer.drain).not.toHaveBeenCalled();
+ });
+});

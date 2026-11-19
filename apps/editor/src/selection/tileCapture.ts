@@ -1,6 +1,6 @@
 import {TILE} from '@illustro/brush-rt';
 import {readGpuTiles,type TileReadRequest} from '../gpuReadback';
-import type {RasterWorkerTile} from './tileStroke';
+import {validateRasterWorkerTiles,type RasterWorkerTile} from './tileStroke';
 import type {MaskData} from './mask';
 
 type RendererTile={surfaceKey:string;key:string};
@@ -79,7 +79,8 @@ function tileHasSelectedPixelData(tile:RasterWorkerTile,mask:MaskData,probe?:Til
  * worker then creates newly touched tiles without scanning blank canvas. */
 export async function captureSelectedLayerTiles(
  renderer:InspectableDrawingRenderer,surfaceId:string,width:number,height:number,valid:()=>boolean,
- area?:TileCaptureArea,eraseMask?:MaskData,eraseProbeArea?:TileCaptureArea
+ area?:TileCaptureArea,eraseMask?:MaskData,eraseProbeArea?:TileCaptureArea,
+ reusableTiles:readonly RasterWorkerTile[]=[]
 ):Promise<RasterWorkerTile[]>{
  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1)
   throw new Error('選択描画の作品サイズが正しくありません。');
@@ -91,6 +92,11 @@ export async function captureSelectedLayerTiles(
  if(eraseMask&&(area||eraseMask.width!==width||eraseMask.height!==height||
    !(eraseMask.alpha instanceof Uint8Array)||eraseMask.alpha.length!==width*height))
   throw new Error('消しゴムの選択マスクが作品に一致しません。');
+ // These are fresh, owned copies of the document baseline. The caller must
+ // exclude every tile touched by a replayed brush stroke. Never infer cache
+ // freshness from the UI inventory or from a previous renderer instance.
+ validateRasterWorkerTiles(width,height,reusableTiles);
+ const reusable=new Map(reusableTiles.map(tile=>[tile.key,tile]));
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
  await renderer.drain();
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
@@ -134,7 +140,11 @@ export async function captureSelectedLayerTiles(
  let selectedHasPaint=false;
  const read=async (items:readonly TileReadRequest[],checkSelection=false)=>{
   for(let offset=0;offset<items.length;offset+=16){
-   const batch=await readGpuTiles(backend,items.slice(offset,offset+16),valid);
+   const group=items.slice(offset,offset+16);
+   const missing=group.filter(item=>!reusable.has(item.key));
+   const fresh=missing.length?await readGpuTiles(backend,missing,valid):[];
+   const byKey=new Map(fresh.map(tile=>[tile.key,tile]));
+   const batch=group.map(item=>reusable.get(item.key)??byKey.get(item.key)!);
    for(const tile of batch){
     if(area?tileHasPixelDataInArea(tile,area):tileHasPixelData(tile.pixels))
      captured.set(tile.key,{key:tile.key,pixels:tile.pixels});

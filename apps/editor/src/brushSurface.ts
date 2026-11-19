@@ -1046,15 +1046,29 @@ export class BrushSurface{
       }
       const host=renderer as unknown as Parameters<typeof captureSelectedLayerTiles>[0];
       const sparse=typeof host.inspect==='function'&&typeof host.backend?.readTiles==='function';
+      const valid=()=>!this.disposed&&this.controller.document===artwork&&
+        this.controller.selectedLayer.id===target.layerId&&artwork.head===target.baseRevision;
+      if(!valid())return;
+      const layer=artwork.root.getLayer(target.layerId),plan=artwork.rasterReplayPlan();
+      let reusable:import('./selection/tileStroke').RasterWorkerTile[]=[];
+      // The projection seeds these exact baseline bytes. Only semantic brush
+      // footprints can differ afterwards; unknown/special layers use readback.
+      if(sparse&&!layer.deformation&&!layer.editable&&!layer.imageLink&&layer.baseColor!=='white'&&
+        (plan.followsGeometry||plan.seededLayers.has(target.layerId))){
+        const dirty=new Set(plan.operations.flatMap(operation=>
+          operation.kind==='brush.stroke'&&operation.targetEntityIds[0]===target.layerId
+            ?this.runtimeKeys(operation):[]));
+        reusable=artwork.readBaseRasterTiles(target.layerId).filter(tile=>!dirty.has(tile.key));
+      }
       // Keep the compatible full-frame path for a non-Worker renderer. On the
       // normal drawing worker path, capture existing GPU tiles in <=1 MiB
       // batches and transfer those tiles directly to the selection Worker.
       const existingTiles=sparse
         ?await captureSelectedLayerTiles(host,target.surfaceId,target.width,target.height,
-          ()=>!this.disposed&&artwork.head===target.baseRevision,
+          valid,
           undefined,records.every(item=>item.preset.blend==='erase')?mask:undefined,
           records.every(item=>item.preset.blend==='erase')
-            ?selectedStrokeProbeBounds(records,target.width,target.height)??undefined:undefined)
+            ?selectedStrokeProbeBounds(records,target.width,target.height)??undefined:undefined,reusable)
         :null;
       // A completely empty GPU layer has nothing to erase. Preserve the
       // transparent-RGB safeguard in tile capture; only truly zero tiles
@@ -1068,7 +1082,7 @@ export class BrushSurface{
         :null;
       const fullPixels=sparse?null:await applySelectedStroke(mask,
         writableRasterView(await renderer.read(target.surfaceId)),records);
-      if((!updatedTiles&&!fullPixels)||this.disposed||artwork.head!==target.baseRevision)return;
+      if((!updatedTiles&&!fullPixels)||!valid())return;
       const transaction=artwork.begin(record.preset.blend==='erase'?'選択範囲を消す':'選択範囲に描く');
       const deformation=artwork.root.getLayer(target.layerId).deformation;
       if(deformation){
