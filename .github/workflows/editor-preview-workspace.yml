@@ -1,0 +1,83 @@
+name: Illustro preview workspace
+on:
+  pull_request:
+    branches: ['quality/C03-C10-integration']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: illustro-editor-preview-workspace
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.event.pull_request.head.ref == 'fix/preview-drawing-workspace' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      VITE_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build existing brush runtime and editor
+        run: |
+          npm ci --no-audit --no-fund
+          npm run brush:build > "$RUNNER_TEMP/brush-build.log"
+          npm --workspace @illustro/editor run build -- --base=/illustro/preview/
+      - name: Install test browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/preview-test" playwright@1.62.1 pngjs@7.0.0 --no-audit --no-fund
+          "$RUNNER_TEMP/preview-test/node_modules/.bin/playwright" install chromium
+      - name: Run the public editor workflow in Chromium
+        run: |
+          mkdir -p "$RUNNER_TEMP/preview-before"
+          git archive 27e6422c401f0cdf72c93ced2ac30946535b9b99 preview | tar -x -C "$RUNNER_TEMP/preview-before"
+          export NODE_PATH="$RUNNER_TEMP/preview-test/node_modules"
+          export PREVIEW_SMOKE_BASELINE="$RUNNER_TEMP/preview-before/preview"
+          export EXPECTED_COMMIT_SHA="$VITE_COMMIT_SHA"
+          node scripts/editor-preview-workspace-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-preview-browser-evidence
+          path: artifacts/preview-smoke/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: editor-preview-release
+          path: apps/editor/dist/
+  publish:
+    needs: verify
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'fix/preview-drawing-workspace'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+      - uses: actions/download-artifact@v4
+        with:
+          name: editor-preview-release
+          path: candidate
+      - name: Publish the verified editor into preview/
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test -f candidate/index.html
+          cp -a candidate/. preview/
+          printf '{"sourceCommit":"%s"}\n' "$SOURCE_SHA" > preview/release.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add preview/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Publish verified editor preview ($SOURCE_SHA)"
+          git push origin HEAD:gh-pages

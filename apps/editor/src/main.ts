@@ -76,6 +76,7 @@ import {installFocusMode} from './ui/focusMode';
 import './ui/c04.css';
 import './ui/workspaceProfiles.css';
 import './ui/floatingPanels.css';
+import './ui/drawingWorkspace.css';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {layerBlendNames,openLayerBlendDialog} from './ui/layerBlendDialog';
@@ -117,13 +118,43 @@ function measureCanvasStage(stage:string,started:number){
 }
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=shellMarkup(qaMode,qaMode?(m09Mode?qaM09Markup():m08Mode?qaM08Markup():qaMarkup()):'');
+const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const contextBar=document.createElement('div');
-contextBar.id='c04ContextBar';contextBar.setAttribute('role','group');contextBar.setAttribute('aria-label','今の操作対象');
+if(!qaMode){
+  document.body.classList.add('right-collapsed');
+  const viewStrip=document.querySelector('.canvas-view-strip')!;
+  const viewOptions=document.createElement('details');
+  viewOptions.id='drawingViewOptions';
+  const viewSummary=document.createElement('summary');
+  viewSummary.textContent='表示';
+  viewStrip.before(contextBar);
+  contextBar.after(viewOptions);
+  viewOptions.append(viewSummary,viewStrip);
+}
+contextBar.id='c04ContextBar';contextBar.setAttribute('role','group');contextBar.setAttribute('aria-label',qaMode?'今の操作対象':'描画設定');
 for(const [id,label] of [['c04ContextTool','ブラシ'],['c04ContextLayer','描画先'],['c04ContextReference','採色元'],['c04ContextSelection','選択なし']] as const){
   const button=document.createElement('button');button.id=id;button.type='button';button.textContent=label;button.disabled=true;contextBar.append(button);
 }
 const contextPending=document.createElement('output');contextPending.id='c04ContextPending';contextPending.setAttribute('role','status');
-contextBar.append(contextPending);document.querySelector('.canvas-view-strip')?.append(contextBar);
+contextBar.append(contextPending);
+if(qaMode)document.querySelector('.canvas-view-strip')?.append(contextBar);
+else{
+  const sizeRow=Array.from(document.querySelectorAll('.scalar-row')).find(row=>row.querySelector('#size'))!;
+  sizeRow.classList.add('drawing-size');
+  contextBar.querySelector('#c04ContextTool')!.after(byId('quickColor'),sizeRow);
+  contextBar.append(byId('quickFinger'),byId('drawingViewOptions'));
+  const layerList=byId('layerPageList'),layerPage=byId('layerPage');
+  const layerActions=layerPage.querySelector('.layer-page-actions')!;
+  const advanced=document.createElement('details');
+  advanced.className='drawing-layer-options';
+  const summary=document.createElement('summary');
+  summary.textContent='レイヤーの詳細操作';
+  const children=Array.from(layerPage.children);
+  const first=children.indexOf(layerPage.querySelector('.layer-page-meta')!);
+  const last=children.indexOf(layerList);
+  advanced.append(summary,...children.slice(first,last));
+  layerPage.append(layerList,layerActions,advanced);
+}
 // Read-only TouchEvent/PointerEvent logger in opt-in QA builds. No gesture changes.
 installPassiveTouchProbe();
 // Opt-in physical-device trace; registers capture before editor input handlers.
@@ -132,7 +163,6 @@ const inputFreezeTrace=installInputFreezeTrace();
 if(m08Mode)document.body.classList.add('m08-canvas-viewport');
 if(m08Mode||!qaMode)document.body.classList.add('canvas-viewport');
 
-const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=EditorController.restored(new CoreDocument({width:512,height:384,name:'新しい作品',dpi:72}));
 const foreground=new ForegroundColor();
 const brushPresets=new BrushPresetLibrary();
@@ -147,7 +177,7 @@ const admittedHistoryChanges:EditorHistoryChange[]=[];
 const historyInputs:Array<{at:number;eventAt:number;button:string;direction:string;phase:string;pointerType:string;disabled:boolean;reason?:string}>=[];
 function traceHistoryInput(button:HTMLButtonElement,direction:HistoryDirection,phase:string,event:Event,reason?:string){if(!perfMode)return;historyInputs.push({at:performance.now(),eventAt:event.timeStamp,button:button.id,direction,phase,pointerType:(event as PointerEvent).pointerType??'keyboard',disabled:button.disabled,...(reason?{reason}:{})});if(historyInputs.length>1200)historyInputs.shift();}
 
-const inputPreferences={finger:false,palmGuard:true,penBarrelErase:false,rotationSnap:false,brushCursorEnabled:false,eraserSizeLink:false};
+const inputPreferences={finger:!qaMode,palmGuard:true,penBarrelErase:false,rotationSnap:false,brushCursorEnabled:false,eraserSizeLink:false};
 try{
   const saved=JSON.parse(localStorage.getItem('illustro.input-preferences.v1')??'null');
   for(const key of Object.keys(inputPreferences) as (keyof typeof inputPreferences)[])
@@ -190,7 +220,6 @@ type BlankWarmup={
   background:'transparent'|'white';
   ready:Promise<boolean>;
   cancelled:boolean;
-  completed:boolean;
   started:number;
 };
 let initialBlankWarmup:BlankWarmup|null=null;
@@ -232,12 +261,10 @@ function beginBlankWarmup(width=512,height=384,name='新しい作品',background
   const drawing=reuseIdle?idle!:makeSurface(null,draft);
   surface=drawing;
   reportBlankWarmup('started',width+'x'+height,background);
-  const entry:BlankWarmup={controller:draft,drawing,selectedLayerId:blank.selected,whiteSurfaceKey:blank.whiteSurfaceKey,background,cancelled:false,completed:false,started:performance.now(),ready:Promise.resolve(false)};
+  const entry:BlankWarmup={controller:draft,drawing,selectedLayerId:blank.selected,whiteSurfaceKey:blank.whiteSurfaceKey,background,cancelled:false,started:performance.now(),ready:Promise.resolve(false)};
   initialBlankWarmup=entry;
-  entry.ready=drawing.initialize().then(async()=>{
-    if(entry.cancelled){drawing.destroy();return false;}
-    if(entry.cancelled){drawing.destroy();return false;}
-    entry.completed=true;
+  entry.ready=drawing.initialize().then(()=>{
+    if(entry.cancelled)return false;
     measureCanvasStage('home-gpu-prewarm',entry.started);
     reportBlankWarmup('ready',width+'x'+height,entry.background);
     return true;
@@ -1825,19 +1852,34 @@ function updateContextBar(){
     source:sampleSource==='layer'?'layer':sampleSource==='specific'?'specific':'composite',
     layerId:sampleLayerId?sampleLayerId as LayerId:null,
   },controller.layers.map(item=>({id:item.id,name:item.name})));
-  tool.textContent='道具: '+(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
-  layer.textContent='描画先: '+(active?controller.selectedLayer.name:'作品なし');
+  tool.textContent=(qaMode?'道具: ':'')+(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
+  layer.textContent=qaMode?'描画先: '+(active?controller.selectedLayer.name:'作品なし'):'レイヤー';
+  if(!qaMode){
+    layer.title=active?'描画先: '+controller.selectedLayer.name:'レイヤー';
+    layer.setAttribute('aria-label',layer.title);
+    tool.setAttribute('aria-label','ブラシを選ぶ · '+tool.textContent);
+  }
+  selection.hidden=!qaMode&&!surface?.selectingRectangle&&!surface?.selectedRectangle;
   const selected=surface?.selectedRectangle;
   selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):'選択なし';
   byId('c04ContextPending').textContent=historyPending?'履歴を反映中':
     surface?.inputActive?'描画中':surface?.busy?'線の反映中':
     geometryBusy?'変更を処理中':surface?.selectingRectangle?'範囲を指定中':'';
 }
-byId<HTMLButtonElement>('c04ContextTool').onclick=()=>shellUi.openBox('brushBox');
-byId<HTMLButtonElement>('c04ContextLayer').onclick=()=>shellUi.setLayerPage(true);
+byId<HTMLButtonElement>('c04ContextTool').onclick=event=>shellUi.openBox('brushBox',event.detail===0);
+byId<HTMLButtonElement>('c04ContextLayer').onclick=event=>shellUi.setLayerPage(true,event.detail===0);
 byId<HTMLButtonElement>('c04ContextSelection').onclick=()=>byId<HTMLButtonElement>('selection').click();
 byId<HTMLButtonElement>('c04ContextReference').onclick=()=>shellUi.openBox('colorBox');
-const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity)});
+const quickColor=document.getElementById('quickColor');
+if(quickColor){
+  quickColor.style.setProperty('--drawing-color',hex(foreground.current));
+  quickColor.onclick=event=>shellUi.openBox('colorBox',event.detail===0);
+}
+const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>{
+  const color=foreground.current;
+  surface?.setForegroundColor([color.r,color.g,color.b],foreground.opacity);
+  quickColor?.style.setProperty('--drawing-color',hex(color));
+}});
 const eyedropperSettings=installEyedropperSettings({foreground,getSurface:()=>surface,getLayers:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name})),onChange:updateContextBar});
 function refreshSelectionControls(){
  const selecting=surface?.selectingRectangle??false;
@@ -2588,13 +2630,8 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     // Library binding depends on storage initialization, but neither depends
     // on GPU worker readiness. Start both now instead of serializing them.
     newStorageInit=persistence.initialize(controller,null,opened.preserved,recovered,opened.selection??null)
-      .then(async()=>{
+      .then(()=>{
         measureCanvasStage('storage-init',started);
-        if(!qaMode){
-          const boundAt=performance.now();
-          await persistence.bindWork(expectedEpoch);
-          measureCanvasStage('work-bind',boundAt);
-        }
         return {ok:true as const};
       }).catch(error=>({ok:false as const,error}));
   }
@@ -2616,9 +2653,8 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     await persistence.initialize(controller,null,opened.preserved,recovered,opened.selection??null);
     measureCanvasStage('storage-init',started);
   }
-  // For NEW works the library was bound concurrently with GPU startup.
-  // Restored/imported works retain the existing serialized binding semantics.
-  if(!qaMode&&!newStorageInit){
+  // Don't add an unusable blank work to the library if graphics startup fails.
+  if(!qaMode){
     const started=performance.now();
     await persistence.bindWork(expectedEpoch);
     measureCanvasStage('work-bind',started);
@@ -2684,21 +2720,17 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
   const storagePromise=persistence.initialize(controller,null,{manifestExtras:{},optionalSections:[]},false)
     .then(async()=>{
       measureCanvasStage('storage-init',storageStarted);
-      const bindStarted=performance.now();
-      await persistence.bindWork(null);
-      measureCanvasStage('work-bind',bindStarted);
       return {ok:true as const};
     }).catch(error=>({ok:false as const,error}));
   try{
-    const warmAwaitStarted=performance.now();
-    const ready=await entry.ready;
-    measureCanvasStage('prewarm-await',warmAwaitStarted);
-    if(!ready)throw Error('Home GPU preparation unavailable');
     const presetSetupStarted=performance.now();
     await initializeCurrentSurface(false,undefined,true);
     measureCanvasStage('prewarmed-editor-setup',presetSetupStarted);
     const storage=await storagePromise;
     if(!storage.ok)throw storage.error;
+    const bindStarted=performance.now();
+    await persistence.bindWork(null);
+    measureCanvasStage('work-bind',bindStarted);
     foreground.bindDocumentPalette(controller.document.root.documentId);
     eyedropperSettings.refreshLayers();eyedropperSettings.apply();
     scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
@@ -2730,15 +2762,26 @@ async function createDocument(width:number,height:number,name='新しい作品',
     const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background,dpi,author,description,emptyDrawingLayer);
     const {document,selected,whiteSurfaceKey}=blank;
     measureCanvasStage('new-document-model',documentStarted);
-    if(warm)await activateFirstPrewarmedBlank(warm);
+    if(warm){
+      const started=performance.now();
+      if(!await warm.ready)throw new Error('GPU initialization failed: '+(warm.drawing.initializationError??'warmup interrupted'));
+      measureCanvasStage('prewarm-await',started);
+      await activateFirstPrewarmedBlank(warm);
+    }
     else await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head},false,null,whiteSurfaceKey);
     if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,background);void refreshWorks();}
-    const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
-    byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
+    byId('status').textContent=qaMode?'描画できます。作業内容は自動的に保護されます。':'';
     updateQa();measureCanvasStage('click-to-editable',createStarted);return true;
   }catch(error){
-    const message=surface?.initializationError||(error instanceof Error?error.message:String(error));
-    updateQa();surface?.destroy();documentReady=false;byId('status').textContent='描画を開始できませんでした。'+message;return false;
+    const message=error instanceof Error?error.message:String(error);
+    console.error('キャンバスの作成に失敗',error);
+    const visibleMessage=message.includes('GPU initialization failed')
+      ?'このブラウザで描画に必要なグラフィック機能を起動できませんでした。ブラウザの設定や更新を確認してください。'
+      :'キャンバスを作成できませんでした。もう一度お試しください。';
+    byId('status').textContent=qaMode?'描画を開始できませんでした。'+message:visibleMessage;
+    updateQa();
+    if(!qaMode)throw new Error(visibleMessage,{cause:error});
+    return false;
   }finally{trigger.disabled=false;}
 }
 byId<HTMLButtonElement>('new').onclick=()=>{
@@ -3052,9 +3095,12 @@ for(const id of ['guideEnabled','guideAngle','guideStrength','guideApplyEraser']
 const referenceToggle=document.getElementById('referencePattern') as HTMLInputElement|null;if(referenceToggle)referenceToggle.onchange=()=>surface?.setReferencePattern(referenceToggle.checked);
 byId<HTMLInputElement>('force').onchange=e=>{if(!applyBrushChange(p=>{if(p.forceFade)p.forceFade.enabled=(e.target as HTMLInputElement).checked;}))syncPreset();updateQa();};for(const id of Object.keys(inputPreferences) as (keyof typeof inputPreferences)[]){
  const input=byId<HTMLInputElement>(id);
- input.checked=inputPreferences[id];
+ const quickFinger=id==='finger'?document.getElementById('quickFinger'):null;
+ const reflectFinger=()=>quickFinger?.setAttribute('aria-pressed',String(input.checked));
+ if(quickFinger)quickFinger.onclick=()=>input.click();
+ input.checked=inputPreferences[id];reflectFinger();
  input.onchange=()=>{
-  inputPreferences[id]=input.checked;if(surface)applyInputPreferences(surface);
+  inputPreferences[id]=input.checked;reflectFinger();if(surface)applyInputPreferences(surface);
   if(id==='brushCursorEnabled'&&!input.checked)hideBrushCursor();
   try{localStorage.setItem('illustro.input-preferences.v1',JSON.stringify(inputPreferences));}catch{}
   updateQa();
@@ -3501,8 +3547,8 @@ if(!qaMode){
   // Warm exactly the size saved in the new-work dialog, not a hard-coded
   // 512×384 document. High-resolution users would otherwise compile a throwaway
   // renderer before the 4000×4000 renderer was even requested.
-  window.setTimeout(()=>{
-    if(initialBlankWarmup)return;
+  const prepareInitialCanvas=()=>{
+    if(initialBlankWarmup||documentReady||documentActivationPending)return;
     try{
       const unit=byId<HTMLSelectElement>('ihNewUnit').value as 'px'|'mm';
       const selected=resolveDocumentDimensions(
@@ -3516,10 +3562,19 @@ if(!qaMode){
         byId<HTMLInputElement>('ihNewAuthor').value.trim(),
         byId<HTMLTextAreaElement>('ihNewDescription').value.trim());
     }catch{/* Invalid saved preferences do not block the new-work dialog. */}
-  },300);
+  };
+  requestAnimationFrame(()=>window.setTimeout(prepareInitialCanvas,0));
 }
 void refreshRecoveryCandidates();if(!qaMode)void refreshWorks();
-if('serviceWorker' in navigator){const build=encodeURIComponent(import.meta.env.VITE_COMMIT_SHA??'dev');void navigator.serviceWorker.register('./sw.js?build='+build,{scope:'./'}).catch(()=>{});}
+if('serviceWorker' in navigator){
+  const register=()=>{
+    const build=encodeURIComponent(import.meta.env.VITE_COMMIT_SHA??'dev');
+    void navigator.serviceWorker.register('./sw.js?build='+build,{scope:'./'}).catch(()=>{});
+  };
+  if(qaMode)register();
+  else if('requestIdleCallback' in window)window.requestIdleCallback(register,{timeout:2500});
+  else setTimeout(register,800);
+}
 
 if(qaMode){
   const out=byId<HTMLPreElement>('qaGpuReport');

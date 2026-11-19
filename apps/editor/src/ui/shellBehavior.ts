@@ -1,6 +1,6 @@
 import {FEATURE_CATEGORIES,RIGHT_BOXES} from './shell';
 
-export type ShellControl={workspace:HTMLElement;drawer:HTMLButtonElement;openBox:(id:string)=>void;close:(focus?:boolean)=>void;setLayerPage:(value:boolean)=>void;layerPageOpen:()=>boolean;refreshWidth:()=>void};
+export type ShellControl={workspace:HTMLElement;drawer:HTMLButtonElement;openBox:(id:string,keyboardNavigation?:boolean)=>void;close:(focus?:boolean)=>void;setLayerPage:(value:boolean,keyboardNavigation?:boolean)=>void;layerPageOpen:()=>boolean;refreshWidth:()=>void};
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const safeRead=(key:string)=>{try{return localStorage.getItem(key)}catch{return null}};
 const safeWrite=(key:string,value:string)=>{try{localStorage.setItem(key,value)}catch{/* private browsing may disallow storage */}};
@@ -86,12 +86,17 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(compact.matches)rightDock.classList.remove('open');else document.body.classList.add('right-collapsed');
     syncPresentation();if(focus)(compact.matches?drawer:toggle).focus({preventScroll:true});
   };
-  function openBox(id:string){
+  function openBox(id:string,keyboardNavigation=false){
     setLayerPage(false);
     if(compact.matches)rightDock.classList.add('open');else document.body.classList.remove('right-collapsed');
     syncPresentation();
     const section=byId(id+'Body')?.closest<HTMLElement>('.workspace-box');
-    if(section){const button=section.querySelector<HTMLButtonElement>('.box-toggle');if(button?.getAttribute('aria-expanded')==='false')button.click();section.scrollIntoView({block:'nearest'});}
+    if(section){
+      const button=section.querySelector<HTMLButtonElement>('.box-toggle');
+      if(button?.getAttribute('aria-expanded')==='false')button.click();
+      section.scrollIntoView({block:'nearest'});
+      if(keyboardNavigation)button?.focus({preventScroll:true});
+    }
   }
   toggle.onclick=()=>{
     if(compact.matches){rightDock.classList.toggle('open');if(!rightDock.classList.contains('open'))layerOpen=false;}
@@ -298,6 +303,8 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(document.querySelector('dialog:modal'))return; // native modal owns dismissal
     const t=event.target;
     if(!(t instanceof Node))return;
+    const viewOptions=document.querySelector<HTMLDetailsElement>('#drawingViewOptions[open]');
+    if(viewOptions&&!viewOptions.contains(t))viewOptions.open=false;
     if(!featurePanel.hidden&&!featurePanel.contains(t)&&!featureButton.contains(t))showFeature(false);
     if(qaCard?.open&&!qaCard.contains(t)&&!qaEntry?.contains(t))closeQa();
     // When drawing/outside the dock, dismiss on pointerdown so the same
@@ -321,7 +328,10 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     // The event path still identifies the original dock; a detached target does not.
     const clickedInsideDock=event.composedPath().includes(rightDock)||
       (t instanceof Element&&!!t.closest('.c04-panel-float'));
-    if(floatingDockOpen()&&!clickedInsideDock&&!toggle.contains(t)&&!drawer.contains(t))close(false);
+    const clickedDockLauncher=t instanceof Element&&!!t.closest(
+      '#layer,#layersPage,#colorPage,#brushPage,#quickColor,#c04ContextTool,#c04ContextLayer,#c04ContextReference',
+    );
+    if(floatingDockOpen()&&!clickedInsideDock&&!clickedDockLauncher&&!toggle.contains(t)&&!drawer.contains(t))close(false);
     if(!clickedInsideDock)return;
     if(t instanceof Element&&t.closest('.box-more'))return;
     for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
@@ -346,6 +356,11 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
   });
   document.addEventListener('keydown',event=>{
     if(event.key!=='Escape'||event.defaultPrevented||document.querySelector('dialog:modal'))return;
+    const viewOptions=document.querySelector<HTMLDetailsElement>('#drawingViewOptions[open]');
+    if(viewOptions){
+      viewOptions.open=false;viewOptions.querySelector('summary')?.focus({preventScroll:true});
+      event.preventDefault();return;
+    }
     if(resizing){finish(true);event.preventDefault();return;}
     // Escape dismisses only the most immediate surface, then its parent.
     const openMenu=[...document.querySelectorAll<HTMLElement>('.box-more-menu')].find(menu=>!menu.hidden);

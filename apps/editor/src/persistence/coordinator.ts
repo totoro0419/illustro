@@ -50,10 +50,13 @@ export class PersistenceCoordinator{
   async initialize(controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>,savedRevision:RevisionId|null=null,preserved?:PreservedPortableData,recovered=false,selection:SelectionRect|null=null){
     // A previous document's Undo/Redo head write must not cross this switch.
     await this.flushPrepared();this.queue=[];this.controller=controller;this.preserved=preserved;this.selection=selection;const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
-    const storage=await this.storageStatus(true);const result=await this.request('init',{documentId:document.root.documentId,writerEpochId:document.writerEpochId,snapshot,blocks,savedRevisionId:savedRevision},blocks.map(x=>x.bytes.buffer as ArrayBuffer)) as any;
+    const result=await this.request('init',{documentId:document.root.documentId,writerEpochId:document.writerEpochId,snapshot,blocks,savedRevisionId:savedRevision},blocks.map(x=>x.bytes.buffer as ArrayBuffer)) as any;
     this.patch({currentRevision:document.head,savedRevision,protectedThrough:String(result.protectedThrough??'0'),backend:String(result.backend??'unknown'),recovered,
-      storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false,saving:false,
+      storageError:null,queueLength:0,protectionPending:false,saving:false,
       lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,recoveryDurationMs:null,lastGood:Boolean(result.lastGood),previousGood:Boolean(result.previousGood)});
+    // Quota and a persistent-storage permission request do not initialize
+    // the journal. Leave them off the path to the first editable frame.
+    if(this.stateValue.storagePersisted===null)void this.storageStatus(true);
   }
   noteCommit(document:CoreDocument,handoff:PersistenceHandoff){
     try{const packet=document.captureRecoveryPacket(handoff),blockMap=document.recoveryBlockPayloads(packet),blocks=[...blockMap].map(([id,bytes])=>({id,bytes})),algorithms=runtimeSupportedAlgorithms(packet);

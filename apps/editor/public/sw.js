@@ -1,8 +1,8 @@
 const params=new URL(self.location.href).searchParams;
 const build=(params.get('build')||'dev').replace(/[^A-Za-z0-9._-]/g,'_');
-const CACHE_PREFIX='illustro-m05-';
-const CACHE_NAME=CACHE_PREFIX+build;
 const scopeUrl=new URL('./',self.location.href).href;
+const CACHE_PREFIX='illustro-editor:'+scopeUrl+':';
+const CACHE_NAME=CACHE_PREFIX+build;
 const indexUrl=new URL('./index.html',self.location.href).href;
 
 self.addEventListener('install',event=>{
