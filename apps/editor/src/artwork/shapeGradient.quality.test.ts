@@ -415,6 +415,21 @@ describe('C09-005/015 invalid pointer geometry',()=>{
   });
 });
 
+describe('C09-005/C09-015 malformed cubic handle safety',()=>{
+  it('rejects incomplete and non-finite legacy handles without creating NaN points',()=>{
+    const incomplete=[{x:1,y:2,inX:0},{x:10,y:20}];
+    expect(moveShapeAnchor(incomplete,0,{x:5,y:6})).toEqual(incomplete);
+    const invalid=[{x:1,y:2,outX:Infinity,outY:4},{x:10,y:20}];
+    expect(moveShapeAnchor(invalid,0,{x:5,y:6})).toEqual(invalid);
+  });
+  it('rejects arithmetic overflow while preserving original cubic geometry',()=>{
+    const points=[{x:-1e308,y:2,inX:-1e308,inY:2},{x:3,y:4}];
+    expect(moveShapeAnchor(points,0,{x:1e308,y:3})).toEqual(points);
+    const handles=[{x:0,y:0,inX:1e308,inY:0},{x:1,y:1}];
+    expect(moveShapeAnchor(handles,0,{x:1e308,y:0})).toEqual(handles);
+  });
+});
+
 describe('C09-005/015 zoom-aware and no-Worker live preview',()=>{
   it('uses a small preview at fit zoom and more pixels only when zoomed in',()=>{
     expect(shapeLivePreviewDimensions(4000,2000,.5,true)).toEqual({outputWidth:512,outputHeight:256});
