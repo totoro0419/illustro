@@ -293,3 +293,34 @@ body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] [d
 .ih-recovery-item h2 { margin: 0; font-size: 1rem; }
 .ih-recovery-item div { display: flex; flex-wrap: wrap; gap: .4rem; }
 .ih-recovery-preview { width: min(160px, 100%); height: auto; }
+
+/* Keep the home screen centered on opening or creating artwork. */
+.ih-main-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+  max-width: 610px;
+  margin-inline: auto;
+  padding-block: clamp(35px, 9vh, 100px) 28px;
+}
+.ih-main-grid h1 { margin-bottom: 26px }
+.ih-feature-disclosure {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.ih-feature-disclosure > summary {
+  width: fit-content;
+  min-height: 44px;
+  padding: 10px 13px;
+  color: var(--ih-muted);
+  cursor: pointer;
+  border-radius: 8px;
+}
+.ih-feature-disclosure .ih-discover { min-height: 0 }
+.ih-canvas-setup { margin: 12px 0 4px }
+.ih-canvas-setup > summary { min-height: 42px; padding: 9px 2px; cursor: pointer }
+#ihSizeSummary { padding-inline-start: 6px; font-size: 12px; color: var(--ih-muted) }
+.ih-canvas-setup .ih-size-presets { margin-top: 8px }

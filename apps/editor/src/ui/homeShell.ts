@@ -63,20 +63,17 @@ const html = [
     '<section class="ih-screen ih-home" data-ih-screen="home" aria-labelledby="ihHomeTitle">',
       '<div class="ih-main-grid">',
         '<div class="ih-welcome">',
-          '<p class="ih-eyebrow"><span class="ih-sparkle" aria-hidden="true">'+icon('effects')+'</span> YOUR CREATIVE SPACE</p>',
-          '<h1 id="ihHomeTitle">Create <span>freely.</span></h1>',
-          '<p class="ih-subtitle">ひらめきを、自由な一枚に。</p>',
-          '<p class="ih-intro">新しいキャンバスから、あなたの次の作品を。</p>',
+          '<h1 id="ihHomeTitle">Illustro<span>.</span></h1>',
           '<div class="ih-home-actions">',
-            '<button type="button" id="ihStart" class="ih-action ih-action-primary"><span class="ih-action-icon ih-primary-icon" aria-hidden="true">'+icon('plus')+'</span><span class="ih-action-text"><strong>新しい作品</strong><small>空白から作成・ファイルから開く</small></span><span class="ih-action-arrow" aria-hidden="true">↗</span></button>',
-            '<button type="button" id="ihWorks" class="ih-action"><span class="ih-action-icon" aria-hidden="true">'+icon('layers')+'</span><span class="ih-action-text"><strong>マイ作品</strong><small>保存した作品を一覧・管理</small></span><span class="ih-action-arrow" aria-hidden="true">→</span></button>',
+            '<button type="button" id="ihStart" class="ih-action ih-action-primary"><span class="ih-action-icon ih-primary-icon" aria-hidden="true">'+icon('plus')+'</span><span class="ih-action-text"><strong>新しい作品</strong></span><span class="ih-action-arrow" aria-hidden="true">↗</span></button>',
+            '<button type="button" id="ihSelectFile" class="ih-action"><span class="ih-action-icon" aria-hidden="true">'+icon('open')+'</span><span class="ih-action-text"><strong>ファイルから開く</strong></span></button>',
             '<button type="button" id="ihContinue" class="ih-action"><span class="ih-action-icon" aria-hidden="true">'+icon('recover')+'</span><span class="ih-action-text"><strong>前回の作業を続ける</strong><small id="ihContinueDescription">保存された作業を確認中</small></span><span class="ih-action-arrow" aria-hidden="true">→</span></button>',
           '</div>',
           '<button type="button" id="ihReturnEditor" class="ih-return-editor" hidden><span aria-hidden="true">↗</span> 開いているキャンバスに戻る</button>',
            '<p id="ihHomeSaveState" class="ih-save-status" role="status" aria-live="polite" hidden></p>',
         '</div>',
-        '<section class="ih-discover" aria-labelledby="ihDiscoverHeading">',
-          '<div class="ih-discover-top"><div><span class="ih-overline">DISCOVER ILLUSTRO</span><h2 id="ihDiscoverHeading">知るほど、描くのが楽しくなる。</h2></div><span class="ih-discover-count" id="ihFeatureCounter">01 / 05</span></div>',
+        '<details class="ih-feature-disclosure"><summary>機能紹介</summary><section class="ih-discover">',
+          '<div class="ih-discover-top"><span class="ih-discover-count" id="ihFeatureCounter">01 / 05</span></div>',
           '<button type="button" id="ihFeatureVisual" class="ih-feature-visual" aria-label="紹介中の機能について詳しく見る">',
             '<span class="ih-glow ih-glow-a" aria-hidden="true"></span><span class="ih-glow ih-glow-b" aria-hidden="true"></span>',
             '<span class="ih-visual-frame" aria-hidden="true"><span class="ih-frame-handle"></span><span class="ih-frame-canvas"><svg viewBox="0 0 450 270" fill="none"><path d="M34 209 C105 148 120 224 180 143 S285 93 347 114 S405 89 430 55" stroke="url(#ihStroke)" stroke-width="22" stroke-linecap="round"/><path d="M39 210 C107 151 122 230 180 143 S285 93 347 114 S405 89 430 55" stroke="white" stroke-opacity=".55" stroke-width="2.5" stroke-linecap="round"/><defs><linearGradient id="ihStroke" x1="20" y1="210" x2="430" y2="56"><stop stop-color="#77B7FF"/><stop offset=".47" stop-color="#8290F8"/><stop offset="1" stop-color="#C28CE9"/></linearGradient></defs></svg></span><span class="ih-frame-caption">ILLUSTRO · CANVAS</span></span>',
@@ -86,9 +83,8 @@ const html = [
             '<h3 id="ihFeatureTitle">キャンバスは、好きな角度で。</h3><p id="ihFeatureSummary">拡大・回転しても、作品そのものの大きさや向きは変わりません。</p>',
             '<div class="ih-feature-bottom"><button type="button" id="ihFeatureMore" class="ih-more">機能を詳しく見る <span aria-hidden="true">↗</span></button><div class="ih-feature-controls"><button type="button" id="ihFeaturePrev" aria-label="前の機能">←</button><button type="button" id="ihFeatureNext" aria-label="次の機能">→</button></div></div>',
           '</div>',
-        '</section>',
+        '</section></details>',
       '</div>',
-      '<footer class="ih-footer"><span>ILLUSTRO — CREATE FREELY.</span><span>MAKE ROOM FOR IMAGINATION.</span></footer>',
     '</section>',
     '<section class="ih-screen ih-inner-screen" data-ih-screen="works" hidden aria-labelledby="ihWorksTitle">',
       '<div class="ih-page-top"><span class="ih-overline">YOUR WORKSPACE</span><h1 id="ihWorksTitle">マイ作品<span class="ih-period">.</span></h1><p>作品を選び、続きを描くための場所。</p></div>',
@@ -114,14 +110,12 @@ const html = [
   '</main>',
   '<div class="ih-floating-notice" id="ihNotice" role="status" aria-live="polite" hidden></div>',
   '<dialog id="ihNewDialog" class="ih-new-dialog" aria-labelledby="ihNewTitle"><div class="ih-dialog-content">',
-    '<div class="ih-dialog-head"><div><span class="ih-overline">START CREATING</span><h2 id="ihNewTitle">新しい作品</h2></div><button type="button" id="ihNewClose" class="ih-dialog-close" aria-label="閉じる">×</button></div>',
-    '<div class="ih-start-choices"><button type="button" id="ihChoiceBlank" class="ih-choice" aria-pressed="true"><span class="ih-choice-icon">'+icon('document')+'</span><strong>空白から作成</strong><small>新しいキャンバスを準備</small></button><button type="button" id="ihChoiceFile" class="ih-choice" aria-pressed="false"><span class="ih-choice-icon">'+icon('open')+'</span><strong>ファイルから開く</strong><small>.illustro 形式の作品</small></button></div>',
-    '<form id="ihBlankForm"><label class="ih-name-field">作品名<input id="ihNewName" name="name" type="text" value="新しい作品" maxlength="120" required></label><div class="ih-size-heading"><strong>キャンバスサイズ</strong><span>px</span></div><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button><button type="button" data-ih-preset="4000x4000" aria-pressed="false">超高画質（4000×4000）</button><button type="button" id="ihA4Preset">A4（300 DPI）</button></div>',
-      '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="decimal"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="decimal"></label></div><div class="ih-dimensions"><label>単位<select id="ihNewUnit"><option value="px">px（画素）</option><option value="mm">mm（ミリメートル）</option></select></label><label>解像度（DPI）<input id="ihNewDpi" type="number" min="1" max="2400" step="1" value="72" inputmode="numeric"></label></div><p id="ihPixelPreview" class="ih-dialog-hint" aria-live="polite">512 × 384 px · 72 DPI</p><p class="ih-dialog-hint">色プロファイル：sRGB</p>',
-      '<label class="ih-name-field">背景<select id="ihNewBackground"><option value="transparent">透明</option><option value="white">白い背景レイヤー</option></select></label><label class="ih-name-field"><input type="checkbox" id="ihNewEmptyLayers"> 空のレイヤー構成で始める</label><details><summary>作品情報（任意）</summary><label class="ih-name-field">作者<input id="ihNewAuthor" maxlength="160" autocomplete="off"></label><label class="ih-name-field">説明<textarea id="ihNewDescription" maxlength="2000" rows="2"></textarea></label></details><div class="ih-name-field"><label>保存した設定<select id="ihTemplateSelect"><option value="">選択してください</option></select></label><label>新しいテンプレート名<input id="ihTemplateName" maxlength="80" placeholder="例：A4 300DPI"></label><div class="ih-dialog-actions"><button type="button" id="ihTemplateSave" class="ih-quiet-button">設定を保存</button><button type="button" id="ihTemplateDelete" class="ih-quiet-button">選択した設定を削除</button></div></div><p class="ih-dialog-hint">作品はIllustro内に自動保存されます。ファイル保存はバックアップ用です。</p><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
+    '<div class="ih-dialog-head"><div><h2 id="ihNewTitle">新しい作品</h2></div><button type="button" id="ihNewClose" class="ih-dialog-close" aria-label="閉じる">×</button></div>',
+    '<form id="ihBlankForm"><label class="ih-name-field">作品名<input id="ihNewName" name="name" type="text" value="新しい作品" maxlength="120" required></label><details id="ihCanvasSetup" class="ih-canvas-setup"><summary>サイズ・背景 <span id="ihSizeSummary">512 × 384 px</span></summary><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button><button type="button" data-ih-preset="4000x4000" aria-pressed="false">超高画質（4000×4000）</button><button type="button" id="ihA4Preset">A4（300 DPI）</button></div>',
+      '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="decimal"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="decimal"></label></div><div class="ih-dimensions"><label>単位<select id="ihNewUnit"><option value="px">px（画素）</option><option value="mm">mm（ミリメートル）</option></select></label><label>解像度（DPI）<input id="ihNewDpi" type="number" min="1" max="2400" step="1" value="72" inputmode="numeric"></label></div><p id="ihPixelPreview" class="ih-dialog-hint" aria-live="polite">512 × 384 px · 72 DPI</p>',
+      '<label class="ih-name-field">背景<select id="ihNewBackground"><option value="transparent">透明</option><option value="white">白い背景レイヤー</option></select></label><label class="ih-name-field"><input type="checkbox" id="ihNewEmptyLayers"> 空のレイヤー構成で始める</label><details><summary>作品情報（任意）</summary><label class="ih-name-field">作者<input id="ihNewAuthor" maxlength="160" autocomplete="off"></label><label class="ih-name-field">説明<textarea id="ihNewDescription" maxlength="2000" rows="2"></textarea></label></details><details><summary>サイズ設定の保存・読み込み</summary><label>保存した設定<select id="ihTemplateSelect"><option value="">選択してください</option></select></label><label>新しいテンプレート名<input id="ihTemplateName" maxlength="80" placeholder="例：A4 300DPI"></label><div class="ih-dialog-actions"><button type="button" id="ihTemplateSave" class="ih-quiet-button">設定を保存</button><button type="button" id="ihTemplateDelete" class="ih-quiet-button">選択した設定を削除</button></div></details></details><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
       '<div class="ih-dialog-actions"><button type="button" id="ihNewCancel" class="ih-quiet-button">キャンセル</button><button type="submit" id="ihNewCreate" class="ih-solid-button">キャンバスを作成 <span aria-hidden="true">↗</span></button></div>',
     '</form>',
-    '<div id="ihFileOptions" class="ih-file-options" hidden><p>Illustroの作品ファイル（.illustro）を選択して、編集画面で開きます。</p><button type="button" id="ihSelectFile" class="ih-solid-button">ファイルを選択 <span aria-hidden="true">↗</span></button></div>',
   '</div></dialog>'
 ].join('');
 
@@ -163,7 +157,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const notify=(message:string)=>{const notice=el('ihNotice');notice.textContent=message;notice.hidden=!message;};
   const updateEditorLink=()=>{el('ihReturnEditor').hidden=!actions.hasDocument();};
   const navigate=(next:Screen,writeHistory=true)=>{
-    if(next==='editor'&&!actions.hasDocument()){showNew('blank');return;}
+    if(next==='editor'&&!actions.hasDocument()){showNew();return;}
     screen=next;const inEditor=next==='editor';
     root.hidden=inEditor;app.inert=!inEditor;app.setAttribute('aria-hidden',String(!inEditor));
     if(inEditor)requestAnimationFrame(()=>actions.onEditorVisible?.());
@@ -180,11 +174,15 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       if(location.hash!==hash)history.pushState({illustroScreen:next},'',hash);
     }
   };
-  const showNew=(mode:'blank'|'file'='blank')=>{navigate('home');setCreationMode(mode);refillTemplates(templatePicker.value);notify('');dialog.showModal();if(mode==='blank')prefetchDraft();};
-  const setCreationMode=(mode:'blank'|'file')=>{
-    const blank=mode==='blank';el('ihBlankForm').hidden=!blank;el('ihFileOptions').hidden=blank;
-    el('ihChoiceBlank').setAttribute('aria-pressed',String(blank));el('ihChoiceFile').setAttribute('aria-pressed',String(!blank));
+  const showNew=(mode:'blank'|'file'='blank')=>{
+    if(mode==='file'){actions.openFile();return;}
+    navigate('home');
+    refillTemplates(templatePicker.value);
+    el<HTMLDetailsElement>('ihCanvasSetup').open=false;
     el('ihNewError').textContent='';
+    notify('');
+    dialog.showModal();
+    prefetchDraft();
   };
   const chooseTrivia=(next:number)=>{
     featureIndex=(next+HOME_TRIVIA.length)%HOME_TRIVIA.length;const card=HOME_TRIVIA[featureIndex]!;
@@ -430,15 +428,14 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   };
 
   setButton('ihBrand',()=>void showHome());setButton('ihNavHome',()=>void showHome());setButton('ihNavWorks',()=>navigate('works'));
-  setButton('ihNavSettings',()=>navigate('settings'));setButton('ihStart',()=>showNew());setButton('ihWorks',()=>navigate('works'));
+  setButton('ihNavSettings',()=>navigate('settings'));setButton('ihStart',()=>showNew());
   setButton('ihContinue',()=>showRecovery(true));setButton('ihReturnEditor',()=>navigate('editor'));
   setButton('ihWorksStart',()=>showNew());setButton('ihSettingsEditor',()=>actions.hasDocument()?navigate('editor'):showNew());
   setButton('ihFeaturePrev',()=>chooseTrivia(featureIndex-1));setButton('ihFeatureNext',()=>chooseTrivia(featureIndex+1));
   setButton('ihFeatureVisual',showFeature);setButton('ihFeatureMore',showFeature);
   setButton('ihDetailEditor',()=>actions.hasDocument()?navigate('editor'):showNew());
   setButton('ihNewClose',()=>dialog.close());setButton('ihNewCancel',()=>dialog.close());
-  setButton('ihChoiceBlank',()=>setCreationMode('blank'));setButton('ihChoiceFile',()=>setCreationMode('file'));
-  setButton('ihSelectFile',()=>{dialog.close();actions.openFile();});
+  setButton('ihSelectFile',actions.openFile);
   let draftTimer:ReturnType<typeof setTimeout>|null=null;
   let currentUnit:DocumentUnit='px';
   const templateStore=(()=>{try{return localStorage;}catch{return null;}})();
@@ -461,10 +458,11 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
         [el<HTMLInputElement>('ihNewWidth').valueAsNumber,d.width],
         [el<HTMLInputElement>('ihNewHeight').valueAsNumber,d.height],
       ].some(([mm,px])=>Math.abs(mm!*scale-px!)>.0001);
+      el('ihSizeSummary').textContent=d.width+' × '+d.height+' px';
       el('ihPixelPreview').textContent=d.width+' × '+d.height+' px · '+d.dpi+' DPI'+(rounded?'（端数は最も近い画素に丸めます）':'');
       return d;
     }
-    catch(error){el('ihPixelPreview').textContent=error instanceof Error?error.message:String(error);return null;}
+    catch(error){el('ihSizeSummary').textContent='サイズを確認';el('ihPixelPreview').textContent=error instanceof Error?error.message:String(error);return null;}
   };
   const prefetchDraft=()=>{
     if(draftTimer!==null){clearTimeout(draftTimer);draftTimer=null;}
@@ -562,6 +560,11 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     }
   }catch{}
   refillTemplates();refreshEmptyLayers();
+  el<HTMLFormElement>('ihBlankForm').addEventListener('invalid',event=>{
+    if(!(event.target instanceof HTMLElement))return;
+    const setup=event.target.closest<HTMLDetailsElement>('#ihCanvasSetup');
+    if(setup)setup.open=true;
+  },true);
   el<HTMLFormElement>('ihBlankForm').addEventListener('submit',event=>{event.preventDefault();void(async()=>{
     const d=sizePreview();if(!d){el('ihNewError').textContent='サイズと解像度を確認してください。';return;}
     const button=el<HTMLButtonElement>('ihNewCreate');button.disabled=true;el('ihNewError').textContent='キャンバスを準備しています。';
