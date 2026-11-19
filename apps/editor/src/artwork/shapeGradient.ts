@@ -192,11 +192,15 @@ export function applyShapePreviewMask(
   const directPixelMask=defaultSampler&&mask.shape==='pixels'?mask:null;
   // Exact source-pixel area averaging is bounded to small, sparse masks.
   // Dense 4K masks retain the existing constant-time center sampler.
-  let sparsePixelTiles:SparseMaskTile[]|null=null;
+  let sparsePixelBuckets:Map<number,SparseMaskTile[]>|null=null;
   if(downscaled&&directPixelMask&&width/outputWidth>=4&&height/outputHeight>=4&&
-    outputWidth*outputHeight<=100000&&directPixelMask.scaleX<=4&&directPixelMask.scaleY<=4){
+    outputWidth*outputHeight<=100000&&directPixelMask.scaleX>0&&directPixelMask.scaleY>0&&
+    directPixelMask.scaleX<=4&&directPixelMask.scaleY<=4){
     const entries=Object.entries(directPixelMask.tiles).filter(([,value])=>value!=='ff');
-    if(entries.length<=16){
+    // Index each changed 64px source tile by the preview pixels it touches.
+    // This avoids scanning every tile for every output pixel, allowing larger
+    // sparse 4K masks to retain area coverage without blocking pointer input.
+    if(entries.length<=128){
       const tiles=entries.map(([key])=>{
         const [tx,ty]=key.split(',').map(Number);
         const left=directPixelMask.x+tx!*64*directPixelMask.scaleX;
@@ -204,8 +208,24 @@ export function applyShapePreviewMask(
         return {tx:tx!,ty:ty!,left,top,
           right:left+64*directPixelMask.scaleX,bottom:top+64*directPixelMask.scaleY};
       });
-      if(tiles.every(tile=>[tile.left,tile.top,tile.right,tile.bottom].every(Number.isFinite)))
-        sparsePixelTiles=tiles;
+      if(tiles.every(tile=>[tile.left,tile.top,tile.right,tile.bottom].every(Number.isFinite))){
+        const buckets=new Map<number,SparseMaskTile[]>();
+        let assignments=0,withinBudget=true;
+        for(const tile of tiles){
+          const x0=Math.max(0,Math.floor(tile.left*outputWidth/width));
+          const x1=Math.min(outputWidth,Math.ceil(tile.right*outputWidth/width));
+          const y0=Math.max(0,Math.floor(tile.top*outputHeight/height));
+          const y1=Math.min(outputHeight,Math.ceil(tile.bottom*outputHeight/height));
+          assignments+=Math.max(0,x1-x0)*Math.max(0,y1-y0);
+          if(assignments>100000){withinBudget=false;break;}
+          for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+            const key=y*outputWidth+x,existing=buckets.get(key);
+            if(existing)existing.push(tile);
+            else buckets.set(key,[tile]);
+          }
+        }
+        if(withinBudget)sparsePixelBuckets=buckets;
+      }
     }
   }
   // Only small polygons use the exact area integral. This keeps the usual
@@ -242,8 +262,8 @@ export function applyShapePreviewMask(
             ?(mask.inverted?1:1-mask.density)
             :smallPathPreviewCoverage(mask,left,top,right,bottom))
           :directPixelMask
-            ?(sparsePixelTiles
-              ?sparsePixelPreviewCoverage(directPixelMask,sparsePixelTiles,left,top,right,bottom)
+            ?(sparsePixelBuckets
+              ?sparsePixelPreviewCoverage(directPixelMask,sparsePixelBuckets.get(y*outputWidth+x)??[],left,top,right,bottom)
               :samplePixelMask(directPixelMask,Math.floor((left+right)/2)+.5,Math.floor((top+bottom)/2)+.5)/255)
             :sampleCoverage(mask,(left+right)/2,(top+bottom)/2);
     pixels[at+3]=Math.round(pixels[at+3]!*coverage);
