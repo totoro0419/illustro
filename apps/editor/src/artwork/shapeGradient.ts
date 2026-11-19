@@ -230,6 +230,11 @@ export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:Art
 /** Keep the live on-canvas preview light at fit zoom, but use more detail
  * when zoomed in. Main-thread fallback is deliberately smaller to avoid
  * blocking pointer input on browsers without OffscreenCanvas. */
+/** Keep gradient mask rasterization on the Worker for large live previews.
+ * Thumbnail-size previews use area coverage to retain subpixel selections. */
+export function shapeLiveMaskOnMainThread(kind:'path'|'gradient',outputWidth:number,outputHeight:number):boolean{
+  return kind==='path'||outputWidth*outputHeight<=100000;
+}
 export function shapeLivePreviewDimensions(width:number,height:number,zoom:number,workerAvailable:boolean){
   const edge=workerAvailable?(Number.isFinite(zoom)&&zoom>=4?1024:Number.isFinite(zoom)&&zoom>=2?768:512):256;
   const scale=Math.min(1,edge/Math.max(width,height));
@@ -380,15 +385,16 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
           context.width,context.height,context.drawing.viewState?.zoom??1,
           typeof OffscreenCanvas!=='undefined');
         const abort=new AbortController();liveAbort=abort;
+        const postMask=shapeLiveMaskOnMainThread(content.kind,outputWidth,outputHeight);
         try{
           const pixels=await runArtwork({width:context.width,height:context.height,
-            outputWidth,outputHeight,mask:mask??null,previewMask:false,content},
+            outputWidth,outputHeight,mask:mask??null,previewMask:!postMask,content},
             {signal:abort.signal,priority:'preview'});
           if(abort.signal.aborted||version!==liveVersion||!editingHandles||
             draftDrawing!==context.drawing||api.context()?.drawing!==context.drawing)continue;
-          // Apply the same area-aware selection coverage to both paths and gradients.
-          // The renderer must not pre-apply a center-sampled mask to gradients.
-          applyShapePreviewMask(pixels,mask,context.width,context.height,outputWidth,outputHeight);
+          // Large gradient previews stay masked in the drawing Worker rather
+          // than blocking the UI thread with a second full-image pass.
+          if(postMask)applyShapePreviewMask(pixels,mask,context.width,context.height,outputWidth,outputHeight);
           context.drawing.showArtworkPreview(new ImageData(pixels,outputWidth,outputHeight),
             false,replacement??null);
         }catch(error){
