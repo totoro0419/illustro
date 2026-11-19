@@ -1,10 +1,18 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`4f0f009b`](https://github.com/totoro0419/illustro/commit/4f0f009b9e1a5fb62293501778deb0b625962985)
+**照合対象のコードHEAD:** [`a50d28ae`](https://github.com/totoro0419/illustro/commit/a50d28aeb0615db267a2d2f61e316964532da796)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
+
+### 2026-11-19 定期自動開発②｜C09-004・C09-005・C09-015｜大きな画素マスク・曲線ハンドル安全性（3 ID、2段階）
+
+- **C09-004（部分改善）**：縮小表示で変更済み64px画素マスクが16タイルを超えると中心点サンプリングへ戻り、細い境界が消える問題を改善。変更タイルを出力画素ごとに索引化し、最大128タイルまで元の整数画素の面積平均を計算。索引登録10万件を超える密集マスクは従来の軽量表示へ戻す。17タイル・小数位置・画面外タイル・反転の回帰テストを追加。128タイル超の密集マスクの厳密縮小は残る。
+- **C09-005 / C09-015（部分改善）**：編集点のドラッグで古いベジェ制御ハンドルが片側だけ存在する、非有限値を含む、座標差分や移動後ハンドルがオーバーフローする場合は変更を拒否。NaNの曲線を仮表示・保存しない。既存の正常なハンドル移動は維持。欠損ハンドル・非有限値・演算オーバーフローの回帰テストを追加。
+- **コード・テスト（5コミット）**：[d3ca9dc9](https://github.com/totoro0419/illustro/commit/d3ca9dc95f48bfe1d65092329889366befd4f5bc) → [dfecc287](https://github.com/totoro0419/illustro/commit/dfecc28723fd3e95d25f1703fd4c040e90cbbb5a) → [70414336](https://github.com/totoro0419/illustro/commit/7041433682a7247d0edc285a93e09c5815e66c6b) → [872b0d57](https://github.com/totoro0419/illustro/commit/872b0d571ce844bd0874e734163339743c8d5458) → [a50d28ae](https://github.com/totoro0419/illustro/commit/a50d28aeb0615db267a2d2f61e316964532da796)。変更は `apps/editor/src/artwork/shapeGradient.ts`、`shapeGradient.quality.test.ts`。保存形式・Undo/Redo構造は変更なし。
+- **検証**：最終コード `a50d28ae` の[統合CI #44445404019](https://github.com/totoro0419/illustro/actions/runs/44445404019)・[Core CI #44445413507](https://github.com/totoro0419/illustro/actions/runs/44445413507)とも **completed/success**。Core/Brush/Editorテスト、型検査、本番ビルド成功。途中 `872b0d57` でTypeScriptのexactOptionalPropertyTypes検査に失敗したが `a50d28ae` で修正・再検証済み。Android実機、4K性能実測、旧作品の保存復元・Undo/Redo独立実機検証は未実施。
+- **残件・次回**：3 IDとも部分改善、完全解決認定なし。記録上の部分対応37件・実装根拠未確認0件・個別完了未認定92件を維持。次回は **C09-004** の128タイル超の密集画素マスク・大規模複雑パスの縮小精度（`apps/editor/src/artwork/shapeGradient.ts`）、**C09-005/015** の大きなパス・複雑レイヤー合成の途中表示（`apps/editor/src/artwork/render.ts`）。競合時は **C07-003**（`apps/editor/src/transform/`）。main・PR #73変更なし、PR #75 Draft維持。
 
 ### 2026-11-19 定期自動開発①｜C06-002・C06-007｜選択消しゴムGPU読戻し・プレビュー整合性（2 ID、2段階）
 
