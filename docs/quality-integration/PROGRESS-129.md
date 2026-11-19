@@ -1,10 +1,19 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`f9cca830`](https://github.com/totoro0419/illustro/commit/f9cca830f2c658bf361458ba532c5cad7309701e)
+**照合対象のコードHEAD:** [`3d21f207`](https://github.com/totoro0419/illustro/commit/3d21f20710d285325db5d63a54fec7a19110cde9)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
+
+### 2026-11-19 定期自動開発②｜C09-004・C09-005・C09-015｜グラデーションのマスク精度・4K応答性（3 ID）
+
+- **C09-004（部分改善）**：図形だけでなくグラデーションの縮小プレビューでも、マスクを描画後に一度だけ適用。小さな矩形・自由形状の選択が出力画素の中心から外れても、面積平均で消えないよう改善。通常プレビューの左右比較も合成後に一度だけマスク適用。サブピクセル矩形・三角形・マスクなしの回帰テスト追加。
+- **C09-004 / C09-005（部分改善）**：ピクセルマスクのプレビューで、128×128画素の中間マスクタイルを大量に生成する経路を避け、元の64×64タイルから直接サンプリング。整数画素中心・マスクの小数オフセット・拡大縮小・反転・密度の既存確定結果と一致する回帰テスト追加。大きなパス・画素マスクの厳密な縮小面積平均は残る。
+- **C09-005 / C09-015（部分改善）**：ライブ編集点の大きなグラデーション仮表示（10万画素超）では、マスク適用を描画Worker側で済ませてUIスレッドの全画素再走査を回避。小さいライブプレビューと通常の縮小プレビューは面積平均を使用。ベクター図形の既存マスク処理を維持。Worker非対応・複雑レイヤーの実機一致は未確認。
+- **コード・回帰テスト（6コミット）**：[a44520a8](https://github.com/totoro0419/illustro/commit/a44520a8c351394a10b9bcb907d551b24f90aca2) → [6d86fd8b](https://github.com/totoro0419/illustro/commit/6d86fd8b5a05a8d0fcaeda9de869b7fbf04b61ea) → [5efaec97](https://github.com/totoro0419/illustro/commit/5efaec97d46dc57bffe7b17d9b1f0be85cccd8ef) → [770707b6](https://github.com/totoro0419/illustro/commit/770707b6012e1225fadeab237265a3d59b5c4f8e) → [5cfec933](https://github.com/totoro0419/illustro/commit/5cfec933cb9777fcf263b5a3c05e36c48a634d8d) → [3d21f207](https://github.com/totoro0419/illustro/commit/3d21f20710d285325db5d63a54fec7a19110cde9)。変更は `apps/editor/src/artwork/shapeGradient.ts` と `shapeGradient.quality.test.ts`。保存形式・Undo/Redo構造は変更なし。
+- **検証**：最終コードHEAD `3d21f207` の[統合CI #44429316094](https://github.com/totoro0419/illustro/actions/runs/44429316094)・[Core CI #44429323844](https://github.com/totoro0419/illustro/actions/runs/44429323844)はともに **completed/success**。統合CIのCore/Brush/Editorテスト、型検査、本番ビルドの各ステップ成功。Android実機・4K時間/メモリ・旧作品保存復元・Undo/Redoの独立実機検証は未実施。
+- **残件・次回**：3 IDとも部分改善で完全解決認定なし。記録上の部分対応37件・実装根拠未確認0件・個別完了未認定92件を維持。次回は **C09-004** 大きな自由形状・画素マスクの縮小面積精度（`apps/editor/src/artwork/shapeGradient.ts`）、**C09-005/015** 高倍率・複雑レイヤー合成の仮表示一致（`apps/editor/src/artwork/render.ts`）。競合時は **C07-003** 特殊レイヤー一括変形（`apps/editor/src/transform/`）。main・PR #73は変更せず、PR #75はDraft維持。
 
 ### 2026-11-19 定期自動開発①｜C06-002・C06-007・C06-015・C08-003（4 ID、4段階の実装修正）
 
