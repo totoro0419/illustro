@@ -6,6 +6,13 @@
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
 
+### 2026-11-19 定期自動開発①｜C06-002｜選択消しゴムの描画範囲限定GPU事前確認（1 ID、5コミット）
+
+- **C06-002（部分改善）**：選択付き消しゴムのGPU事前確認を、選択マスク全体ではなく実際の筆跡の保守的な外接範囲に限定。筆跡から離れた選択画素が別GPUタイルに存在しても、そこを先読みしない。1タイル内でも筆跡外の選択画素は無変更判定に含めず、無関係な画素による全タイル読戻しを防ぐ。変更がある場合は筆跡外を含む**従来の全既存タイル**を取得して保存スナップショットとUndo/Redoの互換性を維持。異常な筆跡座標は安全側の従来の全選択範囲確認へ戻す。
+- **コード・テスト（5コミット）**：[971c186d](https://github.com/totoro0419/illustro/commit/971c186d9d5c033c9317f5d056ea3d01d2b800bf) → [078ccc93](https://github.com/totoro0419/illustro/commit/078ccc937e219efeb4193161ff9474aaa1ca782f) → [b0bddf97](https://github.com/totoro0419/illustro/commit/b0bddf9730db1a14f946b4c85d613a8d2a7d7658) → [ce479665](https://github.com/totoro0419/illustro/commit/ce4796651bea33c9a41189973f90d2b034073723) → [a6ce151b](https://github.com/totoro0419/illustro/commit/a6ce151b07ac3161dc8c6d85ef87f0f31bf91dd5)。変更は `apps/editor/src/selection/maskStrokeBounds.ts`・`tileCapture.ts`・`brushSurface.ts` と対応するテスト2ファイル。追加回帰テスト6件。
+- **検証**：コード最終 `a6ce151b` の[統合CI #44448994078](https://github.com/totoro0419/illustro/actions/runs/44448994078)・[Core CI #44448997504](https://github.com/totoro0419/illustro/actions/runs/44448997504)はともに **completed/success**。テスト・型検査・本番ビルド成功。Android実機、4K時間・メモリ、旧作品の保存復元・Undo/Redo独立実機検証は未実施。
+- **残件・次回**：C06-002は部分改善のまま、完全解決認定なし。記録上の部分対応37件・実装根拠未確認0件・個別完了未認定92件を維持。次回は **C06-001/002** の選択付き特殊合成・消しゴム途中表示と変更がある場合の全GPUタイル読戻し（`apps/editor/src/brushSurface.ts`、`packages/brush-rt/src/stroke-overlay.mjs`、`apps/editor/src/selection/tileCapture.ts`）。次点 **C06-015** 特殊グループのコピー、競合時 **C07-003**。main・PR #73変更なし、PR #75 Draft維持。
+
 ### 2026-11-19 定期自動開発②｜C09-004・C09-005・C09-015｜大きな画素マスク・曲線ハンドル安全性（3 ID、2段階）
 
 - **C09-004（部分改善）**：縮小表示で変更済み64px画素マスクが16タイルを超えると中心点サンプリングへ戻り、細い境界が消える問題を改善。変更タイルを出力画素ごとに索引化し、最大128タイルまで元の整数画素の面積平均を計算。索引登録10万件を超える密集マスクは従来の軽量表示へ戻す。17タイル・小数位置・画面外タイル・反転の回帰テストを追加。128タイル超の密集マスクの厳密縮小は残る。
