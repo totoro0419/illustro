@@ -25,6 +25,9 @@ export type ClipboardItem=Readonly<{
   editable?:Readonly<{layers:readonly EditableLayerCopy[];groups:readonly LayerGroup[]}>;
 }>;
 const safeRect=(selection:SelectionRect|null,width:number,height:number)=>{
+  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||
+    selection&&![selection.x,selection.y,selection.width,selection.height].every(Number.isFinite))
+    throw Error('コピーする範囲が正しくありません。');
   const x0=Math.max(0,Math.min(width,Math.ceil(selection?.x??0)));
   const y0=Math.max(0,Math.min(height,Math.ceil(selection?.y??0)));
   const x1=Math.max(0,Math.min(width,Math.floor(selection?selection.x+selection.width:width)));
@@ -105,6 +108,12 @@ export class ArtworkClipboard {
     const selection=opts.selectionOnly?drawing.selectedRectangle:null;
     if(opts.selectionOnly&&!selection)throw Error('先に選択範囲を作成してください。');
     const area=safeRect(selection,root.width,root.height);
+    // Never turn a corrupt saved selection mask into an unmasked rectangle
+    // copy. In particular, missing alpha bytes must not expose extra pixels.
+    if(selection&&this.selectionMask&&(
+      this.selectionMask.width!==root.width||this.selectionMask.height!==root.height||
+      this.selectionMask.alpha.length!==root.width*root.height))
+      throw Error('選択マスクの大きさが作品に一致しません。');
     let source:Uint8Array|Uint8ClampedArray,editable:ClipboardItem['editable'];
     let regionPixels:Uint8ClampedArray|null=null;
     const selectedLayer=controller.selectedLayer;

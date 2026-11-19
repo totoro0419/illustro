@@ -75,3 +75,27 @@ describe('C06-015 editable group copy uses sparse painted tiles',()=>{
   expect(doc.readPixel(recent[1]!,130,130)).toEqual([140,70,30,255]);
  });
 });
+
+describe('C06-015 invalid clipboard selection fails before any pixel readback',()=>{
+ it('rejects non-finite selection coordinates without changing clipboard content',async()=>{
+  const doc=new CoreDocument({width:128,height:128,ids:createDeterministicIdFactory()});
+  const controller=EditorController.restored(doc,doc.defaultRasterLayerId);
+  const full=vi.fn(async()=>{throw Error('GPU readback must not run');});
+  const drawing={selectedRectangle:{x:NaN,y:0,width:5,height:5},captureDocumentLayers:full} as unknown as BrushSurface;
+  const clipboard=new ArtworkClipboard();
+  await expect(clipboard.copy(controller,drawing,{merged:false,selectionOnly:true})).rejects.toThrow('範囲');
+  expect(full).not.toHaveBeenCalled();
+  expect(clipboard.hasContent).toBe(false);
+ });
+ it('rejects a truncated selection mask rather than copying an unmasked rectangle',async()=>{
+  const doc=new CoreDocument({width:128,height:128,ids:createDeterministicIdFactory()});
+  const controller=EditorController.restored(doc,doc.defaultRasterLayerId);
+  const region=vi.fn(async()=>new Uint8ClampedArray(16));
+  const drawing={selectedRectangle:{x:1,y:1,width:2,height:2},captureDocumentLayerRegion:region} as unknown as BrushSurface;
+  const clipboard=new ArtworkClipboard();
+  clipboard.setSelectionMask({width:128,height:128,alpha:new Uint8Array(12)});
+  await expect(clipboard.copy(controller,drawing,{merged:false,selectionOnly:true})).rejects.toThrow('選択マスク');
+  expect(region).not.toHaveBeenCalled();
+  expect(clipboard.hasContent).toBe(false);
+ });
+});
