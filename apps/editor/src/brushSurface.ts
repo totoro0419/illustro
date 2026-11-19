@@ -8,7 +8,7 @@ import {EmptyStrokeError} from './strokeCommit';
 import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {captureSelectedLayerTiles,captureLayerRegion,type TileCaptureArea} from './selection/tileCapture';
-import {selectedStrokeMayAffectMask} from './selection/maskStrokeBounds';
+import {selectedStrokeMayAffectMask,selectedStrokeProbeBounds} from './selection/maskStrokeBounds';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {originalVisibleWithTransformPreview} from './transform/previewReplacement';
 import {averageSampledPixels} from './color/sampleAverage';
@@ -1052,7 +1052,9 @@ export class BrushSurface{
       const existingTiles=sparse
         ?await captureSelectedLayerTiles(host,target.surfaceId,target.width,target.height,
           ()=>!this.disposed&&artwork.head===target.baseRevision,
-          undefined,records.every(item=>item.preset.blend==='erase')?mask:undefined)
+          undefined,records.every(item=>item.preset.blend==='erase')?mask:undefined,
+          records.every(item=>item.preset.blend==='erase')
+            ?selectedStrokeProbeBounds(records,target.width,target.height)??undefined:undefined)
         :null;
       // A completely empty GPU layer has nothing to erase. Preserve the
       // transparent-RGB safeguard in tile capture; only truly zero tiles
