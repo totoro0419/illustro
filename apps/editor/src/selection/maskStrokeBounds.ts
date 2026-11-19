@@ -49,3 +49,31 @@ export function selectedStrokeMayAffectMask(mask:MaskData,records:readonly Strok
   }
   return false;
 }
+
+
+/** A conservative canvas rectangle containing every possible eraser dab.
+ * An unknown command returns null so GPU preflight checks the entire mask,
+ * never discarding valid paint. This is only a readback optimization; the
+ * final selected-stroke renderer still receives the full old layer snapshot. */
+export function selectedStrokeProbeBounds(
+ records:readonly StrokeRecord[],width:number,height:number
+):Readonly<{x:number;y:number;width:number;height:number}>|null{
+ if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1)return null;
+ let left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;
+ for(const record of records)for(const command of record.commands){
+  const x=command[0],y=command[1],size=command[2],mode=command[19]??0,extra=command[18]??0;
+  const connected=mode>0,ax=connected?(command[16]??x):x,ay=connected?(command[17]??y):y;
+  if(![x,y,size,mode,extra,ax,ay].every(v=>typeof v==='number'&&Number.isFinite(v))||
+     size!<0||extra<0)return null;
+  const radius=Math.max(size!/2,extra)*(connected?1:Math.SQRT2)+4;
+  const x0=Math.min(x!,ax!)-radius,y0=Math.min(y!,ay!)-radius;
+  const x1=Math.max(x!,ax!)+radius,y1=Math.max(y!,ay!)+radius;
+  if(![x0,y0,x1,y1].every(Number.isFinite))return null;
+  left=Math.min(left,x0);top=Math.min(top,y0);
+  right=Math.max(right,x1);bottom=Math.max(bottom,y1);
+ }
+ if(!Number.isFinite(left)||!Number.isFinite(top)||!Number.isFinite(right)||!Number.isFinite(bottom))return null;
+ const x0=Math.max(0,Math.floor(left)),y0=Math.max(0,Math.floor(top));
+ const x1=Math.min(width,Math.ceil(right)),y1=Math.min(height,Math.ceil(bottom));
+ return x1>x0&&y1>y0?{x:x0,y:y0,width:x1-x0,height:y1-y0}:null;
+}
