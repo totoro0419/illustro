@@ -14,6 +14,7 @@ type RenderSize={width:number;height:number;outputWidth:number;outputHeight:numb
 export function tracePath(ctx:Context,path:EditablePath){
   const [first,last]=[path.points[0]!,path.points.at(-1)!];
   ctx.beginPath();
+  if(path.empty)return;
   if(path.shape==='rectangle'){
     ctx.rect(Math.min(first.x,last.x),Math.min(first.y,last.y),Math.abs(last.x-first.x),Math.abs(last.y-first.y));
     return;

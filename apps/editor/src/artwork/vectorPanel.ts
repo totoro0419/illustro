@@ -332,7 +332,9 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     },status),
     button('2つの形を組み合わせる',async()=>{
       const originalId=editing,otherId=secondary.value as LayerId;
-      const result=await combineShapes(draft(),otherPath(),combination.value as 'union'|'intersection'|'difference'|'xor');
+      let result=await combineShapes(draft(),otherPath(),combination.value as 'union'|'intersection'|'difference'|'xor');
+      if(originalId&&otherId&&originalId!==otherId)
+        result={...result,booleanOperands:{...result.booleanOperands!,sourceLayerIds:[originalId,otherId]}};
       sourceEdit=null;readPath(result);
       if(originalId&&otherId&&originalId!==otherId){
         combinedSourceIds=[originalId,otherId];hideOperands.parentElement!.hidden=false;

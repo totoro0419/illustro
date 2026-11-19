@@ -6,6 +6,12 @@
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
 
+### 2026-11-19｜C10-006 元レイヤーと演算結果の自動連動
+
+- 元レイヤーIDと編集可能な形を併記。図形/ベクターの保存時に影響する演算結果を依存順で再計算し、元と結果の画素・編集情報を一つの履歴へ保存。和/差/交差/XOR、連鎖、空の結果、元削除時の最後の形への退避、循環拒否に対応。旧データは埋込み形のまま読み込める。
+- `artwork/linkedBooleans.ts`・`vectorPanel.ts`・`pathOperations.ts`・`render.ts`・`main.ts`、Core `editableArtwork.ts`・`transaction.ts`。関連28試験成功、Core 65試験/型検査・Editor型検査/本番ビルド成功。
+- C10-006：部分対応。図形/ベクターの保存経路の自動更新・一括Undo/Redo・保存復元は確認。専用パネル以外の整列/変形による元形状変更への接続、Android実機の操作は未確認。未確認経路を完全解決としない。
+
 ### 2026-11-19｜C09-007 図形の画像/編集可能出力
 
 - 図形パネルに「形を後から直せる図形」「ブラシで描き直せる画像」を追加。同じ描画・保存処理を通し、画像出力だけ編集用データを付けず通常レイヤーに保存。新規は新しいレイヤー、既存図形の画像化は元レイヤーのマスク・設定を維持する。グラデーションの既存出力は維持。
@@ -417,7 +423,7 @@
 | [C10-003](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-003) | A/P1 | 文字の輪郭化後も元文字レイヤーが表示され重なって外観が変わる | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#84](https://github.com/totoro0419/illustro/pull/84) |
 | [C10-004](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-004) | A/P1 | 文字枠の幅・高さと枠に応じた自動改行がない | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#84](https://github.com/totoro0419/illustro/pull/84) |
 | [C10-005](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-005) | A/P1 | 図形演算を別レイヤーに追加しても元の図形が見えたままで結果を隠す | 修正記録あり・個別完了未認定 | コード修正・対応の記録はある。残存不具合や実機挙動は独立確認待ち | [#88](https://github.com/totoro0419/illustro/pull/88) |
-| [C10-006](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-006) | A/P2 | 図形演算の結果が元の形と連動しないため後から非破壊で編集できない | **部分対応・コード残件あり** | 図形演算の元の編集への結果自動追従が未実装 | [#88](https://github.com/totoro0419/illustro/pull/88) |
+| [C10-006](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-006) | A/P2 | 図形演算の結果が元の形と連動しないため後から非破壊で編集できない | **部分対応・コード残件あり** | 図形/ベクターの保存で元と結果を自動更新し一括履歴へ。連鎖/循環/削除/空の結果を検査。整列/変形経路・実機は未確認（冒頭記録） | [#88](https://github.com/totoro0419/illustro/pull/88) |
 | [C10-007](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-007) | A/P2 | 離れた2本のベクター線も接続候補として直線でつなぎ誤結合する条件 | 修正記録あり・個別完了未認定 | 端点距離制限に加え、接続区間に古い曲線ハンドルを流用しないよう修正。同一点の接続では端点を統合し、元の曲線ハンドルを維持。コード [`99fb1bff`](https://github.com/totoro0419/illustro/commit/99fb1bff0850d0c59b8545356f0563ed8bb3c8d0)。実機・全経路は未確認 | [#88](https://github.com/totoro0419/illustro/pull/88) |
 | [C10-008](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-008) | A/P2 | 線全体を触れるだけで消すベクター消しゴムがない | 修正記録あり・個別完了未認定 | 最後の1本を消す際に確認後、同じUndo可能な操作でレイヤーも削除。未保存の線は実在するレイヤーを消さず候補だけ破棄。ロック・最後の描画用レイヤーは既存の削除保護を保持。コードコミット [`1c51309f`](https://github.com/totoro0419/illustro/commit/1c51309fd6788451e9d012a0b745430a08d2aa85)。曲がりの強い4K線の区間タップ判定を精度可変の細分化に改善 [`99fb1bff`](https://github.com/totoro0419/illustro/commit/99fb1bff0850d0c59b8545356f0563ed8bb3c8d0)。統合CI成功、Android実機は未確認 | [#88](https://github.com/totoro0419/illustro/pull/88) |
 | [C10-009](https://github.com/totoro0419/illustro/blob/b463bb156bfb28cd49f41d403990966e5a7c304e/docs/quality-audit/C10.md#c10-009) | A/P2 | 文字の一部分だけを選択して別の書式を設定できない | **部分対応・コード残件あり** | 複数色・複数の取り込み書体の輪郭化、部分色編集、保存・Undoを追加。端末専用書体・合成太字/斜体の輪郭化は未対応 | [#84](https://github.com/totoro0419/illustro/pull/84) |

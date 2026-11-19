@@ -204,9 +204,10 @@ export function sampledPath(path:EditablePath,tolerance=.5,maxPoints=65536):ArtP
 type Coordinate=[number,number];
 type Polygon=Coordinate[][];
 type ShapeMode='union'|'intersection'|'difference'|'xor';
-export async function combineShapes(current:EditablePath,other:EditablePath,mode:ShapeMode):Promise<EditablePath>{
+export async function combineShapes(current:EditablePath,other:EditablePath,mode:ShapeMode,allowEmpty=false):Promise<EditablePath>{
   requireUniformFill(current);requireUniformFill(other);
   const polygon=(input:EditablePath):Polygon=>{
+    if(input.empty)return [];
     const result=sampledPath(input,.25,8192);
     if(!result.length||result.some(ring=>ring.length<4||distance(ring[0]!,ring.at(-1)!)>.00001))
       throw Error('形状演算には面を持つ閉じた形を選んでください。');
@@ -218,18 +219,25 @@ export async function combineShapes(current:EditablePath,other:EditablePath,mode
   const operations=('default' in imported?imported.default:imported) as typeof imported;
   const rings=(polygon:Polygon)=>{
     const [outer,...rings]=polygon;
-    if(!outer)throw Error('形状の輪郭がありません。');
+    if(!outer)return [];
     return rings.length?operations.xor([outer],...rings.map(ring=>[ring])):[[outer]];
   };
   const groups=operations[mode](rings(a),rings(b));
   const points=groups.flatMap(group=>group.flatMap(ring=>
     ring.slice(0,-1).map(([x,y],index,list):ArtPoint=>({x,y,...(index===0?{move:true}:{}),...(index===list.length-1?{close:true}:{})}))));
-  if(points.length<3)throw Error('演算結果に面がありません。');
+  const empty=points.length<3;
+  if(empty){
+    if(!allowEmpty)throw Error('演算結果に面がありません。');
+    // A closed zero-area contour paints no pixels, including with an outline.
+    // Keep three anchors for the ordinary path validator and legacy readers.
+    points.push({x:0,y:0,move:true},{x:0,y:0},{x:0,y:0,close:true});
+  }
   if(points.length>4096)throw Error('演算結果の点が多すぎます。元の形の点数を減らしてください。');
   // Keep copies of both input shapes for later re-editing, without changing how older renderers display the result.
   const {booleanOperands:_ignoredA,...left}=current,{booleanOperands:_ignoredB,...right}=other;
-  return {...current,shape:'polyline',closed:false,points,fill:current.fill??current.stroke,
-    booleanOperands:{mode,a:left,b:right}};
+  const {empty:_empty,...style}=current;
+  return {...style,shape:'polyline',closed:false,points,fill:current.fill??current.stroke,
+    ...(empty?{empty:true}:{}),booleanOperands:{mode,a:left,b:right}};
 }
 
 export function splitPath(path:EditablePath,index:number):EditablePath{

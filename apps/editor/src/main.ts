@@ -33,6 +33,8 @@ import {runArtwork} from './artwork/run';
 import {snapArtworkPathToGuide} from './artwork/guidedPath';
 import {validatedBooleanSourceVisibility} from './artwork/booleanSourceVisibility';
 import {saveArtworkSnapshot} from './artwork/saveSnapshot';
+import {linkedBooleanUpdates} from './artwork/linkedBooleans';
+import type {EditablePath} from '@illustro/core';
 import {selectionAsLayerMask} from './artwork/selectionMask';
 import {selectionCanCreateMask,explicitSaveStatus,maskApplyAllowed} from './artwork/c03UiGuards';
 import type {ArtworkActions} from './artwork/tools';
@@ -4306,11 +4308,25 @@ const artworkActions:ArtworkActions={
     if(content.kind==='path'&&previous?.kind==='path'&&previous.originalStrokeLayer)
       content={...content,opacity:previous.opacity??1,originalStrokeLayer:previous.originalStrokeLayer};
     const pixels=await runArtwork({content,width,height,outputWidth:width,outputHeight:height,mask});
+    const linked=editing&&content.kind==='path'&&output==='vector'
+      ?await linkedBooleanUpdates(artwork.root.rootLayerIds.flatMap(id=>{
+        const item=artwork.root.getLayer(id).editable;
+        return item?.kind==='path'?[{id,content:item}]:[];
+      }),editing,content):[];
+    const linkedPixels:Array<{id:LayerId;content:EditablePath;pixels:Uint8ClampedArray<ArrayBuffer>}>=[];
+    for(const update of linked){
+      const layer=artwork.root.getLayer(update.id);
+      linkedPixels.push({...update,pixels:await runArtwork({content:update.content,width,height,
+        outputWidth:width,outputHeight:height,mask:layer.vectorMask??null})});
+    }
     await withClipboardAccess(async()=>{
       if(surface!==drawing||controller.document!==artwork||artwork.head!==head||controller.selectedLayer.id!==reference)
         throw Error('作品が変更されたため中止しました。');
       const tx=artwork.begin(editing?'図形・文字などを編集':'編集できるレイヤーを追加');
-      const id=saveArtworkSnapshot(tx,reference,pixels,content,name,editing,mask,output);
+      let id:LayerId;
+      if(editing&&linkedPixels.length){
+        tx.replaceEditableArtworkBatch([{id:editing,pixels,content},...linkedPixels]);id=editing;
+      }else id=saveArtworkSnapshot(tx,reference,pixels,content,name,editing,mask,output);
       // Keep the operands for future edits, but show only the boolean result.
       // Source visibility and result creation must share a single Undo step.
       for(const sourceId of sources)tx.setLayerVisibility(sourceId,false);

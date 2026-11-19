@@ -13,10 +13,14 @@ export type EditablePath=Readonly<{
   points:readonly ArtPoint[];closed:boolean;stroke:string;fill:string|null;width:number;
   lineStyle?:'solid'|'dashed'|'dotted'|'pressure';
   opacity?:number; originalStrokeLayer?:string;
+  /** A linked operation may temporarily have no filled area. */
+  empty?:true;
   /** Ordered painted glyph groups; indices refer to complete point ranges. */
   fillRuns?:readonly Readonly<{start:number;end:number;color:string}>[];
   /** Original operands remain editable; points store the rendered result for legacy readers. */
-  booleanOperands?:Readonly<{mode:'union'|'intersection'|'difference'|'xor';a:EditablePath;b:EditablePath}>;
+  booleanOperands?:Readonly<{mode:'union'|'intersection'|'difference'|'xor';a:EditablePath;b:EditablePath;
+    /** Live layer links; embedded shapes remain safe fallbacks after deletion. */
+    sourceLayerIds?:readonly [string,string]}>;
 }>;
 /** UTF-16 offsets match textarea.selectionStart/End, including emoji. */
 export type TextStyleRange=Readonly<{start:number;end:number;color?:string;size?:number;bold?:boolean;italic?:boolean;family?:'sans-serif'|'serif'|'monospace';fontAsset?:string|null}>;
@@ -74,10 +78,11 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
       ...(spread!==undefined?{spread}:{}),...(typeof radialRatio==='number'?{radialRatio}:{}),
       ...(follow?{follow}:{})});
   }else if(value.kind==='path'){
-    const {shape,points,closed,stroke,fill,width,lineStyle,opacity,originalStrokeLayer,booleanOperands,fillRuns}=value;
+    const {shape,points,closed,stroke,fill,width,lineStyle,opacity,originalStrokeLayer,booleanOperands,fillRuns,empty}=value;
     if(shape!=='rectangle'&&shape!=='ellipse'&&shape!=='polyline'&&shape!=='bezier'&&shape!=='freehand')throw invalid();
     if(!Array.isArray(points)||points.length<2||points.length>4096||typeof closed!=='boolean'||!color(stroke)||
       (opacity!==undefined&&!numeric(opacity,0,1))||
+      (empty!==undefined&&empty!==true)||
       (originalStrokeLayer!==undefined&&(typeof originalStrokeLayer!=='string'||!originalStrokeLayer||originalStrokeLayer.length>128))||
       (fill!==null&&!color(fill))||!numeric(width,0,4096)||
       (lineStyle!==undefined&&lineStyle!=='solid'&&lineStyle!=='dashed'&&lineStyle!=='dotted'&&lineStyle!=='pressure'))throw invalid();
@@ -102,11 +107,15 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
         booleanOperands.a.booleanOperands!==undefined||booleanOperands.b.booleanOperands!==undefined)throw invalid();
       const a=validateEditableArtwork(booleanOperands.a),b=validateEditableArtwork(booleanOperands.b);
       if(a?.kind!=='path'||b?.kind!=='path')throw invalid();
-      construction=Object.freeze({mode:booleanOperands.mode as 'union'|'intersection'|'difference'|'xor',a,b});
+      const ids=booleanOperands.sourceLayerIds;
+      if(ids!==undefined&&(!Array.isArray(ids)||ids.length!==2||ids[0]===ids[1]||
+        ids.some(id=>typeof id!=='string'||!id||id.length>128)))throw invalid();
+      construction=Object.freeze({mode:booleanOperands.mode as 'union'|'intersection'|'difference'|'xor',a,b,
+        ...(ids?{sourceLayerIds:Object.freeze([ids[0],ids[1]]) as readonly [string,string]}:{})});
     }
     checked=Object.freeze({kind:'path',shape,points:Object.freeze(points.map(point)),closed,stroke,fill,width,...(lineStyle?{lineStyle}:{}),
       ...(typeof opacity==='number'?{opacity}:{}),...(typeof originalStrokeLayer==='string'?{originalStrokeLayer}:{}),
-      ...(construction?{booleanOperands:construction}:{}),...(paints?{fillRuns:paints}:{})});
+      ...(construction?{booleanOperands:construction}:{}),...(paints?{fillRuns:paints}:{}),...(empty?{empty:true as const}:{})});
   }else if(value.kind==='text'){
     const {text,origin,vertical,size,family,align,spacing,lineHeight,fontAsset,embedFont,boxWidth,boxHeight,styleRanges}=value;
     if(typeof text!=='string'||!text.trim()||text.length>8192||typeof vertical!=='boolean'||!numeric(size,1,4096)||

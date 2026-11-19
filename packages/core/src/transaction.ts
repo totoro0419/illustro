@@ -229,6 +229,31 @@ export class DocumentTransaction{
     if(editable!==undefined)this.setEditableArtwork(id,editable);
     return true;
   }
+  /** Source edits and all linked boolean results become one history entry.
+   * Validate the complete batch before staging any pixels or metadata. */
+  replaceEditableArtworkBatch(entries:readonly Readonly<{
+    id:LayerId;pixels:Uint8Array|Uint8ClampedArray;content:EditableArtwork|null
+  }>[]) {
+    this.open();
+    if(this.slotsValue.length||!entries.length)throw Error('編集するレイヤーを指定してください。');
+    const seen=new Set<LayerId>(),expected=this.rootValue.width*this.rootValue.height*4;
+    const candidates=entries.map(entry=>{
+      if(seen.has(entry.id))throw Error('同じレイヤーが重複しています。');
+      seen.add(entry.id);
+      const layer=this.editableRaster(entry.id);
+      if(layer.baseColor==='white'||layer.imageLink||layer.deformation||layer.lineRegions||
+        !layer.editable||entry.pixels.length!==expected||
+        layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
+        throw Error('図形を更新できないレイヤーが含まれています。');
+      return {...entry,layer,content:validateEditableArtwork(entry.content)};
+    });
+    for(const {id,layer,pixels,content} of candidates){
+      this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
+      this.seedRasterPixels(id,pixels,true);
+      this.meta(id,{editable:content});
+    }
+    return true;
+  }
   /** Replaces a raster layer using only populated 128px renderer tiles.
    * A snapshot (not a strict delta) is essential: it supersedes old semantic
    * brush strokes during history replay, exactly like replaceLayerRaster(). */
