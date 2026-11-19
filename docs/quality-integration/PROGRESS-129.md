@@ -1,10 +1,19 @@
 # C03〜C10 129件｜修正進捗スナップショット
 
 **作成日:** 2026-11-18 JST
-**照合対象のコードHEAD:** [`3d21f207`](https://github.com/totoro0419/illustro/commit/3d21f20710d285325db5d63a54fec7a19110cde9)
+**照合対象のコードHEAD:** [`6927b66a`](https://github.com/totoro0419/illustro/commit/6927b66a727b1e2dc9b6100fe7642bbd3c79cf2a)
 **基準:** [PR #73（調査原本129件）](https://github.com/totoro0419/illustro/pull/73) / [Issue #92（実装履歴）](https://github.com/totoro0419/illustro/issues/92) / [PR #75（統合）](https://github.com/totoro0419/illustro/pull/75)
 
 > **重要:** 以下はPR・コミット・Issueの記録を突き合わせた**記録ベースの進捗分類**。全129件の現在のソースを新たに行単位で精読した独立品質監査ではない。したがって「修正記録あり」を「コード完成」や「解決確認済み」と読み替えない。実機独立確認は別扱い。元のA/B/C・P1/P2はPR #73の履歴分類で変更しない。
+
+### 2026-11-19 定期自動開発①｜C06-002・C06-007・C06-015｜選択消しゴム・コピー・仮表示（3 ID）
+
+- **C06-002（部分改善）**：選択付き消しゴムで、描画Workerの最新タイル一覧と選択マスクの非ゼロ画素を照合。既存GPUタイルが選択範囲に一つも重ならない場合、全タイルGPU読戻し・選択Worker・Undo記録を作らず終了。重なりがある場合は旧画素を守るため従来どおり全占有タイルを取得。マスクのサイズ・配列が不整合な場合はGPUアクセス前に拒否。非選択タイルが既存の保存スナップショットから消えることはない。
+- **C06-007（部分改善）**：選択ブラシの正確な途中表示（最大384点）の要求識別を、従来の直近64点から直近384点に拡張。筆跡が100〜350点のときに古い入力点が同時補正されても、古い仮表示を再利用しない。長大筆跡は384点で上限を維持。
+- **C06-015（部分改善）**：小さな矩形コピーのGPUタイル占有判定を128×128全体から、実際にコピーする矩形との交差画素に限定。範囲外の描画による不要な画素走査・一時タイル保持を減らす。透明アルファ下のRGBと矩形内の0画素は従来どおり正確に扱う。
+- **コード・回帰テスト**：[6927b66a](https://github.com/totoro0419/illustro/commit/6927b66a727b1e2dc9b6100fe7642bbd3c79cf2a)。変更は `apps/editor/src/selection/tileCapture.ts`、`tileCapture.test.ts`、`brushPreview.ts`、`brushPreview.test.ts`。保存形式・Undo/Redo構造は変更なし。
+- **検証**：最終コード `6927b66a` の[統合CI #44433943706](https://github.com/totoro0419/illustro/actions/runs/44433943706)と[Core CI #44433950887](https://github.com/totoro0419/illustro/actions/runs/44433950887)は両方 **completed/success**。Core・Brush・Editorテスト、型検査、本番ビルドが成功。Android実機・4K処理時間/メモリ・旧作品保存復元・Undo/Redoの独立実機検証は未実施。
+- **残件・次回**：3 IDとも部分改善で完全解決認定なし。記録上、部分対応37件・実装根拠未確認0件・個別完了未認定92件を維持。次回は **C06-001/002** の選択付き消しゴム・特殊合成の仮表示と、選択範囲が既存タイルに重なる場合の全タイル読戻し削減（`apps/editor/src/brushSurface.ts`、`packages/brush-rt/src/stroke-overlay.mjs`、`apps/editor/src/selection/tileCapture.ts`）。競合時は **C07-003** 特殊レイヤー一括変形（`apps/editor/src/transform/`）。main・PR #73変更なし、PR #75 Draft維持。
 
 ### 2026-11-19 定期自動開発②｜C09-004・C09-005・C09-015｜グラデーションのマスク精度・4K応答性（3 ID）
 
