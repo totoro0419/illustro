@@ -164,3 +164,13 @@ it('C06-002 keeps untouched tiles alive when readback tiles share an ArrayBuffer
  expect(split.untouched[0]!.pixels.byteLength).toBe(TILE*TILE*4);
  expect(split.untouched[0]!.pixels[0]).toBe(75);
 });
+
+it('C06-002 plans disjoint symmetry copies and clipped edge blocks without capturing their bounding rectangle',async()=>{
+ const {selectedStrokeReadbackPlan}=await import('./tileStroke');
+ const width=4000,height=4000,alpha=new Uint8Array(width*height);alpha[40*width+40]=255;alpha[3998*width+3998]=128;
+ const plan=selectedStrokeReadbackPlan(width,height,alpha,[stroke([[40,40,0],[42,42,10]]),stroke([[3996,3996,0],[3998,3998,10]])])!;
+ expect(plan.blockKeys).toEqual(['0,0','15,15']);expect(plan.rendererKeys.size).toBe(8);
+ expect(plan.rendererKeys.has('10,10')).toBe(false);
+ const edgeMask=new Uint8Array(300*300);edgeMask[299*300+299]=255;
+ expect([...selectedStrokeReadbackPlan(300,300,edgeMask,[stroke([[298,298,0],[299,299,10]])])!.rendererKeys]).toEqual(['2,2']);
+});

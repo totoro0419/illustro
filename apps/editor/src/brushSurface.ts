@@ -9,6 +9,8 @@ import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {captureSelectedLayerTiles,captureLayerRegion,type TileCaptureArea} from './selection/tileCapture';
 import {selectedStrokeMayAffectMask,selectedStrokeProbeBounds} from './selection/maskStrokeBounds';
+import {selectedStrokeReadbackPlan} from './selection/tileStroke';
+import {rasterReplayKeys} from './rasterReplayKeys';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {originalVisibleWithTransformPreview} from './transform/previewReplacement';
 import {averageSampledPixels} from './color/sampleAverage';
@@ -1049,26 +1051,30 @@ export class BrushSurface{
       const valid=()=>!this.disposed&&this.renderer===renderer&&this.controller.document===artwork&&
         this.controller.selectedLayer.id===target.layerId&&artwork.head===target.baseRevision;
       if(!valid())return;
-      const layer=artwork.root.getLayer(target.layerId),plan=artwork.rasterReplayPlan();
+      const layer=artwork.root.getLayer(target.layerId);
+      const patchPlan=sparse&&!layer.deformation&&!layer.editable&&!layer.imageLink&&!layer.lineRegions&&layer.baseColor!=='white'
+        ?selectedStrokeReadbackPlan(target.width,target.height,mask.alpha,records):null;
+      if(patchPlan&&!patchPlan.blockKeys.length)return;
+      const plan=patchPlan?null:artwork.rasterReplayPlan();
       let reusable:import('./selection/tileStroke').RasterWorkerTile[]=[];
       // The projection seeds these exact baseline bytes. Only semantic brush
       // footprints can differ afterwards; unknown/special layers use readback.
       if(sparse&&!layer.deformation&&!layer.editable&&!layer.imageLink&&layer.baseColor!=='white'&&
-        (plan.followsGeometry||plan.seededLayers.has(target.layerId))){
-        const dirty=new Set(plan.operations.flatMap(operation=>
+        (patchPlan||plan?.followsGeometry||plan?.seededLayers.has(target.layerId))){
+        const dirty=new Set((plan?.operations??[]).flatMap(operation=>
           operation.kind==='brush.stroke'&&operation.targetEntityIds[0]===target.layerId
             ?this.runtimeKeys(operation):[]));
-        reusable=artwork.readBaseRasterTiles(target.layerId,artwork.head,true).filter(tile=>!dirty.has(tile.key));
+        reusable=artwork.readBaseRasterTiles(target.layerId,artwork.head,true,patchPlan?.rendererKeys).filter(tile=>!dirty.has(tile.key));
       }
       // Keep the compatible full-frame path for a non-Worker renderer. On the
       // normal drawing worker path, capture existing GPU tiles in <=1 MiB
       // batches and transfer those tiles directly to the selection Worker.
-      const existingTiles=sparse
+      let existingTiles=sparse
         ?await captureSelectedLayerTiles(host,target.surfaceId,target.width,target.height,
           valid,
           undefined,records.every(item=>item.preset.blend==='erase')?mask:undefined,
           records.every(item=>item.preset.blend==='erase')
-            ?selectedStrokeProbeBounds(records,target.width,target.height)??undefined:undefined,reusable)
+            ?selectedStrokeProbeBounds(records,target.width,target.height)??undefined:undefined,reusable,patchPlan?.rendererKeys)
         :null;
       // A completely empty GPU layer has nothing to erase. Preserve the
       // transparent-RGB safeguard in tile capture; only truly zero tiles
@@ -1076,6 +1082,10 @@ export class BrushSurface{
       if(existingTiles&&existingTiles.length===0&&records.every(item=>item.preset.blend==='erase')){
         this.status('消す画素がないため、作品は変更されませんでした。');
         return;
+      }
+      if(patchPlan&&existingTiles){
+        const occupied=new Map(existingTiles.map(tile=>[tile.key,tile]));
+        existingTiles=[...patchPlan.rendererKeys].map(key=>occupied.get(key)??{key,pixels:new Uint8Array(TILE*TILE*4)});
       }
       const updatedTiles=existingTiles
         ?await applySelectedStrokeTiles(mask,existingTiles,records)
@@ -1093,7 +1103,8 @@ export class BrushSurface{
         passes.push({selection:selectionAsLayerMask(mask),records:[record,...copies]});
         if(updatedTiles)transaction.replaceLayerRasterTiles(target.layerId,updatedTiles,undefined,undefined,{...deformation,postPaint:passes});
         else transaction.replaceLayerRaster(target.layerId,fullPixels!,undefined,undefined,{...deformation,postPaint:passes});
-      }else if(updatedTiles)transaction.replaceLayerRasterTiles(target.layerId,updatedTiles);
+      }else if(updatedTiles&&patchPlan)transaction.patchLayerRasterTiles(target.layerId,patchPlan.blockKeys,updatedTiles);
+      else if(updatedTiles)transaction.replaceLayerRasterTiles(target.layerId,updatedTiles);
       else transaction.replaceLayerRaster(target.layerId,fullPixels!);
       transaction.activateDrawingLayer(target.layerId);
       this.controller.lastPersistenceHandoff=transaction.commit().persistence;
@@ -1226,7 +1237,13 @@ export class BrushSurface{
       this.syncLayerStack();const steps:import('@illustro/brush-rt').DerivedHistoryStep[]=[];
       for(const change of changes){const operations=change.direction==='undo'?[...change.operations].reverse():change.operations;
         for(const operation of operations){if(operation.kind!=='brush.stroke')continue;steps.push({direction:change.direction,record:this.strokeRecord(operation),keys:this.runtimeKeys(operation),surfaceKey:this.surfaceForOperation(operation,change.direction==='undo'?change.fromRevision:change.toRevision)});}
-      }await this.session.navigateDerived(steps);
+      }try{await this.session.navigateDerived(steps);}catch(error){
+        if(!(error instanceof Error)||error.message!=='Raster baseline restore required')throw error;
+        // A cold GPU history cache cannot rebuild a baked patch from brush
+        // records alone. Restore the authoritative Core head only on a miss;
+        // normal before/after-image Undo/Redo keeps its fast path.
+        this.historySyncing=false;await this.restoreDocumentProjection();
+      }
     }finally{this.historySyncing=false;this.onStateChanged();}
   }
   async captureProjectionCache(revisionId:string):Promise<ProjectionCacheV1>{
@@ -1378,7 +1395,7 @@ export class BrushSurface{
             }))}
           :{version:2,revisionId:this.controller.document.head,width:root.width,height:root.height,tileSize:TILE,
             layers:this.controller.layers.filter(layer=>seededLayers.has(layer.id)).map(layer=>({
-              surfaceId:layer.surface.descriptor.surfaceId,tiles:this.controller.document.readBaseRasterTiles(layer.id)
+              surfaceId:layer.surface.descriptor.surfaceId,tiles:this.controller.document.readBaseRasterTiles(layer.id,this.controller.document.head,'replay')
             }))}
         :undefined;
       const validCache=savedCache??baseGeometry;
@@ -1480,12 +1497,7 @@ export class BrushSurface{
   }
   private surfaceForOperation(operation:SemanticOperation,revisionId?:RevisionId){const target=operation.targetEntityIds[0],root=revisionId?this.controller.document.revision(revisionId).root:this.controller.document.root;if(!target||!root.hasLayer(target))throw new Error('History target layer missing');return root.getLayer(target).surface.descriptor.surfaceId;}
   private strokeRecord(operation:SemanticOperation){const record=operation.parameters.strokeRecord;if(!record||typeof record!=='object'||!Array.isArray((record as StrokeRecord).commands))throw new Error('History stroke record missing');return this.restoredRecords.get(record as object)??record as StrokeRecord;}
-  private runtimeKeys(operation:SemanticOperation){const root=this.controller.document.root,keys=new Set<string>(),maxX=Math.ceil(root.width/TILE)-1,maxY=Math.ceil(root.height/TILE)-1;
-    for(const f of operation.dirtyFootprint){const x0=f.tileX*CANONICAL_TILE_SIZE+f.bounds.x0,y0=f.tileY*CANONICAL_TILE_SIZE+f.bounds.y0,x1=f.tileX*CANONICAL_TILE_SIZE+f.bounds.x1,y1=f.tileY*CANONICAL_TILE_SIZE+f.bounds.y1;
-      const minX=Math.max(0,Math.floor(x0/TILE)),minY=Math.max(0,Math.floor(y0/TILE)),endX=Math.min(maxX,Math.ceil(x1/TILE)-1),endY=Math.min(maxY,Math.ceil(y1/TILE)-1);
-      for(let y=minY;y<=endY;y++)for(let x=minX;x<=endX;x++)keys.add(x+','+y);}
-    return [...keys];
-  }
+  private runtimeKeys(operation:SemanticOperation){const root=this.controller.document.root;return rasterReplayKeys(operation,root.width,root.height);}
   setForegroundColor(color:readonly [number,number,number],opacity=1){
     if(!color.every(x=>Number.isFinite(x)&&x>=0&&x<=1)||!Number.isFinite(opacity)||opacity<0||opacity>1)return;
     this.foreground=[...color] as [number,number,number];this.colorOpacity=opacity;

@@ -1,4 +1,4 @@
-import {cryptoIdFactory,type IdFactory,type LayerId,type RevisionId,type WriterEpochId} from './ids';
+import {cryptoIdFactory,operationKeyText,type IdFactory,type LayerId,type RevisionId,type WriterEpochId} from './ids';
 import {RevisionHistory,type Command} from './history';
 import {DocumentRoot,rasterLayer,validateDocumentInfo} from './model';
 import {PagedMap} from './pagedMap';
@@ -121,16 +121,32 @@ export class CoreDocument{
     const operations=this.operationsTo(revisionId);
     const geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
     const visible=operations.slice(geometryIndex+1),baselines=new Map<LayerId,number>();
+    const seededLayers=new Set<LayerId>(),tileFilteredLayers=new Set<LayerId>();
     visible.forEach((operation,index)=>{
       const layer=operation.targetEntityIds[0];
-      if(operation.kind==='layer.snapshot'&&layer)baselines.set(layer,index);
+      if(operation.kind==='layer.snapshot'&&layer){
+        seededLayers.add(layer);
+        if(operation.parameters.partialRaster===true)tileFilteredLayers.add(layer);
+        else baselines.set(layer,index);
+      }
     });
+    const root=this.revision(revisionId).root,live=new Map<string,Set<string>>();
     return {
       followsGeometry:geometryIndex>=0,
-      seededLayers:new Set(baselines.keys()),
-      operations:visible.filter((op,index)=>{
+      seededLayers,tileFilteredLayers,
+      operations:visible.flatMap((op,index)=>{
         const layer=op.targetEntityIds[0];
-        return op.kind!=='brush.stroke'||!layer||index>(baselines.get(layer)??-1);
+        if(op.kind!=='brush.stroke'||!layer)return [op];
+        if(index<=(baselines.get(layer)??-1))return [];
+        if(!tileFilteredLayers.has(layer)||!root.hasLayer(layer))return [op];
+        // Materialized blocks have cleared their older mutation references.
+        // Replay a stroke only on blocks still owning that exact operation.
+        const key=operationKeyText(op.key),footprint=op.dirtyFootprint.filter(f=>{
+          const tag=layer+':'+f.tileX+','+f.tileY;
+          if(!live.has(tag))live.set(tag,new Set(root.getLayer(layer).surface.getValue(f.tileX,f.tileY)?.mutations.map(m=>operationKeyText(m.operationKey))??[]));
+          return live.get(tag)!.has(key);
+        });
+        return footprint.length?[Object.freeze({...op,dirtyFootprint:Object.freeze(footprint)})]:[];
       }),
     };
   }
@@ -147,7 +163,7 @@ export class CoreDocument{
   /** Lossless sparse renderer tiles for a materialized baseline.
    * Splits 256px Core blocks into 128px display-worker tiles without ever
    * allocating the full canvas-sized RGBA image. */
-  readBaseRasterTiles(layerId:LayerId,revisionId:RevisionId=this.head,unmodifiedOnly=false){
+  readBaseRasterTiles(layerId:LayerId,revisionId:RevisionId=this.head,mode:boolean|'replay'=false,onlyKeys?:ReadonlySet<string>){
     const root=this.revision(revisionId).root,layer=root.getLayer(layerId);
     if(layer.baseColor==='white')throw new Error('White background needs the ordinary geometry seed');
     if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('unsupported encoding');
@@ -158,20 +174,23 @@ export class CoreDocument{
       if(value.mutations.length){
         // Reuse callers may omit pending blocks and read their final pixels
         // from the renderer. Ordinary snapshot readers still reject them.
-        if(unmodifiedOnly)continue;
-        throw new Error('strict raster materialization pending');
+        if(mode===true)continue;
+        if(mode!=='replay')throw new Error('strict raster materialization pending');
       }
       const [tileX,tileY]=parseTileKey(key),left=tileX*canonical,top=tileY*canonical;
       if(left<0||top<0||left>=root.width||top>=root.height)continue;
+      if(onlyKeys&&![0,1].some(dy=>[0,1].some(dx=>onlyKeys.has(`${tileX*2+dx},${tileY*2+dy}`))))continue;
       const block=this.storeValue.readCopy(value.baseBlockId);
       for(let dy=0;dy<canonical&&top+dy<root.height;dy+=size)
         for(let dx=0;dx<canonical&&left+dx<root.width;dx+=size){
+          const outputKey=((left+dx)/size)+','+((top+dy)/size);
+          if(onlyKeys&&!onlyKeys.has(outputKey))continue;
           const pixels=new Uint8Array(size*size*4),width=Math.min(size,root.width-left-dx),height=Math.min(size,root.height-top-dy);
           for(let row=0;row<height;row++)pixels.set(
             block.subarray(((dy+row)*canonical+dx)*4,((dy+row)*canonical+dx+width)*4),
             row*size*4
           );
-          if(pixels.some(value=>value!==0))out.push({key:((left+dx)/size)+','+((top+dy)/size),pixels});
+          if(pixels.some(value=>value!==0))out.push({key:outputKey,pixels});
         }
     }
     return out;

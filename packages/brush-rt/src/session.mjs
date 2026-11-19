@@ -112,6 +112,7 @@ export class RealtimeSession {
   if(baseReused&&!renderPlans.length){await this.renderer.drain();return;}
   if((!discarded||baseReused)&&await this.renderer.applyHistory(renderPlans)){this.historyPatchHits+=renderPlans.length;return;}
   this.historyReplayFallbacks+=renderPlans.length;
+  if(this.hasRasterBase)throw Error('Raster baseline restore required');
   if(!discarded&&renderPlans.every(p=>p.direction==='redo')){
    // Redo is an exact suffix: reuse the completed base and evaluate only that suffix.
    for(const p of renderPlans){if(p.id!==undefined)this.renderer.dropHistory([p.id]);const id=++this.id,preset=this.presetForRecord(p.record);this.recordIds.set(p.record,id);this.renderer.document.append(id,preset,p.record.commands,null,p.surfaceKey);this.renderer.document.end(id,preset,p.surfaceKey);}await this.renderer.drain();return;
@@ -132,6 +133,7 @@ export class RealtimeSession {
   for(const p of plans){if(p.direction==='undo')this.unindexRecord(p.record);else this.reindexRecord(p.record);}
   if(await r.applyHistory(renderPlans)){this.historyPatchHits+=renderPlans.length;return;}
   this.historyReplayFallbacks+=renderPlans.length;
+  if(this.hasRasterBase)throw Error('Raster baseline restore required');
   if(renderPlans.every(p=>p.direction==='redo')){
    // An interrupted after image is intentionally incomplete. Redo recreates
    // that suffix from its unchanged canonical record, then caches full images.

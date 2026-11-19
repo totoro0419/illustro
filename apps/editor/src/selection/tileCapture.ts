@@ -80,7 +80,7 @@ function tileHasSelectedPixelData(tile:RasterWorkerTile,mask:MaskData,probe?:Til
 export async function captureSelectedLayerTiles(
  renderer:InspectableDrawingRenderer,surfaceId:string,width:number,height:number,valid:()=>boolean,
  area?:TileCaptureArea,eraseMask?:MaskData,eraseProbeArea?:TileCaptureArea,
- reusableTiles:readonly RasterWorkerTile[]=[]
+ reusableTiles:readonly RasterWorkerTile[]=[],onlyKeys?:ReadonlySet<string>
 ):Promise<RasterWorkerTile[]>{
  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1)
   throw new Error('選択描画の作品サイズが正しくありません。');
@@ -96,6 +96,11 @@ export async function captureSelectedLayerTiles(
  // exclude every tile touched by a replayed brush stroke. Never infer cache
  // freshness from the UI inventory or from a previous renderer instance.
  validateRasterWorkerTiles(width,height,reusableTiles);
+ if(onlyKeys)for(const key of onlyKeys){
+  const [x=NaN,y=NaN]=key.split(',').map(Number);
+  if(!/^(0|[1-9]\d*),(0|[1-9]\d*)$/.test(key)||!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||
+    x>=Math.ceil(width/TILE)||y>=Math.ceil(height/TILE))throw Error('読み取る画像の区画が正しくありません。');
+ }
  const reusable=new Map(reusableTiles.map(tile=>[tile.key,tile]));
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
  await renderer.drain();
@@ -123,6 +128,7 @@ export async function captureSelectedLayerTiles(
    tx>=Math.ceil(width/TILE)||ty>=Math.ceil(height/TILE))
    throw new Error('描画区画が作品の外にあります。');
   seen.add(key);
+  if(onlyKeys&&!onlyKeys.has(key))continue;
   // A clipboard selection only needs overlapping tiles, while a selected
   // brush still requests the complete existing snapshot (area omitted).
   if(area&&(tx*TILE>=area.x+area.width||ty*TILE>=area.y+area.height||

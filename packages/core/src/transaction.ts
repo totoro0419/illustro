@@ -17,7 +17,7 @@ import type {SemanticOperationDraft} from './history';
 import {CANONICAL_TILE_SIZE,parseTileKey,pixelToTile,tileKey,RasterSurfaceManifest,type DirtyTileHint} from './raster/surface';
 
 export type DocumentGeometryKind='document.crop'|'document.canvas-resize'|'document.image-resize';
-type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'artwork-guides';guides:readonly ArtworkGuide[]}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;source?:RevisionId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
+type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'artwork-guides';guides:readonly ArtworkGuide[]}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;partial?:true;source?:RevisionId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
 /** A small image in document coordinates; avoid creating a transparent full-canvas buffer. */
 export type RasterPixelRegion=Readonly<{
@@ -306,6 +306,53 @@ export class DocumentTransaction{
     }));
     if(deformation!==undefined)this.meta(id,{deformation:validateLayerDeformation(deformation)});
     if(editable!==undefined)this.setEditableArtwork(id,editable);
+    return true;
+  }
+  /** Materialize complete changed 256px blocks, retaining semantic strokes
+   * on every other block. Every in-canvas 128px child must be supplied,
+   * including transparent children, so an omitted neighbor cannot be lost. */
+  patchLayerRasterTiles(id:LayerId,blockKeys:readonly string[],tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[]){
+    this.open();
+    if(this.slotsValue.length||!blockKeys.length)throw Error('変更する画像の区画を指定してください。');
+    const layer=this.editableRaster(id),size=128,T=CANONICAL_TILE_SIZE;
+    if(layer.baseColor==='white'||layer.editable||layer.deformation||layer.imageLink||layer.lineRegions||
+      T!==size*2||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
+      throw Error('このレイヤーは区画ごとの描画に対応していません。');
+    const validKey=(key:string,columns:number,rows:number)=>{
+      if(!/^(0|[1-9]\d*),(0|[1-9]\d*)$/.test(key))throw Error('画像の区画が正しくありません。');
+      const [x=NaN,y=NaN]=key.split(',').map(Number);
+      if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x>=columns||y>=rows)throw Error('画像の区画が作品の外です。');
+      return [x,y] as const;
+    };
+    const width=this.rootValue.width,height=this.rootValue.height,blocks=new Set<string>(),expected=new Set<string>();
+    for(const key of blockKeys){
+      const [x,y]=validKey(key,Math.ceil(width/T),Math.ceil(height/T));
+      if(blocks.has(key))throw Error('画像の区画が重複しています。');
+      blocks.add(key);
+      for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++)
+        if((x*2+dx)*size<width&&(y*2+dy)*size<height)expected.add(`${x*2+dx},${y*2+dy}`);
+    }
+    const seen=new Set<string>();
+    for(const tile of tiles){
+      validKey(tile.key,Math.ceil(width/size),Math.ceil(height/size));
+      if(!expected.has(tile.key)||seen.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.length!==size*size*4)
+        throw Error('変更区画の画素が不足または重複しています。');
+      seen.add(tile.key);
+    }
+    if(seen.size!==expected.size)throw Error('隣り合う区画の画素が不足しています。');
+    const cleared=layer.surface.tiles.edit();
+    for(const key of blocks)cleared.set(key,Object.freeze({baseBlockId:null,mutations:Object.freeze([])}));
+    const working=new RasterWorkingSet(new RasterSurfaceManifest(layer.surface.descriptor,cleared.commit()),this.doc._internal(CORE_INTERNAL).store);
+    for(const key of blocks){const [x,y]=parseTileKey(key);working.editTile(x,y,bytes=>bytes.fill(0));}
+    for(const {key,pixels} of tiles){
+      const [x,y]=key.split(',').map(Number),cx=Math.floor(x!/2),cy=Math.floor(y!/2);
+      const localX=x!%2*size,localY=y!%2*size,w=Math.min(size,width-x!*size),h=Math.min(size,height-y!*size);
+      working.editTile(cx,cy,bytes=>{
+        for(let row=0;row<h;row++)bytes.set(pixels.subarray(row*size*4,row*size*4+w*4),((localY+row)*T+localX)*4);
+      });
+    }
+    this.workingValue.set(id,working);
+    this.slotsValue.push(Object.freeze({type:'working',layerId:id,initial:true,partial:true}));
     return true;
   }
   /** One atomic non-destructive snapshot per layer, all in the SAME

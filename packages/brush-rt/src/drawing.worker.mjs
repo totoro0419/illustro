@@ -109,12 +109,12 @@ const r=renderer,s=session,b=r.backend;r.proxy?.setEnabled(!geometry);b.setPrese
   // Reset replaces a projection in the SAME display host. Clear every old
   // occupied region as well as seeding the new ones, including removed ink.
   for(const t of b.tiles.values())pendingTiles.add(t.key);for(const v of b.previews.values())for(const key of v.keys??[])pendingTiles.add(key);
-  await r.reset();stage('reset');records.clear();s.records=[];s.redoRecords=[];s.id=0;s.recordSurfaces=new WeakMap;s.recordTiles=new WeakMap;s.recordIds=new WeakMap;s.recordOrder=new WeakMap;s.tileRecords=new Map;s.nextRecordOrder=0;
+  await r.reset();stage('reset');records.clear();s.records=[];s.redoRecords=[];s.id=0;s.recordSurfaces=new WeakMap;s.recordTiles=new WeakMap;s.recordIds=new WeakMap;s.recordOrder=new WeakMap;s.tileRecords=new Map;s.nextRecordOrder=0;s.hasRasterBase=!!geometry;
   if(solidWhiteSurfaceKey)seedFreshWhite(solidWhiteSurfaceKey);
   else if(cache)await seed(cache);
   stage('seeded');
   for(const e of entries){const value=remember(e.token,e.record),id=++s.id;s.seedSequence=Math.max(s.seedSequence,value.seed?.[1]??0);s.records.push(value);s.recordIds.set(value,id);s.recordSurfaces.set(value,e.surfaceKey);s.indexRecord(value,e.keys,e.surfaceKey);
-   if(!e.cached){const preset=s.presetForRecord(value);r.document.append(id,preset,value.commands,null,e.surfaceKey);r.document.end(id,preset,e.surfaceKey);}}
+   if(!e.cached){const preset=s.presetForRecord(value);r.document.append(id,preset,value.commands,new Set(e.keys),e.surfaceKey);r.document.end(id,preset,e.surfaceKey);}}
   r.needsFrame=true;await r.drain();stage('drained');
  }finally{b.setPresentationHeld(false);}
  await b.presentCurrent();r.proxy?.invalidate();requestPublish();stage('publish-requested');return stats(true);

@@ -1,13 +1,14 @@
 import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId} from '@illustro/core';
 import {blendArtworkPixel,gradientMapTable,mapGradientPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {canUseTiledHistoryPreview,createTiledPreviewAccumulator,yieldHistoryRender} from './tiledPreview';
+import {rasterReplayKeys} from '../rasterReplayKeys';
 
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
   revision:RevisionId;width:number;height:number;name:string;colorProfileId:string;
   layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white';clipSurfaceId?:string;referenceOnly?:boolean;isolation?:readonly string[];mask?:LayerMask;blend?:LayerBlend}>[];
   basePixels?:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[];
-  strokes:readonly Readonly<{surfaceId:string;record:StrokeRecord}>[];
+  strokes:readonly Readonly<{surfaceId:string;record:StrokeRecord;keys?:readonly string[]}>[];
 }>;
 export type ImageExportResult=Readonly<{
   blob:Blob;revision:RevisionId;format:ImageFormat;mime:string;width:number;height:number;
@@ -29,8 +30,8 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
     return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,...(isolation.length?{isolation}:{}),...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{}),...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),...(layer.blend&&!soloLayerId?{blend:layer.blend}:{}),visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
   });
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
-  const strokes: {surfaceId:string;record:StrokeRecord}[]=[];
-  const {operations:visibleOperations,followsGeometry,seededLayers}=document.rasterReplayPlan(revision);
+  const strokes: {surfaceId:string;record:StrokeRecord;keys?:readonly string[]}[]=[];
+  const {operations:visibleOperations,followsGeometry,seededLayers,tileFilteredLayers}=document.rasterReplayPlan(revision);
   const basePixels=root.rootLayerIds.filter(id=>followsGeometry||seededLayers.has(id)).map(id=>({
     surfaceId:root.getLayer(id).surface.descriptor.surfaceId,pixels:document.readBaseRasterPixels(id,revision),
   }));
@@ -40,7 +41,8 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
     if(op.kind==='brush.stroke'){
       const id=op.targetEntityIds[0],surfaceId=id===undefined?undefined:byLayer.get(id);
       if(!surfaceId)throw new Error('書き出し対象に不明なレイヤーがあります。');
-      strokes.push(Object.freeze({surfaceId,record:validateRecord(op.parameters.strokeRecord)}));
+      strokes.push(Object.freeze({surfaceId,record:validateRecord(op.parameters.strokeRecord),
+        ...(id&&tileFilteredLayers.has(id)?{keys:Object.freeze(rasterReplayKeys(op,root.width,root.height))}:{})}));
     }else if(op.kind==='raster.strict-delta')throw new Error('厳密なラスターデータの書き出しはまだ利用できません。');
   }
   return Object.freeze({revision,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,layers:Object.freeze(layers),strokes:Object.freeze(strokes),...(basePixels.length?{basePixels}:{})});
@@ -108,9 +110,9 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
     renderer.setSurfaceStack(layers.map(l=>l.surfaceId));
     if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels,width,height);
     let id=0;
-    for(const {surfaceId,record} of strokes){
+    for(const {surfaceId,record,keys} of strokes){
       const preset={...record.preset,__legacyStarAa:record.engine==='illustro-rt-2.4'};
-      renderer.document.append(++id,preset,record.commands,null,surfaceId);
+      renderer.document.append(++id,preset,record.commands,keys?new Set(keys):null,surfaceId);
       renderer.document.end(id,preset,surfaceId);
     }
     const composite=new Uint8ClampedArray(width*height*4);
@@ -188,11 +190,11 @@ export async function renderFrozenArtworkTiledPreview(
     renderer.setSurfaceStack(layers.map(layer=>layer.surfaceId));
     if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels.filter(layer=>layer.surfaceId!==replacement?.surfaceId),width,height);
     let id=0;
-    for(const {surfaceId,record} of strokes){
+    for(const {surfaceId,record,keys} of strokes){
       if(surfaceId===replacement?.surfaceId)continue;
       check();
       const preset={...record.preset,__legacyStarAa:record.engine==='illustro-rt-2.4'};
-      renderer.document.append(++id,preset,record.commands,null,surfaceId);
+      renderer.document.append(++id,preset,record.commands,keys?new Set(keys):null,surfaceId);
       renderer.document.end(id,preset,surfaceId);
     }
     await renderer.drain();

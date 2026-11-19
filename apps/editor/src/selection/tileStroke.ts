@@ -3,6 +3,46 @@ import {selectedStrokeProbeBounds} from './maskStrokeBounds';
 
 export type RasterWorkerTile={key:string;pixels:Uint8Array};
 
+/** Shared conservative footprint for planning readback and exact painting. */
+function commandTileBounds(command:StrokeRecord['commands'][number],width:number,height:number){
+ const [x=0,y=0,size=0]=command,connected=(command[19]??0)>0;
+ const ax=connected?(command[16]??x):x,ay=connected?(command[17]??y):y,extra=command[18]??0;
+ if(![x,y,size,ax,ay,extra].every(Number.isFinite)||size<0||extra<0)return null;
+ const radius=Math.max(size/2,extra)*(connected?1:Math.SQRT2)+2;
+ if(!Number.isFinite(radius))return null;
+ return {left:Math.max(0,Math.floor((Math.min(x,ax)-radius)/TILE)),
+  top:Math.max(0,Math.floor((Math.min(y,ay)-radius)/TILE)),
+  right:Math.min(Math.ceil(width/TILE),Math.ceil((Math.max(x,ax)+radius)/TILE)),
+  bottom:Math.min(Math.ceil(height/TILE),Math.ceil((Math.max(y,ay)+radius)/TILE))};
+}
+/** A patch must include every 128px child of each changed 256px storage
+ * block. This preserves neighboring old semantic strokes without reading
+ * any unrelated block, including on the very first selected stroke. */
+export function selectedStrokeReadbackPlan(width:number,height:number,alpha:Uint8Array,records:readonly StrokeRecord[]){
+ if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||alpha.length!==width*height)
+  throw Error('選択マスクの大きさが作品に一致しません。');
+ const selected=new Map<string,boolean>(),blocks=new Set<string>(),rendererKeys=new Set<string>();
+ for(const record of records)for(const command of record.commands){
+  const bounds=commandTileBounds(command,width,height);if(!bounds)return null;
+  for(let y=bounds.top;y<bounds.bottom;y++)for(let x=bounds.left;x<bounds.right;x++){
+   const key=x+','+y;
+   if(!selected.has(key)){
+    let hit=false;
+    for(let row=y*TILE;row<Math.min(height,(y+1)*TILE)&&!hit;row++)
+     for(let col=x*TILE;col<Math.min(width,(x+1)*TILE);col++)if(alpha[row*width+col]!==0){hit=true;break;}
+    selected.set(key,hit);
+   }
+   if(selected.get(key))blocks.add(Math.floor(x/2)+','+Math.floor(y/2));
+  }
+ }
+ for(const key of blocks){
+  const [x=0,y=0]=key.split(',').map(Number);
+  for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++)
+   if((x*2+dx)*TILE<width&&(y*2+dy)*TILE<height)rendererKeys.add(`${x*2+dx},${y*2+dy}`);
+ }
+ return {blockKeys:[...blocks],rendererKeys};
+}
+
 /** Only transfer existing pixels that the brush can read or change. The
  * complete untouched snapshot stays owned by the UI and is joined afterwards.
  * Unknown footprints use the original full-snapshot path. */
@@ -60,7 +100,7 @@ export function renderSelectedStrokeTiles(
 ):RasterWorkerTile[]|null{
  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||
    alpha.length!==width*height)throw new Error('選択マスクの大きさが作品に一致しません。');
- const columns=Math.ceil(width/TILE),rows=Math.ceil(height/TILE),tiles=new Map<string,Uint8Array>();
+ const tiles=new Map<string,Uint8Array>();
  validateRasterWorkerTiles(width,height,input);
  for(const tile of input)tiles.set(tile.key,tile.pixels);
  let changed=false;
@@ -71,13 +111,9 @@ export function renderSelectedStrokeTiles(
  for(const record of records){
   const commandsByTile=new Map<string,Array<StrokeRecord['commands'][number]>>();
   for(const command of record.commands){
-   const [x=0,y=0,size=0]=command,connected=(command[19]??0)>0;
-   const ax=connected?(command[16]??x):x,ay=connected?(command[17]??y):y;
-   const radius=Math.max(size/2,command[18]??0)*(connected?1:Math.SQRT2)+2;
-   const left=Math.max(0,Math.floor((Math.min(x,ax)-radius)/TILE));
-   const top=Math.max(0,Math.floor((Math.min(y,ay)-radius)/TILE));
-   const right=Math.min(columns,Math.ceil((Math.max(x,ax)+radius)/TILE));
-   const bottom=Math.min(rows,Math.ceil((Math.max(y,ay)+radius)/TILE));
+   const bounds=commandTileBounds(command,width,height);
+   if(!bounds)throw Error('筆跡の描画範囲が正しくありません。');
+   const {left,top,right,bottom}=bounds;
    for(let row=top;row<bottom;row++)for(let col=left;col<right;col++){
     const key=col+','+row,list=commandsByTile.get(key);
     if(list)list.push(command);else commandsByTile.set(key,[command]);
