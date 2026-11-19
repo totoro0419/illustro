@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type EditableGradient,type LayerId} from '@illustro/core';
 import {renderArtwork} from './render';
 import {layerMaskCoverage} from '@illustro/brush-rt';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,shapeLiveMaskOnMainThread,shouldCancelStaleShapePreview,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,moveShapeHandle,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,shapeLiveMaskOnMainThread,shouldCancelStaleShapePreview,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -128,6 +128,64 @@ describe('C09-004 sparse pixel-mask area coverage at 4K fit zoom',()=>{
     const pixels=new Uint8ClampedArray([0,0,0,255]);
     applyShapePreviewMask(pixels,mask,64,64,1,1);
     expect(pixels[3]).toBe(191);
+  });
+});
+
+describe('C09-004 large sparse mask preview work budget',()=>{
+  it('keeps accurate fractional edges across 129 visible source tiles',()=>{
+    const tiles=Object.fromEntries(Array.from({length:129},(_,i)=>[
+      (i%16)+','+Math.floor(i/16),'00'
+    ]));
+    const mask={shape:'pixels',x:60,y:0,scaleX:1,scaleY:1,
+      tiles,enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray(32*16*4);
+    for(let i=0;i<32*16;i++)pixels[i*4+3]=255;
+    applyShapePreviewMask(pixels,mask,2048,1024,32,16);
+    expect(pixels[3]).toBe(239);
+    expect(pixels[7]).toBe(0);
+  });
+  it('does not count offscreen source tiles against the preview budget',()=>{
+    const tiles=Object.fromEntries([
+      ['0,0','00'],
+      ...Array.from({length:128},(_,i)=>[(100+i)+',0','00'])
+    ]);
+    const mask={shape:'pixels',x:0,y:0,scaleX:1,scaleY:1,
+      tiles,enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray([1,2,3,255]);
+    applyShapePreviewMask(pixels,mask,256,256,1,1);
+    expect(pixels[3]).toBe(239);
+  });
+  it('falls back to bounded center sampling for dense masks above one million source pixels',()=>{
+    const tiles=Object.fromEntries(Array.from({length:289},(_,i)=>[
+      (i%17)+','+Math.floor(i/17),'00'
+    ]));
+    const mask={shape:'pixels',x:60,y:0,scaleX:1,scaleY:1,
+      tiles,enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray(32*32*4);
+    for(let i=0;i<32*32;i++)pixels[i*4+3]=255;
+    applyShapePreviewMask(pixels,mask,2048,2048,32,32);
+    expect(pixels[3]).toBe(255);
+  });
+});
+
+describe('C09-005/C09-015 safe cubic handle preview and commit',()=>{
+  const points=[{x:10,y:20,inX:8,inY:18,outX:12,outY:22},{x:30,y:40}];
+  it('moves only the intended handle without changing anchors or neighbors',()=>{
+    expect(moveShapeHandle(points,0,'in',{x:7.5,y:17.25})).toEqual([
+      {x:10,y:20,inX:7.5,inY:17.25,outX:12,outY:22},points[1]
+    ]);
+    expect(moveShapeHandle(points,0,'out',{x:15,y:24})).toEqual([
+      {x:10,y:20,inX:8,inY:18,outX:15,outY:24},points[1]
+    ]);
+    expect(points[0]).toEqual({x:10,y:20,inX:8,inY:18,outX:12,outY:22});
+  });
+  it('rejects non-finite pointer positions and incomplete legacy handles',()=>{
+    expect(moveShapeHandle(points,0,'in',{x:NaN,y:3})).toEqual(points);
+    expect(moveShapeHandle(points,0,'out',{x:Infinity,y:3})).toEqual(points);
+    expect(moveShapeHandle(points,1,'in',{x:1,y:2})).toEqual(points);
+    expect(moveShapeHandle([{x:0,y:0,inX:1}],0,'in',{x:2,y:3}))
+      .toEqual([{x:0,y:0,inX:1}]);
+    expect(moveShapeHandle(points,99,'out',{x:1,y:2})).toEqual(points);
   });
 });
 
