@@ -347,7 +347,9 @@ export function shouldCancelStaleShapePreview(elapsedMs:number):boolean{
   return Number.isFinite(elapsedMs)&&elapsedMs>=120;
 }
 export function shapeLiveMaskOnMainThread(kind:'path'|'gradient',outputWidth:number,outputHeight:number):boolean{
-  return kind==='path'||outputWidth*outputHeight<=100000;
+  // Both path and gradient masks now render in the Worker for large previews.
+  // Keep small previews on the UI for subpixel area averaging.
+  return outputWidth*outputHeight<=100000;
 }
 export function shapeLivePreviewDimensions(width:number,height:number,zoom:number,workerAvailable:boolean){
   const edge=workerAvailable?(Number.isFinite(zoom)&&zoom>=4?1024:Number.isFinite(zoom)&&zoom>=2?768:512):256;
