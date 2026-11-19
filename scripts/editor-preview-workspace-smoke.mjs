@@ -207,16 +207,19 @@ async function run(label, full = false, touch = false) {
     await draw(0.46, 0.51, 0.56);
     await waitStrokes(3);
     await idle();
-    check('eraser removed red pixels', countPixels(await snapshot(), red) < redBeforeErase - 30);
+    check('eraser removed red pixels', await waitForPixels(red, count => count < redBeforeErase * 0.9));
+    const redAfterErase = countPixels(await snapshot(), red);
+    const restoredThreshold = redAfterErase + (redBeforeErase - redAfterErase) * 0.8;
+    const erasedThreshold = redAfterErase + (redBeforeErase - redAfterErase) * 0.2;
     const erased = (await state()).revisionId;
     await click('#undo');
     await page.waitForFunction(id => document.querySelector('#canvas').dataset.revisionId === id, beforeErase);
     await idle();
-    check('Undo restores the erased pixels', await waitForPixels(red, count => count > redBeforeErase - 30));
+    check('Undo restores the erased pixels', await waitForPixels(red, count => count >= restoredThreshold));
     await click('#redo');
     await page.waitForFunction(id => document.querySelector('#canvas').dataset.revisionId === id, erased);
     await idle();
-    check('Redo removes the same ink', await waitForPixels(red, count => count < redBeforeErase - 30));
+    check('Redo removes the same ink', await waitForPixels(red, count => count <= erasedThreshold));
 
     await click('#c04ContextLayer');
     const layerCount = Number((await state()).layerCount);
