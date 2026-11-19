@@ -83,6 +83,30 @@ describe('C09-004/C09-005 pixel-mask preview direct sampling',()=>{
 });
 
 
+describe('C09-004 sparse pixel-mask area coverage at 4K fit zoom',()=>{
+  it('keeps a small erased tile visible even when the preview center misses it',()=>{
+    const original=new Uint8ClampedArray([11,22,33,255]);
+    const mask={shape:'pixels',x:0,y:0,scaleX:1,scaleY:1,
+      tiles:{'0,0':'00'},enabled:true,inverted:false,density:1} as const;
+    const pixels=original.slice();
+    applyShapePreviewMask(pixels,mask,256,256,1,1);
+    expect(Array.from(pixels)).toEqual([11,22,33,239]);
+    const inverted=original.slice();
+    applyShapePreviewMask(inverted,{...mask,inverted:true},256,256,1,1);
+    expect(inverted[3]).toBe(16);
+    const half=original.slice();
+    applyShapePreviewMask(half,{...mask,density:.5},256,256,1,1);
+    expect(half[3]).toBe(247);
+  });
+  it('uses the committed integer source-pixel coverage under fractional transforms',()=>{
+    const mask={shape:'pixels',x:.25,y:.25,scaleX:.5,scaleY:.5,
+      tiles:{'0,0':'00'},enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray([0,0,0,255]);
+    applyShapePreviewMask(pixels,mask,64,64,1,1);
+    expect(pixels[3]).toBe(191);
+  });
+});
+
 describe('C09-005/C09-015 live gradient preview responsiveness',()=>{
   it('keeps large gradient mask work in the renderer and avoids a second UI pass',()=>{
     expect(shapeLiveMaskOnMainThread('gradient',1024,1024)).toBe(false);

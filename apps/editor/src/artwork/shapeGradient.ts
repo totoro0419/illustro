@@ -143,8 +143,40 @@ export function smallPathPreviewCoverage(
   const inside=Math.max(0,Math.min(1,covered/((right-left)*(bottom-top))));
   return mask.inverted?1-mask.density*inside:1-mask.density*(1-inside);
 }
-/** Apply the same vector/pixel mask coverage as the committed layer,
- * sampled at the preview pixel center in original document coordinates. */
+type SparseMaskTile=Readonly<{tx:number;ty:number;left:number;top:number;right:number;bottom:number}>;
+/** Average the committed full-resolution pixel-mask samples over a reduced
+ * preview pixel. Only sparse masks use this path: unaffected tiles contribute
+ * the uniform default without scanning an entire 4K document. */
+function sparsePixelPreviewCoverage(
+  mask:Extract<LayerMask,{shape:'pixels'}>,tiles:readonly SparseMaskTile[],
+  left:number,top:number,right:number,bottom:number
+):number{
+  const outside=Math.round(255-(mask.inverted?255:0)*mask.density)/255;
+  const area=(right-left)*(bottom-top);
+  if(!(area>0))return outside;
+  let correction=0;
+  for(const tile of tiles){
+    if(right<=tile.left||bottom<=tile.top||left>=tile.right||top>=tile.bottom)continue;
+    const x0=Math.max(Math.floor(left),Math.floor(tile.left));
+    const x1=Math.min(Math.ceil(right),Math.ceil(tile.right));
+    const y0=Math.max(Math.floor(top),Math.floor(tile.top));
+    const y1=Math.min(Math.ceil(bottom),Math.ceil(tile.bottom));
+    for(let y=y0;y<y1;y++){
+      const row=Math.floor((y+.5-mask.y)/mask.scaleY);
+      if(Math.floor(row/64)!==tile.ty)continue;
+      const wy=Math.max(0,Math.min(bottom,y+1)-Math.max(top,y));
+      for(let x=x0;x<x1;x++){
+        const column=Math.floor((x+.5-mask.x)/mask.scaleX);
+        if(Math.floor(column/64)!==tile.tx)continue;
+        const wx=Math.max(0,Math.min(right,x+1)-Math.max(left,x));
+        if(wx&&wy)correction+=wx*wy*(samplePixelMask(mask,x+.5,y+.5)/255-outside);
+      }
+    }
+  }
+  return Math.max(0,Math.min(1,outside+correction/area));
+}
+/** Apply the same vector/pixel mask coverage as the committed layer.
+ * Large downscaled sparse pixel masks use a source-pixel area average. */
 export function applyShapePreviewMask(
   pixels:Uint8ClampedArray,mask:LayerMask|null|undefined,
   width:number,height:number,outputWidth:number,outputHeight:number,
@@ -158,6 +190,24 @@ export function applyShapePreviewMask(
   // directly avoids allocating 128x128 coverage tiles across a 4K preview.
   // Use the document pixel center, matching layerMaskCoverage's raster rule.
   const directPixelMask=defaultSampler&&mask.shape==='pixels'?mask:null;
+  // Exact source-pixel area averaging is bounded to small, sparse masks.
+  // Dense 4K masks retain the existing constant-time center sampler.
+  let sparsePixelTiles:SparseMaskTile[]|null=null;
+  if(downscaled&&directPixelMask&&width/outputWidth>=4&&height/outputHeight>=4&&
+    outputWidth*outputHeight<=100000&&directPixelMask.scaleX<=4&&directPixelMask.scaleY<=4){
+    const entries=Object.entries(directPixelMask.tiles).filter(([,value])=>value!=='ff');
+    if(entries.length<=16){
+      const tiles=entries.map(([key])=>{
+        const [tx,ty]=key.split(',').map(Number);
+        const left=directPixelMask.x+tx!*64*directPixelMask.scaleX;
+        const top=directPixelMask.y+ty!*64*directPixelMask.scaleY;
+        return {tx:tx!,ty:ty!,left,top,
+          right:left+64*directPixelMask.scaleX,bottom:top+64*directPixelMask.scaleY};
+      });
+      if(tiles.every(tile=>[tile.left,tile.top,tile.right,tile.bottom].every(Number.isFinite)))
+        sparsePixelTiles=tiles;
+    }
+  }
   // Only small polygons use the exact area integral. This keeps the usual
   // 4K path preview on its existing fast raster-tile path.
   let tinyPathBounds:[number,number,number,number]|null=null;
@@ -192,7 +242,9 @@ export function applyShapePreviewMask(
             ?(mask.inverted?1:1-mask.density)
             :smallPathPreviewCoverage(mask,left,top,right,bottom))
           :directPixelMask
-            ?samplePixelMask(directPixelMask,Math.floor((left+right)/2)+.5,Math.floor((top+bottom)/2)+.5)/255
+            ?(sparsePixelTiles
+              ?sparsePixelPreviewCoverage(directPixelMask,sparsePixelTiles,left,top,right,bottom)
+              :samplePixelMask(directPixelMask,Math.floor((left+right)/2)+.5,Math.floor((top+bottom)/2)+.5)/255)
             :sampleCoverage(mask,(left+right)/2,(top+bottom)/2);
     pixels[at+3]=Math.round(pixels[at+3]!*coverage);
   }
