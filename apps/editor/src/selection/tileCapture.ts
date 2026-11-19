@@ -44,9 +44,11 @@ function tileHasPixelDataInArea(tile:RasterWorkerTile,area:TileCaptureArea):bool
 /** An eraser cannot alter a layer whose allocated GPU tiles contain no
  * selected pixels. A positive result is deliberately conservative: an
  * allocated tile might itself be empty, in which case normal capture runs. */
-function tileIntersectsSelection(mask:MaskData,tx:number,ty:number):boolean{
- const left=tx*TILE,top=ty*TILE;
- const right=Math.min(mask.width,left+TILE),bottom=Math.min(mask.height,top+TILE);
+function tileIntersectsSelection(mask:MaskData,tx:number,ty:number,probe?:TileCaptureArea):boolean{
+ const tileX=tx*TILE,tileY=ty*TILE;
+ const left=Math.max(tileX,probe?.x??0),top=Math.max(tileY,probe?.y??0);
+ const right=Math.min(mask.width,tileX+TILE,probe?probe.x+probe.width:mask.width);
+ const bottom=Math.min(mask.height,tileY+TILE,probe?probe.y+probe.height:mask.height);
  for(let y=top;y<bottom;y++){
   const start=y*mask.width+left,end=y*mask.width+right;
   for(let index=start;index<end;index++)if(mask.alpha[index]!==0)return true;
@@ -56,15 +58,17 @@ function tileIntersectsSelection(mask:MaskData,tx:number,ty:number):boolean{
 /** A selected eraser can be a no-op even when the mask intersects an
  * allocated tile: only nonzero pixels *inside* the selection can change.
  * Preserve transparent RGB conservatively, as with tileHasPixelData. */
-function tileHasSelectedPixelData(tile:RasterWorkerTile,mask:MaskData):boolean{
+function tileHasSelectedPixelData(tile:RasterWorkerTile,mask:MaskData,probe?:TileCaptureArea):boolean{
  const [tx=0,ty=0]=tile.key.split(',').map(Number);
- const left=tx*TILE,top=ty*TILE;
- const right=Math.min(mask.width,left+TILE),bottom=Math.min(mask.height,top+TILE);
+ const tileX=tx*TILE,tileY=ty*TILE;
+ const left=Math.max(tileX,probe?.x??0),top=Math.max(tileY,probe?.y??0);
+ const right=Math.min(mask.width,tileX+TILE,probe?probe.x+probe.width:mask.width);
+ const bottom=Math.min(mask.height,tileY+TILE,probe?probe.y+probe.height:mask.height);
  for(let y=top;y<bottom;y++){
-  const maskRow=y*mask.width,rgbaRow=(y-top)*TILE*4;
+  const maskRow=y*mask.width,rgbaRow=(y-tileY)*TILE*4;
   for(let x=left;x<right;x++){
    if(mask.alpha[maskRow+x]===0)continue;
-   const i=rgbaRow+(x-left)*4,p=tile.pixels;
+   const i=rgbaRow+(x-tileX)*4,p=tile.pixels;
    if((p[i]!|p[i+1]!|p[i+2]!|p[i+3]!)!==0)return true;
   }
  }
@@ -75,13 +79,14 @@ function tileHasSelectedPixelData(tile:RasterWorkerTile,mask:MaskData):boolean{
  * worker then creates newly touched tiles without scanning blank canvas. */
 export async function captureSelectedLayerTiles(
  renderer:InspectableDrawingRenderer,surfaceId:string,width:number,height:number,valid:()=>boolean,
- area?:TileCaptureArea,eraseMask?:MaskData
+ area?:TileCaptureArea,eraseMask?:MaskData,eraseProbeArea?:TileCaptureArea
 ):Promise<RasterWorkerTile[]>{
  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1)
   throw new Error('選択描画の作品サイズが正しくありません。');
- if(area&&(![area.x,area.y,area.width,area.height].every(Number.isSafeInteger)||
-   area.x<0||area.y<0||area.width<1||area.height<1||
-   area.x+area.width>width||area.y+area.height>height))
+ for(const rect of [area,eraseProbeArea])if(rect&&
+   (![rect.x,rect.y,rect.width,rect.height].every(Number.isSafeInteger)||
+   rect.x<0||rect.y<0||rect.width<1||rect.height<1||
+   rect.x+rect.width>width||rect.y+rect.height>height))
   throw new Error('読み取る画像の範囲が正しくありません。');
  if(eraseMask&&(area||eraseMask.width!==width||eraseMask.height!==height||
    !(eraseMask.alpha instanceof Uint8Array)||eraseMask.alpha.length!==width*height))
@@ -117,7 +122,7 @@ export async function captureSelectedLayerTiles(
   if(area&&(tx*TILE>=area.x+area.width||ty*TILE>=area.y+area.height||
     (tx+1)*TILE<=area.x||(ty+1)*TILE<=area.y))continue;
   requests.push({surfaceId,key});
-  if(eraseMask&&tileIntersectsSelection(eraseMask,tx,ty)){
+  if(eraseMask&&tileIntersectsSelection(eraseMask,tx,ty,eraseProbeArea)){
    eraseCanChange=true;
    selectedRequests.push({surfaceId,key});
   }
@@ -133,7 +138,7 @@ export async function captureSelectedLayerTiles(
    for(const tile of batch){
     if(area?tileHasPixelDataInArea(tile,area):tileHasPixelData(tile.pixels))
      captured.set(tile.key,{key:tile.key,pixels:tile.pixels});
-    if(checkSelection&&eraseMask&&tileHasSelectedPixelData(tile,eraseMask))
+    if(checkSelection&&eraseMask&&tileHasSelectedPixelData(tile,eraseMask,eraseProbeArea))
      selectedHasPaint=true;
    }
    // Keep the UI responsive without yielding after every 1 MiB GPU batch.
