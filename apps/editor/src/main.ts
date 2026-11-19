@@ -1856,7 +1856,7 @@ function updateContextBar(){
   layer.textContent=qaMode?'描画先: '+(active?controller.selectedLayer.name:'作品なし'):'レイヤー';
   if(!qaMode){
     layer.title=active?'描画先: '+controller.selectedLayer.name:'レイヤー';
-    layer.setAttribute('aria-label',layer.title);
+    layer.setAttribute('aria-label',active?'レイヤーを開く · '+layer.title:'レイヤーを開く');
     tool.setAttribute('aria-label','ブラシを選ぶ · '+tool.textContent);
   }
   selection.hidden=!qaMode&&!surface?.selectingRectangle&&!surface?.selectedRectangle;

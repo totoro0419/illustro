@@ -159,6 +159,9 @@ async function run(label, full = false, touch = false) {
     if (!full) return;
 
     check('QA controls absent', await page.locator('#qaSummary').count() === 0);
+    check('recovery command stays hidden while autosave is healthy', !await page.locator('#rescueWorkSave').isVisible());
+    check('hidden selection preview does not cover the canvas', !await page.locator('.c06-mask-preview').isVisible());
+    check('workspace fits the screen width', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     check('finger drawing initially enabled', await page.locator('#quickFinger').getAttribute('aria-pressed') === 'true');
     await click('#quickFinger');
     check('switching finger drawing off changes the real preference', !await page.locator('#finger').isChecked());
@@ -167,6 +170,7 @@ async function run(label, full = false, touch = false) {
       await page.setViewportSize({ width: 800, height: 500 });
       await page.waitForFunction(() => document.querySelector('.surface').getBoundingClientRect().width > 600);
       check('line remains after rotation and resize', countPixels(await snapshot(), dark) > 20);
+      check('workspace does not open by itself after rotation', await page.locator('#workspace').evaluate(el => el.inert));
       await draw(0.34, 0.61, 0.56);
       await waitStrokes(2);
       return;
@@ -222,6 +226,22 @@ async function run(label, full = false, touch = false) {
     check('reopened artwork has the saved layers', Number((await state()).layerCount) === layerCount + 1);
     check('reopened artwork has both visible ink colors', countPixels(await snapshot(), dark) > 20 && countPixels(await snapshot(), red) > 20);
     await page.screenshot({ path: path.join(output, label + '-saved.png') });
+    await click('#paint');
+    const graphics = await context.newCDPSession(page);
+    const area = await surface.boundingBox();
+    const startX = Math.round(area.x + area.width * 0.4);
+    const penY = Math.round(area.y + area.height * 0.64);
+    const savedCount = Number((await state()).committedStrokes);
+    const pen = (type, x, buttons, force) => graphics.send('Input.dispatchMouseEvent', {
+      type, pointerType: 'pen', x, y: penY, button: type === 'mouseMoved' ? 'none' : 'left',
+      buttons, force, clickCount: 1,
+    });
+    await pen('mousePressed', startX, 1, 0.65);
+    for (let i = 1; i <= 12; i++) await pen('mouseMoved', startX + i * 7, 1, 0.65);
+    await pen('mouseReleased', startX + 84, 0, 0);
+    await waitStrokes(savedCount + 1);
+    await idle();
+    check('emulated pen produces another committed stroke', Number((await state()).committedStrokes) === savedCount + 1);
     assert.deepEqual(errors, []);
   } catch (error) {
     await page.screenshot({ path: path.join(output, label + '-error.png') }).catch(() => {});

@@ -198,7 +198,15 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
   byId('resetWidth').onclick=()=>applyWidth(defaultWidth(),true);
   byId('hideWorkspace').onclick=event=>close(event.detail===0);
   window.addEventListener('resize',()=>applyWidth(width));
-  compact.addEventListener('change',()=>{if(!compact.matches)rightDock.classList.remove('open');syncPresentation();});
+  compact.addEventListener('change',()=>{
+    if(document.body.dataset.appMode==='production'){
+      // Keep the panel's explicit open/closed state when rotating a tablet.
+      if(compact.matches)rightDock.classList.toggle('open',!document.body.classList.contains('right-collapsed'));
+      else document.body.classList.toggle('right-collapsed',!rightDock.classList.contains('open'));
+    }
+    if(!compact.matches)rightDock.classList.remove('open');
+    syncPresentation();
+  });
   const featurePanel=byId<HTMLElement>('allFeaturesPanel'),featureButton=byId<HTMLButtonElement>('allFeatures');
   const categories=byId<HTMLElement>('featuresCategories'),actions=byId<HTMLElement>('featuresActions'),items=byId<HTMLElement>('featuresItems');
   // Keep the palette beside its launcher and inside the usable viewport.

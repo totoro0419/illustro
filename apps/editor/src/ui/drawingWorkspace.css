@@ -5,6 +5,7 @@ body[data-app-mode="production"] {
 
 body[data-app-mode="production"] .rail .tool-button:is([hidden], [data-drawing-unavailable]),
 body[data-app-mode="production"] .drawing-color[hidden],
+body[data-app-mode="production"] .topbar button[hidden],
 body[data-app-mode="production"] .box-body > .unavailable,
 body[data-app-mode="production"].illustro-focus-mode #c04ContextBar {
   display: none;
@@ -136,7 +137,7 @@ body[data-app-mode="production"] #c04ContextPending:empty {
   display: none;
 }
 
-body[data-app-mode="production"] .canvas-top:has(#status:empty):not(:has(#maskEditingBar:not([hidden]), #maskInspectBar:not([hidden]), #historyBrushBar:not([hidden]))) {
+body[data-app-mode="production"] .canvas-top:has(#status:empty):not(:has(#maskEditingBar:not([hidden]), #maskInspectionBar:not([hidden]), #historyBrushBar:not([hidden]))) {
   display: none;
 }
 
