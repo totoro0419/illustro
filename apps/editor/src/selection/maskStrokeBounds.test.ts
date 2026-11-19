@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import type {StrokeRecord} from '@illustro/brush-rt';
 import type {MaskData} from './mask';
-import {selectedStrokeMayAffectMask} from './maskStrokeBounds';
+import {selectedStrokeMayAffectMask,selectedStrokeProbeBounds} from './maskStrokeBounds';
 
 const mask=(width:number,height:number,x:number,y:number):MaskData=>{
   const alpha=new Uint8Array(width*height);
@@ -67,5 +67,25 @@ describe('C06-002 selected-stroke early rejection',()=>{
  it('honors a later stroke in a multi-record batch',()=>{
    const selection=mask(128,128,100,100);
    expect(selectedStrokeMayAffectMask(selection,[stroke([[10,10,4]]),stroke([[100,100,4]])])).toBe(true);
+ });
+});
+
+describe('C06-002 conservative eraser probe bounds',()=>{
+ it('limits a small eraser to its actual canvas footprint',()=>{
+  const bounds=selectedStrokeProbeBounds([stroke([[200,200,8]])],4000,4000);
+  expect(bounds).toEqual({x:190,y:190,width:20,height:20});
+ });
+ it('includes connected segments and clips safely at canvas edges',()=>{
+  const command=new Array<number>(20).fill(0);
+  command[0]=4000;command[1]=4000;command[2]=8;
+  command[16]=0;command[17]=0;command[19]=1;
+  expect(selectedStrokeProbeBounds([stroke([command])],4000,4000))
+   .toEqual({x:0,y:0,width:4000,height:4000});
+ });
+ it('falls back to full probing on unknown or overflowing geometry',()=>{
+  expect(selectedStrokeProbeBounds([stroke([[NaN,3,4]])],4000,4000)).toBeNull();
+  const huge=new Array<number>(20).fill(0);
+  huge[0]=1e308;huge[1]=2;huge[2]=1e308;
+  expect(selectedStrokeProbeBounds([stroke([huge])],4000,4000)).toBeNull();
  });
 });
