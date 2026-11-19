@@ -64,6 +64,10 @@ export class LiveRegionTrace{
  private previousGraph:RegionGraph|null=null;
  private previousLabels:RegionGraph['labels']|null=null;
  private previousExternal:RegionGraph['external']|null=null;
+ private previousAnchors:RegionGraph['anchors']|null=null;
+ private previousWalls:RegionGraph['walls']|null=null;
+ private previousBridges:RegionGraph['bridges']|null=null;
+ private previousCount=-1;
  private previousWidth=0;
  private previousHeight=0;
 
@@ -73,7 +77,9 @@ export class LiveRegionTrace{
    // Some incremental analyzers keep the graph wrapper while replacing
    // its label/exterior arrays. Reused region IDs must not keep old highlights.
    if(graph!==this.previousGraph||graph.labels!==this.previousLabels||
-      graph.external!==this.previousExternal||
+      graph.external!==this.previousExternal||graph.anchors!==this.previousAnchors||
+      graph.walls!==this.previousWalls||graph.bridges!==this.previousBridges||
+      graph.count!==this.previousCount||
       graph.width!==this.previousWidth||graph.height!==this.previousHeight||
       points.length<this.processed||optionKey!==this.optionKey){
      changed=this.selected.size>0;
@@ -81,6 +87,8 @@ export class LiveRegionTrace{
      this.recentSegments.clear();this.recentPoints.clear();
      this.processed=0;this.optionKey=optionKey;this.previousGraph=graph;
      this.previousLabels=graph.labels;this.previousExternal=graph.external;
+     this.previousAnchors=graph.anchors;this.previousWalls=graph.walls;
+     this.previousBridges=graph.bridges;this.previousCount=graph.count;
      this.previousWidth=graph.width;this.previousHeight=graph.height;
    }else{
      let restart=this.processed;
@@ -122,9 +130,9 @@ export class LiveRegionTrace{
      this.recentPoints.set(i,{...points[i]!});
    }
    this.processed=points.length;
-   // The last 16 points can be revised without replaying a 4K-length trace.
+   // The last 64 points can be revised without replaying a 4K-length trace.
    // A change to point i also changes segment i+1, both retained here.
-   const cutoff=Math.max(0,this.processed-16);
+   const cutoff=Math.max(0,this.processed-64);
    for(const index of this.recentPoints.keys())if(index<cutoff){
      this.recentPoints.delete(index);this.recentSegments.delete(index);
    }
