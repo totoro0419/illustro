@@ -312,8 +312,8 @@ export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:Art
   const outY=point.outY===undefined?undefined:point.outY+dy;
   if([inX,inY,outX,outY].some(value=>value!==undefined&&!Number.isFinite(value)))return [...points];
   const moved={...point,x:next.x,y:next.y,
-    ...(inX===undefined?{}:{inX,inY}),
-    ...(outX===undefined?{}:{outX,outY})};
+    ...(inX===undefined||inY===undefined?{}:{inX,inY}),
+    ...(outX===undefined||outY===undefined?{}:{outX,outY})};
   return points.map((candidate,i)=>i===index?moved:candidate);
 }
 /** Keep the live on-canvas preview light at fit zoom, but use more detail
