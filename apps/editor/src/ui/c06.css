@@ -20,6 +20,10 @@
 .c06-selection-panel output{display:block;min-height:22px;color:var(--a-subtle,#667);font-size:11px}
 .c06-selection-preview{position:absolute;inset:0;z-index:9;width:100%;height:100%;pointer-events:none;overflow:hidden}
 .c06-selection-preview[data-empty="true"]{display:none}
+/* The editor's base canvas style is opaque and overrides the native hidden
+   display. A selection preview must never cover the artwork outside the mask. */
+.c06-mask-preview,.c06-selection-brush-raster{background:transparent}
+.c06-mask-preview[hidden]{display:none}
 .c06-selection-preview path{fill:#41c2eb14;stroke:#36acd6;stroke-width:2;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
 .c06-selection-notice{pointer-events:none;position:absolute;top:10px;left:10px;z-index:9;padding:5px 7px;border:1px solid #60b9cd;border-radius:6px;background:#ffffffcf;color:#236275;font-size:10px}
 .c06-selection-notice[hidden]{display:none}

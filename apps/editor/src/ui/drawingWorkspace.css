@@ -1,0 +1,278 @@
+/* Production workspace. Legacy QA pages keep their diagnostic controls. */
+body[data-app-mode="production"] {
+  --drawing-control: 36px;
+}
+
+body[data-app-mode="production"] .rail .tool-button:is([hidden], [data-drawing-unavailable]),
+body[data-app-mode="production"] .drawing-color[hidden],
+body[data-app-mode="production"] .topbar button[hidden],
+body[data-app-mode="production"] .box-body > .unavailable,
+body[data-app-mode="production"].illustro-focus-mode #c04ContextBar {
+  display: none;
+}
+
+body[data-app-mode="production"] main#canvasArea {
+  position: relative;
+}
+
+body[data-app-mode="production"] main#canvasArea > #c04ContextBar {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  align-self: stretch;
+  margin: 0;
+  padding: 6px 10px;
+  gap: 6px;
+  overflow: visible;
+  flex-wrap: wrap;
+  background: var(--a-surface);
+  border-bottom: 1px solid var(--a-border);
+  font-size: 12px;
+}
+
+body[data-app-mode="production"] #c04ContextBar :is(button, summary, input[type="number"]) {
+  min-height: var(--drawing-control);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+body[data-app-mode="production"] #c04ContextBar button[aria-pressed="true"] {
+  background: var(--a-accent-soft);
+  border-color: var(--a-border-strong);
+  color: var(--a-focus);
+}
+
+body[data-app-mode="production"] #c04ContextBar #quickColor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#quickColor > span {
+  width: 17px;
+  height: 17px;
+  border: 1px solid #5a6574;
+  border-radius: 50%;
+  background: var(--drawing-color, #141a2a);
+}
+
+#c04ContextBar .drawing-size {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  padding-inline: 4px;
+}
+
+.drawing-size #size {
+  min-width: 36px;
+  width: clamp(40px, 9vw, 108px);
+  min-height: var(--drawing-control);
+  margin: 0 4px;
+  accent-color: var(--a-focus);
+}
+
+.drawing-size #sizeNumber {
+  width: 4.75em;
+  padding-inline: 4px;
+  border: 1px solid var(--a-border-strong);
+  background: var(--a-surface);
+}
+
+#drawingViewOptions {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+#drawingViewOptions > summary,
+.drawing-layer-options > summary {
+  display: list-item;
+  align-content: center;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  padding-inline: 10px;
+  cursor: pointer;
+}
+
+#drawingViewOptions .canvas-view-strip {
+  position: absolute;
+  inset: 100% 6px auto auto;
+  justify-content: flex-start;
+  width: min(410px, calc(100% - 12px));
+  max-height: 45dvh;
+  overflow: auto;
+  flex-wrap: wrap;
+  padding: 10px;
+  border: 1px solid var(--a-border);
+  border-radius: 10px;
+  background: var(--a-surface);
+  box-shadow: var(--a-elevation);
+}
+
+body[data-app-mode="production"] main#canvasArea > .canvas-top {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 3;
+  min-height: 0;
+  padding: 3px 10px;
+  pointer-events: none;
+}
+
+body[data-app-mode="production"] .canvas-top :is(button, input) {
+  pointer-events: auto;
+}
+
+body[data-app-mode="production"] #c04ContextPending {
+  position: absolute;
+  inset: 100% auto auto 10px;
+  padding: 2px 5px;
+  border-radius: 0 0 6px 6px;
+  background: var(--a-surface);
+  pointer-events: none;
+}
+
+body[data-app-mode="production"] #c04ContextPending:empty {
+  display: none;
+}
+
+body[data-app-mode="production"] .canvas-top:has(#status:empty):not(:has(#maskEditingBar:not([hidden]), #maskInspectionBar:not([hidden]), #historyBrushBar:not([hidden]))) {
+  display: none;
+}
+
+body[data-app-mode="production"] .canvas-top #status {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  max-height: 2.8em;
+}
+
+body[data-app-mode="production"] .layer-page-list {
+  min-height: 64px;
+}
+
+.drawing-layer-options {
+  flex: 0 1 auto;
+  overflow: auto;
+  max-height: 43%;
+  overscroll-behavior: contain;
+}
+
+.drawing-layer-options > summary {
+  min-height: var(--drawing-control);
+}
+
+body[data-app-mode="production"] .topbar :is(#saveState, #rescueWorkSave, #retryWorkSave) {
+  min-width: 0;
+  font-size: 11px;
+}
+
+body[data-app-mode="production"] .topbar #saveState {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (any-pointer: coarse) {
+  body[data-app-mode="production"] {
+    --drawing-control: 44px;
+  }
+  body[data-app-mode="production"] .topbar button {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-app-mode="production"] main#canvasArea > #c04ContextBar {
+    padding: 4px 6px;
+    gap: 4px;
+  }
+  body[data-app-mode="production"] #c04ContextBar #c04ContextTool {
+    max-width: 104px;
+  }
+  body[data-app-mode="production"] .rail :is(#colorPage, #brushPage, #layersPage) {
+    display: none;
+  }
+}
+
+@media (max-width: 460px) {
+  body[data-app-mode="production"] .topbar .brand-mark {
+    display: none;
+  }
+  body[data-app-mode="production"] .topbar {
+    gap: 3px;
+    padding-inline: 5px;
+  }
+  body[data-app-mode="production"] .topbar .brand {
+    margin-right: 3px;
+  }
+  .drawing-size #size {
+    width: 46px;
+  }
+}
+
+.ih-new-dialog .ih-dialog-content {
+  display: flex;
+  flex-direction: column;
+  max-height: min(790px, calc(100dvh - 24px));
+  overflow: hidden;
+  padding: clamp(12px, 3vw, 24px);
+}
+
+.ih-new-dialog :is(.ih-dialog-head, .ih-start-choices, .ih-dialog-actions) {
+  flex: 0 0 auto;
+}
+
+.ih-new-dialog :is(.ih-dialog-head, .ih-start-choices) {
+  margin-bottom: 12px;
+}
+
+#ihBlankForm:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ih-form-fields {
+  min-height: 0;
+  padding: 2px 4px 5px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ih-canvas-options {
+  margin-top: 10px;
+}
+
+.ih-canvas-options > summary {
+  display: list-item;
+  min-height: 40px;
+  align-content: center;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  padding-inline: 10px;
+  cursor: pointer;
+}
+
+.ih-new-dialog .ih-checkbox {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.ih-new-dialog .ih-checkbox input {
+  inline-size: 18px;
+  min-block-size: 18px;
+}
+
+.ih-new-dialog #ihNewError {
+  flex: 0 0 auto;
+  margin-top: 6px;
+  color: #8b294d;
+}
+
+.ih-new-dialog #ihNewError:empty {
+  display: none;
+}

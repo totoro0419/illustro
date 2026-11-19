@@ -114,11 +114,11 @@ const html = [
   '</main>',
   '<div class="ih-floating-notice" id="ihNotice" role="status" aria-live="polite" hidden></div>',
   '<dialog id="ihNewDialog" class="ih-new-dialog" aria-labelledby="ihNewTitle"><div class="ih-dialog-content">',
-    '<div class="ih-dialog-head"><div><span class="ih-overline">START CREATING</span><h2 id="ihNewTitle">新しい作品</h2></div><button type="button" id="ihNewClose" class="ih-dialog-close" aria-label="閉じる">×</button></div>',
+    '<div class="ih-dialog-head"><h2 id="ihNewTitle">新しい作品</h2><button type="button" id="ihNewClose" class="ih-dialog-close" aria-label="閉じる">×</button></div>',
     '<div class="ih-start-choices"><button type="button" id="ihChoiceBlank" class="ih-choice" aria-pressed="true"><span class="ih-choice-icon">'+icon('document')+'</span><strong>空白から作成</strong><small>新しいキャンバスを準備</small></button><button type="button" id="ihChoiceFile" class="ih-choice" aria-pressed="false"><span class="ih-choice-icon">'+icon('open')+'</span><strong>ファイルから開く</strong><small>.illustro 形式の作品</small></button></div>',
-    '<form id="ihBlankForm"><label class="ih-name-field">作品名<input id="ihNewName" name="name" type="text" value="新しい作品" maxlength="120" required></label><div class="ih-size-heading"><strong>キャンバスサイズ</strong><span>px</span></div><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button><button type="button" data-ih-preset="4000x4000" aria-pressed="false">超高画質（4000×4000）</button><button type="button" id="ihA4Preset">A4（300 DPI）</button></div>',
-      '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="decimal"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="decimal"></label></div><div class="ih-dimensions"><label>単位<select id="ihNewUnit"><option value="px">px（画素）</option><option value="mm">mm（ミリメートル）</option></select></label><label>解像度（DPI）<input id="ihNewDpi" type="number" min="1" max="2400" step="1" value="72" inputmode="numeric"></label></div><p id="ihPixelPreview" class="ih-dialog-hint" aria-live="polite">512 × 384 px · 72 DPI</p><p class="ih-dialog-hint">色プロファイル：sRGB</p>',
-      '<label class="ih-name-field">背景<select id="ihNewBackground"><option value="transparent">透明</option><option value="white">白い背景レイヤー</option></select></label><label class="ih-name-field"><input type="checkbox" id="ihNewEmptyLayers"> 空のレイヤー構成で始める</label><details><summary>作品情報（任意）</summary><label class="ih-name-field">作者<input id="ihNewAuthor" maxlength="160" autocomplete="off"></label><label class="ih-name-field">説明<textarea id="ihNewDescription" maxlength="2000" rows="2"></textarea></label></details><div class="ih-name-field"><label>保存した設定<select id="ihTemplateSelect"><option value="">選択してください</option></select></label><label>新しいテンプレート名<input id="ihTemplateName" maxlength="80" placeholder="例：A4 300DPI"></label><div class="ih-dialog-actions"><button type="button" id="ihTemplateSave" class="ih-quiet-button">設定を保存</button><button type="button" id="ihTemplateDelete" class="ih-quiet-button">選択した設定を削除</button></div></div><p class="ih-dialog-hint">作品はIllustro内に自動保存されます。ファイル保存はバックアップ用です。</p><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
+    '<form id="ihBlankForm"><div class="ih-form-fields"><label class="ih-name-field">作品名<input id="ihNewName" name="name" type="text" value="新しい作品" maxlength="120" required></label><div class="ih-size-heading"><strong>キャンバスサイズ</strong></div><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button><button type="button" data-ih-preset="4000x4000" aria-pressed="false">超高画質（4000×4000）</button><button type="button" id="ihA4Preset">A4（300 DPI）</button></div>',
+      '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="decimal"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="decimal"></label></div><p id="ihPixelPreview" class="ih-dialog-hint" aria-live="polite">512 × 384 px · 72 DPI</p><details class="ih-canvas-options"><summary>キャンバスの詳細設定</summary><div class="ih-dimensions"><label>単位<select id="ihNewUnit"><option value="px">px（画素）</option><option value="mm">mm（ミリメートル）</option></select></label><label>解像度（DPI）<input id="ihNewDpi" type="number" min="1" max="2400" step="1" value="72" inputmode="numeric"></label></div><p class="ih-dialog-hint">色プロファイル：sRGB</p>',
+      '<label class="ih-name-field">背景<select id="ihNewBackground"><option value="transparent">透明</option><option value="white">白い背景レイヤー</option></select></label><label class="ih-checkbox"><input type="checkbox" id="ihNewEmptyLayers"> 描画用レイヤーを空にする</label><details><summary>作品情報（任意）</summary><label class="ih-name-field">作者<input id="ihNewAuthor" maxlength="160" autocomplete="off"></label><label class="ih-name-field">説明<textarea id="ihNewDescription" maxlength="2000" rows="2"></textarea></label></details><div class="ih-name-field"><label>保存した設定<select id="ihTemplateSelect"><option value="">選択してください</option></select></label><label>新しいテンプレート名<input id="ihTemplateName" maxlength="80" placeholder="例：A4 300DPI"></label><div class="ih-dialog-actions"><button type="button" id="ihTemplateSave" class="ih-quiet-button">設定を保存</button><button type="button" id="ihTemplateDelete" class="ih-quiet-button">選択した設定を削除</button></div></div></details></div><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
       '<div class="ih-dialog-actions"><button type="button" id="ihNewCancel" class="ih-quiet-button">キャンセル</button><button type="submit" id="ihNewCreate" class="ih-solid-button">キャンバスを作成 <span aria-hidden="true">↗</span></button></div>',
     '</form>',
     '<div id="ihFileOptions" class="ih-file-options" hidden><p>Illustroの作品ファイル（.illustro）を選択して、編集画面で開きます。</p><button type="button" id="ihSelectFile" class="ih-solid-button">ファイルを選択 <span aria-hidden="true">↗</span></button></div>',
@@ -180,7 +180,12 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       if(location.hash!==hash)history.pushState({illustroScreen:next},'',hash);
     }
   };
-  const showNew=(mode:'blank'|'file'='blank')=>{navigate('home');setCreationMode(mode);refillTemplates(templatePicker.value);notify('');dialog.showModal();if(mode==='blank')prefetchDraft();};
+  const showNew=(mode:'blank'|'file'='blank')=>{
+    if(screen!=='home')navigate('home');
+    el('ihStart').focus({preventScroll:true});
+    setCreationMode(mode);refillTemplates(templatePicker.value);notify('');dialog.showModal();
+    if(mode==='blank')prefetchDraft();
+  };
   const setCreationMode=(mode:'blank'|'file')=>{
     const blank=mode==='blank';el('ihBlankForm').hidden=!blank;el('ihFileOptions').hidden=blank;
     el('ihChoiceBlank').setAttribute('aria-pressed',String(blank));el('ihChoiceFile').setAttribute('aria-pressed',String(!blank));
@@ -436,6 +441,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   setButton('ihFeaturePrev',()=>chooseTrivia(featureIndex-1));setButton('ihFeatureNext',()=>chooseTrivia(featureIndex+1));
   setButton('ihFeatureVisual',showFeature);setButton('ihFeatureMore',showFeature);
   setButton('ihDetailEditor',()=>actions.hasDocument()?navigate('editor'):showNew());
+  dialog.addEventListener('cancel',event=>{if(el<HTMLButtonElement>('ihNewCreate').disabled)event.preventDefault();});
   setButton('ihNewClose',()=>dialog.close());setButton('ihNewCancel',()=>dialog.close());
   setButton('ihChoiceBlank',()=>setCreationMode('blank'));setButton('ihChoiceFile',()=>setCreationMode('file'));
   setButton('ihSelectFile',()=>{dialog.close();actions.openFile();});
@@ -564,7 +570,13 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   refillTemplates();refreshEmptyLayers();
   el<HTMLFormElement>('ihBlankForm').addEventListener('submit',event=>{event.preventDefault();void(async()=>{
     const d=sizePreview();if(!d){el('ihNewError').textContent='サイズと解像度を確認してください。';return;}
-    const button=el<HTMLButtonElement>('ihNewCreate');button.disabled=true;el('ihNewError').textContent='キャンバスを準備しています。';
+    const button=el<HTMLButtonElement>('ihNewCreate');
+    if(button.disabled)return;
+    const dialogButtons=['ihNewClose','ihNewCancel','ihNewCreate','ihChoiceBlank','ihChoiceFile'].map(id=>el<HTMLButtonElement>(id));
+    for(const control of dialogButtons)control.disabled=true;
+    const fields=el('ihBlankForm').querySelector<HTMLElement>('.ih-form-fields')!;
+    fields.inert=true;
+    el('ihNewError').textContent='キャンバスを準備しています。';
     try{
       const name=el<HTMLInputElement>('ihNewName').value;
       const setup={width:el<HTMLInputElement>('ihNewWidth').valueAsNumber,height:el<HTMLInputElement>('ihNewHeight').valueAsNumber,
@@ -575,7 +587,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       }
       else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';
     }catch(error){console.error('C01_CREATE_DOCUMENT_FAULT',error instanceof Error?error.stack??error.message:error);el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}
-    finally{button.disabled=false;}
+    finally{for(const control of dialogButtons)control.disabled=false;fields.inert=false;}
   })();});
   let swipeStart:number|null=null;
   el('ihFeatureVisual').addEventListener('touchstart',event=>{swipeStart=event.touches[0]?.clientX??null;},{passive:true});

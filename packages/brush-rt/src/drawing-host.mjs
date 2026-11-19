@@ -11,6 +11,12 @@ export class DrawingHost {
   if(abortSignal?.aborted)throw Error('Cancelled canvas initialization');
   const host=new DrawingHost(canvas,workerUrl,presentationUrl);host.documentPresentation=new DocumentPresentation(canvas,width,height);host.documentVersion=0;
   const abort=()=>host.destroy();
+  // A crashed or suspended graphics worker may never acknowledge startup.
+  // End only the initialization attempt and leave its UI free to retry.
+  let timeout;
+  const unavailable=new Promise((_,reject)=>{
+   timeout=setTimeout(()=>reject(Error('Drawing worker startup timed out')),12000);
+  });
   abortSignal?.addEventListener('abort',abort,{once:true});
   try{
    // Both workers own separate GPU resources. They can initialize in parallel:
@@ -18,11 +24,11 @@ export class DrawingHost {
    // The previous sequential startup waited for two pipeline compilations.
    const drawingInit=host.call('init',{width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend,options,canonicalUrl,diagnostics,timeOrigin:performance.timeOrigin});
    host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend});
-   const [state]=await Promise.all([drawingInit,host.presentationReady]);
+   const [state]=await Promise.race([Promise.all([drawingInit,host.presentationReady]),unavailable]);
    if(abortSignal?.aborted||host.disposed)throw Error('Cancelled canvas initialization');
    host.update(state);return host;
   }catch(error){host.destroy();throw error;}
-  finally{abortSignal?.removeEventListener('abort',abort);}
+  finally{clearTimeout(timeout);abortSignal?.removeEventListener('abort',abort);}
  }
  constructor(canvas,url,presentationUrl){this.remote=true;
   // Split retained document uploads into browser tasks in the real editor.
