@@ -1,5 +1,5 @@
 import {validateEditableArtwork,type ArtPoint,type EditableGradient,type EditablePath,type GradientStop,type LayerId,type LayerMask} from '@illustro/core';
-import {layerMaskCoverage} from '@illustro/brush-rt';
+import {layerMaskCoverage,samplePixelMask} from '@illustro/brush-rt';
 import {runArtwork} from './run';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
@@ -152,7 +152,12 @@ export function applyShapePreviewMask(
 ):void{
   // A zero-density mask cannot change any pixel; skip even the mask tile lookup.
   if(!mask?.enabled||mask.density===0)return;
-  const downscaled=sampleCoverage===layerMaskCoverage&&(outputWidth<width||outputHeight<height);
+  const defaultSampler=sampleCoverage===layerMaskCoverage;
+  const downscaled=defaultSampler&&(outputWidth<width||outputHeight<height);
+  // Pixel masks already store 64px source tiles. Reading their samples
+  // directly avoids allocating 128x128 coverage tiles across a 4K preview.
+  // Use the document pixel center, matching layerMaskCoverage's raster rule.
+  const directPixelMask=defaultSampler&&mask.shape==='pixels'?mask:null;
   // Only small polygons use the exact area integral. This keeps the usual
   // 4K path preview on its existing fast raster-tile path.
   let tinyPathBounds:[number,number,number,number]|null=null;
@@ -181,7 +186,9 @@ export function applyShapePreviewMask(
             left>=tinyPathBounds[2]||top>=tinyPathBounds[3]
             ?(mask.inverted?1:1-mask.density)
             :smallPathPreviewCoverage(mask,left,top,right,bottom))
-          :sampleCoverage(mask,(left+right)/2,(top+bottom)/2);
+          :directPixelMask
+            ?samplePixelMask(directPixelMask,Math.floor((left+right)/2)+.5,Math.floor((top+bottom)/2)+.5)/255
+            :sampleCoverage(mask,(left+right)/2,(top+bottom)/2);
     pixels[at+3]=Math.round(pixels[at+3]!*coverage);
   }
 }
