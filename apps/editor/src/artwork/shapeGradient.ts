@@ -161,14 +161,19 @@ export function applyShapePreviewMask(
   // Only small polygons use the exact area integral. This keeps the usual
   // 4K path preview on its existing fast raster-tile path.
   let tinyPathBounds:[number,number,number,number]|null=null;
-  if(downscaled&&mask.shape==='path'&&mask.points.length<=64){
+  if(downscaled&&mask.shape==='path'&&mask.points.length<=128){
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
     for(const point of mask.points){
       minX=Math.min(minX,point.x);minY=Math.min(minY,point.y);
       maxX=Math.max(maxX,point.x);maxY=Math.max(maxY,point.y);
     }
-    if(maxX-minX<=2*width/outputWidth&&maxY-minY<=2*height/outputHeight)
-      tinyPathBounds=[minX,minY,maxX,maxY];
+    const previewPixelWidth=width/outputWidth,previewPixelHeight=height/outputHeight;
+    const compact=maxX-minX<=2*previewPixelWidth&&maxY-minY<=2*previewPixelHeight;
+    // A long, very thin selection can miss every preview pixel center.
+    // Its narrow axis limits the number of expensive exact area evaluations.
+    const thin=mask.points.length<=16&&
+      (maxX-minX<=2*previewPixelWidth||maxY-minY<=2*previewPixelHeight);
+    if(compact||thin)tinyPathBounds=[minX,minY,maxX,maxY];
   }
   for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
     const at=(y*outputWidth+x)*4;
@@ -232,6 +237,12 @@ export function moveShapeAnchor(points:readonly ArtPoint[],index:number,next:Art
  * blocking pointer input on browsers without OffscreenCanvas. */
 /** Keep gradient mask rasterization on the Worker for large live previews.
  * Thumbnail-size previews use area coverage to retain subpixel selections. */
+/** Cancel a stale Worker render only after it has delayed a newer pointer
+ * position long enough to be noticeable. Canceling on every pointermove
+ * would starve the preview during a continuous drag. */
+export function shouldCancelStaleShapePreview(elapsedMs:number):boolean{
+  return Number.isFinite(elapsedMs)&&elapsedMs>=120;
+}
 export function shapeLiveMaskOnMainThread(kind:'path'|'gradient',outputWidth:number,outputHeight:number):boolean{
   return kind==='path'||outputWidth*outputHeight<=100000;
 }
@@ -310,6 +321,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
   let previewRunning=false,previewPending=false,editingHandles=false;
   let previewAbort:AbortController|null=null;
   let liveVersion=0,liveRunning=false,liveAbort:AbortController|null=null;
+  let liveStartedAt=-1;
   type LiveCandidate={content:EditablePath|EditableGradient;mask:LayerMask|null|undefined;
     context:NonNullable<ReturnType<ArtworkActions['context']>>;version:number;replacement:LayerId|undefined};
   let livePending:LiveCandidate|null=null;
@@ -384,7 +396,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         const {outputWidth,outputHeight}=shapeLivePreviewDimensions(
           context.width,context.height,context.drawing.viewState?.zoom??1,
           typeof OffscreenCanvas!=='undefined');
-        const abort=new AbortController();liveAbort=abort;
+        const abort=new AbortController();liveAbort=abort;liveStartedAt=performance.now();
         const postMask=shapeLiveMaskOnMainThread(content.kind,outputWidth,outputHeight);
         try{
           const pixels=await runArtwork({width:context.width,height:context.height,
@@ -398,11 +410,18 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
           context.drawing.showArtworkPreview(new ImageData(pixels,outputWidth,outputHeight),
             false,replacement??null);
         }catch(error){
-          if(!abort.signal.aborted&&version===liveVersion)
+          if(!abort.signal.aborted&&version===liveVersion&&editingHandles&&
+            draftDrawing===context.drawing&&api.context()?.drawing===context.drawing){
+            // Do not leave an older geometry preview visible after the
+            // newest render fails: the saved artwork must not be misrepresented.
+            context.drawing.showArtworkPreview(null);
             status.textContent=error instanceof Error?error.message:String(error);
+          }
+        }finally{
+          if(liveAbort===abort){liveAbort=null;liveStartedAt=-1;}
         }
       }
-    }finally{liveRunning=false;liveAbort=null;}
+    }finally{liveRunning=false;liveAbort=null;liveStartedAt=-1;}
   }
   /** Show editable points on the actual canvas; the drawing engine owns the live drag outline. */
   function editOnCanvas(){
@@ -469,6 +488,11 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
           if(!candidate||!editingHandles)return;
           livePending={content:candidate,mask:getMask(),context:current,
             version:++liveVersion,replacement:editing};
+          // Keep rendering during fast pointer motion, but abandon an old
+          // frame if it has blocked the latest pointer position for 120ms.
+          if(liveAbort&&liveStartedAt>=0&&
+            shouldCancelStaleShapePreview(performance.now()-liveStartedAt))
+            liveAbort.abort();
           void pumpLive();
         },
         commit:(index,point)=>{

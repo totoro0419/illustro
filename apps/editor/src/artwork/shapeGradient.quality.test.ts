@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {vectorMaskCoverage,type EditableGradient,type LayerId} from '@illustro/core';
 import {renderArtwork} from './render';
 import {layerMaskCoverage} from '@illustro/brush-rt';
-import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,shapeLiveMaskOnMainThread,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
+import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,shapeLiveMaskOnMainThread,shouldCancelStaleShapePreview,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
   it('clips selection-outside alpha without modifying original color bytes',()=>{
@@ -89,6 +89,39 @@ describe('C09-005/C09-015 live gradient preview responsiveness',()=>{
     expect(shapeLiveMaskOnMainThread('gradient',512,512)).toBe(false);
     expect(shapeLiveMaskOnMainThread('gradient',260,260)).toBe(true);
     expect(shapeLiveMaskOnMainThread('path',1024,1024)).toBe(true);
+  });
+});
+
+describe('C09-004 long thin and dense small path coverage',()=>{
+  it('retains a long narrow selection that misses all downscaled pixel centers',()=>{
+    const mask={shape:'path',points:[
+      {x:0,y:.25},{x:4000,y:.25},{x:4000,y:.75},{x:0,y:.75}
+    ],enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray(200*200*4);
+    for(let i=0;i<200*200;i++)pixels[i*4+3]=200;
+    applyShapePreviewMask(pixels,mask,4000,4000,200,200);
+    for(let x=0;x<200;x++)expect(pixels[x*4+3]).toBe(5);
+    expect(pixels[(200+100)*4+3]).toBe(0);
+  });
+  it('preserves small polygons with more than 64 vertices',()=>{
+    const points=Array.from({length:80},(_,i)=>({
+      x:1+Math.cos(i*Math.PI/40),y:1+Math.sin(i*Math.PI/40)
+    }));
+    const mask={shape:'path',points,enabled:true,inverted:false,density:1} as const;
+    const pixels=new Uint8ClampedArray([10,20,30,255]);
+    applyShapePreviewMask(pixels,mask,20,20,1,1);
+    expect(pixels[3]).toBeGreaterThan(0);
+    expect(pixels[3]).toBeLessThan(4);
+  });
+});
+describe('C09-005/C09-015 slow live render cancellation policy',()=>{
+  it('keeps quick in-flight frames and aborts only sufficiently stale frames',()=>{
+    expect(shouldCancelStaleShapePreview(0)).toBe(false);
+    expect(shouldCancelStaleShapePreview(119.9)).toBe(false);
+    expect(shouldCancelStaleShapePreview(120)).toBe(true);
+    expect(shouldCancelStaleShapePreview(250)).toBe(true);
+    expect(shouldCancelStaleShapePreview(NaN)).toBe(false);
+    expect(shouldCancelStaleShapePreview(Infinity)).toBe(false);
   });
 });
 
