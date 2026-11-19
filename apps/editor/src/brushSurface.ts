@@ -1051,7 +1051,8 @@ export class BrushSurface{
       // batches and transfer those tiles directly to the selection Worker.
       const existingTiles=sparse
         ?await captureSelectedLayerTiles(host,target.surfaceId,target.width,target.height,
-          ()=>!this.disposed&&artwork.head===target.baseRevision)
+          ()=>!this.disposed&&artwork.head===target.baseRevision,
+          undefined,records.every(item=>item.preset.blend==='erase')?mask:undefined)
         :null;
       // A completely empty GPU layer has nothing to erase. Preserve the
       // transparent-RGB safeguard in tile capture; only truly zero tiles

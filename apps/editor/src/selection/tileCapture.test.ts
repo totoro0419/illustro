@@ -119,11 +119,33 @@ describe('C06-002 selected eraser GPU no-op preflight',()=>{
  it('preserves the full occupied snapshot when any allocated tile touches the selection',async()=>{
   const {renderer,readTiles}=fakeRenderer([['L','0,0',255],['L','1,1',190]]);
   const alpha=new Uint8Array(4000*4000);
-  alpha[129*4000+129]=128;
+  alpha[128*4000+128]=128;
   const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
     undefined,{width:4000,height:4000,alpha});
   expect(result.map(tile=>tile.key)).toEqual(['0,0','1,1']);
-  expect(readTiles.mock.calls[0]?.[0]).toHaveLength(2);
+  expect(readTiles).toHaveBeenCalledTimes(2);
+  expect(readTiles.mock.calls[0]?.[0]).toEqual([{surfaceId:'L',key:'1,1'}]);
+  expect(readTiles.mock.calls[1]?.[0]).toEqual([{surfaceId:'L',key:'0,0'}]);
+ });
+ it('does not read unrelated tiles when selected pixels are empty inside an occupied tile',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',255],['L','1,1',190]]);
+  const alpha=new Uint8Array(4000*4000);
+  alpha[1*4000+1]=255; // Tile 0,0 contains paint at (0,0), not (1,1).
+  const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+    undefined,{width:4000,height:4000,alpha});
+  expect(result).toEqual([]);
+  expect(readTiles).toHaveBeenCalledTimes(1);
+  expect(readTiles.mock.calls[0]?.[0]).toEqual([{surfaceId:'L',key:'0,0'}]);
+ });
+ it('retains transparent RGB in selected pixels and reads other tiles once',async()=>{
+  const {renderer,readTiles}=fakeRenderer([['L','0,0',175],['L','1,1',190]]);
+  const alpha=new Uint8Array(4000*4000);
+  alpha[0]=128;
+  const result=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true,
+    undefined,{width:4000,height:4000,alpha});
+  expect(result.map(tile=>tile.key)).toEqual(['0,0','1,1']);
+  expect(readTiles).toHaveBeenCalledTimes(2);
+  expect(result[0]!.pixels[0]).toBe(175);
  });
  it('rejects invalid eraser masks before inspecting or reading GPU data',async()=>{
   const {renderer,readTiles}=fakeRenderer([['L','0,0',255]]);

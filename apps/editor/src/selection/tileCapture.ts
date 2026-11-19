@@ -53,6 +53,23 @@ function tileIntersectsSelection(mask:MaskData,tx:number,ty:number):boolean{
  }
  return false;
 }
+/** A selected eraser can be a no-op even when the mask intersects an
+ * allocated tile: only nonzero pixels *inside* the selection can change.
+ * Preserve transparent RGB conservatively, as with tileHasPixelData. */
+function tileHasSelectedPixelData(tile:RasterWorkerTile,mask:MaskData):boolean{
+ const [tx=0,ty=0]=tile.key.split(',').map(Number);
+ const left=tx*TILE,top=ty*TILE;
+ const right=Math.min(mask.width,left+TILE),bottom=Math.min(mask.height,top+TILE);
+ for(let y=top;y<bottom;y++){
+  const maskRow=y*mask.width,rgbaRow=(y-top)*TILE*4;
+  for(let x=left;x<right;x++){
+   if(mask.alpha[maskRow+x]===0)continue;
+   const i=rgbaRow+(x-left)*4,p=tile.pixels;
+   if((p[i]!|p[i+1]!|p[i+2]!|p[i+3]!)!==0)return true;
+  }
+ }
+ return false;
+}
 /** Capture all occupied tiles of one layer, in batches, to preserve its old
  * brush strokes when producing the new layer.snapshot. The selected stroke
  * worker then creates newly touched tiles without scanning blank canvas. */
@@ -80,6 +97,7 @@ export async function captureSelectedLayerTiles(
  if(!backend?.tiles||typeof backend.readTiles!=='function')
   throw new Error('選択範囲の区画読み取りを利用できません。');
  const requests:TileReadRequest[]=[];
+ const selectedRequests:TileReadRequest[]=[];
  const seen=new Set<string>();
  let eraseCanChange=!eraseMask;
  for(const item of backend.tiles.values()){
@@ -99,27 +117,45 @@ export async function captureSelectedLayerTiles(
   if(area&&(tx*TILE>=area.x+area.width||ty*TILE>=area.y+area.height||
     (tx+1)*TILE<=area.x||(ty+1)*TILE<=area.y))continue;
   requests.push({surfaceId,key});
-  if(eraseMask&&!eraseCanChange&&tileIntersectsSelection(eraseMask,tx,ty))
+  if(eraseMask&&tileIntersectsSelection(eraseMask,tx,ty)){
    eraseCanChange=true;
+   selectedRequests.push({surfaceId,key});
+  }
  }
  // Keep every existing tile for snapshot reconstruction when any selected
  // tile is allocated. Only the proven no-op eraser avoids all GPU readback.
  if(!eraseCanChange)return [];
- const result:RasterWorkerTile[]=[];
- for(let offset=0;offset<requests.length;offset+=16){
-  const batch=await readGpuTiles(backend,requests.slice(offset,offset+16),valid);
-  for(const tile of batch)if(area
-    ?tileHasPixelDataInArea(tile,area)
-    :tileHasPixelData(tile.pixels))
-   result.push({key:tile.key,pixels:tile.pixels});
-  // GPU batches are already asynchronous. Yield a full browser task every
-  // four batches instead of every batch, keeping 4K capture responsive
-  // without adding dozens of timer delays to a single stroke.
-  if((offset/16)%4===3&&offset+16<requests.length)
-   await new Promise<void>(resolve=>setTimeout(resolve,0));
- }
+ const captured=new Map<string,RasterWorkerTile>();
+ let selectedHasPaint=false;
+ const read=async (items:readonly TileReadRequest[],checkSelection=false)=>{
+  for(let offset=0;offset<items.length;offset+=16){
+   const batch=await readGpuTiles(backend,items.slice(offset,offset+16),valid);
+   for(const tile of batch){
+    if(area?tileHasPixelDataInArea(tile,area):tileHasPixelData(tile.pixels))
+     captured.set(tile.key,{key:tile.key,pixels:tile.pixels});
+    if(checkSelection&&eraseMask&&tileHasSelectedPixelData(tile,eraseMask))
+     selectedHasPaint=true;
+   }
+   // Keep the UI responsive without yielding after every 1 MiB GPU batch.
+   if((offset/16)%4===3&&offset+16<items.length)
+    await new Promise<void>(resolve=>setTimeout(resolve,0));
+  }
+ };
+ if(eraseMask){
+  // Probe only selected tiles first. If they contain no selected paint,
+  // the eraser is a proven no-op: all other GPU tiles stay untouched.
+  await read(selectedRequests,true);
+  if(!selectedHasPaint)return [];
+  // Reuse the probe pixels rather than reading the selected tiles twice.
+  const selectedKeys=new Set(selectedRequests.map(item=>item.key));
+  await read(requests.filter(item=>!selectedKeys.has(item.key)));
+ }else await read(requests);
  if(!valid())throw new Error('選択描画中に作品が切り替わりました。');
- return result;
+ // Keep inventory order for deterministic snapshot reconstruction.
+ return requests.flatMap(item=>{
+  const tile=captured.get(item.key);
+  return tile?[tile]:[];
+ });
 }
 
 /** Read a small clipboard rectangle directly from occupied GPU tiles.
