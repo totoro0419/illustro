@@ -1,5 +1,6 @@
 import {describe,expect,it} from 'vitest';
-import {vectorMaskCoverage,type LayerId} from '@illustro/core';
+import {vectorMaskCoverage,type EditableGradient,type LayerId} from '@illustro/core';
+import {renderArtwork} from './render';
 import {roundedRectanglePoints,regularPolygonPoints,reverseGradientStops,shapeGradientInitialMask,shapeGradientPreviewMask,applyShapePreviewMask,rectanglePreviewCoverage,ellipsePreviewCoverage,smallPathPreviewCoverage,moveShapeAnchor,gradientStopPointerPosition,gradientStopKeyboardPosition,shapeAnchorFieldValues,safeGradientStopValue,shapeLivePreviewDimensions,gradientStopCssColor,gradientStopSwatchBackground} from './shapeGradient';
 
 describe('C09-004 mask coverage in shape previews',()=>{
@@ -24,6 +25,39 @@ describe('C09-004 mask coverage in shape previews',()=>{
     const unchanged=pixels.slice();
     applyShapePreviewMask(pixels,disabled,4,2,2,1);
     expect(pixels).toEqual(unchanged);
+  });
+});
+
+
+describe('C09-004/C09-005/C09-015 shared gradient and path preview masking',()=>{
+  const gradient:EditableGradient={
+    kind:'gradient',mode:'linear',start:{x:0,y:0},end:{x:4,y:0},
+    stops:[{at:0,color:'#000000',opacity:1,midpoint:.5},
+      {at:1,color:'#ffffff',opacity:1,midpoint:.5}]
+  };
+  const renderUnmasked=()=>renderArtwork(gradient,{
+    width:4,height:4,outputWidth:2,outputHeight:2,previewMask:false
+  },{} as HTMLCanvasElement);
+
+  it('keeps a subpixel rectangle visible in a gradient preview, without masking twice',()=>{
+    const mask={shape:'rectangle',x:1,y:1,width:1,height:1,
+      enabled:true,inverted:false,density:1} as const;
+    const pixels=renderUnmasked();
+    expect([pixels[3],pixels[7],pixels[11],pixels[15]]).toEqual([255,255,255,255]);
+    applyShapePreviewMask(pixels,mask,4,4,2,2);
+    expect([pixels[3],pixels[7],pixels[11],pixels[15]]).toEqual([64,0,0,0]);
+  });
+  it('preserves the same even-odd subpixel path coverage for gradients',()=>{
+    const mask={shape:'path',points:[{x:.2,y:.2},{x:.7,y:.2},{x:.2,y:.7}],
+      enabled:true,inverted:false,density:1} as const;
+    const pixels=renderUnmasked();
+    applyShapePreviewMask(pixels,mask,4,4,2,2);
+    expect([pixels[3],pixels[7],pixels[11],pixels[15]]).toEqual([8,0,0,0]);
+  });
+  it('does not change unmasked gradient pixels or colors',()=>{
+    const pixels=renderUnmasked(),original=pixels.slice();
+    applyShapePreviewMask(pixels,null,4,4,2,2);
+    expect(pixels).toEqual(original);
   });
 });
 
