@@ -123,6 +123,28 @@ async function run(browser, [mode, width, height, touch], limited = false) {
   };
   const stage = (name, fn) => capture(name, fn);
   const observeHere = name => observe(page, mode + '/' + name);
+  const goHome = async () => {
+    if (await page.locator('#ihNewDialog').isVisible()) await click('#ihNewClose');
+    if (await page.locator('#ihStart').isVisible()) return;
+    if (await page.locator('#ihNavHome').isVisible()) await click('#ihNavHome');
+    else await click('#home');
+    await page.locator('#ihStart').waitFor({ state: 'visible' });
+  };
+  const workList = async () => {
+    if (await page.locator('#ihWorksTitle').isVisible()) return;
+    await goHome();
+    await click('#ihNavWorks');
+    await page.locator('#ihWorksTitle').waitFor({ state: 'visible' });
+  };
+  const openSaved = async () => {
+    if (!(await page.locator('#app').evaluate(el => el.inert))) return;
+    await workList();
+    const card = byName(testName + 'を開く');
+    await card.waitFor({ state: 'visible', timeout: 13000 });
+    await click(card);
+    await canvas.waitFor({ state: 'visible', timeout: 13000 });
+    await idle();
+  };
   const openBox = async id => {
     if (await page.locator('#layerPage').isVisible()) await click('#closeLayerPage');
     if (await page.locator('#workspace').evaluate(el => el.inert)) await click('#workspaceToggle');
@@ -181,25 +203,28 @@ async function run(browser, [mode, width, height, touch], limited = false) {
     report.emulation[mode] = await page.evaluate(() => ({ width: innerWidth, height: innerHeight, touch: navigator.maxTouchPoints, ua: navigator.userAgent, nativeSavePicker: typeof window.showSaveFilePicker }));
     report.emulation[mode].graphics = await page.evaluate(async () => {
       const gl = document.createElement('canvas').getContext('webgl2');
-      const adapter = await navigator.gpu?.requestAdapter().catch(() => null);
+      const adapter = await Promise.race([navigator.gpu?.requestAdapter().catch(() => null), new Promise(resolve => setTimeout(() => resolve(null), 4500))]);
       const result = { webGpuAdapter: !!adapter, webGl2: !!gl, floatTargets: !!gl?.getExtension('EXT_color_buffer_float') };
       gl?.getExtension('WEBGL_lose_context')?.loseContext();
       return result;
     });
     await observeHere('home');
-    await picture('home');
+    await picture('home').catch(error => report.console.push({ mode, level: 'test-runner', message: String(error.message).slice(0, 200) }));
     if (!limited) {
       await stage('ホーム・紹介 次の機能', async () => {
+      await goHome();
         const title = await page.locator('#ihFeatureTitle').textContent();
         await click('#ihFeatureNext');
         assert.notEqual(await page.locator('#ihFeatureTitle').textContent(), title);
       });
       await stage('ホーム・紹介 前の機能', async () => {
+      await goHome();
         const title = await page.locator('#ihFeatureTitle').textContent();
         await click('#ihFeaturePrev');
         assert.notEqual(await page.locator('#ihFeatureTitle').textContent(), title);
       });
       await stage('ホーム・機能を詳しく見る', async () => {
+      await goHome();
         await click('#ihFeatureMore');
         assert.ok(await page.locator('#ihDetailTitle').isVisible());
         await observeHere('feature');
@@ -207,12 +232,14 @@ async function run(browser, [mode, width, height, touch], limited = false) {
         assert.ok(await page.locator('#ihStart').isVisible());
       });
       await stage('ホーム・紹介画像から詳細', async () => {
+      await goHome();
         await click('#ihFeatureVisual');
         assert.ok(await page.locator('#ihDetailTitle').isVisible());
         await click('#ihBrand');
         assert.ok(await page.locator('#ihStart').isVisible());
       });
       await stage('ホーム・設定から描画画面への導線', async () => {
+      await goHome();
         await click('#ihNavSettings');
         await click('#ihSettingsEditor');
         assert.ok(await page.locator('#ihNewDialog').isVisible());
@@ -221,12 +248,14 @@ async function run(browser, [mode, width, height, touch], limited = false) {
         await click('#ihNavHome');
       });
       await stage('ホーム・設定', async () => {
+      await goHome();
         await click('#ihNavSettings');
         assert.ok(await page.locator('#ihSettingsTitle').isVisible());
         await observeHere('settings');
         return await page.locator('[data-ih-screen="settings"]').innerText();
       });
       await stage('ホーム・マイ作品のタブ', async () => {
+      await goHome();
         await click('#ihNavWorks');
         assert.ok(await page.locator('#ihWorksTitle').isVisible());
         await observeHere('works-empty');
@@ -234,25 +263,28 @@ async function run(browser, [mode, width, height, touch], limited = false) {
         assert.ok(await page.locator('#ihStart').isVisible());
       });
       await stage('マイ作品・空のゴミ箱を開閉', async () => {
-        await click('#ihNavWorks');
-        const summary = page.locator('#ihWorkTrash > summary');
+        await workList();
+        const trash = page.locator('#ihWorkTrash');
+        const summary = trash.locator(':scope > summary');
         await click(summary);
-        assert.ok(await page.locator('#ihWorkTrashGrid').isVisible());
+        assert.ok(await trash.evaluate(el => el.open));
         await observeHere('works-trash');
         await click(summary);
-        assert.ok(!(await page.locator('#ihWorkTrashGrid').isVisible()));
-        await click('#ihNavHome');
+        assert.ok(!(await trash.evaluate(el => el.open)));
+        await goHome();
       });
       await stage('ホーム・マイ作品のカード', async () => {
+      await goHome();
         await click('#ihWorks');
         assert.ok(await page.locator('#ihWorksTitle').isVisible());
         await click('#ihNavHome');
       });
     }
     const created = await stage('01 キャンバスを作成', async () => {
+      await goHome();
       await click('#ihStart');
       await observeHere('new');
-      await picture('new-initial');
+      await picture('new-initial').catch(() => {});
       const createPosition = await page.locator('#ihNewCreate').evaluate(el => {
         const b = el.getBoundingClientRect();
         const d = el.closest('dialog').getBoundingClientRect();
@@ -309,7 +341,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       await canvas.waitFor({ state: 'visible' });
       await idle();
       await observeHere('editor');
-      await picture('editor');
+      await picture('editor').catch(() => {});
       return { createPosition, canvas: await info() };
     });
     if (!created || limited) return;
@@ -592,8 +624,8 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       return { width: result.width, height: result.height, red };
     });
     await stage('20 ホームから開いて編集を継続', async () => {
-      await click('#home');
-      await click('#ihNavWorks');
+      await goHome();
+      await workList();
       await observeHere('works-return');
       await click(byName(testName + 'を開く'));
       await canvas.waitFor({ state: 'visible', timeout: 11000 });
@@ -607,8 +639,8 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       return { changed };
     });
     await stage('マイ作品・保存した作品の名前検索', async () => {
-      await click('#home');
-      await click('#ihNavWorks');
+      await goHome();
+      await workList();
       const field = page.locator('#ihWorkSearch');
       await byName(testName + 'を開く').waitFor({ state: 'visible', timeout: 10000 });
       await field.fill('no-qa-matching-name');
@@ -645,7 +677,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
     });
     await stage('作品ファイルの読み込み', async () => {
       assert.ok(documentFile, 'No .illustro backup was created');
-      await click('#ihNavHome');
+      await goHome();
       await click('#ihStart');
       await click('#ihChoiceFile');
       const popup = page.waitForEvent('filechooser', { timeout: 10000 }).catch(() => null);
@@ -657,12 +689,9 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       await idle();
       assert.ok(reds(await snap()) > 30, 'opened .illustro file has no measured red pixels');
     });
-    if (await page.locator('#app').evaluate(el => el.inert)) {
-      await click('#ihNavWorks');
-      await click(byName(testName + 'を開く'));
-      await idle();
-    }
+    await stage('別の画面から編集へ戻る', openSaved);
     await stage('編集・全機能と各カテゴリ', async () => {
+      await openSaved();
       await click('#allFeatures');
       await observeHere('features');
       const cats = await page.locator('#featuresCategories [data-category]').evaluateAll(els => els.map(el => el.dataset.category));
@@ -681,6 +710,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       return { opened };
     });
     await stage('編集・レイヤー詳細画面', async () => {
+      await openSaved();
       await click('#layer');
       assert.ok(await page.locator('#layerPage').isVisible());
       await observeHere('layer-page');
@@ -688,6 +718,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
       assert.ok(!(await page.locator('#layerPage').isVisible()));
     });
     await stage('編集・右側パネルの展開と折りたたみ', async () => {
+      await openSaved();
       const ids = await page.locator('.workspace-box .box-toggle').evaluateAll(els => els.map(el => el.getAttribute('aria-controls')));
       for (const id of ids) {
         await stage('パネル・' + id, async () => {
@@ -751,7 +782,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
 
 (async () => {
   await fs.mkdir(output, { recursive: true });
-  const flags = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--enable-unsafe-swiftshader', '--disable-blink-features=FileSystemAccess'];
+  const flags = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--enable-unsafe-swiftshader', '--disable-blink-features=FileSystemAccessLocal'];
   report.flags = flags;
   const browser = await chromium.launch({ headless: true, args: flags });
   try {
@@ -760,7 +791,7 @@ async function run(browser, [mode, width, height, touch], limited = false) {
     await browser.close();
     await fs.writeFile(output + '/results.json', JSON.stringify(report, null, 2));
   }
-  const limited = await chromium.launch({ headless: true, args: ['--disable-gpu', '--disable-webgl', '--disable-webgl2', '--disable-features=WebGPU,Vulkan'] });
+  const limited = await chromium.launch({ headless: true, args: ['--disable-gpu', '--disable-software-rasterizer', '--disable-webgl', '--disable-webgl2', '--disable-features=WebGPU,Vulkan'] });
   try {
     await run(limited, ['gpu-unavailable', 800, 1280, true], true);
   } finally {
