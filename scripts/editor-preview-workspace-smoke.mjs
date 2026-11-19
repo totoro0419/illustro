@@ -133,22 +133,25 @@ async function run(label, full = false, touch = false) {
     check('white paper has real rendered pixels', countPixels(visible, white) > 500);
     if (full) await page.screenshot({ path: path.join(output, label + '-canvas.png') });
     const beforeInk = countPixels(visible, dark);
-    let firstInk = 0;
+    const baseline = label.startsWith('before');
+    let firstInk = null;
+    let liveInk = false;
     await draw(0.34, 0.62, 0.44, async () => {
-      await page.waitForFunction(() => {
-        const overlay = document.querySelector('.illustro-stroke-overlay');
-        return overlay?.width > 1 && getComputedStyle(overlay).display !== 'none';
-      }, null, { timeout: 4500 }).catch(() => {});
-      const ink = countPixels(await snapshot(), dark);
-      check('line visible with pointer still held', ink > beforeInk + 20);
-      firstInk = await page.evaluate(() => performance.now() - performance.getEntriesByName('smoke-create-click').at(-1).startTime);
+      const deadline = performance.now() + 1800;
+      do {
+        liveInk = countPixels(await snapshot(), dark) > beforeInk + 20;
+      } while (!liveInk && performance.now() < deadline);
+      if (liveInk) firstInk = await page.evaluate(() =>
+        performance.now() - performance.getEntriesByName('smoke-create-click').at(-1).startTime);
+      if (!baseline) check('line visible with pointer still held', liveInk);
     });
     await waitStrokes(1);
     await idle();
-    check('line remains after release', countPixels(await snapshot(), dark) > beforeInk + 20);
+    const committedInk = countPixels(await snapshot(), dark) > beforeInk + 20;
+    if (!baseline) check('line remains after release', committedInk);
     report.timings.push({
       label, homeReadyMs: Math.round(homeReady), clickToEditorMs: Math.round(editorReady),
-      clickToObservedLiveInkMs: Math.round(firstInk), backend: canvasState.backend,
+      clickToObservedLiveInkMs: firstInk === null ? null : Math.round(firstInk), liveInk, committedInk, backend: canvasState.backend,
       stages: await page.evaluate(() => performance.getEntriesByType('measure')
         .filter(entry => entry.name.startsWith('illustro-canvas:'))
         .map(entry => [entry.name, Math.round(entry.duration)])),

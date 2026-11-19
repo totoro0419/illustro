@@ -15,7 +15,7 @@ import {exportSelectionSections,importSelectionSections} from './native';
 export type SelectionWorkbench=Readonly<{
   active:()=>MaskData|null;
   isPending:()=>boolean;
-  documentChanged:()=>void;
+  documentChanged:(restoreSaved?:boolean)=>void;
   refresh:()=>void;
   updateView:()=>void;
   applyRectangle:(rect:Readonly<{x:number;y:number;width:number;height:number}>)=>void;
@@ -137,7 +137,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   viewport?.append(brushRaster);
   let currentWork:null|string=null;
   let selectionBounds:ReturnType<typeof boundsOfSelection>=null;
-  const source=()=>{
+  const source=(restoreSaved=true)=>{
     const info=callbacks.getDocument();
     if(!info||!callbacks.getSurface())return null;
     const identity=info.id+':'+info.width+'x'+info.height;
@@ -149,6 +149,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       pendingSelectionJob=0;
       tool=null;points=[];brushPoints=[];magneticPixels=null;drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
       const request=++job,loadedId=info.id;
+      if(!restoreSaved)return info;
       // A saved selection must finish loading BEFORE the user may draw:
       // otherwise the first stroke could paint outside its restored mask.
       pendingSelectionJob=request;
@@ -783,9 +784,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!drawing||event.pointerId!==drawing.pointer)return;
     drawing=null;points=[];brushPoints=[];overlayPath();brushOverlayPath();
   },true);
-  const documentChanged=()=>{
+  const documentChanged=(restoreSaved=true)=>{
     if(previewDialog?.open)previewDialog.close();
-    job++;pendingSelectionJob=0;currentWork=null;source();
+    job++;pendingSelectionJob=0;currentWork=null;source(restoreSaved);
     callbacks.getSurface()?.setSelectionVisible(showSelection.checked&&!visual);
     void updateNamed();};
   refresh();documentChanged();
