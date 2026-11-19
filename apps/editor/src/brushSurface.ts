@@ -1031,6 +1031,8 @@ export class BrushSurface{
       await session.discardUncommitted(record);
       const artwork=this.controller.document,renderer=this.renderer;
       if(!renderer||artwork.head!==target.baseRevision||mask.width!==target.width||mask.height!==target.height)return;
+      if(mask.alpha.length!==target.width*target.height)
+        throw Error('選択マスクの大きさが作品に一致しません。');
       const variants=symmetry?[record,...await this.copySymmetricStroke(record,symmetry)]:[record];
       const copies=seamless?variants.flatMap((variant,index)=>[
         ...(index?[variant]:[]),...wrappedCopies(variant,target.width,target.height).map(copy=>copy.record)
@@ -1047,10 +1049,19 @@ export class BrushSurface{
       // Keep the compatible full-frame path for a non-Worker renderer. On the
       // normal drawing worker path, capture existing GPU tiles in <=1 MiB
       // batches and transfer those tiles directly to the selection Worker.
-      const updatedTiles=sparse
-        ?await applySelectedStrokeTiles(mask,
-          await captureSelectedLayerTiles(host,target.surfaceId,target.width,target.height,
-            ()=>!this.disposed&&artwork.head===target.baseRevision),records)
+      const existingTiles=sparse
+        ?await captureSelectedLayerTiles(host,target.surfaceId,target.width,target.height,
+          ()=>!this.disposed&&artwork.head===target.baseRevision)
+        :null;
+      // A completely empty GPU layer has nothing to erase. Preserve the
+      // transparent-RGB safeguard in tile capture; only truly zero tiles
+      // qualify, and do not start a Worker or publish an Undo entry.
+      if(existingTiles&&existingTiles.length===0&&records.every(item=>item.preset.blend==='erase')){
+        this.status('消す画素がないため、作品は変更されませんでした。');
+        return;
+      }
+      const updatedTiles=existingTiles
+        ?await applySelectedStrokeTiles(mask,existingTiles,records)
         :null;
       const fullPixels=sparse?null:await applySelectedStroke(mask,
         writableRasterView(await renderer.read(target.surfaceId)),records);

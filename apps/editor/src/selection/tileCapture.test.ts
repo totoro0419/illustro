@@ -88,3 +88,19 @@ describe('C06-002 bounded GPU inventory capture',()=>{
   await expect(captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true)).rejects.toThrow(/作品の外/);
  });
 });
+
+describe('C06-002 empty selected eraser capture safeguards',()=>{
+ it('returns no occupied tiles and does not read GPU pixels for an empty layer',async()=>{
+  const {renderer,readTiles}=fakeRenderer([]);
+  expect(await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true)).toEqual([]);
+  expect(renderer.inspect).toHaveBeenCalledTimes(1);
+  expect(readTiles).not.toHaveBeenCalled();
+ });
+ it('preserves a hidden nonzero RGB channel as an occupied tile',async()=>{
+  const {renderer}=fakeRenderer([['L','0,0',175]]);
+  const tiles=await captureSelectedLayerTiles(renderer,'L',4000,4000,()=>true);
+  expect(tiles).toHaveLength(1);
+  expect(tiles[0]!.pixels[0]).toBe(175);
+  expect(tiles[0]!.pixels[3]).toBe(0);
+ });
+});
