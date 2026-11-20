@@ -1,3 +1,4 @@
+import {appConfirm} from '../ui/appDialogs';
 /** C06 copy/cut/paste operating on real document pixels and history. */
 import {transformLayerMask,moveEditableArtwork,type RasterPixelTiles,type LayerNode,type LayerGroup,type LayerDeformation,type LayerMask,type LayerId,type LineRegions} from '@illustro/core';
 import {validateRecord,type StrokeRecord} from '@illustro/brush-rt';
@@ -262,7 +263,7 @@ export class ArtworkClipboard {
     if(record.sourceColorProfile!==root.colorProfileId)
       throw Error('元作品と色空間が異なります。色変換はC15の機能を使ってください。');
     if(!record.editable&&record.sourceDocumentId!=='external-image'&&record.sourceDocumentId!==root.documentId&&
-      !window.confirm('別の作品から貼り付けます。現段階では画素だけを新しいレイヤーへ移し、元のブラシ履歴・特殊なレイヤー設定は移せません。続けますか？'))
+      !await appConfirm('別の作品から貼り付けます。現段階では画素だけを新しいレイヤーへ移し、元のブラシ履歴・特殊なレイヤー設定は移せません。続けますか？'))
       throw Error('別作品への貼り付けを取り消しました。');
     const custom=typeof placement==='object'?placement:null;
     if(custom&&(!Number.isSafeInteger(custom.x)||!Number.isSafeInteger(custom.y)||
@@ -290,7 +291,7 @@ export class ArtworkClipboard {
       const missingLinks=record.editable.layers.some(({layer})=>layer.imageLink?.kind==='instance'&&!ids.has(layer.imageLink.sourceId));
       const detached=clipLoss?'別のレイヤーへのクリッピングは、元になるレイヤーがコピーに含まれないため引き継げません。':'';
       const originals=record.editable.layers.some(entry=>entry.transform)?'変形を再編集できるように、非表示の原本も一緒に置きます。':'';
-      if(!window.confirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤー設定・マスク・文字・パスを保持します。元作品のUndo履歴は含みません。${originals}${hasRegions?'確認した線画の版も保持します。':''}${detached}${fontNotice}${missingLinks?'元が見つからない複製は現在の画像を埋め込みます。':''}`))
+      if(!await appConfirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤー設定・マスク・文字・パスを保持します。元作品のUndo履歴は含みません。${originals}${hasRegions?'確認した線画の版も保持します。':''}${detached}${fontNotice}${missingLinks?'元が見つからない複製は現在の画像を埋め込みます。':''}`))
         throw Error('貼り付けを取り消しました。');
       const place=(pixels:Uint8Array|RasterPixelTiles)=>{
         if('tiles' in pixels)return {...pixels,x,y,width:record.width,height:record.height};
@@ -331,7 +332,7 @@ export class ArtworkClipboard {
     if(x>=root.width||y>=root.height||x+record.width<=0||y+record.height<=0)
       throw Error('元の座標では画像がキャンバスの外に出ます。中央に貼り付けてください。');
     if((x<0||y<0||x+record.width>root.width||y+record.height>root.height)&&
-      !window.confirm('貼り付ける画像の一部がキャンバスの外です。はみ出した部分は省いて新しいレイヤーへ貼り付けます。続けますか？'))
+      !await appConfirm('貼り付ける画像の一部がキャンバスの外です。はみ出した部分は省いて新しいレイヤーへ貼り付けます。続けますか？'))
       throw Error('貼り付けを取り消しました。');
     // Core stores raster pixels by tile. Write exactly the touched tiles,
     // never create an unnecessary canvas-wide RGBA allocation for a 4px image.
