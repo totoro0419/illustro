@@ -2958,15 +2958,19 @@ byId<HTMLButtonElement>('brushSave').onclick=()=>{
  }catch(error){brushMessage('保存できません: '+String(error));}
 };
 byId<HTMLButtonElement>('brushRename').onclick=async()=>{
- if(!surface?.preset||!brushPresets.isUser(surface.preset.id))return;
- const title=await appPrompt('ブラシの名前',surface.preset.name,{required:true,maxLength:80});if(title===null)return;
- try{const draft=structuredClone(surface.preset);draft.name=title.trim();brushPresets.save(draft);refreshBrushCatalog(draft.id);brushMessage('名前を変更しました。');}
+ const preset=surface?.preset;
+ if(!preset||!brushPresets.isUser(preset.id))return;
+ const title=await appPrompt('ブラシの名前',preset.name,{required:true,maxLength:100});if(title===null)return;
+ if(surface?.preset?.id!==preset.id)return;
+ try{const draft=structuredClone(preset);draft.name=title.trim();brushPresets.save(draft);refreshBrushCatalog(draft.id);brushMessage('名前を変更しました。');}
  catch(error){brushMessage('名前を変更できません: '+String(error));}
 };
 byId<HTMLButtonElement>('brushDelete').onclick=async()=>{
- if(!surface?.preset||!brushPresets.isUser(surface.preset.id))return;
+ const preset=surface?.preset;
+ if(!preset||!brushPresets.isUser(preset.id))return;
  if(!await appConfirm('この自作ブラシを削除しますか？作品に描いた線は消えません。'))return;
- try{const id=surface.preset.id;brushPresets.remove(id);brushDrafts.delete(id);brushUsage.remove(id);refreshBrushCatalog('foundation-g-pen');brushMessage('自作ブラシを削除しました。');}
+ if(surface?.preset?.id!==preset.id)return;
+ try{const id=preset.id;brushPresets.remove(id);brushDrafts.delete(id);brushUsage.remove(id);refreshBrushCatalog('foundation-g-pen');brushMessage('自作ブラシを削除しました。');}
  catch(error){brushMessage('削除できません: '+String(error));}
 };
 byId<HTMLButtonElement>('brushImport').onclick=()=>byId<HTMLInputElement>('brushImportFile').click();
