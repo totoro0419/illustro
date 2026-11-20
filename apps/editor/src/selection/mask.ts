@@ -46,7 +46,9 @@ export function rasterizeSelection(shape:SelectionShape,width:number,height:numb
   return {width,height,alpha:output};
 }
 export function combineSelection(previous:MaskData|null,next:MaskData,mode:CombineMode):MaskData{
-  if(!previous||mode==='replace')return next;
+  if(mode==='replace')return next;
+  // Subtraction/intersection against an empty selection must remain empty.
+  if(!previous)return mode==='add'?next:{width:next.width,height:next.height,alpha:new Uint8Array(next.alpha.length)};
   if(previous.width!==next.width||previous.height!==next.height)throw Error('範囲の大きさが異なります。');
   const data=new Uint8Array(next.alpha.length);
   for(let i=0;i<data.length;i++){
@@ -82,6 +84,19 @@ export function translateSelection(mask:MaskData,dx:number,dy:number):MaskData{
       y*mask.width+fromX+offsetX);
   }
   return {width:mask.width,height:mask.height,alpha:result};
+}
+/** Copy only the selected rectangle's alpha for a small clipboard job.
+ * Never transfer or scan the full 4K mask in a small selection copy. */
+export function cropSelectionMask(mask:MaskData,area:Readonly<{x:number;y:number;width:number;height:number}>):MaskData{
+  const {x,y,width,height}=area;
+  if(![x,y,width,height,mask.width,mask.height].every(Number.isSafeInteger)||
+    width<1||height<1||x<0||y<0||x+width>mask.width||y+height>mask.height||
+    mask.alpha.length!==mask.width*mask.height)
+    throw Error('切り出す選択範囲が正しくありません。');
+  const alpha=new Uint8Array(width*height);
+  for(let row=0;row<height;row++)
+    alpha.set(mask.alpha.subarray((y+row)*mask.width+x,(y+row)*mask.width+x+width),row*width);
+  return {width,height,alpha};
 }
 export function maskImage(pixels:Uint8Array|Uint8ClampedArray,mask:MaskData):Uint8ClampedArray{
   if(pixels.length!==mask.alpha.length*4)throw Error('選択の大きさが作品に一致しません。');
@@ -168,14 +183,23 @@ export type SelectionBrushSettings=Readonly<{
 export function brushSelection(
   mask:MaskData,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings
 ):MaskData{
+  const result={...mask,alpha:mask.alpha.slice()};
+  paintSelectionBrush(result,points,settings);
+  return result;
+}
+/** Mutates an owned scratch mask. Preview workers append only new segments;
+ * the committed brush uses the same kernel with a fresh mask and from=0. */
+export function paintSelectionBrush(
+  mask:MaskData,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings,from=0
+):void{
   const {width,height}=mask;
   if(mask.alpha.length!==width*height||points.length>10000||
+    !Number.isInteger(from)||from<0||from>points.length||
     !Number.isFinite(settings.size)||settings.size<1||settings.size>800||
     !Number.isFinite(settings.opacity)||settings.opacity<0||settings.opacity>1||
     !Number.isFinite(settings.hardness)||settings.hardness<0||settings.hardness>1)
     throw Error('選択ブラシの設定か入力が正しくありません。');
-  const out=mask.alpha.slice();
-  if(points.length===0)return {width,height,alpha:out};
+  const out=mask.alpha;
   const paint=(x:number,y:number,pressure:number)=>{
     const radius=Math.max(.5,settings.size*(.25+.75*limit(pressure,0,1))*.5);
     const inner=radius*settings.hardness;
@@ -194,7 +218,7 @@ export function brushSelection(
   };
   // Interpolate dots to avoid gaps when events are sparse or sampling is delayed.
   const step=Math.max(1,settings.size*.23);
-  for(let i=0;i<points.length;i++){
+  for(let i=from;i<points.length;i++){
     const current=points[i]!;
     if(!Number.isFinite(current.x)||!Number.isFinite(current.y)||!Number.isFinite(current.pressure))
       throw Error('選択ブラシの位置が正しくありません。');
@@ -205,5 +229,4 @@ export function brushSelection(
       paint(prior.x+(current.x-prior.x)*t,prior.y+(current.y-prior.y)*t,prior.pressure+(current.pressure-prior.pressure)*t);
     }
   }
-  return {width,height,alpha:out};
 }

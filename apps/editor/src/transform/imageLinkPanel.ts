@@ -9,7 +9,7 @@ type ImageActions=Readonly<{
   finish:(action:'embed'|'independent')=>Promise<void>;
 }>;
 export function installImageLinkPanel(host:HTMLElement,api:ImageActions){
-  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';panel.dataset.editPanel='image-link';
   const heading=document.createElement('summary');heading.textContent='リンク画像・埋め込み・同じ画像の複製';
   const meta=document.createElement('output');meta.setAttribute('role','status');
   const options=document.createElement('div');options.className='c06-clipboard-grid';

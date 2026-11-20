@@ -1,7 +1,7 @@
 /* C04 search and Quick controls: transient, never intercept canvas input while closed. */
 .c04-command-open{min-height:34px;white-space:nowrap;padding:5px 10px;border-radius:9px;border:1px solid var(--a-border,#ddd);background:var(--a-surface,#fff);color:inherit;font:inherit}
 .c04-command-open:focus-visible,.c04-quick-open:focus-visible{outline:2px solid var(--a-focus,#317ab6);outline-offset:2px}
-.rail .c04-quick-open{font:600 11px/1.2 system-ui,sans-serif;width:100%;min-height:42px;border:1px solid var(--a-border,#ddd);border-radius:9px;background:var(--a-accent-soft,#fff6d7);color:var(--a-focus,#344)}
+.rail .c04-quick-open{touch-action:none;font:600 11px/1.2 system-ui,sans-serif;width:100%;min-height:42px;border:1px solid var(--a-border,#ddd);border-radius:9px;background:var(--a-accent-soft,#fff6d7);color:var(--a-focus,#344)}
 .c04-command-dialog{position:fixed;z-index:40;inset:8vh auto auto 50%;transform:translateX(-50%);margin:0;max-width:calc(100vw - 30px);width:min(610px,calc(100vw - 30px));max-height:80dvh;overflow:hidden;border-radius:16px;border:1px solid var(--a-border,#ddd);background:var(--a-surface,#fff);box-shadow:0 24px 66px #121b3250;color:var(--a-text,#242a36);padding:0}
 .c04-command-dialog::backdrop{background:#14192262}
 .c04-command-dialog section{padding:16px;display:flex;flex-direction:column;gap:10px;max-height:80dvh}
@@ -45,14 +45,15 @@
 }
 
 /* UI-007: leave Save, persistence warnings and the exit control visible. */
-#c04FocusExit[hidden]{display:none!important}
+#c04FocusExit[hidden],#c04FocusQuick[hidden]{display:none!important}
+#c04FocusQuick{border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-accent-soft,#fff6d7);color:inherit;min-height:32px}
+body.illustro-focus-mode .c04-quick-controller{left:12px;bottom:12px;width:min(324px,calc(100vw - 24px));max-height:calc(100dvh - var(--top,44px) - 28px)}
 #c04FocusExit{border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-accent-soft,#fff6d7);color:inherit;white-space:nowrap}
 body.illustro-focus-mode .rail,
 body.illustro-focus-mode .right-dock,
 body.illustro-focus-mode #splitter,
 body.illustro-focus-mode .bottom,
 body.illustro-focus-mode .features-panel,
-body.illustro-focus-mode .c04-quick-controller,
 body.illustro-focus-mode .canvas-view-strip,
 body.illustro-focus-mode .document-actions{display:none!important}
 body.illustro-focus-mode .topbar .brand,

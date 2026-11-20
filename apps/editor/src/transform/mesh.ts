@@ -125,11 +125,20 @@ export function meshMapping(bounds:TransformBounds,mesh:TransformMesh){
 }
 
 export function changeGrid(bounds:TransformBounds,mesh:Extract<TransformMesh,{kind:'grid'}>,columns:number,rows:number){
+  if(!Number.isInteger(columns)||!Number.isInteger(rows)||columns<2||rows<2||columns>32||rows>32)
+    throw Error('網目の分割数は縦横とも2〜32にしてください。');
   const next=gridMesh(bounds,columns,rows),old=gridMesh(bounds,mesh.columns,mesh.rows);
+  // An unmatched pin cannot be represented exactly in the new topology. Never silently drop it.
+  const locked=old.points.filter((_,index)=>mesh.points[index]?.fixed);
+  if(locked.some(point=>!next.points.some(nextPoint=>
+    Math.abs(point.x-nextPoint.x)<1e-8&&Math.abs(point.y-nextPoint.y)<1e-8)))
+    throw Error('固定した点が消える分割です。別の分割数にするか、先に固定を解除してください。');
   const mapped=meshMapping(bounds,mesh).forward;
   return {...next,points:next.points.map(point=>{
     const position=mapped(point.x,point.y);
     const oldIndex=old.points.findIndex(p=>Math.hypot(p.x-point.x,p.y-point.y)<1e-8);
+    if(!Number.isFinite(position.x)||!Number.isFinite(position.y))
+      throw Error('網目の範囲外に点ができました。分割数を変えてください。');
     return {...position,fixed:mesh.points[oldIndex]?.fixed??false};
   })};
 }

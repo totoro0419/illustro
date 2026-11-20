@@ -1,4 +1,10 @@
 import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText,LayerMask} from '@illustro/core';
+import {layoutEditableText} from './textLayout';
+import {layoutStyledText,textCanvasFont} from './textStyles';
+import {alignedTextLineStart,textRowTop,textVerticalCell} from './textPlacement';
+import {gradientBoundaryField} from './gradientDistance';
+import {readCanvasAlphaBands} from './alphaBands';
+import {verticalGlyphAdjustment,verticalTextUnits,isCombinedVerticalDigits} from './verticalGlyph';
 import {layerMaskCoverage} from '@illustro/brush-rt';
 import {sampledPath} from './pathOperations';
 
@@ -8,6 +14,7 @@ type RenderSize={width:number;height:number;outputWidth:number;outputHeight:numb
 export function tracePath(ctx:Context,path:EditablePath){
   const [first,last]=[path.points[0]!,path.points.at(-1)!];
   ctx.beginPath();
+  if(path.empty)return;
   if(path.shape==='rectangle'){
     ctx.rect(Math.min(first.x,last.x),Math.min(first.y,last.y),Math.abs(last.x-first.x),Math.abs(last.y-first.y));
     return;
@@ -34,39 +41,44 @@ export function tracePath(ctx:Context,path:EditablePath){
 
 function rgba(color:string){return [1,3,5].map(i=>parseInt(color.slice(i,i+2),16));}
 const wrap=(t:number)=>((t%1)+1)%1;
-function gradientPosition(gradient:EditableGradient,x:number,y:number){
-  const dx=gradient.end.x-gradient.start.x,dy=gradient.end.y-gradient.start.y;
-  const u=x-gradient.start.x,v=y-gradient.start.y,den=dx*dx+dy*dy;
-  if(!den)return 0;
-  if(gradient.mode==='radial')return Math.hypot(u,v)/Math.sqrt(den);
-  if(gradient.mode==='angular')return wrap((Math.atan2(v,u)-Math.atan2(dy,dx))/(2*Math.PI));
-  const t=(u*dx+v*dy)/den;
-  return gradient.mode==='reflected'?Math.abs(t):t;
-}
-function boundaryDistance(alpha:Uint8Array,width:number,height:number){
-  const distances=new Float32Array(alpha.length);
-  const diagonal=Math.SQRT2;
-  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-    const i=y*width+x;
-    if(!alpha[i])continue;
-    distances[i]=Math.min(
-      x?distances[i-1]!+1:1,y?distances[i-width]!+1:1,
-      x&&y?distances[i-width-1]!+diagonal:Infinity,
-      x+1<width&&y?distances[i-width+1]!+diagonal:Infinity
-    );
+/** Prepare canvas-invariant gradient math once, rather than for every
+ * pixel of a 4K raster (especially the angular atan2 and radial sqrt). */
+export function gradientPositionSampler(gradient:EditableGradient):(x:number,y:number)=>number{
+  const {x:startX,y:startY}=gradient.start;
+  const dx=gradient.end.x-startX,dy=gradient.end.y-startY,den=dx*dx+dy*dy;
+  if(!den)return ()=>0;
+  if(gradient.mode==='radial'){
+    if(gradient.radialRatio===undefined||gradient.radialRatio===1){
+      const radius=1/Math.sqrt(den);
+      return (x,y)=>Math.hypot(x-startX,y-startY)*radius;
+    }
+    const ratio=gradient.radialRatio;
+    return (x,y)=>{
+      const u=x-startX,v=y-startY;
+      return Math.hypot((u*dx+v*dy)/den,(-u*dy+v*dx)/den/ratio);
+    };
   }
-  for(let y=height-1;y>=0;y--)for(let x=width-1;x>=0;x--){
-    const i=y*width+x;
-    if(!alpha[i])continue;
-    distances[i]=Math.min(distances[i]!,
-      x+1<width?distances[i+1]!+1:1,y+1<height?distances[i+width]!+1:1,
-      x+1<width&&y+1<height?distances[i+width+1]!+diagonal:Infinity,
-      x&&y+1<height?distances[i+width-1]!+diagonal:Infinity
-    );
+  if(gradient.mode==='angular'){
+    const angle=Math.atan2(dy,dx),inverse=1/(2*Math.PI);
+    return (x,y)=>wrap((Math.atan2(y-startY,x-startX)-angle)*inverse);
   }
-  return distances;
+  const inverse=1/den;
+  return gradient.mode==='reflected'
+    ?(x,y)=>Math.abs(((x-startX)*dx+(y-startY)*dy)*inverse)
+    :(x,y)=>((x-startX)*dx+(y-startY)*dy)*inverse;
 }
 
+/** Lower bound for the first stop at or after t, clamped to [1,last].
+ * A binary search avoids up to 63 comparisons per pixel for 64-stop gradients.
+ * Equality and duplicate stop positions preserve the previous linear scan. */
+export function gradientStopUpperIndex(stops:readonly {at:number}[],t:number):number{
+  let low=1,high=stops.length-1;
+  while(low<high){
+    const mid=(low+high)>>>1;
+    if(stops[mid]!.at<t)low=mid+1;else high=mid;
+  }
+  return low;
+}
 function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCanvasElement|OffscreenCanvas){
   const {width,height,outputWidth,outputHeight}=size;
   const output=new Uint8ClampedArray(outputWidth*outputHeight*4);
@@ -85,22 +97,30 @@ function gradientPixels(gradient:EditableGradient,size:RenderSize,canvas:HTMLCan
       const ctx=canvas.getContext('2d') as Context|null;
       if(!ctx)throw Error('図形の内側を取得できません。');
       ctx.scale(1/factorX,1/factorY);
+      if(follow.transform){const t=follow.transform;ctx.transform(t.a,t.b,t.c,t.d,t.e,t.f);}
       tracePath(ctx,follow);ctx.fill('evenodd');
-      const pixels=ctx.getImageData(0,0,outputWidth,outputHeight).data;
-      for(let i=0;i<alpha.length;i++)alpha[i]=pixels[i*4+3]!;
+      // Read only a short row band at once: avoid an additional full 4K RGBA
+      // image during full-resolution shape-following gradient rendering.
+      alpha=readCanvasAlphaBands(outputWidth,outputHeight,(row,rows)=>
+        ctx.getImageData(0,row,outputWidth,rows).data);
     }
   }
   const shapeCoverage=alpha;
-  const distance=alpha?boundaryDistance(alpha,outputWidth,outputHeight):null;
+  const distance=alpha?gradientBoundaryField(alpha,outputWidth,outputHeight,factorX,factorY):null;
   const spread=Math.max(1,Math.hypot(gradient.end.x-gradient.start.x,gradient.end.y-gradient.start.y));
-  const distanceScale=Math.sqrt(factorX*factorY)/spread;
-  for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
+  const position=distance?null:gradientPositionSampler(gradient);
+  const fieldLeft=distance?.left??0,top=distance?.top??0;
+  const right=fieldLeft+(distance?.width??outputWidth),bottom=top+(distance?.height??outputHeight);
+  for(let y=top;y<bottom;y++)for(let x=fieldLeft;x<right;x++){
     const index=y*outputWidth+x;
     if(shapeCoverage&&!shapeCoverage[index])continue;
     const sx=(x+.5)*factorX,sy=(y+.5)*factorY;
-    const t=distance?Math.max(0,distance[index]!-1)*distanceScale:gradientPosition(gradient,sx,sy);
-    let high=1;
-    while(high<stops.length-1&&stops[high]!.at<t)high++;
+    let t=distance?Math.max(0,distance.values[(y-top)*distance.width+x-fieldLeft]!-Math.min(factorX,factorY))/spread:position!(sx,sy);
+    if(gradient.spread==='repeat')t=wrap(t);
+    else if(gradient.spread==='reflect'){
+      const period=wrap(t/2)*2;t=period<=1?period:2-period;
+    }
+    const high=gradientStopUpperIndex(stops,t);
     const a=stops[high-1]!,b=stops[high]!;
     const u=b.at===a.at?Number(t>=b.at):Math.max(0,Math.min(1,(t-a.at)/(b.at-a.at)));
     const weight=u<=a.midpoint?u/(2*a.midpoint):.5+(u-a.midpoint)/(2*(1-a.midpoint));
@@ -119,17 +139,57 @@ function drawText(ctx:Context,text:EditableText){
   const font=['serif','sans-serif','monospace'].includes(family)?family:`"${family}", sans-serif`;
   ctx.font=`${text.size}px ${font}`;
   ctx.fillStyle=text.color;ctx.textBaseline='top';
-  const lines=text.text.split('\n');
+  if(text.styleRanges?.length){
+    const laidOut=layoutStyledText(text,(character,size,bold,italic,family)=>{
+      ctx.font=textCanvasFont(family,size,bold,italic);
+      return ctx.measureText(character).width;
+    });
+    ctx.textAlign='left';
+    for(const line of laidOut.lines){
+      const left=alignedTextLineStart(text,line.width);
+      for(const glyph of line.glyphs){
+        ctx.save();
+        ctx.font=textCanvasFont(glyph.family,glyph.size,glyph.bold,glyph.italic);
+        ctx.fillStyle=glyph.color;
+        if(text.vertical){
+          const cell={x:text.origin.x-line.offset,y:text.origin.y+glyph.position};
+          const combined=isCombinedVerticalDigits(glyph.character),placement=combined?{dx:0,dy:0,rotate:false}:verticalGlyphAdjustment(glyph.character,glyph.size);
+          ctx.textAlign='center';
+          ctx.translate(cell.x+placement.dx,cell.y+placement.dy+glyph.size/2);
+          if(placement.rotate)ctx.rotate(Math.PI/2);
+          if(combined){
+            ctx.textBaseline='alphabetic';
+            const metrics=ctx.measureText(glyph.character);
+            ctx.scale(Math.min(1,glyph.size/Math.max(1,metrics.width)),1);
+            ctx.fillText(glyph.character,0,((metrics.actualBoundingBoxAscent??glyph.size*.8)-(metrics.actualBoundingBoxDescent??0))/2);
+          }else ctx.fillText(glyph.character,0,-glyph.size/2);
+        }else ctx.fillText(glyph.character,left+glyph.position,text.origin.y+line.offset);
+        ctx.restore();
+      }
+    }
+    return;
+  }
+  const lines=layoutEditableText(text,characters=>{
+    const width=ctx.measureText(characters).width;
+    return text.spacing?width+Math.max(0,Array.from(characters).length-1)*text.spacing:width;
+  }).lines;
   if(text.vertical){
     ctx.textAlign='center';
     for(let line=0;line<lines.length;line++){
       let row=0;
-      for(const character of Array.from(lines[line]!)){
-        const x=text.origin.x-line*text.size*text.lineHeight,y=text.origin.y+row*(text.size+text.spacing);
+      for(const character of verticalTextUnits(lines[line]!,text.combineDigits)){
+        const combined=isCombinedVerticalDigits(character),placement=combined?{dx:0,dy:0,rotate:false}:verticalGlyphAdjustment(character,text.size);
+        const cell=textVerticalCell(text,line,row);
+        const x=cell.x+placement.dx,y=cell.y+placement.dy;
         ctx.save();
         ctx.translate(x,y+text.size/2);
-        if(/[A-Za-z0-9ー―‐–—]/u.test(character))ctx.rotate(Math.PI/2);
-        ctx.fillText(character,0,-text.size/2);
+        if(placement.rotate)ctx.rotate(Math.PI/2);
+        if(combined){
+          ctx.textBaseline='alphabetic';
+          const metrics=ctx.measureText(character);
+          ctx.scale(Math.min(1,text.size/Math.max(1,metrics.width)),1);
+          ctx.fillText(character,0,((metrics.actualBoundingBoxAscent??text.size*.8)-(metrics.actualBoundingBoxDescent??0))/2);
+        }else ctx.fillText(character,0,-text.size/2);
         ctx.restore();
         row++;
       }
@@ -137,27 +197,53 @@ function drawText(ctx:Context,text:EditableText){
     return;
   }
   for(let row=0;row<lines.length;row++){
-    const line=lines[row]!,y=text.origin.y+row*text.size*text.lineHeight;
-    if(!text.spacing){ctx.textAlign=text.align;ctx.fillText(line,text.origin.x,y);continue;}
+    const line=lines[row]!,y=textRowTop(text,row);
+    if(!text.spacing){ctx.textAlign='left';ctx.fillText(line,alignedTextLineStart(text,ctx.measureText(line).width),y);continue;}
     const characters=Array.from(line),widths=characters.map(character=>ctx.measureText(character).width+text.spacing);
     const total=widths.reduce((sum,w)=>sum+w,0)-text.spacing;
-    let x=text.origin.x-(text.align==='center'?total/2:text.align==='right'?total:0);
+    let x=alignedTextLineStart(text,total);
     ctx.textAlign='left';
     characters.forEach((character,i)=>{ctx.fillText(character,x,y);x+=widths[i]!;});
   }
 }
 
+/** Apply the committed layer-mask raster rule inside the artwork Worker.
+ * Large path previews must not do a second full-image pass on the UI thread. */
+export function applyRenderedPathMask(
+  pixels:Uint8ClampedArray,mask:LayerMask|null|undefined,
+  width:number,height:number,outputWidth:number,outputHeight:number
+):void{
+  if(!mask?.enabled||mask.density===0)return;
+  const factorX=width/outputWidth,factorY=height/outputHeight;
+  for(let y=0;y<outputHeight;y++)for(let x=0;x<outputWidth;x++){
+    const at=(y*outputWidth+x)*4;
+    if(pixels[at+3]===0)continue;
+    pixels[at+3]=Math.round(pixels[at+3]!*
+      layerMaskCoverage(mask,(x+.5)*factorX,(y+.5)*factorY));
+  }
+}
+
 export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTMLCanvasElement|OffscreenCanvas){
+  if(content.kind==='path'&&content.empty)return new Uint8ClampedArray(size.outputWidth*size.outputHeight*4);
   if(content.kind==='gradient')return gradientPixels(content,size,canvas);
   canvas.width=size.outputWidth;canvas.height=size.outputHeight;
   const ctx=canvas.getContext('2d') as Context|null;
   if(!ctx)throw Error('表示用画像を作れません。');
   ctx.scale(size.outputWidth/size.width,size.outputHeight/size.height);
+  if(content.transform){const t=content.transform;ctx.transform(t.a,t.b,t.c,t.d,t.e,t.f);}
   if(content.kind==='text')drawText(ctx,content);
   else{
     ctx.globalAlpha=content.opacity??1;
     tracePath(ctx,content);
-    if(content.fill){ctx.fillStyle=content.fill;ctx.fill('evenodd');}
+    if(content.fill){
+      if(content.fillRuns?.length){
+        for(const run of content.fillRuns){
+          tracePath(ctx,{...content,points:content.points.slice(run.start,run.end),closed:false});
+          ctx.fillStyle=run.color;ctx.fill('evenodd');
+        }
+        tracePath(ctx,content);
+      }else{ctx.fillStyle=content.fill;ctx.fill('evenodd');}
+    }
     if(content.width){
       ctx.lineWidth=content.width;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=content.stroke;
       if(content.lineStyle==='dashed')ctx.setLineDash([content.width*4,content.width*2]);
@@ -178,8 +264,14 @@ export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTM
       }else ctx.stroke();
     }
   }
+  // getImageData already owns a dedicated byte buffer. Returning it directly
+  // avoids a second full-canvas allocation and copy (64 MB / about 61 MiB at 4000×4000).
   const pixels=ctx.getImageData(0,0,size.outputWidth,size.outputHeight).data;
-  return new Uint8ClampedArray(pixels);
+  // A new typed-array view shares the ImageData buffer without copying its bytes.
+  const result=new Uint8ClampedArray(pixels.buffer as ArrayBuffer,pixels.byteOffset,pixels.byteLength);
+  if(size.previewMask&&content.kind==='path')
+    applyRenderedPathMask(result,size.mask,size.width,size.height,size.outputWidth,size.outputHeight);
+  return result;
 }
 
 export function movePoint(point:ArtPoint,x:number,y:number):ArtPoint{

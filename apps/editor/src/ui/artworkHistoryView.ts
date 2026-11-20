@@ -1,30 +1,56 @@
 import type {CoreDocument,RevisionId} from '@illustro/core';
 import {CanvasNavigation} from '../canvasNavigation';
 import {CanvasView} from '../canvasView';
-import {captureExport,renderFrozenArtwork} from '../export/basicExport';
+import {captureExport,renderFrozenArtwork,renderFrozenArtworkTiledPreview,encodePng} from '../export/basicExport';
+import {HistoryPreviewQueue} from './historyPreviewQueue';
+import {HistoryThumbnailCache} from './historyThumbnailCache';
 
-const cachedThumbnails=new WeakMap<CoreDocument,Map<RevisionId,Blob>>();
-export async function historyThumbnail(artwork:CoreDocument,revision:RevisionId){
-  let cache=cachedThumbnails.get(artwork);
-  if(!cache){cache=new Map();cachedThumbnails.set(artwork,cache);}
-  const cached=cache.get(revision);
-  if(cached)return cached;
+// Reuse both completed and in-flight thumbnails. A 4000px preview can otherwise
+// allocate several full-resolution pixel buffers for duplicate concurrent calls.
+const cachedThumbnails=new WeakMap<CoreDocument,HistoryThumbnailCache<RevisionId,Blob>>();
+const historyPreviewQueue=new HistoryPreviewQueue();
+export function historyPreviewDimensions(width:number,height:number,maxWidth:number,maxHeight:number){
+  if(![width,height,maxWidth,maxHeight].every(Number.isFinite)||[width,height,maxWidth,maxHeight].some(v=>v<1))
+    throw new Error('履歴画像の大きさが正しくありません。');
+  const scale=Math.min(1,maxWidth/width,maxHeight/height);
+  return {width:Math.max(1,Math.round(width*scale)),height:Math.max(1,Math.round(height*scale))};
+}
+
+// Full-resolution pixels are rendered exactly once; only the small on-screen image
+// is encoded to PNG. Full-size comparisons remain available on explicit request.
+async function renderHistoryPreview(artwork:CoreDocument,revision:RevisionId,maxWidth:number,maxHeight:number){
   const frozen=captureExport(artwork,undefined,revision);
+  const {width,height}=historyPreviewDimensions(frozen.width,frozen.height,maxWidth,maxHeight);
+  // A GPU/backend that cannot read individual tiles still uses the original
+  // fully accurate rendering route; thumbnail failure must not lose history.
+  let fastPixels:Uint8ClampedArray|null=null;
+  try{fastPixels=await renderFrozenArtworkTiledPreview(frozen,width,height);}
+  catch{fastPixels=null;}
+  if(fastPixels)return {blob:await encodePng(fastPixels,width,height),width,height};
   const pixels=await renderFrozenArtwork(frozen);
-  const scale=Math.min(1,160/frozen.width,120/frozen.height);
-  const width=Math.max(1,Math.round(frozen.width*scale)),height=Math.max(1,Math.round(frozen.height*scale));
-  const bitmap=await createImageBitmap(new ImageData(new Uint8ClampedArray(pixels),frozen.width,frozen.height),{
-    resizeWidth:width,resizeHeight:height,resizeQuality:'medium',
-  });
+  const bitmap=await createImageBitmap(
+    new ImageData(pixels as Uint8ClampedArray<ArrayBuffer>,frozen.width,frozen.height),
+    {resizeWidth:width,resizeHeight:height,resizeQuality:'high'},
+  );
   try{
     const canvas=new OffscreenCanvas(width,height),context=canvas.getContext('2d');
-    if(!context)throw new Error('画像を縮小できません。');
+    if(!context)throw new Error('履歴画像を縮小できません。');
     context.drawImage(bitmap,0,0);
-    const image=await canvas.convertToBlob({type:'image/png'});
-    if(cache.size>=24)cache.delete(cache.keys().next().value!);
-    cache.set(revision,image);
-    return image;
+    return {blob:await canvas.convertToBlob({type:'image/png'}),width,height};
   }finally{bitmap.close();}
+}
+
+export function historyComparisonPreview(artwork:CoreDocument,revision:RevisionId){
+  return historyPreviewQueue.run(()=>renderHistoryPreview(artwork,revision,1600,1200),'foreground');
+}
+
+export function historyThumbnail(artwork:CoreDocument,revision:RevisionId):Promise<Blob>{
+  let cache=cachedThumbnails.get(artwork);
+  if(!cache){cache=new HistoryThumbnailCache<RevisionId,Blob>(24);cachedThumbnails.set(artwork,cache);}
+  // Pending renders are tracked separately from the bounded completed cache.
+  // Scrolling through many revisions cannot evict and duplicate an in-flight 4K replay.
+  return cache.get(revision,()=>historyPreviewQueue.run(
+    ()=>renderHistoryPreview(artwork,revision,160,120).then(result=>result.blob)));
 }
 
 export function createHistoryComparison(url:string,caption:string,width:number,height:number){

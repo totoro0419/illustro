@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from './appDialogs';
 /**
  * C04 UI-004 / UI-005 bridge to C16: simple repeatable UI command sequences.
  * C16 can replace the provider with timeline and action-aware macro execution.
@@ -16,6 +17,64 @@ const SAFE=new Set([
   'layerSoloToggle','layerAlphaLock','layerClipping'
 ]);
 const permitted=(id:string)=>SAFE.has(id)||id.startsWith('brush:')||id.startsWith('color:')||id.startsWith('workspace:');
+/** Validate user-imported macros before storing or exposing any commands. */
+export function parseSimpleMacroFile(input:unknown):SimpleMacro[]{
+  if(!input||typeof input!=='object'||Array.isArray(input))
+    throw Error('操作セットの形式が正しくありません。');
+  const file=input as Record<string,unknown>;
+  if(file.schema!=='illustro.macros.simple'||file.version!==1||
+    !Array.isArray(file.items)||file.items.length>MAX_MACROS)
+    throw Error('対応していない操作セットです。');
+  const ids=new Set<string>(),names=new Set<string>(),result:SimpleMacro[]=[];
+  for(const row of file.items){
+    if(!row||typeof row!=='object'||Array.isArray(row))
+      throw Error('操作セットの情報が正しくありません。');
+    const item=row as Record<string,unknown>;
+    if(typeof item.id!=='string'||!item.id||item.id.length>100||
+      typeof item.name!=='string'||!item.name.trim()||item.name.length>80||
+      ids.has(item.id)||names.has(item.name)||
+      !Array.isArray(item.steps)||item.steps.length<1||item.steps.length>MAX_STEPS||
+      !item.steps.every(step=>typeof step==='string'&&permitted(step)))
+      throw Error('操作セットに使えない操作や重複した名前が含まれています。');
+    ids.add(item.id);names.add(item.name);
+    result.push({id:item.id,name:item.name,steps:[...item.steps] as string[]});
+  }
+  return result;
+}
+const activeSequences=new WeakSet<CommandService['invokeAsync']>();
+/** Await every declared command completion and report dispatch-only steps honestly. */
+export async function invokeMacroSequence(
+  steps:readonly string[],
+  invoke:CommandService['invokeAsync'],
+  options:Readonly<{contextKey?: (()=>unknown)|undefined;signal?:AbortSignal}>={}
+):Promise<Readonly<{ok:boolean;reason:string|null;failedStep:number|null;unfinished:boolean}>>{
+  if(activeSequences.has(invoke))return {ok:false,reason:'ほかの操作セットが実行中です。',failedStep:null,unfinished:false};
+  activeSequences.add(invoke);
+  const context=options.contextKey?.();
+  const stopped=()=>options.signal?.aborted?'操作セットを取り消しました。':
+    options.contextKey&&options.contextKey()!==context?'作品が切り替わったため操作を停止しました。':null;
+  let unfinished=false;
+  try{
+  for(const [i,id] of steps.entries()){
+    const reason=stopped();if(reason)return {ok:false,reason,failedStep:i+1,unfinished};
+    if(!permitted(id))return {ok:false,reason:'対応していない操作が含まれています。',failedStep:i+1,unfinished};
+    let result:Awaited<ReturnType<CommandService['invokeAsync']>>;
+    try{result=await invoke(id);}catch(error){return {ok:false,reason:error instanceof Error?error.message:String(error),failedStep:i+1,unfinished};}
+    const after=stopped();if(after)return {ok:false,reason:after,failedStep:i+1,unfinished:!result.settled};
+    if(!result.ok)return {ok:false,reason:result.reason??'現在は使えません。',failedStep:i+1,unfinished};
+    if(!result.settled){
+      unfinished=true;
+      // A dispatched DOM click is not a completed asynchronous history
+      // operation. Never race the next macro step against unknown work.
+      if(i<steps.length-1)return {
+        ok:false,reason:'処理完了を確認できないため、残りの操作を実行せず停止しました。',
+        failedStep:i+1,unfinished
+      };
+    }
+  }
+  return {ok:true,reason:null,failedStep:null,unfinished};
+  }finally{activeSequences.delete(invoke);}
+}
 const read=():SimpleMacro[]=>{
   try{
     const input=JSON.parse(localStorage.getItem(KEY)||'null') as Stored|null;
@@ -38,10 +97,12 @@ const persist=(items:readonly SimpleMacro[]):boolean=>{
 const uid=()=>typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'
   ?crypto.randomUUID():'macro-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 
-export function installSimpleMacros(commands:CommandService){
+export type SimpleMacroService=Readonly<{importText:(json:string)=>Promise<number>}>;
+export function installSimpleMacros(commands:CommandService):SimpleMacroService|null{
   const workspace=document.getElementById('workspaceBoxBody');
-  if(!workspace)return;
+  if(!workspace)return null;
   let macros=read(),playing=false,steps:string[]=[],selectedId:string|null=null;
+  let playback:AbortController|null=null;
   const root=document.createElement('details');root.className='c04-simple-macros';
   const summary=document.createElement('summary');summary.textContent='よく使う操作をまとめる';
   const help=document.createElement('p');
@@ -57,7 +118,10 @@ export function installSimpleMacros(commands:CommandService){
   save.textContent='保存';run.textContent='実行';reset.textContent='新しく作る';remove.textContent='削除';
   const status=document.createElement('output');status.setAttribute('role','status');
   const actions=document.createElement('div');actions.className='c04-workspace-actions';
-  actions.append(add,save,run,reset,remove);
+  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='実行を中止';cancel.disabled=true;
+  cancel.onclick=()=>playback?.abort();
+  window.addEventListener('keydown',event=>{if(event.key==='Escape')playback?.abort();});
+  actions.append(add,save,run,cancel,reset,remove);
   root.append(summary,help,select,name,commandSelect,stepsList,actions,status);
   workspace.append(root);
 
@@ -120,31 +184,38 @@ export function installSimpleMacros(commands:CommandService){
     const duplicate=macros.find(x=>x.name===title&&x.id!==selectedId);
     if(duplicate){status.textContent='別の操作セットと同じ名前は使えません。';return;}
     const id=selectedId??uid(),item:SimpleMacro={id,name:title,steps:[...steps]};
-    macros=macros.filter(m=>m.id!==id).concat(item);selectedId=id;
-    if(!persist(macros)){status.textContent='端末に保存できませんでした。';return;}
+    const next=macros.filter(m=>m.id!==id).concat(item);
+    if(!persist(next)){status.textContent='端末に保存できませんでした。';return;}
+    macros=next;selectedId=id;
     refreshSelect();refreshSteps();commands.refresh();
     status.textContent='操作セットを保存しました。機能検索やQuickにも表示されます。';
   };
-  remove.onclick=()=>{
+  remove.onclick=async()=>{
     if(!selectedId)return;
-    if(!window.confirm('「'+name.value+'」を削除しますか？'))return;
-    macros=macros.filter(m=>m.id!==selectedId);persist(macros);
-    newMacro();commands.refresh();status.textContent='操作セットを削除しました。';
+    if(!await appConfirm('「'+name.value+'」を削除しますか？'))return;
+    const next=macros.filter(m=>m.id!==selectedId);
+    if(!persist(next)){status.textContent='端末に保存できませんでした。';return;}
+    macros=next;newMacro();commands.refresh();status.textContent='操作セットを削除しました。';
   };
-  function play(macro:SimpleMacro){
+  async function play(macro:SimpleMacro):Promise<void>{
     if(playing){status.textContent='ほかの操作セットが実行中です。';return;}
-    playing=true;run.disabled=true;
+    playing=true;run.disabled=true;cancel.disabled=false;playback=new AbortController();
     try{
-      for(const [i,id] of macro.steps.entries()){
-        if(!permitted(id)){status.textContent='対応していない操作が含まれています。';return;}
-        const result=commands.invoke(id);
-        if(!result.ok){status.textContent=(i+1)+'番目の操作で停止しました。'+(result.reason??'現在は使えません。');return;}
+      const result=await invokeMacroSequence([...macro.steps],commands.invokeAsync,{contextKey:commands.contextKey,signal:playback.signal});
+      if(!result.ok){
+        status.textContent=result.failedStep+'番目の操作で停止しました。'+result.reason;
+        throw Error(status.textContent);
       }
-      status.textContent='「'+macro.name+'」の操作を実行しました。';
-    }finally{playing=false;refreshSteps();}
+      status.textContent=result.unfinished
+        ?'「'+macro.name+'」の操作を送りました。履歴や描画の完了はまだ確認できていません。'
+        :'「'+macro.name+'」の操作を実行しました。';
+    }catch(error){
+      status.textContent=error instanceof Error?error.message:'操作セットの実行に失敗しました。';
+      throw error;
+    }finally{playing=false;playback=null;cancel.disabled=true;refreshSteps();}
   }
   run.onclick=()=>{
-    if(steps.length)play({id:selectedId??'preview',name:name.value.trim()||'仮の操作セット',steps});
+    if(steps.length)void play({id:selectedId??'preview',name:name.value.trim()||'仮の操作セット',steps}).catch(()=>{});
   };
   const provider=():readonly CommandDefinition[]=>macros.map(macro=>({
     id:'macro:'+macro.id,label:macro.name,category:'マクロ',
@@ -153,5 +224,31 @@ export function installSimpleMacros(commands:CommandService){
     execute:()=>play(macro)
   }));
   commands.registerProvider(provider);
+  async function importText(json:string):Promise<number>{
+    if(json.length>1048576)throw Error('操作セットが大きすぎます。');
+    const imported=parseSimpleMacroFile(JSON.parse(json));
+    const nameSet=new Set(imported.map(item=>item.name));
+    if(imported.some(item=>macros.some(existing=>existing.name===item.name))&&
+      !await appConfirm('同名の操作セットを置き換えますか？'))
+      return 0;
+    const remaining=macros.filter(existing=>!nameSet.has(existing.name));
+    if(remaining.length+imported.length>MAX_MACROS)
+      throw Error('保存できる操作セットは32件までです。');
+    const occupied=new Set(remaining.map(item=>item.id));
+    const safe=imported.map(item=>{
+      let id=item.id;
+      while(occupied.has(id))id=uid();
+      occupied.add(id);
+      return {...item,id};
+    });
+    const next=[...remaining,...safe];
+    if(!persist(next))throw Error('操作セットを端末へ保存できませんでした。');
+    macros=next;
+    load(safe[0]?.id??'');
+    refreshSelect();refreshSteps();commands.refresh();
+    status.textContent=safe.length+'件の操作セットを読み込みました。';
+    return safe.length;
+  }
   refreshSelect();refreshOptions();refreshSteps();
+  return {importText};
 }

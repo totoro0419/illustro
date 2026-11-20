@@ -1,56 +1,80 @@
-/** C06 view-only selection density preview. Never touches source raster pixels. */
+/** C06 screen-space selection preview. Samples the real mask at visible zoom. */
 import type {BrushSurface} from '../brushSurface';
 import type {MaskData} from './mask';
+
 export class SelectionOverlay{
-  private canvas:HTMLCanvasElement;
+  private readonly canvas:HTMLCanvasElement;
+  private readonly ctx:CanvasRenderingContext2D|null;
   private mask:MaskData|null=null;
   private visible=true;
-  setVisible(visible:boolean){this.visible=visible;this.canvas.hidden=!visible||!this.mask;}
-  private ctx:CanvasRenderingContext2D|null;
-  constructor(private viewport:HTMLElement,private surface:()=>BrushSurface|null){
+  private frame=0;
+  private image:ImageData|null=null;
+  private readonly resize=()=>this.updateView();
+
+  constructor(private readonly viewport:HTMLElement,private readonly surface:()=>BrushSurface|null){
     this.canvas=document.createElement('canvas');
     this.canvas.className='c06-mask-preview';
-    this.canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;transform-origin:0 0;z-index:6;';
+    this.canvas.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:6;';
     this.canvas.hidden=true;
     viewport.append(this.canvas);
-    this.ctx=this.canvas.getContext('2d');
-    window.addEventListener('resize',()=>this.updateView());
+    this.ctx=this.canvas.getContext('2d',{alpha:true});
+    window.addEventListener('resize',this.resize);
+  }
+  setVisible(visible:boolean){
+    this.visible=visible;
+    this.canvas.hidden=!visible||!this.mask;
+    if(visible)this.updateView();
   }
   set(mask:MaskData|null){
     this.mask=mask;
-    if(!mask){this.canvas.hidden=true;return;}
-    const scale=Math.min(1,640/Math.max(mask.width,mask.height));
-    const w=Math.max(1,Math.round(mask.width*scale)),h=Math.max(1,Math.round(mask.height*scale));
-    this.canvas.width=w;this.canvas.height=h;
-    const ctx=this.ctx;if(!ctx)return;
-    const image=ctx.createImageData(w,h),values=image.data;
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      const px=Math.min(mask.width-1,Math.floor((x+.5)*mask.width/w)),
-        py=Math.min(mask.height-1,Math.floor((y+.5)*mask.height/h));
-      const alpha=mask.alpha[py*mask.width+px]??0,i=(y*w+x)*4;
-      if(!alpha)continue;
-      const border=
-        (mask.alpha[py*mask.width+Math.max(0,px-1)]??0)<alpha/2||
-        (mask.alpha[py*mask.width+Math.min(mask.width-1,px+1)]??0)<alpha/2||
-        (mask.alpha[Math.max(0,py-1)*mask.width+px]??0)<alpha/2||
-        (mask.alpha[Math.min(mask.height-1,py+1)*mask.width+px]??0)<alpha/2;
-      values[i]=38;values[i+1]=164;values[i+2]=214;
-      values[i+3]=Math.round(alpha*(border?.7:.13));
-    }
-    ctx.putImageData(image,0,0);
-    this.canvas.hidden=!this.visible;
+    this.canvas.hidden=!this.visible||!mask;
     this.updateView();
   }
   updateView(){
-    const drawing=this.surface(),mask=this.mask;
-    if(!drawing||!mask||this.canvas.hidden)return;
-    const origin=drawing.documentToScreen({x:0,y:0}),
-      right=drawing.documentToScreen({x:mask.width,y:0}),
-      down=drawing.documentToScreen({x:0,y:mask.height}),
-      w=this.canvas.width,h=this.canvas.height;
-    const a=(right.x-origin.x)/w,b=(right.y-origin.y)/w,
-      c=(down.x-origin.x)/h,d=(down.y-origin.y)/h;
-    this.canvas.style.transform='matrix('+[a,b,c,d,origin.x,origin.y].join(',')+')';
+    if(this.frame||!this.visible||!this.mask||!this.ctx||this.canvas.hidden)return;
+    // One repaint per display frame, no full-artwork mask scaling or GPU readback.
+    this.frame=requestAnimationFrame(()=>{this.frame=0;this.render();});
   }
-  destroy(){this.canvas.remove();}
+  private render(){
+    const drawing=this.surface(),mask=this.mask,ctx=this.ctx;
+    if(!drawing||!mask||!ctx||this.canvas.hidden)return;
+    const cssWidth=this.viewport.clientWidth,cssHeight=this.viewport.clientHeight;
+    if(cssWidth<=0||cssHeight<=0)return;
+    // The displayed canvas (not the whole 4000px artwork) determines work.
+    // At a 1:1 zoom this retains individual artwork pixels.
+    const width=Math.max(1,Math.ceil(cssWidth)),height=Math.max(1,Math.ceil(cssHeight));
+    if(this.canvas.width!==width||this.canvas.height!==height||!this.image){
+      this.canvas.width=width;this.canvas.height=height;
+      this.image=ctx.createImageData(width,height);
+    }else this.image.data.fill(0);
+    const data=this.image.data;
+    const o=drawing.screenToDocument({x:0,y:0});
+    const right=drawing.screenToDocument({x:cssWidth,y:0});
+    const down=drawing.screenToDocument({x:0,y:cssHeight});
+    const stepXx=(right.x-o.x)/width,stepXy=(right.y-o.y)/width;
+    const stepYx=(down.x-o.x)/height,stepYy=(down.y-o.y)/height;
+    for(let y=0;y<height;y++){
+      let sx=o.x+(y+.5)*stepYx+.5*stepXx;
+      let sy=o.y+(y+.5)*stepYy+.5*stepXy;
+      for(let x=0;x<width;x++,sx+=stepXx,sy+=stepXy){
+        const px=Math.floor(sx),py=Math.floor(sy);
+        if(px<0||py<0||px>=mask.width||py>=mask.height)continue;
+        const index=py*mask.width+px,alpha=mask.alpha[index]!;
+        if(!alpha)continue;
+        const border=(px>0&&mask.alpha[index-1]!<alpha/2)||
+          (px+1<mask.width&&mask.alpha[index+1]!<alpha/2)||
+          (py>0&&mask.alpha[index-mask.width]!<alpha/2)||
+          (py+1<mask.height&&mask.alpha[index+mask.width]!<alpha/2);
+        const at=(y*width+x)*4;
+        data[at]=38;data[at+1]=164;data[at+2]=214;
+        data[at+3]=Math.round(alpha*(border?.7:.13));
+      }
+    }
+    ctx.putImageData(this.image,0,0);
+  }
+  destroy(){
+    if(this.frame)cancelAnimationFrame(this.frame);
+    window.removeEventListener('resize',this.resize);
+    this.canvas.remove();this.image=null;this.mask=null;
+  }
 }

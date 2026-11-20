@@ -1,7 +1,10 @@
 /** C06 named, versioned masks. Artwork history and raster tiles stay separate. */
 import {type MaskData} from './mask';
-export type SavedSelection=Readonly<{id:string;documentId:string;name:string;width:number;height:number;createdAt:number;modifiedAt:number;alpha:Blob}>;
+import {packSelectionMask} from './maskCodec';
+export type SavedSelection=Readonly<{id:string;documentId:string;name:string;width:number;height:number;createdAt:number;modifiedAt:number;alpha:Blob;portableBytes?:number}>;
 const DB='illustro-c06-selections-v1',STORE='selections',MAX_PER_WORK=32;
+// Portable artwork stores all named masks plus the current selection (160 MiB max).
+const MAX_PORTABLE_MASK_BYTES=160*1024*1024;
 let task:Promise<IDBDatabase>|null=null;
 const db=()=>task??=new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(DB,1);
@@ -32,12 +35,31 @@ export async function saveNamedSelection(documentId:string,name:string,mask:Mask
   if(mask.width*mask.height!==mask.alpha.length)throw Error('選択範囲の画像サイズが正しくありません。');
   const existing=await listSavedSelections(documentId);
   const prior=currentId?existing.find(x=>x.id===currentId):null;
+  if(currentId&&!prior)throw Error('上書き先の選択範囲が見つかりません。');
   if(!prior&&existing.length>=MAX_PER_WORK)throw Error('保存できる範囲は32件までです。');
+  // Size is based on the lossless native encoding, not the in-memory alpha
+  // arrays. A mostly empty 4000x4000 selection should not consume 16MB
+  // of portable budget simply because its bitmap has that many coordinates.
+  const newPortableBytes=packSelectionMask(mask.alpha).bytes.byteLength;
+  let usedBytes=0;
+  for(const entry of existing){
+    if(entry.id===prior?.id)continue;
+    // Earlier device records stored raw alpha only. Estimate their native
+    // size lazily rather than assuming every pixel takes one file byte.
+    const stored=entry.portableBytes??packSelectionMask(
+      new Uint8Array(await entry.alpha.arrayBuffer())
+    ).bytes.byteLength;
+    usedBytes+=stored;
+  }
+  // Leave room for the active mask in addition to named selections.
+  // Future edits can enlarge that active mask, so export still rechecks.
+  if(usedBytes+newPortableBytes*2>MAX_PORTABLE_MASK_BYTES)
+    throw Error('この作品の選択範囲が保存容量の上限です。不要な範囲を削除してください。');
   if(existing.some(x=>x.name===title&&x.id!==currentId))throw Error('同じ名前の選択範囲があります。');
   const now=Date.now();
   const entry:SavedSelection={
     id:prior?.id??crypto.randomUUID(),documentId,name:title,width:mask.width,height:mask.height,
-    createdAt:prior?.createdAt??now,modifiedAt:now,
+    createdAt:prior?.createdAt??now,modifiedAt:now,portableBytes:newPortableBytes,
     alpha:new Blob([mask.alpha.slice().buffer as ArrayBuffer],{type:'application/octet-stream'})
   };
   await transaction<void>('readwrite',(store,done)=>{store.put(entry);done(undefined);});

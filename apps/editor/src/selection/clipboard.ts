@@ -1,5 +1,6 @@
+import {appConfirm} from '../ui/appDialogs';
 /** C06 copy/cut/paste operating on real document pixels and history. */
-import {transformLayerMask,moveEditableArtwork,type LayerNode,type LayerGroup,type LayerDeformation,type LayerMask,type LayerId,type LineRegions} from '@illustro/core';
+import {transformLayerMask,moveEditableArtwork,type RasterPixelTiles,type LayerNode,type LayerGroup,type LayerDeformation,type LayerMask,type LayerId,type LineRegions} from '@illustro/core';
 import {validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {translateStroke} from '../seamlessStroke';
 import {describeStroke,strokeTilesForCanvas} from '../strokeCommit';
@@ -10,10 +11,11 @@ import {getAsset} from '../assets/library';
 import {readFillReference} from '../fill/reference';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 import type {SelectionRect} from '../strokeSelection';
-import {type MaskData,rasterizeSelection} from './mask';
+import {cropSelectionMask,type MaskData,rasterizeSelection} from './mask';
 import {runMaskedPixelJob} from './pixels';
+import {forEachPastedTile} from './pasteTiles';
 
-type EditableLayerCopy=Readonly<{layer:LayerNode;pixels:Uint8Array;regionSource?:Readonly<{pixels:Uint8Array;recipe:LineRegions}>;transform?:Readonly<{
+type EditableLayerCopy=Readonly<{layer:LayerNode;pixels:Uint8Array|RasterPixelTiles;regionSource?:Readonly<{pixels:Uint8Array;recipe:LineRegions}>;transform?:Readonly<{
   original:Uint8Array;mask:LayerMask|null;deformation:LayerDeformation;
   strokes:readonly Readonly<{record:StrokeRecord;supplemental:boolean}>[];
 }>}>;
@@ -24,6 +26,9 @@ export type ClipboardItem=Readonly<{
   editable?:Readonly<{layers:readonly EditableLayerCopy[];groups:readonly LayerGroup[]}>;
 }>;
 const safeRect=(selection:SelectionRect|null,width:number,height:number)=>{
+  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||
+    selection&&![selection.x,selection.y,selection.width,selection.height].every(Number.isFinite))
+    throw Error('コピーする範囲が正しくありません。');
   const x0=Math.max(0,Math.min(width,Math.ceil(selection?.x??0)));
   const y0=Math.max(0,Math.min(height,Math.ceil(selection?.y??0)));
   const x1=Math.max(0,Math.min(width,Math.floor(selection?selection.x+selection.width:width)));
@@ -61,20 +66,57 @@ function moveDeformation(deformation:LayerDeformation,x:number,y:number):LayerDe
 
 export class ArtworkClipboard {
   private item:ClipboardItem|null=null;
+  private serial=0;
   private selectionMask:MaskData|null=null;
+  get snapshotId(){return this.serial;}
+  /** Generate a small read-only visual candidate, never a second 4K canvas. */
+  preview(maxSide=512):Readonly<{
+    width:number;height:number;originX:number;originY:number;
+    previewWidth:number;previewHeight:number;pixels:Uint8ClampedArray|null;
+    editable:boolean;sourceName:string;
+  }>|null{
+    const item=this.item;
+    if(!item)return null;
+    const factor=Math.min(1,maxSide/Math.max(item.width,item.height));
+    const previewWidth=Math.max(1,Math.round(item.width*factor)),
+      previewHeight=Math.max(1,Math.round(item.height*factor));
+    let pixels:Uint8ClampedArray|null=null;
+    if(item.pixels.length===item.width*item.height*4){
+      pixels=new Uint8ClampedArray(previewWidth*previewHeight*4);
+      for(let py=0;py<previewHeight;py++){
+        const sy=Math.min(item.height-1,Math.floor((py+.5)*item.height/previewHeight));
+        for(let px=0;px<previewWidth;px++){
+          const sx=Math.min(item.width-1,Math.floor((px+.5)*item.width/previewWidth));
+          const from=(sy*item.width+sx)*4,to=(py*previewWidth+px)*4;
+          pixels.set(item.pixels.subarray(from,from+4),to);
+        }
+      }
+    }
+    return {
+      width:item.width,height:item.height,originX:item.originX,originY:item.originY,
+      previewWidth,previewHeight,pixels,editable:!!item.editable,sourceName:item.sourceName
+    };
+  }
   setSelectionMask(mask:MaskData|null){this.selectionMask=mask;}
   get hasContent(){return this.item!==null;}
   get summary(){return this.item?{
     name:this.item.sourceName,width:this.item.width,height:this.item.height,
     sourceDocumentId:this.item.sourceDocumentId,selected:this.item.selected,merged:this.item.merged,editable:this.item.editable?.layers.length??0,group:this.item.editable?.groups.length!==0&&!!this.item.editable
   }:null;}
-  clear(){this.item=null;}
+  clear(){this.item=null;this.serial++;}
   async copy(controller:EditorController,drawing:BrushSurface,opts:Readonly<{merged:boolean;selectionOnly:boolean;group?:boolean}>){
     const document=controller.document,root=document.root,head=document.head;
     const selection=opts.selectionOnly?drawing.selectedRectangle:null;
     if(opts.selectionOnly&&!selection)throw Error('先に選択範囲を作成してください。');
     const area=safeRect(selection,root.width,root.height);
+    // Never turn a corrupt saved selection mask into an unmasked rectangle
+    // copy. In particular, missing alpha bytes must not expose extra pixels.
+    if(selection&&this.selectionMask&&(
+      this.selectionMask.width!==root.width||this.selectionMask.height!==root.height||
+      this.selectionMask.alpha.length!==root.width*root.height))
+      throw Error('選択マスクの大きさが作品に一致しません。');
     let source:Uint8Array|Uint8ClampedArray,editable:ClipboardItem['editable'];
+    let regionPixels:Uint8ClampedArray|null=null;
     const selectedLayer=controller.selectedLayer;
     const group=opts.group?root.groupsForLayer(selectedLayer.id).at(-1):undefined;
     if(opts.group&&!group)throw Error('コピーするグループ内のレイヤーを選んでください。');
@@ -92,15 +134,29 @@ export class ArtworkClipboard {
           if(link?.kind==='instance'&&root.layers.get(link.sourceId)?.imageLink)ids.add(link.sourceId);
         }
       }
-      const captured=await drawing.captureDocumentLayers(ids);
+      // Normal group layers are copied as occupied tiles. Geometry-aware
+      // layers (deformation, line-regions, white paper) retain their full
+      // compatible capture; they have additional reconstruction semantics.
+      if(selection&&!group&&layer.baseColor!=='white'&&!layer.deformation&&
+        !layer.lineRegions&&!layer.imageLink&&typeof drawing.captureDocumentLayerRegion==='function')
+        regionPixels=await drawing.captureDocumentLayerRegion(layer.id,area);
+      const sparseIds=group&&!selection?new Set([...ids].filter(id=>{
+        const candidate=root.getLayer(id);
+        return candidate.baseColor!=='white'&&!candidate.deformation&&!candidate.lineRegions;
+      })):null;
+      const sparse= sparseIds?.size?await drawing.captureDocumentLayerTiles(sparseIds):null;
+      const fullIds=regionPixels?new Set<LayerId>():
+        sparse?new Set([...ids].filter(id=>!sparseIds!.has(id))):ids;
+      const captured=fullIds.size?await drawing.captureDocumentLayers(fullIds):new Map<LayerId,Uint8Array>();
       if(!selection&&layer.baseColor!=='white'){
         const operations=document.rasterReplayPlan(head).operations;
         const layers:EditableLayerCopy[]=[];
         for(const id of root.rootLayerIds.filter(id=>ids.has(id))){
-          const current=root.getLayer(id),pixels=captured.get(id);
+          const current=root.getLayer(id),pixels=sparse?.get(id)??captured.get(id);
           if(!pixels)throw Error('コピーするレイヤーを読み込めませんでした。');
           const recipe=current.lineRegions;
           if(recipe){
+            if(!(pixels instanceof Uint8Array))throw Error('線画領域の参照元が正しくありません。');
             const source=document.revision(recipe.sourceRevision).root;
             if(source.width!==root.width||source.height!==root.height)
               throw Error('元の線画の大きさが変わっています。領域を更新してからコピーしてください。');
@@ -127,22 +183,30 @@ export class ArtworkClipboard {
         ):[];
         editable={layers,groups};
       }
-      const pixels=captured.get(layer.id);
-      if(!pixels)throw Error('レイヤーを読み込めませんでした。');
-      source=pixels;
+      if(group)source=new Uint8Array(0); // A group preview uses its outline; no merged 4K image.
+      else{
+        const pixels=regionPixels??captured.get(layer.id);
+        if(!pixels)throw Error('レイヤーを読み込めませんでした。');
+        source=pixels;
+      }
     }
     if(document.head!==head)throw Error('コピー中に作品が変更されました。もう一度コピーしてください。');
-    const masked=this.selectionMask&&this.selectionMask.width===root.width&&this.selectionMask.height===root.height&&selection
-      ?await runMaskedPixelJob(source,this.selectionMask,'copy'):source;
+    // Crop before masking: a 12px selection should not transfer a 64 MiB
+    // source and a 16 MiB alpha mask to a Worker just to keep 12px.
+    const selectedMask=this.selectionMask&&this.selectionMask.width===root.width&&
+      this.selectionMask.height===root.height&&selection?this.selectionMask:null;
+    const clipped=group?new Uint8ClampedArray(0):
+      regionPixels??crop(source,root.width,area);
+    const pixels=selectedMask&&!group
+      ?await runMaskedPixelJob(clipped,cropSelectionMask(selectedMask,area),'copy'):clipped;
     if(document.head!==head)throw Error('コピー中に作品が変更されました。');
-    const pixels=group?new Uint8ClampedArray(0):crop(masked,root.width,area);
     const record:ClipboardItem={
       sourceDocumentId:root.documentId,sourceColorProfile:root.colorProfileId,
       sourceName:opts.merged?'合成した作品':group?.name??selectedLayer.name,
       originX:area.x,originY:area.y,width:area.width,height:area.height,
       selected:!!selection,merged:opts.merged,pixels,...(editable?{editable}:{})
     };
-    this.item=record;
+    this.item=record;this.serial++;
     return record;
   }
   async cut(controller:EditorController,drawing:BrushSurface){
@@ -189,17 +253,24 @@ export class ArtworkClipboard {
     controller.lastPersistenceHandoff=transaction.commit().persistence;
     return {revision:document.head,layerId:layer.id};
   }
-  async paste(controller:EditorController,placement:'center'|'original'='center'){
+  async paste(
+    controller:EditorController,
+    placement:'center'|'original'|Readonly<{x:number;y:number}>='center'
+  ){
     const record=this.item;
     if(!record)throw Error('先にコピーしてください。');
     const document=controller.document,root=document.root,head=document.head,reference=controller.selectedLayer.id;
     if(record.sourceColorProfile!==root.colorProfileId)
       throw Error('元作品と色空間が異なります。色変換はC15の機能を使ってください。');
     if(!record.editable&&record.sourceDocumentId!=='external-image'&&record.sourceDocumentId!==root.documentId&&
-      !window.confirm('別の作品から貼り付けます。現段階では画素だけを新しいレイヤーへ移し、元のブラシ履歴・特殊なレイヤー設定は移せません。続けますか？'))
+      !await appConfirm('別の作品から貼り付けます。現段階では画素だけを新しいレイヤーへ移し、元のブラシ履歴・特殊なレイヤー設定は移せません。続けますか？'))
       throw Error('別作品への貼り付けを取り消しました。');
-    const x=placement==='original'?record.originX:Math.round((root.width-record.width)/2);
-    const y=placement==='original'?record.originY:Math.round((root.height-record.height)/2);
+    const custom=typeof placement==='object'?placement:null;
+    if(custom&&(!Number.isSafeInteger(custom.x)||!Number.isSafeInteger(custom.y)||
+      Math.abs(custom.x)>16384||Math.abs(custom.y)>16384))
+      throw Error('貼り付け位置の座標が正しくありません。');
+    const x=custom?custom.x:placement==='original'?record.originX:Math.round((root.width-record.width)/2);
+    const y=custom?custom.y:placement==='original'?record.originY:Math.round((root.height-record.height)/2);
     if(record.editable){
       if(x<0||y<0||x+record.width>root.width||y+record.height>root.height)
         throw Error('編集できるレイヤーを保つには、元作品と同じ大きさ以上のキャンバスに貼り付けてください。');
@@ -220,16 +291,15 @@ export class ArtworkClipboard {
       const missingLinks=record.editable.layers.some(({layer})=>layer.imageLink?.kind==='instance'&&!ids.has(layer.imageLink.sourceId));
       const detached=clipLoss?'別のレイヤーへのクリッピングは、元になるレイヤーがコピーに含まれないため引き継げません。':'';
       const originals=record.editable.layers.some(entry=>entry.transform)?'変形を再編集できるように、非表示の原本も一緒に置きます。':'';
-      if(!window.confirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤー設定・マスク・文字・パスを保持します。元作品のUndo履歴は含みません。${originals}${hasRegions?'確認した線画の版も保持します。':''}${detached}${fontNotice}${missingLinks?'元が見つからない複製は現在の画像を埋め込みます。':''}`))
+      if(!await appConfirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤー設定・マスク・文字・パスを保持します。元作品のUndo履歴は含みません。${originals}${hasRegions?'確認した線画の版も保持します。':''}${detached}${fontNotice}${missingLinks?'元が見つからない複製は現在の画像を埋め込みます。':''}`))
         throw Error('貼り付けを取り消しました。');
-      const place=(pixels:Uint8Array)=>{
+      const place=(pixels:Uint8Array|RasterPixelTiles)=>{
+        if('tiles' in pixels)return {...pixels,x,y,width:record.width,height:record.height};
         if(!x&&!y&&record.width===root.width&&record.height===root.height)return pixels;
-        const placed=new Uint8Array(root.width*root.height*4);
-        for(let row=0;row<record.height;row++){
-          const start=row*record.width*4;
-          placed.set(pixels.subarray(start,start+record.width*4),((row+y)*root.width+x)*4);
-        }
-        return placed;
+        // Keep the original bytes and offset. Core seeds only intersecting
+        // tiles, instead of allocating one giant transparent RGBA buffer per
+        // editable layer (including each preserved deformation source).
+        return {x,y,width:record.width,height:record.height,pixels};
       };
       const entries=await Promise.all(record.editable.layers.map(async({layer,pixels,transform,regionSource})=>{
         const mask=moveMask(layer.vectorMask,x,y),effect=layer.blend?.effect;
@@ -262,21 +332,15 @@ export class ArtworkClipboard {
     if(x>=root.width||y>=root.height||x+record.width<=0||y+record.height<=0)
       throw Error('元の座標では画像がキャンバスの外に出ます。中央に貼り付けてください。');
     if((x<0||y<0||x+record.width>root.width||y+record.height>root.height)&&
-      !window.confirm('貼り付ける画像の一部がキャンバスの外です。はみ出した部分は省いて新しいレイヤーへ貼り付けます。続けますか？'))
+      !await appConfirm('貼り付ける画像の一部がキャンバスの外です。はみ出した部分は省いて新しいレイヤーへ貼り付けます。続けますか？'))
       throw Error('貼り付けを取り消しました。');
-    const pixels=new Uint8ClampedArray(root.width*root.height*4);
-    for(let row=0;row<record.height;row++){
-      const dy=y+row;
-      if(dy<0||dy>=root.height)continue;
-      const x0=Math.max(0,x),x1=Math.min(root.width,x+record.width);
-      if(x0>=x1)continue;
-      const srcStart=(row*record.width+x0-x)*4;
-      const destStart=(dy*root.width+x0)*4;
-      pixels.set(record.pixels.subarray(srcStart,srcStart+(x1-x0)*4),destStart);
-    }
+    // Core stores raster pixels by tile. Write exactly the touched tiles,
+    // never create an unnecessary canvas-wide RGBA allocation for a 4px image.
     const tx=document.begin('画像を貼り付ける');
-    const id=tx.addRasterSnapshotAbove(controller.selectedLayer.id,pixels,
-      (record.sourceName||'貼り付け').slice(0,100)+'（貼り付け）',false,false);
+    const id=tx.addRasterLayerAbove(controller.selectedLayer.id,false);
+    tx.renameLayer(id,(record.sourceName||'貼り付け').slice(0,100)+'（貼り付け）');
+    forEachPastedTile(record,{width:root.width,height:root.height},x,y,
+      (tileX,tileY,bytes)=>tx.editTile(id,tileX,tileY,destination=>destination.set(bytes)));
     controller.lastPersistenceHandoff=tx.commit().persistence;
     controller.selectLayer(id);
     return {revision:document.head,layerId:id,x,y};
@@ -299,7 +363,7 @@ export class ArtworkClipboard {
         width:bitmap.width,height:bitmap.height,selected:false,merged:true,
         pixels:data.data.slice()
       };
-      this.item=item;return item;
+      this.item=item;this.serial++;return item;
     }finally{bitmap.close();}
   }
   async writeSystemClipboard():Promise<void>{

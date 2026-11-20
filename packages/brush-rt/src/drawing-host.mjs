@@ -233,6 +233,7 @@ export class DrawingHost {
  async drain(finalFrame=true){this.update(await this.call('drain',finalFrame));}
  read(surfaceKey='default'){return this.call('read',surfaceKey);}
  readPixel(x,y,surfaceKey){return this.call('pixel',{x,y,surfaceKey});}
+ readPixelArea(x,y,width,height,surfaceKey){return this.call('pixelArea',{x,y,width,height,surfaceKey});}
  setPerformanceEnabled(enabled){this.send('measure',enabled);}
  performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){return false;}
@@ -241,9 +242,24 @@ export class DrawingHost {
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 
-class DrawingSessionPort {
- constructor(host){this.renderer=host;this.prediction=true;this.id=0;this.recordIds=new WeakMap;this.tokens=new WeakMap;this.recordsByToken=new Map;this.pending=[];this.pendingRawCount=0;this.rawAccepted=0;this.browserPredictions=0;this.errors=[];}
- begin(preset,fast=0,context={},surfaceKey='default'){if(this.active)throw Error('Stroke already active');const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};if(this.renderer.backend.viewTransform)this.renderer.send('view',this.renderer.backend.viewTransform);this.renderer.send('begin',{preset,fast,context,surfaceKey,id});return id;}
+export class DrawingSessionPort {
+ constructor(host){this.renderer=host;this.prediction=true;this.id=0;this.previewMaskId=0;this.previewMaskBytes=null;this.previewMaskSize='';this.recordIds=new WeakMap;this.tokens=new WeakMap;this.recordsByToken=new Map;this.pending=[];this.pendingRawCount=0;this.rawAccepted=0;this.browserPredictions=0;this.errors=[];}
+ begin(preset,fast=0,context={},surfaceKey='default',showPreview=true,selectionMask=null){
+  if(this.active)throw Error('Stroke already active');
+  let selection=null;
+  if(selectionMask){
+   const {width,height,alpha}=selectionMask,dimensions=width+'x'+height;
+   if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||
+      alpha?.length!==width*height)throw Error('Invalid selection preview mask');
+   const reused=this.previewMaskBytes===alpha&&this.previewMaskSize===dimensions;
+   if(!reused){this.previewMaskId++;this.previewMaskBytes=alpha;this.previewMaskSize=dimensions;}
+   selection={id:this.previewMaskId,width,height,...(reused?{}:{alpha})};
+  }
+  const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};
+  if(this.renderer.backend.viewTransform)this.renderer.send('view',this.renderer.backend.viewTransform);
+  this.renderer.send('begin',{preset,fast,context,surfaceKey,id,showPreview:showPreview!==false,selection});
+  return id;
+ }
  accept(sample){if(!this.active)return;this.pending.push(sample);this.active.count++;this.rawAccepted++;}
  predictions(samples){this.predicted=samples;this.browserPredictions+=samples.length;}
  flush(){if(!this.active||!this.pending.length)return;this.renderer.send('samples',{samples:this.pending,predictions:this.predicted??[],prediction:this.prediction});this.pending=[];}

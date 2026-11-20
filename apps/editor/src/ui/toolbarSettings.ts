@@ -1,21 +1,31 @@
+import {DEFAULT_TOOL_ORDER} from './shell';
+
 /** UI-006: customizable tool rail; critical drawing actions remain reachable. */
 export type ToolLayout=Readonly<{order:readonly string[];hidden:readonly string[]}>;
 export type ToolbarSettingsService=Readonly<{snapshot:()=>ToolLayout;restore:(layout:ToolLayout)=>void;reset:()=>void}>;
 const KEY='illustro.c04.toolbar-layout.v1';
+const DEFAULT_HIDDEN=['smudge','transform','move'];
 const MUST_SHOW=new Set(['paint','erase']);
 const rail=()=>document.querySelector<HTMLElement>('.rail');
 const buttons=()=>[...document.querySelectorAll<HTMLButtonElement>('.rail>.tool-button[id]')];
-const baseline=()=>buttons().map(b=>b.id);
-const defaultLayout=():ToolLayout=>({order:baseline(),hidden:[]});
+const defaultLayout=():ToolLayout=>({order:DEFAULT_TOOL_ORDER,hidden:DEFAULT_HIDDEN});
 const normalize=(data:unknown):ToolLayout=>{
   if(!data||typeof data!=='object'||Array.isArray(data))return defaultLayout();
   const obj=data as Record<string,unknown>;
   const order=Array.isArray(obj.order)?obj.order.filter((id):id is string=>typeof id==='string'&&id.length<90):[];
   const hidden=Array.isArray(obj.hidden)?obj.hidden.filter((id):id is string=>typeof id==='string'&&id.length<90&&!MUST_SHOW.has(id)):[];
-  return {order:[...new Set([...order,...baseline()])],hidden:[...new Set(hidden)]};
+  return {order:[...new Set([...order,...DEFAULT_TOOL_ORDER])],hidden:[...new Set(hidden)]};
 };
-const read=()=>{try{return normalize(JSON.parse(localStorage.getItem(KEY)||'null'));}catch{return defaultLayout();}};
-const save=(data:ToolLayout)=>{try{localStorage.setItem(KEY,JSON.stringify({version:1,...data}));}catch{/* no storage */}};
+const read=()=>{
+  try{
+    const saved=JSON.parse(localStorage.getItem(KEY)||'null');
+    // The old shell automatically persisted its factory layout on first run.
+    if(saved?.version===1&&Array.isArray(saved.hidden)&&saved.hidden.length===0&&
+      Array.isArray(saved.order)&&saved.order.join(',')===DEFAULT_TOOL_ORDER.join(','))return defaultLayout();
+    return normalize(saved);
+  }catch{return defaultLayout();}
+};
+const save=(data:ToolLayout)=>{try{localStorage.setItem(KEY,JSON.stringify({version:2,...data}));}catch{/* no storage */}};
 export function installToolbarSettings():ToolbarSettingsService{
   const root=rail(),workspace=document.getElementById('workspaceBoxBody');
   if(!root||!workspace)return {snapshot:defaultLayout,restore:()=>{},reset:()=>{}};
@@ -34,7 +44,7 @@ export function installToolbarSettings():ToolbarSettingsService{
     for(const id of state.order){
       const button=actual.get(id);
       if(!button)continue;
-      root.insertBefore(button,document.getElementById('colorPage')??document.getElementById('allFeatures'));
+      root.insertBefore(button,document.getElementById('allFeatures'));
       button.hidden=!visible(id);
       button.style.display=visible(id)?'':'none';
       button.setAttribute('aria-hidden',String(!visible(id)));

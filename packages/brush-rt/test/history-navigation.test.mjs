@@ -35,3 +35,12 @@ test('cold reconstruction collects private dirty tiles and flushes once after re
  await r.rebuildTileGroups([{surfaceKey:'layer',keys:['0,0'],entries:[]}]);
  assert.deepEqual(events,[['drain',false],['held',true],['drain',false],['drain',true],['held',false],['present']]);assert.equal(backend.deferredHistoryDirty,null);assert.deepEqual([...backend.dirtyConfirmed],['0,0','1,0']);
 });
+
+test('materialized raster history preserves the warm image path and requests Core restore only on a cold miss',async()=>{
+ const hot=harness(true);hot.session.hasRasterBase=true;
+ await hot.session.navigateDerived([hot.step('undo',2)]);
+ assert.equal(hot.session.historyPatchHits,1);assert.equal(hot.calls.rebuilds.length,0);
+ const cold=harness(false);cold.session.hasRasterBase=true;
+ await assert.rejects(cold.session.navigateDerived([cold.step('undo',2)]),/Raster baseline restore required/);
+ assert.equal(cold.calls.rebuilds.length,0);assert.equal(cold.calls.appends.length,0);
+});

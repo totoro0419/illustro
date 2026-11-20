@@ -1,18 +1,41 @@
-import {buildRegions,colorMask,fillBoundaries,fillMask,paintColorHints,sharedBoundary,suggestLocalGaps,unpaintedFillEdges,type FillSettings,type RegionGraph,type Walls} from './pixels';
+import {buildRegions,colorMask,fillBoundaries,fillGuaranteedUnchanged,fillMask,hasFillPixelChanges,paintColorHints,sharedBoundary,suggestLocalGaps,unpaintedFillEdges,type FillSettings,type RegionGraph,type Walls} from './pixels';
 import type {ColorHint} from '@illustro/core';
 import type {MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
+import {updateChangedRegions} from './changedRegions';
+import {ExactColorFillPreview,type LiveFillContext} from './liveExactPreview';
 
 export type FillImage={source:Uint8Array;width:number;height:number;settings:FillSettings};
-export type FillJob={type:'local-gaps';graph:RegionGraph;point:Point;reach:number;manual:Walls}|{type:'boundary';graph:RegionGraph;first:number;second:number;near?:Point}|(FillImage&(
+export type FillJob={type:'live-fill';id:string;context?:LiveFillContext;settings:FillSettings;points:readonly Point[]}|
+{type:'graph-edit';graph:RegionGraph;points:readonly Point[];remove:boolean}|{type:'local-gaps';graph:RegionGraph;point:Point;reach:number;manual:Walls}|{type:'boundary';graph:RegionGraph;first:number;second:number;near?:Point}|(FillImage&(
   |{type:'graph';manual:Walls}
   |{type:'hints';target:Uint8Array|null;selection:MaskData|null;graph:RegionGraph;hints:readonly ColorHint[];alphaLocked:boolean}
   |{type:'fill';target:Uint8Array|null;selection:MaskData|null;graph:RegionGraph|null;
     points:readonly Point[];output:'selection'|'pixels';alphaLocked:boolean;diagnostics?:boolean}
 ));
 
-self.onmessage=({data}:MessageEvent<FillJob>)=>{
+let live:{id:string;fill:ExactColorFillPreview}|null=null;
+self.onmessage=({data}:MessageEvent<FillJob|{type:'live-end';id:string}>)=>{
   try{
+    if(data.type==='live-end'){
+      if(live?.id===data.id)live=null;
+      return; // Release is deliberately silent: it must not settle a queued job.
+    }
+    if(data.type==='live-fill'){
+      if(data.context)live={id:data.id,fill:new ExactColorFillPreview(data.context)};
+      if(live?.id!==data.id){self.postMessage({previewMissing:true});return;}
+      const {preview}=live.fill.render(data.settings,data.points);
+      (self as unknown as Worker).postMessage({preview},[preview.pixels.buffer]);
+      return;
+    }
+    if(data.type==='graph-edit'){
+      const graph=updateChangedRegions(data.graph,data.points,data.remove,true);
+      if(!graph){self.postMessage({patchUnavailable:true});return;}
+      (self as unknown as Worker).postMessage({graph},[graph.labels.buffer as ArrayBuffer,graph.walls.buffer as ArrayBuffer,
+        graph.bridges.buffer as ArrayBuffer,graph.external.buffer as ArrayBuffer,graph.neighborOffsets.buffer as ArrayBuffer,
+        graph.neighbors.buffer as ArrayBuffer,graph.depth.buffer as ArrayBuffer,graph.anchors.buffer as ArrayBuffer]);
+      return;
+    }
     if(data.type==='local-gaps'){
       self.postMessage({gaps:suggestLocalGaps(data.graph,data.point,data.reach,data.manual)});
       return;
@@ -36,14 +59,15 @@ self.onmessage=({data}:MessageEvent<FillJob>)=>{
     }
     const repairs=data.graph??(settings.method==='color'&&settings.contiguous&&settings.gap
       ?fillBoundaries(source,width,height,settings.tolerance,settings.gap):null);
-    const mask=fillMask(source,width,height,settings,data.points,data.graph,data.selection,repairs?.bridges);
+    const mask=fillMask(source,width,height,settings,data.points,data.graph,data.selection,repairs?.bridges,data.target);
     if(data.output==='selection'){
       post.postMessage({mask},[mask.alpha.buffer as ArrayBuffer]);return;
     }
-    const pixels=colorMask(data.target,mask,settings,data.alphaLocked);
-    const changed=pixels.some((value,index)=>value!==(data.target?.[index]??0));
+    const skipOutput=!data.diagnostics&&fillGuaranteedUnchanged(mask,settings,data.alphaLocked,data.target);
+    const pixels=skipOutput?null:colorMask(data.target,mask,settings,data.alphaLocked);
+    const changed=pixels!==null&&hasFillPixelChanges(pixels,data.target,mask);
     const transfer=[mask.alpha.buffer as ArrayBuffer];
-    if(changed)transfer.push(pixels.buffer);
+    if(changed&&pixels)transfer.push(pixels.buffer);
     let diagnostics;
     if(data.diagnostics){
       const bounds=repairs??fillBoundaries(source,width,height,settings.tolerance,0);

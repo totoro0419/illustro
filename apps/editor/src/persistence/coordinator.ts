@@ -5,6 +5,10 @@ import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortab
 import type {DecodedPortableFile,PortableManifestSection,PortableSectionInput} from './format';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
 import {cloneProjectionTiles} from './projectionTransfer';
+import {exactBlobBuffer} from './blobBuffer';
+import {needsUnloadWarning} from './unloadGuard';
+import {fingerprintOwnedBytes,fingerprintFileChunks} from './chunkFingerprint';
+import {NavigationBarrier} from './navigationBarrier';
 import type {SelectionRect} from '../strokeSelection';
 
 export class ExternalFileConflict extends Error{
@@ -26,7 +30,8 @@ type SaveAttachments=()=>((root:CoreDocument['root'])=>Promise<readonly Portable
 type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=>Promise<unknown>};
 
 export class PersistenceCoordinator{
-  private destroyed=false;private navigationSequence=0;private navigationPending=0;
+  private destroyed=false;private workerFailure:Error|null=null;private navigationSequence=0;private navigationPending=0;
+  private readonly navigationBarrier=new NavigationBarrier();
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
   private saveAttachmentProvider:SaveAttachments|null=null;
@@ -37,12 +42,14 @@ export class PersistenceCoordinator{
   });
   constructor(private readonly onChange:(state:PersistenceState)=>void=()=>{}){
     this.worker.onmessage=(event:MessageEvent<WorkerReply>)=>{const pending=this.pendingRequests.get(event.data.id);if(!pending)return;this.pendingRequests.delete(event.data.id);event.data.ok?pending.resolve(event.data.result):pending.reject(new Error(event.data.error??'Persistence Worker error'));};
-    this.worker.onerror=event=>this.patch({storageError:event.message||'Persistence Worker error'});
-    addEventListener('online',this.onlineState);addEventListener('offline',this.onlineState);document.addEventListener('visibilitychange',this.visibility,{capture:true});addEventListener('pagehide',this.pagehide,{capture:true});
+    this.worker.onerror=event=>this.failWorker(new Error(event.message||'作品の保護処理が停止しました。'));
+    this.worker.onmessageerror=()=>this.failWorker(new Error('作品の保護処理との通信に失敗しました。'));
+    addEventListener('online',this.onlineState);addEventListener('offline',this.onlineState);addEventListener('beforeunload',this.beforeUnload);document.addEventListener('visibilitychange',this.visibility,{capture:true});addEventListener('pagehide',this.pagehide,{capture:true});
   }
   get state(){return this.stateValue;}get preservedData(){return this.preserved;}
   async initialize(controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>,savedRevision:RevisionId|null=null,preserved?:PreservedPortableData,recovered=false,selection:SelectionRect|null=null){
-    this.cancelIdle();await this.drain();this.queue=[];this.controller=controller;this.preserved=preserved;this.selection=selection;const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
+    // A previous document's Undo/Redo head write must not cross this switch.
+    await this.flushPrepared();this.queue=[];this.controller=controller;this.preserved=preserved;this.selection=selection;const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
     const storage=await this.storageStatus(true);const result=await this.request('init',{documentId:document.root.documentId,writerEpochId:document.writerEpochId,snapshot,blocks,savedRevisionId:savedRevision},blocks.map(x=>x.bytes.buffer as ArrayBuffer)) as any;
     this.patch({currentRevision:document.head,savedRevision,protectedThrough:String(result.protectedThrough??'0'),backend:String(result.backend??'unknown'),recovered,
       storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false,saving:false,
@@ -54,9 +61,38 @@ export class PersistenceCoordinator{
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
-    const sequence=++this.navigationSequence,revisionId=document.head;this.navigationPending++;this.patch({currentRevision:revisionId,protectionPending:true});void this.flushPrepared().then(()=>{if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;return this.request('set-head',{revisionId,name:document.root.name,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId,previewLayers:previewLayersFor(document,revisionId)});}).catch(error=>this.patch({storageError:message(error)})).finally(()=>{this.navigationPending--;this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});});
+    const sequence=++this.navigationSequence,revisionId=document.head;
+    this.navigationPending++;
+    this.patch({currentRevision:revisionId,protectionPending:true});
+    // Use the commit-only barrier here: the public flushPrepared also waits for
+    // navigation jobs and would deadlock if a job waited for itself.
+    const write=this.flushCommitted().then(()=>{
+      if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;
+      return this.request('set-head',{
+        revisionId,name:document.root.name,width:document.root.width,height:document.root.height,
+        selectedLayerId:this.controller?.selectedLayerId,previewLayers:previewLayersFor(document,revisionId),
+      });
+    }).catch(error=>this.patch({storageError:message(error)})).finally(()=>{
+      this.navigationPending--;
+      this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});
+    });
+    this.navigationBarrier.track(write);
   }
-  async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
+  private async flushCommitted(){
+    this.cancelIdle();
+    await this.drain();
+    if(this.stateValue.storageError||this.queue.length)
+      throw new Error(this.stateValue.storageError??'自動保存が完了していません。');
+  }
+  async flushPrepared(){
+    // Navigation state itself is durable data: finish set-head after the raster
+    // journal, including a new Undo/Redo issued while an older write completes.
+    do{
+      await this.flushCommitted();
+      await this.navigationBarrier.waitUntilIdle();
+    }while(this.navigationPending>0||this.queue.length>0||this.activeDrain!==null);
+    if(this.stateValue.storageError)throw new Error(this.stateValue.storageError);
+  }
   async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}
   async bindWork(expectedEpoch:string|null=null){if(!this.controller)throw new Error('作品が開かれていません。');return this.request('library-bind',{selectedLayerId:this.controller.selectedLayerId,expectedEpoch,preserved:this.preserved,selection:this.selection});}
   async loadWork(documentId:string){const raw=await this.request('library-load',{documentId});
@@ -144,8 +180,11 @@ export class PersistenceCoordinator{
       }else if(existingHandle&&!forceSaveCopy){
         this.externalFingerprint=await this.writeExternal(existingHandle,bytes,previousFingerprint);output='picker';
       }else{downloadBlob(bytes,suggestedName);output='download';}
-      this.patch({lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
-      return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId});
+      // A browser download click cannot confirm that the file was retained by the OS.
+      // Only the file-picker path performs read-back verification.
+      this.patch({lastExplicitSaveTime:output==='picker'?Date.now():this.stateValue.lastExplicitSaveTime,
+        saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
+      return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId,verified:output==='picker'});
     }catch(error){this.patch({saving:false,saveDurationMs:performance.now()-started});throw error;}
   }
   async storeProjectionCheckpoint(cache:ProjectionCacheV1){
@@ -167,8 +206,8 @@ export class PersistenceCoordinator{
     try{const estimate=storage?.estimate?await storage.estimate():null;usage=estimate?.usage??null;quota=estimate?.quota??null;}catch{}
     this.patch({storagePersisted:persisted,storageUsage:usage,storageQuota:quota});return {persisted,usage,quota};
   }
-  destroy(){this.destroyed=true;this.cancelIdle();this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
-  private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:250});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},60);}
+  destroy(){this.destroyed=true;this.cancelIdle();this.failWorker(new Error('作品の保護処理が終了しました。'));this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);removeEventListener('beforeunload',this.beforeUnload);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
+  private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:120});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},60);}
   private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
   private async drain(){
     if(this.activeDrain)return this.activeDrain;
@@ -176,7 +215,22 @@ export class PersistenceCoordinator{
       catch(error){this.queue.unshift(item);this.patch({storageError:message(error),protectionPending:true});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}})();
     this.activeDrain=run;try{await run;}finally{if(this.activeDrain===run)this.activeDrain=null;if(this.queue.length&&!this.stateValue.storageError)this.schedule();}
   }
-  private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){const id=this.nextId++;return new Promise<any>((resolve,reject)=>{this.pendingRequests.set(id,{resolve,reject});this.worker.postMessage({id,type,...payload},transfer);});}
+  private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){
+    if(this.workerFailure||this.destroyed)return Promise.reject(this.workerFailure??new Error('作品の保護処理が終了しました。'));
+    const id=this.nextId++;
+    return new Promise<any>((resolve,reject)=>{
+      this.pendingRequests.set(id,{resolve,reject});
+      try{this.worker.postMessage({id,type,...payload},transfer);}
+      catch(error){this.pendingRequests.delete(id);reject(error);}
+    });
+  }
+  private failWorker(error:Error){
+    if(this.workerFailure)return;
+    this.workerFailure=error;
+    for(const pending of this.pendingRequests.values())pending.reject(error);
+    this.pendingRequests.clear();
+    this.patch({storageError:error.message});
+  }
   private patch(patch:Partial<PersistenceState>){
     const next={...this.stateValue,...patch,offline:!navigator.onLine};if(this.navigationPending>0)next.protectionPending=true;
     next.dirty=next.savedRevision===null?true:next.currentRevision!==next.savedRevision;
@@ -187,16 +241,26 @@ export class PersistenceCoordinator{
     type Writable={write:(b:Blob|BufferSource|string)=>Promise<void>;truncate?:(size:number)=>Promise<void>;close:()=>Promise<void>;abort?:()=>Promise<void>};
     const h=handle as {getFile:()=>Promise<File>;createWritable:(options?:{keepExistingData?:boolean})=>Promise<Writable>};if(!h?.getFile||!h?.createWritable)throw new Error('保存先を使用できません。');
     if(expectedFingerprint&&await fingerprintHandle(handle)!==expectedFingerprint)throw new ExternalFileConflict(await h.getFile());
-    const stable=bytes.slice(),writable=await h.createWritable({keepExistingData:false});
+    // encode-save transfers a uniquely owned byte buffer from the Worker. It is
+    // not modified while this awaited write and read-back verification run.
+    // Avoid cloning a potentially huge native save file before writing it.
+    const stable=bytes,writable=await h.createWritable({keepExistingData:false});
     try{
       await writable.truncate?.(0);
-      await writable.write(new Blob([stable.buffer as ArrayBuffer],{type:'application/octet-stream'}));
+      await writable.write(new Blob([exactBlobBuffer(stable)],{type:'application/octet-stream'}));
       await writable.truncate?.(stable.byteLength);
       await writable.close();
     }catch(error){try{await writable.abort?.();}catch{}throw error;}
     return await verifyExternalWrite(h,stable);
   }
-  private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared().catch(()=>{});};private pagehide=()=>{void this.flushPrepared().catch(()=>{});};private onlineState=()=>this.patch({offline:!navigator.onLine});
+  // This is a best-effort warning only. Android and background tab termination
+  // may bypass beforeunload entirely, so checkpointing continues normally.
+  private beforeUnload=(event:BeforeUnloadEvent)=>{
+    if(this.destroyed||!this.controller||!needsUnloadWarning(this.stateValue))return;
+    event.preventDefault();
+    event.returnValue='';
+  };
+  private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared().catch(error=>this.patch({storageError:message(error)}));};private pagehide=()=>{void this.flushPrepared().catch(error=>this.patch({storageError:message(error)}));};private onlineState=()=>this.patch({offline:!navigator.onLine});
 }
 
 function previewLayersFor(document:CoreDocument,revisionId:RevisionId):readonly PreviewLayer[]{
@@ -206,24 +270,30 @@ function previewLayersFor(document:CoreDocument,revisionId:RevisionId):readonly 
 function runtimeSupportedAlgorithms(packet:CoreRecoveryPacketV1){
   const supported=new Set<string>();for(const operation of packet.revision.command.operations)for(const ref of operation.algorithmVersionRefs)supported.add(ref);return Object.freeze([...supported]);
 }
-async function fingerprintHandle(handle:unknown){const file=await (handle as {getFile:()=>Promise<File>}).getFile(),bytes=new Uint8Array(await file.arrayBuffer()),hash=await hashHex(bytes);return file.size+':'+file.lastModified+':'+hash;}
+async function fingerprintHandle(handle:unknown){
+  const file=await (handle as {getFile:()=>Promise<File>}).getFile();
+  return file.size+':'+file.lastModified+':'+await fingerprintFileChunks(file);
+}
 async function verifyExternalWrite(handle:{getFile:()=>Promise<File>},expected:Uint8Array){
-  const expectedHash=await hashHex(expected),delays=[0,30,80,160,320,640,1200,2000];let lastSize:number|null=null,lastReason='読み戻しできませんでした';
+  const expectedHash=await fingerprintOwnedBytes(expected),delays=[0,30,80,160,320,640,1200,2000];
+  let lastSize:number|null=null,lastReason='読み戻しできませんでした';
   for(const delay of delays){
     if(delay)await sleep(delay);
     try{
       const file=await handle.getFile();lastSize=file.size;
       if(file.size!==expected.byteLength){lastReason='保存先のサイズが反映待ちです';continue;}
-      const actual=new Uint8Array(await file.arrayBuffer());if(actual.byteLength!==expected.byteLength){lastReason='保存先の読み戻しサイズが一致しません';continue;}
-      const actualHash=await hashHex(actual);if(actualHash===expectedHash)return file.size+':'+file.lastModified+':'+actualHash;
+      // Verify every byte indirectly, via the same ordered chunk fingerprint as
+      // the encoded source, without loading the entire saved file into RAM.
+      const actualHash=await fingerprintFileChunks(file);
+      if(actualHash===expectedHash)return file.size+':'+file.lastModified+':'+actualHash;
       lastReason='保存先の内容がまだ反映されていません';
     }catch(error){lastReason=message(error);}
   }
-  const sizeText=lastSize===null?'不明':String(lastSize);throw new Error('保存先の検証に失敗しました。書き込み後のファイルが端末側で正しく確認できませんでした（確認サイズ '+sizeText+' B / 予定 '+expected.byteLength+' B、'+lastReason+'）。');
+  const sizeText=lastSize===null?'不明':String(lastSize);
+  throw new Error('保存先の検証に失敗しました。書き込み後のファイルが端末側で正しく確認できませんでした（確認サイズ '+sizeText+' B / 予定 '+expected.byteLength+' B、'+lastReason+'）。');
 }
 function sleep(ms:number){return new Promise<void>(resolve=>setTimeout(resolve,ms));}
-async function hashHex(bytes:Uint8Array){const copy=bytes.byteOffset===0&&bytes.byteLength===bytes.buffer.byteLength?bytes:bytes.slice(),hash=new Uint8Array(await crypto.subtle.digest('SHA-256',copy as Uint8Array<ArrayBuffer>));return [...hash].map(x=>x.toString(16).padStart(2,'0')).join('');}
-function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([bytes.slice().buffer as ArrayBuffer],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
+function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([exactBlobBuffer(bytes)],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
 function safeFileName(value:string){return (value.trim()||'Illustro作品').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').slice(0,120);}
 function message(error:unknown){return error instanceof Error?error.message:String(error);}
 

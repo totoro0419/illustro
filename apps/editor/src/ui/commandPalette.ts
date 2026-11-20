@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from './appDialogs';
 /**
  * C04 UI-004 / UI-005: commands share the application's existing controls.
  * The palette never implements a second undo, brush engine or document writer.
@@ -8,25 +9,64 @@ import {icon,type IconName} from './icons';
 
 export type CommandDefinition=Readonly<{
   id:string;label:string;category:string;aliases:string;
-  availability:()=>string|null;execute:()=>void;
+  availability:()=>string|null;execute:()=>void|Promise<void>;
+  completion?:boolean;
 }>;
+/** Execute the actual handler and observe its declared completion, never a DOM dispatch. */
+export async function invokeCommandAsync(command:CommandDefinition,contextKey?:()=>unknown){
+  const reason=command.availability();
+  if(reason)return {ok:false,reason,settled:false};
+  try{
+    const context=contextKey?.();
+    await command.execute();
+    if(contextKey&&contextKey()!==context)throw Error('作品が切り替わったため操作を停止しました。');
+    return {ok:true,reason:null,settled:command.completion!==false};
+  }catch(error){return {ok:false,reason:error instanceof Error?error.message:String(error),settled:false};}
+}
 export type CommandService=Readonly<{
   list:()=>readonly Readonly<{id:string;label:string;category:string}>[];
   invoke:(id:string)=>Readonly<{ok:boolean;reason:string|null}>;
+  invokeAsync:(id:string)=>Promise<Readonly<{ok:boolean;reason:string|null;settled:boolean}>>;
   registerProvider:(provider:()=>readonly CommandDefinition[])=>()=>void;
   refresh:()=>void;
+  contextKey?: (()=>unknown)|undefined;
 }>;
+export type LayerCommandSource=Readonly<{
+  layers:()=>readonly Readonly<{id:string;name:string;visible:boolean}>[];
+  selectLayer:(id:string)=>void|Promise<void>;
+}>;
+/** Generate commands from the artwork, not whichever rows the UI happens to show. */
+export function layerCommandsFromArtwork(source:LayerCommandSource):CommandDefinition[]{
+  return source.layers().map(layer=>({
+    id:'layer:'+layer.id,
+    label:layer.name+(layer.visible?'':'（非表示）'),
+    category:'レイヤー',aliases:'描画先 選ぶ '+layer.id,
+    availability:()=>source.layers().some(item=>item.id===layer.id)?null:'このレイヤーはもうありません。',
+    execute:()=>source.selectLayer(layer.id),
+  }));
+}
 type PinState=Readonly<{version:1;slots:readonly string[];names?:readonly string[];groups?:readonly string[]}>;
 const PIN_KEY='illustro.c04.quick-controller.v1';
 const RECENTS_KEY='illustro.c04.command-history.v1';
 const SLOT_COUNT=6;
 const DEFAULT_SLOTS=['undo','redo','paint','erase','layer','save'];
+/** Returns null when all Quick slots are occupied and the user must choose one. */
+export function quickPinTarget(slots:readonly string[],id:string,editingSlot:number|null):number|null{
+  if(editingSlot!==null)return editingSlot>=0&&editingSlot<SLOT_COUNT?editingSlot:null;
+  const existing=slots.indexOf(id);
+  if(existing>=0)return existing;
+  const empty=slots.findIndex(slot=>!slot);
+  return empty>=0?empty:null;
+}
 const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T|null;
 const disabledReason=(id:string)=>{
   const element=el<HTMLButtonElement>(id);
   if(!element)return 'この機能は現在の画面で利用できません。';
   if(element.disabled)return '作品や操作状態により現在は使えません。';
-  if(element.closest('[hidden],[inert]'))return '現在の画面では操作できません。';
+  // A command can target a collapsed presentation surface or an unpinned rail tool.
+  // Disabled controls and contextual visibility still guard mode-specific actions.
+  if(element.closest('[hidden],[inert]')&&
+    !element.matches('.rail > .tool-button, #addLayer, #workspaceToggle, #quickControllerOpen'))return '現在の画面では操作できません。';
   return null;
 };
 const read=(key:string)=>{try{return localStorage.getItem(key)}catch{return null;}};
@@ -42,12 +82,18 @@ const parseRecents=():string[]=>{
   try{const raw=JSON.parse(read(RECENTS_KEY)||'[]') as unknown;return Array.isArray(raw)?raw.filter((s):s is string=>typeof s==='string').slice(0,24):[];}catch{return [];}
 };
 
-export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>,colorState:ForegroundColor):CommandService{
+export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>,colorState:ForegroundColor,layerSource:LayerCommandSource,execution?:Readonly<{
+  resolve:(id:string)=>(()=>void|Promise<void>)|null;contextKey:()=>unknown;
+}>):CommandService{
   const actions:Array<readonly [string,string,string,string]>= [
     ['undo','元に戻す','履歴','Undo 取り消し'],
     ['redo','やり直す','履歴','Redo'],
     ['paint','ブラシで描く','描画','絵を描く ペン'],
     ['erase','消しゴム','描画','消す'],
+    ['smudge','ぼかし・混色','描画','なじませる'],
+    ['smartFill','スマート塗り','描画','塗りつぶし バケツ'],
+    ['transform','変形','編集','拡大 縮小 回転 レイヤー'],
+    ['move','レイヤーを移動','編集','位置を動かす'],
     ['eyedropper','スポイト','色','色を取得 採色'],
     ['addLayer','レイヤーを追加','レイヤー','層 追加'],
     ['layer','レイヤー画面','レイヤー','層 一覧'],
@@ -98,7 +144,8 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   const known:CommandDefinition[]=actions.map(([id,label,category,aliases])=>({
     id,label,category,aliases,
     availability:()=>disabledReason(id),
-    execute:()=>el<HTMLButtonElement>(id)?.click(),
+    completion:!!execution?.resolve(id),
+    execute:()=>{const run=execution?.resolve(id);if(run)return run();el<HTMLButtonElement>(id)?.click();},
   }));
   for(const [id,label,section] of [
     ['workspace:brush','ブラシの一覧','brushBox'],
@@ -136,19 +183,13 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       commands.push({
         id,label:option.textContent||option.value,category:'ブラシ',aliases:'筆 ペン プリセット',
         availability:()=>brush.disabled?'ブラシを選べる作品を開いてください。':null,
-        execute:()=>{shell.openBox('brushBox');brush.value=option.value;brush.dispatchEvent(new Event('change',{bubbles:true}));},
+        completion:!!execution?.resolve(id),
+        execute:()=>{shell.openBox('brushBox');const run=execution?.resolve(id);if(run)return run();brush.value=option.value;brush.dispatchEvent(new Event('change',{bubbles:true}));},
       });
     }
-    const layerRows=document.querySelectorAll<HTMLButtonElement>('#layerPageList button[data-layer-id]');
-    for(const row of layerRows){
-      const id='layer:'+row.dataset.layerId;
-      if(!row.dataset.layerId)continue;
-      commands.push({
-        id,label:(row.textContent||'レイヤー').trim().slice(0,80),category:'レイヤー',aliases:'描画先 選ぶ '+row.dataset.layerId,
-        availability:()=>row.disabled?'このレイヤーは今選択できません。':null,
-        execute:()=>{shell.setLayerPage(true);row.click();},
-      });
-    }
+    // Includes hidden, filtered, collapsed and unmounted layers. No DOM lookup
+    // can silently drop an artwork layer from the search index.
+    commands.push(...layerCommandsFromArtwork(layerSource));
     return commands;
   }
   let slots=parsePins(),recents=parseRecents(),lastFocus:HTMLElement|null=null,editingSlot:number|null=null;
@@ -162,7 +203,17 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     }catch{return {names:Array(SLOT_COUNT).fill('') as string[],groups:Array(SLOT_COUNT).fill('') as string[]};}
   })();
   const savePins=()=>write(PIN_KEY,JSON.stringify({version:1,slots,names:pinMeta.names,groups:pinMeta.groups}));
-  const find=(id:string)=>dynamicCommands().find(command=>command.id===id);
+  const find=(id:string)=>{
+    const found=dynamicCommands().find(command=>command.id===id);
+    if(found)return found;
+    // A saved brush remains usable while the visible catalog is filtered.
+    const brushRun=id.startsWith('brush:')?execution?.resolve(id):null;
+    if(brushRun)return {id,label:id.slice(6),category:'ブラシ',aliases:'',availability:()=>null,completion:true,execute:brushRun};
+    // Stored macros keep exact colors even after they leave the recent palette.
+    const color=id.startsWith('color:')?fromHex(id.slice(6)):null;
+    return color?{id,label:'描画色 '+id.slice(6),category:'色',aliases:'',availability:()=>null,
+      execute:()=>colorState.choose(color)}:undefined;
+  };
   const remember=(id:string)=>{
     recents=[id,...recents.filter(key=>key!==id)].slice(0,24);
     write(RECENTS_KEY,JSON.stringify(recents));
@@ -171,11 +222,11 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   searchButton.id='commandSearchOpen';searchButton.type='button';searchButton.className='c04-command-open';
   searchButton.textContent='⌕ 機能を探す';
   searchButton.title='機能を探す（Ctrl+K）';
-  document.querySelector('.topbar .top-spacer')?.before(searchButton);
+  el('featureShortcuts')?.prepend(searchButton);
   const quickButton=document.createElement('button');
   quickButton.id='quickControllerOpen';quickButton.type='button';quickButton.className='c04-quick-open';
-  quickButton.textContent='Quick';quickButton.title='よく使う操作';
-  el('allFeatures')?.before(quickButton);
+  quickButton.textContent='よく使う操作';quickButton.title='よく使う操作';
+  el('featureShortcuts')?.append(quickButton);
   const dialog=document.createElement('dialog');
   dialog.id='commandSearchDialog';dialog.className='c04-command-dialog';
   const section=document.createElement('section');
@@ -195,7 +246,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   const quickLabel=document.createElement('strong');quickLabel.textContent='Quick';
   const configure=document.createElement('button');configure.type='button';configure.textContent='編集';
   const closeQuick=document.createElement('button');closeQuick.type='button';closeQuick.textContent='閉じる';
-  closeQuick.onclick=()=>{quick.hidden=true;quickButton.setAttribute('aria-expanded','false');};
+  closeQuick.onclick=()=>{pendingPinId=null;quick.hidden=true;quickButton.setAttribute('aria-expanded','false');};
   quickTitle.append(quickLabel,configure,closeQuick);
   const quickSlots=document.createElement('div');quickSlots.className='c04-quick-slots';
   const note=document.createElement('p');note.className='c04-quick-note';note.hidden=true;
@@ -204,11 +255,11 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   penButton.checked=read('illustro.c04.quick.pen-barrel')==='true';
   penSetting.append(penButton,document.createTextNode(' ペンのサイドボタンで開く（対応機種のみ）'));
   quick.append(quickTitle,quickSlots,note,penSetting);document.body.append(quick);
-  penButton.onchange=()=>{
+  penButton.onchange=async()=>{
     if(penButton.checked){
       const eraser=document.getElementById('penBarrelErase') as HTMLInputElement|null;
       if(eraser?.checked){
-        if(!window.confirm('このペンボタンには現在「消しゴム」が設定されています。Quickへ変更しますか？')){
+        if(!await appConfirm('このペンボタンには現在「消しゴム」が設定されています。Quickへ変更しますか？')){
           penButton.checked=false;return;
         }
         eraser.checked=false;eraser.dispatchEvent(new Event('change',{bubbles:true}));
@@ -217,12 +268,19 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     write('illustro.c04.quick.pen-barrel',String(penButton.checked));
   };
   let isConfiguring=false;
+  let pendingPinId:string|null=null;
 
   function execute(command:CommandDefinition){
     const reason=command.availability();
     if(reason){status.textContent=reason;return;}
     dialog.close();quick.hidden=true;quickButton.setAttribute('aria-expanded','false');
-    command.execute();remember(command.id);renderQuick();
+    try{
+      const outcome=command.execute();
+      if(outcome instanceof Promise)void outcome.catch(error=>{
+        status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
+      });
+      remember(command.id);renderQuick();
+    }catch(error){status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';}
   }
   function renderQuick(){
     quickSlots.replaceChildren();
@@ -249,7 +307,10 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       }
       button.onclick=()=>{
         if(isConfiguring){
-          editingSlot=i;quick.hidden=true;openSearch('',true);
+          if(pendingPinId){
+             const pending=pendingPinId;pendingPinId=null;editingSlot=i;
+             pinIntoSlot(pending);isConfiguring=false;renderQuick();
+           }else{editingSlot=i;quick.hidden=true;openSearch('',true);}
         }else if(command){
           execute(command);
         }
@@ -259,9 +320,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
         const edit=document.createElement('div');edit.className='c04-quick-edit-labels';
         for(const [name,field,max] of [['名前','names',28],['グループ','groups',22]] as const){
           const change=document.createElement('button');change.type='button';change.textContent=name;
-          change.onclick=()=>{
+          change.onclick=async()=>{
             const previous=pinMeta[field][i]||'';
-            const value=window.prompt('スロット'+(i+1)+'の'+name+'を入力（空欄で自動表示）',previous);
+            const value=await appPrompt('スロット'+(i+1)+'の'+name+'を入力（空欄で自動表示）',previous);
             if(value===null)return;
             pinMeta[field][i]=value.trim().slice(0,max);savePins();renderQuick();
           };
@@ -272,15 +333,55 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       quickSlots.append(wrapper);
     }
     note.hidden=!isConfiguring;
-    note.textContent='変更する場所を押して機能を選びます。もう一度「完了」で確定します。';
+    note.textContent=pendingPinId
+      ?'6枠とも登録済みです。入れ替える場所を選んでください。キャンセルする場合は「完了」か「閉じる」を押してください。'
+      :'変更する場所を押して機能を選びます。もう一度「完了」で確定します。';
     configure.textContent=isConfiguring?'完了':'編集';
   }
-  configure.onclick=()=>{isConfiguring=!isConfiguring;renderQuick();};
+  configure.onclick=()=>{pendingPinId=null;isConfiguring=!isConfiguring;renderQuick();};
   function toggleQuick(){
     quick.hidden=!quick.hidden;quickButton.setAttribute('aria-expanded',String(!quick.hidden));
-    if(!quick.hidden){dialog.close();renderQuick();}
+    if(!quick.hidden){
+      dialog.close();renderQuick();
+      const features=el<HTMLElement>('allFeaturesPanel');
+      if(features&&!features.hidden)el<HTMLButtonElement>('featuresClose')?.click();
+    }
   }
-  quickButton.onclick=toggleQuick;
+  let quickGesture:{pointerId:number;x:number;y:number;moved:boolean}|null=null;
+  let suppressOpenClick=false;
+  quickButton.onclick=()=>{
+    if(suppressOpenClick){suppressOpenClick=false;return;}
+    toggleQuick();
+  };
+  // Touch or pen: open on press, then slide directly to a Quick slot.
+  // Ordinary taps and keyboard clicks keep the original behavior.
+  quickButton.addEventListener('pointerdown',event=>{
+    if(event.pointerType!=='touch'&&event.pointerType!=='pen')return;
+    if(!quick.hidden)return;
+    suppressOpenClick=true;
+    quickGesture={pointerId:event.pointerId,x:event.clientX,y:event.clientY,moved:false};
+    toggleQuick();
+  });
+  document.addEventListener('pointermove',event=>{
+    if(!quickGesture||event.pointerId!==quickGesture.pointerId)return;
+    if(Math.hypot(event.clientX-quickGesture.x,event.clientY-quickGesture.y)>12)quickGesture.moved=true;
+  },{passive:true});
+  document.addEventListener('pointerup',event=>{
+    const gesture=quickGesture;
+    if(!gesture||gesture.pointerId!==event.pointerId)return;
+    quickGesture=null;
+    if(gesture.moved&&!quick.hidden&&!isConfiguring){
+      const target=document.elementFromPoint(event.clientX,event.clientY);
+      const item=target instanceof Element?target.closest<HTMLButtonElement>('.c04-quick-slot'):null;
+      if(item&&!item.disabled&&quick.contains(item))item.click();
+    }
+    window.setTimeout(()=>{suppressOpenClick=false;},0);
+  },{capture:true});
+  document.addEventListener('pointercancel',event=>{
+    if(quickGesture?.pointerId===event.pointerId){
+      quickGesture=null;window.setTimeout(()=>{suppressOpenClick=false;},0);
+    }
+  },{capture:true});
   document.addEventListener('pointerdown',event=>{
     if(!penButton.checked||event.pointerType!=='pen'||event.button!==2)return;
     if(!(event.target instanceof Element&&event.target.closest('.surface')))return;
@@ -289,8 +390,14 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     toggleQuick();
   },{capture:true});
   const pinIntoSlot=(id:string)=>{
-    const target=editingSlot===null?slots.findIndex(x=>!x):editingSlot;
-    const index=target>=0?target:SLOT_COUNT-1;
+    if(editingSlot===null&&slots.includes(id))return;
+    const target=quickPinTarget(slots,id,editingSlot);
+    if(target===null){
+      pendingPinId=id;isConfiguring=true;
+      quick.hidden=false;quickButton.setAttribute('aria-expanded','true');
+      renderQuick();return;
+    }
+    const index=target;
     const duplicate=slots.indexOf(id);
     if(duplicate>=0&&duplicate!==index)slots[duplicate]='';
     if(slots[index]!==id){pinMeta.names[index]='';pinMeta.groups[index]='';}
@@ -364,7 +471,8 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   }
   dialog.addEventListener('close',()=>{
     if(editingSlot!==null){editingSlot=null;quick.hidden=false;quickButton.setAttribute('aria-expanded','true');renderQuick();}
-    else if(lastFocus?.isConnected)lastFocus.focus({preventScroll:true});
+    else if(lastFocus?.isConnected&&lastFocus.checkVisibility())lastFocus.focus({preventScroll:true});
+    else el('allFeatures')?.focus({preventScroll:true});
   });
   searchButton.onclick=()=>openSearch();
   document.addEventListener('keydown',event=>{
@@ -387,14 +495,27 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       providers.push(provider);refresh();
       return ()=>{const i=providers.indexOf(provider);if(i>=0)providers.splice(i,1);refresh();};
     },
-    refresh,
+    refresh,contextKey:execution?.contextKey,
     invoke:(id:string)=>{
       const command=find(id);
       if(!command)return {ok:false,reason:'この機能はまだ利用できません。'};
       const reason=command.availability();
       if(reason)return {ok:false,reason};
-      command.execute();remember(id);renderQuick();
-      return {ok:true,reason:null};
+      try{
+        const outcome=command.execute();
+        if(outcome instanceof Promise)void outcome.catch(error=>{
+          status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
+        });
+        remember(id);renderQuick();
+        return {ok:true,reason:null};
+      }catch(error){return {ok:false,reason:error instanceof Error?error.message:'実行できませんでした。'};}
+    },
+    invokeAsync:async(id:string)=>{
+      const command=find(id);
+      if(!command)return {ok:false,reason:'この機能はまだ利用できません。',settled:false};
+      const result=await invokeCommandAsync(command,execution?.contextKey);
+      if(result.ok){remember(id);renderQuick();}
+      return result;
     },
   };
 }

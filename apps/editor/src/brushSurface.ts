@@ -1,4 +1,4 @@
-import type {CorrectionHold,CorrectionStroke} from './artwork/strokeCorrection';
+import {correctionGeometry,correctionSuggestedShape,type CorrectionHold,type CorrectionStroke} from './artwork/strokeCorrection';
 import type {ArtworkGuide} from '@illustro/core';
 import {StrokeHandoff,type StrokeReservation} from './strokeHandoff';
 import {nativeBrushSensors} from './brushInput';
@@ -7,9 +7,15 @@ import {penEraserInput} from './stylusButtons';
 import {EmptyStrokeError} from './strokeCommit';
 import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
+import {captureSelectedLayerTiles,captureLayerRegion,type TileCaptureArea} from './selection/tileCapture';
+import {selectedStrokeMayAffectMask,selectedStrokeProbeBounds} from './selection/maskStrokeBounds';
+import {selectedStrokeReadbackPlan} from './selection/tileStroke';
+import {rasterReplayKeys} from './rasterReplayKeys';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
+import {originalVisibleWithTransformPreview} from './transform/previewReplacement';
+import {averageSampledPixels} from './color/sampleAverage';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
-import {CANONICAL_TILE_SIZE,type LayerBlend,type LayerMask,type MaskPoint,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,type RasterPixelTiles,type LayerBlend,type LayerMask,type MaskPoint,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import drawingWorkerUrl from '../../../packages/brush-rt/dist/rt/drawing.worker.mjs?worker&url';
 import presentationWorkerUrl from '../../../packages/brush-rt/dist/rt/presentation.worker.mjs?worker&url';
@@ -23,10 +29,11 @@ import {CanvasNavigation} from './canvasNavigation';
 import {wrappedCopies} from './seamlessStroke';
 import {DEFAULT_SYMMETRY,symmetryCopies,symmetryPoint,type SymmetrySettings} from './strokeSymmetry';
 import {buildSymmetricStrokes} from './runSymmetry';
+import {symmetryStrokePreview} from './symmetryStrokePreview';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,lockStraightGuide,lockArtworkGuide,snapToStraightGuide,type GuideSettings,type LockedGuide} from './strokeGuide';
 import {rectangleFromPoints,clampSelectionRect,type SelectionRect} from './strokeSelection';
 import {selectionAsLayerMask} from './artwork/selectionMask';
-import {applySelectedStroke} from './selection/brush';
+import {applySelectedStroke,applySelectedStrokeTiles,writableRasterView} from './selection/brush';
 import type {MaskData} from './selection/mask';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
 
@@ -35,23 +42,39 @@ export type InputPointerRole='draw'|'pan'|'sample';
 export type PointerRoleSettings=Readonly<{pen:InputPointerRole;mouse:InputPointerRole}>;
 type CanvasEditGesture=Readonly<{
   path:boolean;width:number;color:string;complete:(points:readonly MaskStrokePoint[])=>void;
-  pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;commit:(index:number,point:MaskPoint)=>void}>;
+  completeSamples?:(samples:readonly Sample[])=>void;
+  updateSamples?:(samples:readonly Sample[])=>void;
+  cancel?:()=>void;
+  continuous?:boolean;end?:()=>void;
+  /** At most once per animation frame while tracing a canvas interaction. */
+  update?:(points:readonly MaskStrokePoint[])=>void;
+  pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;
+    /** Called at most once per animation frame while a handle is dragged. */
+    preview?:(index:number,point:MaskPoint)=>void;
+    commit:(index:number,point:MaskPoint)=>void}>;
 }>;
 
 export class BrushSurface{
   private editGesture:CanvasEditGesture|null=null;
+  private editTraceVisible=true;
   private editPointer:number|null=null;
   private editPointIndex:number|null=null;
   private editPointerType='';
   private editPoints:MaskStrokePoint[]=[];
+  private editSamples:Sample[]=[];
   private editStrokeOutline:SVGSVGElement|null=null;
+  private editOutlineFrame=0;
   private artworkPreview:HTMLCanvasElement|null=null;
+  private fillGesturePreview:HTMLCanvasElement|null=null;
+  private artworkPreviewReplacementId:LayerId|null=null;
   private maskInspection:HTMLCanvasElement|null=null;
   private layerOutline:HTMLCanvasElement|null=null;
   private layerOutlineSequence=0;
   private readonly restoredRecords=new WeakMap<object,StrokeRecord>();
   correctionHold:()=>CorrectionHold|null=()=>null;
-  private holdStroke:{settings:CorrectionHold;start:Point;position:Point;timer:number;shown:boolean}|null=null;
+  private holdStroke:{settings:CorrectionHold;start:Point;position:Point;timer:number;shown:boolean;samples:Point[]}|null=null;
+  private holdOutline:SVGSVGElement|null=null;
+  private holdOutlineFrame=0;
   private heldReservations=new WeakMap<StrokeReservation,CorrectionHold>();
   private lastCorrectionStroke:CorrectionStroke|null=null;
   get correctionStroke(){
@@ -66,15 +89,48 @@ export class BrushSurface{
     if(Math.hypot(position.x-hold.start.x,position.y-hold.start.y)>9||hold.timer!==0){
       hold.timer=window.setTimeout(()=>{
         hold.shown=true;
-        this.status('ペンを離すと形状補正の候補を表示します。');
+        this.status('補正候補をキャンバスに仮表示中です。ペンを離すと編集できます。');
         hold.settings.show();
+        this.updateCorrectionHoldOutline();
       },hold.settings.delay);
     }
+  }
+  private queueCorrectionHoldOutline(){
+    if(this.holdOutlineFrame)return;
+    this.holdOutlineFrame=requestAnimationFrame(()=>{
+      this.holdOutlineFrame=0;
+      if(!this.disposed)this.updateCorrectionHoldOutline();
+    });
+  }
+  private updateCorrectionHoldOutline(){
+    const hold=this.holdStroke,view=this.view;
+    if(!hold?.shown||!view||hold.samples.length<2){
+      this.holdOutline?.remove();this.holdOutline=null;return;
+    }
+    const shape=correctionSuggestedShape(hold.samples);
+    const points=correctionGeometry(hold.samples,shape);
+    const svg='http://www.w3.org/2000/svg';
+    if(!this.holdOutline){
+      const overlay=document.createElementNS(svg,'svg');
+      overlay.setAttribute('aria-hidden','true');
+      overlay.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:5';
+      const path=document.createElementNS(svg,'path');
+      path.setAttribute('fill','none');path.setAttribute('stroke','#43bfea');
+      path.setAttribute('stroke-width','3');path.setAttribute('stroke-dasharray','7 4');
+      path.setAttribute('stroke-linejoin','round');
+      overlay.append(path);this.inputViewport.append(overlay);this.holdOutline=overlay;
+    }
+    const screen=points.map(point=>view.screen(point));
+    this.holdOutline.firstElementChild?.setAttribute('d',
+      screen.map((point,i)=>(i?'L':'M')+point.x+' '+point.y).join(' ')+
+      (shape==='polyline'?'':' Z'));
   }
   private endCorrectionHold(){
     const hold=this.holdStroke;
     this.holdStroke=null;
     if(hold)clearTimeout(hold.timer);
+    if(this.holdOutlineFrame){cancelAnimationFrame(this.holdOutlineFrame);this.holdOutlineFrame=0;}
+    this.holdOutline?.remove();this.holdOutline=null;
     return hold?.shown?hold.settings:undefined;
   }
   private recordCorrectionStroke(record:StrokeRecord,layer:LayerId,revision:RevisionId,selection:MaskData|null,hold?:CorrectionHold){
@@ -91,7 +147,7 @@ export class BrushSurface{
   private handoffAccepted=0;private handoffRejected=0;private handoffTraces:Array<{id:number;upAt:number;readyMs:number;recordMs?:number;logicalMs?:number;parkedMs?:number;gpuMs?:number;savePrepareMs?:number;uiStateMs?:number}>=[];
   private readonly traceHandoff=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
   private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private previewPressureShown=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private presentedFrames=0;private lastPresentedAt=0;private _initializationError:string|null=null;private _projectionRestoreMs=0;private _projectionRestoreMode:'none'|'cache'|'replay-fallback'='none';private _projectionCacheRevision:string|null=null;
-  private lastFrameAt=0;private viewNotificationPending=false;private checkpointMetrics={captures:0,tiles:0,batches:0,bytes:0,lastMs:0};private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private navigation:CanvasNavigation|null=null;
+  private lastFrameAt=0;private reportedFrameErrors={renderer:0,session:0};private viewNotificationPending=false;private checkpointMetrics={captures:0,tiles:0,batches:0,bytes:0,lastMs:0};private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private navigation:CanvasNavigation|null=null;
   private pointerRoles:PointerRoleSettings={pen:'draw',mouse:'draw'};
   setPointerRoles(roles:PointerRoleSettings){this.pointerRoles={...roles};}
   private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'|'specific'='composite';private sampleLayerId:LayerId|null=null;private sampleDiameter:1|3|5=1;private sampleTransparency:'skip'|'keep'|'white'='skip';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private colorOpacity=1;private foreground:readonly [number,number,number]=[.12,.15,.2];
@@ -100,7 +156,9 @@ export class BrushSurface{
   private get inputViewport(){return this.canvas.closest<HTMLElement>('.surface')??this.canvas;}
   private layoutRect(){return this.inputViewport.getBoundingClientRect();}
   get viewportRect(){return this.layoutRect();}
-  readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;barrelErases=false;palmGuard=true;panTool=false;rotationSnap=false;
+  readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;barrelErases=false;palmGuard=true;private panningTool=false;rotationSnap=false;
+  get panTool(){return this.panningTool;}
+  set panTool(value:boolean){if(value&&this.editGesture?.continuous)this.setCanvasEditGesture(null);this.panningTool=value;}
   eraserPreset:()=>FoundationPreset|null=()=>null;
   private suppressedTouches=new Set<number>();
   private commonStabilization=0.25;
@@ -109,6 +167,8 @@ export class BrushSurface{
   private selectionVisible=true;
   private selectionMode=false;private selectionPointer:number|null=null;private selectionAnchor:Point|null=null;
   selectionMask:()=>MaskData|null=()=>null;
+  /** Prevent painting against a stale selection while a mask job is pending. */
+  selectionPending:()=>boolean=()=>false;
   private strokeMask:MaskData|null=null;
   onSelectionChanged:()=>void=()=>{};
   private guideSettings:GuideSettings=DEFAULT_GUIDE_SETTINGS;
@@ -126,6 +186,7 @@ export class BrushSurface{
   previewArtworkGuides(guides:readonly ArtworkGuide[]|null){this.guidePreview=guides;this.paintArtworkGuides();}
   showArtworkGuideLines(visible:boolean){this.showArtworkGuides=visible;this.paintArtworkGuides();}
   setPreferredGuide(id:string|null){this.preferredGuide=id;}
+  get preferredArtworkGuideId(){return this.preferredGuide;}
   bypassNextGuide(){this.skipNextArtworkGuide=true;}
   private guideGeometry:Readonly<{items:readonly ArtworkGuide[];width:number;height:number;preview:boolean}>|null=null;
   private paintArtworkGuides(){
@@ -186,9 +247,13 @@ export class BrushSurface{
   private symmetry:SymmetrySettings=DEFAULT_SYMMETRY;
   private strokeSymmetry:SymmetrySettings|null=null;
   private symmetryOverlay:SVGSVGElement|null=null;
+  private symmetryStrokeOverlay:SVGSVGElement|null=null;
+  private symmetryStrokePoints:Point[]=[];
+  private symmetryStrokeFrame=0;
   private symmetryAnchor:Point|null=null;
   private symmetryFrame=0;
   private activeGuide:LockedGuide|null=null;
+  private pendingPerspectiveHeading:{origin:Point;eraser:boolean}|null=null;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:(reason?:'view'|'view-command'|'state')=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
   async initialize(){const target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('canvas-viewport')?.94:1);
     this.canvas.style.aspectRatio=document.body.classList.contains('canvas-viewport')?'auto':target.width+' / '+target.height;
@@ -249,6 +314,9 @@ export class BrushSurface{
     return this.navigation?.active?'navigation':this.pointer!==null||this.editPointer!==null?'drawing':'idle';
   }
   private keyNavigation=(e:KeyboardEvent)=>{
+    if(e.type==='keydown'&&e.key==='Escape'&&this.editGesture?.continuous){
+      this.setCanvasEditGesture(null);e.preventDefault();return;
+    }
     if(e.type==='keydown'&&e.key==='Escape'&&this.editPointer!==null){
       this.clearCanvasEditGestureStroke();
       if(this.editGesture?.pointEdit)this.updateEditStrokeOutline();
@@ -261,7 +329,7 @@ export class BrushSurface{
     if(!this.navigation)return;
     e.preventDefault();this.navigation.wheelZoom(e.deltaY,this.pointerLocation(e));
   };
-  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.artworkGuideOverlay||this.artworkGuides.length||this.guidePreview)this.paintArtworkGuides();if(this.symmetry.mode!=='off'||this.symmetryOverlay)this.updateSymmetryOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.editPointer!==null||this.editGesture?.pointEdit)this.updateEditStrokeOutline();if(this.artworkPreview)this.positionDocumentOverlay(this.artworkPreview);if(this.maskInspection)this.positionDocumentOverlay(this.maskInspection);if(this.layerOutline)this.positionDocumentOverlay(this.layerOutline);if(immediate)this.onStateChanged('view-command');}}
+  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.artworkGuideOverlay||this.artworkGuides.length||this.guidePreview)this.paintArtworkGuides();if(this.symmetry.mode!=='off'||this.symmetryOverlay)this.updateSymmetryOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.editPointer!==null||this.editGesture?.pointEdit)this.updateEditStrokeOutline();if(this.artworkPreview)this.positionDocumentOverlay(this.artworkPreview);if(this.fillGesturePreview)this.positionDocumentOverlay(this.fillGesturePreview);if(this.maskInspection)this.positionDocumentOverlay(this.maskInspection);if(this.layerOutline)this.positionDocumentOverlay(this.layerOutline);if(immediate)this.onStateChanged('view-command');}}
   get viewState(){return this.view?.state??null;}
   restoreView(state:SavedCanvasView){this.view?.restore(state);this.updateView(true);}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
@@ -284,6 +352,7 @@ export class BrushSurface{
   get selectionIsVisible(){return this.selectionVisible;}
   get selectingRectangle(){return this.selectionMode;}
   setSelectionMode(enabled:boolean){
+    if(this.editGesture?.continuous)this.setCanvasEditGesture(null);
     if(this.inputActive)return;
     this.selectionMode=enabled;this.onSelectionChanged();
   }
@@ -384,6 +453,46 @@ export class BrushSurface{
       this.symmetryFrame=0;this.showSymmetryCursors();
     });
   }
+  /** Lightweight on-canvas guide for symmetric copies, updated once per frame.
+   * The brush runtime still determines final pressure and pixel blending. */
+  private queueSymmetryStrokePreview(){
+    if(this.symmetryStrokeFrame)return;
+    this.symmetryStrokeFrame=requestAnimationFrame(()=>{
+      this.symmetryStrokeFrame=0;
+      if(!this.disposed)this.drawSymmetryStrokePreview();
+    });
+  }
+  private drawSymmetryStrokePreview(){
+    const settings=this.strokeSymmetry,v=this.view;
+    if(!settings||!v||this.symmetryStrokePoints.length<2){
+      this.symmetryStrokeOverlay?.remove();this.symmetryStrokeOverlay=null;return;
+    }
+    const svgNS='http://www.w3.org/2000/svg';
+    const overlay=this.symmetryStrokeOverlay??document.createElementNS(svgNS,'svg');
+    if(!this.symmetryStrokeOverlay){
+      overlay.setAttribute('aria-hidden','true');
+      overlay.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4';
+      this.inputViewport.append(overlay);this.symmetryStrokeOverlay=overlay;
+    }
+    const paths=symmetryStrokePreview(this.symmetryStrokePoints,settings).map(copy=>{
+      const path=document.createElementNS(svgNS,'path');
+      const points=copy.map(point=>v.screen(point));
+      path.setAttribute('d',points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' '));
+      path.setAttribute('fill','none');
+      path.setAttribute('stroke','#55b1fb');
+      path.setAttribute('stroke-opacity','.6');
+      path.setAttribute('stroke-width','2');
+      path.setAttribute('stroke-dasharray','4 3');
+      path.setAttribute('stroke-linecap','round');
+      return path;
+    });
+    overlay.replaceChildren(...paths);
+  }
+  private clearSymmetryStrokePreview(){
+    if(this.symmetryStrokeFrame){cancelAnimationFrame(this.symmetryStrokeFrame);this.symmetryStrokeFrame=0;}
+    this.symmetryStrokePoints=[];
+    this.symmetryStrokeOverlay?.remove();this.symmetryStrokeOverlay=null;
+  }
   private async copySymmetricStroke(record:StrokeRecord,settings:SymmetrySettings):Promise<readonly StrokeRecord[]>{
     try{return await buildSymmetricStrokes(record,settings);}
     catch(error){
@@ -483,17 +592,51 @@ export class BrushSurface{
     this.maskInspection=canvas;
     this.positionDocumentOverlay(canvas);
   }
-  showArtworkPreview(image:ImageData|null){
-    if(!image){this.artworkPreview?.remove();this.artworkPreview=null;return;}
-    const {width,height}=this.controller.document.root;
+  /** A safe replacement overlay hides the original raster only while shown. */
+  showArtworkPreview(image:ImageData|null,isolated=false,replacementLayerId:LayerId|null=null,replacementOpacity=1){
+    if(!image){
+      this.artworkPreview?.remove();this.artworkPreview=null;
+      this.setArtworkPreviewReplacement(null);
+      return;
+    }
+    const root=this.controller.document.root;
+    const replacement=!isolated&&replacementLayerId&&root.hasLayer(replacementLayerId)&&
+      this.controller.selectedLayer.id===replacementLayerId&&!this.inspectedLayer&&
+      Number.isFinite(replacementOpacity)&&replacementOpacity>0&&replacementOpacity<=1
+      ?replacementLayerId:null;
+    const {width,height}=root;
     const canvas=this.artworkPreview??document.createElement('canvas');
-    canvas.width=image.width;canvas.height=image.height;
+    // Do not discard a live preview's backing store on every pointer update.
+    if(canvas.width!==image.width)canvas.width=image.width;
+    if(canvas.height!==image.height)canvas.height=image.height;
     canvas.setAttribute('aria-hidden','true');
-    canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:3;transform-origin:0 0;opacity:.78';
+    canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:3;transform-origin:0 0;'+
+      (isolated?'opacity:1;background:repeating-conic-gradient(#e5e5e5 0% 25%,#fff 0% 50%) 50% / 16px 16px':replacement?'opacity:'+replacementOpacity:'opacity:.78');
     canvas.style.width=width+'px';canvas.style.height=height+'px';
     canvas.getContext('2d')?.putImageData(image,0,0);
     if(!this.artworkPreview)this.inputViewport.append(canvas);
     this.artworkPreview=canvas;this.positionDocumentOverlay(canvas);
+    this.setArtworkPreviewReplacement(replacement);
+  }
+  /** Temporary fill-region guide. Never hides an artwork layer or changes its pixels. */
+  showFillGesturePreview(image:ImageData|null){
+    if(!image){this.fillGesturePreview?.remove();this.fillGesturePreview=null;return;}
+    const canvas=this.fillGesturePreview??document.createElement('canvas');
+    if(canvas.width!==image.width)canvas.width=image.width;
+    if(canvas.height!==image.height)canvas.height=image.height;
+    const {width,height}=this.controller.document.root;
+    canvas.setAttribute('aria-hidden','true');
+    canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:3;transform-origin:0 0;';
+    canvas.style.width=width+'px';canvas.style.height=height+'px';
+    canvas.getContext('2d')?.putImageData(image,0,0);
+    if(!this.fillGesturePreview)this.inputViewport.append(canvas);
+    this.fillGesturePreview=canvas;this.positionDocumentOverlay(canvas);
+  }
+  private setArtworkPreviewReplacement(layerId:LayerId|null){
+    if(this.artworkPreviewReplacementId===layerId)return;
+    this.artworkPreviewReplacementId=layerId;
+    // Style-only update: never alter layer data, GPU tiles, revision or history.
+    this.syncLayerStyles();
   }
   private positionDocumentOverlay(overlay:HTMLCanvasElement){
     if(!this.view)return;
@@ -532,25 +675,51 @@ export class BrushSurface{
     }
   }
   setCanvasEditGesture(gesture:CanvasEditGesture|null){
+    this.showFillGesturePreview(null);
     this.clearCanvasEditGestureStroke();
-    this.editGesture=gesture;
+    const previous=this.editGesture;this.editGesture=gesture;
+    if(previous!==gesture)previous?.end?.();
     if(gesture?.pointEdit)this.updateEditStrokeOutline();
+    return ()=>{if(this.editGesture===gesture)this.setCanvasEditGesture(null);};
   }
-  private clearCanvasEditGestureStroke(){
+  showCanvasEditTrace(visible:boolean){
+    this.editTraceVisible=visible;
+    if(this.editStrokeOutline)this.editStrokeOutline.style.visibility=visible?'visible':'hidden';
+  }
+  private clearCanvasEditGestureStroke(notify=true){
+    const interrupted=this.editPointer!==null;
+    if(this.editOutlineFrame){cancelAnimationFrame(this.editOutlineFrame);this.editOutlineFrame=0;}
     this.editPointer=null;
     this.editPointIndex=null;
     this.editPointerType='';
     this.editPoints=[];
+    this.editSamples=[];
     this.editStrokeOutline?.remove();
     this.editStrokeOutline=null;
+    this.editTraceVisible=true;
+    if(notify&&interrupted)this.editGesture?.cancel?.();
   }
   private appendEditPoint(event:PointerEvent){
     if(!this.view)return;
     const {x,y}=this.view.document(this.pointerLocation(event));
     const pressure=event.pointerType==='pen'?(event.pressure||this.editPoints.at(-1)?.pressure||.5):1;
     const last=this.editPoints.at(-1);
-    if(!last||Math.hypot(x-last.x,y-last.y)>=.5)this.editPoints.push({x,y,pressure});
-    if(this.editPoints.length>4096)this.editPoints=this.editPoints.filter((_,i)=>i%2===0);
+    if(!last||Math.hypot(x-last.x,y-last.y)>=.5){
+      this.editPoints.push({x,y,pressure});
+      if(this.editGesture?.completeSamples||this.editGesture?.updateSamples)this.editSamples.push(this.sample(event));
+    }
+    if(this.editPoints.length>4096){
+      this.editPoints=this.editPoints.filter((_,i)=>i%2===0);
+      this.editSamples=this.editSamples.filter((_,i)=>i%2===0);
+    }
+  }
+  private requestEditStrokeOutline(){
+    // Coalesce high-frequency pen/touch events into one SVG update per frame.
+    if(this.editOutlineFrame)return;
+    this.editOutlineFrame=requestAnimationFrame(()=>{
+      this.editOutlineFrame=0;
+      if(!this.disposed)this.updateEditStrokeOutline();
+    });
   }
   private updateEditStrokeOutline(){
     const gesture=this.editGesture,v=this.view;
@@ -560,6 +729,7 @@ export class BrushSurface{
       const outline=document.createElementNS(svg,'svg');
       outline.setAttribute('aria-hidden','true');
       outline.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:4';
+      outline.style.visibility=this.editTraceVisible?'visible':'hidden';
       outline.append(document.createElementNS(svg,'path'));
       this.inputViewport.append(outline);
       this.editStrokeOutline=outline;
@@ -593,6 +763,12 @@ export class BrushSurface{
         dot.setAttribute('r',i===this.editPointIndex?'8':'6');
         dot.setAttribute('fill',gesture.pointEdit.fixed?.[i]?'#303640':'#fff');
       }
+      // Geometry is rendered separately from the guide, so dragging never
+      // modifies the committed artwork or creates history transactions.
+      if(this.editPointIndex!==null&&this.editPoints.length){
+        const point=this.editPoints.at(-1)!;
+        gesture.pointEdit.preview?.(this.editPointIndex,{x:point.x,y:point.y});
+      }
       return;
     }
     const points=this.editPoints.map(p=>v.screen(p));
@@ -604,18 +780,22 @@ export class BrushSurface{
     path.setAttribute('stroke-linecap','round');
     path.setAttribute('stroke-linejoin','round');
     path.setAttribute('stroke-opacity',gesture.path?'1':'.48');
+    gesture.update?.(this.editPoints);
+    gesture.updateSamples?.(this.editSamples);
   }
   private finishCanvasEditGesture(event:PointerEvent){
     this.appendEditPoint(event);
-    const gesture=this.editGesture,points=this.editPoints,index=this.editPointIndex;
-    this.clearCanvasEditGestureStroke();
+    this.showFillGesturePreview(null);
+    const gesture=this.editGesture,points=this.editPoints,index=this.editPointIndex,samples=this.editSamples;
+    this.clearCanvasEditGestureStroke(false);
     if(gesture?.pointEdit){
       const finalPoint=points.at(-1);
       if(index!==null&&finalPoint)gesture.pointEdit.commit(index,{x:finalPoint.x,y:finalPoint.y});
       if(this.editGesture?.pointEdit)this.updateEditStrokeOutline();
       return;
     }
-    gesture?.complete(points);
+    if(gesture?.completeSamples)gesture.completeSamples(samples);
+    else gesture?.complete(points);
   }
   private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset)return;
     // Undo can restore a virtual background while it remains selected. Do not
@@ -712,6 +892,7 @@ export class BrushSurface{
       return;
     }
     const eraser=penEraserInput(e,this.barrelErases)?this.eraserPreset():null,preset=eraser??this.preset;
+    if(this.selectionPending()){this.status('選択範囲の計算・復元中です。完了後に描画してください。');return;}
     const mask=this.selectionMask();
     if(mask&&this.busy){this.status('前の描画を反映しています。');return;}
     if(this.layerBlendPreview?.layerId===this.controller.selectedLayer.id){this.status('合成モードを確定または取り消してから描いてください。');return;}
@@ -737,6 +918,12 @@ export class BrushSurface{
       const guideOrigin={x:origin.x-(this.wrapOrigin?.x??0),y:origin.y-(this.wrapOrigin?.y??0)};
       const bypass=e.shiftKey||this.skipNextArtworkGuide;
       this.skipNextArtworkGuide=false;
+      // Wait for the first meaningful pen movement before picking the
+      // vanishing-point axis. Freeze that choice for the rest of this stroke.
+      this.pendingPerspectiveHeading=!bypass&&this.artworkGuides.some(item=>
+        item.enabled&&item.strength>0&&item.kind.startsWith('perspective')&&
+        (preset.blend!=='erase'||item.applyEraser))
+        ?{origin:guideOrigin,eraser:preset.blend==='erase'}:null;
       const picked=!bypass&&this.artworkGuides.length?lockArtworkGuide(guideOrigin,this.artworkGuides,preset.blend==='erase',this.preferredGuide):null;
       this.activeGuide=picked?.guide??lockStraightGuide(guideOrigin,this.guideSettings,preset.blend==='erase',bypass);
       if(this.artworkGuides.length||bypass)this.onArtworkGuideTarget(picked?picked.name+'へ吸着（'+picked.distance.toFixed(1)+' px）':bypass?'この一筆は吸着を解除':'作品の定規への吸着なし');
@@ -747,13 +934,15 @@ export class BrushSurface{
       // The eraser keeps its own separately configurable opacity.
       const strokePreset=preset.blend==='erase'||this.colorOpacity===1?preset:
         {...preset,opacity:preset.opacity*this.colorOpacity};
-      this.activeStrokeId=this.session.begin(strokePreset,0,context,this.target.surfaceId,!mask);if(this.reservation)this.pendingStrokeIds.set(this.reservation,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;
+      this.activeStrokeId=this.session.begin(strokePreset,0,context,this.target.surfaceId,true,mask);if(this.reservation)this.pendingStrokeIds.set(this.reservation,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;
       this.strokeSymmetry=!e.shiftKey&&this.symmetry.mode!=='off'&&(preset.blend!=='erase'||this.symmetry.erase)?this.symmetry:null;
+      this.symmetryStrokePoints=this.strokeSymmetry?[{x:s.x,y:s.y}]:[];
       if(this.symmetry.mode!=='off'){this.updateSymmetryOverlay();this.trackSymmetryCursor(e);}
       const correction=e.pointerType==='pen'&&!this.strokeSymmetry&&!this.view.seamless&&preset.blend==='normal'?this.correctionHold():null;
       if(correction){
         const position=this.pointerLocation(e);
-        this.holdStroke={settings:correction,start:position,position,timer:0,shown:false};
+        this.holdStroke={settings:correction,start:position,position,timer:0,shown:false,
+          samples:[{x:s.x,y:s.y}]};
       }
       this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
   private move=(e:PointerEvent)=>{
@@ -766,7 +955,7 @@ export class BrushSurface{
       e.preventDefault();
       const samples=e.getCoalescedEvents?.()??[];
       for(const sample of samples.length?samples:[e])this.appendEditPoint(sample);
-      this.updateEditStrokeOutline();
+      this.requestEditStrokeOutline();
       return;
     }
     if(e.pointerId===this.selectionPointer){
@@ -778,9 +967,41 @@ export class BrushSurface{
     if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
     if(e.pointerType==='touch'&&this.navigation?.touchMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
      if(this.navigation?.mouseMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
-     if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();if(this.holdStroke)this.trackCorrectionHold(this.pointerLocation(e));const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];for(let i=0;i<events.length;i++){
+     if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();if(this.holdStroke)this.trackCorrectionHold(this.pointerLocation(e));const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];
+     if(this.pendingPerspectiveHeading&&this.view){
+       const pending=this.pendingPerspectiveHeading;
+       const documentPoint=this.view.document(this.pointerLocation(events[0]!));
+       const heading={x:documentPoint.x-(this.wrapOrigin?.x??0)-pending.origin.x,
+         y:documentPoint.y-(this.wrapOrigin?.y??0)-pending.origin.y};
+       if(Math.hypot(heading.x,heading.y)>=2){
+         this.pendingPerspectiveHeading=null;
+         const selected=lockArtworkGuide(pending.origin,this.artworkGuides,pending.eraser,this.preferredGuide,heading);
+         if(selected){
+           this.activeGuide=selected.guide;
+           this.onArtworkGuideTarget(selected.name+'へ吸着（方向を自動選択）');
+           this.updateGuideOverlay();
+         }
+       }
+     }
+     for(let i=0;i<events.length;i++){
       const sample=this.sample(events[i]!);
       actual.push(sample);this.session.accept(sample,i===events.length-1);
+    }
+    if(this.holdStroke&&actual.length){
+      const samples=this.holdStroke.samples;
+      samples.push(...actual.map(sample=>({x:sample.x,y:sample.y})));
+      if(samples.length>512){
+        const last=samples.at(-1)!;
+        this.holdStroke.samples=[samples[0]!,...samples.filter((_,i)=>i>0&&i%2===0),last];
+      }
+      if(this.holdStroke.shown)this.queueCorrectionHoldOutline();
+    }
+    if(this.strokeSymmetry&&actual.length){
+      this.symmetryStrokePoints.push(...actual.map(sample=>({x:sample.x,y:sample.y})));
+      // Keep stroke input bounded even on very long sessions.
+      if(this.symmetryStrokePoints.length>2048)
+        this.symmetryStrokePoints=this.symmetryStrokePoints.filter((_,index)=>index%2===0);
+      this.queueSymmetryStrokePreview();
     }
     const predictedEvents=this.strokeMask?[]:e.getPredictedEvents?.()??[];
     const predicted=this.clampPredicted(actual.at(-1)??this.sample(e),predictedEvents.slice(0,2).map(event=>({...this.sample(event),origin:'predicted'})));
@@ -798,7 +1019,7 @@ export class BrushSurface{
     }
     if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.eyedropperPointer=null;this.queueSample(this.screenToDocument(this.pointerLocation(e)),'commit');return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId!==this.pointer||!this.session||!this.target)return;
     this.finishStroke(this.sample(e));};
-  private finishStroke(release:Sample|null=null){if(!this.session||!this.target||this.pointer===null)return;const session=this.session,target=this.target,seamless=this.view?.seamless??false,strokeId=this.activeStrokeId,reservation=this.reservation,mask=this.strokeMask,symmetry=this.strokeSymmetry;session.predictions([]);const upAt=performance.now();this.pointer=null;this.strokeSymmetry=null;if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.reservation=null;
+  private finishStroke(release:Sample|null=null){if(!this.session||!this.target||this.pointer===null)return;const session=this.session,target=this.target,seamless=this.view?.seamless??false,strokeId=this.activeStrokeId,reservation=this.reservation,mask=this.strokeMask,symmetry=this.strokeSymmetry;session.predictions([]);const upAt=performance.now();this.pointer=null;this.strokeSymmetry=null;this.clearSymmetryStrokePreview();if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.pendingPerspectiveHeading=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.reservation=null;
     const hold=this.endCorrectionHold();
     if(mask){void this.finishMaskedStroke(session,target,mask,seamless,release,symmetry,hold);return;}
     if(!reservation)return;
@@ -821,13 +1042,66 @@ export class BrushSurface{
       await session.discardUncommitted(record);
       const artwork=this.controller.document,renderer=this.renderer;
       if(!renderer||artwork.head!==target.baseRevision||mask.width!==target.width||mask.height!==target.height)return;
+      if(mask.alpha.length!==target.width*target.height)
+        throw Error('選択マスクの大きさが作品に一致しません。');
       const variants=symmetry?[record,...await this.copySymmetricStroke(record,symmetry)]:[record];
       const copies=seamless?variants.flatMap((variant,index)=>[
         ...(index?[variant]:[]),...wrappedCopies(variant,target.width,target.height).map(copy=>copy.record)
       ]):variants.slice(1);
-      const previous=new Uint8Array(await renderer.read(target.surfaceId));
-      const result=await applySelectedStroke(mask,previous,[record,...copies]);
-      if(!result||this.disposed||artwork.head!==target.baseRevision)return;
+      const records=[record,...copies];
+      // Reject only strokes that provably cannot touch any selected pixel.
+      // This avoids a full occupied-tile GPU readback for a no-op stroke.
+      if(!selectedStrokeMayAffectMask(mask,records)){
+        this.status('選択範囲の外のため、線は追加されませんでした。');
+        return;
+      }
+      const host=renderer as unknown as Parameters<typeof captureSelectedLayerTiles>[0];
+      const sparse=typeof host.inspect==='function'&&typeof host.backend?.readTiles==='function';
+      const valid=()=>!this.disposed&&this.renderer===renderer&&this.controller.document===artwork&&
+        this.controller.selectedLayer.id===target.layerId&&artwork.head===target.baseRevision;
+      if(!valid())return;
+      const layer=artwork.root.getLayer(target.layerId);
+      const patchPlan=sparse&&!layer.deformation&&!layer.editable&&!layer.imageLink&&!layer.lineRegions&&layer.baseColor!=='white'
+        ?selectedStrokeReadbackPlan(target.width,target.height,mask.alpha,records):null;
+      if(patchPlan&&!patchPlan.blockKeys.length)return;
+      const plan=patchPlan?null:artwork.rasterReplayPlan();
+      let reusable:import('./selection/tileStroke').RasterWorkerTile[]=[];
+      // The projection seeds these exact baseline bytes. Only semantic brush
+      // footprints can differ afterwards; unknown/special layers use readback.
+      if(sparse&&!layer.deformation&&!layer.editable&&!layer.imageLink&&layer.baseColor!=='white'&&
+        (patchPlan||plan?.followsGeometry||plan?.seededLayers.has(target.layerId))){
+        const dirty=new Set((plan?.operations??[]).flatMap(operation=>
+          operation.kind==='brush.stroke'&&operation.targetEntityIds[0]===target.layerId
+            ?this.runtimeKeys(operation):[]));
+        reusable=artwork.readBaseRasterTiles(target.layerId,artwork.head,true,patchPlan?.rendererKeys).filter(tile=>!dirty.has(tile.key));
+      }
+      // Keep the compatible full-frame path for a non-Worker renderer. On the
+      // normal drawing worker path, capture existing GPU tiles in <=1 MiB
+      // batches and transfer those tiles directly to the selection Worker.
+      let existingTiles=sparse
+        ?await captureSelectedLayerTiles(host,target.surfaceId,target.width,target.height,
+          valid,
+          undefined,records.every(item=>item.preset.blend==='erase')?mask:undefined,
+          records.every(item=>item.preset.blend==='erase')
+            ?selectedStrokeProbeBounds(records,target.width,target.height)??undefined:undefined,reusable,patchPlan?.rendererKeys)
+        :null;
+      // A completely empty GPU layer has nothing to erase. Preserve the
+      // transparent-RGB safeguard in tile capture; only truly zero tiles
+      // qualify, and do not start a Worker or publish an Undo entry.
+      if(existingTiles&&existingTiles.length===0&&records.every(item=>item.preset.blend==='erase')){
+        this.status('消す画素がないため、作品は変更されませんでした。');
+        return;
+      }
+      if(patchPlan&&existingTiles){
+        const occupied=new Map(existingTiles.map(tile=>[tile.key,tile]));
+        existingTiles=[...patchPlan.rendererKeys].map(key=>occupied.get(key)??{key,pixels:new Uint8Array(TILE*TILE*4)});
+      }
+      const updatedTiles=existingTiles
+        ?await applySelectedStrokeTiles(mask,existingTiles,records)
+        :null;
+      const fullPixels=sparse?null:await applySelectedStroke(mask,
+        writableRasterView(await renderer.read(target.surfaceId)),records);
+      if((!updatedTiles&&!fullPixels)||!valid())return;
       const transaction=artwork.begin(record.preset.blend==='erase'?'選択範囲を消す':'選択範囲に描く');
       const deformation=artwork.root.getLayer(target.layerId).deformation;
       if(deformation){
@@ -836,8 +1110,11 @@ export class BrushSurface{
         const passes=[...deformation.postPaint??[]];
         for(let start=0;start<later.length;start+=64)passes.push({selection:null,records:later.slice(start,start+64)});
         passes.push({selection:selectionAsLayerMask(mask),records:[record,...copies]});
-        transaction.replaceLayerRaster(target.layerId,result,undefined,undefined,{...deformation,postPaint:passes});
-      }else transaction.replaceLayerRaster(target.layerId,result);
+        if(updatedTiles)transaction.replaceLayerRasterTiles(target.layerId,updatedTiles,undefined,undefined,{...deformation,postPaint:passes});
+        else transaction.replaceLayerRaster(target.layerId,fullPixels!,undefined,undefined,{...deformation,postPaint:passes});
+      }else if(updatedTiles&&patchPlan)transaction.patchLayerRasterTiles(target.layerId,patchPlan.blockKeys,updatedTiles);
+      else if(updatedTiles)transaction.replaceLayerRasterTiles(target.layerId,updatedTiles);
+      else transaction.replaceLayerRaster(target.layerId,fullPixels!);
       transaction.activateDrawingLayer(target.layerId);
       this.controller.lastPersistenceHandoff=transaction.commit().persistence;
       this.discardRedoProjection();
@@ -908,8 +1185,15 @@ export class BrushSurface{
     }
     if(this.pointer!==null){void this.cancelStroke();this.status('入力が中断されたため、この線を取り消しました。');}
   };
-  private async cancelStroke(){this.endCorrectionHold();const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.strokeSymmetry=null;if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
-  private frame=(now:number)=>{if(this.disposed)return;this.lastFrameAt=performance.now();this.session?.frame(now);if(this.viewNotificationPending){this.viewNotificationPending=false;this.onStateChanged('view');}const pressure=!!(this.renderer as any)?.backend.previewPressure;if(pressure!==this.previewPressureShown){this.previewPressureShown=pressure;if(pressure)this.status('表示処理が混み合っています。入力を保持して線の確定を優先しています。');else if(!this.handoffFault&&!this.historySyncing)this.status('描画を続けられます。');this.onStateChanged();}if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
+  private async cancelStroke(){this.endCorrectionHold();const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.strokeSymmetry=null;this.clearSymmetryStrokePreview();if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.pendingPerspectiveHeading=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
+  private frame=(now:number)=>{if(this.disposed)return;this.lastFrameAt=now;this.session?.frame(now);if(this.viewNotificationPending){this.viewNotificationPending=false;this.onStateChanged('view');}const pressure=!!(this.renderer as any)?.backend.previewPressure;if(pressure!==this.previewPressureShown){this.previewPressureShown=pressure;if(pressure)this.status('表示処理が混み合っています。入力を保持して線の確定を優先しています。');else if(!this.handoffFault&&!this.historySyncing)this.status('描画を続けられます。');this.onStateChanged();}
+    const rendererErrors=this.renderer?.errors.length??0,sessionErrors=this.session?.errors.length??0;
+    if(rendererErrors!==this.reportedFrameErrors.renderer||sessionErrors!==this.reportedFrameErrors.session){
+      const increased=rendererErrors>this.reportedFrameErrors.renderer||sessionErrors>this.reportedFrameErrors.session;
+      this.reportedFrameErrors={renderer:rendererErrors,session:sessionErrors};
+      if(increased)this.status('描画中に問題が起きました。');
+    }
+    this.frameId=requestAnimationFrame(this.frame);};
   private markPresented(){this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;}
   async inspectRendering(){
     const backend=(this.renderer as unknown as {backend?:{
@@ -962,7 +1246,13 @@ export class BrushSurface{
       this.syncLayerStack();const steps:import('@illustro/brush-rt').DerivedHistoryStep[]=[];
       for(const change of changes){const operations=change.direction==='undo'?[...change.operations].reverse():change.operations;
         for(const operation of operations){if(operation.kind!=='brush.stroke')continue;steps.push({direction:change.direction,record:this.strokeRecord(operation),keys:this.runtimeKeys(operation),surfaceKey:this.surfaceForOperation(operation,change.direction==='undo'?change.fromRevision:change.toRevision)});}
-      }await this.session.navigateDerived(steps);
+      }try{await this.session.navigateDerived(steps);}catch(error){
+        if(!(error instanceof Error)||error.message!=='Raster baseline restore required')throw error;
+        // A cold GPU history cache cannot rebuild a baked patch from brush
+        // records alone. Restore the authoritative Core head only on a miss;
+        // normal before/after-image Undo/Redo keeps its fast path.
+        this.historySyncing=false;await this.restoreDocumentProjection();
+      }
     }finally{this.historySyncing=false;this.onStateChanged();}
   }
   async captureProjectionCache(revisionId:string):Promise<ProjectionCacheV1>{
@@ -1035,6 +1325,35 @@ export class BrushSurface{
     if(this.busy||this.disposed)throw new Error('Thumbnail became stale');
     return output.convertToBlob({type:'image/png'});
   }
+  /** Small selection clipboard copy without a full-size GPU readback. */
+  async captureDocumentLayerRegion(id:LayerId,area:TileCaptureArea):Promise<Uint8ClampedArray|null>{
+    if(!this.renderer||this.busy||this.disposed)throw Error('コピー中に画像を変更できません。');
+    const host=this.renderer as unknown as Parameters<typeof captureLayerRegion>[0];
+    if(typeof host.inspect!=='function'||typeof host.backend?.readTiles!=='function')return null;
+    const root=this.controller.document.root,revision=this.controller.document.head;
+    if(!root.hasLayer(id))throw Error('コピー対象のレイヤーが見つかりません。');
+    const valid=()=>!this.disposed&&!this.busy&&this.controller.document.head===revision;
+    return captureLayerRegion(host,root.getLayer(id).surface.descriptor.surfaceId,
+      root.width,root.height,area,valid);
+  }
+  /** Read an editable group without one full canvas RGBA buffer per layer.
+   * Unsupported renderer implementations still use captureDocumentLayers. */
+  async captureDocumentLayerTiles(ids:ReadonlySet<LayerId>):Promise<Map<LayerId,RasterPixelTiles>|null>{
+    if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
+    const host=this.renderer as unknown as Parameters<typeof captureSelectedLayerTiles>[0];
+    if(typeof host.inspect!=='function'||typeof host.backend?.readTiles!=='function')return null;
+    const revision=this.controller.document.head,root=this.controller.document.root;
+    const valid=()=>!this.disposed&&!this.busy&&this.controller.document.head===revision;
+    const result=new Map<LayerId,RasterPixelTiles>();
+    for(const id of ids){
+      if(!root.hasLayer(id))throw Error('コピー対象のレイヤーが見つかりません。');
+      const surfaceId=root.getLayer(id).surface.descriptor.surfaceId;
+      const tiles=await captureSelectedLayerTiles(host,surfaceId,root.width,root.height,valid);
+      result.set(id,{x:0,y:0,width:root.width,height:root.height,tileSize:128,tiles});
+    }
+    if(!valid())throw Error('コピー中に作品が変更されました。');
+    return result;
+  }
   async captureDocumentLayers(ids?:ReadonlySet<LayerId>){if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
     await this.renderer.drain();
     const result=new Map<ReturnType<EditorController['target']>['layerId'],Uint8Array>();
@@ -1077,7 +1396,17 @@ export class BrushSurface{
         else if(operation.kind==='raster.strict-delta')throw new Error('Direct raster deltas outside geometry need materialization');
       }
       const savedCache=this.validProjectionCache(cache);
-      const baseGeometry:ProjectionCacheV1|undefined=needsSeed&&!savedCache?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,layers:this.controller.layers.filter(layer=>geometry||seededLayers.has(layer.id)).map(layer=>({surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)}))}:undefined;
+      const baseGeometry:ProjectionCache|undefined=needsSeed&&!savedCache
+        ?geometry
+          ?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,
+            layers:this.controller.layers.map(layer=>({
+              surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)
+            }))}
+          :{version:2,revisionId:this.controller.document.head,width:root.width,height:root.height,tileSize:TILE,
+            layers:this.controller.layers.filter(layer=>seededLayers.has(layer.id)).map(layer=>({
+              surfaceId:layer.surface.descriptor.surfaceId,tiles:this.controller.document.readBaseRasterTiles(layer.id,this.controller.document.head,'replay')
+            }))}
+        :undefined;
       const validCache=savedCache??baseGeometry;
       const cachedKeys=needsSeed&&!savedCache?new Set<SemanticOperation['key']>():new Set(validCache?this.controller.document.rasterReplayPlan(validCache.revisionId as RevisionId).operations.filter(op=>op.kind==='brush.stroke').map(op=>op.key):[]);
       await (this.session as any).restore(entries.map(e=>({...e,cached:cachedKeys.has(e.operation.key)})),validCache,needsSeed);
@@ -1157,7 +1486,7 @@ export class BrushSurface{
         :candidate?.blend!==undefined?candidate.blend:layer.blend;
       return {
         surfaceKey:layer.surface.descriptor.surfaceId,
-        visible:solo?layer.id===solo.id:visible,
+        visible:solo?layer.id===solo.id:originalVisibleWithTransformPreview(visible,layer.id,this.artworkPreviewReplacementId),
         ...(!solo&&clip?{clipKey:clip.surface.descriptor.surfaceId}:{}),
         ...(isolation.length?{isolation}:{}),
         ...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),
@@ -1177,12 +1506,7 @@ export class BrushSurface{
   }
   private surfaceForOperation(operation:SemanticOperation,revisionId?:RevisionId){const target=operation.targetEntityIds[0],root=revisionId?this.controller.document.revision(revisionId).root:this.controller.document.root;if(!target||!root.hasLayer(target))throw new Error('History target layer missing');return root.getLayer(target).surface.descriptor.surfaceId;}
   private strokeRecord(operation:SemanticOperation){const record=operation.parameters.strokeRecord;if(!record||typeof record!=='object'||!Array.isArray((record as StrokeRecord).commands))throw new Error('History stroke record missing');return this.restoredRecords.get(record as object)??record as StrokeRecord;}
-  private runtimeKeys(operation:SemanticOperation){const root=this.controller.document.root,keys=new Set<string>(),maxX=Math.ceil(root.width/TILE)-1,maxY=Math.ceil(root.height/TILE)-1;
-    for(const f of operation.dirtyFootprint){const x0=f.tileX*CANONICAL_TILE_SIZE+f.bounds.x0,y0=f.tileY*CANONICAL_TILE_SIZE+f.bounds.y0,x1=f.tileX*CANONICAL_TILE_SIZE+f.bounds.x1,y1=f.tileY*CANONICAL_TILE_SIZE+f.bounds.y1;
-      const minX=Math.max(0,Math.floor(x0/TILE)),minY=Math.max(0,Math.floor(y0/TILE)),endX=Math.min(maxX,Math.ceil(x1/TILE)-1),endY=Math.min(maxY,Math.ceil(y1/TILE)-1);
-      for(let y=minY;y<=endY;y++)for(let x=minX;x<=endX;x++)keys.add(x+','+y);}
-    return [...keys];
-  }
+  private runtimeKeys(operation:SemanticOperation){const root=this.controller.document.root;return rasterReplayKeys(operation,root.width,root.height);}
   setForegroundColor(color:readonly [number,number,number],opacity=1){
     if(!color.every(x=>Number.isFinite(x)&&x>=0&&x<=1)||!Number.isFinite(opacity)||opacity<0||opacity>1)return;
     this.foreground=[...color] as [number,number,number];this.colorOpacity=opacity;
@@ -1190,6 +1514,7 @@ export class BrushSurface{
   }
   get samplingColor(){return this.eyedropperPointer!==null||this.commitSamplePending;}
   setEyedropper(enabled:boolean,source:'composite'|'layer'|'specific'='composite'){
+    if(enabled&&this.editGesture?.continuous)this.setCanvasEditGesture(null);
     if(!enabled&&this.eyedropperPointer!==null){
       this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);
     }
@@ -1204,31 +1529,48 @@ export class BrushSurface{
   private async flushSamples(){this.sampleRunning=true;const epoch=this.sampleEpoch;try{while(this.pendingSample&&epoch===this.sampleEpoch&&!this.disposed){const requested=this.pendingSample;this.pendingSample=null;let rgba:readonly number[]|null=null;try{rgba=await this.readSampleArea(requested.point);}catch(error){this.status('色を取得できませんでした。'+(error instanceof Error?error.message:String(error)));}
     if(epoch!==this.sampleEpoch||this.disposed)return;if(this.pendingSample&&requested.phase!=='commit')continue;if(requested.phase==='commit')this.commitSamplePending=false;this.onSample(rgba,requested.phase,requested.point);
    }}finally{this.sampleRunning=false;if(this.pendingSample&&!this.disposed)void this.flushSamples();}}
-  /** Optional 3x3/5x5 eyedropper averaging. One-pixel path stays the default. */
+  /** Read 3x3 or 5x5 with one Worker request rather than 9-25 GPU RPCs. */
   private async readSampleArea(point:Point):Promise<readonly number[]|null>{
     const diameter=this.sampleDiameter,mode=this.sampleTransparency;
     if(diameter===1){
       const rgba=await this.readOnePixel(point);
       if(!rgba||rgba.length<4)return null;
       if(mode==='skip'&&(rgba[3]??0)===0)return null;
-      return mode==='white'?this.sampleAgainstWhite(rgba):rgba;
+      return mode==='white'?compositeWhiteBackdrop(rgba,1):rgba;
     }
-    const half=Math.floor(diameter/2);
+    const x=Math.floor(point.x),y=Math.floor(point.y);
+    const {width:canvasWidth,height:canvasHeight}=this.controller.document.root;
+    if(x<0||y<0||x>=canvasWidth||y>=canvasHeight)return null;
+    const half=Math.floor(diameter/2),left=Math.max(0,x-half),top=Math.max(0,y-half);
+    const width=Math.min(canvasWidth-1,x+half)-left+1;
+    const height=Math.min(canvasHeight-1,y+half)-top+1;
+    const selected=this.sampleSource==='specific'
+      ?this.controller.layers.find(layer=>layer.id===this.sampleLayerId):this.controller.selectedLayer;
+    if(this.sampleSource==='specific'&&!selected)return null;
+    if(this.sampleSource!=='composite'&&selected?.baseColor==='white')return [255,255,255,255];
+    const surfaceKey=this.sampleSource==='composite'?null:selected?.surface.descriptor.surfaceId??null;
+    const host=this.renderer as unknown as {
+      readPixelArea?:(x:number,y:number,w:number,h:number,key:string|null)=>Promise<Uint8Array>;
+    }|null;
+    if(host?.readPixelArea){
+      const bytes=await host.readPixelArea(left,top,width,height,surfaceKey);
+      if(bytes.byteLength!==width*height*4)throw Error('採色用の画素が不足しています。');
+      const solo=this.inspectedLayer;
+      const white=this.sampleSource==='composite'
+        ?this.controller.layers.find(layer=>layer.baseColor==='white'&&(solo?solo.id===layer.id:layer.visible)&&layer.opacity>0):null;
+      return averageSampledPixels(bytes,mode,white?.opacity??null);
+    }
+    // Older embedded drawing hosts may not support the new request yet.
     const sum=[0,0,0,0];let count=0;
-    for(let y=-half;y<=half;y++)for(let x=-half;x<=half;x++){
-      const rgba=await this.readOnePixel({x:point.x+x,y:point.y+y});
-      if(!rgba||rgba.length<4)continue;
-      if(mode==='skip'&&(rgba[3]??0)===0)continue;
-      const c=mode==='white'?this.sampleAgainstWhite(rgba):rgba;
-      for(let i=0;i<4;i++)sum[i]=(sum[i]??0)+(c[i]??0);
+    for(let row=top;row<top+height;row++)for(let col=left;col<left+width;col++){
+      const pixel=await this.readOnePixel({x:col,y:row});
+      if(!pixel)continue;
+      if(mode==='skip'&&(pixel[3]??0)===0)continue;
+      const rgba=mode==='white'?compositeWhiteBackdrop(pixel,1):pixel;
+      for(let i=0;i<4;i++)sum[i]=(sum[i]??0)+(rgba[i]??0);
       count++;
     }
-    if(!count)return null;
-    return sum.map(n=>Math.min(255,Math.max(0,Math.round(n/count))));
-  }
-  private sampleAgainstWhite(rgba:readonly number[]):readonly number[]{
-    const opacity=Math.min(1,Math.max(0,(rgba[3]??0)/255));
-    return [0,1,2].map(index=>Math.min(255,Math.max(0,Math.round((rgba[index]??0)+(1-opacity)*255)))).concat([255]);
+    return count?sum.map(value=>Math.min(255,Math.max(0,Math.round(value/count)))):null;
   }
   /** Read only a 1x1 GPU region. Neither a canvas readback nor a layer recomposition is allowed here. */
   private async readOnePixel(point:Point):Promise<readonly number[]|null>{
@@ -1270,11 +1612,11 @@ export class BrushSurface{
     if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];
     (this.renderer as any)?.proxy?.prepare(this.preset);
   }
-  select(index:number){const p=this.brushes[index];if(p){this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}}selectById(id:string){const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024){this.preset.size=value;(this.renderer as any)?.proxy?.prepare(this.preset);}}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
+  select(index:number){const p=this.brushes[index];if(p){this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}}selectById(id:string){if(this.editGesture?.continuous)this.setCanvasEditGesture(null);const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024){this.preset.size=value;(this.renderer as any)?.proxy?.prepare(this.preset);}}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
   setPerformanceEnabled(enabled:boolean){this.renderer?.setPerformanceEnabled(enabled);}
   handoffProbe(){return {renderer:this.renderer,session:this.session,controller:this.controller};}
   get performanceDiagnostics(){const r=this.renderer as any;return {...this.renderer?.performanceSummary(),handoff:{inputAttempts:this.traceHandoff?this.inputAttempts:[],accepted:this.handoffAccepted,rejected:this.handoffRejected,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,pendingEntries:this.handoff?.diagnostics,historyVisibility:this.historyTraces,protectionQueue:this.protectionQueueLength,fault:this.handoffFault,traces:this.traceHandoff?this.handoffTraces:[]},frameState:{lastFrameAt:this.lastFrameAt,disposed:this.disposed,operationMode:this.operationMode,pointer:this.pointer,finishing:this.finishing,historySyncing:this.historySyncing,inputBarrier:this.inputBarrier,pendingRawCount:this.session?.pendingRawCount??0,formalCommands:r?.document.count??0,inflight:r?.inflight,viewPending:r?.viewPending,navigationActive:r?.navigationActive,navigationUntil:r?.navigationUntil,guardPreparing:r?.guardPreparing,overlayViewPending:!!r?.overlayViewPending,overlayPending:r?.proxy?.pending.size,overlayFinalizations:r?.proxy?.finalizations.size,viewFence:!!r?.backend.viewFence,viewSubmission:!!r?.backend.viewSubmission,cancellingStroke:!!r?.cancellingStroke,needsFrame:r?.needsFrame,jobs:r?.document.jobs.length,presentationHeld:r?.backend.presentationHeld,glFence:!!r?.backend.fence,pending:!!r?.backend.pending,errors:r?.errors,sessionErrors:this.session?.errors},checkpoint:{...this.checkpointMetrics},strokeReplayFallbacks:this.historyReplayFallbacks,fullDocumentRebuilds:this.session?.fullDocumentRebuilds??0,fullReplayStrokes:this.session?.fullReplayStrokes??0,cancelledStrokeCount:this.session?.cancelledStrokeCount??0,projectionRestoreMode:this._projectionRestoreMode};}
   get interacting(){return !!this.navigation?.touching||this.busy;}
   get initializationError(){return this._initializationError;}get backendSelection(){return this.renderer?.info.selection??null;}get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get rendererArtworkAlpha(){return Boolean(this.renderer?.info.artworkAlpha);}get presentationOpaque(){return Boolean(this.renderer?.info.presentationOpaque);}get presentationMode(){return 'worker-images';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get projectionRestoreMs(){return this._projectionRestoreMs;}get projectionRestoreMode(){return this._projectionRestoreMode;}get projectionCacheRevision(){return this._projectionCacheRevision;}get browserPredictionSamples(){return this.session?.browserPredictions??0;}get brushName(){return this.preset?.name??'未選択';}get brushId(){return this.preset?.id??'未選択';}get blendMode(){return this.preset?.blend??'normal';}get eraserType(){return this.preset?.id==='foundation-hard-eraser'?'hard':this.preset?.id==='foundation-soft-eraser'?'soft':this.preset?.blend==='erase'?'erase':null;}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.inputActive||this.hasPendingStrokes;}
-  destroy(){this.endCorrectionHold();this.showArtworkPreview(null);this.artworkGuideOverlay?.remove();cancelAnimationFrame(this.symmetryFrame);this.symmetryOverlay?.remove();this.cancelLayerPickHold();void this.showLayerOutline(null);this.setCanvasEditGesture(null);this.setMaskInspection();this.activeGuide=null;this.selectionRect=null;this.updateSelectionOverlay();this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
+  destroy(){this.endCorrectionHold();this.clearSymmetryStrokePreview();this.showArtworkPreview(null);this.showFillGesturePreview(null);this.artworkGuideOverlay?.remove();cancelAnimationFrame(this.symmetryFrame);this.symmetryOverlay?.remove();this.cancelLayerPickHold();void this.showLayerOutline(null);this.setCanvasEditGesture(null);this.setMaskInspection();this.activeGuide=null;this.selectionRect=null;this.updateSelectionOverlay();this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
 }

@@ -2,6 +2,15 @@ import type {CoreDocument,LayerId,LineRegions,RevisionId} from '@illustro/core';
 import {runArtwork} from '../artwork/run';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 
+/** Choose the layers currently drawn on screen except the one excluded by the user. */
+export function visibleFillReferenceIds<T extends {id:string;visible:boolean}>(layers:readonly T[],excludedId:string):string[]{
+  if(!excludedId||!layers.some(layer=>layer.id===excludedId&&layer.visible))
+    throw Error('参照から外す、表示中のレイヤーを選んでください。');
+  const ids=layers.filter(layer=>layer.visible&&layer.id!==excludedId).map(layer=>layer.id);
+  if(!ids.length)throw Error('参照できるレイヤーが残りません。除外するレイヤーを変更してください。');
+  return ids;
+}
+
 export async function readFillReference(document:CoreDocument,revision:RevisionId,mode:LineRegions['reference'],ids:readonly LayerId[]){
   const root=document.revision(revision).root,{width,height}=root;
   if(mode!=='merged'&&(!ids.length||ids.some(id=>!root.hasLayer(id)||root.getLayer(id).lineRegions)))

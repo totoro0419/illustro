@@ -13,6 +13,16 @@ self.onmessage=(event:MessageEvent<Req>)=>{
     if(type==='copy')result=maskImage(image,selected);
     else if(type==='cut')result=eraseMaskedPixels(image,selected);
     else{
+      if(!Number.isSafeInteger(dx)||!Number.isSafeInteger(dy))throw Error('移動距離が不正です。');
+      // Never irreversibly crop painted pixels when a move leaves the canvas.
+      // Check alpha before any new raster is committed; an empty transparent
+      // border may move outside without being mistaken for artwork loss.
+      for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+        if(x+dx>=0&&x+dx<width&&y+dy>=0&&y+dy<height)continue;
+        const position=y*width+x;
+        if(mask[position]&&image[position*4+3])
+          throw Error('絵の一部がキャンバスの外に出ます。元の絵を守るため移動を中止しました。移動距離を短くしてください。');
+      }
       result=eraseMaskedPixels(image,selected);
       const selectedPixels=maskImage(image,selected);
       if(!Number.isSafeInteger(dx)||!Number.isSafeInteger(dy))throw Error('移動距離が不正です。');

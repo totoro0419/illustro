@@ -1,4 +1,5 @@
 import {FEATURE_CATEGORIES,RIGHT_BOXES} from './shell';
+import './paintingWorkspace.css';
 
 export type ShellControl={workspace:HTMLElement;drawer:HTMLButtonElement;openBox:(id:string)=>void;close:(focus?:boolean)=>void;setLayerPage:(value:boolean)=>void;layerPageOpen:()=>boolean;refreshWidth:()=>void};
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
@@ -6,8 +7,10 @@ const safeRead=(key:string)=>{try{return localStorage.getItem(key)}catch{return 
 const safeWrite=(key:string,value:string)=>{try{localStorage.setItem(key,value)}catch{/* private browsing may disallow storage */}};
 const WIDTH_KEY='illustro.m07.rightWidth',BOX_KEY='illustro.m07.boxExpansion';
 const actionLabels:Readonly<Record<string,readonly [string,string][]>>={
-  drawing:[['ブラシ','paint'],['消しゴム','erase']],
-  'layers-compositing':[['レイヤー画面','layer'],['レイヤー追加','addLayer']],
+  drawing:[['ブラシ','paint'],['消しゴム','erase'],['ぼかし・混色','smudge']],
+  'fill-color-region':[['スマート塗り','smartFill'],['スポイト','eyedropper'],['色を選ぶ','colorPage']],
+  'selection-transform':[['選択範囲','selection'],['変形','transform'],['レイヤーを移動','move']],
+  'layers-compositing':[['レイヤー画面','layer'],['レイヤー追加','addLayerPage']],
   'canvas-view':[['画面を移動する','panView'],['全体表示','fitView'],['回転を戻す','resetRotation']],
   'history-automation':[['元に戻す','undo'],['やり直す','redo']],
   'document-output':[['新規キャンバス','new'],['作品を開く','open'],['作品情報','documentInfoOpen'],['作品を保存','save'],['別名保存','saveCopy'],['自動保存から戻す','recover'],['PNG / JPEG / WebP','exportImage']],
@@ -40,6 +43,9 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(button&&document.activeElement===button)button.blur();
   });
 
+  const colorButton=byId<HTMLButtonElement>('colorPage'),brushButton=byId<HTMLButtonElement>('brushPage');
+  let dockOpen=false,panel='',dockTrigger:HTMLElement=layer;
+  const isQuickPanel=(id:string)=>id==='brushBox'||id==='colorBox';
   let width=touch()?360:344,resizing:{pointerId:number;original:number}|null=null,layerOpen=false,expanded:Record<string,boolean>={};
   const savedWidth=Number(safeRead(WIDTH_KEY));if(Number.isFinite(savedWidth)&&savedWidth>0)width=savedWidth;
   try{expanded=JSON.parse(safeRead(BOX_KEY)||'{}') as Record<string,boolean>;}catch{expanded={};}
@@ -47,18 +53,22 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
   const defaultWidth=()=>touch()?360:344;
   const clamp=(value:number)=>Math.min(440,Math.max(minimum(),Math.round(value)));
   const syncPresentation=()=>{
-    const isCompact=compact.matches,shown=isCompact?rightDock.classList.contains('open'):!document.body.classList.contains('right-collapsed');
-    if(isCompact){document.body.classList.remove('right-collapsed','right-overlay');}
-    else{document.body.classList.toggle('right-overlay',shown&&innerWidth-parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--rail'))-width<720);}
+    const isCompact=compact.matches;
+    rightDock.classList.toggle('open',dockOpen);
+    rightDock.dataset.panel=layerOpen?'layers':panel;
+    document.body.classList.toggle('right-collapsed',!isCompact&&!dockOpen);
+    const overlay=dockOpen&&!isCompact&&(layerOpen||isQuickPanel(panel)||
+      innerWidth-parseFloat(getComputedStyle(root).getPropertyValue('--rail'))-width<720);
+    document.body.classList.toggle('right-overlay',overlay);
     workspace.style.display=layerOpen?'none':'';
     page.hidden=!layerOpen;
-    workspace.inert=!shown||layerOpen;page.inert=!shown||!layerOpen;
-    workspace.setAttribute('aria-hidden',String(!shown||layerOpen));
-    page.setAttribute('aria-hidden',String(!shown||!layerOpen));
-    drawer.setAttribute('aria-expanded',String(isCompact?shown:false));
-    toggle.setAttribute('aria-expanded',String(shown));
+    workspace.inert=!dockOpen||layerOpen;
+    page.inert=!dockOpen||!layerOpen;
+    drawer.setAttribute('aria-expanded',String(dockOpen&&!layerOpen&&!panel));
+    toggle.setAttribute('aria-expanded',String(dockOpen&&!layerOpen&&!panel));
     layer.setAttribute('aria-expanded',String(layerOpen));
-    layer.classList.toggle('selected',layerOpen);
+    colorButton.setAttribute('aria-expanded',String(dockOpen&&panel==='colorBox'&&!layerOpen));
+    brushButton.setAttribute('aria-expanded',String(dockOpen&&panel==='brushBox'&&!layerOpen));
   };
   const applyWidth=(value:number,persist=false)=>{
     width=clamp(value);document.documentElement.style.setProperty('--workspace',width+'px');
@@ -68,41 +78,64 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     syncPresentation();if(persist)safeWrite(WIDTH_KEY,String(width));
     if(!byId<HTMLElement>('allFeaturesPanel').hidden)positionFeature();
   };
-  // Move focus only for keyboard-initiated navigation. Pointer/touch opening
-  // must not leave an unrelated Close button selected or focus-highlighted.
   const setLayerPage=(open:boolean,keyboardNavigation=false)=>{
-    const focusWasInside=page.contains(document.activeElement);
-    const changed=layerOpen!==open;
-    layerOpen=open;if(open){document.body.classList.remove('right-collapsed');if(compact.matches)rightDock.classList.add('open');}
+    if(layerOpen===open)return;
+    layerOpen=open;
+    dockOpen=open;
+    panel='';
+    if(open)dockTrigger=layer;
     syncPresentation();
-    if(changed)onLayerPageChange?.(open);
-    if(open&&keyboardNavigation)byId<HTMLButtonElement>('closeLayerPage').focus({preventScroll:true});
-    else if(!open&&focusWasInside&&keyboardNavigation)layer.focus({preventScroll:true});
+    onLayerPageChange?.(open);
+    if(keyboardNavigation)(open?byId('closeLayerPage'):layer).focus({preventScroll:true});
   };
   layer.onclick=event=>setLayerPage(!layerOpen,event.detail===0);
   byId('closeLayerPage').onclick=event=>setLayerPage(false,event.detail===0);
+  const vectorMask=byId<HTMLDetailsElement>('layerVectorMask');
+  vectorMask.addEventListener('illustro:open-layer-settings',()=>{
+    const details=vectorMask.parentElement?.closest<HTMLDetailsElement>('details');
+    if(details)details.open=true;
+  });
   const close=(focus=false)=>{
     if(layerOpen)setLayerPage(false);
-    if(compact.matches)rightDock.classList.remove('open');else document.body.classList.add('right-collapsed');
-    syncPresentation();if(focus)(compact.matches?drawer:toggle).focus({preventScroll:true});
+    dockOpen=false;panel='';
+    syncPresentation();
+    if(focus){
+      const target=dockTrigger.isConnected&&dockTrigger.checkVisibility()?dockTrigger:byId('allFeatures');
+      target.focus({preventScroll:true});
+    }
   };
-  function openBox(id:string){
+  function openBox(id:string,trigger?:HTMLElement,keyboard=false){
     setLayerPage(false);
-    if(compact.matches)rightDock.classList.add('open');else document.body.classList.remove('right-collapsed');
-    syncPresentation();
+    dockOpen=true;
+    panel=isQuickPanel(id)?id:'';
+    dockTrigger=trigger??(panel==='colorBox'?colorButton:panel==='brushBox'?brushButton:byId('allFeatures'));
     const section=byId(id+'Body')?.closest<HTMLElement>('.workspace-box');
-    if(section){const button=section.querySelector<HTMLButtonElement>('.box-toggle');if(button?.getAttribute('aria-expanded')==='false')button.click();section.scrollIntoView({block:'nearest'});}
-  }
-  toggle.onclick=()=>{
-    if(compact.matches){rightDock.classList.toggle('open');if(!rightDock.classList.contains('open'))layerOpen=false;}
-    else{if(layerOpen)setLayerPage(false);document.body.classList.toggle('right-collapsed');}
+    if(section?.classList.contains('c04-panel-float')){dockOpen=false;panel='';}
     syncPresentation();
+    if(section){
+      const button=section.querySelector<HTMLButtonElement>('.box-toggle');
+      if(button?.getAttribute('aria-expanded')==='false')button.click();
+      section.scrollIntoView({block:'nearest'});
+      if(keyboard)(id==='brushBox'?byId('brush'):section.querySelector<HTMLElement>('.box-toggle'))?.focus({preventScroll:true});
+    }
+  }
+  const toggleWorkspace=(event:MouseEvent)=>{
+    if(dockOpen&&!layerOpen&&!panel){close(event.detail===0);return;}
+    setLayerPage(false);
+    dockOpen=true;panel='';dockTrigger=byId('allFeatures');
+    showFeature(false);syncPresentation();
+    if(event.detail===0)byId('close').focus({preventScroll:true});
   };
-  drawer.onclick=()=>{rightDock.classList.toggle('open');if(!rightDock.classList.contains('open'))layerOpen=false;syncPresentation();};
-  byId('close').onclick=e=>close(e.detail===0);
+  toggle.onclick=toggleWorkspace;
+  drawer.onclick=toggleWorkspace;
+  byId('close').onclick=event=>close(event.detail===0);
   byId('layersPage').onclick=event=>setLayerPage(true,event.detail===0);
-  byId('colorPage').onclick=()=>openBox('colorBox');
-  byId('brushPage').onclick=()=>openBox('brushBox');
+  const togglePanel=(id:string,button:HTMLElement,event:MouseEvent)=>{
+    if(dockOpen&&!layerOpen&&panel===id)close(event.detail===0);
+    else openBox(id,button,event.detail===0);
+  };
+  colorButton.onclick=event=>togglePanel('colorBox',colorButton,event);
+  brushButton.onclick=event=>togglePanel('brushBox',brushButton,event);
   // Box operation menus share the same light-dismiss behavior as floating
   // palettes. Only one may be expanded; their Box body state is independent.
   const closeBoxMenus=(except:HTMLElement|null=null,returnFocus=false)=>{
@@ -193,7 +226,7 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
   byId('resetWidth').onclick=()=>applyWidth(defaultWidth(),true);
   byId('hideWorkspace').onclick=event=>close(event.detail===0);
   window.addEventListener('resize',()=>applyWidth(width));
-  compact.addEventListener('change',()=>{if(!compact.matches)rightDock.classList.remove('open');syncPresentation();});
+  compact.addEventListener('change',syncPresentation);
   const featurePanel=byId<HTMLElement>('allFeaturesPanel'),featureButton=byId<HTMLButtonElement>('allFeatures');
   const categories=byId<HTMLElement>('featuresCategories'),actions=byId<HTMLElement>('featuresActions'),items=byId<HTMLElement>('featuresItems');
   // Keep the palette beside its launcher and inside the usable viewport.
@@ -244,6 +277,7 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(event.detail===0)previousCategory?.focus({preventScroll:true});
   };
   categories.querySelectorAll<HTMLButtonElement>('[data-category]').forEach(button=>{
+    if(!actionLabels[button.dataset.category??'']?.length){button.hidden=true;return;}
     button.onclick=event=>{
       previousCategory=button;
       const id=button.dataset.category||'',cat=FEATURE_CATEGORIES.find(entry=>entry[1]===id);
@@ -251,10 +285,9 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
       items.replaceChildren();
       for(const [label,action] of actionLabels[id]||[]){
         const btn=document.createElement('button');btn.type='button';btn.textContent=label;
-        btn.onclick=()=>{showFeature(false);byId<HTMLButtonElement>(action)?.click();};items.append(btn);
-      }
-      if(!(actionLabels[id]?.length)){
-        const info=document.createElement('p');info.className='unavailable';info.textContent='このカテゴリの機能は後のマイルストーンで利用できます。';items.append(info);
+        const control=byId<HTMLButtonElement>(action);
+        btn.disabled=!control||control.disabled;
+        btn.onclick=event=>{showFeature(false,event.detail===0);control?.click();};items.append(btn);
       }
       categories.hidden=true;actions.hidden=false;positionFeature();
       if(event.detail===0){
@@ -291,9 +324,7 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     qaPanel.addEventListener('toggle',syncQa);
     syncQa();
   }
-  const floatingDockOpen=()=>compact.matches
-    ?rightDock.classList.contains('open')
-    :document.body.classList.contains('right-overlay')&&!document.body.classList.contains('right-collapsed');
+  const floatingDockOpen=()=>dockOpen&&(compact.matches||document.body.classList.contains('right-overlay'));
   document.addEventListener('pointerdown',event=>{
     if(document.querySelector('dialog:modal'))return; // native modal owns dismissal
     const t=event.target;
@@ -321,7 +352,8 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     // The event path still identifies the original dock; a detached target does not.
     const clickedInsideDock=event.composedPath().includes(rightDock)||
       (t instanceof Element&&!!t.closest('.c04-panel-float'));
-    if(floatingDockOpen()&&!clickedInsideDock&&!toggle.contains(t)&&!drawer.contains(t))close(false);
+    if(floatingDockOpen()&&!clickedInsideDock&&
+      ![toggle,drawer,layer,colorButton,brushButton,featurePanel].some(trigger=>trigger.contains(t)))close(false);
     if(!clickedInsideDock)return;
     if(t instanceof Element&&t.closest('.box-more'))return;
     for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
@@ -356,6 +388,32 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(layerOpen){setLayerPage(false);event.preventDefault();}
   },{capture:true});
 
+  // Keep feedback available without reserving a permanent row of status text.
+  const status=byId('status');
+  let statusTimer=0;
+  const refreshStatus=()=>{
+    const text=status.textContent?.trim()??'';
+    clearTimeout(statusTimer);
+    const quiet=!text||text==='線を作品に反映しました。'||/^(描画できます。|新規キャンバスを開くか、)/.test(text);
+    status.classList.toggle('visible-message',!quiet);
+    if(!quiet&&!/失敗|できません|ありません|エラー|不足|確認してください/.test(text))
+      statusTimer=window.setTimeout(()=>status.classList.remove('visible-message'),3600);
+  };
+  new MutationObserver(refreshStatus).observe(status,{childList:true,characterData:true,subtree:true});
+  const files=byId<HTMLElement>('fileActions');
+  const fileButton=byId('fileActionsOpen'),saveState=byId('saveState');
+  new MutationObserver(()=>{
+    const error=/保存できません|保存待ち/.test(saveState.textContent??'');
+    fileButton.toggleAttribute('data-storage-error',error);
+    fileButton.setAttribute('aria-label',error?'作品・自動保存に問題があります':'作品');
+  }).observe(saveState,{childList:true,characterData:true,subtree:true});
+  const view=byId<HTMLElement>('viewActions');
+  files.addEventListener('click',event=>{
+    if(event.target instanceof Element&&event.target.closest('#new,#open,#recover,#saveCopy,#exportImage'))files.hidePopover();
+  });
+  view.addEventListener('click',event=>{
+    if(event.target instanceof Element&&event.target.closest('#panView,#c04FocusToggle,#c04FullscreenToggle'))view.hidePopover();
+  });
   applyWidth(width);syncPresentation();
   return {workspace,drawer,openBox,close,setLayerPage,layerPageOpen:()=>layerOpen,refreshWidth:()=>applyWidth(width)};
 }

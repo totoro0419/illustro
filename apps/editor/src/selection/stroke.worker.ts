@@ -1,15 +1,32 @@
 import {cpuReference,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 
 import type {PixelLayerMask} from '@illustro/core';
+import {renderSelectedStrokeTiles,uniqueTransferableTileBuffers,type RasterWorkerTile} from './tileStroke';
 type Pass={selection:PixelLayerMask|null;records:readonly unknown[]};
-type Job={width:number;height:number;pixels:Uint8Array}&(
-  {alpha:Uint8Array;records:readonly StrokeRecord[]}|{passes:readonly Pass[]}
+type Job={width:number;height:number}&(
+  ({pixels:Uint8Array}&({alpha?:Uint8Array;records:readonly StrokeRecord[]}|{passes:readonly Pass[]}))
+  |{tiles:RasterWorkerTile[];alpha?:Uint8Array;records:readonly StrokeRecord[]}
 );
+let retainedMask:Uint8Array|null=null,retainedWidth=0,retainedHeight=0;
 
 self.onmessage=({data}:MessageEvent<Job>)=>{
   try{
-    const {width,height,pixels}=data;
-    const alpha='alpha' in data?data.alpha:null;
+    const {width,height}=data;
+    let alpha:Uint8Array|null=null;
+    if('records' in data){
+      if(data.alpha){
+        if(data.alpha.length!==width*height)throw Error('選択マスクの大きさが作品に一致しません。');
+        retainedMask=data.alpha;retainedWidth=width;retainedHeight=height;
+      }else if(!retainedMask||retainedWidth!==width||retainedHeight!==height)
+        throw Error('選択マスクの再利用情報が失われました。');
+      alpha=retainedMask;
+    }
+    if('tiles' in data){
+      const result=renderSelectedStrokeTiles(width,height,alpha!,data.tiles,data.records);
+      (self as unknown as Worker).postMessage({tiles:result},result?uniqueTransferableTileBuffers(result):[]);
+      return;
+    }
+    const pixels=data.pixels;
     const passes='passes' in data?data.passes:[{selection:null,records:data.records}];
     let changed=false;
     for(const pass of passes)for(const raw of pass.records){
