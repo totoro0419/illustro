@@ -1,0 +1,25 @@
+.illustro-app-dialog{
+  box-sizing:border-box;position:fixed;inset:0;margin:auto;
+  width:min(440px,calc(100vw - 32px));max-width:calc(100vw - 32px);
+  padding:0;border:1px solid var(--a-border-strong,#ced8e7);border-radius:18px;
+  background:var(--a-surface,#fff);color:var(--a-text,#222c40);
+  box-shadow:0 22px 65px #1b315b45;font:inherit;z-index:1200;
+}
+.illustro-app-dialog::backdrop{background:#19294f78}
+.illustro-app-dialog-content{padding:23px;display:flex;flex-direction:column;gap:14px}
+.illustro-app-dialog h2{font-size:18px;font-weight:740;margin:0}
+.illustro-app-dialog-message{white-space:pre-line;font-size:14px;line-height:1.7;margin:0;overflow-wrap:anywhere}
+.illustro-app-dialog input{width:100%;box-sizing:border-box;min-height:44px;padding:10px 12px;
+  border:1px solid var(--a-border-strong,#ced8e7);border-radius:10px;background:#fff;
+  color:var(--a-text,#222c40);font:inherit;font-size:16px}
+.illustro-app-dialog-error{color:#a53355;font-size:12px;line-height:1.5}
+.illustro-app-dialog-error[hidden]{display:none}
+.illustro-app-dialog-actions{display:flex;gap:10px;justify-content:flex-end}
+.illustro-app-dialog button{min-width:88px;min-height:44px;border-radius:10px;
+  border:1px solid var(--a-border-strong,#ced8e7);background:var(--a-surface-soft,#f9fbff);
+  color:var(--a-text,#222c40);font:inherit;font-weight:650;cursor:pointer}
+.illustro-app-dialog button.illustro-app-dialog-primary{background:var(--a-accent-soft,#e9eeff);
+  border-color:var(--a-accent,#718dfa);color:#354c9c}
+.illustro-app-dialog button:focus-visible,.illustro-app-dialog input:focus-visible{
+  outline:3px solid var(--a-focus,#5865cc);outline-offset:2px}
+@media(max-width:480px){.illustro-app-dialog-content{padding:20px}}
