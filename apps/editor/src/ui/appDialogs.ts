@@ -17,6 +17,9 @@ function openDialog(kind:Kind,message:string,initial='',options:InputOptions={})
   return new Promise(resolve=>{
     const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;
     const dialog=document.createElement('dialog');dialog.className='illustro-app-dialog';
+    // Keep editor-wide shortcuts from acting on the painting while a dialog is open.
+    // Do not preventDefault: Esc must still close the native <dialog> element.
+    dialog.addEventListener('keydown',event=>event.stopPropagation());
     const form=document.createElement('form');form.className='illustro-app-dialog-content';
     form.noValidate=true;
     const title=document.createElement('h2');title.id='illustro-app-dialog-'+Math.random().toString(36).slice(2);
