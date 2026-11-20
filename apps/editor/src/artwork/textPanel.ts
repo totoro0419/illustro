@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from '../ui/appDialogs';
 import {mapArtworkPoint,inverseArtworkAffine,validateEditableArtwork,type EditableText,type LayerId,type TextStyleRange} from '@illustro/core';
 import {fontAssets,fontFamily,fontOutlineCapability,importFont,outlineText} from './fonts';
 import {runArtwork} from './run';
@@ -241,7 +242,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       await show(current.content,originalPreview);
       await show(outline);
       previewCaption.textContent='上：変換前の文字　下：変換後の輪郭。位置・濃さが変わらないか確認してください。';
-      if(confirm('選択中の文字レイヤーを輪郭のパスに置き換えます。文章や書体は編集できなくなりますが、Undoで元の文字に戻せます。変換しますか？')){
+      if(await appConfirm('選択中の文字レイヤーを輪郭のパスに置き換えます。文章や書体は編集できなくなりますが、Undoで元の文字に戻せます。変換しますか？')){
         const context=api.context();
         if(context?.selected.id!==current.id)throw Error('文字レイヤーを選び直してください。');
         // Updating the same layer prevents duplicate text/path pixels and keeps the original in Undo history.
@@ -253,7 +254,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     button('描画用レイヤーへ変換',async()=>{
       const context=api.context();
       if(!context?.selected.content)throw Error('文字・図形・グラデーションのレイヤーを選んでください。');
-      if(!confirm('見た目を保ち、元の文字や図形の編集情報を取り除きます。直後にUndoで戻せます。変換しますか？'))return;
+      if(!await appConfirm('見た目を保ち、元の文字や図形の編集情報を取り除きます。直後にUndoで戻せます。変換しますか？'))return;
       await api.rasterize(context.selected.id);editing=undefined;status.textContent='描画用レイヤーへ変換しました。';
     },status)
   );

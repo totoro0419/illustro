@@ -39,6 +39,7 @@ export function colorMarkup():string {
    '</svg>'+
    '<span class="color-orbit-hint">タップで選色・円周をなぞって回転・手前は左右スライド</span>'+
   '</div>'+
+  '<details class="color-disclosure paint-color-values"><summary>色を数値で調整</summary><div class="color-detail-inner">'+
   '<label class="color-hex-label" for="colorHex"><span>カラーコード</span><input id="colorHex" maxlength="7" spellcheck="false" inputmode="text" autocomplete="off" aria-describedby="colorHexError" value="#1F2633"></label>'+
   '<small id="colorHexError" class="color-error" role="status"></small>'+
   '<div id="colorValueChannels" class="color-value-channels"></div>'+ 
@@ -48,6 +49,7 @@ export function colorMarkup():string {
     ['HSV','RGB','HSL'].map((m,i)=>'<label><input type="radio" name="colorModel" value="'+m+'" '+(i===0?'checked':'')+'><span>'+(m==='HSV'?'HSB':m)+'</span></label>').join('')+
    '</div>'+
   '</div>'+
+  '</div></details>'+
   '<details id="colorEyedropperOptions" class="color-disclosure color-sample-options"><summary>スポイトの参照先</summary><div class="color-detail-inner">'+
    '<label class="color-sample-source" for="colorSampleSource">取得する場所<select id="colorSampleSource"><option value="composite">見えている絵全体</option><option value="layer">選んでいるレイヤー</option><option value="specific">指定したレイヤー</option></select></label>'+
    '<label class="color-sample-source" id="colorSampleLayerLabel" hidden>取得するレイヤー<select id="colorSampleLayerId"></select></label>'+
@@ -107,7 +109,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(store){try{localStorage.setItem('illustro-color-picker-mode',mode);}catch{/* browser storage may be restricted */}}
  }
  modeSelect.onchange=()=>setPickerMode(modeSelect.value==='orbit'?'orbit':'classic');
- setPickerMode(readStoredMode()==='orbit'?'orbit':'classic',false);
+ setPickerMode(readStoredMode()==='classic'?'classic':'orbit',false);
  let channelEditing=false,editingHex=false;
  const selectScreen=(next:'color'|'palette',focus=false)=>{
   colorScreen.hidden=next!=='color';paletteScreen.hidden=next!=='palette';
@@ -126,6 +128,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   const c=state.current,hsv=rgbToHsv(c);
   if(hsv.v>1e-7){saturationMemory=hsv.s;if(hsv.s>1e-7)hueMemory=hsv.h;}
   const displayS=hsv.v<=1e-7?saturationMemory:hsv.s;
+  document.getElementById('colorPage')?.style.setProperty('--current-paint-color',hex(c));
   current.style.backgroundColor=hex(c);code.textContent=hex(c);previous.style.backgroundColor=hex(state.previous);
   id<HTMLInputElement>('c04BackgroundColor').value=hex(state.background);
   const opacity=Math.round(state.opacity*100);

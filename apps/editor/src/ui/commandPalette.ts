@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from './appDialogs';
 /**
  * C04 UI-004 / UI-005: commands share the application's existing controls.
  * The palette never implements a second undo, brush engine or document writer.
@@ -62,7 +63,10 @@ const disabledReason=(id:string)=>{
   const element=el<HTMLButtonElement>(id);
   if(!element)return 'この機能は現在の画面で利用できません。';
   if(element.disabled)return '作品や操作状態により現在は使えません。';
-  if(element.closest('[hidden],[inert]'))return '現在の画面では操作できません。';
+  // A command can target a collapsed presentation surface or an unpinned rail tool.
+  // Disabled controls and contextual visibility still guard mode-specific actions.
+  if(element.closest('[hidden],[inert]')&&
+    !element.matches('.rail > .tool-button, #addLayer, #workspaceToggle, #quickControllerOpen'))return '現在の画面では操作できません。';
   return null;
 };
 const read=(key:string)=>{try{return localStorage.getItem(key)}catch{return null;}};
@@ -86,6 +90,10 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     ['redo','やり直す','履歴','Redo'],
     ['paint','ブラシで描く','描画','絵を描く ペン'],
     ['erase','消しゴム','描画','消す'],
+    ['smudge','ぼかし・混色','描画','なじませる'],
+    ['smartFill','スマート塗り','描画','塗りつぶし バケツ'],
+    ['transform','変形','編集','拡大 縮小 回転 レイヤー'],
+    ['move','レイヤーを移動','編集','位置を動かす'],
     ['eyedropper','スポイト','色','色を取得 採色'],
     ['addLayer','レイヤーを追加','レイヤー','層 追加'],
     ['layer','レイヤー画面','レイヤー','層 一覧'],
@@ -214,11 +222,11 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   searchButton.id='commandSearchOpen';searchButton.type='button';searchButton.className='c04-command-open';
   searchButton.textContent='⌕ 機能を探す';
   searchButton.title='機能を探す（Ctrl+K）';
-  document.querySelector('.topbar .top-spacer')?.before(searchButton);
+  el('featureShortcuts')?.prepend(searchButton);
   const quickButton=document.createElement('button');
   quickButton.id='quickControllerOpen';quickButton.type='button';quickButton.className='c04-quick-open';
-  quickButton.textContent='Quick';quickButton.title='よく使う操作';
-  el('allFeatures')?.before(quickButton);
+  quickButton.textContent='よく使う操作';quickButton.title='よく使う操作';
+  el('featureShortcuts')?.append(quickButton);
   const dialog=document.createElement('dialog');
   dialog.id='commandSearchDialog';dialog.className='c04-command-dialog';
   const section=document.createElement('section');
@@ -247,11 +255,11 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   penButton.checked=read('illustro.c04.quick.pen-barrel')==='true';
   penSetting.append(penButton,document.createTextNode(' ペンのサイドボタンで開く（対応機種のみ）'));
   quick.append(quickTitle,quickSlots,note,penSetting);document.body.append(quick);
-  penButton.onchange=()=>{
+  penButton.onchange=async()=>{
     if(penButton.checked){
       const eraser=document.getElementById('penBarrelErase') as HTMLInputElement|null;
       if(eraser?.checked){
-        if(!window.confirm('このペンボタンには現在「消しゴム」が設定されています。Quickへ変更しますか？')){
+        if(!await appConfirm('このペンボタンには現在「消しゴム」が設定されています。Quickへ変更しますか？')){
           penButton.checked=false;return;
         }
         eraser.checked=false;eraser.dispatchEvent(new Event('change',{bubbles:true}));
@@ -312,9 +320,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
         const edit=document.createElement('div');edit.className='c04-quick-edit-labels';
         for(const [name,field,max] of [['名前','names',28],['グループ','groups',22]] as const){
           const change=document.createElement('button');change.type='button';change.textContent=name;
-          change.onclick=()=>{
+          change.onclick=async()=>{
             const previous=pinMeta[field][i]||'';
-            const value=window.prompt('スロット'+(i+1)+'の'+name+'を入力（空欄で自動表示）',previous);
+            const value=await appPrompt('スロット'+(i+1)+'の'+name+'を入力（空欄で自動表示）',previous);
             if(value===null)return;
             pinMeta[field][i]=value.trim().slice(0,max);savePins();renderQuick();
           };
@@ -333,7 +341,11 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   configure.onclick=()=>{pendingPinId=null;isConfiguring=!isConfiguring;renderQuick();};
   function toggleQuick(){
     quick.hidden=!quick.hidden;quickButton.setAttribute('aria-expanded',String(!quick.hidden));
-    if(!quick.hidden){dialog.close();renderQuick();}
+    if(!quick.hidden){
+      dialog.close();renderQuick();
+      const features=el<HTMLElement>('allFeaturesPanel');
+      if(features&&!features.hidden)el<HTMLButtonElement>('featuresClose')?.click();
+    }
   }
   let quickGesture:{pointerId:number;x:number;y:number;moved:boolean}|null=null;
   let suppressOpenClick=false;
@@ -459,7 +471,8 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   }
   dialog.addEventListener('close',()=>{
     if(editingSlot!==null){editingSlot=null;quick.hidden=false;quickButton.setAttribute('aria-expanded','true');renderQuick();}
-    else if(lastFocus?.isConnected)lastFocus.focus({preventScroll:true});
+    else if(lastFocus?.isConnected&&lastFocus.checkVisibility())lastFocus.focus({preventScroll:true});
+    else el('allFeatures')?.focus({preventScroll:true});
   });
   searchButton.onclick=()=>openSearch();
   document.addEventListener('keydown',event=>{

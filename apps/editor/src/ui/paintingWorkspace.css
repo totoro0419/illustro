@@ -1,0 +1,245 @@
+/* Shared painting controls stay in reach while auxiliary panels sit over the canvas. */
+:root {
+  --top: 56px;
+  --bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+}
+.topbar {
+  gap: 4px;
+  padding-inline: max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-right));
+}
+.topbar button, .drawing-controls button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 8px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.topbar button[aria-expanded="true"],
+.drawing-controls button[aria-expanded="true"],
+body:has(#panView[aria-pressed="true"]) #viewActionsOpen {
+  background: var(--a-accent-soft);
+  border-color: var(--a-border-strong);
+}
+.current-color {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--current-paint-color, #1f2633);
+  border: 1px solid #5c6c83;
+  box-shadow: 0 0 0 2px var(--a-surface), 0 0 0 3px var(--a-border-strong);
+}
+.rail {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.rail .tool-button, .rail #allFeatures { flex: none }
+.rail .tool-caption { font-size: 11px }
+.rail .all { min-height: 44px !important }
+.feature-shortcuts { display: grid; gap: 5px; margin-block-end: 5px }
+.feature-shortcuts button { min-height: 44px; text-align: start }
+.feature-shortcuts button .ui-icon { vertical-align: middle }
+.feature-category[hidden] { display: none }
+
+main#canvasArea, body.right-overlay main#canvasArea {
+  height: calc(100dvh - var(--top) - var(--bottom));
+  position: relative;
+}
+#canvasArea > .canvas-top {
+  position: absolute;
+  z-index: 4;
+  inset: 8px 8px auto;
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  pointer-events: none;
+}
+.canvas-top > div:not([hidden]) {
+  padding: 5px 8px;
+  border: 1px solid var(--a-border);
+  border-radius: 8px;
+  background: var(--a-surface);
+  pointer-events: auto;
+}
+#canvasArea #status {
+  position: absolute;
+  width: max-content;
+  max-width: min(100%, 460px);
+  min-width: 0;
+  max-height: none;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 7px 11px;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: 10px;
+  box-shadow: var(--a-elevation);
+  font-size: 12px;
+  opacity: 0;
+}
+#canvasArea #status.visible-message { opacity: 1 }
+.canvas-top:has(> div:not([hidden])) #status { top: calc(100% + 5px) }
+.drawing-controls {
+  position: fixed;
+  z-index: 8;
+  bottom: 0;
+  left: var(--rail);
+  right: var(--workspace);
+  height: var(--bottom);
+  padding: 0 8px env(safe-area-inset-bottom, 0px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(5px, 1vw, 16px);
+  border-top: 1px solid var(--a-border);
+  background: var(--a-surface);
+}
+body.right-collapsed .drawing-controls, body.right-overlay .drawing-controls { right: 0 }
+.drawing-size {
+  flex: 1 1 260px;
+  max-width: 440px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.drawing-size label { margin: 0; }
+.drawing-size #size { flex: 1; min-width: 36px; margin: 0; min-height: 44px; accent-color: var(--a-focus) }
+.drawing-size #sizeNumber {
+  flex: none;
+  width: 5.3em;
+  height: 36px;
+  padding-inline: 4px;
+  border: 1px solid var(--a-border-strong);
+  border-radius: 8px;
+  background: var(--a-surface-soft);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.drawing-controls .ui-icon, #close .ui-icon { width: 20px; height: 20px }
+.editor-popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  max-height: calc(100dvh - var(--top) - var(--bottom) - 12px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 10px;
+  color: var(--a-text);
+  background: var(--a-surface);
+  border: 1px solid var(--a-border-strong);
+  border-radius: var(--a-radius);
+  box-shadow: var(--a-elevation);
+}
+.editor-popover:not(:popover-open) { display: none }
+#fileActions {
+  left: 9px;
+  top: calc(var(--top) + 4px);
+  width: min(280px, calc(100vw - 18px));
+}
+#fileActions:popover-open { display: grid }
+#fileActions button { min-height: 44px; text-align: start }
+#fileActions #saveState { font-size: 12px; padding: 4px 2px; color: var(--a-subtle) }
+#viewActions {
+  inset-inline-start: calc(var(--rail) + 8px);
+  bottom: calc(var(--bottom) + 6px);
+  width: min(430px, calc(100vw - var(--rail) - 16px));
+  white-space: normal;
+}
+#viewActions:popover-open { display: flex; flex-wrap: wrap; justify-content: flex-start }
+#viewActions button { min-height: 44px }
+#viewActions button[aria-pressed="true"] { background: var(--a-accent-soft) }
+#viewActions #c04ContextBar { margin: 0; width: 100%; border-top: 1px solid var(--a-border) }
+body.workspace-left-handed #viewActions { inset-inline-start: auto; inset-inline-end: calc(var(--rail) + 8px) }
+body.workspace-left-handed .drawing-controls { left: var(--workspace); right: var(--rail) }
+body.workspace-left-handed:is(.right-collapsed, .right-overlay) .drawing-controls { left: 0; right: var(--rail) }
+
+body.right-collapsed .right-dock { display: none }
+.right-dock {
+  bottom: var(--bottom);
+  border-bottom: 1px solid var(--a-border);
+}
+aside#workspace {
+  display: flex;
+  flex-direction: column;
+}
+aside#workspace .dock-close {
+  align-self: flex-end;
+  flex: none;
+  margin: 4px 7px 0;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 5px;
+}
+#workspace > .box-stack { height: auto; flex: 1; min-height: 0 }
+.right-dock[data-panel="brushBox"] .box-stack > :not([data-box-id="right.brush"]),
+.right-dock[data-panel="colorBox"] .box-stack > :not([data-box-id="right.color"]) { display: none }
+#splitter { bottom: var(--bottom) }
+body:has(.right-dock[data-panel]:not([data-panel=""])) #splitter { display: none }
+.layer-page {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.layer-page-head { flex-shrink: 0 }
+.layer-page-actions { border: 0; padding: 8px 0 0; flex: none }
+#layerPageList { flex: none; min-height: 0; max-height: 42dvh; margin-block: 10px }
+.layer-details, .layer-filters { margin: 0 0 8px; width: 100% }
+.layer-details > summary, .layer-filters > summary, .brush-disclosure > summary { cursor: pointer; padding: 7px 2px }
+.layer-page-fields { display: grid; gap: 8px; min-width: 0 }
+.layer-page-fields label { flex-wrap: wrap }
+.layer-page-fields label input:not([type=checkbox]), .layer-page-fields label select { max-width: 100% }
+.layer-details :is(#layerComps, #layerVectorMask) { max-height: none }
+.layer-list button { min-height: 44px }
+.m10-presets > label { font-size: 13px; margin-bottom: 12px }
+.box-body #brush { min-height: 44px }
+.brush-disclosure { margin-top: 7px }
+body.illustro-focus-mode .drawing-controls,
+body.illustro-focus-mode .topbar > button:not(#c04FocusQuick, #c04FocusExit) { display: none }
+
+@media (max-width: 760px) {
+  :root { --top: 52px }
+  .topbar { padding-inline: 4px; gap: 0 }
+  .topbar button { padding-inline: 5px }
+  .topbar #qaEntry { min-width: 34px }
+  body:not(.workspace-left-handed) .drawing-controls { right: 0 }
+  body.workspace-left-handed .drawing-controls { left: 0; right: var(--rail) }
+  .right-dock, body.right-overlay .right-dock { bottom: var(--bottom); height: min(55dvh, 610px) }
+  #layerPageList { max-height: min(29dvh, 255px) }
+}
+@media (max-width: 540px) {
+  .drawing-controls button span, .drawing-size > span { display: none }
+  .drawing-size { gap: 4px }
+  .drawing-size #sizeNumber { width: 4.6em }
+}
+@media (max-width: 360px) {
+  .topbar button { min-width: 42px }
+  .drawing-controls { padding-inline: 4px; gap: 3px }
+}
+
+#fileActionsOpen[data-storage-error] {
+  color: #9d3030;
+  border-color: currentColor;
+}
+#fileActionsOpen[data-storage-error]::after {
+  content: "!";
+  font-weight: 800;
+}
+@media (max-width: 760px) {
+  .topbar button, .drawing-controls button { flex-direction: column; gap: 1px }
+  .topbar button span, .drawing-controls button span { display: block; font-size: 9px; line-height: 11px }
+  .topbar button .ui-icon { width: 20px; height: 20px }
+  .topbar button .current-color { width: 20px; height: 20px }
+}

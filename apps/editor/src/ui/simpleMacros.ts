@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from './appDialogs';
 /**
  * C04 UI-004 / UI-005 bridge to C16: simple repeatable UI command sequences.
  * C16 can replace the provider with timeline and action-aware macro execution.
@@ -96,7 +97,7 @@ const persist=(items:readonly SimpleMacro[]):boolean=>{
 const uid=()=>typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'
   ?crypto.randomUUID():'macro-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 
-export type SimpleMacroService=Readonly<{importText:(json:string)=>number}>;
+export type SimpleMacroService=Readonly<{importText:(json:string)=>Promise<number>}>;
 export function installSimpleMacros(commands:CommandService):SimpleMacroService|null{
   const workspace=document.getElementById('workspaceBoxBody');
   if(!workspace)return null;
@@ -189,9 +190,9 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     refreshSelect();refreshSteps();commands.refresh();
     status.textContent='操作セットを保存しました。機能検索やQuickにも表示されます。';
   };
-  remove.onclick=()=>{
+  remove.onclick=async()=>{
     if(!selectedId)return;
-    if(!window.confirm('「'+name.value+'」を削除しますか？'))return;
+    if(!await appConfirm('「'+name.value+'」を削除しますか？'))return;
     const next=macros.filter(m=>m.id!==selectedId);
     if(!persist(next)){status.textContent='端末に保存できませんでした。';return;}
     macros=next;newMacro();commands.refresh();status.textContent='操作セットを削除しました。';
@@ -223,12 +224,12 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     execute:()=>play(macro)
   }));
   commands.registerProvider(provider);
-  function importText(json:string):number{
+  async function importText(json:string):Promise<number>{
     if(json.length>1048576)throw Error('操作セットが大きすぎます。');
     const imported=parseSimpleMacroFile(JSON.parse(json));
     const nameSet=new Set(imported.map(item=>item.name));
     if(imported.some(item=>macros.some(existing=>existing.name===item.name))&&
-      !window.confirm('同名の操作セットを置き換えますか？'))
+      !await appConfirm('同名の操作セットを置き換えますか？'))
       return 0;
     const remaining=macros.filter(existing=>!nameSet.has(existing.name));
     if(remaining.length+imported.length>MAX_MACROS)

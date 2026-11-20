@@ -1,0 +1,66 @@
+name: Publish Illustro workspace preview
+
+on:
+  push:
+    branches: ['quality/C03-C10-integration']
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'prototypes/brush-rt/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/illustro-workspace-preview.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: illustro-workspace-preview
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build and verify the editor
+        run: |
+          npm run brush:build
+          npm run core:check
+          npm run brush:regression
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          VITE_COMMIT_SHA="$GITHUB_SHA" npm --workspace @illustro/editor exec -- vite build --base=/illustro/workspace-preview/
+          test -f apps/editor/dist/index.html
+          grep -q '/illustro/workspace-preview/assets/' apps/editor/dist/index.html
+      - name: Check out the existing Pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+          fetch-depth: 0
+      - name: Update workspace-preview only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/workspace-preview
+          cp -a apps/editor/dist/. site/workspace-preview/
+          printf '{"sourceCommit":"%s","baselineCommit":"%s"}\n' "$GITHUB_SHA" "b2893cc2e58f422e671ad7395b101e8ec7d11afe" > site/workspace-preview/release.json
+          git -C site config user.name 'github-actions[bot]'
+          git -C site config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C site add workspace-preview
+          if git -C site diff --cached --quiet; then
+            echo 'Preview is already current'
+            exit 0
+          fi
+          unexpected="$(git -C site diff --cached --name-only | grep -Ev '^workspace-preview/' || true)"
+          test -z "$unexpected"
+          git -C site commit -m "preview: publish integration $GITHUB_SHA"
+          git -C site pull --rebase origin gh-pages
+          git -C site push origin HEAD:gh-pages

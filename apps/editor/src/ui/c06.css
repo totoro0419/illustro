@@ -62,4 +62,7 @@
 
 /* Bounded pixel-exact preview for small selection-brush strokes. */
 .c06-selection-brush-raster{position:absolute;left:0;top:0;z-index:10;pointer-events:none;transform-origin:0 0;image-rendering:pixelated}
-.c06-selection-brush-raster[hidden]{display:none}
+/* Selection canvases are transparent overlays. The base canvas rule otherwise
+   gives them a white background and overrides the browser's hidden display. */
+.c06-mask-preview,.c06-selection-brush-raster{background:transparent}
+.c06-mask-preview[hidden],.c06-selection-brush-raster[hidden]{display:none}
