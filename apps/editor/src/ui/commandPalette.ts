@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from './appDialogs';
 /**
  * C04 UI-004 / UI-005: commands share the application's existing controls.
  * The palette never implements a second undo, brush engine or document writer.
@@ -254,11 +255,11 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   penButton.checked=read('illustro.c04.quick.pen-barrel')==='true';
   penSetting.append(penButton,document.createTextNode(' ペンのサイドボタンで開く（対応機種のみ）'));
   quick.append(quickTitle,quickSlots,note,penSetting);document.body.append(quick);
-  penButton.onchange=()=>{
+  penButton.onchange=async()=>{
     if(penButton.checked){
       const eraser=document.getElementById('penBarrelErase') as HTMLInputElement|null;
       if(eraser?.checked){
-        if(!window.confirm('このペンボタンには現在「消しゴム」が設定されています。Quickへ変更しますか？')){
+        if(!await appConfirm('このペンボタンには現在「消しゴム」が設定されています。Quickへ変更しますか？')){
           penButton.checked=false;return;
         }
         eraser.checked=false;eraser.dispatchEvent(new Event('change',{bubbles:true}));
@@ -319,9 +320,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
         const edit=document.createElement('div');edit.className='c04-quick-edit-labels';
         for(const [name,field,max] of [['名前','names',28],['グループ','groups',22]] as const){
           const change=document.createElement('button');change.type='button';change.textContent=name;
-          change.onclick=()=>{
+          change.onclick=async()=>{
             const previous=pinMeta[field][i]||'';
-            const value=window.prompt('スロット'+(i+1)+'の'+name+'を入力（空欄で自動表示）',previous);
+            const value=await appPrompt('スロット'+(i+1)+'の'+name+'を入力（空欄で自動表示）',previous);
             if(value===null)return;
             pinMeta[field][i]=value.trim().slice(0,max);savePins();renderQuick();
           };

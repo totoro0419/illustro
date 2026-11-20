@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from './appDialogs';
 /** C04 GST-002/005: user shortcuts invoke the same command handlers as the UI. */
 import type {CommandService} from './commandPalette';
 
@@ -135,7 +136,7 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     capturing=false;capture.textContent='キーを押して登録';
     document.removeEventListener('keydown',captureKey,true);
   };
-  const captureKey=(event:KeyboardEvent)=>{
+  const captureKey=async(event:KeyboardEvent)=>{
     if(!capturing)return;
     event.preventDefault();event.stopImmediatePropagation();
     if(event.key==='Escape'){stopCapture();status.textContent='登録をキャンセルしました。';return;}
@@ -151,7 +152,7 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     if(RESERVED.has(key)){status.textContent=human(proposed)+' はアプリまたは端末の既定の操作と重なるため登録できません。';return;}
     if(proposed.mode==='hold'&&!isHoldable(proposed.commandId)){status.textContent='この操作は押している間だけの割当に対応していません。';return;}
     const duplicates=bindings.filter(b=>signature(b)===key||(b.code===proposed.code&&b.physical&&proposed.physical&&b.ctrl===proposed.ctrl&&b.shift===proposed.shift&&b.alt===proposed.alt&&b.meta===proposed.meta));
-    if(duplicates.length&&!window.confirm(human(proposed)+' は登録済みです。元の割当を置き換えますか？'))return;
+    if(duplicates.length&&!await appConfirm(human(proposed)+' は登録済みです。元の割当を置き換えますか？'))return;
     const next=bindings.filter(b=>!duplicates.includes(b));
     if(next.length>=MAX_BINDINGS){status.textContent='割当をこれ以上追加できません。';return;}
     next.push(proposed);
@@ -165,9 +166,9 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     status.textContent='この画面で実際に登録したいキーを押してください。';
     document.addEventListener('keydown',captureKey,true);
   };
-  cancel.onclick=()=>{
+  cancel.onclick=async()=>{
     if(!bindings.length)return;
-    if(!window.confirm('追加したキー割当をすべて解除しますか？ 既定のキーは変わりません。'))return;
+    if(!await appConfirm('追加したキー割当をすべて解除しますか？ 既定のキーは変わりません。'))return;
     if(!persist([]))return;
     render();status.textContent='追加した割当を解除しました。';
   };
@@ -202,7 +203,7 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
         ...(removed.length>8?[' ほか'+(removed.length-8)+'件']:[]),
         '', '現在の設定と入れ替えますか？'
       ];
-      if(!window.confirm(details.join('\n')))return;
+      if(!await appConfirm(details.join('\n')))return;
       if(!persist(imported))return;
       render();
       status.textContent='キー設定を読み込みました。追加・変更'+added.length+'件、解除'+removed.length+

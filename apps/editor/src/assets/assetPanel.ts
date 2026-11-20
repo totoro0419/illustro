@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from '../ui/appDialogs';
 /** C05 personal asset library, independent of artwork layers. */
 import {ASSET_KINDS,ASSET_LABELS,type AssetInfo,type AssetEntry,type AssetKind,listAssets,getAsset,addAsset,
   updateAsset,removeAsset,restoreAsset,markAssetUsed,duplicateAsset,createAssetVersion} from './library';
@@ -16,8 +17,8 @@ type PanelOptions=Readonly<{
   placeImage:(file:File)=>Promise<void>;
   applyEditable:(asset:AssetEntry)=>Promise<void>;
   applyBrushMaterial:(asset:AssetEntry)=>Promise<void>;
-  importMacro:(text:string)=>number;
-  importWorkspace:(text:string)=>number;
+  importMacro:(text:string)=>Promise<number>;
+  importWorkspace:(text:string)=>Promise<number>;
 }>;
 function button(text:string,handler:()=>void,css=''){
   const b=document.createElement('button');b.type='button';b.textContent=text;b.className=css;b.onclick=handler;return b;
@@ -58,7 +59,7 @@ export function installAssetPanel(opts:PanelOptions){
   retryButton.hidden=true;
   const discardButton=button('再開記録を破棄',()=>void run(async()=>{
     if(!recovery)return;
-    if(!window.confirm('読み込みの再開情報を削除しますか？ すでに素材庫に入った素材はそのまま残ります。'))return;
+    if(!await appConfirm('読み込みの再開情報を削除しますか？ すでに素材庫に入った素材はそのまま残ります。'))return;
     await clearImportRecovery();
     recovery=null;refreshRecoveryControls();
     status.textContent='再開記録を破棄しました。保存済みの素材は削除していません。';
@@ -179,7 +180,7 @@ export function installAssetPanel(opts:PanelOptions){
             status.textContent='素材を使う自作ブラシを保存して選択しました。';
           }else{
             const text=await entry.data.text();
-            const imported=useRoute==='macro'?opts.importMacro(text):opts.importWorkspace(text);
+            const imported=await (useRoute==='macro'?opts.importMacro(text):opts.importWorkspace(text));
             status.textContent=imported?imported+'件の設定を読み込みました。':'読み込みはキャンセルされました。';
           }
           await markAssetUsed(entry.id);await refresh();
@@ -202,7 +203,7 @@ export function installAssetPanel(opts:PanelOptions){
           }
           const descendants=all.filter(other=>other.parentId===item.id&&!other.deleted).length;
           const warning=descendants?'この素材を旧版として参照する新版が'+descendants+'件あります。\n':'';
-          if(!window.confirm('「'+item.name+'」をゴミ箱へ移しますか？\n'+warning+
+          if(!await appConfirm('「'+item.name+'」をゴミ箱へ移しますか？\n'+warning+
             '作品や参考資料で使用中の可能性は確認できません。\n'+
             'ゴミ箱へ移しても素材の中身は消さず、後から復元できます。'))return;
           await removeAsset(item.id);status.textContent='素材をゴミ箱へ移しました。';await refresh();
@@ -217,13 +218,13 @@ export function installAssetPanel(opts:PanelOptions){
     }
   }
   async function editMetadata(item:AssetInfo){
-    const name=window.prompt('素材名',item.name);if(name===null)return;
+    const name=await appPrompt('素材名',item.name);if(name===null)return;
     if(!name.trim())throw Error('素材名は空にできません。');
-    const folder=window.prompt('フォルダー名（空白なら未分類）',item.folder);if(folder===null)return;
-    const tags=window.prompt('タグ（カンマ区切り）',item.tags.join(', '));if(tags===null)return;
-    const license=window.prompt('利用条件や使用許諾（例：自作、許可済み等）',item.license);if(license===null)return;
-    const origin=window.prompt('配布元・作成元（入力は任意）',item.origin);if(origin===null)return;
-    const notes=window.prompt('素材についてのメモ',item.notes);if(notes===null)return;
+    const folder=await appPrompt('フォルダー名（空白なら未分類）',item.folder);if(folder===null)return;
+    const tags=await appPrompt('タグ（カンマ区切り）',item.tags.join(', '));if(tags===null)return;
+    const license=await appPrompt('利用条件や使用許諾（例：自作、許可済み等）',item.license);if(license===null)return;
+    const origin=await appPrompt('配布元・作成元（入力は任意）',item.origin);if(origin===null)return;
+    const notes=await appPrompt('素材についてのメモ',item.notes);if(notes===null)return;
     await updateAsset(item.id,{name,folder,tags:tags.split(/[,、，]+/),license,origin,notes});
     status.textContent='素材の情報を更新しました。';await refresh();
   }
@@ -259,7 +260,7 @@ export function installAssetPanel(opts:PanelOptions){
     file.onchange=()=>{
       const blob=file.files?.[0];file.remove();if(!blob)return;
       void run(async()=>{
-        if(!window.confirm('「'+item.name+'」の新版として別の素材IDで保存します。旧版は残ります。続けますか？'))return;
+        if(!await appConfirm('「'+item.name+'」の新版として別の素材IDで保存します。旧版は残ります。続けますか？'))return;
         const next=await createAssetVersion(item.id,blob);
         status.textContent='新版「'+next.name+'」を保存しました。旧版も使えます。';
         await refresh();
@@ -343,7 +344,7 @@ export function installAssetPanel(opts:PanelOptions){
       const manifest=await readAssetPack(file),summary=await previewAssetPack(manifest);
       const titles=summary.items.slice(0,12).map(i=>
         '・'+i.name+(i.conflict?'（同じIDあり：別IDで保存）':'')).join('\n');
-      if(!window.confirm(summary.items.length+'件の素材を読み込みます。合計'+Math.round(summary.totalBytes/1024)+'KB。\n'+
+      if(!await appConfirm(summary.items.length+'件の素材を読み込みます。合計'+Math.round(summary.totalBytes/1024)+'KB。\n'+
         '元の素材を上書きしません。\n'+titles+'\n\n読み込みますか？'))return;
       // Resolve startup recovery before allowing a new import to overwrite it.
       await recoveryBoot;

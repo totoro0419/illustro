@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from './appDialogs';
 import type {FloatPlacement,FloatingPanelService} from './floatingPanels';
 import type {ToolLayout,ToolbarSettingsService} from './toolbarSettings';
 import {validateShortcutSettings} from './shortcutSettings';
@@ -56,7 +57,7 @@ function download(name:string,text:string){
   window.setTimeout(()=>URL.revokeObjectURL(url),0);
 }
 
-export type WorkspaceImportService=Readonly<{importText:(json:string)=>number}>;
+export type WorkspaceImportService=Readonly<{importText:(json:string)=>Promise<number>}>;
 export function installWorkspaceProfiles(
   floating:FloatingPanelService,toolbar:ToolbarSettingsService
 ):WorkspaceImportService|null{
@@ -218,14 +219,14 @@ export function installWorkspaceProfiles(
     const layout:WorkspaceLayout={...original,expanded,compact:presetSelect.value==='minimal',floats:[]};
     tryLayout(layout,presetSelect.selectedOptions[0]?.textContent??'標準');
   };
-  remove.onclick=()=>{
+  remove.onclick=async()=>{
     const label=select.value,profile=profiles.find(p=>p.name===label);if(!profile)return;
-    if(!window.confirm('「'+label+'」の保存済み配置を削除しますか？'))return;
+    if(!await appConfirm('「'+label+'」の保存済み配置を削除しますか？'))return;
     if(!persist(profiles.filter(p=>p!==profile)))return;
     choices();status.textContent='保存済み配置を削除しました。';
   };
-  reset.onclick=()=>{
-    if(!window.confirm('作業欄の表示と並び順を初期状態に戻しますか？ 作品の内容は変更されません。'))return;
+  reset.onclick=async()=>{
+    if(!await appConfirm('作業欄の表示と並び順を初期状態に戻しますか？ 作品の内容は変更されません。'))return;
     setHanded(false);setDensity(false);floating.reset();toolbar.reset();
     const original=[...stack.querySelectorAll<HTMLElement>('.workspace-box[data-box-id]')]
       .sort((a,b)=>DEFAULT_ORDER.indexOf(a.dataset.boxId!)-DEFAULT_ORDER.indexOf(b.dataset.boxId!));
@@ -260,7 +261,7 @@ export function installWorkspaceProfiles(
         throw Error('対応していない一括設定ファイルです。');
       const importedProfiles=parseFile(value.workspace,boxIds());
       validateShortcutSettings(value.shortcuts);
-      if(!window.confirm('保存済みの作業場とキー設定を、このファイルの内容で置き換えますか？ 現在の作品は変更しません。'))return;
+      if(!await appConfirm('保存済みの作業場とキー設定を、このファイルの内容で置き換えますか？ 現在の作品は変更しません。'))return;
       const oldWorkspace=read(KEY),oldShortcuts=read(SHORTCUT_KEY);
       try{
         localStorage.setItem(KEY,JSON.stringify(value.workspace));
@@ -278,11 +279,11 @@ export function installWorkspaceProfiles(
       status.textContent='一括設定を保存しました。キー設定を反映するには、作品を保存したあとで画面を再読み込みしてください。';
     }catch(error){status.textContent=error instanceof Error?error.message:'一括設定を読み込めませんでした。';}
   };
-  function importText(json:string):number{
+  async function importText(json:string):Promise<number>{
     if(json.length>1048576)throw Error('ファイルが大きすぎます。');
     const imported=parseFile(JSON.parse(json),boxIds());
     const duplicate=imported.filter(x=>profiles.some(p=>p.name===x.name)).map(x=>x.name);
-    if(duplicate.length&&!window.confirm('同名の設定 '+duplicate.join('、')+' を置き換えますか？'))return 0;
+    if(duplicate.length&&!await appConfirm('同名の設定 '+duplicate.join('、')+' を置き換えますか？'))return 0;
     const merged=profiles.filter(x=>!imported.some(y=>y.name===x.name)).concat(imported);
     if(merged.length>32)throw Error('保存できる配置は32件までです。');
     if(!persist(merged))throw Error('作業場の設定を保存できませんでした。');
@@ -294,7 +295,7 @@ export function installWorkspaceProfiles(
     const source=file.files?.[0];file.value='';if(!source)return;
     try{
       if(source.size>1048576)throw new Error('ファイルが大きすぎます。');
-      importText(await source.text());
+      await importText(await source.text());
     }catch(e){status.textContent=e instanceof Error?e.message:'設定を読み込めませんでした。';}
   };
   handed.onchange=()=>setHanded(handed.checked);

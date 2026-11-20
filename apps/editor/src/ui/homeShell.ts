@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from './appDialogs';
 import type {WorkEntry} from '../persistence/workLibrary';
 import {icon} from './icons';
 import {resolveDocumentDimensions,pixelToMillimeters,listCreationTemplates,storeCreationTemplate,removeCreationTemplate,type DocumentUnit} from '../documentSetup';
@@ -241,12 +242,12 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
           await actions.updateWorkCatalog(work.documentId,{favorite:!work.favorite});await loadWorks();
         }],
         ['整理する',async()=>{
-          const folder=prompt('フォルダー名（空欄なら未分類）',work.catalogFolder??'');if(folder===null)return;
-          const tags=prompt('タグ（カンマで区切ってください）',(work.catalogTags??[]).join(', '));if(tags===null)return;
+          const folder=await appPrompt('フォルダー名（空欄なら未分類）',work.catalogFolder??'');if(folder===null)return;
+          const tags=await appPrompt('タグ（カンマで区切ってください）',(work.catalogTags??[]).join(', '));if(tags===null)return;
           await actions.updateWorkCatalog(work.documentId,{folder,tags:tags.split(/[,、，]+/)});await loadWorks();
         }],
         ['複製',async()=>{await actions.duplicateWork(work.documentId);await loadWorks();}],
-        ['ゴミ箱へ移動',async()=>{if(confirm('「'+work.name+'」をゴミ箱へ移しますか？\n後からゴミ箱から復元できます。')){await actions.deleteWork(work.documentId);await loadWorks();await loadTrash();}}]
+        ['ゴミ箱へ移動',async()=>{if(await appConfirm('「'+work.name+'」をゴミ箱へ移しますか？\n後からゴミ箱から復元できます。')){await actions.deleteWork(work.documentId);await loadWorks();await loadTrash();}}]
       ] as const){
         const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.workAction=label;button.onclick=()=>void run(action,button);details.append(button);
       }
@@ -287,7 +288,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   };
   batchAction('ihWorkMoveSelected',async()=>{
     const selected=selectedWorks();if(!selected.length)return;
-    const folder=prompt(selected.length+'件の作品を移動するフォルダー名（空欄なら未分類）');
+    const folder=await appPrompt(selected.length+'件の作品を移動するフォルダー名（空欄なら未分類）');
     if(folder===null)return;
     for(const work of selected){
       await actions.updateWorkCatalog(work.documentId,{folder});
@@ -305,7 +306,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   });
   batchAction('ihWorkTrashSelected',async()=>{
     const selected=selectedWorks();if(!selected.length)return;
-    if(!confirm(selected.length+'件の作品をゴミ箱へ移動しますか？後から復元できます。'))return;
+    if(!await appConfirm(selected.length+'件の作品をゴミ箱へ移動しますか？後から復元できます。'))return;
     for(const work of selected){
       await actions.deleteWork(work.documentId);
       selectedWorkIds.delete(work.documentId);
@@ -337,7 +338,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
         },restore);
         const purge=document.createElement('button');purge.type='button';purge.textContent='完全に削除';
         purge.onclick=()=>void run(async()=>{
-          if(!window.confirm('「'+work.name+'」を完全に削除しますか？\n元に戻せなくなります。'))return;
+          if(!await appConfirm('「'+work.name+'」を完全に削除しますか？\n元に戻せなくなります。'))return;
           await actions.purgeWork(work.documentId);await loadTrash();await loadWorks();
           notify('作品を完全に削除しました。');
         },purge);
@@ -355,8 +356,8 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   // keep it hidden unless explicitly requested for debugging.
   const isMyWorksQa=location.pathname.includes('/qa/my-works-open/');
   reset.hidden=!isMyWorksQa&&new URLSearchParams(location.search).get('debugWorks')!=='1';
-  reset.onclick=()=>{
-    if(!confirm('マイ作品を初期化しますか？\\nアプリ内の全作品・復旧データを削除します。元に戻せません。\\n書き出した .illustro ファイルは削除されません。'))return;
+  reset.onclick=async()=>{
+    if(!await appConfirm('マイ作品を初期化しますか？\\nアプリ内の全作品・復旧データを削除します。元に戻せません。\\n書き出した .illustro ファイルは削除されません。'))return;
     void run(async()=>{await actions.resetWorks();recovery=[];setWorks([],null);await loadWorks();updateContinue();notify('マイ作品を初期化しました。');},reset);
   };
   const rename=document.createElement('dialog');rename.className='ih-new-dialog';rename.setAttribute('aria-label','作品名を変更');rename.innerHTML='<form class="ih-dialog-content"><h2>作品名を変更</h2><label class="ih-name-field">作品名<input name="title" maxlength="120" required></label><p role="status"></p><div class="ih-dialog-actions"><button type="button" class="ih-quiet-button">キャンセル</button><button type="submit" class="ih-solid-button">変更する</button></div></form>';root.append(rename);
