@@ -806,7 +806,7 @@ function groupLayerRow(group:LayerGroup,depth:number){
     changeLayer('グループのロックを切り替えました。',tx=>tx.updateLayerGroup(group.id,{locked:!group.locked}));
   });
   button('改名',group.name+'の名前を変更する',async()=>{
-    const name=await appPrompt('グループ名',group.name)?.trim();
+    const name=(await appPrompt('グループ名',group.name))?.trim();
     if(name&&name!==group.name)changeLayer('グループ名を変更しました。',tx=>tx.updateLayerGroup(group.id,{name}));
   });
   button('合成範囲',group.name+'の合成範囲を見比べる',()=>editGroupStructure(group));
@@ -1571,7 +1571,7 @@ byId<HTMLButtonElement>('layerBatchGroup').onclick=async()=>{
     '離れたレイヤーを隣り合わせに移してグループにします。間にあるレイヤーとの重なり順が変わります。\n' +
     '既存のグループは分割せず、まとめて1回で元に戻せます。続けますか？'
   ))return;
-  const name=await appPrompt('グループ名','グループ')?.trim();
+  const name=(await appPrompt('グループ名','グループ'))?.trim();
   if(!name)return;
   changeLayer('選んだレイヤーをグループにまとめました。',tx=>tx.createLayerGroup(ids,name,separated));
 };
@@ -2342,7 +2342,7 @@ function openArtworkHistory(){
   branch.onclick=async()=>{
     const id=list.value as RevisionId;
     if(!id||id===head)return;
-    const title=await appPrompt('別案の名前',entries.find(entry=>entry.id===id)?.snapshot?.name??'別案')?.trim();
+    const title=(await appPrompt('別案の名前',entries.find(entry=>entry.id===id)?.snapshot?.name??'別案'))?.trim();
     if(!title)return;
     dialog.close();
     void restoreArtworkHistory(artwork,id,title.slice(0,160));
