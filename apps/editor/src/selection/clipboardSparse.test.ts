@@ -5,6 +5,9 @@ import {ArtworkClipboard} from './clipboard';
 import type {BrushSurface} from '../brushSurface';
 import {createDeterministicIdFactory} from '../../../../packages/core/src/ids';
 
+// In headless tests, explicitly accept the app's async confirmation UI.
+vi.mock('../ui/appDialogs',()=>({appConfirm:vi.fn(async()=>true)}));
+
 afterEach(()=>vi.unstubAllGlobals());
 describe('C06-015 editable group copy uses sparse painted tiles',()=>{
  it('copies a small selection without a full-layer GPU readback',async()=>{
@@ -61,7 +64,6 @@ describe('C06-015 editable group copy uses sparse painted tiles',()=>{
   expect(full).not.toHaveBeenCalled();
   const preview=clipboard.preview();
   expect(preview?.pixels).toBeNull();
-  vi.stubGlobal('window',{confirm:()=>true});
   const pasted=await clipboard.paste(controller,'original');
   expect(doc.root.rootLayerIds).toHaveLength(5);
   // The new group uses the same source positions, without a 64 MiB buffer.
