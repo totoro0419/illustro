@@ -94,7 +94,7 @@ const html = [
       '<div class="ih-empty-works"><div class="ih-empty-art" aria-hidden="true"><span class="ih-empty-sheet ih-sheet-one"></span><span class="ih-empty-sheet ih-sheet-two"></span><span class="ih-empty-spark">'+icon('effects')+'</span></div>',
         '<h2>最初の作品を、ここから。</h2><p>新しく作った作品は自動保存され、ここからいつでも続きを描けます。</p>',
         '<button id="ihWorksStart" type="button" class="ih-solid-button">新しい作品を作る <span aria-hidden="true">↗</span></button>',
-        '<p class="ih-empty-note">保存した .illustro ファイルは「新しい作品 → ファイルから開く」から読み込めます。</p>',
+        '<p class="ih-empty-note">保存した .illustro ファイルは、ホームの「ファイルから開く」から読み込めます。</p>',
       '</div>',
     '</section>',
     '<section class="ih-screen ih-inner-screen" data-ih-screen="recovery" hidden aria-labelledby="ihRecoveryTitle">',
@@ -106,7 +106,7 @@ const html = [
     '</section>',
     '<section class="ih-screen ih-inner-screen" data-ih-screen="settings" hidden aria-labelledby="ihSettingsTitle">',
       '<div class="ih-page-top"><span class="ih-overline">PREFERENCES</span><h1 id="ihSettingsTitle">設定<span class="ih-period">.</span></h1><p>Illustroの操作や表示を調整するためのページ。</p></div>',
-      '<div class="ih-placeholder"><strong>設定の詳細は今後追加します。</strong><p>現時点で利用できる描画の設定は、エディターのWorkspaceから変更できます。</p><button type="button" class="ih-solid-button" id="ihSettingsEditor">描画画面へ <span aria-hidden="true">↗</span></button></div>',
+      '<div class="ih-placeholder"><strong>設定の詳細は今後追加します。</strong><p>描画の設定は、描画画面の「その他」→「パネル一覧」から探せます。</p><button type="button" class="ih-solid-button" id="ihSettingsEditor">描画画面へ <span aria-hidden="true">↗</span></button></div>',
     '</section>',
   '</main>',
   '<div class="ih-floating-notice" id="ihNotice" role="status" aria-live="polite" hidden></div>',
@@ -126,8 +126,11 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   if(location.pathname.replace(/\/+$/,'').endsWith('/qa/home')){
     const checks=document.createElement('details');checks.className='ih-checks';checks.innerHTML='<summary>今回の確認</summary><ol><li>作品を作り、線を描いてホームへ戻る</li><li>マイ作品から開き、線とレイヤーが残っているか見る</li><li>別の作品も作り、二つの絵が混ざらないか見る</li><li>アプリを閉じて開き直し、前回の作品を続ける</li><li>作品の名前を変え、複製・削除を試す</li><li>用紙を動かす・拡大する・回す。白い枠だけが残らないか見る</li></ol>';root.querySelector('.ih-footer')!.after(checks);
   }
-  const el=<T extends HTMLElement=HTMLElement>(id:string)=>root.querySelector<T>('#'+id)!;
-  const dialog=el<HTMLDialogElement>('ihNewDialog');
+  // Show the dialog over the current screen, including when Home is hidden.
+  const dialog=root.querySelector<HTMLDialogElement>('#ihNewDialog')!;
+  document.body.append(dialog);
+  const el=<T extends HTMLElement=HTMLElement>(id:string)=>
+    (dialog.querySelector<T>('#'+id)??root.querySelector<T>('#'+id))!;
   let screen:Screen='home',featureIndex=0,recovery:readonly RecoverySummary[]=[],works:readonly WorkEntry[]=[],lastWorkId:string|null=null,workUrls=new Map<string,{revision:string|null;url:string}>();
   const previewPending=new Set<string>();
   const selectedWorkIds=new Set<string>();
@@ -177,11 +180,10 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   };
   const showNew=(mode:'blank'|'file'='blank')=>{
     if(mode==='file'){actions.openFile();return;}
-    navigate('home');
+    if(dialog.open)return;
     refillTemplates(templatePicker.value);
     el<HTMLDetailsElement>('ihCanvasSetup').open=false;
     el('ihNewError').textContent='';
-    notify('');
     dialog.showModal();
     prefetchDraft();
   };
@@ -436,6 +438,10 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   setButton('ihFeatureVisual',showFeature);setButton('ihFeatureMore',showFeature);
   setButton('ihDetailEditor',()=>actions.hasDocument()?navigate('editor'):showNew());
   setButton('ihNewClose',()=>dialog.close());setButton('ihNewCancel',()=>dialog.close());
+  const createButton=el<HTMLButtonElement>('ihNewCreate');
+  const closeButtons=[el<HTMLButtonElement>('ihNewClose'),el<HTMLButtonElement>('ihNewCancel')];
+  dialog.addEventListener('keydown',event=>event.stopPropagation());
+  dialog.addEventListener('cancel',event=>{if(createButton.disabled)event.preventDefault();});
   setButton('ihSelectFile',actions.openFile);
   let draftTimer:ReturnType<typeof setTimeout>|null=null;
   let currentUnit:DocumentUnit='px';
@@ -567,8 +573,11 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     if(setup)setup.open=true;
   },true);
   el<HTMLFormElement>('ihBlankForm').addEventListener('submit',event=>{event.preventDefault();void(async()=>{
+    if(createButton.disabled)return;
     const d=sizePreview();if(!d){el('ihNewError').textContent='サイズと解像度を確認してください。';return;}
-    const button=el<HTMLButtonElement>('ihNewCreate');button.disabled=true;el('ihNewError').textContent='キャンバスを準備しています。';
+    createButton.disabled=true;
+    for(const button of closeButtons)button.disabled=true;
+    el('ihNewError').textContent='キャンバスを準備しています。';
     try{
       const name=el<HTMLInputElement>('ihNewName').value;
       const setup={width:el<HTMLInputElement>('ihNewWidth').valueAsNumber,height:el<HTMLInputElement>('ihNewHeight').valueAsNumber,
@@ -579,7 +588,10 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       }
       else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';
     }catch(error){console.error('C01_CREATE_DOCUMENT_FAULT',error instanceof Error?error.stack??error.message:error);el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}
-    finally{button.disabled=false;}
+    finally{
+      createButton.disabled=false;
+      for(const button of closeButtons)button.disabled=false;
+    }
   })();});
   let swipeStart:number|null=null;
   el('ihFeatureVisual').addEventListener('touchstart',event=>{swipeStart=event.touches[0]?.clientX??null;},{passive:true});

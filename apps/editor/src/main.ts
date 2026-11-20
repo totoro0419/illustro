@@ -1,13 +1,13 @@
 import {installPassiveTouchProbe} from './passiveTouchProbe';
 import {installInputFreezeTrace} from './inputFreezeTrace';
 import {HistoryNavigation,type HistoryDirection} from './historyNavigation';
-import {namedSnapshot,type WorkEntry,listWorks as listLocalWorks,updateWorkCatalog as updateLocalCatalog} from './persistence/workLibrary';
+import {getWork,namedSnapshot,type WorkEntry,listWorks as listLocalWorks,updateWorkCatalog as updateLocalCatalog} from './persistence/workLibrary';
 import './style.css';
 import './ui/shell.css';
 import './ui/aurora.css';
 import './ui/home.css';
 import {installHomeShell,type HomeShell} from './ui/homeShell';
-import {appConfirm,appPrompt} from './ui/appDialogs';
+import {appChoose,appConfirm,appPrompt} from './ui/appDialogs';
 import './color/color.css';
 import './color/harmony.css';
 import {ForegroundColor,rgb,hex,fromHex,DOCUMENT_PALETTE_SECTION} from './color/model';
@@ -88,6 +88,7 @@ import {penEraserInput} from './stylusButtons';
 import {parseSavedCanvasView,type Point} from './canvasView';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,type GuideSettings} from './strokeGuide';
 import {BrushPresetLibrary} from './brushPresets';
+import {readWorkBrushSettings,saveWorkBrushSettings} from './workBrushSettings';
 import {additionalBrushes} from './brushStarterPresets';
 import {installBrushDynamicsEditor} from './brushDynamicsEditor';
 import {filterBrushCatalog,type BrushCatalogGroup} from './brushCatalog';
@@ -139,7 +140,10 @@ const foreground=new ForegroundColor();
 const brushPresets=new BrushPresetLibrary();
 const brushUsage=new BrushUsage();
 let builtInBrushes:FoundationPreset[]=[];
-const brushDrafts=new Map<string,FoundationPreset>();
+const workBrushDrafts=new Map<string,Map<string,FoundationPreset>>();
+let brushDrafts=new Map<string,FoundationPreset>();
+let temporaryEraserReturn:string|null=null;
+let temporaryEraserRestoreRequested=false;
 let advancedBrushEditor:ReturnType<typeof installBrushAdvancedEditor>|null=null;
 let dynamicsEditor:ReturnType<typeof installBrushDynamicsEditor>|null=null;
 let eyedropperOriginal=foreground.current;
@@ -1877,10 +1881,14 @@ byId<HTMLSelectElement>('colorSampleSource').onchange=()=>{eyedropperSettings.ap
 addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='i'||e.altKey||e.ctrlKey||e.metaKey||e.repeat||(e.target instanceof HTMLElement&&e.target.closest('input,textarea,select,[contenteditable]')))return;e.preventDefault();if(selectedTool==='eyedropper')restoreDrawingTool();else activateEyedropper();});
 
 function savedBrush(id:string):FoundationPreset|undefined{return brushPresets.all(builtInBrushes).find(p=>p.id===id);}
+function rememberWorkBrush(){
+ if(qaMode||!documentReady||documentActivationPending||temporaryEraserReturn||!surface?.preset)return;
+ saveWorkBrushSettings(brushPresets.storage,controller.document.root.documentId,{presetId:surface.preset.id,size:surface.preset.size});
+}
 function applyBrushChange(change:(draft:FoundationPreset)=>void):boolean{
  if(!surface?.preset)return false;
  if(surface.inputActive){brushMessage('描画中は設定を変更できません。線を離してから調整してください。');return false;}
- const draft=structuredClone(surface.preset);
+ const previousSize=surface.preset.size,draft=structuredClone(surface.preset);
  try{
   change(draft);
   compilePreset(draft,{forceFadeGeometry:'adaptive-v1'});
@@ -1888,6 +1896,7 @@ function applyBrushChange(change:(draft:FoundationPreset)=>void):boolean{
   const original=savedBrush(draft.id);
   if(original&&sameEditableBrush(draft,original))brushDrafts.delete(draft.id);
   else brushDrafts.set(draft.id,structuredClone(draft));
+  if(draft.size!==previousSize)rememberWorkBrush();
   syncPreset();
   return true;
  }catch(error){brushMessage('この設定は使えません: '+String(error));return false;}
@@ -1895,7 +1904,10 @@ function applyBrushChange(change:(draft:FoundationPreset)=>void):boolean{
 function syncPreset(){
  if(!surface?.preset)return;
  const p=surface.preset;
- byId<HTMLInputElement>('size').value=String(p.size);byId<HTMLInputElement>('sizeNumber').value=String(p.size);
+ const sizeNumber=byId<HTMLInputElement>('sizeNumber');
+ byId<HTMLInputElement>('size').value=String(p.size);
+ if(document.activeElement!==sizeNumber)sizeNumber.value=String(p.size);
+ byId('brushBoxSummary').textContent=(surface.brushName||selectedTool)+' · '+Math.round(p.size)+'px';
  byId<HTMLInputElement>('force').checked=p.forceFade?.enabled??false;
  for(const [id,value] of [['brushOpacity',p.opacity],['brushFlow',p.flow],['brushSpacing',p.spacing.value],['brushPressure',p.pressure.smoothing],['brushStabilization',p.stabilization.constant],['brushTexture',p.texture.paper.strength]] as const){
   const control=byId<HTMLInputElement>(id);control.value=String(Math.round(value*100));
@@ -2535,9 +2547,25 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   surface.setBrushes(brushPresets.all(builtInBrushes));
   refreshBrushOptions();
   if(brushPresets.loadError)byId('brushLibraryStatus').textContent='保存済みブラシを読み取れませんでした: '+brushPresets.loadError;
-  lastBrushPresetId=surface.brushes.some(p=>p.id===lastBrushPresetId)?lastBrushPresetId:surface.brushes.find(p=>p.blend!=='erase')?.id??surface.brushes[0]?.id??lastBrushPresetId;
+  const defaultBrush=surface.brushes.find(p=>p.id==='foundation-g-pen')??surface.brushes.find(p=>p.blend!=='erase')??surface.brushes[0]!;
+  lastBrushPresetId=surface.brushes.some(p=>p.id===lastBrushPresetId)?lastBrushPresetId:defaultBrush.id;
   lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;
-  selectPreset(lastBrushPresetId);
+  let initialBrushId=lastBrushPresetId;
+  if(!qaMode){
+    const documentId=controller.document.root.documentId;
+    brushDrafts=workBrushDrafts.get(documentId)??new Map();
+    workBrushDrafts.set(documentId,brushDrafts);
+    temporaryEraserReturn=null;
+    temporaryEraserRestoreRequested=false;
+    const settings=readWorkBrushSettings(brushPresets.storage,documentId);
+    const saved=settings&&surface.brushes.find(p=>p.id===settings.presetId);
+    lastBrushPresetId=defaultBrush.id;
+    initialBrushId=saved?.id??defaultBrush.id;
+    if(saved&&settings&&(brushDrafts.get(saved.id)?.size??saved.size)!==settings.size){
+      brushDrafts.set(saved.id,{...(brushDrafts.get(saved.id)??saved),size:settings.size});
+    }
+  }
+  selectPreset(initialBrushId,false);
   if(freshWhiteSurfaceKey){
     // No white pixels are generated at startup. The editor already displays
     // an ordinary white paper; the layer's real color is recorded in Core.
@@ -2547,7 +2575,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
     await surface.restoreDocumentProjection(projectionCache);
     measureCanvasStage('projection-restore',replayStarted);
   }
-  for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV','brushDuplicate','brushSave','brushOpacity','brushFlow','brushSpacing','brushPressure','brushStabilization','brushTexture','brushAzimuth','brushTwist'])(byId(id) as HTMLInputElement).disabled=false;
+  for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV','brushDuplicate','brushSave','brushOpacity','brushOpacityNumber','brushFlow','brushFlowNumber','brushSpacing','brushPressure','brushStabilization','brushStabilizationNumber','brushTexture','brushAzimuth','brushTwist'])(byId(id) as HTMLInputElement).disabled=false;
   syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity);documentReady=true;c06Selection?.documentChanged();renderLayers();void c05ReferenceBoard?.refreshIfChanged();updateHistoryButtons();
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
@@ -2739,7 +2767,7 @@ async function createDocument(width:number,height:number,name='新しい作品',
     updateQa();measureCanvasStage('click-to-editable',createStarted);return true;
   }catch(error){
     const message=surface?.initializationError||(error instanceof Error?error.message:String(error));
-    updateQa();surface?.destroy();documentReady=false;byId('status').textContent='描画を開始できませんでした。'+message;return false;
+    updateQa();byId('status').textContent='描画を開始できませんでした。'+message;return false;
   }finally{trigger.disabled=false;}
 }
 byId<HTMLButtonElement>('new').onclick=()=>{
@@ -2845,7 +2873,7 @@ function refreshBrushCatalog(selectId?:string){
  refreshBrushOptions();
  if(selectId)selectPreset(selectId);else if(surface.preset)selectPreset(surface.preset.id);
 }
-function selectPreset(id:string){
+function selectPreset(id:string,remember=true){
  if(!surface)return;
  surface.setSelectionMode(false);
  surface.panTool=false;byId('panView').setAttribute('aria-pressed','false');
@@ -2856,18 +2884,29 @@ function selectPreset(id:string){
  if(erasing)lastEraserPresetId=surface.brushId;else lastBrushPresetId=surface.brushId;
  lastDrawingTool=selectedTool;refreshBrushOptions();byId<HTMLSelectElement>('brush').value=surface.brushId;
  byId('erase').setAttribute('aria-pressed',String(erasing));byId('paint').setAttribute('aria-pressed',String(!erasing));
- syncPreset();reflectRailTool();byId('brushBoxSummary').textContent=(surface.brushName||selectedTool)+' · '+Math.round(surface.brushSize)+'px';
+ syncPreset();reflectRailTool();
+ if(remember)rememberWorkBrush();
 }
 function brushMessage(message:string){byId('brushLibraryStatus').textContent=message;}
+function bindBrushNumber(input:HTMLInputElement,current:()=>number,apply:(value:number)=>void){
+ const applyInput=()=>{
+  const value=input.valueAsNumber;
+  if(Number.isFinite(value)&&!input.validity.rangeUnderflow&&!input.validity.rangeOverflow&&value!==current())apply(value);
+ };
+ const reflect=()=>{input.value=String(current());};
+ input.addEventListener('input',applyInput);
+ input.addEventListener('change',()=>{applyInput();reflect();});
+ input.addEventListener('blur',reflect);
+ input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();input.blur();}});
+}
 function editBrushParameter(controlId:string,change:(preset:FoundationPreset,value:number)=>void){
  const input=byId<HTMLInputElement>(controlId);
- const changeValue=(value:string)=>{
-  const number=Number(value);
-  if(!value||!Number.isFinite(number)||number<0||number>100){brushMessage('0〜100で設定してください');syncPreset();return;}
+ const changeValue=(number:number)=>{
   if(!applyBrushChange(p=>change(p,number/100)))syncPreset();
  };
- input.addEventListener('input',()=>changeValue(input.value));
- (document.getElementById(controlId+'Number') as HTMLInputElement|null)?.addEventListener('change',event=>changeValue((event.target as HTMLInputElement).value));
+ input.addEventListener('input',()=>changeValue(input.valueAsNumber));
+ const number=document.getElementById(controlId+'Number') as HTMLInputElement|null;
+ if(number)bindBrushNumber(number,()=>input.valueAsNumber,changeValue);
 }
 for(const [id,change] of [
  ['brushOpacity',(p:FoundationPreset,v:number)=>{p.opacity=v;}],
@@ -2985,23 +3024,15 @@ byId<HTMLButtonElement>('brushExport').onclick=()=>{
  catch(error){brushMessage('書き出せません: '+String(error));}
 };
 byId<HTMLSelectElement>('brush').onchange=e=>selectPreset((e.target as HTMLSelectElement).value);
-for(const id of ['size','sizeNumber']){
- const input=byId<HTMLInputElement>(id);
- const onSizeInput=()=>{
-  const value=Number(input.value);
-  if(!input.value||!Number.isFinite(value)||value<.1||value>1024){syncPreset();return;}
-  if(!applyBrushChange(p=>{p.size=value;}))syncPreset();
- };
- input.addEventListener('input',onSizeInput);
- if(id==='sizeNumber')input.addEventListener('change',onSizeInput);
-}
+const sizeSlider=byId<HTMLInputElement>('size'),sizeNumber=byId<HTMLInputElement>('sizeNumber');
+const changeBrushSize=(size:number)=>{if(!applyBrushChange(p=>{p.size=size;}))syncPreset();};
+sizeSlider.addEventListener('input',()=>changeBrushSize(sizeSlider.valueAsNumber));
+bindBrushNumber(sizeNumber,()=>surface?.preset?.size??sizeSlider.valueAsNumber,changeBrushSize);
 for(const [id,handler] of Object.entries({fitView:()=>surface?.fitView(),zoomOut:()=>surface?.zoomView(1/1.25),zoomIn:()=>surface?.zoomView(1.25),view100:()=>surface?.viewAt100(),actualPixels:()=>surface?.actualPixels(),resetRotation:()=>surface?.resetRotation(),flipH:()=>surface?.flipView('x'),flipV:()=>surface?.flipView('y')}))byId<HTMLButtonElement>(id).onclick=handler;
 byId<HTMLInputElement>('zoomPercent').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewZoom(n/100);};
 byId<HTMLInputElement>('angleDegree').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewRotation(n*Math.PI/180);};
 // C02 BRU-012 / GST-004: hold E to temporarily use the eraser on PC.
 // Preserve the active preset and drawing target, and never switch an in-progress stroke.
-let temporaryEraserReturn:string|null=null;
-let temporaryEraserRestoreRequested=false;
 function restoreTemporaryEraser(){
  if(!temporaryEraserRestoreRequested)return;
  if(surface?.inputActive){window.setTimeout(restoreTemporaryEraser,32);return;}
@@ -3022,7 +3053,7 @@ document.addEventListener('keydown',event=>{
  temporaryEraserReturn=active;
  const brushSize=surface.brushSize;
  try{
-  selectPreset(lastEraserPresetId);
+  selectPreset(lastEraserPresetId,false);
   if(inputPreferences.eraserSizeLink&&surface.preset){surface.applyPreset({...surface.preset,size:brushSize});syncPreset();}
  }catch{temporaryEraserReturn=null;}
 });
@@ -3114,17 +3145,24 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
     }}};
     migrationCopy=true;
   }
-  byId('status').textContent='作品を表示しています。';
   try{
     if(!qaMode){
       if(!(await prepareWorkSwitch()))return;
-      const same=(await persistence.listWorks()).works.find(x=>x.documentId===opened.document.root.documentId);
+      const same=await getWork(opened.document.root.documentId);
       if(same){
-        if(same.revisionId===opened.document.head){await openWork(same.documentId);homeUi?.notify('登録済みの同じ作品を開きました。');return;}
-        if(!await appConfirm('同じ識別番号の作品が既にあります。読み込むファイルを別の作品として追加しますか？\n既存の作品は残ります。'))return;
-        opened=copyOpened(opened,opened.document.root.name+'（読み込み）');
+        const copyChoice={value:'copy',label:'別作品として複製'} as const;
+        const decision=await appChoose(
+          '同じ識別番号の作品が'+(same.trashedAt?'ごみ箱に':'マイ作品に')+'あります。\n'
+          +'既存の作品と元のファイルはそのまま残ります。',
+          same.trashedAt?[copyChoice]:[{value:'existing',label:'既存作品を開く'},copyChoice],
+        );
+        if(decision===null){byId('status').textContent='作品ファイルの読み込みを取り消しました。';return;}
+        if(decision==='existing'){await openWork(same.documentId);return;}
+        if(!(await prepareWorkSwitch()))return;
+        opened=copyOpened(opened,opened.document.root.name.slice(0,120-'（読み込み）'.length)+'（読み込み）');
       }
     }
+    byId('status').textContent='作品を表示しています。';
     await activateOpened(opened,false);
     byId('status').textContent=migrationCopy
       ?'旧形式から移行コピーを開きました。元ファイルは変更していません。新形式を残すには「別名で保存」を押してください。'

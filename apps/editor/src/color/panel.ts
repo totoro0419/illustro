@@ -63,7 +63,7 @@ export function colorMarkup():string {
   '<div class="color-section-header"><h3>カラーパレット</h3>'+button('＋ 色を追加','add-current','color-add-button')+'</div>'+
   '<label for="colorPaletteSelect" class="color-palette-choice"><span>パレット</span><select id="colorPaletteSelect" aria-label="使うパレット"></select></label>'+
   '<div id="colorPaletteList" class="color-swatch-grid color-favorites-grid" role="group" aria-label="カラーパレット"></div>'+
-  '<div class="color-section-header color-history-heading"><h3>カラー履歴</h3></div>'+
+  '<div class="color-section-header color-history-heading"><h3>カラー履歴</h3>'+button('履歴を消去','clear-history')+'</div>'+
   '<div id="colorHistoryList" class="color-swatch-grid color-history-strip" role="group" aria-label="カラー履歴"></div>'+
   '<details id="colorPaletteTools" class="color-disclosure color-manage"><summary>パレットの編集・管理</summary><div class="color-detail-inner">'+
    '<div class="color-palette-actions">'+button('新規作成','new-palette')+button('名前の変更','rename-palette')+'</div>'+
@@ -256,6 +256,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  function updateChannels(){const v=values();v.forEach((n,i)=>{const s=document.getElementById('colorSlider'+i) as HTMLInputElement|null,f=document.getElementById('colorNumber'+i) as HTMLInputElement|null;if(s)s.value=String(n);if(f&&document.activeElement!==f)f.value=String(Math.round(n*10)/10);});}
  // HSB/RGB/HSL values are directly visible below the diamond.
  const list=id<HTMLElement>('colorPaletteList'),manager=id<HTMLElement>('colorPaletteManageList'),history=id<HTMLElement>('colorHistoryList'),selector=id<HTMLSelectElement>('colorPaletteSelect');
+ const clearHistory=document.querySelector<HTMLButtonElement>('[data-color-action="clear-history"]')!;
  const chipsByHex=new Map<string,HTMLButtonElement[]>();
  let selectedChipHex=hex(state.current),renderedCollectionsVersion=-1;
  function makeChip(color:RGB,label:string,onSelect:()=>void):HTMLButtonElement{
@@ -288,6 +289,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(!list.childElementCount)list.innerHTML='<span class="color-empty">「＋ 色を追加」で現在の色を登録</span>';
   if(!manager.childElementCount)manager.innerHTML='<span class="color-empty">保存した色はありません。</span>';
   history.replaceChildren(...state.history.map((c,i)=>makeChip(c,'最近の色 '+(i+1),()=>state.choose(c))));
+  clearHistory.disabled=state.history.length===0;
   if(!history.childElementCount)history.innerHTML='<span class="color-empty">色を選ぶと、ここからすぐ戻せます。</span>';
   selectedChipHex=hex(state.current);
   renderedCollectionsVersion=state.collectionsVersion;
@@ -306,7 +308,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
    switch(name){
     case 'eyedropper':options.onPickTool();break;
     case 'add-current':state.addSwatch();notice.textContent='今の色を保存しました。';break;
-    case 'clear-history':state.clearHistory();break;
+    case 'clear-history':state.clearHistory();notice.textContent='カラー履歴を消去しました。';break;
     case 'new-palette':showPaletteDialog('new');break;
     case 'rename-palette':showPaletteDialog('rename');break;
     case 'export-palette':{const payload=new Blob([exportPalette(state.palette)],{type:'application/json'});const url=URL.createObjectURL(payload),a=document.createElement('a');a.href=url;a.download='illustro-palette.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);break;}
