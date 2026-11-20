@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from '../ui/appDialogs';
 /** C06 selection workbench. Paint and geometry are intentionally different modes. */
 import type {BrushSurface} from '../brushSurface';
 import {rasterizeSelection,combineSelection,invertSelection,fullSelection,translateSelection,featherMask,boundsOfSelection,
@@ -476,25 +477,25 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const invert=asButton('選択を反転',()=>{
     const d=source();if(d)publish(invertSelection(active??fullSelection(d.width,d.height)));
   });
-  const shift=asButton('境界だけ移動',()=>{
+  const shift=asButton('境界だけ移動',async()=>{
     if(!active)return;
-    const dx=window.prompt('横に何pxずらしますか？','0');if(dx===null)return;
-    const dy=window.prompt('縦に何pxずらしますか？','0');if(dy===null)return;
+    const dx=await appPrompt('横に何pxずらしますか？','0');if(dx===null)return;
+    const dy=await appPrompt('縦に何pxずらしますか？','0');if(dy===null)return;
     if(!Number.isFinite(Number(dx))||!Number.isFinite(Number(dy)))return;
     publish(translateSelection(active,Number(dx),Number(dy)));
   });
   const movePixels=asButton('選んだ絵そのものを移動',()=>void moveSelectedArtwork());
   const moveSelectedArtwork=async()=>{
     if(!active)return;
-    const x=window.prompt('絵を横に何px移動しますか？（負の数も使用可）','0');
+    const x=await appPrompt('絵を横に何px移動しますか？（負の数も使用可）','0');
     if(x===null)return;
-    const y=window.prompt('絵を縦に何px移動しますか？（負の数も使用可）','0');
+    const y=await appPrompt('絵を縦に何px移動しますか？（負の数も使用可）','0');
     if(y===null)return;
     const dx=Number(x),dy=Number(y);
     if(!Number.isInteger(dx)||!Number.isInteger(dy)||Math.abs(dx)>16384||Math.abs(dy)>16384||(dx===0&&dy===0)){
       status.textContent='移動距離を正しく入力してください。';return;
     }
-    if(!window.confirm('選択した絵を移動します。選択枠だけの移動とは異なり、作品の画素も変わります。実行しますか？'))return;
+    if(!await appConfirm('選択した絵を移動します。選択枠だけの移動とは異なり、作品の画素も変わります。実行しますか？'))return;
     status.textContent='絵を移動しています。';
     try{
       await callbacks.moveContent(dx,dy);
@@ -503,7 +504,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   };
   function previewAdjustment(before:MaskData,after:MaskData,label:string):Promise<boolean>{
-    if(!visual)return Promise.resolve(window.confirm(label+'の変更を適用しますか？'));
+    if(!visual)return appConfirm(label+'の変更を適用しますか？');
     visual.set(after);
     return new Promise(resolve=>{
       const dialog=document.createElement('dialog');
@@ -532,9 +533,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       catch{dialog.remove();previewDialog=null;visual.set(active);resolve(false);}
     });
   }
-  const feather=asButton('選択の縁をぼかす',()=>{
+  const feather=asButton('選択の縁をぼかす',async()=>{
     if(!active)return;
-    const value=window.prompt('ぼかし幅 0〜32px','3');if(value===null)return;
+    const value=await appPrompt('ぼかし幅 0〜32px','3');if(value===null)return;
     const amount=Number(value);if(!Number.isInteger(amount)||amount<0||amount>32){status.textContent='0〜32pxで指定してください。';return;}
     const original=active,doc=source(),current=++job;if(!doc)return;
     pendingSelectionJob=current;
@@ -552,7 +553,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   async function adjust(operation:'grow'|'shrink'|'border'){
     if(!active)return;
     const question=operation==='grow'?'広げる幅':operation==='shrink'?'縮める幅':'境界の幅';
-    const response=window.prompt(question+'（0〜128px）','5');
+    const response=await appPrompt(question+'（0〜128px）','5');
     if(response===null)return;
     const radius=Number(response);
     if(!Number.isInteger(radius)||radius<0||radius>128){status.textContent='0〜128pxで指定してください。';return;}
@@ -658,7 +659,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   }
   async function saveCurrent(){
     const doc=source();if(!doc||!active)return;
-    const name=window.prompt('選択範囲の名前','選択範囲');if(!name)return;
+    const name=await appPrompt('選択範囲の名前','選択範囲');if(!name)return;
     try{
       const saved=await saveNamedSelection(doc.id,name,active);
       await updateNamed();named.value=saved.id;refresh();void updateNamedPreview();
@@ -671,7 +672,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     try{
       const entry=(await listSavedSelections(doc.id)).find(item=>item.id===selectedId);
       if(!entry)throw Error('上書きする保存済み範囲が見つかりません。');
-      if(!window.confirm('「'+entry.name+'」の保存内容を現在の選択範囲に置き換えますか？'))return;
+      if(!await appConfirm('「'+entry.name+'」の保存内容を現在の選択範囲に置き換えますか？'))return;
       await saveNamedSelection(doc.id,entry.name,active,entry.id);
       await updateNamed();named.value=entry.id;refresh();void updateNamedPreview();
       status.textContent='「'+entry.name+'」を上書きしました。';
@@ -689,7 +690,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   }
   async function deleteCurrent(){
     const doc=source();if(!doc||!named.value)return;
-    if(!window.confirm('保存した選択範囲を削除しますか？ 現在の選択は維持します。'))return;
+    if(!await appConfirm('保存した選択範囲を削除しますか？ 現在の選択は維持します。'))return;
     await deleteNamedSelection(named.value);await updateNamed();
   }
   panel.append(summary,intro,modes,showSelectionLabel,fingerLabel,tools,brushTools,autoTools,actions,saveArea,status);host.append(panel);

@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from '../ui/appDialogs';
 /**
  * C05 floating reference windows. No reference content enters the artwork
  * renderer, saved raster tiles or exported composited images.
@@ -204,10 +205,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     syncAfter({...board,items:[...board.items,newBoardItem(assetId,board.items.length)]});
     status.textContent='資料を追加しました。';
   }
-  function reselectReferenceImage(itemId:string){
+  async function reselectReferenceImage(itemId:string){
     const current=board,reference=current?.items.find(item=>item.id===itemId);
     if(!current||!reference)return;
-    if(!reference.assetId.startsWith('missing:')&&!window.confirm(
+    if(!reference.assetId.startsWith('missing:')&&!await appConfirm(
       'この資料の画像を別の画像に入れ替えますか？ 元の素材は削除しません。'))return;
     const filePicker=document.createElement('input');
     filePicker.type='file';filePicker.hidden=true;
@@ -235,10 +236,10 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const next={...item,...patch};
     syncAfter({...prior,items:prior.items.map(x=>x.id===itemId?next:x)},history);
   }
-  function removeItem(itemId:string){
+  async function removeItem(itemId:string){
     const prior=snapshot();
     const target=prior.items.find(x=>x.id===itemId);if(!target)return;
-    if(!window.confirm('この資料を作品の資料ボードから外しますか？ 素材庫の元画像は残ります。'))return;
+    if(!await appConfirm('この資料を作品の資料ボードから外しますか？ 素材庫の元画像は残ります。'))return;
     syncAfter({...prior,items:prior.items.filter(x=>x.id!==itemId)});
   }
   async function toggleVisibility(){
@@ -362,7 +363,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       const local=JSON.stringify(board.items.map(item=>({...item,id:null})));
       const incoming=JSON.stringify(input.items.map(item=>({...item,id:null})));
       if(local===incoming){status.textContent='参考資料はすでに読み込まれています。';return;}
-      if(!window.confirm('この端末には同じ作品の参考資料が残っています。開いた作品ファイルの資料配置で置き換えますか？\n「キャンセル」で端末側の配置を残します。')){
+      if(!await appConfirm('この端末には同じ作品の参考資料が残っています。開いた作品ファイルの資料配置で置き換えますか？\n「キャンセル」で端末側の配置を残します。')){
         status.textContent='端末に保存してある資料配置を残しました。';return;
       }
     }
@@ -473,8 +474,8 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       void getAsset(item.assetId).then(asset=>{
         if(row.isConnected)name.textContent=(asset?.name??'不足している資料')+groupName;
       }).catch(()=>{});
-      const groupButton=input('グループ',()=>{
-        const name=window.prompt('この資料のグループ名（空欄で解除）',item.group);
+      const groupButton=input('グループ',async()=>{
+        const name=await appPrompt('この資料のグループ名（空欄で解除）',item.group);
         if(name!==null)changeItem(item.id,{group:name.trim().slice(0,60)});
       });
       const pin=input(item.pinned?'固定解除':'位置を固定',()=>changeItem(item.id,{pinned:!item.pinned}));

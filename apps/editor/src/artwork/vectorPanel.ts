@@ -1,3 +1,4 @@
+import {appConfirm,appPrompt} from '../ui/appDialogs';
 import {mapArtworkPoint,validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {continuousVectorSession} from './continuousVector';
@@ -281,7 +282,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
             return;
           }
           if(!api.remove)throw Error('レイヤーの削除処理を利用できません。');
-          if(!window.confirm('このレイヤーの最後の線を消します。レイヤーも削除しますか？（Undoで戻せます）')){
+          if(!await appConfirm('このレイヤーの最後の線を消します。レイヤーも削除しますか？（Undoで戻せます）')){
             status.textContent='線の削除を取り消しました。';
             return;
           }
