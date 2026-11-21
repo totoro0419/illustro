@@ -645,10 +645,12 @@ export class BrushSurface{
   }
   async layerThumbnail(id:LayerId){
     const root=this.controller.document.root;
-    const host=this.renderer as unknown as {call:(name:string,args:unknown)=>Promise<Uint8ClampedArray>}|null;
+    const host=this.renderer as unknown as {call:(name:string,args:unknown)=>Promise<{
+      data:Uint8ClampedArray|null;bounds:readonly [number,number,number,number]|null;
+    }|null>}|null;
     if(!host||!root.hasLayer(id))return null;
-    const surfaceKey=root.getLayer(id).surface.descriptor.surfaceId;
-    return host.call('layerThumbnail',{surfaceKey});
+    const layer=root.getLayer(id);
+    return host.call('layerThumbnail',{surfaceKey:layer.surface.descriptor.surfaceId,white:layer.baseColor==='white'});
   }
   async showLayerOutline(id:LayerId|null){
     const sequence=++this.layerOutlineSequence;
@@ -929,7 +931,7 @@ export class BrushSurface{
       if(this.artworkGuides.length||bypass)this.onArtworkGuideTarget(picked?picked.name+'へ吸着（'+picked.distance.toFixed(1)+' px）':bypass?'この一筆は吸着を解除':'作品の定規への吸着なし');
       this.updateGuideOverlay();
       this.renderer?.setSeamlessPreview(this.view.seamless);
-      const context={...(layer.alphaLocked?{alphaLocked:true}:{}),...(this.pressureCalibrationMidpoint===0.5?{}:{deviceCurve:[[0,0],[0.5,this.pressureCalibrationMidpoint],[1,1]] as const}),...(preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{})};
+      const context={stabilizationGeometry:'adaptive-v2' as const,...(layer.alphaLocked?{alphaLocked:true}:{}),...(this.pressureCalibrationMidpoint===0.5?{}:{deviceCurve:[[0,0],[0.5,this.pressureCalibrationMidpoint],[1,1]] as const}),...(preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{})};
       // Color opacity applies to this stroke, not to the stored brush preset.
       // The eraser keeps its own separately configurable opacity.
       const strokePreset=preset.blend==='erase'||this.colorOpacity===1?preset:

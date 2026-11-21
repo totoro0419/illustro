@@ -11,14 +11,34 @@ export class WorkerStrokeSink {
   if(!this.element)this.element=new OffscreenCanvas(w,h);
   if(this.element.width!==w)this.element.width=w;if(this.element.height!==h)this.element.height=h;
   this.context=this.element.getContext('2d',{alpha:true,willReadFrequently:true});if(!this.context)throw Error('Worker preview Canvas2D unavailable');
-  this.context.clearRect(0,0,w,h);this.allocations++;return true;
+  this.context.clearRect(0,0,w,h);this.patch=null;this.allocations++;return true;
  }
- draw(_plan,_rects,_guards,cells){const [x,y]=this.rect;for(const {key,image}of cells){const [cx,cy]=key.split(',').map(Number);this.context.putImageData(image,cx*CELL-Math.round(x*this.scale),cy*CELL-Math.round(y*this.scale));}this.notify();}
+ draw(_plan,_rects,_guards,cells){
+  const [x,y]=this.rect,offsetX=Math.round(x*this.scale),offsetY=Math.round(y*this.scale);
+  for(const {key,image}of cells){
+   const [cx,cy]=key.split(',').map(Number),left=cx*CELL-offsetX,top=cy*CELL-offsetY;
+   this.context.putImageData(image,left,top);
+   if(this.patch!==null){
+    const [x0,y0,x1,y1]=this.patch??[this.element.width,this.element.height,0,0];
+    this.patch=[Math.max(0,Math.min(x0,left)),Math.max(0,Math.min(y0,top)),
+     Math.min(this.element.width,Math.max(x1,left+CELL)),Math.min(this.element.height,Math.max(y1,top+CELL))];
+   }
+  }
+  this.notify();
+ }
  reproject(from){this.view=Array.from(from);}
  retireStroke(id){const layer=this.layers.get(id);if(!layer)return;layer.destroy();this.layers.delete(id);this.changed.delete(id);this.retired.add(id);this.notify();}
  hide(){for(const id of [...this.layers.keys()])this.retireStroke(id);}
+ resend(){for(const [id,layer]of this.layers){layer.patch=null;this.changed.add(id);}}
  async snapshot(){const changed=[...this.changed],retired=[...this.retired];this.changed.clear();this.retired.clear();const layers=[];
-  const pending=[];for(const id of changed){const s=this.layers.get(id);if(!s?.element||!s.view)continue;const data={id,view:s.view,rect:s.rect,scale:s.scale,polygon:s.plan.polygon};pending.push(createImageBitmap(s.element).then(bitmap=>({...data,bitmap})));}
+  const pending=[];
+  for(const id of changed){
+   const s=this.layers.get(id);if(!s?.element||!s.view)continue;
+   const {width,height}=s.element,patch=s.patch;s.patch=undefined;
+   const data={id,view:s.view,rect:s.rect,scale:s.scale,polygon:s.plan.polygon,width,height,patch};
+   const image=patch?createImageBitmap(s.element,patch[0],patch[1],patch[2]-patch[0],patch[3]-patch[1]):createImageBitmap(s.element);
+   pending.push(image.then(bitmap=>({...data,bitmap})));
+  }
   layers.push(...await Promise.all(pending));return {layers,retired};
  }
  get pixels(){return (this.element?this.element.width*this.element.height:0)+[...this.layers.values()].reduce((n,s)=>n+s.pixels,0);}

@@ -243,3 +243,98 @@ body.illustro-focus-mode .topbar > button:not(#c04FocusQuick, #c04FocusExit) { d
   .topbar button .ui-icon { width: 20px; height: 20px }
   .topbar button .current-color { width: 20px; height: 20px }
 }
+
+/* The list gets the panel height. Secondary actions open over the list. */
+#layerPage { overflow: hidden; }
+#layerPageList { flex: 1; max-height: none; margin-block: 6px; }
+.layer-page-head { padding: 0 0 6px; }
+.layer-page-head h2 { margin: 0; }
+.layer-toolbar { display: flex; gap: 2px; }
+.layer-toolbar button, .layer-entry :is(.layer-visibility,.layer-grip), .layer-group-row .layer-visibility,
+.layer-folder-actions > summary {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+#addLayerPage { color: var(--a-focus); background: var(--a-accent-soft); }
+.layer-properties {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: none;
+  padding: 6px 0;
+}
+.layer-properties label { display: grid; grid-template-columns: minmax(40px,1fr) auto; gap: 0 4px; flex: 1; min-width: 0; font-size: 11px; }
+#layerOpacity { grid-column: 1 / -1; grid-row: 2; min-width: 0; width: 100%; margin: 0; height: 28px; }
+#layerOpacityValue { grid-column: 2; grid-row: 1; font-variant-numeric: tabular-nums; }
+#layerBlendMode { max-width: 55%; min-height: 44px; white-space: normal; }
+.layer-batch-summary { padding: 6px 4px; }
+.layer-actions-menu { position: fixed; inset: auto; margin: 0; padding: 12px; overflow: auto; overscroll-behavior: contain; }
+.layer-actions-menu button { min-height: 40px; }
+.layer-actions-menu .layer-page-meta { padding-top: 0; overflow-wrap: anywhere; }
+.layer-actions-menu .layer-mode-actions { margin-block: 8px; }
+#deleteLayer { color: #a03434; }
+
+#layerPageList .layer-entry, #layerList .layer-entry { grid-template-columns: auto minmax(0,1fr) auto; gap: 2px; align-items: center; }
+#layerList .layer-entry-compact { grid-template-columns: auto minmax(0,1fr) auto auto; }
+.layer-entry .layer-row { display: flex; gap: 7px; align-items: center; min-width: 0; padding: 3px 6px; min-height: 48px; }
+.layer-description { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.layer-description .layer-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.layer-lock-indicator { display: inline-grid; flex-shrink: 0; }
+.layer-lock-indicator .ui-icon { width: 15px; height: 15px; }
+.layer-visibility, .layer-grip { border-color: transparent; background: transparent; }
+.layer-grip { touch-action: none; cursor: grab; }
+.layer-grip:active { cursor: grabbing; }
+.layer-grip:disabled { visibility: hidden; }
+.layer-dragging .layer-row { opacity: .65; }
+.layer-edit-shortcuts { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 3px; }
+.layer-edit-shortcuts button { font-size: 11px; padding-inline: 5px; }
+.layer-preview {
+  display: block;
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid var(--a-border-strong);
+  background: conic-gradient(#d7dce5 25%, #f8faff 0 50%, #d7dce5 0 75%, #f8faff 0) 0 0 / 10px 10px;
+}
+.layer-preview canvas { display: block; width: 100%; height: 100%; background: transparent; border-radius: 0; }
+.layer-preview-position { position: absolute; right: 1px; bottom: 1px; width: 13px; height: 10px; border-radius: 2px; border: 1px solid #61739c; background: #fffe; }
+.layer-preview-position i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #324aa2; transform: translate(-50%,-50%); }
+.layer-group-row .layer-folder-toggle { display: flex; align-items: center; gap: 5px; }
+.layer-folder-icons { display: inline-flex; flex: none; align-items: center; }
+.layer-folder-icons .ui-icon { width: 18px; height: 18px; }
+.layer-folder-toggle[aria-expanded=false] .layer-folder-icons .ui-icon:last-child { transform: rotate(-90deg); }
+.layer-folder-actions { display: contents; }
+.layer-folder-actions > summary { cursor: pointer; list-style: none; border-radius: 8px; }
+.layer-folder-actions > summary::-webkit-details-marker { display: none; }
+.layer-folder-actions > div { width: 100%; display: flex; flex-wrap: wrap; gap: 4px; }
+.layer-folder-actions:not([open]) > div { display: none; }
+
+.brush-size-preview { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.brush-size-preview i {
+  position: absolute;
+  left: 50%;
+  top: 43%;
+  transform: translate(-50%,-50%);
+  border: 1px solid #202a42;
+  box-shadow: 0 0 0 1px #fff;
+  box-sizing: border-box;
+  border-radius: 50%;
+}
+.brush-size-preview output {
+  position: absolute;
+  left: 50%;
+  top: 5%;
+  transform: translateX(-50%);
+  padding: 4px 9px;
+  color: var(--a-text);
+  background: var(--a-surface);
+  border: 1px solid var(--a-border-strong);
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}

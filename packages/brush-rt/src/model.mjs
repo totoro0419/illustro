@@ -12,24 +12,29 @@ export function continuous(p){if(p.__foundation)return p.__foundation.solid;retu
 // Weighted local linear regression evaluated at the latest real sample. Unlike a
 // trailing position average it preserves constant-velocity lines without phase lag.
 export class Stabilizer {
- constructor(p,fast=0){this.p=p;this.fast=fast;this.window=[];this.last=null;this.direction=null;}
+ constructor(p,fast=0,adaptive=false){this.p=p;this.fast=fast;this.adaptive=adaptive;this.window=[];this.last=null;this.direction=null;}
  accept(s){
   const q=normalize(s);if(this.p.__foundation)q.p=q.valid&1?curve(this.p.__foundation.preset.pressure.deviceCurve,q.p):this.p.__foundation.preset.pressure.fallback;q.p=curve(this.p.pressureCurve,q.p);
   if(this.last&&q.t<this.last.t)throw Error('out-of-order input');
   const dx=q.x-(this.last?.x??q.x),dy=q.y-(this.last?.y??q.y),len=Math.hypot(dx,dy);
   const dir=len>0?[dx/len,dy/len]:this.direction;
   const corner=!!(len>6&&dir&&this.direction&&dir[0]*this.direction[0]+dir[1]*this.direction[1]<.5);
-  if(corner)this.window=[];
-  this.window.push(q); const period=this.last?Math.max(0,q.t-this.last.t):0,horizon=Math.max(24,Math.min(48,period*2.1));this.window=this.window.filter(a=>q.t-a.t<=horizon).slice(-8);
-  const speed=this.last?len/Math.max(1,q.t-this.last.t):0;
+  const period=this.last?Math.max(0,q.t-this.last.t):0;
+  const speed=len/Math.max(1,period);
   const strength=clamp(this.p.stabilization+(this.p.__foundation?.preset.stabilization.speedMode==='reduce'?-1:1)*this.fast*clamp(speed/2));
+  if(corner||this.adaptive&&period>90)this.window=[];
+  this.window.push(q);
+  // Extending the regression window as strength increases suppresses jitter
+  // while still extrapolating to the current sample on a straight stroke.
+  const horizon=this.adaptive?Math.max(period*2.1,24+64*strength):Math.max(24,Math.min(48,period*2.1));
+  this.window=this.window.filter(a=>q.t-a.t<=horizon).slice(this.adaptive?-24:-8);
   let x=q.x,y=q.y;
   if(strength&&this.window.length>=3&&!corner){
    let w=0,wt=0,wtt=0,wx=0,wy=0,wtx=0,wty=0;
-   for(const a of this.window){const t=a.t-q.t,k=Math.exp(t/14);w+=k;wt+=k*t;wtt+=k*t*t;wx+=k*a.x;wy+=k*a.y;wtx+=k*t*a.x;wty+=k*t*a.y;}
+   for(const a of this.window){const t=a.t-q.t,k=Math.exp(t/(this.adaptive?14+32*strength:14));w+=k;wt+=k*t;wtt+=k*t*t;wx+=k*a.x;wy+=k*a.y;wtx+=k*t*a.x;wty+=k*t*a.y;}
    const det=w*wtt-wt*wt;
    if(det>1e-6){x=q.x+strength*((wx*wtt-wtx*wt)/det-q.x);y=q.y+strength*((wy*wtt-wty*wt)/det-q.y);}
-   const d=Math.hypot(x-q.x,y-q.y),bound=2+4*strength;if(d>bound){x=q.x+(x-q.x)*bound/d;y=q.y+(y-q.y)*bound/d;}
+   const d=Math.hypot(x-q.x,y-q.y),bound=this.adaptive?1+7*strength:2+4*strength;if(d>bound){x=q.x+(x-q.x)*bound/d;y=q.y+(y-q.y)*bound/d;}
   }
   // Pressure is independent; no spatial delay is introduced by pressure smoothing.
   const prev=this.output,dt=this.last?Math.max(0,q.t-this.last.t):0;
@@ -91,7 +96,7 @@ function releaseScale(e,c,totalDistance,totalTime){const v=e.length?releasePosit
 function releaseReady(e,c,totalDistance,totalTime){if(!e)return true;return releasePosition(e,c,totalDistance,totalTime)>=e.length;}
 function finalizeFoundationCommands(commands,start,p,totalDistance,totalTime){const e=commands.length>1?releaseEnvelope(p):null,out=[];let previous=start>0?commands[start-1][2]:null;for(let i=start;i<commands.length;i++){const c=commands[i].slice();if(e){let desired=c[2]*releaseScale(e,c,totalDistance,totalTime);if(previous!==null){const travel=Math.max(0,c[21]-commands[i-1][21]);desired=limitFoundationDiameter(p,desired,previous/2,travel);c[18]=previous/2;}else c[18]=desired/2;c[2]=desired;previous=desired;}else{c[2]*=taper(p,c[21],totalDistance,true);c[18]*=taper(p,c[22],totalDistance,true);}out.push(c);}return out;}
 export class CanonicalBuilder {
- constructor(p,seed=[0x12345678,0x9abcdef0],fast=0,context={}){this.foundation=p.format==='illustro-brush-preset'?structuredClone(p):null;this.context=structuredClone(context);if(this.foundation){p=compilePreset(p,context);fast=p.__foundation.preset.stabilization.fast;}else validatePreset(p);if(!Number.isFinite(fast)||fast<0||fast>1)throw Error('invalid fast stabilization');if(!Array.isArray(seed)||seed.length!==2||seed.some(x=>!Number.isInteger(x)||x<0||x>0xffffffff))throw Error('invalid seed');this.p=structuredClone(p);this.seed=[...seed];this.fast=fast;this.filter=new Stabilizer(p,fast);this.raw=[];this.geometry=[];this.commands=[];this.distance=0;this.index=0;this.carry=0;this.finished=false;this.published=0;this.solid=continuous(p);this.sweep=!!p.__foundation?.coverageUnion;}
+ constructor(p,seed=[0x12345678,0x9abcdef0],fast=0,context={}){this.foundation=p.format==='illustro-brush-preset'?structuredClone(p):null;this.context=structuredClone(context);if(this.foundation){p=compilePreset(p,context);fast=p.__foundation.preset.stabilization.fast;}else validatePreset(p);if(!Number.isFinite(fast)||fast<0||fast>1)throw Error('invalid fast stabilization');if(!Array.isArray(seed)||seed.length!==2||seed.some(x=>!Number.isInteger(x)||x<0||x>0xffffffff))throw Error('invalid seed');this.p=structuredClone(p);this.seed=[...seed];this.fast=fast;this.filter=new Stabilizer(p,fast,!!this.foundation&&context.stabilizationGeometry==='adaptive-v2');this.raw=[];this.geometry=[];this.commands=[];this.distance=0;this.index=0;this.carry=0;this.finished=false;this.published=0;this.solid=continuous(p);this.sweep=!!p.__foundation?.coverageUnion;}
  accept(s){if(this.finished)throw Error('closed');if(s.predicted||s.origin==='predicted')throw Error('prediction cannot be canonical');if(this.raw.length>=500000)throw Error('input limit');const q=this.filter.accept(s),a=this.geometry.at(-1);if(this.foundation){q.pointerType=s.pointerType??'unknown';q.origin=s.origin??'raw';q.velocity=a?Math.hypot(q.x-a.x,q.y-a.y)/Math.max(.001,(q.t-a.t)/1000):0;q.direction=a&&Math.hypot(q.x-a.x,q.y-a.y)>0?Math.atan2(q.y-a.y,q.x-a.x):(a?.direction??0);q.distance=this.distance+(a?Math.hypot(q.x-a.x,q.y-a.y):0);q.elapsed=q.t-(this.start??q.t);}this.raw.push({...s});this.geometry.push(q);if(!a){this.start=q.t;this.nextExposure=q.t+this.p.exposureMs;this.emit(q,null,0,0);return;}const len=Math.hypot(q.x-a.x,q.y-a.y),speed=len/Math.max(.001,(q.t-a.t)/1000),dir=Math.atan2(q.y-a.y,q.x-a.x);
  if(this.solid||this.sweep){this.distance+=len;this.emit(q,a,speed,dir);return;}
  const startDistance=this.geometryDistance??0,dt=q.t-a.t;let traveled=0;
@@ -104,10 +109,23 @@ export class CanonicalBuilder {
  }
 
  emit(q,a,speed,dir){if(this.commands.length>=2000000)throw Error('command limit');const generated=this.foundation?foundationDabs(q,this.p,this.index,this.seed,this.distance,speed,dir,q.t-this.start):{dabs:[makeDab(q,this.p,this.index,this.seed,this.distance,speed,dir,q.t-this.start)]};for(const dab of generated.dabs){if(this.foundation&&this.solid&&a)dab[2]=limitFoundationDiameter(this.p,dab[2],this.lastRadius,Math.hypot(q.x-a.x,q.y-a.y));this.index++;const c=new Float64Array(STRIDE);c.set(dab);c[16]=a?.x??q.x;c[17]=a?.y??q.y;c[18]=a?(q.x===a.x&&q.y===a.y&&!this.compatLegacyRadius?Math.max(this.lastRadius,dab[2]/2):this.lastRadius):dab[2]/2;c[19]=this.solid?1:this.sweep?2:0;c[20]=q.t;c[21]=this.distance;c[22]=a?this.lastDistance:this.distance;c[23]=dab[2]/2;this.lastRadius=dab[2]/2;this.lastDistance=this.distance;this.spacing=generated.spacing??dab[2]*dab[14];if(this.foundation&&!this.solid)c[22]=dir;if(this.sweep)this.appendSweep(c,q);else this.commands.push(c);}}
- appendSweep(c,q){const old=this.commands.at(-1),t=this.p.__foundation.texture,window=this.sweepWindow??[],same=old&&this.commands.length-1>=this.published&&window.length<64&&t.space==='paper'&&t.sizeMode==='absolute'&&!t.followDirection&&[2,3,5,6,7,8,9,10,18].every(i=>c[i]===old[i])&&old[18]===old[2]/2;let merge=!!same;if(merge){const dx=q.x-old[16],dy=q.y-old[17],den=dx*dx+dy*dy;for(const v of window){const f=clamp(((v.x-old[16])*dx+(v.y-old[17])*dy)/Math.max(1e-9,den));if(Math.hypot(v.x-old[16]-dx*f,v.y-old[17]-dy*f)>.05){merge=false;break;}}}if(merge){c[16]=old[16];c[17]=old[17];c[18]=old[18];this.commands[this.commands.length-1]=c;this.sweepWindow.push({...q});}else{this.commands.push(c);this.sweepWindow=[{x:c[16],y:c[17]},{...q}];}}
+ appendSweep(c,q){const old=this.commands.at(-1),t=this.p.__foundation.texture,window=this.sweepWindow??[],same=old&&(this.filter.adaptive||this.commands.length-1>=this.published)&&window.length<64&&t.space==='paper'&&t.sizeMode==='absolute'&&!t.followDirection&&[2,3,5,6,7,8,9,10,18].every(i=>c[i]===old[i])&&old[18]===old[2]/2;let merge=!!same;if(merge){const dx=q.x-old[16],dy=q.y-old[17],den=dx*dx+dy*dy;for(const v of window){const f=clamp(((v.x-old[16])*dx+(v.y-old[17])*dy)/Math.max(1e-9,den));if(Math.hypot(v.x-old[16]-dx*f,v.y-old[17]-dy*f)>.05){merge=false;break;}}}if(merge){c[16]=old[16];c[17]=old[17];c[18]=old[18];this.commands[this.commands.length-1]=c;this.sweepWindow.push({...q});}else{this.commands.push(c);this.sweepWindow=[{x:c[16],y:c[17]},{...q}];}}
  ready(finish=false){let n=this.published,limit=this.commands.length-(this.sweep&&!finish?1:0),endTime=this.commands.at(-1)?.[20]??0,e=this.foundation?releaseEnvelope(this.p):null;while(n<limit&&(finish||(e?releaseReady(e,this.commands[n],this.distance,endTime):this.commands[n][21]<=this.distance-this.p.taperEnd)))n++;if(this.foundation&&finish&&e){const out=finalizeFoundationCommands(this.commands,this.published,this.p,this.distance,endTime);this.published=n;return out;}const out=[];for(;this.published<n;this.published++){const c=this.commands[this.published].slice();c[2]*=taper(this.p,c[21],this.distance,finish);c[18]*=taper(this.p,c[22],this.distance,finish);out.push(c);}return out;}
  release(s){normalize(s);if(s.predicted||s.origin==='predicted')throw Error('prediction cannot be canonical');if(s.t<(this.raw.at(-1)?.t??0))throw Error('out-of-order release');this.releaseInput={...s,phase:'release'};}
- finish(){if(this.finished)throw Error('closed');this.finished=true;return this.ready(true);}
+ finish(){
+  if(this.finished)throw Error('closed');
+  if(this.filter.adaptive&&(this.solid||this.sweep)&&this.p.stabilization>0&&this.geometry.length>1){
+   const previous=this.geometry.at(-1),raw=this.raw.at(-1),release=this.releaseInput;
+   const end=release&&Math.hypot(release.x-raw.x,release.y-raw.y)<=16?release:raw;
+   const travel=Math.hypot(end.x-previous.x,end.y-previous.y);
+   if(travel>.05){
+    const q={...previous,x:end.x,y:end.y,t:end.t,distance:this.distance+travel,elapsed:end.t-this.start};
+    this.distance+=travel;this.geometry.push(q);
+    this.emit(q,previous,Math.min(20000,travel*1000/Math.max(1,end.t-previous.t)),Math.atan2(q.y-previous.y,q.x-previous.x));
+   }
+  }
+  this.finished=true;return this.ready(true);
+ }
  record(){if(!this.finished)throw Error('not finalized');const endTime=this.commands.at(-1)?.[20]??0,finalCommands=this.foundation?finalizeFoundationRecord(this.commands,this.p,this.distance,endTime,this.context).map(c=>Array.from(c)):this.commands.map(c=>{const a=Array.from(c);a[2]*=taper(this.p,a[21],this.distance,true);a[18]*=taper(this.p,a[22],this.distance,true);return a;});return {...(this.foundation?{foundation:this.foundation,context:this.context,...(this.releaseInput?{releaseInput:this.releaseInput}:{})}:{}),version:this.foundation?3:2,engine:this.replayEngine??(this.foundation?FOUNDATION:VERSION),smoothing:'local-regression-adaptive-48ms-bounded-2',fast:this.fast,random:'philox4x32-10',seed:this.seed,preset:this.p,raw:this.raw,geometry:this.geometry,commands:finalCommands};}
 }
 export function commandBounds(c){const solid=c[19]>0,r=Math.max(c[2]/2,c[18])*(solid?1:Math.SQRT2)+2,ax=solid?c[16]:c[0],ay=solid?c[17]:c[1];return {x0:Math.min(c[0],ax)-r,y0:Math.min(c[1],ay)-r,x1:Math.max(c[0],ax)+r,y1:Math.max(c[1],ay)+r};}

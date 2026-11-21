@@ -80,6 +80,7 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
   };
   const setLayerPage=(open:boolean,keyboardNavigation=false)=>{
     if(layerOpen===open)return;
+    if(!open&&byId('layerActionsMenu').matches(':popover-open'))byId('layerActionsMenu').hidePopover();
     layerOpen=open;
     dockOpen=open;
     panel='';
@@ -90,10 +91,22 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
   };
   layer.onclick=event=>setLayerPage(!layerOpen,event.detail===0);
   byId('closeLayerPage').onclick=event=>setLayerPage(false,event.detail===0);
+  const layerMenu=byId('layerActionsMenu'),layerTrigger=byId<HTMLButtonElement>('layerSettingsTrigger');
+  const positionLayerMenu=()=>{
+    const box=page.getBoundingClientRect();
+    layerMenu.style.left=Math.max(8,box.left+8)+'px';
+    layerMenu.style.width=Math.min(box.width-16,360)+'px';
+    layerMenu.style.top=Math.min(box.top+48,window.innerHeight-128)+'px';
+    layerMenu.style.maxHeight=Math.min(480,window.innerHeight-Number.parseFloat(layerMenu.style.top)-12)+'px';
+  };
+  layerMenu.addEventListener('beforetoggle',event=>{
+    if((event as ToggleEvent).newState==='open')positionLayerMenu();
+  });
+  window.addEventListener('resize',()=>{if(layerMenu.matches(':popover-open'))positionLayerMenu();});
   const vectorMask=byId<HTMLDetailsElement>('layerVectorMask');
   vectorMask.addEventListener('illustro:open-layer-settings',()=>{
-    const details=vectorMask.parentElement?.closest<HTMLDetailsElement>('details');
-    if(details)details.open=true;
+    if(!layerOpen)setLayerPage(true);
+    if(!layerMenu.matches(':popover-open'))layerMenu.showPopover({source:layerTrigger});
   });
   const close=(focus=false)=>{
     if(layerOpen)setLayerPage(false);
@@ -112,6 +125,7 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     const section=byId(id+'Body')?.closest<HTMLElement>('.workspace-box');
     if(section?.classList.contains('c04-panel-float')){dockOpen=false;panel='';}
     syncPresentation();
+    onLayerPageChange?.(false);
     if(section){
       const button=section.querySelector<HTMLButtonElement>('.box-toggle');
       if(button?.getAttribute('aria-expanded')==='false')button.click();
@@ -123,7 +137,7 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(dockOpen&&!layerOpen&&!panel){close(event.detail===0);return;}
     setLayerPage(false);
     dockOpen=true;panel='';dockTrigger=byId('allFeatures');
-    showFeature(false);syncPresentation();
+    showFeature(false);syncPresentation();onLayerPageChange?.(false);
     if(event.detail===0)byId('close').focus({preventScroll:true});
   };
   toggle.onclick=toggleWorkspace;
