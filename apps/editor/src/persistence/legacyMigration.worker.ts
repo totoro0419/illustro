@@ -2,6 +2,8 @@ import {CoreDocument} from '@illustro/core';
 import {CoreStrokeDocumentPort,EmptyStrokeError} from '../strokeCommit';
 import {readLegacyStrokeDocument} from './legacyMigration';
 import {createPortableDocument,openPortableDocument} from './portable';
+import {assertLegacyStrokeIntegrity} from './legacyStrokeIntegrity';
+import type {StrokeRecord} from '@illustro/brush-rt';
 
 self.onmessage=async({data}:MessageEvent<{bytes:Uint8Array;name?:string}>)=>{
   try{
@@ -9,9 +11,9 @@ self.onmessage=async({data}:MessageEvent<{bytes:Uint8Array;name?:string}>)=>{
     if(data.name===undefined){self.postMessage({source});return;}
     const document=new CoreDocument({width:source.width,height:source.height,name:data.name});
     const port=new CoreStrokeDocumentPort(document);
-    let outside=0;
+    let outside=0;const accepted:StrokeRecord[]=[];
     for(const stroke of source.strokes){
-      try{await port.commitStroke(port.target(),stroke);}
+      try{await port.commitStroke(port.target(),stroke);accepted.push(stroke);}
       catch(error){if(!(error instanceof EmptyStrokeError))throw error;outside++;}
     }
     const notices=[
@@ -23,8 +25,10 @@ self.onmessage=async({data}:MessageEvent<{bytes:Uint8Array;name?:string}>)=>{
       optionalSections:[],manifestExtras:{legacyMigration:{format:source.format,importedStrokes:source.strokes.length-outside,omittedStrokes:outside}}
     }});
     const reopened=await openPortableDocument(bytes);
-    if(reopened.document.rasterReplayPlan().operations.filter(operation=>operation.kind==='brush.stroke').length!==source.strokes.length-outside)
-      throw Error('移行後に描線の数が一致しませんでした。');
+    // Reject a portable file if migration/re-encoding lost any stroke, point,
+    // brush parameter or original order. Pixel-level visual equality still
+    // needs a separate render comparison on representative real artworks.
+    assertLegacyStrokeIntegrity(accepted,reopened.document.rasterReplayPlan().operations);
     const post=self as unknown as Worker;
     post.postMessage({bytes,notices},[bytes.buffer as ArrayBuffer]);
   }catch(error){

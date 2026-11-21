@@ -1,18 +1,21 @@
-import type {EditableArtwork,LayerId,LayerMask} from '@illustro/core';
+import type {ArtPoint,EditableArtwork,LayerId,LayerMask} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import type {MaskStrokePoint} from '../layerMaskEditing';
 
 export type ArtworkContext=Readonly<{
-  width:number;height:number;color:string;drawing:BrushSurface;
+  width:number;height:number;color:string;drawing:BrushSurface;documentKey?:unknown;
   selected:Readonly<{id:LayerId;name:string;content:EditableArtwork|null;mask:LayerMask|null}>;
   selectionMask:()=>LayerMask|null;
+  snapGuidedPath?:(points:readonly ArtPoint[])=>ArtPoint[];
   paths:readonly Readonly<{id:LayerId;name:string;content:EditableArtwork}>[];
   missingFontCandidates:readonly Readonly<{name:string;assetId:string}>[];
 }>;
 export type ArtworkActions=Readonly<{
   context:()=>ArtworkContext|null;
-  save:(content:EditableArtwork,name:string,id?:LayerId,initialMask?:LayerMask|null)=>Promise<void>;
+  save:(content:EditableArtwork,name:string,id?:LayerId,initialMask?:LayerMask|null,hideSourcePaths?:readonly LayerId[],output?:'vector'|'raster',sourceOf?:LayerId,signal?:AbortSignal)=>Promise<void>;
   rasterize:(id:LayerId)=>Promise<void>;
+  /** Remove an editable vector layer in the same undoable transaction as its final stroke. */
+  remove?:(id:LayerId)=>Promise<void>;
 }>;
 export function button(text:string,run:()=>void|Promise<void>,output:HTMLOutputElement){
   const control=document.createElement('button');control.type='button';control.textContent=text;
@@ -38,9 +41,10 @@ export function selectField<T extends string>(parent:HTMLElement,label:string,en
   labelledField(parent,label,control);
   return control;
 }
-export function locate(drawing:BrushSurface,complete:(points:readonly MaskStrokePoint[])=>void){
-  drawing.setCanvasEditGesture({path:false,width:2,color:'#ffb742',complete:points=>{
-    drawing.setCanvasEditGesture(null);
+export function locate(drawing:BrushSurface,complete:(points:readonly MaskStrokePoint[])=>void,
+  options:Readonly<{continuous?:boolean;end?:()=>void}>={}){
+  return drawing.setCanvasEditGesture({...(options.continuous?{continuous:true}:{}),...(options.end?{end:options.end}:{}),path:false,width:2,color:'#ffb742',complete:points=>{
+    if(!options.continuous)drawing.setCanvasEditGesture(null);
     if(points.length)complete(points);
   }});
 }

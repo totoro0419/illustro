@@ -79,12 +79,164 @@ function sample(source:Uint8Array,width:number,height:number,x:number,y:number,m
   return [source[at]!*a,source[at+1]!*a,source[at+2]!*a,a];
 }
 
+/** Exact box area coverage for axis-aligned affine shrinking. The work is
+ * proportional to the source pixels covered by each output cell, so a 32x
+ * reduction doesn't silently skip 3 out of 4 source columns as an 8x8
+ * fixed-grid supersample would. No document-sized integral-image buffers. */
+function sampleAreaBox(source:Uint8Array,width:number,height:number,
+ x0:number,y0:number,x1:number,y1:number,mask:MaskData|null):Pixel{
+ const left=Math.min(x0,x1),right=Math.max(x0,x1);
+ const top=Math.min(y0,y1),bottom=Math.max(y0,y1);
+ const area=(right-left)*(bottom-top);
+ if(!Number.isFinite(area)||area<=0)return empty;
+ const startX=Math.max(0,Math.floor(left)),endX=Math.min(width,Math.ceil(right));
+ const startY=Math.max(0,Math.floor(top)),endY=Math.min(height,Math.ceil(bottom));
+ if(startX>=endX||startY>=endY)return empty;
+ let red=0,green=0,blue=0,alpha=0;
+ const inverseArea=1/area;
+ for(let y=startY;y<endY;y++){
+  const overlapY=Math.max(0,Math.min(y+1,bottom)-Math.max(y,top));
+  for(let x=startX;x<endX;x++){
+   const overlapX=Math.max(0,Math.min(x+1,right)-Math.max(x,left));
+   if(overlapX<=0||overlapY<=0)continue;
+   const index=y*width+x,at=index*4;
+   const a=source[at+3]!/255*(mask?mask.alpha[index]!/255:1);
+   // Sparse line art and masked-out pixels are common in 4K transforms.
+   // They contribute nothing to the exact area integral.
+   if(a<=0)continue;
+   const contribution=overlapX*overlapY*inverseArea*a;
+   red+=source[at]!*contribution;
+   green+=source[at+1]!*contribution;
+   blue+=source[at+2]!*contribution;
+   alpha+=contribution;
+  }
+ }
+ return [red,green,blue,alpha];
+}
+
+function polygonArea(points:readonly Point[]){
+ if(points.length<3)return 0;
+ const origin=points[0]!;
+ let twice=0;
+ for(let i=1;i<points.length-1;i++){
+   const a=points[i]!,b=points[i+1]!;
+   twice+=(a.x-origin.x)*(b.y-origin.y)-(a.y-origin.y)*(b.x-origin.x);
+ }
+ return twice/2;
+}
+/** Exact source-pixel coverage of an affine output pixel (a parallelogram).
+ * Unlike a fixed sampling grid this cannot skip repeating stripes at strong
+ * reductions. Fully covered cells avoid polygon clipping and allocations. */
+function sampleAreaQuad(source:Uint8Array,width:number,height:number,quad:readonly Point[],mask:MaskData|null):Pixel{
+ const signedArea=polygonArea(quad),area=Math.abs(signedArea);
+ if(!Number.isFinite(area)||area<=0)return empty;
+ // One bounds pass per output pixel avoids four short-lived arrays during
+ // rotated/sheared 4K area resampling, without changing coverage math.
+ let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+ for(const point of quad){
+  minX=Math.min(minX,point.x);maxX=Math.max(maxX,point.x);
+  minY=Math.min(minY,point.y);maxY=Math.max(maxY,point.y);
+ }
+ const x0=Math.max(0,Math.floor(minX)),x1=Math.min(width,Math.ceil(maxX));
+ const y0=Math.max(0,Math.floor(minY)),y1=Math.min(height,Math.ceil(maxY));
+ if(x0>=x1||y0>=y1)return empty;
+ const sign=Math.sign(signedArea);
+ // Most 4K artwork tiles are transparent. Avoid constructing four edge
+ // objects for every empty output footprint; initialize on first ink.
+ let edges:ReadonlyArray<{a:number;b:number;c:number}>|null=null;
+ const clip=(points:readonly Point[],axis:'x'|'y',bound:number,greater:boolean)=>{
+   const out:Point[]=[];
+   for(let i=0;i<points.length;i++){
+     const a=points[i]!,b=points[(i+1)%points.length]!;
+     const inside=greater?a[axis]>=bound:a[axis]<=bound;
+     const next=greater?b[axis]>=bound:b[axis]<=bound;
+     if(inside)out.push(a);
+     if(inside!==next){
+       const t=(bound-a[axis])/(b[axis]-a[axis]);
+       out.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
+     }
+   }
+   return out;
+ };
+ let red=0,green=0,blue=0,alpha=0;
+ for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+   const at=y*width+x,opacity=source[at*4+3]!/255*(mask?mask.alpha[at]!/255:1);
+   if(!opacity)continue;
+   if(!edges)edges=quad.map((p,i)=>{
+     const q=quad[(i+1)%quad.length]!,dx=q.x-p.x,dy=q.y-p.y;
+     return {a:-dy*sign,b:dx*sign,c:(dy*p.x-dx*p.y)*sign};
+   });
+   let full=true,outside=false;
+   for(const {a,b,c} of edges){
+     const max=a*(a>=0?x+1:x)+b*(b>=0?y+1:y)+c;
+     if(max<=0){outside=true;break;}
+     const min=a*(a>=0?x:x+1)+b*(b>=0?y:y+1)+c;
+     if(min<0)full=false;
+   }
+   if(outside)continue;
+   const coverage=full?1:Math.min(1,Math.abs(polygonArea(
+     clip(clip(clip(clip(quad,'x',x,true),'x',x+1,false),'y',y,true),'y',y+1,false)
+   )));
+   const contribution=coverage/area*opacity;
+   red+=source[at*4]!*contribution;green+=source[at*4+1]!*contribution;
+   blue+=source[at*4+2]!*contribution;alpha+=contribution;
+ }
+ return [red,green,blue,alpha];
+}
+
+/** Integrate locally linear source footprints, subdividing curved mappings.
+ * Unlike a fixed 8×8 point grid, a footprint includes every covered source
+ * pixel even at a strong reduction. Curvature is bounded to .125 source px
+ * where possible, with four subdivisions limiting extreme-warp work. */
+function sampleWarpArea(source:Uint8Array,width:number,height:number,mask:MaskData|null,
+ inverse:(x:number,y:number)=>Point,read:(x:number,y:number)=>Pixel,
+ left:number,top:number,right:number,bottom:number,depth=0):Pixel{
+ const mx=(left+right)/2,my=(top+bottom)/2;
+ const corners=[inverse(left,top),inverse(right,top),inverse(right,bottom),inverse(left,bottom)];
+ const mids=[inverse(mx,top),inverse(right,my),inverse(mx,bottom),inverse(left,my),inverse(mx,my)];
+ const finite=corners.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
+ let error=finite?0:Infinity;
+ if(finite){
+  for(let i=0;i<4;i++){
+   const a=corners[i]!,b=corners[(i+1)%4]!,mid=mids[i]!;
+   error=Math.max(error,Math.hypot(mid.x-(a.x+b.x)/2,mid.y-(a.y+b.y)/2));
+  }
+  const center=mids[4]!;
+  error=Math.max(error,Math.hypot(center.x-corners.reduce((sum,p)=>sum+p.x,0)/4,
+   center.y-corners.reduce((sum,p)=>sum+p.y,0)/4));
+  // A fold or an invalid midpoint cannot be treated as a convex footprint.
+  let sign=0;
+  for(let i=0;i<4;i++){
+   const a=corners[i]!,b=corners[(i+1)%4]!,c=corners[(i+2)%4]!;
+   const cross=(b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x);
+   if(cross&&sign&&Math.sign(cross)!==sign){error=Infinity;break;}
+   if(cross)sign=Math.sign(cross);
+  }
+ }
+ if(finite&&Number.isFinite(error)&&error<=.125)
+  return sampleAreaQuad(source,width,height,corners,mask);
+ if(depth>=4){
+  if(finite&&Number.isFinite(error))return sampleAreaQuad(source,width,height,corners,mask);
+  const center=mids[4]!;
+  return read(center.x,center.y);
+ }
+ // Entirely unmapped cells outside quadrilateral/mesh bounds need no recursion.
+ if(!finite&&[...corners,...mids].every(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)))return empty;
+ const cells=[sampleWarpArea(source,width,height,mask,inverse,read,left,top,mx,my,depth+1),
+  sampleWarpArea(source,width,height,mask,inverse,read,mx,top,right,my,depth+1),
+  sampleWarpArea(source,width,height,mask,inverse,read,mx,my,right,bottom,depth+1),
+  sampleWarpArea(source,width,height,mask,inverse,read,left,my,mx,bottom,depth+1)];
+ const channel=(index:0|1|2|3)=>cells.reduce((sum,p)=>sum+p[index],0)/4;
+ return [channel(0),channel(1),channel(2),channel(3)];
+}
 export function transformRaster(source:Uint8Array,width:number,height:number,t:Transform,selection:MaskData|null=null,
   previewWidth=width,previewHeight=height,showProtection=false){
   if(source.length!==width*height*4)throw Error('変形する画像の大きさが一致しません。');
   const warp=t.mode==='liquify'?liquifyMapping(t.liquify??[]):null;
   const inverse=warp?.inverse??inverseTransform(t,width,height),out=new Uint8ClampedArray(previewWidth*previewHeight*4);
   const sx=width/previewWidth,sy=height/previewHeight;
+  const affineArea=t.interpolation==='area'&&t.mode==='affine';
+  const exactArea=affineArea&&t.angle%90===0&&t.shear===0;
   const read=(x:number,y:number):Pixel=>{
     if(!Number.isFinite(x)||!Number.isFinite(y))return empty;
     if(t.interpolation==='nearest')return sample(source,width,height,x,y,selection);
@@ -94,16 +246,26 @@ export function transformRaster(source:Uint8Array,width:number,height:number,t:T
     const channel=(i:0|1|2|3)=>(a[i]*(1-dx)+b[i]*dx)*(1-dy)+(c[i]*(1-dx)+d[i]*dx)*dy;
     return [channel(0),channel(1),channel(2),channel(3)];
   };
-  const area=t.interpolation==='area'?[-.375,-.125,.125,.375]:[0];
   for(let y=0;y<previewHeight;y++)for(let x=0;x<previewWidth;x++){
     const px=(x+.5)*sx,py=(y+.5)*sy,index=(y*previewWidth+x)*4;
     let red=0,green=0,blue=0,alpha=0;
-    for(const oy of area)for(const ox of area){
-      const p=inverse(px+ox*sx,py+oy*sy),value=read(p.x,p.y);
-      red+=value[0];green+=value[1];blue+=value[2];alpha+=value[3];
+    if(exactArea){
+      const topLeft=inverse(px-sx/2,py-sy/2),bottomRight=inverse(px+sx/2,py+sy/2);
+      const value=sampleAreaBox(source,width,height,topLeft.x,topLeft.y,bottomRight.x,bottomRight.y,selection);
+      red=value[0];green=value[1];blue=value[2];alpha=value[3];
+    }else if(affineArea){
+      const value=sampleAreaQuad(source,width,height,[
+        inverse(px-sx/2,py-sy/2),inverse(px+sx/2,py-sy/2),
+        inverse(px+sx/2,py+sy/2),inverse(px-sx/2,py+sy/2)
+      ],selection);
+      red=value[0];green=value[1];blue=value[2];alpha=value[3];
+    }else if(t.interpolation==='area'){
+      const value=sampleWarpArea(source,width,height,selection,inverse,read,px-sx/2,py-sy/2,px+sx/2,py+sy/2);
+      red=value[0];green=value[1];blue=value[2];alpha=value[3];
+    }else{
+      const p=inverse(px,py),value=read(p.x,p.y);
+      red=value[0];green=value[1];blue=value[2];alpha=value[3];
     }
-    const n=area.length**2;
-    red/=n;green/=n;blue/=n;alpha/=n;
     if(selection){
       const base=sample(source,width,height,px,py,null);
       const amount=selection.alpha[Math.floor(py)*width+Math.floor(px)]!/255;

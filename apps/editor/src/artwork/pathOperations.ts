@@ -1,6 +1,9 @@
-import type {ArtPoint,EditablePath} from '@illustro/core';
+import {mapArtworkPoint,inverseArtworkAffine,composeArtworkAffine,type ArtPoint,type EditablePath} from '@illustro/core';
 
 const distance=(a:ArtPoint,b:ArtPoint)=>Math.hypot(a.x-b.x,a.y-b.y);
+function requireUniformFill(path:EditablePath){
+  if(path.fillRuns)throw Error('複数色の輪郭は点・ハンドルと部分色を編集できます。線の分割や図形演算をするには先に単色にそろえてください。');
+}
 function segmentDistance(p:ArtPoint,a:ArtPoint,b:ArtPoint){
   const dx=b.x-a.x,dy=b.y-a.y,len=dx*dx+dy*dy;
   const u=len?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/len)):0;
@@ -29,6 +32,8 @@ export function smoothPath(points:readonly ArtPoint[],closed:boolean,amount:numb
   });
 }
 export function eraseSegment(path:EditablePath,point:ArtPoint){
+  if(path.transform)point=mapArtworkPoint(point,inverseArtworkAffine(path.transform));
+  requireUniformFill(path);
   if(path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(p=>p.move||p.close))
     throw Error('この形は区間消去に対応していません。レイヤーの削除か点の編集を使ってください。');
   let best=Math.max(10,path.width*2),cut=-1;
@@ -36,13 +41,16 @@ export function eraseSegment(path:EditablePath,point:ArtPoint){
     const a=path.points[i]!,b=path.points[(i+1)%path.points.length]!;
     let d=segmentDistance(point,a,b);
     if(a.outX!==undefined||b.inX!==undefined){
-      let previous=a;d=Infinity;
-      for(let j=1;j<=16;j++){
-        const t=j/16,u=1-t;
-        const coord=(a:number,b:number,c:number,d:number)=>u**3*a+3*u*u*t*b+3*u*t*t*c+t**3*d;
-        const next={x:coord(a.x,a.outX??a.x,b.inX??b.x,b.x),y:coord(a.y,a.outY??a.y,b.inY??b.y,b.y)};
-        d=Math.min(d,segmentDistance(point,previous,next));previous=next;
-      }
+      // A cubic can bow far away from its end-to-end chord. First reject
+      // segments whose entire control hull is outside the hit radius.
+      const xs=[a.x,a.outX??a.x,b.inX??b.x,b.x];
+      const ys=[a.y,a.outY??a.y,b.inY??b.y,b.y];
+      if(point.x<Math.min(...xs)-best||point.x>Math.max(...xs)+best||
+         point.y<Math.min(...ys)-best||point.y>Math.max(...ys)+best)continue;
+      const samples=sampledPath({...path,shape:'bezier',points:[a,b],closed:false},.5,4096)[0]!;
+      d=Infinity;
+      for(let j=1;j<samples.length;j++)
+        d=Math.min(d,segmentDistance(point,samples[j-1]!,samples[j]!));
     }
     if(d<best){best=d;cut=i;}
   }
@@ -54,34 +62,143 @@ export function eraseSegment(path:EditablePath,point:ArtPoint){
   return {...path,fill:null,points};
 }
 
-
-function sampleCurve(a:ArtPoint,b:ArtPoint,t:number){
-  const u=1-t,hasHandles=a.outX!==undefined||b.inX!==undefined;
-  const coord=(a:number,b:number,c:number,d:number)=>hasHandles?u**3*a+3*u*u*t*b+3*u*t*t*c+t**3*d:a+(d-a)*t;
-  const pa=a.pressure??1,pb=b.pressure??1;
-  return {x:coord(a.x,a.outX??a.x,b.inX??b.x,b.x),y:coord(a.y,a.outY??a.y,b.inY??b.y,b.y),pressure:pa+(pb-pa)*t};
+/** Combine independent strokes without changing the native, backwards-compatible path format. */
+export function appendPathStroke(base:EditablePath,stroke:EditablePath):EditablePath{
+  if(base.transform||stroke.transform){
+    const relative=composeArtworkAffine(base.transform?inverseArtworkAffine(base.transform):{a:1,b:0,c:0,d:1,e:0,f:0},stroke.transform);
+    const {transform:_old,...local}=stroke;
+    stroke={...local,points:stroke.points.map(p=>({...mapArtworkPoint(p,relative),
+      ...(p.inX===undefined?{}:{inX:mapArtworkPoint({x:p.inX,y:p.inY!},relative).x,inY:mapArtworkPoint({x:p.inX,y:p.inY!},relative).y}),
+      ...(p.outX===undefined?{}:{outX:mapArtworkPoint({x:p.outX,y:p.outY!},relative).x,outY:mapArtworkPoint({x:p.outX,y:p.outY!},relative).y})}))};
+  }
+  requireUniformFill(base);requireUniformFill(stroke);
+  if(base.booleanOperands||stroke.booleanOperands)throw Error('図形演算の元データを含む形には追加できません。');
+  if(base.shape==='rectangle'||base.shape==='ellipse'||stroke.shape==='rectangle'||stroke.shape==='ellipse'||
+    base.closed||stroke.closed||base.points.some(point=>point.close)||stroke.points.some(point=>point.close))
+    throw Error('別の線を追加するには、閉じていないベクター線を選んでください。');
+  if(base.fill||stroke.fill)throw Error('線を追加する前に内側の塗りをオフにしてください。');
+  if(base.stroke.toLowerCase()!==stroke.stroke.toLowerCase()||base.width!==stroke.width||(base.lineStyle??'solid')!==(stroke.lineStyle??'solid')||
+    (base.opacity??1)!==(stroke.opacity??1))
+    throw Error('同じレイヤーに追加する線は、色・太さ・線の種類をそろえてください。');
+  if(base.points.length+stroke.points.length>4096)throw Error('このレイヤーの点が4096個を超えます。別のレイヤーに描いてください。');
+  const first=stroke.points[0]!;
+  return {...base,points:[...base.points,{...first,move:true},...stroke.points.slice(1)]};
 }
-export function sampledPath(path:EditablePath):ArtPoint[][]{
+
+/** Remove the nearest complete subpath; null means the layer itself must be removed atomically. */
+export function eraseWholeStroke(path:EditablePath,position:ArtPoint):EditablePath|null{
+  if(path.transform)position=mapArtworkPoint(position,inverseArtworkAffine(path.transform));
+  if(path.fillRuns){
+    let nearest=-1,best=Math.max(10,path.width*2);
+    path.fillRuns.forEach((run,index)=>{
+      const contours=sampledPath({...path,points:path.points.slice(run.start,run.end),closed:false},.5,8192);
+      let inside=false,distanceToEdge=Infinity;
+      for(const line of contours)for(let i=1;i<line.length;i++){
+        const a=line[i-1]!,b=line[i]!;
+        distanceToEdge=Math.min(distanceToEdge,segmentDistance(position,a,b));
+        if((a.y>position.y)!==(b.y>position.y)&&position.x<(b.x-a.x)*(position.y-a.y)/(b.y-a.y)+a.x)inside=!inside;
+      }
+      const score=path.fill&&inside?0:distanceToEdge;
+      if(score<=best){best=score;nearest=index;}
+    });
+    if(nearest<0)throw Error('消したい文字の輪郭の近くを指定してください。');
+    if(path.fillRuns.length===1)return null;
+    const cut=path.fillRuns[nearest]!,length=cut.end-cut.start;
+    const remaining=path.fillRuns.filter((_,i)=>i!==nearest).map(run=>run.start>=cut.end?
+      {...run,start:run.start-length,end:run.end-length}:run);
+    const points=[...path.points.slice(0,cut.start),...path.points.slice(cut.end)];
+    const {fillRuns:_old,...rest}=path;
+    const colors=new Set(remaining.map(run=>run.color.toLowerCase()));
+    return {...rest,points,fill:path.fill?remaining[0]!.color:null,...(colors.size>1?{fillRuns:remaining}:{})};
+  }
+  const groups:ArtPoint[][]=[];
+  if(path.shape==='rectangle'||path.shape==='ellipse')groups.push([...path.points]);
+  else{
+    for(const point of path.points){
+      if((point.move||groups.length===0)&&(!groups.length||groups.at(-1)!.length))groups.push([]);
+      groups.at(-1)!.push(point);
+    }
+  }
+  let nearest=-1,best=Math.max(10,path.width*2);
+  for(let i=0;i<groups.length;i++){
+    const group=groups[i]!;
+    if(group.length<2)continue;
+    const sampled=sampledPath({...path,points:group,closed:path.closed&&groups.length===1})[0]??[];
+    for(let j=1;j<sampled.length;j++){
+      const d=segmentDistance(position,sampled[j-1]!,sampled[j]!);
+      if(d<best){best=d;nearest=i;}
+    }
+  }
+  if(nearest<0)throw Error('消したいベクター線の近くを指定してください。');
+  if(groups.length===1)return null;
+  const remaining=groups.filter((_,i)=>i!==nearest);
+  const points=remaining.flatMap((group,i)=>group.map((p,j)=>{
+    if(j>0)return p;
+    if(i>0)return {...p,move:true};
+    const {move,...rest}=p;
+    return rest;
+  }));
+  if(points.length<2)throw Error('残った線が短すぎます。レイヤーごと消してください。');
+  return {...path,shape:path.shape==='freehand'?'freehand':'polyline',closed:false,points};
+}
+
+/**
+ * Adaptive Bézier sampling limits geometric error rather than sampling by fixed distance.
+ * The cap prevents unusually complex drawings from freezing a canvas operation.
+ */
+export function sampledPath(path:EditablePath,tolerance=.5,maxPoints=65536):ArtPoint[][]{
   const anchors=path.points,first=anchors[0]!,last=anchors.at(-1)!;
-  if(path.shape==='rectangle')return [[first,{x:last.x,y:first.y},last,{x:first.x,y:last.y},first]];
+  if(path.shape==='rectangle'){
+    if(maxPoints<5)throw Error('図形の輪郭に必要な点数を確保できません。');
+    return [[first,{x:last.x,y:first.y},last,{x:first.x,y:last.y},first]];
+  }
   if(path.shape==='ellipse'){
     const cx=(first.x+last.x)/2,cy=(first.y+last.y)/2,rx=Math.abs(first.x-last.x)/2,ry=Math.abs(first.y-last.y)/2;
-    const count=Math.min(320,Math.max(40,Math.ceil(Math.PI*Math.max(rx,ry)/5)));
+    const radius=Math.max(rx,ry);
+    const count=Math.min(2048,Math.max(40,Math.ceil(Math.PI*Math.sqrt(radius/(2*Math.max(.05,tolerance))))));
+    // The maximum sagitta of each elliptical arc is bounded by that of a
+    // circle with the major radius. Never silently exceed the caller's
+    // tolerance or point budget when converting a large ellipse to edges.
+    if(count+1>maxPoints)throw Error('図形の輪郭に必要な点数を確保できません。');
+    if(radius*(1-Math.cos(Math.PI/count))>tolerance)
+      throw Error('楕円の精度を保てる点数を超えました。許容幅を広げてください。');
     return [Array.from({length:count+1},(_,i)=>{const t=i*2*Math.PI/count;return {x:cx+Math.cos(t)*rx,y:cy+Math.sin(t)*ry};})];
   }
   const groups:ArtPoint[][]=[];
   let group:ArtPoint[]=[];
-  let prior:ArtPoint|null=null,anchor:ArtPoint|null=null;
+  let prior:ArtPoint|null=null,anchor:ArtPoint|null=null,total=0;
+  const checkBudget=()=>{if(total>maxPoints)throw Error('線の点が多すぎます。先に点を減らしてください。');};
   function addCurve(a:ArtPoint,b:ArtPoint){
-    if(a.outX===undefined&&b.inX===undefined){group.push(b);return;}
-    const steps=Math.min(64,Math.max(6,Math.ceil((distance(a,b)+
-      distance(a,{x:a.outX??a.x,y:a.outY??a.y})+distance(b,{x:b.inX??b.x,y:b.inY??b.y}))/8)));
-    for(let i=1;i<=steps;i++)group.push(sampleCurve(a,b,i/steps));
+    if(a.outX===undefined&&b.inX===undefined){group.push(b);total++;checkBudget();return;}
+    const p0=a,p1={x:a.outX??a.x,y:a.outY??a.y},p2={x:b.inX??b.x,y:b.inY??b.y},p3=b;
+    const lerp=(l:ArtPoint,r:ArtPoint)=>({x:(l.x+r.x)/2,y:(l.y+r.y)/2});
+    let samples=0;
+    // The former 255-segment cap could force the last part of a complex curve
+    // into one visibly straight edge. Expand it only when the overall point
+    // budget allows, retaining a strict upper bound for 4K operations.
+    const curveBudget=Math.min(2048,Math.max(255,
+      Math.floor((maxPoints-anchors.length)/Math.max(1,anchors.length-1))));
+    function flatten(a0:ArtPoint,a1:ArtPoint,a2:ArtPoint,a3:ArtPoint,begin:number,end:number,depth:number){
+      const flat=Math.max(segmentDistance(a1,a0,a3),segmentDistance(a2,a0,a3));
+      if(flat<=tolerance){
+        group.push({...a3,pressure:(p0.pressure??1)+((p3.pressure??1)-(p0.pressure??1))*end});
+        samples++;total++;checkBudget();return;
+      }
+      // Never silently replace an inaccurate high-curvature section with
+      // one long straight edge when the safety budget is exhausted.
+      if(depth>=14||samples>=curveBudget)
+        throw Error('曲線の精度を保てる点数を超えました。点を減らすか許容幅を広げてください。');
+      const q0=lerp(a0,a1),q1=lerp(a1,a2),q2=lerp(a2,a3);
+      const r0=lerp(q0,q1),r1=lerp(q1,q2),mid=lerp(r0,r1),middle=(begin+end)/2;
+      flatten(a0,q0,r0,mid,begin,middle,depth+1);
+      flatten(mid,r1,q2,a3,middle,end,depth+1);
+    }
+    flatten(p0,p1,p2,p3,0,1,0);
   }
   for(const point of anchors){
     if(point.move||!prior){
       if(group.length)groups.push(group);
-      group=[point];anchor=point;
+      group=[point];total++;checkBudget();anchor=point;
     }else addCurve(prior,point);
     if(point.close&&anchor){addCurve(point,anchor);groups.push(group);group=[];prior=null;anchor=null;}
     else prior=point;
@@ -96,31 +213,44 @@ export function sampledPath(path:EditablePath):ArtPoint[][]{
 type Coordinate=[number,number];
 type Polygon=Coordinate[][];
 type ShapeMode='union'|'intersection'|'difference'|'xor';
-export async function combineShapes(current:EditablePath,other:EditablePath,mode:ShapeMode):Promise<EditablePath>{
+export async function combineShapes(current:EditablePath,other:EditablePath,mode:ShapeMode,allowEmpty=false):Promise<EditablePath>{
+  requireUniformFill(current);requireUniformFill(other);
   const polygon=(input:EditablePath):Polygon=>{
-    const result=sampledPath(input);
+    if(input.empty)return [];
+    const result=sampledPath(input,.25,8192);
     if(!result.length||result.some(ring=>ring.length<4||distance(ring[0]!,ring.at(-1)!)>.00001))
       throw Error('形状演算には面を持つ閉じた形を選んでください。');
     // The source's even-odd fill can contain separate island outlines as well as holes.
-    return result.map(ring=>ring.map(p=>[p.x,p.y]));
+    return result.map(ring=>ring.map(p=>{const world=mapArtworkPoint(p,input.transform);return [world.x,world.y];}));
   };
   const a=polygon(current),b=polygon(other);
   const imported=await import('polygon-clipping');
   const operations=('default' in imported?imported.default:imported) as typeof imported;
   const rings=(polygon:Polygon)=>{
     const [outer,...rings]=polygon;
-    if(!outer)throw Error('形状の輪郭がありません。');
+    if(!outer)return [];
     return rings.length?operations.xor([outer],...rings.map(ring=>[ring])):[[outer]];
   };
   const groups=operations[mode](rings(a),rings(b));
   const points=groups.flatMap(group=>group.flatMap(ring=>
     ring.slice(0,-1).map(([x,y],index,list):ArtPoint=>({x,y,...(index===0?{move:true}:{}),...(index===list.length-1?{close:true}:{})}))));
-  if(points.length<3)throw Error('演算結果に面がありません。');
+  const empty=points.length<3;
+  if(empty){
+    if(!allowEmpty)throw Error('演算結果に面がありません。');
+    // A closed zero-area contour paints no pixels, including with an outline.
+    // Keep three anchors for the ordinary path validator and legacy readers.
+    points.push({x:0,y:0,move:true},{x:0,y:0},{x:0,y:0,close:true});
+  }
   if(points.length>4096)throw Error('演算結果の点が多すぎます。元の形の点数を減らしてください。');
-  return {...current,shape:'polyline',closed:false,points,fill:current.fill??current.stroke};
+  // Keep copies of both input shapes for later re-editing, without changing how older renderers display the result.
+  const {booleanOperands:_ignoredA,...left}=current,{booleanOperands:_ignoredB,...right}=other;
+  const {empty:_empty,transform:_transform,...style}=current;
+  return {...style,shape:'polyline',closed:false,points,fill:current.fill??current.stroke,
+    ...(empty?{empty:true}:{}),booleanOperands:{mode,a:left,b:right}};
 }
 
 export function splitPath(path:EditablePath,index:number):EditablePath{
+  requireUniformFill(path);
   if(path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(p=>p.move||p.close)||index<1||index>=path.points.length-1)
     throw Error('開いた線の途中にある点を選んでください。');
   if(path.closed)throw Error('先に線を開いてから分割してください。');
@@ -134,19 +264,34 @@ function reversePath(points:readonly ArtPoint[]){
       ...(inX===undefined||inY===undefined?{}:{outX:inX,outY:inY})};
   });
 }
-export function joinPaths(a:EditablePath,b:EditablePath):EditablePath{
+export function joinPaths(a:EditablePath,b:EditablePath,maxGap=24):EditablePath{
+  if(JSON.stringify(a.transform)!==JSON.stringify(b.transform))throw Error('異なる変形を持つ線は、そのまま接続できません。');
+  requireUniformFill(a);requireUniformFill(b);
   for(const path of [a,b])if(path.closed||path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(point=>point.move||point.close))
     throw Error('接続するには開いた線を2本選んでください。');
   const paths=[[a.points,b.points],[a.points,reversePath(b.points)],
     [reversePath(a.points),b.points],[reversePath(a.points),reversePath(b.points)]] as const;
   const candidates=paths.map(([left,right])=>({left,right,length:distance(left.at(-1)!,right[0]!)}));
   candidates.sort((a,b)=>a.length-b.length);
-  const {left,right}=candidates[0]!;
-  if(left.length+right.length>4096)throw Error('接続する線の点が多すぎます。点を減らしてください。');
-  return {...a,shape:'bezier',points:[...left,...right],fill:null,closed:false};
+  const {left,right,length}=candidates[0]!;
+  if(!Number.isFinite(maxGap)||maxGap<0||length>maxGap)
+    throw Error('2本の端が離れています。まず端の点を近づけてください。');
+  const coincident=length<=.000001;
+  if(left.length+right.length-(coincident?1:0)>4096)
+    throw Error('接続する線の点が多すぎます。点を減らしてください。');
+  // Handles on the two sides of a gap belong to the original strokes,
+  // not the new bridge. Otherwise the bridge unexpectedly becomes a loop.
+  const {outX:_outX,outY:_outY,...leftEnd}=left.at(-1)!;
+  const {inX:_inX,inY:_inY,...rightStart}=right[0]!;
+  const points=coincident?
+    [...left.slice(0,-1),{...leftEnd,...(rightStart.outX===undefined?{}:{outX:rightStart.outX,outY:rightStart.outY})},...right.slice(1)]:
+    [...left.slice(0,-1),leftEnd,rightStart,...right.slice(1)];
+  return {...a,shape:'bezier',points,fill:null,closed:false};
 }
 
 export function eraseBetweenIntersections(path:EditablePath,reference:EditablePath,position:ArtPoint):EditablePath{
+  if(path.transform||reference.transform)throw Error('変形を保持した線の交点消去にはまだ対応していません。線全体か区間の消去を使ってください。');
+  requireUniformFill(path);
   if(path.closed||path.shape==='ellipse'||path.shape==='rectangle'||path.points.some(p=>p.move||p.close))
     throw Error('交点まで消すには、開いた1本の線を選んでください。');
   const subject=sampledPath(path)[0]!,edges=sampledPath(reference);

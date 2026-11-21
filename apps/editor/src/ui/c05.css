@@ -62,3 +62,24 @@ body.illustro-focus-mode .c05-reference-layer{display:none}
 .c05-asset-preview img{display:block;width:auto;height:auto;max-width:100%;max-height:58dvh;margin:auto;object-fit:contain}
 .c05-asset-preview p{font-size:11px;overflow-wrap:anywhere}
 .c05-asset-preview button{min-height:40px;border:1px solid var(--a-border,#ddd);border-radius:7px;padding:8px 15px;background:var(--a-accent-soft,#fff2d5)}
+
+/* Explicit multi-selection: no destructive action is available until selected. */
+.ih-work-card{position:relative}
+.ih-work-pick{position:absolute;z-index:2;right:8px;top:8px;display:flex;align-items:center;gap:5px;padding:6px 9px;border-radius:9px;border:1px solid var(--a-border,#ddd);background:var(--a-surface,#fff);font-size:12px;cursor:pointer;box-shadow:0 2px 7px #1112}
+.ih-work-pick input{width:18px;height:18px;accent-color:var(--a-accent,#567dde);cursor:pointer}
+.ih-work-batch{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:10px 0;padding:9px;border:1px solid var(--a-border,#ddd);border-radius:11px;background:var(--a-surface-soft,#f7f7f7)}
+.ih-work-batch[hidden]{display:none}
+.ih-work-batch strong{font-size:12px;margin-right:auto}
+.ih-work-batch button{min-height:40px;padding:7px 10px;border:1px solid var(--a-border,#ddd);border-radius:8px;background:var(--a-surface,#fff);color:inherit;font-size:12px}
+.ih-work-batch button:disabled{opacity:.45}
+
+/* C05-013: clearly distinguish portable embedded images from device-only links. */
+.c05-reference-native-mode{display:flex;flex-direction:column;gap:5px;margin:8px 0;font-size:11px;font-weight:650}
+.c05-reference-native-mode select{max-width:100%;min-height:40px;padding:6px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-surface,#fff);color:inherit}
+.c05-reference-mode-help{margin:3px 0 8px;font-size:11px;line-height:1.5;color:var(--a-subtle,#667)}
+
+/* Reference sampling is a deliberate mode; ordinary touch gestures still pan
+   images when it is off. Do not recolor or obscure the artwork canvas. */
+.c05-reference-frame.c05-reference-picking{outline:2px solid var(--a-accent,#6085e8);outline-offset:1px}
+.c05-reference-frame.c05-reference-picking .c05-reference-image-area{cursor:crosshair}
+.c05-reference-frame.c05-reference-picking .c05-reference-image-area img{user-select:none}

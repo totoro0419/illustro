@@ -1,9 +1,9 @@
-import {layerMaskCoverage} from '@rt/layer-mask-coverage';
+import {layerMaskCoverage,layerMaskTile} from '@rt/layer-mask-coverage';
 import {GpuRenderer} from '@rt/renderer';
 import {RealtimeSession} from '@rt/session';
 import {WorkerStrokeSink} from '@rt/worker-stroke-sink';
 import {captureTilePages,ATLAS_SIZE} from '@rt/presentation-tiles';
-import {readHistoryImages} from '@rt/history-io';
+import {historyYield,readHistoryImages} from '@rt/history-io';
 import {TILE} from '@rt/model';
 
 globalThis.requestAnimationFrame=fn=>setTimeout(()=>fn(performance.now()),0);
@@ -11,6 +11,7 @@ let renderer,session,sink,diagnostics=false,visibilityEpoch=0,latestView,initial
 let publishing=false,publishRequested=false,lastSent=0,acknowledged=0,serial=0,sentPacket=null;
 let formalGate=null,recordGate=false;const heldRecords=[],records=new Map,recordTokens=new WeakMap,pendingTiles=new Set;
 const metrics={gpuCaptures:0,bitmapBytes:0,publications:0,formal:[]};
+let previewMaskId=null,previewMask=null;
 const tokenFor=record=>recordTokens.get(record);
 function remember(token,record){records.set(token,record);recordTokens.set(record,token);return record;}
 function record(token){const value=records.get(token);if(!value)throw Error('Unknown stroke token');return value;}
@@ -50,7 +51,7 @@ async function publish(){
  publishing=true;publishRequested=false;const epoch=visibilityEpoch,ready=coherent(),keys=ready?[...pendingTiles]:[];if(ready)pendingTiles.clear();
  let pages=[];
  try{pages=captureTilePages(renderer.backend,keys);const images=sink.snapshot();const result=await images,layers=result.layers,retired=ready?result.retired:[];if(!ready)for(const id of result.retired)sink.retired.add(id);
-  if(epoch!==visibilityEpoch){for(const p of pages)p.bitmap.close();for(const l of layers)l.bitmap.close();for(const key of keys)pendingTiles.add(key);for(const id of sink.layers.keys())sink.changed.add(id);for(const id of retired)sink.retired.add(id);publishRequested=true;return;}
+  if(epoch!==visibilityEpoch){for(const p of pages)p.bitmap.close();for(const l of layers)l.bitmap.close();for(const key of keys)pendingTiles.add(key);sink.resend();for(const id of retired)sink.retired.add(id);publishRequested=true;return;}
   if(!pages.length&&!layers.length&&!retired.length)return;
   if(formalGate?.stage==='picture'&&pages.length){formalGate.held='picture';await formalGate.promise;}
   lastSent=++serial;sentPacket={keys,retired};metrics.publications++;metrics.gpuCaptures+=pages.length;metrics.bitmapBytes+=pages.reduce((n,p)=>n+p.bitmap.width*p.bitmap.height*4,0)+layers.reduce((n,l)=>n+l.bitmap.width*l.bitmap.height*4,0);
@@ -75,6 +76,61 @@ async function init(m){
 async function readTiles(requests){const b=renderer.backend,result=requests.map(r=>({...r,pixels:new Uint8Array(TILE*TILE*4)}));
  for(let at=0;at<result.length;at+=8){const group=result.slice(at,at+8),occupied=group.filter(r=>b.tiles.has(r.surfaceId+'\u0000'+r.key)),images=occupied.map(r=>{const t=b.tiles.get(r.surfaceId+'\u0000'+r.key);return t.layer[t.l];}),pixels=await readHistoryImages(b,images);occupied.forEach((r,i)=>r.pixels=pixels[i]);}return result;
 }
+// Read only occupied tiles, in the same bounded batches as history. The first
+// pass finds the real alpha bounds, including tiny marks far from the center.
+async function layerThumbnail(surfaceKey,white){
+ const r=renderer,b=r.backend,{width,height}=b,side=96,padding=6;
+ const mask=b.surfaceStyles?.get(surfaceKey)?.mask;
+ const available=()=>!session.active&&!r.inflight&&!r.document.jobs.length&&!r.historyPreparing&&!b.presentationHeld;
+ if(!available())return null;
+ const requests=[...b.tiles.values()].filter(t=>t.surfaceKey===surfaceKey);
+ const retained=requests.length<=8,occupied=[];
+ let left=width,top=height,right=0,bottom=0;
+ const size=t=>[Math.min(TILE,width-t.x),Math.min(TILE,height-t.y)];
+ for(let at=0;at<requests.length&&!white;at+=8){
+  if(!available())return null;
+  const batch=requests.slice(at,at+8),images=await readHistoryImages(b,batch.map(t=>t.layer[t.l]));
+  if(!available())return null;
+  for(let i=0;i<batch.length;i++){
+   const tile=batch[i],pixels=images[i],[w,h]=size(tile),coverage=mask?layerMaskTile(mask,tile.key):255;
+   let x0=w,y0=h,x1=0,y1=0;
+   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const at=y*TILE+x;
+    if(!pixels[at*4+3]||!(typeof coverage==='number'?coverage:coverage[at]))continue;
+    x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x+1);y1=Math.max(y1,y+1);
+   }
+   if(x1<=x0)continue;
+   left=Math.min(left,tile.x+x0);top=Math.min(top,tile.y+y0);
+   right=Math.max(right,tile.x+x1);bottom=Math.max(bottom,tile.y+y1);
+   occupied.push({tile,coverage,...(retained?{pixels}:{} )});
+  }
+  if(at+8<requests.length)await historyYield();
+ }
+ if(white){left=top=0;right=width;bottom=height;}
+ if(right<=left||bottom<=top)return {data:null,bounds:null};
+ const canvas=new OffscreenCanvas(side,side),ctx=canvas.getContext('2d',{willReadFrequently:true});
+ const scale=Math.min((side-padding*2)/(right-left),(side-padding*2)/(bottom-top));
+ const x=(side-(right-left)*scale)/2,y=(side-(bottom-top)*scale)/2;
+ if(white){ctx.fillStyle='#fff';ctx.fillRect(x,y,(right-left)*scale,(bottom-top)*scale);}
+ else{
+  const tileCanvas=new OffscreenCanvas(TILE,TILE),tileContext=tileCanvas.getContext('2d');
+  for(let at=0;at<occupied.length;at+=8){
+   if(!available())return null;
+   const batch=occupied.slice(at,at+8);
+   const images=retained?batch.map(entry=>entry.pixels):await readHistoryImages(b,batch.map(({tile})=>tile.layer[tile.l]));
+   if(!available())return null;
+   for(let i=0;i<batch.length;i++){
+    const {tile,coverage}=batch[i],[w,h]=size(tile),pixels=new Uint8ClampedArray(images[i]);
+    if(coverage!==255)for(let p=0;p<TILE*TILE;p++)pixels[p*4+3]*=(typeof coverage==='number'?coverage:coverage[p])/255;
+    tileContext.putImageData(new ImageData(pixels,TILE,TILE),0,0);
+    ctx.drawImage(tileCanvas,0,0,w,h,x+(tile.x-left)*scale,y+(tile.y-top)*scale,w*scale,h*scale);
+   }
+   if(at+8<occupied.length)await historyYield();
+  }
+ }
+ return {data:ctx.getImageData(0,0,side,side).data,bounds:[left/width,top/height,right/width,bottom/height]};
+}
+
 async function seed(cache){const b=renderer.backend,upload=(surfaceId,key,pixels)=>{if(!pixels.some(x=>x!==0))return;const t=b.tile(key,surfaceId),image=t.layer[t.l];
  if(b.gl){const g=b.gl;g.bindTexture(g.TEXTURE_2D,image.t);g.texSubImage2D(g.TEXTURE_2D,0,0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,pixels);}else b.device.queue.writeTexture({texture:image},pixels,{bytesPerRow:TILE*4},[TILE,TILE]);t.committedId=-1;b.dirtyConfirmed.add(key);};
  if(cache.version===2){for(const l of cache.layers)for(const t of l.tiles)upload(l.surfaceId,t.key,t.pixels);}
@@ -108,12 +164,12 @@ const r=renderer,s=session,b=r.backend;r.proxy?.setEnabled(!geometry);b.setPrese
   // Reset replaces a projection in the SAME display host. Clear every old
   // occupied region as well as seeding the new ones, including removed ink.
   for(const t of b.tiles.values())pendingTiles.add(t.key);for(const v of b.previews.values())for(const key of v.keys??[])pendingTiles.add(key);
-  await r.reset();stage('reset');records.clear();s.records=[];s.redoRecords=[];s.id=0;s.recordSurfaces=new WeakMap;s.recordTiles=new WeakMap;s.recordIds=new WeakMap;s.recordOrder=new WeakMap;s.tileRecords=new Map;s.nextRecordOrder=0;
+  await r.reset();stage('reset');records.clear();s.records=[];s.redoRecords=[];s.id=0;s.recordSurfaces=new WeakMap;s.recordTiles=new WeakMap;s.recordIds=new WeakMap;s.recordOrder=new WeakMap;s.tileRecords=new Map;s.nextRecordOrder=0;s.hasRasterBase=!!geometry;
   if(solidWhiteSurfaceKey)seedFreshWhite(solidWhiteSurfaceKey);
   else if(cache)await seed(cache);
   stage('seeded');
   for(const e of entries){const value=remember(e.token,e.record),id=++s.id;s.seedSequence=Math.max(s.seedSequence,value.seed?.[1]??0);s.records.push(value);s.recordIds.set(value,id);s.recordSurfaces.set(value,e.surfaceKey);s.indexRecord(value,e.keys,e.surfaceKey);
-   if(!e.cached){const preset=s.presetForRecord(value);r.document.append(id,preset,value.commands,null,e.surfaceKey);r.document.end(id,preset,e.surfaceKey);}}
+   if(!e.cached){const preset=s.presetForRecord(value);r.document.append(id,preset,value.commands,new Set(e.keys),e.surfaceKey);r.document.end(id,preset,e.surfaceKey);}}
   r.needsFrame=true;await r.drain();stage('drained');
  }finally{b.setPresentationHeld(false);}
  await b.presentCurrent();r.proxy?.invalidate();requestPublish();stage('publish-requested');return stats(true);
@@ -123,10 +179,85 @@ async function pixel({x,y,surfaceKey}){const b=renderer.backend,layer=surfaceKey
  if(b.gl){const g=b.gl,a=new Uint8Array(4);g.bindFramebuffer(g.FRAMEBUFFER,layer?t.layer[t.l].f:b.liveTarget.f);g.readPixels(sx,layer?sy:b.height-1-sy,1,1,g.RGBA,g.UNSIGNED_BYTE,a);return [...a];}
  const d=b.device,buffer=d.createBuffer({size:256,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});try{const e=d.createCommandEncoder();e.copyTextureToBuffer({texture:layer?t.layer[t.l]:b.liveTarget,origin:{x:sx,y:sy}},{buffer,bytesPerRow:256},[1,1]);d.queue.submit([e.finish()]);await buffer.mapAsync(GPUMapMode.READ);const a=new Uint8Array(buffer.getMappedRange()),bgra=!layer&&b.format.startsWith('bgra');return [a[bgra?2:0],a[1],a[bgra?0:2],a[3]];}finally{buffer.destroy();}
 }
+/** Read a 1/3/5 px sample area in one worker request and at most 4 GPU
+ * rectangles, even when the area straddles a 128px layer tile boundary. */
+async function pixelArea({x,y,width,height,surfaceKey}){
+ const b=renderer.backend,layer=surfaceKey!==null;
+ if(![x,y,width,height].every(Number.isSafeInteger)||width<1||height<1||
+   width>5||height>5||x<0||y<0||x+width>b.width||y+height>b.height)
+  throw Error('invalid eyedropper sample area');
+ const output=new Uint8Array(width*height*4);
+ for(let row=0;row<height;){
+  const sampleY=y+row,blockHeight=layer?Math.min(height-row,TILE-sampleY%TILE):height-row;
+  for(let col=0;col<width;){
+   const sampleX=x+col,blockWidth=layer?Math.min(width-col,TILE-sampleX%TILE):width-col;
+   const tile=layer?b.tiles.get(surfaceKey+'\u0000'+Math.floor(sampleX/TILE)+','+Math.floor(sampleY/TILE)):null;
+   if(!layer||tile){
+    const originX=layer?sampleX%TILE:sampleX,originY=layer?sampleY%TILE:sampleY;
+    let values,stride,flipped=false,bgra=false;
+    if(b.gl){
+     const g=b.gl,src=new Uint8Array(blockWidth*blockHeight*4);
+     g.bindFramebuffer(g.FRAMEBUFFER,layer?tile.layer[tile.l].f:b.liveTarget.f);
+     g.readPixels(originX,layer?originY:b.height-originY-blockHeight,
+       blockWidth,blockHeight,g.RGBA,g.UNSIGNED_BYTE,src);
+     if(g.getError()!==g.NO_ERROR)throw Error('Eyedropper GPU read failed');
+     values=src;stride=blockWidth*4;flipped=!layer;
+    }else{
+     const device=b.device,buffer=device.createBuffer({
+       size:Math.ceil(blockWidth*4/256)*256*blockHeight,
+       usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ
+     });
+     try{
+      stride=Math.ceil(blockWidth*4/256)*256;
+      const encoder=device.createCommandEncoder();
+      encoder.copyTextureToBuffer({
+        texture:layer?tile.layer[tile.l]:b.liveTarget,
+        origin:{x:originX,y:originY}
+      },{buffer,bytesPerRow:stride},[blockWidth,blockHeight]);
+      device.queue.submit([encoder.finish()]);
+      await buffer.mapAsync(GPUMapMode.READ);
+      values=new Uint8Array(buffer.getMappedRange().slice(0));
+      buffer.unmap();
+      bgra=!layer&&b.format.startsWith('bgra');
+     }finally{buffer.destroy();}
+    }
+    for(let dy=0;dy<blockHeight;dy++)for(let dx=0;dx<blockWidth;dx++){
+      const p=(flipped?blockHeight-1-dy:dy)*stride+dx*4;
+      const q=((row+dy)*width+col+dx)*4;
+      output[q]=values[p+(bgra?2:0)];
+      output[q+1]=values[p+1];
+      output[q+2]=values[p+(bgra?0:2)];
+      output[q+3]=values[p+3];
+    }
+   }
+   col+=blockWidth;
+  }
+  row+=blockHeight;
+ }
+ return output;
+}
 async function settlePictures(){requestPublish();while(publishing||publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size||lastSent>acknowledged){if(renderer.errors.length)throw Error(renderer.errors.join(';'));await new Promise(ok=>setTimeout(ok,0));}}
 async function command(method,a){const r=renderer,s=session;
  switch(method){
- case 'begin':{const id=s.begin(a.preset,a.fast,a.context,a.surfaceKey);if(id!==a.id)throw Error('Drawing worker stroke sequence mismatch');return id;}
+ case 'begin':{
+  let mask=null;
+  if(a.selection){
+   const {id,width,height,alpha}=a.selection;
+   if(!Number.isSafeInteger(id)||width!==r.document.width||height!==r.document.height)
+    throw Error('Selection preview dimensions do not match document');
+   if(alpha!==undefined){
+    if(!(alpha instanceof Uint8Array)||alpha.length!==width*height)
+      throw Error('Invalid selection preview payload');
+    previewMaskId=id;previewMask={width,height,alpha};
+   }else if(previewMaskId!==id||!previewMask||
+      previewMask.width!==width||previewMask.height!==height)
+    throw Error('Selection preview cache is no longer valid');
+   mask=previewMask;
+  }
+  const id=s.begin(a.preset,a.fast,a.context,a.surfaceKey,a.showPreview!==false,mask);
+  if(id!==a.id)throw Error('Drawing worker stroke sequence mismatch');
+  return id;
+ }
  case 'samples':s.prediction=a.prediction!==false;for(const sample of a.samples)s.accept(sample,false);s.predictions(a.predictions??[]);s.flush();s.updateLive(performance.now());return;
  case 'end':{r.releaseInteractiveUntil=performance.now()+280;const value=await s.end(a.release);if(value)remember(a.token,value);return value;}
  case 'commit':a.additional.forEach((value,i)=>remember(a.token+':copy:'+i,value));return s.commitRecord(record(a.token),a.additional,a.surfaceKey);
@@ -137,26 +268,15 @@ async function command(method,a){const r=renderer,s=session;
  case 'discardRedo':return s.discardRedo();
  case 'navigate':return s.navigateDerived(a.map(e=>({...e,record:record(e.token)})));
  case 'restore':await restore(a);if(a.solidWhiteSurfaceKey&&diagnostics)postMessage({type:'white-seed-stage',stage:'settling'});await settlePictures();if(a.solidWhiteSurfaceKey&&diagnostics)postMessage({type:'white-seed-stage',stage:'settled'});return stats(true);
- case 'pictureAck':acknowledged=Math.max(acknowledged,a.sequence);if(!a.accepted&&sentPacket){for(const key of sentPacket.keys)pendingTiles.add(key);for(const id of sink.layers.keys())sink.changed.add(id);for(const id of sentPacket.retired)sink.retired.add(id);}sentPacket=null;if(publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size)requestPublish();return;
+ case 'pictureAck':acknowledged=Math.max(acknowledged,a.sequence);if(!a.accepted&&sentPacket){for(const key of sentPacket.keys)pendingTiles.add(key);sink.resend();for(const id of sentPacket.retired)sink.retired.add(id);}sentPacket=null;if(publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size)requestPublish();return;
  case 'waitStroke':{const result=await r.waitStroke(a);await settlePictures();return result;}
  case 'drain':await r.drain(a);await settlePictures();return stats(true);
  case 'read':return r.read(a);
  case 'readViewport':await r.drain();return r.backend.readViewport();
  case 'readTiles':return readTiles(a);
  case 'pixel':return pixel(a);
- case 'layerThumbnail':{
-  const {surfaceKey}=a,{width,height}=r.backend;
-  const side=48,scale=Math.min(side/width,side/height);
-  const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
-  const pixels=await r.read(surfaceKey),image=new Uint8ClampedArray(side*side*4);
-  const left=Math.floor((side-w)/2),top=Math.floor((side-h)/2);
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-   const sx=Math.floor((x+.5)*width/w),sy=Math.floor((y+.5)*height/h);
-   const source=(sy*width+sx)*4,destination=((top+y)*side+left+x)*4;
-   image.set(pixels.subarray(source,source+4),destination);
-  }
-  return image;
- }
+ case 'pixelArea':return pixelArea(a);
+ case 'layerThumbnail':return layerThumbnail(a.surfaceKey,a.white);
  case 'layerOutline':{
   const {surfaceKey}=a,b=r.backend,style=b.surfaceStyles?.get(surfaceKey);
   if(!style?.visible||!style.opacity)return null;
@@ -209,8 +329,8 @@ async function command(method,a){const r=renderer,s=session;
  case 'styles':r.setSurfaceStyles(a);return;
  case 'seamless':r.setSeamlessPreview(a);return;
  case 'clearSeamless':r.clearSeamlessPreviews(a);return;
- case 'hide':visibilityEpoch=a.epoch;r.hideStrokePreview(a.id);for(const id of sink.layers.keys())sink.changed.add(id);requestPublish();return;
- case 'show':visibilityEpoch=a.epoch;r.restoreStrokePreview(a.id);for(const id of sink.layers.keys())sink.changed.add(id);requestPublish();return;
+ case 'hide':visibilityEpoch=a.epoch;r.hideStrokePreview(a.id);sink.resend();requestPublish();return;
+ case 'show':visibilityEpoch=a.epoch;r.restoreStrokePreview(a.id);sink.resend();requestPublish();return;
  case 'prepareHistory':return r.prepareHistory();
  case 'resumeHistory':return r.resumeHistory();
  case 'prepare':r.proxy?.prepare(a);return;

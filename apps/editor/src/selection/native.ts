@@ -6,10 +6,12 @@
 import type {PortableSectionInput} from '../persistence/format';
 import type {PreservedPortableData} from '../persistence/portable';
 import type {MaskData} from './mask';
+import {packSelectionMask,unpackSelectionMask} from './maskCodec';
 import {listSavedSelections,saveNamedSelection} from './store';
 
 const META='c06.selection.index',ACTIVE='c06.selection.active',PREFIX='c06.selection.saved.';
-const INDEX_TYPE='selection.index.v1',ALPHA_TYPE='selection.alpha.v1',MAX_TOTAL=160*1024*1024;
+const INDEX_TYPE='selection.index.v1',ALPHA_TYPE='selection.alpha.v1';
+const PACKED_TYPE='selection.alpha.rle.v2',MAX_TOTAL=160*1024*1024;
 export const C06_SELECTION_PREFIX='c06.selection.';
 type Index=Readonly<{
   schema:'illustro.selection';version:1;width:number;height:number;active:boolean;
@@ -30,16 +32,22 @@ export async function exportSelectionSections(
     throw Error('保存する作品の大きさが正しくありません。');
   if(active)validateMask(active,width,height);
   const saved=await listSavedSelections(documentId);
-  let total=active?.alpha.byteLength??0;
+  let total=0;
+  const alphaSection=(id:string,mask:Uint8Array):PortableSectionInput=>{
+    const packed=packSelectionMask(mask);
+    total+=packed.bytes.byteLength;
+    if(total>MAX_TOTAL)throw Error(
+      '選択範囲の保存データの合計が160MBを超えています。不要な選択範囲を整理してください。'
+    );
+    return {id,type:packed.compressed?PACKED_TYPE:ALPHA_TYPE,required:false,bytes:packed.bytes};
+  };
   const items:Index['saved'][number][]=[],sections:PortableSectionInput[]=[];
-  if(active)sections.push({id:ACTIVE,type:ALPHA_TYPE,required:false,bytes:active.alpha.slice()});
+  if(active)sections.push(alphaSection(ACTIVE,active.alpha));
   for(const entry of saved){
     const bytes=new Uint8Array(await entry.alpha.arrayBuffer());
     if(bytes.byteLength!==entry.width*entry.height)throw Error('「'+entry.name+'」の保存された範囲が壊れています。');
-    total+=bytes.byteLength;
-    if(total>MAX_TOTAL)throw Error('作品内の選択範囲の合計が160MBを超えています。範囲の保存件数を減らしてください。');
     items.push({id:entry.id,name:entry.name,width:entry.width,height:entry.height,createdAt:entry.createdAt,modifiedAt:entry.modifiedAt});
-    sections.push({id:PREFIX+entry.id,type:ALPHA_TYPE,required:false,bytes});
+    sections.push(alphaSection(PREFIX+entry.id,bytes));
   }
   sections.push(textSection({schema:'illustro.selection',version:1,width,height,active:!!active,saved:items}));
   return sections;
@@ -59,8 +67,12 @@ export async function importSelectionSections(
     throw Error('この作品の選択範囲の保存形式には対応していません。');
   if(index.width!==width||index.height!==height)throw Error('選択範囲と作品の大きさが異なります。');
   const from=(id:string,expectedPixels:number):Uint8Array=>{
-    const entry=preserved!.optionalSections.find(s=>s.id===id&&s.type===ALPHA_TYPE);
-    if(!entry||entry.bytes.byteLength!==expectedPixels)throw Error('保存した範囲の画素情報が不足しています。');
+    const entries=preserved!.optionalSections.filter(s=>s.id===id&&
+      (s.type===ALPHA_TYPE||s.type===PACKED_TYPE));
+    if(entries.length!==1)throw Error('保存した範囲の画素情報が重複または不足しています。');
+    const entry=entries[0]!;
+    if(entry.type===PACKED_TYPE)return unpackSelectionMask(entry.bytes,expectedPixels);
+    if(entry.bytes.byteLength!==expectedPixels)throw Error('保存した範囲の画素情報が不足しています。');
     return entry.bytes.slice();
   };
   let selection:MaskData|null=null;

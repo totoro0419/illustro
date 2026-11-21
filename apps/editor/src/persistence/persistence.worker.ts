@@ -141,7 +141,7 @@ async function handle(message:RequestMessage){
       const current=snapshot.revisions.find(revision=>revision.id===snapshot.snapshotRevisionId);
       if(!current||current.root.documentId!==documentId||!current.root.rootLayerIds.length)throw new Error('invalid work root');
       await writeBlocks(store,path,blocks);await putVerified(store,path+'/base.frame',await frameJson(snapshot));
-      const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId};
+      const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId,title:current.root.name};
       await putVerified(store,path+'/meta.frame',await frameJson(meta));
       justInitializedRoot={documentId,writerEpochId,revisionId:snapshot.snapshotRevisionId,root:current.root};
       const saves=await documentSaveState(store,documentId),storage=await storageInfo();reply(message.id,true,{backend:store.mode,protectedThrough:'0',storage,...saves});break;
@@ -155,11 +155,11 @@ async function handle(message:RequestMessage){
       let proof=protectionProofs.get(session.path);if(!proof){proof=new ContiguousProtection<VerifiedHead>(seq===1n?0n:await scanProtected(store,session));protectionProofs.set(session.path,proof);}
       const root=packet.replacementRoot??libraryWork;proof.verified(seq,{revisionId:packet.revision.id,selectedLayerId:uuid(message.selectedLayerId,'selected layer'),width:root?.width??0,height:root?.height??0});const protectedThrough=proof.through;
       if(proof.value){await writeHead(store,session,proof.value.revisionId);if(libraryWork)await publishCurrent({...proof.value,protectedThrough:protectedThrough.toString(),updatedAt:Date.now(),...(packet.revision.id===proof.value.revisionId?{previewLayers:parsePreviewLayers(message.previewLayers),...(typeof message.name==='string'?{name:message.name}:{})}:{})});}
-      await touchMeta(store,session);
+      await touchMeta(store,session,undefined,packet.revision.id===proof.value?.revisionId&&typeof message.name==='string'?message.name:undefined);
       reply(message.id,true,{protectedThrough:protectedThrough.toString(),backend:store.mode,storage:await storageInfo()});break;
     }
     case 'set-head':{
-      const session=requireSession(message),revisionId=uuid(message.revisionId,'revision id');await writeHead(store,session,revisionId);await touchMeta(store,session);
+      const session=requireSession(message),revisionId=uuid(message.revisionId,'revision id');await writeHead(store,session,revisionId);await touchMeta(store,session,undefined,typeof message.name==='string'?message.name:undefined);
       if(libraryWork)await publishCurrent({revisionId,selectedLayerId:typeof message.selectedLayerId==='string'?uuid(message.selectedLayerId,'selected layer'):libraryWork.selectedLayerId,...(typeof message.name==='string'?{name:message.name}:{}),width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,previewLayers:parsePreviewLayers(message.previewLayers),updatedAt:Date.now()});
       reply(message.id,true,{backend:store.mode});break;
     }
@@ -197,13 +197,36 @@ async function handle(message:RequestMessage){
         makeEditorState(selectedLayerId,requestedSelection(message.selection,target.root.width,target.root.height),target.root.width,target.root.height)
       ))});
       const preserved=preservedSections(message.preserved);for(const section of preserved.sections){if(section.required)throw new Error('unknown preserved section cannot be required');if(sectionInputs.some(x=>x.id===section.id))continue;sectionInputs.push(section);}
-      const preview=await getWorkThumbnail(target.root.documentId,snapshot.snapshotRevisionId);
+      const saveSession=currentSession?.documentId===target.root.documentId?currentSession:null;
+      const allowedRevisions=new Set(snapshot.revisions.map(r=>r.id));
+      const [preview,encodedTiles]=await Promise.all([
+        getWorkThumbnail(target.root.documentId,snapshot.snapshotRevisionId),
+        saveSession?loadProjectionDeltaTiles(store,saveSession,allowedRevisions,async(descriptor,bytes)=>{
+          // Version 3 authenticates the compressed bytes already validated by the
+          // checkpoint writer. Use the validated legacy decoding path otherwise.
+          if(!descriptor.digest||descriptor.encoding==='raw-rgba8'&&bytes.byteLength!==descriptor.rawLength)
+            throw new Error('projection tile requires decoding');
+          return {descriptor,bytes};
+        }):null,
+      ]);
       if(preview&&preview.size<=8*1024*1024&&preview.type==='image/png'){
         const image=new Uint8Array(await preview.arrayBuffer());
         if(image.length>=24&&[137,80,78,71,13,10,26,10].every((v,i)=>image[i]===v))sectionInputs.push({id:'render-preview',type:'render.preview.png.v1',required:false,bytes:image});
       }
-      if(currentSession&&currentSession.documentId===target.root.documentId){
-        const checkpoint=await loadProjectionCheckpointRaw(store,currentSession,new Set(snapshot.revisions.map(r=>r.id)));
+      if(encodedTiles){
+        const {index,layers}=encodedTiles;
+        const sections=index.surfaceIds.map(surfaceId=>({
+          surfaceId,tiles:layers.get(surfaceId)!.map(({descriptor,bytes})=>{
+            const {key,encoding,rawLength}=descriptor,sectionId='render-cache-tile:'+surfaceId+':'+key;
+            sectionInputs.push({id:sectionId,type:'render.cache.tile.v2',required:false,bytes});
+            return {key,sectionId,encoding,rawLength};
+          }),
+        }));
+        sectionInputs.push({id:'render-cache',type:'render.cache.index.v2',required:false,bytes:encoder.encode(JSON.stringify({
+          version:2,revisionId:index.revisionId,width:index.width,height:index.height,tileSize:128,layers:sections,
+        }))});
+      }else if(saveSession){
+        const checkpoint=await loadProjectionCheckpointRaw(store,saveSession,allowedRevisions);
         if(checkpoint?.version===2){
           const layers=[] as Array<{surfaceId:string;tiles:Array<{key:string;sectionId:string;encoding:ProjectionEncoding;rawLength:number}>}>;
           for(const layer of checkpoint.layers){
@@ -465,27 +488,37 @@ export async function storeProjectionDelta(store:WorkingStore,session:Session,re
   const currentFiles=new Set([...map.values()].map(file));
   for(const target of previousFiles)if(!currentFiles.has(target))await cleanup(target);
 }
-export async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>):Promise<ProjectionCache|null>{
-  const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
+type ProjectionTile=ProjectionDeltaIndex['tiles'][number];
+async function loadProjectionDeltaTiles<T>(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>,
+  unpack:(descriptor:ProjectionTile,bytes:Uint8Array)=>Promise<T>){
   try{
-    const index=parseProjectionDeltaIndex(await unframeJson(frame));if(!allowedRevisions.has(index.revisionId))return null;
-    // Keep the checkpoint sparse all the way to the GPU. The former code allocated
-    // width*height*4 bytes for EVERY layer, even if the work only had a few marks.
-    if(index.tileSize!==128)return null;
-    const layers=new Map<string,Array<{key:string;pixels:Uint8Array}>>();for(const surfaceId of index.surfaceIds)layers.set(surfaceId,[]);
+    const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
+    const index=parseProjectionDeltaIndex(await unframeJson(frame));
+    if(!allowedRevisions.has(index.revisionId)||index.tileSize!==128)return null;
+    const layers=new Map(index.surfaceIds.map(id=>[id,[] as T[]]));
     for(let offset=0;offset<index.tiles.length;offset+=8){
       const batch=index.tiles.slice(offset,offset+8);
-      const decoded=await Promise.all(batch.map(async descriptor=>{
+      const loaded=await Promise.all(batch.map(async descriptor=>{
         const bytes=await store.get(session.path+'/projection-v2/'+descriptor.surfaceId+'/'+tileFileName(descriptor.key,descriptor.digest)+'.bin');
         if(!bytes||(descriptor.digest&&await digestHex(bytes)!==descriptor.digest))throw new Error('projection tile missing or changed');
         const [tx,ty]=parseTileKey(descriptor.key);
         if(tx*index.tileSize>=index.width||ty*index.tileSize>=index.height)throw new Error('projection tile outside canvas');
-        return {descriptor,pixels:await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength)};
+        return {surfaceId:descriptor.surfaceId,value:await unpack(descriptor,bytes)};
       }));
-      for(const {descriptor,pixels} of decoded){const layer=layers.get(descriptor.surfaceId);if(!layer)return null;layer.push({key:descriptor.key,pixels});}
+      for(const {surfaceId,value} of loaded){const layer=layers.get(surfaceId);if(!layer)return null;layer.push(value);}
     }
-    return Object.freeze({version:2 as const,revisionId:index.revisionId,width:index.width,height:index.height,tileSize:128 as const,layers:Object.freeze(index.surfaceIds.map(surfaceId=>Object.freeze({surfaceId,tiles:Object.freeze(layers.get(surfaceId)!.map(tile=>Object.freeze(tile)))})))});
+    return {index,layers};
   }catch{return null;}
+}
+
+export async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>):Promise<ProjectionCache|null>{
+  const saved=await loadProjectionDeltaTiles(store,session,allowedRevisions,async(descriptor,bytes)=>({
+    key:descriptor.key,pixels:await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength),
+  }));
+  if(!saved)return null;
+  const {index,layers}=saved;
+  return Object.freeze({version:2 as const,revisionId:index.revisionId,width:index.width,height:index.height,tileSize:128 as const,
+    layers:Object.freeze(index.surfaceIds.map(surfaceId=>Object.freeze({surfaceId,tiles:Object.freeze(layers.get(surfaceId)!.map(tile=>Object.freeze(tile)))})))});
 }
 function parseProjectionDeltaIndex(value:unknown):ProjectionDeltaIndex{
   if(!value||typeof value!=='object')throw new Error('invalid projection delta index');const x=value as Record<string,unknown>;if(x.version!==2&&x.version!==3)throw new Error('unsupported projection delta index');
@@ -567,13 +600,17 @@ async function listRecoveryCandidates(store:WorkingStore){
       const session={documentId:doc.name,writerEpochId:epoch.name,path:root+'/'+doc.name+'/'+epoch.name};try{const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)continue;const base=await unframeJson(baseBytes) as CorePersistenceSnapshotV1,protectedThrough=await scanProtected(store,session);
         const target=base.revisions.find(x=>x.id===base.snapshotRevisionId),metaBytes=await store.get(session.path+'/meta.frame'),meta=metaBytes?await unframeJson(metaBytes) as Record<string,unknown>:{};
         const saves=await documentSaveState(store,session.documentId),lastGood=saves.lastGood,previousGood=saves.previousGood;
-        out.push({documentId:session.documentId,writerEpochId:session.writerEpochId,title:target?.root.name??'作品',protectedThrough:protectedThrough.toString(),updatedAt:typeof meta.updatedAt==='number'?meta.updatedAt:0,savedRevisionId:typeof meta.savedRevisionId==='string'?meta.savedRevisionId:null,lastGood,previousGood});}catch{} }}
+        // The gallery title is optional. A gallery DB failure must not hide a recoverable session.
+        const work=await getWork(session.documentId).catch(()=>null);
+        const title=(work?.writerEpochId===session.writerEpochId&&work.name)||
+          (typeof meta.title==='string'&&meta.title.trim())||target?.root.name||'作品';
+        out.push({documentId:session.documentId,writerEpochId:session.writerEpochId,title,protectedThrough:protectedThrough.toString(),updatedAt:typeof meta.updatedAt==='number'?meta.updatedAt:0,savedRevisionId:typeof meta.savedRevisionId==='string'?meta.savedRevisionId:null,lastGood,previousGood});}catch{} }}
   return out.sort((a,b)=>(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0));
 }
 async function writeHead(store:WorkingStore,session:Session,revisionId:string){await putVerified(store,session.path+'/head.frame',await frameJson({version:1,revisionId:uuid(revisionId,'revision id')}));}
-async function touchMeta(store:WorkingStore,session:Session,savedRevisionId?:string){
+async function touchMeta(store:WorkingStore,session:Session,savedRevisionId?:string,title?:string){
   const path=session.path+'/meta.frame',old=await store.get(path);let meta:Record<string,unknown>={version:1,documentId:session.documentId,writerEpochId:session.writerEpochId,createdAt:Date.now()};
-  if(old)try{meta=await unframeJson(old) as Record<string,unknown>;}catch{}meta={...meta,updatedAt:Date.now(),...(savedRevisionId?{savedRevisionId}:{})};await putVerified(store,path,await frameJson(meta));
+  if(old)try{meta=await unframeJson(old) as Record<string,unknown>;}catch{}meta={...meta,updatedAt:Date.now(),...(savedRevisionId?{savedRevisionId}:{}),...(title?.trim()?{title:title.trim().slice(0,4096)}:{})};await putVerified(store,path,await frameJson(meta));
 }
 function sessionPath(documentId:string,writerEpochId:string){return 'm05/sessions/'+documentId+'/'+writerEpochId;}
 function documentSavePath(documentId:string){return 'm05/documents/'+documentId+'/saves';}

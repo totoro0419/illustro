@@ -7,19 +7,21 @@ const id=<T extends HTMLElement>(name:string)=>document.getElementById(name) as 
 const button=(label:string,action:string,cls='')=>'<button type="button" class="'+cls+'" data-color-action="'+action+'">'+label+'</button>';
 
 /** Familiar two-view Color/Palette panel with a compact Classic/Orbit selector. */
+export function colorSettingsMarkup(){
+ return '<div id="workspaceColorSettings"><label>色相環の表示形式 <select id="colorPickerMode" aria-label="色選択の表示モード" title="色選択の表示モード"><option value="classic">クラシック</option><option value="orbit">オービット</option></select></label></div>'+
+ '<div class="c04-secondary-color"><label>背景の色 <input id="c04BackgroundColor" type="color" value="#FFFFFF" aria-label="背景色を選ぶ"></label><button id="c04SwapColor" type="button">描画色と交換</button></div>'+
+ '<button type="button" id="openEyedropperSettings">スポイトの設定</button>';
+}
 export function colorMarkup():string {
  const arcs=orbitHuePaths();
  return '<div class="color-workbench">'+
- '<div class="color-current" aria-label="現在の色と変更前の色">'+
+ '<div class="color-current" aria-label="現在の色">'+
   '<button id="colorCurrent" class="color-chip" type="button" aria-label="現在の色"></button>'+
   '<div class="color-describe"><strong>現在の色</strong><output id="colorCode">#1F2633</output></div>'+
-  '<button id="colorPrevious" class="color-chip color-previous" type="button" aria-label="変更前の色に戻す"></button><span class="color-previous-label">変更前</span>'+
  '</div>'+
- '<div class="c04-secondary-color"><label>背景の色 <input id="c04BackgroundColor" type="color" value="#FFFFFF" aria-label="背景色を選ぶ"></label><button id="c04SwapColor" type="button">描画色と交換</button></div>'+
  '<div class="color-mode-switch" role="tablist" aria-label="カラーウィンドウ">'+
   '<button type="button" id="colorShowColor" role="tab" aria-controls="colorScreen" aria-selected="true" tabindex="0">カラー</button>'+
   '<button type="button" id="colorShowPalette" role="tab" aria-controls="colorPaletteScreen" aria-selected="false" tabindex="-1">パレット</button>'+
-  '<select id="colorPickerMode" aria-label="色選択の表示モード" title="色選択の表示モード"><option value="classic">クラシック</option><option value="orbit">オービット</option></select>'+
  '</div>'+
  '<section id="colorScreen" role="tabpanel" aria-labelledby="colorShowColor" class="color-primary">'+
   '<div class="color-picker" id="colorPicker">'+
@@ -39,28 +41,27 @@ export function colorMarkup():string {
    '</svg>'+
    '<span class="color-orbit-hint">タップで選色・円周をなぞって回転・手前は左右スライド</span>'+
   '</div>'+
+  '<div class="paint-color-values">'+
   '<label class="color-hex-label" for="colorHex"><span>カラーコード</span><input id="colorHex" maxlength="7" spellcheck="false" inputmode="text" autocomplete="off" aria-describedby="colorHexError" value="#1F2633"></label>'+
   '<small id="colorHexError" class="color-error" role="status"></small>'+
-  '<div id="colorValueChannels" class="color-value-channels"></div>'+ 
+  '<div role="tablist" class="color-models" aria-label="色の数値形式">'+
+   ['HSV','RGB','HSL'].map((m,i)=>'<button type="button" id="colorModel'+m+'" role="tab" aria-controls="colorValueChannels" aria-selected="'+(i===0)+'" tabindex="'+(i===0?0:-1)+'" value="'+m+'">'+m+'</button>').join('')+
+  '</div><div id="colorValueChannels" role="tabpanel" aria-labelledby="colorModelHSV" class="color-value-channels"></div>'+
   '<div class="c04-color-opacity"><label for="c04ColorOpacity">色の不透明度</label><input id="c04ColorOpacity" type="range" min="0" max="100" step="1" value="100" aria-label="描画色の不透明度"><input id="c04ColorOpacityNumber" type="number" min="0" max="100" step="1" value="100" aria-label="描画色の不透明度の数値"><span>%</span></div><small id="c04ColorOpacityStatus" role="status"></small>'+
-  '<div class="color-value-footer"><span class="color-mode-caption">色の数値</span>'+
-   '<div role="radiogroup" class="color-models" aria-label="カラー形式">'+
-    ['HSV','RGB','HSL'].map((m,i)=>'<label><input type="radio" name="colorModel" value="'+m+'" '+(i===0?'checked':'')+'><span>'+(m==='HSV'?'HSB':m)+'</span></label>').join('')+
-   '</div>'+
-  '</div>'+
-  '<details id="colorEyedropperOptions" class="color-disclosure color-sample-options"><summary>スポイトの参照先</summary><div class="color-detail-inner">'+
+  '</div></section>'+
+  '<dialog id="colorEyedropperOptions" class="color-sample-options" aria-labelledby="eyedropperSettingsTitle"><h3 id="eyedropperSettingsTitle">スポイトの設定</h3><div class="color-detail-inner">'+
    '<label class="color-sample-source" for="colorSampleSource">取得する場所<select id="colorSampleSource"><option value="composite">見えている絵全体</option><option value="layer">選んでいるレイヤー</option><option value="specific">指定したレイヤー</option></select></label>'+
    '<label class="color-sample-source" id="colorSampleLayerLabel" hidden>取得するレイヤー<select id="colorSampleLayerId"></select></label>'+
    '<label class="color-sample-source">取得する範囲<select id="colorSampleDiameter"><option value="1">1画素（点）</option><option value="3">3×3画素の平均</option><option value="5">5×5画素の平均</option></select></label>'+
    '<label class="color-sample-source">透明の扱い<select id="colorSampleTransparency"><option value="skip">透明な画素は除外</option><option value="keep">透明も平均に含める</option><option value="white">白背景上の見た目</option></select></label>'+
+   '<output id="colorSampleActiveSummary" class="color-sample-current" role="status" aria-live="polite">現在の採色元: 見えている作品全体</output>'+
    '<button id="referenceSampleOpen" type="button">参考画像から色を取る</button><small>作品の補助線・選択枠・色覚確認表示は採色に含めません。</small>'+
-  '</div></details>'+
- '</section>'+
+  '</div><form method="dialog"><button type="submit">閉じる</button></form></dialog>'+
  '<section id="colorPaletteScreen" role="tabpanel" aria-labelledby="colorShowPalette" class="color-palette-screen" hidden>'+
   '<div class="color-section-header"><h3>カラーパレット</h3>'+button('＋ 色を追加','add-current','color-add-button')+'</div>'+
   '<label for="colorPaletteSelect" class="color-palette-choice"><span>パレット</span><select id="colorPaletteSelect" aria-label="使うパレット"></select></label>'+
   '<div id="colorPaletteList" class="color-swatch-grid color-favorites-grid" role="group" aria-label="カラーパレット"></div>'+
-  '<div class="color-section-header color-history-heading"><h3>カラー履歴</h3></div>'+
+  '<div class="color-section-header color-history-heading"><h3>カラー履歴</h3>'+button('履歴を消去','clear-history')+'</div>'+
   '<div id="colorHistoryList" class="color-swatch-grid color-history-strip" role="group" aria-label="カラー履歴"></div>'+
   '<details id="colorPaletteTools" class="color-disclosure color-manage"><summary>パレットの編集・管理</summary><div class="color-detail-inner">'+
    '<div class="color-palette-actions">'+button('新規作成','new-palette')+button('名前の変更','rename-palette')+'</div>'+
@@ -82,7 +83,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  // Black RGB cannot encode the selected saturation. Preserve the SV marker
  // coordinate separately when Value reaches zero.
  let saturationMemory=rgbToHsv(state.current).s,orbitStartSaturation=saturationMemory;
- const current=id<HTMLElement>('colorCurrent'),previous=id<HTMLButtonElement>('colorPrevious'),code=id<HTMLOutputElement>('colorCode'),
+ const current=id<HTMLElement>('colorCurrent'),code=id<HTMLOutputElement>('colorCode'),
   ring=id<HTMLElement>('colorRing'),plane=id<HTMLElement>('colorPlane'),hexField=id<HTMLInputElement>('colorHex'),
   notice=id<HTMLElement>('colorActionNotice'),
   colorScreen=id<HTMLElement>('colorScreen'),paletteScreen=id<HTMLElement>('colorPaletteScreen'),
@@ -106,14 +107,12 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(store){try{localStorage.setItem('illustro-color-picker-mode',mode);}catch{/* browser storage may be restricted */}}
  }
  modeSelect.onchange=()=>setPickerMode(modeSelect.value==='orbit'?'orbit':'classic');
- setPickerMode(readStoredMode()==='orbit'?'orbit':'classic',false);
+ setPickerMode(readStoredMode()==='classic'?'classic':'orbit',false);
  let channelEditing=false,editingHex=false;
  const selectScreen=(next:'color'|'palette',focus=false)=>{
   colorScreen.hidden=next!=='color';paletteScreen.hidden=next!=='palette';
   showColor.setAttribute('aria-selected',String(next==='color'));showPalette.setAttribute('aria-selected',String(next==='palette'));
   showColor.tabIndex=next==='color'?0:-1;showPalette.tabIndex=next==='palette'?0:-1;
-  modeSelect.hidden=next!=='color';
-  modeSelect.parentElement?.classList.toggle('color-no-picker-mode',next!=='color');
   if(focus)(next==='color'?showColor:showPalette).focus();
  };
  showColor.onclick=()=>selectScreen('color');showPalette.onclick=()=>selectScreen('palette');
@@ -125,7 +124,8 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   const c=state.current,hsv=rgbToHsv(c);
   if(hsv.v>1e-7){saturationMemory=hsv.s;if(hsv.s>1e-7)hueMemory=hsv.h;}
   const displayS=hsv.v<=1e-7?saturationMemory:hsv.s;
-  current.style.backgroundColor=hex(c);code.textContent=hex(c);previous.style.backgroundColor=hex(state.previous);
+  document.getElementById('colorPage')?.style.setProperty('--current-paint-color',hex(c));
+  current.style.backgroundColor=hex(c);code.textContent=hex(c);
   id<HTMLInputElement>('c04BackgroundColor').value=hex(state.background);
   const opacity=Math.round(state.opacity*100);
   id<HTMLInputElement>('c04ColorOpacity').value=String(opacity);
@@ -141,8 +141,13 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(pickerMode==='orbit')orbit.reflect(hueMemory,displayS,hsv.v);
   if(document.activeElement!==hexField)hexField.value=hex(c);
   if(!channelEditing)updateChannels();
-  for(const el of document.querySelectorAll<HTMLButtonElement>('.color-swatch')){
-   el.setAttribute('aria-pressed',String(el.dataset.hex===hex(c)));
+  // Preview can fire on every pointer move. Touch only chips whose selected
+  // state actually changes; avoid walking 2×256 palette controls each move.
+  const nextHex=hex(c);
+  if(nextHex!==selectedChipHex){
+    for(const chip of chipsByHex.get(selectedChipHex)??[])chip.setAttribute('aria-pressed','false');
+    for(const chip of chipsByHex.get(nextHex)??[])chip.setAttribute('aria-pressed','true');
+    selectedChipHex=nextHex;
   }
   options.onBrushColor();
  }
@@ -163,7 +168,6 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(event.key==='Escape'){event.preventDefault();opacityNumeric.setCustomValidity('');opacityNumeric.value=String(Math.round(state.opacity*100));opacityStatus.textContent='';opacityNumeric.blur();}
  };
  current.onclick=()=>{(pickerMode==='orbit'?id<HTMLElement>('colorOrbitWheel'):ring).focus({preventScroll:true});};
- previous.onclick=()=>state.choose(state.previous);
  id<HTMLInputElement>('c04BackgroundColor').onchange=event=>{const next=fromHex((event.target as HTMLInputElement).value);if(next)state.setBackground(next);};
  id<HTMLButtonElement>('c04SwapColor').onclick=()=>state.swapBackground();
  const commitHex=()=>{if(!editingHex)return;const parsed=fromHex(hexField.value);
@@ -214,9 +218,27 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   e.preventDefault();const h=e.key==='Home'?0:e.key==='End'?359:(hueMemory+delta!+360)%360,sv=rgbToHsv(state.current);
   hueMemory=h;state.choose(hsvToRgb(h,sv.v<=1e-7?saturationMemory:sv.s,sv.v));
  });
- const models=document.querySelectorAll<HTMLInputElement>('input[name="colorModel"]');
- models.forEach(el=>el.onchange=()=>{if(el.checked){model=el.value as typeof model;renderChannels();}});
+ const models=[...document.querySelectorAll<HTMLButtonElement>('.color-models [role=tab]')];
  const channels=id<HTMLElement>('colorValueChannels');
+ const selectModel=(next:typeof model,focus=false)=>{
+  model=next;
+  for(const tab of models){
+   const selected=tab.value===model;
+   tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;
+   if(selected){channels.setAttribute('aria-labelledby',tab.id);if(focus)tab.focus();}
+  }
+  renderChannels();
+ };
+ for(const [index,tab] of models.entries()){
+  tab.onclick=()=>selectModel(tab.value as typeof model);
+  tab.onkeydown=event=>{
+   const key=event.key;
+   if(!['ArrowLeft','ArrowRight','Home','End'].includes(key))return;
+   event.preventDefault();
+   const at=key==='Home'?0:key==='End'?models.length-1:(index+models.length+(key==='ArrowRight'?1:-1))%models.length;
+   selectModel(models[at]!.value as typeof model,true);
+  };
+ }
  const channelDef=()=>model==='RGB'?[['R','赤',255],['G','緑',255],['B','青',255]] as const:model==='HSL'?[['H','色相',360],['S','鮮やかさ',100],['L','明るさ',100]] as const:[['H','色相',360],['S','鮮やかさ',100],['V','明るさ',100]] as const;
  const values=()=>{const c=state.current,hsv=rgbToHsv(c),hsl=rgbToHsl(c);return model==='RGB'?[c.r*255,c.g*255,c.b*255]:model==='HSL'?[hsl.h,hsl.s*100,hsl.l*100]:[hueMemory,(hsv.v<=1e-7?saturationMemory:hsv.s)*100,hsv.v*100];};
  function previewValue(index:number,value:number){
@@ -247,11 +269,18 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  function updateChannels(){const v=values();v.forEach((n,i)=>{const s=document.getElementById('colorSlider'+i) as HTMLInputElement|null,f=document.getElementById('colorNumber'+i) as HTMLInputElement|null;if(s)s.value=String(n);if(f&&document.activeElement!==f)f.value=String(Math.round(n*10)/10);});}
  // HSB/RGB/HSL values are directly visible below the diamond.
  const list=id<HTMLElement>('colorPaletteList'),manager=id<HTMLElement>('colorPaletteManageList'),history=id<HTMLElement>('colorHistoryList'),selector=id<HTMLSelectElement>('colorPaletteSelect');
+ const clearHistory=document.querySelector<HTMLButtonElement>('[data-color-action="clear-history"]')!;
+ const chipsByHex=new Map<string,HTMLButtonElement[]>();
+ let selectedChipHex=hex(state.current),renderedCollectionsVersion=-1;
  function makeChip(color:RGB,label:string,onSelect:()=>void):HTMLButtonElement{
-  const b=document.createElement('button');b.type='button';b.className='color-swatch';b.style.backgroundColor=hex(color);b.dataset.hex=hex(color);b.title=label+' '+hex(color);b.setAttribute('aria-label',label+' '+hex(color));b.setAttribute('aria-pressed',String(hex(color)===hex(state.current)));b.onclick=onSelect;return b;
+  const b=document.createElement('button');b.type='button';b.className='color-swatch';b.style.backgroundColor=hex(color);b.dataset.hex=hex(color);b.title=label+' '+hex(color);b.setAttribute('aria-label',label+' '+hex(color));b.setAttribute('aria-pressed',String(hex(color)===hex(state.current)));b.onclick=onSelect;
+  const key=b.dataset.hex!;const registered=chipsByHex.get(key);
+  if(registered)registered.push(b);else chipsByHex.set(key,[b]);
+  return b;
  }
  function renderCollections(){
-  selector.replaceChildren(...state.palettes.map(p=>{const op=new Option((p.folder?p.folder+' / ':'')+p.name,p.id);op.selected=p.id===state.paletteId;return op;}));
+  chipsByHex.clear();
+  selector.replaceChildren(...state.availablePalettes.map(p=>{const op=new Option((p.folder?p.folder+' / ':'')+p.name,p.id);op.selected=p.id===state.paletteId;return op;}));
   const folder=id<HTMLInputElement>('c04PaletteFolder');if(document.activeElement!==folder)folder.value=state.palette.folder??'';
   list.replaceChildren();manager.replaceChildren();
   for(const [i,s] of state.palette.swatches.entries()){
@@ -273,7 +302,10 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(!list.childElementCount)list.innerHTML='<span class="color-empty">「＋ 色を追加」で現在の色を登録</span>';
   if(!manager.childElementCount)manager.innerHTML='<span class="color-empty">保存した色はありません。</span>';
   history.replaceChildren(...state.history.map((c,i)=>makeChip(c,'最近の色 '+(i+1),()=>state.choose(c))));
+  clearHistory.disabled=state.history.length===0;
   if(!history.childElementCount)history.innerHTML='<span class="color-empty">色を選ぶと、ここからすぐ戻せます。</span>';
+  selectedChipHex=hex(state.current);
+  renderedCollectionsVersion=state.collectionsVersion;
  }
  selector.onchange=()=>state.selectPalette(selector.value);
  id<HTMLInputElement>('c04PaletteFolder').onchange=e=>state.setPaletteFolder((e.target as HTMLInputElement).value);
@@ -289,7 +321,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
    switch(name){
     case 'eyedropper':options.onPickTool();break;
     case 'add-current':state.addSwatch();notice.textContent='今の色を保存しました。';break;
-    case 'clear-history':state.clearHistory();break;
+    case 'clear-history':state.clearHistory();notice.textContent='カラー履歴を消去しました。';break;
     case 'new-palette':showPaletteDialog('new');break;
     case 'rename-palette':showPaletteDialog('rename');break;
     case 'export-palette':{const payload=new Blob([exportPalette(state.palette)],{type:'application/json'});const url=URL.createObjectURL(payload),a=document.createElement('a');a.href=url;a.download='illustro-palette.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);break;}
@@ -302,7 +334,10 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(file.size>262144){error.textContent='ファイルが大きすぎます（256KBまで）。';return;}
   try{state.importPalette(await file.text());selectScreen('palette');notice.textContent='パレットを読み込みました。';}catch(ex){error.textContent=ex instanceof Error?ex.message:String(ex);}
  };
- const unsubscribe=state.subscribe(()=>{reflect();if(!state.isEditing)renderCollections();});
+ const unsubscribe=state.subscribe(()=>{
+  reflect();
+  if(!state.isEditing&&state.collectionsVersion!==renderedCollectionsVersion)renderCollections();
+ });
  renderChannels();reflect();renderCollections();
- return {destroy:()=>{unsubscribe();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1){model='RGB';(document.querySelector<HTMLInputElement>('input[name="colorModel"][value="RGB"]')!).checked=true;renderChannels();}}};
+ return {destroy:()=>{unsubscribe();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1)selectModel('RGB');}};
 }

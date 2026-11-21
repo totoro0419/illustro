@@ -17,8 +17,19 @@ import type {SemanticOperationDraft} from './history';
 import {CANONICAL_TILE_SIZE,parseTileKey,pixelToTile,tileKey,RasterSurfaceManifest,type DirtyTileHint} from './raster/surface';
 
 export type DocumentGeometryKind='document.crop'|'document.canvas-resize'|'document.image-resize';
-type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'artwork-guides';guides:readonly ArtworkGuide[]}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;source?:RevisionId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
+type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'artwork-guides';guides:readonly ArtworkGuide[]}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;partial?:true;source?:RevisionId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
+/** A small image in document coordinates; avoid creating a transparent full-canvas buffer. */
+export type RasterPixelRegion=Readonly<{
+  x:number;y:number;width:number;height:number;pixels:Uint8Array|Uint8ClampedArray;
+}>;
+/** Whole-layer sparse 128px tiles. x/y place the source canvas within the
+ * destination; missing tiles are transparent, with no full-canvas buffer. */
+export type RasterPixelTiles=Readonly<{
+  x:number;y:number;width:number;height:number;tileSize:128;
+  tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[];
+}>;
+type RasterPixels=Uint8Array|Uint8ClampedArray|RasterPixelRegion|RasterPixelTiles;
 
 export class DocumentTransaction{
   private readonly baseValue:RevisionId;private readonly expectedHead:RevisionId;private resultId:RevisionId|undefined;private readonly rootValue;private readonly idValue:TransactionId;private readonly workingValue=new Map<LayerId,RasterWorkingSet>();
@@ -51,14 +62,51 @@ export class DocumentTransaction{
     }
     this.updatesValue.set(layerId,layer);this.slotsValue.push(Object.freeze({type:'structure' as const,layerId,surfaceId,insertIndex,name}));return layerId;
   }
-  addRasterSnapshotAbove(referenceId:LayerId,pixels:Uint8Array|Uint8ClampedArray,name:string,copyStyle=false,inheritGroup=true,below=false){
+  addRasterSnapshotAbove(referenceId:LayerId,pixels:RasterPixels,name:string,copyStyle=false,inheritGroup=true,below=false){
     const root=this.rootValue;
-    if(pixels.length!==root.width*root.height*4)throw new Error('画像の大きさが作品と一致しません。');
+    if('tiles' in pixels){
+      if(!Number.isSafeInteger(pixels.x)||!Number.isSafeInteger(pixels.y)||
+        !Number.isSafeInteger(pixels.width)||!Number.isSafeInteger(pixels.height)||
+        pixels.width<1||pixels.height<1||pixels.x<0||pixels.y<0||
+        pixels.x+pixels.width>root.width||pixels.y+pixels.height>root.height||
+        pixels.tileSize!==128||CANONICAL_TILE_SIZE%pixels.tileSize)
+        throw new Error('貼り付ける区画の大きさ・配置が正しくありません。');
+      const seen=new Set<string>(),cols=Math.ceil(pixels.width/pixels.tileSize),rows=Math.ceil(pixels.height/pixels.tileSize);
+      for(const tile of pixels.tiles){
+        if(!/^\d+,\d+$/.test(tile.key)||seen.has(tile.key)||
+          !(tile.pixels instanceof Uint8Array)||tile.pixels.byteLength!==pixels.tileSize*pixels.tileSize*4)
+          throw new Error('貼り付ける区画が重複または破損しています。');
+        const [tx=NaN,ty=NaN]=tile.key.split(',').map(Number);
+        if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||tx>=cols||ty>=rows)
+          throw new Error('貼り付ける区画が作品の外にあります。');
+        seen.add(tile.key);
+      }
+    }else if('pixels' in pixels){
+      if(!Number.isSafeInteger(pixels.x)||!Number.isSafeInteger(pixels.y)||
+        !Number.isSafeInteger(pixels.width)||!Number.isSafeInteger(pixels.height)||
+        pixels.width<1||pixels.height<1||pixels.x<0||pixels.y<0||
+        pixels.x+pixels.width>root.width||pixels.y+pixels.height>root.height||
+        pixels.pixels.length!==pixels.width*pixels.height*4)
+        throw new Error('貼り付ける画像の大きさ・配置が正しくありません。');
+    }else if(pixels.length!==root.width*root.height*4)
+      throw new Error('画像の大きさが作品と一致しません。');
     const id=this.addRasterLayerAbove(referenceId,inheritGroup,below);
     this.renameLayer(id,name);
     if(copyStyle){
       const source=this.updatesValue.get(referenceId)??root.getLayer(referenceId);
-      if(source.deformation)throw new Error('変形を保持したレイヤーの複製は未対応です。見た目を複製する場合は画像に焼き込んでください。');
+      // The captured pixels already represent the transformed appearance.
+      // A deformation can be copied safely because the original revision is
+      // immutable. Resolve the implicit source-layer reference explicitly:
+      // without this, the clone would incorrectly refer to its own new ID.
+      if(source.deformation){
+        const deformation=validateLayerDeformation({
+          ...source.deformation,sourceLayerId:source.deformation.sourceLayerId??source.id
+        });
+        if(!deformation||!this.doc.hasRevision(deformation.sourceRevision)||
+          !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId!))
+          throw new Error('複製元の変形原本が見つかりません。');
+        this.meta(id,{deformation});
+      }
       this.setLayerOpacity(id,source.opacity);
       this.setLayerVisibility(id,source.visible);
       if(source.colorTag)this.setLayerColorTag(id,source.colorTag);
@@ -67,14 +115,16 @@ export class DocumentTransaction{
       if(source.vectorMask)this.meta(id,{vectorMask:source.vectorMask});
       if(source.editable)this.meta(id,{editable:source.editable});
     }
-    this.seedRasterPixels(id,pixels);
+    if('tiles' in pixels)this.seedRasterTiles(id,pixels);
+    else if('pixels' in pixels)this.seedRasterRegion(id,pixels);
+    else this.seedRasterPixels(id,pixels);
     return id;
   }
   pasteRasterLayers(referenceId:LayerId,entries:readonly Readonly<{
-    layer:LayerNode;pixels:Uint8Array|Uint8ClampedArray;mask?:LayerMask|null;editable?:EditableArtwork|null;
-    source?:Readonly<{pixels:Uint8Array;mask:LayerMask|null;deformation:LayerDeformation}>;
+    layer:LayerNode;pixels:RasterPixels;mask?:LayerMask|null;editable?:EditableArtwork|null;
+    source?:Readonly<{pixels:RasterPixels;mask:LayerMask|null;deformation:LayerDeformation}>;
     strokes?:readonly Readonly<{operation:RasterSemanticMutation;tiles:readonly DirtyTileHint[]}>[];
-    regionSource?:Readonly<{pixels:Uint8Array;recipe:LineRegions}>;
+    regionSource?:Readonly<{pixels:RasterPixels;recipe:LineRegions}>;
   }>[],groups:readonly LayerGroup[]){
     this.open();
     if(!entries.length)throw new Error('貼り付けるレイヤーがありません。');
@@ -179,6 +229,176 @@ export class DocumentTransaction{
     if(editable!==undefined)this.setEditableArtwork(id,editable);
     return true;
   }
+  /** Source edits and all linked boolean results become one history entry.
+   * Validate the complete batch before staging any pixels or metadata. */
+  replaceEditableArtworkBatch(entries:readonly Readonly<{
+    id:LayerId;pixels:Uint8Array|Uint8ClampedArray;content:EditableArtwork|null
+  }>[]) {
+    this.open();
+    if(this.slotsValue.length||!entries.length)throw Error('編集するレイヤーを指定してください。');
+    const seen=new Set<LayerId>(),expected=this.rootValue.width*this.rootValue.height*4;
+    const candidates=entries.map(entry=>{
+      if(seen.has(entry.id))throw Error('同じレイヤーが重複しています。');
+      seen.add(entry.id);
+      const layer=this.editableRaster(entry.id);
+      if(layer.baseColor==='white'||layer.imageLink||layer.deformation||layer.lineRegions||
+        !layer.editable||entry.pixels.length!==expected||
+        layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
+        throw Error('図形を更新できないレイヤーが含まれています。');
+      return {...entry,layer,content:validateEditableArtwork(entry.content)};
+    });
+    for(const {id,layer,pixels,content} of candidates){
+      this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
+      this.seedRasterPixels(id,pixels,true);
+      this.meta(id,{editable:content});
+    }
+    return true;
+  }
+  /** Replaces a raster layer using only populated 128px renderer tiles.
+   * A snapshot (not a strict delta) is essential: it supersedes old semantic
+   * brush strokes during history replay, exactly like replaceLayerRaster(). */
+  replaceLayerRasterTiles(
+    id:LayerId,tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[],
+    source?:RevisionId,editable?:EditableArtwork|null,deformation?:LayerDeformation|null
+  ){
+    this.open();
+    if(this.slotsValue.length)throw new Error('Replace layer pixels as a standalone operation');
+    if(source&&!this.doc.hasRevision(source))throw new Error('復元元の履歴が見つかりません。');
+    const layer=this.editableRaster(id),tileSize=128,canonical=CANONICAL_TILE_SIZE;
+    if(layer.baseColor==='white')throw new Error('白背景を描画用に変換してから復元してください。');
+    if(layer.imageLink)throw Error('画像の参照を解除してから画素を編集してください。');
+    if(layer.deformation&&deformation===undefined)throw new Error('このレイヤーは変形を保持しています。画像に焼き込むか、変形の上に別レイヤーを追加してください。');
+    if(deformation&&(!this.doc.hasRevision(deformation.sourceRevision)||
+      !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId??id)))throw new Error('変形前の原本が見つかりません。');
+    if(layer.editable&&editable===undefined)throw new Error('編集できるレイヤーです。専用の操作画面で編集するか、描画用に変換してください。');
+    if(canonical%tileSize!==0||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
+      throw new Error('対応していない画像の区画形式です。');
+    const seen=new Set<string>(),maxX=Math.ceil(this.rootValue.width/tileSize),maxY=Math.ceil(this.rootValue.height/tileSize);
+    for(const tile of tiles){
+      if(!/^\d+,\d+$/.test(tile.key)||seen.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.length!==tileSize*tileSize*4)
+        throw new Error('画像の区画が重複または破損しています。');
+      const [x=NaN,y=NaN]=tile.key.split(',').map(Number);
+      if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0||x>=maxX||y>=maxY)
+        throw new Error('画像の区画が作品の外です。');
+      seen.add(tile.key);
+    }
+    const empty=new RasterSurfaceManifest(layer.surface.descriptor);
+    const working=new RasterWorkingSet(empty,this.doc._internal(CORE_INTERNAL).store);
+    for(const {key,pixels} of tiles){
+      if(!pixels.some(value=>value!==0))continue;
+      const [tx=NaN,ty=NaN]=key.split(',').map(Number),originX=tx*tileSize,originY=ty*tileSize;
+      const cx=Math.floor(originX/canonical),cy=Math.floor(originY/canonical);
+      const localX=originX-cx*canonical,localY=originY-cy*canonical;
+      const w=Math.min(tileSize,this.rootValue.width-originX),h=Math.min(tileSize,this.rootValue.height-originY);
+      working.editTile(cx,cy,bytes=>{
+        for(let row=0;row<h;row++)bytes.set(
+          pixels.subarray(row*tileSize*4,row*tileSize*4+w*4),
+          ((localY+row)*canonical+localX)*4
+        );
+      });
+    }
+    this.updatesValue.set(id,Object.freeze({...layer,surface:empty}));
+    this.workingValue.set(id,working);
+    const sourceRevision=deformation?.sourceRevision??source;
+    this.slotsValue.push(Object.freeze({
+      type:'working' as const,layerId:id,initial:true as const,replace:true as const,
+      ...(sourceRevision?{source:sourceRevision}:{})
+    }));
+    if(deformation!==undefined)this.meta(id,{deformation:validateLayerDeformation(deformation)});
+    if(editable!==undefined)this.setEditableArtwork(id,editable);
+    return true;
+  }
+  /** Materialize complete changed 256px blocks, retaining semantic strokes
+   * on every other block. Every in-canvas 128px child must be supplied,
+   * including transparent children, so an omitted neighbor cannot be lost. */
+  patchLayerRasterTiles(id:LayerId,blockKeys:readonly string[],tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[]){
+    this.open();
+    if(this.slotsValue.length||!blockKeys.length)throw Error('変更する画像の区画を指定してください。');
+    const layer=this.editableRaster(id),size=128,T=CANONICAL_TILE_SIZE;
+    if(layer.baseColor==='white'||layer.editable||layer.deformation||layer.imageLink||layer.lineRegions||
+      T!==size*2||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
+      throw Error('このレイヤーは区画ごとの描画に対応していません。');
+    const validKey=(key:string,columns:number,rows:number)=>{
+      if(!/^(0|[1-9]\d*),(0|[1-9]\d*)$/.test(key))throw Error('画像の区画が正しくありません。');
+      const [x=NaN,y=NaN]=key.split(',').map(Number);
+      if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x>=columns||y>=rows)throw Error('画像の区画が作品の外です。');
+      return [x,y] as const;
+    };
+    const width=this.rootValue.width,height=this.rootValue.height,blocks=new Set<string>(),expected=new Set<string>();
+    for(const key of blockKeys){
+      const [x,y]=validKey(key,Math.ceil(width/T),Math.ceil(height/T));
+      if(blocks.has(key))throw Error('画像の区画が重複しています。');
+      blocks.add(key);
+      for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++)
+        if((x*2+dx)*size<width&&(y*2+dy)*size<height)expected.add(`${x*2+dx},${y*2+dy}`);
+    }
+    const seen=new Set<string>();
+    for(const tile of tiles){
+      validKey(tile.key,Math.ceil(width/size),Math.ceil(height/size));
+      if(!expected.has(tile.key)||seen.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.length!==size*size*4)
+        throw Error('変更区画の画素が不足または重複しています。');
+      seen.add(tile.key);
+    }
+    if(seen.size!==expected.size)throw Error('隣り合う区画の画素が不足しています。');
+    const cleared=layer.surface.tiles.edit();
+    for(const key of blocks)cleared.set(key,Object.freeze({baseBlockId:null,mutations:Object.freeze([])}));
+    const working=new RasterWorkingSet(new RasterSurfaceManifest(layer.surface.descriptor,cleared.commit()),this.doc._internal(CORE_INTERNAL).store);
+    for(const key of blocks){const [x,y]=parseTileKey(key);working.editTile(x,y,bytes=>bytes.fill(0));}
+    for(const {key,pixels} of tiles){
+      const [x,y]=key.split(',').map(Number),cx=Math.floor(x!/2),cy=Math.floor(y!/2);
+      const localX=x!%2*size,localY=y!%2*size,w=Math.min(size,width-x!*size),h=Math.min(size,height-y!*size);
+      working.editTile(cx,cy,bytes=>{
+        for(let row=0;row<h;row++)bytes.set(pixels.subarray(row*size*4,row*size*4+w*4),((localY+row)*T+localX)*4);
+      });
+    }
+    this.workingValue.set(id,working);
+    this.slotsValue.push(Object.freeze({type:'working',layerId:id,initial:true,partial:true}));
+    return true;
+  }
+  /** One atomic non-destructive snapshot per layer, all in the SAME
+   * revision. Ordinary replaceLayerDeformation deliberately stays
+   * standalone; this explicit API validates every target before writing. */
+  replaceLayerDeformationsBatch(entries:readonly Readonly<{
+    id:LayerId;pixels:Uint8Array|Uint8ClampedArray;deformation?:LayerDeformation;content?:EditableArtwork
+  }>[]) {
+    this.open();
+    if(this.slotsValue.length||entries.length<2)throw Error('複数レイヤーをまとめて変形するには2枚以上指定してください。');
+    const seen=new Set<LayerId>(),expected=this.rootValue.width*this.rootValue.height*4;
+    const candidates=entries.map(entry=>{
+      if(seen.has(entry.id))throw Error('同じレイヤーが重複しています。');
+      seen.add(entry.id);
+      const layer=this.editableRaster(entry.id);
+      if(layer.baseColor==='white'||layer.imageLink||layer.lineRegions||
+        this.rootValue.isLayerPositionLocked(entry.id))
+        throw Error('まとめて変形できないレイヤーが含まれています。');
+      if(entry.pixels.length!==expected||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')
+        throw Error('変形結果の画素データが作品と一致しません。');
+      if(entry.content){
+        if(!layer.editable||layer.deformation||entry.deformation)throw Error('編集情報を保って変形できません。');
+        const content=validateEditableArtwork(entry.content);
+        if(!content||content.kind==='gradient'||content.kind!==layer.editable.kind)throw Error('編集できるレイヤーの種類を変更できません。');
+        return {id:entry.id,layer,pixels:entry.pixels,content,deformation:null};
+      }
+      if(layer.editable)throw Error('図形や文字の元の編集情報が必要です。');
+      const deformation=validateLayerDeformation(entry.deformation);
+      if(!deformation||!this.doc.hasRevision(deformation.sourceRevision)||
+        !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId??entry.id))
+        throw Error('変形前の画像の履歴が見つかりません。');
+      const saved=layer.deformation;
+      if(saved&&(saved.enabled===false||deformation.enabled===false||saved.mode!=='affine'||deformation.mode!=='affine'||saved.selection||deformation.selection||
+        saved.postPaint?.length||deformation.postPaint?.length||
+        saved.sourceRevision!==deformation.sourceRevision||
+        (saved.sourceLayerId??entry.id)!==(deformation.sourceLayerId??entry.id)))
+        throw Error('元画像を保った移動・回転・拡縮だけをまとめて再編集できます。');
+      return {id:entry.id,layer,pixels:entry.pixels,deformation,content:null};
+    });
+    for(const {id,layer,pixels,deformation,content} of candidates){
+      this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
+      this.seedRasterPixels(id,pixels,true,deformation?.sourceRevision);
+      if(content)this.meta(id,{editable:content});else this.meta(id,{deformation});
+    }
+    return true;
+  }
   replaceLayerDeformation(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,deformation:LayerDeformation|null){
     const layer=this.rootValue.getLayer(id);
     this.replaceLayerRaster(id,pixels,undefined,undefined,deformation);
@@ -245,6 +465,55 @@ export class DocumentTransaction{
     const layer=this.editableRaster(id);
     if(!layer.deformation)throw new Error('再編集できる変形がありません。');
     return this.meta(id,{deformation:null});
+  }
+  /** Seed a translated layer from only occupied 128px tiles. This preserves
+   * its source-space pixel positions even with non-aligned document offsets. */
+  private seedRasterTiles(id:LayerId,source:RasterPixelTiles){
+    const chunk=source.tileSize,canonical=CANONICAL_TILE_SIZE;
+    for(const {key,pixels} of source.tiles){
+      if(!pixels.some(v=>v!==0))continue;
+      const [sx=NaN,sy=NaN]=key.split(',').map(Number);
+      const sourceX=sx*chunk,sourceY=sy*chunk;
+      const left=source.x+sourceX,top=source.y+sourceY;
+      const width=Math.min(chunk,source.width-sourceX),height=Math.min(chunk,source.height-sourceY);
+      const right=left+width,bottom=top+height;
+      for(let tileY=Math.floor(top/canonical);tileY<Math.ceil(bottom/canonical);tileY++)
+        for(let tileX=Math.floor(left/canonical);tileX<Math.ceil(right/canonical);tileX++){
+          const x0=Math.max(left,tileX*canonical),x1=Math.min(right,(tileX+1)*canonical);
+          const y0=Math.max(top,tileY*canonical),y1=Math.min(bottom,(tileY+1)*canonical);
+          this.editTile(id,tileX,tileY,destination=>{
+            for(let y=y0;y<y1;y++){
+              const from=((y-top)*chunk+x0-left)*4;
+              const to=((y-tileY*canonical)*canonical+x0-tileX*canonical)*4;
+              destination.set(pixels.subarray(from,from+(x1-x0)*4),to);
+            }
+          });
+        }
+    }
+  }
+  /** Write only intersecting nonempty tiles. An empty area has no allocated blocks. */
+  private seedRasterRegion(id:LayerId,region:RasterPixelRegion){
+    const size=CANONICAL_TILE_SIZE;
+    const lastX=region.x+region.width,lastY=region.y+region.height;
+    for(let tileY=Math.floor(region.y/size);tileY<Math.ceil(lastY/size);tileY++)
+      for(let tileX=Math.floor(region.x/size);tileX<Math.ceil(lastX/size);tileX++){
+        const x0=Math.max(region.x,tileX*size),x1=Math.min(lastX,(tileX+1)*size);
+        const y0=Math.max(region.y,tileY*size),y1=Math.min(lastY,(tileY+1)*size);
+        let occupied=false;
+        for(let y=y0;y<y1&&!occupied;y++){
+          const offset=((y-region.y)*region.width+x0-region.x)*4;
+          const segment=region.pixels.subarray(offset,offset+(x1-x0)*4);
+          occupied=segment.some(value=>value!==0);
+        }
+        if(!occupied)continue;
+        this.editTile(id,tileX,tileY,tile=>{
+          for(let y=y0;y<y1;y++){
+            const offset=((y-region.y)*region.width+x0-region.x)*4;
+            tile.set(region.pixels.subarray(offset,offset+(x1-x0)*4),
+              ((y-tileY*size)*size+x0-tileX*size)*4);
+          }
+        });
+      }
   }
   private seedRasterPixels(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,replace=false,source?:RevisionId){
     const {width:documentWidth,height:documentHeight}=this.rootValue;
@@ -366,18 +635,35 @@ export class DocumentTransaction{
     this.slotsValue.push(Object.freeze({type:'comps',id,action}));
     return true;
   }
-  createLayerGroup(ids:ReadonlySet<LayerId>,name:string){
+  createLayerGroup(ids:ReadonlySet<LayerId>,name:string,packSeparated=false){
     this.open();
-    const members=this.rootValue.rootLayerIds.filter(id=>ids.has(id));
+    if(this.slotsValue.length)throw new Error('グループ化は独立した操作として実行してください。');
+    const original=this.rootValue.rootLayerIds;
+    const members=original.filter(id=>ids.has(id));
     if(members.length!==ids.size||!members.length)throw new Error('まとめるレイヤーを選んでください。');
-    if(members.some(id=>this.rootValue.getLayer(id).baseColor==='white'||this.rootValue.isLayerLocked(id)))throw new Error('白背景やロック中のレイヤーはグループ化できません。');
+    if(members.some(id=>this.rootValue.getLayer(id).baseColor==='white'||this.rootValue.isLayerLocked(id)))
+      throw new Error('白背景やロック中のレイヤーはグループ化できません。');
+    const first=original.indexOf(members[0]!);
+    const spread=original.indexOf(members.at(-1)!)-first+1!==members.length;
+    // Keep the old order unless the user explicitly approved packing separate layers.
+    if(spread&&!packSeparated)throw new Error('離れたレイヤーをまとめるには、重なり順の変更を確認してください。');
+    const order=spread
+      ?[...original.slice(0,first).filter(id=>!ids.has(id)),...members,
+        ...original.slice(first).filter(id=>!ids.has(id))]
+      :[...original];
     const id=this.doc._internal(CORE_INTERNAL).ids.layer();
+    const groups=[...this.rootValue.layerGroups,{id,name:name.trim(),members,visible:true,locked:false}];
     try{
-      return this.editGroups('create',id,[...this.rootValue.layerGroups,{id,name:name.trim(),members,visible:true,locked:false}]);
+      // Check all old groups before mutating the transaction. A nested group must
+      // not be torn apart merely to make a noncontiguous selection fit.
+      validateLayerGroups(groups,order);
     }catch(error){
-      if(error instanceof Error&&(error.message.includes('stay together')||error.message.includes('overlapping')))throw new Error('隣り合うレイヤーを、既存のグループを途中で分けないように選んでください。');
+      if(error instanceof Error&&(error.message.includes('stay together')||error.message.includes('overlapping')))
+        throw new Error('既存グループを途中で分ける配置にはできません。グループごと選ぶか、並び順を変えてください。');
       throw error;
     }
+    if(spread)this.rootOrderValue=order;
+    return this.editGroups('create',id,groups);
   }
   updateLayerGroup(id:LayerId,patch:Partial<Pick<LayerGroup,'name'|'visible'|'locked'|'compositing'>>){
     const groups=this.rootValue.layerGroups;

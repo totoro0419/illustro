@@ -1,7 +1,7 @@
 /* C04 search and Quick controls: transient, never intercept canvas input while closed. */
 .c04-command-open{min-height:34px;white-space:nowrap;padding:5px 10px;border-radius:9px;border:1px solid var(--a-border,#ddd);background:var(--a-surface,#fff);color:inherit;font:inherit}
 .c04-command-open:focus-visible,.c04-quick-open:focus-visible{outline:2px solid var(--a-focus,#317ab6);outline-offset:2px}
-.rail .c04-quick-open{font:600 11px/1.2 system-ui,sans-serif;width:100%;min-height:42px;border:1px solid var(--a-border,#ddd);border-radius:9px;background:var(--a-accent-soft,#fff6d7);color:var(--a-focus,#344)}
+.rail .c04-quick-open{touch-action:none;font:600 11px/1.2 system-ui,sans-serif;width:100%;min-height:42px;border:1px solid var(--a-border,#ddd);border-radius:9px;background:var(--a-accent-soft,#fff6d7);color:var(--a-focus,#344)}
 .c04-command-dialog{position:fixed;z-index:40;inset:8vh auto auto 50%;transform:translateX(-50%);margin:0;max-width:calc(100vw - 30px);width:min(610px,calc(100vw - 30px));max-height:80dvh;overflow:hidden;border-radius:16px;border:1px solid var(--a-border,#ddd);background:var(--a-surface,#fff);box-shadow:0 24px 66px #121b3250;color:var(--a-text,#242a36);padding:0}
 .c04-command-dialog::backdrop{background:#14192262}
 .c04-command-dialog section{padding:16px;display:flex;flex-direction:column;gap:10px;max-height:80dvh}
@@ -45,14 +45,15 @@
 }
 
 /* UI-007: leave Save, persistence warnings and the exit control visible. */
-#c04FocusExit[hidden]{display:none!important}
+#c04FocusExit[hidden],#c04FocusQuick[hidden]{display:none!important}
+#c04FocusQuick{border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-accent-soft,#fff6d7);color:inherit;min-height:32px}
+body.illustro-focus-mode .c04-quick-controller{left:12px;bottom:12px;width:min(324px,calc(100vw - 24px));max-height:calc(100dvh - var(--top,44px) - 28px)}
 #c04FocusExit{border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-accent-soft,#fff6d7);color:inherit;white-space:nowrap}
 body.illustro-focus-mode .rail,
 body.illustro-focus-mode .right-dock,
 body.illustro-focus-mode #splitter,
 body.illustro-focus-mode .bottom,
 body.illustro-focus-mode .features-panel,
-body.illustro-focus-mode .c04-quick-controller,
 body.illustro-focus-mode .canvas-view-strip,
 body.illustro-focus-mode .document-actions{display:none!important}
 body.illustro-focus-mode .topbar .brand,
@@ -91,3 +92,65 @@ body.illustro-focus-mode .topbar #saveState{display:inline;max-width:65vw;overfl
 .c04-quick-slot-wrap .c04-quick-slot small{font-size:9px;color:var(--a-subtle,#667)}
 .c04-quick-edit-labels{display:grid;grid-template-columns:1fr 1fr;gap:3px}
 .c04-quick-edit-labels button{min-height:33px;font-size:10px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:transparent;color:inherit}
+
+#quickControllerPanel.quick-ring {
+  position: fixed;
+  left: var(--quick-x, clamp(119px, 39vw, 420px));
+  top: var(--quick-y, calc(100dvh - 192px));
+  right: auto;
+  bottom: auto;
+  width: 224px;
+  height: 204px;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  overflow: visible;
+  transform: translate(-50%,-50%);
+  box-shadow: none;
+  background: transparent;
+  pointer-events: none;
+}
+.quick-ring .c04-quick-slots { position: absolute; inset: 0; display: block; pointer-events: none }
+.quick-ring .c04-quick-slots::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:#5f6dad31;
+  clip-path:path(evenodd,'M112 1 A103 101 0 1 1 112 203 A103 101 0 1 1 112 1 Z M112 52 A52 50 0 1 1 112 152 A52 50 0 1 1 112 52 Z');
+  pointer-events:auto;
+  touch-action:none;
+  cursor:grab;
+}
+.quick-ring .c04-quick-slots:active { cursor: grabbing }
+.quick-ring .c04-quick-slot-wrap {
+  position: absolute;
+  left: calc(50% + var(--slot-x));
+  top: calc(50% + var(--slot-y));
+  transform: translate(-50%,-50%);
+}
+.quick-ring .c04-quick-slot {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  pointer-events: auto;
+  height: 52px;
+  min-height: 52px;
+  padding: 5px;
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(0 50%,25% 0,75% 0,100% 50%,75% 100%,25% 100%);
+  background: color-mix(in srgb,var(--a-surface,#fff) 89%,var(--a-focus,#6270b6));
+  color: var(--a-text,#111);
+}
+.quick-ring .c04-quick-slot:focus-visible { background: var(--a-focus,#5665ae); color: #fff }
+.quick-ring .c04-quick-slot :is(strong,small), .quick-ring .c04-quick-pen,
+.quick-ring .c04-quick-heading strong { display: none }
+.quick-ring .c04-quick-heading {
+  position: absolute;
+  inset: auto 0 -27px;
+  justify-content: center;
+  margin: 0;
+  z-index: 1;
+}
+.quick-ring .c04-quick-heading button { pointer-events: auto; min-height: 34px; background: var(--a-surface,#fff) }
