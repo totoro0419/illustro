@@ -211,13 +211,15 @@ function newBlankDocument(width:number,height:number,name:string,background:'tra
   // The upper transparent drawing layer is immediately usable. Native saves
   // carry the white-base metadata, and image export composites it on demand.
   const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',dpi,author,description,emptyDrawingLayer,...(background==='white'?{blankBackground:'white' as const}:{})});
-  let selected=document.root.rootLayerIds[0]!;
-  let whiteSurfaceKey:string|null=null;
-  if(background==='white'){
-    whiteSurfaceKey=document.root.getLayer(selected).surface.descriptor.surfaceId;
-    selected=document.addRasterLayerAbove(selected).layerId;
-  }
-  return {document,selected,whiteSurfaceKey};
+  const first=document.root.rootLayerIds[0]!;
+  if(background!=='white')return {document,selected:first,whiteSurfaceKey:null};
+  const whiteSurfaceKey=document.root.getLayer(first).surface.descriptor.surfaceId;
+  const selected=document.addRasterLayerAbove(first).layerId;
+  // The initial pair of layers is already in the autosave base. Start its
+  // journal in a fresh writer epoch so the first subsequent edit is packet 1.
+  const snapshot=document.capturePersistenceSnapshot();
+  const ready=CoreDocument.restore({snapshot,blockPayloads:document.persistenceBlockPayloads(snapshot)});
+  return {document:ready,selected,whiteSurfaceKey};
 }
 // Prepares the ACTUAL drawing host in the hidden editor, not an unrelated
 // temporary GPU context whose shaders would need to be compiled a second time.
