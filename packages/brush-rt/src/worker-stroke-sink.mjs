@@ -35,7 +35,7 @@ export class WorkerStrokeSink {
   for(const id of changed){
    const s=this.layers.get(id);if(!s?.element||!s.view)continue;
    const {width,height}=s.element,patch=s.patch;s.patch=undefined;
-   const data={id,view:s.view,rect:s.rect,scale:s.scale,polygon:s.plan.polygon,width,height,patch};
+   const data={id,view:s.view,rect:s.rect,scale:s.scale,polygon:s.plan.polygon,smooth:s.plan.smooth,width,height,patch};
    const image=patch?createImageBitmap(s.element,patch[0],patch[1],patch[2]-patch[0],patch[3]-patch[1]):createImageBitmap(s.element);
    pending.push(image.then(bitmap=>({...data,bitmap})));
   }

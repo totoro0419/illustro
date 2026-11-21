@@ -394,6 +394,12 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(event.key!=='Escape'||event.defaultPrevented||document.querySelector('dialog:modal'))return;
     if(resizing){finish(true);event.preventDefault();return;}
     // Escape dismisses only the most immediate surface, then its parent.
+    if(layerMenu.matches(':popover-open')){
+      layerMenu.hidePopover();
+      layerTrigger.focus({preventScroll:true});
+      event.preventDefault();
+      return;
+    }
     const openMenu=[...document.querySelectorAll<HTMLElement>('.box-more-menu')].find(menu=>!menu.hidden);
     if(openMenu){closeBoxMenus(null,true);event.preventDefault();return;}
     if(!featurePanel.hidden){showFeature(false,true);event.preventDefault();return;}

@@ -164,7 +164,7 @@ export class DrawingHost {
   for(const id of m.retired){if(this.pendingRetirements.has(id))continue;const layer=this.layers.get(id);layer?.element.remove();this.layers.delete(id);}
   const originX=this.canvas.offsetLeft,originY=this.canvas.offsetTop;
   for(const data of m.layers){let layer=this.layers.get(data.id);if(!layer){const element=document.createElement('canvas');element.className='illustro-stroke-overlay';element.setAttribute('aria-hidden','true');Object.assign(element.style,{position:'absolute',pointerEvents:'none',transformOrigin:'0 0',background:'transparent',aspectRatio:'auto'});layer={element,context:element.getContext('2d',{alpha:true})};if(!layer.context){element.remove();data.bitmap.close();this.fault('Transparent stroke preview Canvas2D unavailable');continue;}const next=[...this.layers].filter(([id])=>id>data.id).sort(([a],[b])=>a-b)[0]?.[1];if(next)next.element.before(element);else ([...this.layers].sort(([a],[b])=>a-b).at(-1)?.[1].element??this.canvas).after(element);this.layers.set(data.id,layer);}
-   layer.view=data.view;layer.rect=data.rect;layer.scale=data.scale;layer.polygon=data.polygon;
+   layer.view=data.view;layer.rect=data.rect;layer.scale=data.scale;layer.polygon=data.polygon;layer.smooth=data.smooth;
    if(layer.element.width!==data.width)layer.element.width=data.width;
    if(layer.element.height!==data.height)layer.element.height=data.height;
    // Canvas2D keeps the real alpha on mobile. Replace only the changed pixels.
@@ -205,7 +205,7 @@ export class DrawingHost {
  }
  reproject(){const to=this.viewportScene.baseView??this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
   if(this.presentationView?.length){const from=this.presentationView,[a,b,c,d,e,f]=viewAffine(from,to),x=from[2]/to[2],y=from[3]/to[3];Object.assign(this.canvas.style,{transformOrigin:'0 0',imageRendering:to[13]>.5?'pixelated':'auto',transform:`matrix(${[a*x,b*x,c*y,d*y,e,f].join(',')})`});}
-  for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
+  for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5&&!layer.smooth?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
  }
  setViewTransform(view){
   const old=this.backend.viewTransform;

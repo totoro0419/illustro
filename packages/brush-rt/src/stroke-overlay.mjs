@@ -95,7 +95,7 @@ export class StrokeOverlay{
   const softLimit=ratio==='auto'&&broadSoftRound(preset)&&preset.size*zoom>=128?.5:Infinity;
   const density=Math.min(1,Math.max(1/128,Math.min(screenDensity,softLimit)*zoom));
   const view=Float64Array.from([w*density,h*density,w,h,w,h,1,0,0,0,1,1,0,this.view[13],0,0]);
-  const plan=previewPlan(view,preset,1);plan.rasterView=view;if(density===1){plan.sampling='document-analytic';plan.samplesPerDocumentPixel=1;}return plan;
+  const plan=previewPlan(view,preset,1);plan.rasterView=view;plan.smooth=softLimit<screenDensity&&density<1;if(density===1){plan.sampling='document-analytic';plan.samplesPerDocumentPixel=1;}return plan;
  }
  setEnabled(value){this.enabled=value;this.invalidate();}
  setNavigationActive(value){this.navigationActive=!!value;if(value){
