@@ -127,7 +127,8 @@ function changedPixels(a,b) {
       await page.locator('#save').click();
       const file=await dl;
       assert(/\.illustro$/i.test(file.suggestedFilename()),'expected native .illustro file');
-      await file.path();
+      const filePath=await file.path();
+      assert(fs.statSync(filePath).size>1024,'native file must contain actual data');
     });
     await step('work is in My Works',async()=>{
       await page.locator('#home').click();
@@ -141,6 +142,11 @@ function changedPixels(a,b) {
       await page.locator('#ihWorkGrid .ih-work-preview').first().click();
       await page.locator('#canvas').waitFor({state:'visible',timeout:60000});
       await page.waitForFunction(()=>document.querySelector('#app')?.inert===false,null,{timeout:45000});
+      await page.waitForTimeout(1000);
+      const reopenedCanvas=await page.locator('#canvas').screenshot();
+      const recoveredPixels=changedPixels(initialCanvas,reopenedCanvas);
+      console.log('Reopened canvas changed pixel count: '+recoveredPixels);
+      assert(recoveredPixels>30,'reopened work has no retained drawn pixels');
     });
     console.log('Browser JavaScript uncaught errors: '+JSON.stringify(errors));
     assert.equal(errors.length,0,'uncaught page errors');
