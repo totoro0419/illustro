@@ -243,10 +243,11 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   quick.id='quickControllerPanel';quick.className='c04-quick-controller';quick.hidden=true;
   quick.setAttribute('role','region');quick.setAttribute('aria-label','よく使う操作');
   const quickTitle=document.createElement('div');quickTitle.className='c04-quick-heading';
-  const quickLabel=document.createElement('strong');quickLabel.textContent='Quick';
+  const quickLabel=document.createElement('strong');quickLabel.textContent='よく使う操作';
   const configure=document.createElement('button');configure.type='button';configure.textContent='編集';
   const closeQuick=document.createElement('button');closeQuick.type='button';closeQuick.textContent='閉じる';
-  closeQuick.onclick=()=>{pendingPinId=null;quick.hidden=true;quickButton.setAttribute('aria-expanded','false');};
+  closeQuick.setAttribute('aria-label','よく使う操作を閉じる');
+  closeQuick.onclick=()=>{pendingPinId=null;followArmed=false;quick.hidden=true;quickButton.setAttribute('aria-expanded','false');};
   quickTitle.append(quickLabel,configure,closeQuick);
   const quickSlots=document.createElement('div');quickSlots.className='c04-quick-slots';
   const note=document.createElement('p');note.className='c04-quick-note';note.hidden=true;
@@ -254,7 +255,38 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   const penButton=document.createElement('input');penButton.type='checkbox';
   penButton.checked=read('illustro.c04.quick.pen-barrel')==='true';
   penSetting.append(penButton,document.createTextNode(' ペンのサイドボタンで開く（対応機種のみ）'));
-  quick.append(quickTitle,quickSlots,note,penSetting);document.body.append(quick);
+  const followSetting=document.createElement('label');followSetting.className='c04-quick-pen';
+  const followPen=document.createElement('input');followPen.type='checkbox';
+  followPen.checked=read('illustro.c04.quick.follow-pen')!=='false';
+  followPen.onchange=()=>{
+    followArmed=followPen.checked;
+    write('illustro.c04.quick.follow-pen',String(followPen.checked));
+  };
+  followSetting.append(followPen,' ペンを離した位置に表示する');
+  quick.append(quickTitle,quickSlots,note,penSetting,followSetting);document.body.append(quick);
+  quick.classList.add('quick-ring');
+  const ringTopbar=document.createElement('button');ringTopbar.type='button';ringTopbar.id='quickRingToggle';
+  ringTopbar.innerHTML=icon('all');ringTopbar.title='よく使う操作';ringTopbar.setAttribute('aria-label','よく使う操作');
+  el('dockCompactToggle')?.before(ringTopbar);
+  ringTopbar.onclick=()=>quickButton.click();
+  function positionRing(x:number,y:number){
+    const halfWidth=quick.offsetWidth/2||114,halfHeight=quick.offsetHeight/2||100;
+    const top=Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--top'))||54;
+    quick.style.setProperty('--quick-x',Math.max(halfWidth+3,Math.min(innerWidth-halfWidth-3,x))+'px');
+    quick.style.setProperty('--quick-y',Math.max(halfHeight+top,Math.min(innerHeight-halfHeight-8,y))+'px');
+  }
+  let drag:{pointer:number;x:number;y:number;left:number;top:number}|null=null;
+  quickSlots.onpointerdown=event=>{
+    if(isConfiguring||event.button!==0||drag||event.target!==quickSlots)return;
+    const rect=quickSlots.getBoundingClientRect();
+    drag={pointer:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left+rect.width/2,top:rect.top+rect.height/2};
+    quickSlots.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  };
+  quickSlots.onpointermove=event=>{
+    if(drag?.pointer===event.pointerId)positionRing(drag.left+event.clientX-drag.x,drag.top+event.clientY-drag.y);
+  };
+  quickSlots.onlostpointercapture=()=>{drag=null;};
   penButton.onchange=async()=>{
     if(penButton.checked){
       const eraser=document.getElementById('penBarrelErase') as HTMLInputElement|null;
@@ -267,7 +299,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     }
     write('illustro.c04.quick.pen-barrel',String(penButton.checked));
   };
-  let isConfiguring=false;
+  let isConfiguring=false,followArmed=followPen.checked;
+  let penDrawing:number|null=null;
+  let lastPen:{x:number;y:number}|null=null;
   let pendingPinId:string|null=null;
 
   function execute(command:CommandDefinition){
@@ -283,9 +317,12 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     }catch(error){status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';}
   }
   function renderQuick(){
+    quick.classList.toggle('quick-ring',!isConfiguring);
     quickSlots.replaceChildren();
+    const commands=new Map(dynamicCommands().map(command=>[command.id,command]));
     for(let i=0;i<SLOT_COUNT;i++){
-      const command=slots[i]?find(slots[i]!):undefined;
+      const id=slots[i];
+      const command=id?(commands.get(id)??find(id)):undefined;
       const wrapper=document.createElement('div');wrapper.className='c04-quick-slot-wrap';
       const button=document.createElement('button');button.type='button';
       button.className='c04-quick-slot';
@@ -299,6 +336,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       const group=document.createElement('small');
       group.textContent=pinMeta.groups[i]||command?.category||'未登録';
       button.append(visual,label,group);
+      button.setAttribute('aria-label',label.textContent);
+      wrapper.style.setProperty('--slot-x',['-81px','81px','-42px','42px','-42px','42px'][i]!);
+      wrapper.style.setProperty('--slot-y',['0px','0px','-70px','-70px','70px','70px'][i]!);
       button.title='スロット'+(i+1)+'：'+(command?.label??'未登録');
       if(!isConfiguring){
         const reason=command?.availability()??null;
@@ -328,6 +368,19 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
           };
           edit.append(change);
         }
+        for(const [text,step] of [['←',-1],['→',1]] as const){
+          const move=document.createElement('button');move.type='button';move.textContent=text;
+          move.setAttribute('aria-label','枠'+(i+1)+(step<0?'を手前に移動':'を後ろに移動'));
+          move.disabled=i+step<0||i+step>=SLOT_COUNT;
+          move.onclick=()=>{
+            const next=i+step;
+            for(const values of [slots,pinMeta.names,pinMeta.groups])
+              [values[i],values[next]]=[values[next]!,values[i]!];
+            savePins();renderQuick();
+            quickSlots.children[next]?.querySelector('button')?.focus();
+          };
+          edit.append(move);
+        }
         wrapper.append(edit);
       }
       quickSlots.append(wrapper);
@@ -340,9 +393,10 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   }
   configure.onclick=()=>{pendingPinId=null;isConfiguring=!isConfiguring;renderQuick();};
   function toggleQuick(){
-    quick.hidden=!quick.hidden;quickButton.setAttribute('aria-expanded',String(!quick.hidden));
+    quick.hidden=!quick.hidden;followArmed=!quick.hidden;quickButton.setAttribute('aria-expanded',String(!quick.hidden));
     if(!quick.hidden){
       dialog.close();renderQuick();
+      if(lastPen&&!isConfiguring)positionRing(lastPen.x,lastPen.y);
       const features=el<HTMLElement>('allFeaturesPanel');
       if(features&&!features.hidden)el<HTMLButtonElement>('featuresClose')?.click();
     }
@@ -363,10 +417,21 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     toggleQuick();
   });
   document.addEventListener('pointermove',event=>{
+    if(event.pointerType==='pen'&&event.target instanceof Element&&event.target.closest('.surface'))
+      lastPen={x:event.clientX,y:event.clientY};
     if(!quickGesture||event.pointerId!==quickGesture.pointerId)return;
     if(Math.hypot(event.clientX-quickGesture.x,event.clientY-quickGesture.y)>12)quickGesture.moved=true;
   },{passive:true});
   document.addEventListener('pointerup',event=>{
+    if(penDrawing===event.pointerId){
+      penDrawing=null;lastPen={x:event.clientX,y:event.clientY};
+      const position=lastPen;
+      requestAnimationFrame(()=>{
+        if(penDrawing!==null||lastPen!==position||!followArmed||!followPen.checked||isConfiguring||document.querySelector('dialog:modal'))return;
+        quick.hidden=false;renderQuick();positionRing(position.x,position.y);
+        quickButton.setAttribute('aria-expanded','true');
+      });
+    }
     const gesture=quickGesture;
     if(!gesture||gesture.pointerId!==event.pointerId)return;
     quickGesture=null;
@@ -378,6 +443,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     window.setTimeout(()=>{suppressOpenClick=false;},0);
   },{capture:true});
   document.addEventListener('pointercancel',event=>{
+    if(penDrawing===event.pointerId)penDrawing=null;
     if(quickGesture?.pointerId===event.pointerId){
       quickGesture=null;window.setTimeout(()=>{suppressOpenClick=false;},0);
     }
@@ -480,11 +546,13 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
       event.preventDefault();openSearch();return;
     }
-    if(event.key==='Escape'&&!quick.hidden){quick.hidden=true;quickButton.setAttribute('aria-expanded','false');}
+    if(event.key==='Escape'&&!quick.hidden){followArmed=false;quick.hidden=true;quickButton.setAttribute('aria-expanded','false');}
   });
   document.addEventListener('pointerdown',event=>{
+    if(event.pointerType==='pen'&&event.button===0&&event.target instanceof Element&&event.target.closest('.surface'))
+      penDrawing=event.pointerId;
     if(quick.hidden||dialog.open)return;
-    if(!(event.target instanceof Node)||quick.contains(event.target)||quickButton.contains(event.target))return;
+    if(!(event.target instanceof Node)||quick.contains(event.target)||quickButton.contains(event.target)||ringTopbar.contains(event.target))return;
     quick.hidden=true;quickButton.setAttribute('aria-expanded','false');
   },{capture:true});
   renderQuick();

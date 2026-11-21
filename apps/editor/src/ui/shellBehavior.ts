@@ -9,6 +9,9 @@ const WIDTH_KEY='illustro.m07.rightWidth',BOX_KEY='illustro.m07.boxExpansion';
 const actionLabels:Readonly<Record<string,readonly [string,string][]>>={
   drawing:[['ブラシ','paint'],['消しゴム','erase'],['ぼかし・混色','smudge']],
   'fill-color-region':[['スマート塗り','smartFill'],['スポイト','eyedropper'],['色を選ぶ','colorPage']],
+  'vector-text-shape':[['図形・グラデーション','shapes']],
+  'guides-rulers':[['定規・ガイド','rulers']],
+  'adjust-filter-retouch':[['補正・効果','workspaceEffects']],
   'selection-transform':[['選択範囲','selection'],['変形','transform'],['レイヤーを移動','move']],
   'layers-compositing':[['レイヤー画面','layer'],['レイヤー追加','addLayerPage']],
   'canvas-view':[['画面を移動する','panView'],['全体表示','fitView'],['回転を戻す','resetRotation']],
@@ -44,8 +47,10 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
   });
 
   const colorButton=byId<HTMLButtonElement>('colorPage'),brushButton=byId<HTMLButtonElement>('brushPage');
-  let dockOpen=false,panel='',dockTrigger:HTMLElement=layer;
-  const isQuickPanel=(id:string)=>id==='brushBox'||id==='colorBox';
+  const collapse=byId<HTMLButtonElement>('close'), mobileToggle=byId<HTMLButtonElement>('dockCompactToggle');
+  const panelButtons=[...rightDock.querySelectorAll<HTMLButtonElement>('[data-workspace-panel]')];
+  let dockOpen=!compact.matches,panel='brushBox',dockTrigger:HTMLElement=layer;
+  const boxId=(domId:string)=>RIGHT_BOXES.find(box=>box[2]===domId)?.[0]??'';
   let width=touch()?360:344,resizing:{pointerId:number;original:number}|null=null,layerOpen=false,expanded:Record<string,boolean>={};
   const savedWidth=Number(safeRead(WIDTH_KEY));if(Number.isFinite(savedWidth)&&savedWidth>0)width=savedWidth;
   try{expanded=JSON.parse(safeRead(BOX_KEY)||'{}') as Record<string,boolean>;}catch{expanded={};}
@@ -56,9 +61,10 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     const isCompact=compact.matches;
     rightDock.classList.toggle('open',dockOpen);
     rightDock.dataset.panel=layerOpen?'layers':panel;
+    rightDock.dataset.box=boxId(panel);
+    rightDock.classList.toggle('dock-collapsed',!dockOpen);
     document.body.classList.toggle('right-collapsed',!isCompact&&!dockOpen);
-    const overlay=dockOpen&&!isCompact&&(layerOpen||isQuickPanel(panel)||
-      innerWidth-parseFloat(getComputedStyle(root).getPropertyValue('--rail'))-width<720);
+    const overlay=dockOpen&&!isCompact&&innerWidth-width<620;
     document.body.classList.toggle('right-overlay',overlay);
     workspace.style.display=layerOpen?'none':'';
     page.hidden=!layerOpen;
@@ -66,11 +72,17 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     page.inert=!dockOpen||!layerOpen;
     drawer.setAttribute('aria-expanded',String(dockOpen&&!layerOpen&&!panel));
     toggle.setAttribute('aria-expanded',String(dockOpen&&!layerOpen&&!panel));
-    layer.setAttribute('aria-expanded',String(layerOpen));
+    layer.setAttribute('aria-expanded',String(dockOpen&&layerOpen));
+    byId('workspaceLayers').setAttribute('aria-pressed',String(dockOpen&&layerOpen));
+    collapse.setAttribute('aria-expanded',String(dockOpen));
+    collapse.setAttribute('aria-label',dockOpen?'作業パネルを折りたたむ':'作業パネルを広げる');
+    mobileToggle.setAttribute('aria-expanded',String(dockOpen));
+    for(const button of panelButtons)button.setAttribute('aria-pressed',String(dockOpen&&!layerOpen&&button.dataset.workspacePanel===panel));
     colorButton.setAttribute('aria-expanded',String(dockOpen&&panel==='colorBox'&&!layerOpen));
     brushButton.setAttribute('aria-expanded',String(dockOpen&&panel==='brushBox'&&!layerOpen));
   };
   const applyWidth=(value:number,persist=false)=>{
+    if(!compact.matches&&value<minimum()-36&&resizing){dockOpen=false;syncPresentation();return;}
     width=clamp(value);document.documentElement.style.setProperty('--workspace',width+'px');
     const slider=byId<HTMLInputElement>('width');slider.min=String(minimum());slider.max='440';slider.value=String(width);
     byId<HTMLOutputElement>('widthValue').textContent=width+'px';
@@ -78,26 +90,40 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     syncPresentation();if(persist)safeWrite(WIDTH_KEY,String(width));
     if(!byId<HTMLElement>('allFeaturesPanel').hidden)positionFeature();
   };
+  const layerMenu=byId('layerActionsMenu'),layerTrigger=byId<HTMLButtonElement>('layerSettingsTrigger');
+  const positionLayerMenu=()=>{
+    const box=page.getBoundingClientRect();
+    layerMenu.style.left=Math.max(8,box.left+8)+'px';
+    layerMenu.style.width=Math.max(170,Math.min(box.width-16,360))+'px';
+    const top=Math.max(8,Math.min(box.top+48,innerHeight-144));
+    layerMenu.style.top=top+'px';
+    layerMenu.style.maxHeight=Math.min(480,innerHeight-top-12)+'px';
+  };
+  layerMenu.addEventListener('beforetoggle',event=>{
+    if((event as ToggleEvent).newState==='open')positionLayerMenu();
+  });
+  window.addEventListener('resize',()=>{if(layerMenu.matches(':popover-open'))positionLayerMenu();});
   const setLayerPage=(open:boolean,keyboardNavigation=false)=>{
-    if(layerOpen===open)return;
+    if(layerOpen===open&&(!open||dockOpen))return;
+    if(!open&&layerMenu.matches(':popover-open'))layerMenu.hidePopover();
     layerOpen=open;
-    dockOpen=open;
-    panel='';
+    if(open)dockOpen=true;
     if(open)dockTrigger=layer;
     syncPresentation();
     onLayerPageChange?.(open);
     if(keyboardNavigation)(open?byId('closeLayerPage'):layer).focus({preventScroll:true});
   };
-  layer.onclick=event=>setLayerPage(!layerOpen,event.detail===0);
+  layer.onclick=event=>setLayerPage(!layerOpen||!dockOpen,event.detail===0);
+  byId<HTMLButtonElement>('workspaceLayers').onclick=event=>setLayerPage(!layerOpen||!dockOpen,event.detail===0);
   byId('closeLayerPage').onclick=event=>setLayerPage(false,event.detail===0);
   const vectorMask=byId<HTMLDetailsElement>('layerVectorMask');
   vectorMask.addEventListener('illustro:open-layer-settings',()=>{
-    const details=vectorMask.parentElement?.closest<HTMLDetailsElement>('details');
-    if(details)details.open=true;
+    if(!layerOpen||!dockOpen)setLayerPage(true);
+    if(!layerMenu.matches(':popover-open'))layerMenu.showPopover({source:layerTrigger});
   });
   const close=(focus=false)=>{
-    if(layerOpen)setLayerPage(false);
-    dockOpen=false;panel='';
+    if(layerMenu.matches(':popover-open'))layerMenu.hidePopover();
+    dockOpen=false;
     syncPresentation();
     if(focus){
       const target=dockTrigger.isConnected&&dockTrigger.checkVisibility()?dockTrigger:byId('allFeatures');
@@ -105,22 +131,24 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     }
   };
   function openBox(id:string,trigger?:HTMLElement,keyboard=false){
+    if(id==='documentBox')delete byId('documentBoxBody').dataset.activeToolPanel;
     setLayerPage(false);
     dockOpen=true;
-    panel=isQuickPanel(id)?id:'';
+    panel=boxId(id)?id:'';
     dockTrigger=trigger??(panel==='colorBox'?colorButton:panel==='brushBox'?brushButton:byId('allFeatures'));
     const section=byId(id+'Body')?.closest<HTMLElement>('.workspace-box');
     if(section?.classList.contains('c04-panel-float')){dockOpen=false;panel='';}
     syncPresentation();
+    onLayerPageChange?.(false);
     if(section){
       const button=section.querySelector<HTMLButtonElement>('.box-toggle');
       if(button?.getAttribute('aria-expanded')==='false')button.click();
       section.scrollIntoView({block:'nearest'});
-      if(keyboard)(id==='brushBox'?byId('brush'):section.querySelector<HTMLElement>('.box-toggle'))?.focus({preventScroll:true});
+      if(keyboard)(id==='brushBox'?section.querySelector<HTMLElement>('.brush-catalog button')??section.querySelector<HTMLElement>('.box-toggle'):section.querySelector<HTMLElement>('.box-toggle'))?.focus({preventScroll:true});
     }
   }
   const toggleWorkspace=(event:MouseEvent)=>{
-    if(dockOpen&&!layerOpen&&!panel){close(event.detail===0);return;}
+    if(dockOpen){close(event.detail===0);return;}
     setLayerPage(false);
     dockOpen=true;panel='';dockTrigger=byId('allFeatures');
     showFeature(false);syncPresentation();
@@ -128,7 +156,14 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
   };
   toggle.onclick=toggleWorkspace;
   drawer.onclick=toggleWorkspace;
-  byId('close').onclick=event=>close(event.detail===0);
+  mobileToggle.onclick=toggleWorkspace;
+  collapse.onclick=()=>{if(dockOpen)close();else{dockOpen=true;syncPresentation();if(layerOpen)onLayerPageChange?.(true);}};
+  for(const button of panelButtons)button.onclick=()=>{
+    setLayerPage(false);dockOpen=true;
+    const target=button.dataset.workspacePanel;
+    if(target)openBox(target,button);
+    else{panel='';delete byId('documentBoxBody').dataset.activeToolPanel;syncPresentation();}
+  };
   byId('layersPage').onclick=event=>setLayerPage(true,event.detail===0);
   const togglePanel=(id:string,button:HTMLElement,event:MouseEvent)=>{
     if(dockOpen&&!layerOpen&&panel===id)close(event.detail===0);
@@ -324,7 +359,7 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     qaPanel.addEventListener('toggle',syncQa);
     syncQa();
   }
-  const floatingDockOpen=()=>dockOpen&&(compact.matches||document.body.classList.contains('right-overlay'));
+  const floatingDockOpen=()=>dockOpen&&compact.matches;
   document.addEventListener('pointerdown',event=>{
     if(document.querySelector('dialog:modal'))return; // native modal owns dismissal
     const t=event.target;
@@ -350,14 +385,16 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     // and accidental non-activation, especially at tablet overlay widths.
     // A swatch action may replace its button before this bubbling click arrives.
     // The event path still identifies the original dock; a detached target does not.
-    const clickedInsideDock=event.composedPath().includes(rightDock)||
+    const path=event.composedPath();
+    if(path.some(node=>node instanceof HTMLDialogElement))return;
+    const clickedInsideDock=path.includes(rightDock)||
       (t instanceof Element&&!!t.closest('.c04-panel-float'));
     if(floatingDockOpen()&&!clickedInsideDock&&
-      ![toggle,drawer,layer,colorButton,brushButton,featurePanel].some(trigger=>trigger.contains(t)))close(false);
+      ![toggle,drawer,layer,colorButton,brushButton,mobileToggle,featurePanel].some(trigger=>trigger.contains(t)))close(false);
     if(!clickedInsideDock)return;
     if(t instanceof Element&&t.closest('.box-more'))return;
     for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
-      if(!menu.hidden&&!menu.contains(t)){
+      if(!menu.hidden&&!event.composedPath().includes(menu)){
         const opener=menu.closest('.workspace-box')?.querySelector<HTMLButtonElement>('.box-more');
         menu.hidden=true;opener?.setAttribute('aria-expanded','false');
       }
@@ -377,7 +414,11 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     }
   });
   document.addEventListener('keydown',event=>{
-    if(event.key!=='Escape'||event.defaultPrevented||document.querySelector('dialog:modal'))return;
+    if(event.target instanceof Element&&event.target.closest('.workspace-details-pane,#quickControllerPanel'))return;
+    if(event.key!=='Escape'||event.defaultPrevented||document.querySelector('dialog:modal,.workspace-options:popover-open,#quickControllerPanel:not([hidden])'))return;
+    if(layerMenu.matches(':popover-open')){
+      layerMenu.hidePopover();layerTrigger.focus({preventScroll:true});event.preventDefault();return;
+    }
     if(resizing){finish(true);event.preventDefault();return;}
     // Escape dismisses only the most immediate surface, then its parent.
     const openMenu=[...document.querySelectorAll<HTMLElement>('.box-more-menu')].find(menu=>!menu.hidden);
@@ -415,5 +456,5 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(event.target instanceof Element&&event.target.closest('#panView,#c04FocusToggle,#c04FullscreenToggle'))view.hidePopover();
   });
   applyWidth(width);syncPresentation();
-  return {workspace,drawer,openBox,close,setLayerPage,layerPageOpen:()=>layerOpen,refreshWidth:()=>applyWidth(width)};
+  return {workspace,drawer,openBox,close,setLayerPage,layerPageOpen:()=>dockOpen&&layerOpen,refreshWidth:()=>applyWidth(width)};
 }

@@ -45,7 +45,7 @@ export function installGradientMapPanel(host:HTMLElement,api:{
   capture:(edit:boolean)=>Promise<GradientMapDraft>;
   storeColors:(colors:readonly string[])=>void;
 }){
-  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';panel.dataset.editPanel='gradient-map';
   const heading=document.createElement('summary');heading.textContent='グラデーションマップ・階調';
   const actions=document.createElement('div');actions.className='c06-clipboard-grid';
   const editor=document.createElement('div');editor.hidden=true;

@@ -31,7 +31,7 @@ export function installFillPanel(host:HTMLElement,api:{
   saveRegion:(regions:LineRegions,id?:LayerId)=>Promise<LayerId>;
   capture:(reference:Reference,destination:Destination,layerIds:readonly string[],needTarget:boolean,stored?:LineRegions,previewOnly?:boolean)=>Promise<FillCapture>;
 }){
-  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';panel.dataset.toolPanel='smartFill';
   const summary=document.createElement('summary');summary.textContent='塗りつぶし・線画の領域';
   const options=document.createElement('div');options.className='c06-clipboard-grid';
   const actions=document.createElement('div');actions.className='c06-clipboard-grid';
@@ -539,7 +539,7 @@ export function installFillPanel(host:HTMLElement,api:{
     rememberRefs();forgetAnalysis();sync();
     output.textContent='表示中のレイヤーから選んだ1枚を外しました。参照元を確認してから塗ってください。';
   });
-  button('キャンバスで塗る',()=>onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',(points,source)=>fill(points,false,source),method.value.startsWith('lasso'),'#ffb742',true));
+  const startFill=button('キャンバスで塗る',()=>onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',(points,source)=>fill(points,false,source),method.value.startsWith('lasso'),'#ffb742',true));
   button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',(points,source)=>fill(points,true,source),method.value.startsWith('lasso'),'#ffb742',true,true));
   const applyPaint=button('候補を適用',async()=>{
     if(!candidate||!candidateValid(candidate))throw Error('塗る対象が変わりました。');
@@ -868,5 +868,5 @@ export function installFillPanel(host:HTMLElement,api:{
   advanced.append(advancedTitle,advancedOptions,advancedActions);
   panel.ontoggle=()=>{if(panel.open){sync();refreshReferences();refreshRegionList();}else stopGesture();};
   panel.append(summary,options,targets,analysisState,actions,advanced,preview,detailPreview,gapZoom,output);host.append(panel);sync();
-  return {refresh:()=>{if(panel.open)sync();}};
+  return {refresh:()=>{if(panel.open)sync();},open:()=>{panel.open=true;sync();startFill.click();},stop:()=>{if(gesture)stopGesture();}};
 }

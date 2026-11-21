@@ -1,5 +1,10 @@
 import type {CanvasView,Point} from './canvasView';
 
+export function snapRightAngle(angle:number){
+ const nearest=Math.round(angle/(Math.PI/2))*(Math.PI/2);
+ return Math.abs(nearest-angle)<=Math.PI/36?nearest:angle;
+}
+
 // One independent input state machine for touch, pen+finger, mouse and wheel.
 // It edits CanvasView and tells the display port to move only an existing scene.
 export class CanvasNavigation {
@@ -56,9 +61,8 @@ export class CanvasNavigation {
   }
   this.pan=null;if(this.touches.size===0){
    if(wasActive&&this.snapRotation){
-    const angle=this.view.rotation,quarterTurn=Math.PI/2;
-    const nearest=Math.round(angle/quarterTurn)*quarterTurn;
-    if(Math.abs(nearest-angle)<=Math.PI/36&&nearest!==angle){
+    const angle=this.view.rotation,nearest=snapRightAngle(angle);
+    if(nearest!==angle){
      this.view.setRotation(nearest);this.changed();
     }
    }

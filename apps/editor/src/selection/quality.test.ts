@@ -26,6 +26,11 @@ describe('C06 empty-selection combination safety',()=>{
     const result=combineSelection(mask(2,1,[255,128]),mask(2,1,[128,255]),'subtract');
     expect(Array.from(result.alpha)).toEqual([127,0]);
   });
+  it('removes the overlap while keeping both selections outside it',()=>{
+    const left=mask(4,1,[255,255,0,20]),right=mask(4,1,[0,255,255,80]);
+    expect([...combineSelection(left,right,'xor').alpha]).toEqual([255,0,255,60]);
+    expect(combineSelection(null,right,'xor')).toBe(right);
+  });
   it('keeps the exact alpha mask while calculating geometrical bounds (C06-004)',()=>{
     const polygon=rasterizeSelection({type:'polygon',points:[
       {x:0,y:0},{x:4,y:0},{x:0,y:4}

@@ -368,7 +368,7 @@ export function gradientStopSwatchBackground(stop:Pick<GradientStop,'color'|'opa
   return `linear-gradient(${color},${color}),repeating-conic-gradient(#d5d5d5 0% 25%,#fff 0% 50%) 50% / 8px 8px`;
 }
 export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
-  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';panel.dataset.toolPanel='shapes';
   const heading=document.createElement('summary');heading.textContent='図形・グラデーション';
   const controls=document.createElement('div');controls.className='c06-clipboard-grid';
   const tools=document.createElement('div');tools.className='c06-clipboard-grid';

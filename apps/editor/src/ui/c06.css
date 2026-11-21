@@ -66,3 +66,6 @@
    gives them a white background and overrides the browser's hidden display. */
 .c06-mask-preview,.c06-selection-brush-raster{background:transparent}
 .c06-mask-preview[hidden],.c06-selection-brush-raster[hidden]{display:none}
+
+.c06-mask-preview,.c06-selection-brush-raster { background: transparent }
+.c06-mask-preview[hidden],.c06-selection-brush-raster[hidden] { display: none }

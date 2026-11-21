@@ -25,7 +25,7 @@ export type TransformSource={
 type Target='layer'|'selected'|'boundary';
 
 export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>Promise<TransformSource>,bake:()=>Promise<void>,addAbove:()=>Promise<void>,changeEnabled:(remove:boolean)=>Promise<string>){
-  const panel=document.createElement('details');panel.className='c06-clipboard-panel';panel.dataset.editPanel='transform';
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';panel.dataset.editPanel='transform';panel.dataset.toolPanel='transform';
   const summary=document.createElement('summary');summary.textContent='変形';
   const target=document.createElement('select');target.setAttribute('aria-label','変形する対象');
   target.add(new Option('レイヤー全体','layer'));target.add(new Option('選択した絵','selected'));target.add(new Option('選択の枠だけ','boundary'));
@@ -762,4 +762,15 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     else if(!panel.open&&!busy&&source)reset('候補を取り消しました。');
   };
   sync();
+  return {
+    open:(selected:boolean,move:boolean)=>{
+      panel.open=true;
+      if(busy)return;
+      if(source?.valid()){if(move&&!editingHandles)direct.click();return;}
+      target.value=selected?'selected':'layer';
+      void Promise.resolve(start.onclick?.(new PointerEvent('click'))).then(()=>{
+        if(move&&source?.valid()&&!editingHandles)direct.click();
+      });
+    },
+  };
 }

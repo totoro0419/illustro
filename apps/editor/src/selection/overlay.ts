@@ -14,6 +14,7 @@ export class SelectionOverlay{
   constructor(private readonly viewport:HTMLElement,private readonly surface:()=>BrushSurface|null){
     this.canvas=document.createElement('canvas');
     this.canvas.className='c06-mask-preview';
+    this.canvas.setAttribute('aria-hidden','true');
     this.canvas.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:6;';
     this.canvas.hidden=true;
     viewport.append(this.canvas);
