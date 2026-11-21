@@ -14,8 +14,8 @@
   color:var(--a-text,#222c40);font:inherit;font-size:16px}
 .illustro-app-dialog-error{color:#a53355;font-size:12px;line-height:1.5}
 .illustro-app-dialog-error[hidden]{display:none}
-.illustro-app-dialog-actions{display:flex;gap:10px;justify-content:flex-end}
-.illustro-app-dialog button{min-width:88px;min-height:44px;border-radius:10px;
+.illustro-app-dialog-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+.illustro-app-dialog button{min-width:88px;min-height:44px;padding-inline:12px;border-radius:10px;
   border:1px solid var(--a-border-strong,#ced8e7);background:var(--a-surface-soft,#f9fbff);
   color:var(--a-text,#222c40);font:inherit;font-weight:650;cursor:pointer}
 .illustro-app-dialog button.illustro-app-dialog-primary{background:var(--a-accent-soft,#e9eeff);

@@ -11,6 +11,7 @@ const modeNames=[
  'difference','exclusion','linear-burn','linear-dodge','vivid-light','linear-light','pin-light','hard-mix','subtract','divide',
  'hue','saturation','color','luminosity','dissolve',
 ];
+const ADD_GLOW=modeNames.indexOf('linear-dodge');
 export const layerToneChannel=channel=>Math.max(0,['luminosity','red','green','blue'].indexOf(channel));
 export const layerBlendIndex=mode=>Math.max(0,modeNames.indexOf(mode));
 const clamp=(x,lo=0,hi=1)=>Math.max(lo,Math.min(hi,x));
@@ -101,6 +102,7 @@ export function blendArtworkPixel(destination,offset,source,alpha,blend,x,y,effe
   alpha*=artworkToneWeight(blend.tone,blend.tone.source==='backdrop'?b:s);
   if(alpha<=0)return;
  }
+ if(alpha<=0)return;
  const mode=layerBlendIndex(blend.mode);
  if(mode===24&&alpha<1){
   if(hashPixel(blend.seed,x,y)>=alpha)return;
@@ -116,7 +118,11 @@ export function blendArtworkPixel(destination,offset,source,alpha,blend,x,y,effe
  else if(mode===22)mixed=setLum(s,lum(b));
  else if(mode===23)mixed=setLum(b,lum(s));
  for(let i=0;i<3;i++){
-  const out=clamp(((1-alpha)*baseAlpha*b[i]+(1-baseAlpha)*alpha*s[i]+alpha*baseAlpha*mixed[i])/a);
+  // Add each channel's light contribution before limiting it to the
+  // output alpha. Transparent pixels have no contribution.
+  const out=mode===ADD_GLOW
+   ?clamp((baseAlpha*b[i]+alpha*s[i])/a)
+   :clamp(((1-alpha)*baseAlpha*b[i]+(1-baseAlpha)*alpha*s[i]+alpha*baseAlpha*mixed[i])/a);
   destination[offset+i]=Math.round((inLinear?encoded(out):out)*255);
  }
  destination[offset+3]=Math.round(a*255);
@@ -277,6 +283,7 @@ fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
  let blend=artisticBlend(b,s,mode);
  let alpha=a+ba*(1.-a);
  var rgb=((1.-a)*ba*b+(1.-ba)*a*s+a*ba*blend)/alpha;
+ if(mode==${ADD_GLOW}){rgb=clamp((ba*b+a*s)/alpha,vec3f(0.),vec3f(1.));}
  if(inLinear){rgb=vec3f(toEncoded(rgb.r),toEncoded(rgb.g),toEncoded(rgb.b));}
  return vec4f(clamp(rgb*alpha-vec3f(paper*(1.-a)),vec3f(0.),vec3f(1.)),a+dst.a*(1.-a));
 }\n`;
@@ -339,6 +346,7 @@ vec4 compositeArtwork(ivec2 q,vec4 src,float coverage){
  vec3 blend=artisticBlend(b,s,mode);
  float alpha=a+ba*(1.-a);
  vec3 rgb=((1.-a)*ba*b+(1.-ba)*a*s+a*ba*blend)/alpha;
+ if(mode==${ADD_GLOW})rgb=clamp((ba*b+a*s)/alpha,0.,1.);
  if(inLinear)rgb=vec3(toEncoded(rgb.r),toEncoded(rgb.g),toEncoded(rgb.b));
  return vec4(clamp(rgb*alpha-paper*(1.-a),0.,1.),a+dst.a*(1.-a));
 }\n`;

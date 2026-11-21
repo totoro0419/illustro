@@ -57,7 +57,8 @@ export class RendererRegistry {
 export const rendererRegistry=new RendererRegistry;
 export function compilePreset(input,context={}){
  const p=copy(validateFoundation(input));
- keys(context,['commonStabilization','commonForceFade','deviceCurve','knownLength','knownDuration','forceFadeGeometry','alphaLocked'],'stroke context');
+ keys(context,['commonStabilization','commonForceFade','deviceCurve','knownLength','knownDuration','forceFadeGeometry','stabilizationGeometry','alphaLocked'],'stroke context');
+ if(context.stabilizationGeometry!==undefined&&context.stabilizationGeometry!=='adaptive-v2')throw Error('unsupported stabilization geometry');
  if(context.alphaLocked!==undefined&&typeof context.alphaLocked!=='boolean')throw Error('invalid alpha lock');
  if(context.forceFadeGeometry!==undefined&&!['legacy','adaptive-v1'].includes(context.forceFadeGeometry))throw Error('unsupported force fade geometry');
  if(context.deviceCurve){checkCurve(context.deviceCurve);p.pressure.deviceCurve=copy(context.deviceCurve);}

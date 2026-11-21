@@ -1,9 +1,9 @@
-import {layerMaskCoverage} from '@rt/layer-mask-coverage';
+import {layerMaskCoverage,layerMaskTile} from '@rt/layer-mask-coverage';
 import {GpuRenderer} from '@rt/renderer';
 import {RealtimeSession} from '@rt/session';
 import {WorkerStrokeSink} from '@rt/worker-stroke-sink';
 import {captureTilePages,ATLAS_SIZE} from '@rt/presentation-tiles';
-import {readHistoryImages} from '@rt/history-io';
+import {historyYield,readHistoryImages} from '@rt/history-io';
 import {TILE} from '@rt/model';
 
 globalThis.requestAnimationFrame=fn=>setTimeout(()=>fn(performance.now()),0);
@@ -51,7 +51,7 @@ async function publish(){
  publishing=true;publishRequested=false;const epoch=visibilityEpoch,ready=coherent(),keys=ready?[...pendingTiles]:[];if(ready)pendingTiles.clear();
  let pages=[];
  try{pages=captureTilePages(renderer.backend,keys);const images=sink.snapshot();const result=await images,layers=result.layers,retired=ready?result.retired:[];if(!ready)for(const id of result.retired)sink.retired.add(id);
-  if(epoch!==visibilityEpoch){for(const p of pages)p.bitmap.close();for(const l of layers)l.bitmap.close();for(const key of keys)pendingTiles.add(key);for(const id of sink.layers.keys())sink.changed.add(id);for(const id of retired)sink.retired.add(id);publishRequested=true;return;}
+  if(epoch!==visibilityEpoch){for(const p of pages)p.bitmap.close();for(const l of layers)l.bitmap.close();for(const key of keys)pendingTiles.add(key);sink.resend();for(const id of retired)sink.retired.add(id);publishRequested=true;return;}
   if(!pages.length&&!layers.length&&!retired.length)return;
   if(formalGate?.stage==='picture'&&pages.length){formalGate.held='picture';await formalGate.promise;}
   lastSent=++serial;sentPacket={keys,retired};metrics.publications++;metrics.gpuCaptures+=pages.length;metrics.bitmapBytes+=pages.reduce((n,p)=>n+p.bitmap.width*p.bitmap.height*4,0)+layers.reduce((n,l)=>n+l.bitmap.width*l.bitmap.height*4,0);
@@ -76,6 +76,61 @@ async function init(m){
 async function readTiles(requests){const b=renderer.backend,result=requests.map(r=>({...r,pixels:new Uint8Array(TILE*TILE*4)}));
  for(let at=0;at<result.length;at+=8){const group=result.slice(at,at+8),occupied=group.filter(r=>b.tiles.has(r.surfaceId+'\u0000'+r.key)),images=occupied.map(r=>{const t=b.tiles.get(r.surfaceId+'\u0000'+r.key);return t.layer[t.l];}),pixels=await readHistoryImages(b,images);occupied.forEach((r,i)=>r.pixels=pixels[i]);}return result;
 }
+// Read only occupied tiles, in the same bounded batches as history. The first
+// pass finds the real alpha bounds, including tiny marks far from the center.
+async function layerThumbnail(surfaceKey,white){
+ const r=renderer,b=r.backend,{width,height}=b,side=48,padding=3;
+ const mask=b.surfaceStyles?.get(surfaceKey)?.mask;
+ const available=()=>!session.active&&!r.inflight&&!r.document.jobs.length&&!r.historyPreparing&&!b.presentationHeld;
+ if(!available())return null;
+ const requests=[...b.tiles.values()].filter(t=>t.surfaceKey===surfaceKey);
+ const retained=requests.length<=8,occupied=[];
+ let left=width,top=height,right=0,bottom=0;
+ const size=t=>[Math.min(TILE,width-t.x),Math.min(TILE,height-t.y)];
+ for(let at=0;at<requests.length&&!white;at+=8){
+  if(!available())return null;
+  const batch=requests.slice(at,at+8),images=await readHistoryImages(b,batch.map(t=>t.layer[t.l]));
+  if(!available())return null;
+  for(let i=0;i<batch.length;i++){
+   const tile=batch[i],pixels=images[i],[w,h]=size(tile),coverage=mask?layerMaskTile(mask,tile.key):255;
+   let x0=w,y0=h,x1=0,y1=0;
+   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const at=y*TILE+x;
+    if(!pixels[at*4+3]||!(typeof coverage==='number'?coverage:coverage[at]))continue;
+    x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x+1);y1=Math.max(y1,y+1);
+   }
+   if(x1<=x0)continue;
+   left=Math.min(left,tile.x+x0);top=Math.min(top,tile.y+y0);
+   right=Math.max(right,tile.x+x1);bottom=Math.max(bottom,tile.y+y1);
+   occupied.push({tile,coverage,...(retained?{pixels}:{} )});
+  }
+  if(at+8<requests.length)await historyYield();
+ }
+ if(white){left=top=0;right=width;bottom=height;}
+ if(right<=left||bottom<=top)return {data:null,bounds:null};
+ const canvas=new OffscreenCanvas(side,side),ctx=canvas.getContext('2d',{willReadFrequently:true});
+ const scale=Math.min((side-padding*2)/(right-left),(side-padding*2)/(bottom-top));
+ const x=(side-(right-left)*scale)/2,y=(side-(bottom-top)*scale)/2;
+ if(white){ctx.fillStyle='#fff';ctx.fillRect(x,y,(right-left)*scale,(bottom-top)*scale);}
+ else{
+  const tileCanvas=new OffscreenCanvas(TILE,TILE),tileContext=tileCanvas.getContext('2d');
+  for(let at=0;at<occupied.length;at+=8){
+   if(!available())return null;
+   const batch=occupied.slice(at,at+8);
+   const images=retained?batch.map(entry=>entry.pixels):await readHistoryImages(b,batch.map(({tile})=>tile.layer[tile.l]));
+   if(!available())return null;
+   for(let i=0;i<batch.length;i++){
+    const {tile,coverage}=batch[i],[w,h]=size(tile),pixels=new Uint8ClampedArray(images[i]);
+    if(coverage!==255)for(let p=0;p<TILE*TILE;p++)pixels[p*4+3]*=(typeof coverage==='number'?coverage:coverage[p])/255;
+    tileContext.putImageData(new ImageData(pixels,TILE,TILE),0,0);
+    ctx.drawImage(tileCanvas,0,0,w,h,x+(tile.x-left)*scale,y+(tile.y-top)*scale,w*scale,h*scale);
+   }
+   if(at+8<occupied.length)await historyYield();
+  }
+ }
+ return {data:ctx.getImageData(0,0,side,side).data,bounds:[left/width,top/height,right/width,bottom/height]};
+}
+
 async function seed(cache){const b=renderer.backend,upload=(surfaceId,key,pixels)=>{if(!pixels.some(x=>x!==0))return;const t=b.tile(key,surfaceId),image=t.layer[t.l];
  if(b.gl){const g=b.gl;g.bindTexture(g.TEXTURE_2D,image.t);g.texSubImage2D(g.TEXTURE_2D,0,0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,pixels);}else b.device.queue.writeTexture({texture:image},pixels,{bytesPerRow:TILE*4},[TILE,TILE]);t.committedId=-1;b.dirtyConfirmed.add(key);};
  if(cache.version===2){for(const l of cache.layers)for(const t of l.tiles)upload(l.surfaceId,t.key,t.pixels);}
@@ -213,7 +268,7 @@ async function command(method,a){const r=renderer,s=session;
  case 'discardRedo':return s.discardRedo();
  case 'navigate':return s.navigateDerived(a.map(e=>({...e,record:record(e.token)})));
  case 'restore':await restore(a);if(a.solidWhiteSurfaceKey&&diagnostics)postMessage({type:'white-seed-stage',stage:'settling'});await settlePictures();if(a.solidWhiteSurfaceKey&&diagnostics)postMessage({type:'white-seed-stage',stage:'settled'});return stats(true);
- case 'pictureAck':acknowledged=Math.max(acknowledged,a.sequence);if(!a.accepted&&sentPacket){for(const key of sentPacket.keys)pendingTiles.add(key);for(const id of sink.layers.keys())sink.changed.add(id);for(const id of sentPacket.retired)sink.retired.add(id);}sentPacket=null;if(publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size)requestPublish();return;
+ case 'pictureAck':acknowledged=Math.max(acknowledged,a.sequence);if(!a.accepted&&sentPacket){for(const key of sentPacket.keys)pendingTiles.add(key);sink.resend();for(const id of sentPacket.retired)sink.retired.add(id);}sentPacket=null;if(publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size)requestPublish();return;
  case 'waitStroke':{const result=await r.waitStroke(a);await settlePictures();return result;}
  case 'drain':await r.drain(a);await settlePictures();return stats(true);
  case 'read':return r.read(a);
@@ -221,19 +276,7 @@ async function command(method,a){const r=renderer,s=session;
  case 'readTiles':return readTiles(a);
  case 'pixel':return pixel(a);
  case 'pixelArea':return pixelArea(a);
- case 'layerThumbnail':{
-  const {surfaceKey}=a,{width,height}=r.backend;
-  const side=48,scale=Math.min(side/width,side/height);
-  const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
-  const pixels=await r.read(surfaceKey),image=new Uint8ClampedArray(side*side*4);
-  const left=Math.floor((side-w)/2),top=Math.floor((side-h)/2);
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-   const sx=Math.floor((x+.5)*width/w),sy=Math.floor((y+.5)*height/h);
-   const source=(sy*width+sx)*4,destination=((top+y)*side+left+x)*4;
-   image.set(pixels.subarray(source,source+4),destination);
-  }
-  return image;
- }
+ case 'layerThumbnail':return layerThumbnail(a.surfaceKey,a.white);
  case 'layerOutline':{
   const {surfaceKey}=a,b=r.backend,style=b.surfaceStyles?.get(surfaceKey);
   if(!style?.visible||!style.opacity)return null;
@@ -286,8 +329,8 @@ async function command(method,a){const r=renderer,s=session;
  case 'styles':r.setSurfaceStyles(a);return;
  case 'seamless':r.setSeamlessPreview(a);return;
  case 'clearSeamless':r.clearSeamlessPreviews(a);return;
- case 'hide':visibilityEpoch=a.epoch;r.hideStrokePreview(a.id);for(const id of sink.layers.keys())sink.changed.add(id);requestPublish();return;
- case 'show':visibilityEpoch=a.epoch;r.restoreStrokePreview(a.id);for(const id of sink.layers.keys())sink.changed.add(id);requestPublish();return;
+ case 'hide':visibilityEpoch=a.epoch;r.hideStrokePreview(a.id);sink.resend();requestPublish();return;
+ case 'show':visibilityEpoch=a.epoch;r.restoreStrokePreview(a.id);sink.resend();requestPublish();return;
  case 'prepareHistory':return r.prepareHistory();
  case 'resumeHistory':return r.resumeHistory();
  case 'prepare':r.proxy?.prepare(a);return;
