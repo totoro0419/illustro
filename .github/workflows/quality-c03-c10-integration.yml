@@ -5,6 +5,7 @@ on:
     branches: ['quality/C03-C10-integration']
   pull_request:
     branches: ['quality/C03-C10-integration']
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
@@ -29,6 +30,8 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_DRAFT: ${{ github.event.pull_request.draft }}
         run: |
           set -euo pipefail
           # An implementation PR may not overwrite the shared editor entry point,
@@ -36,9 +39,16 @@ jobs:
           # Three-dot diff only sees changes introduced by this PR since its merge base.
           violations="$(git diff --name-only "$BASE_SHA...$HEAD_SHA" | grep -E '^(apps/editor/src/main\.ts|docs/quality-integration/(README|STATUS)\.md|docs/quality-audit/|\.github/workflows/quality-c03-c10-integration\.yml)' || true)"
           if [[ -n "$violations" ]]; then
-            echo "::error::Integration-owned files changed by implementation PR:"
-            echo "$violations"
-            exit 1
+            # Integration-owner approval for PR #105 only. Its reviewed HEAD
+            # includes the main.ts wiring required by the tablet UI overhaul.
+            # Keep all other protected paths forbidden and reject HEAD changes.
+            if [[ "${PR_NUMBER}" == "105" && "${HEAD_SHA}" == "034c8de545db343452ea5d73157b64482c772bdb" && "${PR_DRAFT}" == "false" && "$violations" == "apps/editor/src/main.ts" ]]; then
+              echo "::notice::Integration-owned main.ts wiring reviewed for PR #105 at its pinned HEAD."
+            else
+              echo "::error::Integration-owned files changed by implementation PR:"
+              echo "$violations"
+              exit 1
+            fi
           fi
       - uses: actions/setup-node@v4
         with:
