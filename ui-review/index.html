@@ -160,12 +160,56 @@
   .scene-head{min-height:39px}
 }
 
+
+/* Keep the tablet preview in the visual viewport when the Android/iOS keyboard opens. */
+@media (max-width:680px){
+  html{height:100%;overflow:hidden}
+  body{position:fixed;left:0;right:0;top:0;width:100%;height:var(--review-visual-height,100dvh)!important;overflow:hidden}
+  .review-title{position:sticky;top:0;z-index:7;background:#fff;min-height:34px}
+  .review-title h3{font-size:13px}
+  #doneTyping{display:none;min-height:32px;padding:5px 12px;background:#e9efff;border-color:#bdcbed;color:#334e9a}
+  .review .note-label{display:block;flex:none;margin:0}
+  .review .note-label>span{display:block;margin-bottom:4px}
+  #note{min-height:98px;resize:vertical;max-width:100%;caret-color:#3654c3}
+  .review .area>label{margin:0}
+  .review .area input{font-size:16px}
+  .review textarea:focus,.review input:focus{border-color:#6886ef;box-shadow:0 0 0 2px #a3b7ff55;outline:none}
+  /* Typing occupies the lower panel, not the screen preview. */
+  body[data-editing] .top,body[data-editing] .status,body[data-editing] .mobile-bar{display:none!important}
+  body[data-editing] .layout{grid-template-rows:minmax(112px,36fr) minmax(125px,64fr)!important}
+  body[data-editing] .scene-head{min-height:29px;padding:2px 7px}
+  body[data-editing] .scene-head .controls,body[data-editing] .scene-head #big{display:none}
+  body[data-editing] .under{display:none}
+  body[data-editing] .review{gap:6px;padding:4px 12px 6px;overflow:auto}
+  body[data-editing] #doneTyping{display:inline-flex;align-items:center;justify-content:center}
+  body[data-editing] .review .rating,
+  body[data-editing] .review .banner,
+  body[data-editing] .review #notes,
+  body[data-editing] .review #saveJson,
+  body[data-editing] .review #loadJson{display:none!important}
+  body[data-editing="note"] .review .area{display:none!important}
+  body[data-editing="note"] .review .note-label{display:flex;flex-direction:column;flex:1 1 auto;min-height:80px}
+  body[data-editing="note"] .review #note{flex:1 1 auto;height:100%;min-height:90px;resize:none;overflow:auto}
+  body[data-editing="area"] .review .note-label{display:none!important}
+  body[data-editing="area"] .review .area{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;padding:5px 8px;gap:5px}
+  body[data-editing="area"] .review .area label{flex:none}
+  body[data-editing="area"] .review .area label:has(#areaNote){flex:1 1 auto;min-height:68px;display:flex;flex-direction:column}
+  body[data-editing="area"] #areaNote{flex:1 1 auto;min-height:68px;resize:none}
+  body[data-editing="area"] #pick{display:none}
+  body[data-editing] .toast{bottom:10px}
+  /* Prefer the editor over the preview when the viewport gets exceptionally short. */
+  @media (max-height:420px){
+    body[data-editing] .layout{grid-template-rows:minmax(75px,28fr) minmax(100px,72fr)!important}
+    body[data-editing] .scene-head{min-height:24px}
+  }
+}
+
 </style></head>
 <body>
 <header class="top"><div><strong>Illustro · 現行UIレビュー</strong><div class="sub">GitHubの実際のUIコードから画面を生成／アプリ本体は変更しません</div></div><span class="grow"></span><button class="action" id="retry">UIを読み直す</button><button class="action" id="copy">メモをコピー</button><button class="action primary" id="saveMd">メモを保存 (.md)</button></header>
 <div id="status" class="status"><i class="dot"></i><span id="statusText">実装ファイルを読み込みます…</span></div>
 <div class="layout"><nav class="nav" id="nav" aria-label="場面の選択"><div class="nav-search"><label for="sceneSearch">シーンを探す</label><input id="sceneSearch" type="search" placeholder="例：投げ縄、ブラシ、色…" autocomplete="off"></div><div id="navList"></div></nav><section class="middle"><div class="scene-head"><div class="heading"><h2 id="sceneName"></h2><p id="sceneInfo"></p></div><div class="controls" id="devices"><button data-device="desktop">PC</button><button data-device="tablet" class="active">タブレット</button><button data-device="phone">スマホ</button></div><button id="big" class="action">拡大</button></div><div class="stage" id="stage"><div class="stage-inner" id="stageScroll"><div class="zoom-wrap" id="zoomWrap"><div class="device-frame" id="deviceFrame"><iframe id="sourceFrame" title="Illustroの実装コードから生成した画面" sandbox="allow-scripts allow-same-origin"></iframe></div><div id="panLayer" class="pan-layer" aria-hidden="true"></div></div></div><div class="stage-tools" role="group" aria-label="画面の拡大縮小"><button class="action" id="zoomOut" aria-label="縮小">－</button><button class="action" id="zoomIn" aria-label="拡大">＋</button><button class="action" id="zoomFit">全体</button><button class="action" id="zoomWidth">横幅</button><button class="action" id="panMode" aria-pressed="false">移動</button><button class="action stage-close" id="closeBig">閉じる</button></div><div class="pick-guide hidden" id="pickGuide">気になる場所をタップ <button id="cancelPick" type="button">中止</button></div><div id="errorLayer" class="error-layer hidden"><span id="errorText"></span></div></div><div class="under"><span id="sceneCounter"></span><span>※ 実装のUI構造・CSSを使用。描画・保存作品などの実行時データは再現しません。</span><div class="actions"><button id="prev" class="action">前</button><button id="next" class="action">次</button></div></div></section>
-<aside class="review" id="review"><div class="review-title"><h3>この画面への意見</h3><button class="action" id="backToScene" type="button">画面に戻る</button></div><p>「どこにあるか分からない」「ここを減らしたい」など、気付いたことを自由に記録してください。</p><div class="rating" id="rating"><button data-rate="needs">改善したい</button><button data-rate="good">このままでよい</button><button data-rate="unsure">判断に迷う</button><button data-rate="none">未評価</button></div><label>画面全体へのメモ<textarea id="note" placeholder="この画面全体で改善したいこと…"></textarea></label><div class="area"><button id="pick" class="action">画面内の場所を指定</button><label>対象の場所<input id="areaName" placeholder="例：ブラシの太さ"></label><label>改善案・指摘<textarea id="areaNote" placeholder="この操作はもっと簡単に…"></textarea></label><button class="action primary" id="add">このメモを追加</button></div><div id="notes" class="notes"></div><div class="banner">メモはこの端末のブラウザに一時保存されます。最後に <b>メモを保存 (.md)</b> を押してファイルを共有してください。操作できるのは主にシーン切替と、画面内の一部の開閉表示です。</div><button class="action" id="saveJson">作業の控え (.json)</button><button class="action" id="loadJson">控えを読み込む</button><input id="loadFile" type="file" accept="application/json,.json" hidden></aside><section id="mobileSettings" class="mobile-settings" aria-label="画面の表示と移動"><h3>タブレット画面の見方</h3><div class="settings-actions"><button type="button" data-target="zoomFit">全体表示</button><button type="button" data-target="zoomWidth">横幅に拡大</button><button type="button" data-target="zoomOut">縮小 －</button><button type="button" data-target="zoomIn">拡大 ＋</button><button type="button" data-target="panMode">画面を移動</button></div><p>上の画面はタブレットの大きさを縮小して表示します。拡大すると左右上下へスクロールできます。<span id="mobileZoomLabel"></span></p></section></div><div class="mobile-bar" id="mobileBar" role="navigation" aria-label="レビュー操作">
+<aside class="review" id="review"><div class="review-title"><h3>画面を見ながらメモ</h3><button class="action" id="doneTyping" type="button">入力を終える</button><button class="action" id="backToScene" type="button">画面に戻る</button></div><p>「どこにあるか分からない」「ここを減らしたい」など、気付いたことを自由に記録してください。</p><div class="rating" id="rating"><button data-rate="needs">改善したい</button><button data-rate="good">このままでよい</button><button data-rate="unsure">判断に迷う</button><button data-rate="none">未評価</button></div><label class="note-label"><span>画面全体へのメモ（入力内容は自動で記録）</span><textarea id="note" placeholder="上の画面を見ながら、気になる点をそのまま書く…"></textarea></label><div class="area"><button id="pick" class="action">画面内の場所を指定</button><label>対象の場所<input id="areaName" placeholder="例：ブラシの太さ"></label><label>改善案・指摘<textarea id="areaNote" placeholder="この操作はもっと簡単に…"></textarea></label><button class="action primary" id="add">このメモを追加</button></div><div id="notes" class="notes"></div><div class="banner">メモはこの端末のブラウザに一時保存されます。最後に <b>メモを保存 (.md)</b> を押してファイルを共有してください。操作できるのは主にシーン切替と、画面内の一部の開閉表示です。</div><button class="action" id="saveJson">作業の控え (.json)</button><button class="action" id="loadJson">控えを読み込む</button><input id="loadFile" type="file" accept="application/json,.json" hidden></aside><section id="mobileSettings" class="mobile-settings" aria-label="画面の表示と移動"><h3>タブレット画面の見方</h3><div class="settings-actions"><button type="button" data-target="zoomFit">全体表示</button><button type="button" data-target="zoomWidth">横幅に拡大</button><button type="button" data-target="zoomOut">縮小 －</button><button type="button" data-target="zoomIn">拡大 ＋</button><button type="button" data-target="panMode">画面を移動</button></div><p>上の画面はタブレットの大きさを縮小して表示します。拡大すると左右上下へスクロールできます。<span id="mobileZoomLabel"></span></p></section></div><div class="mobile-bar" id="mobileBar" role="navigation" aria-label="レビュー操作">
 <button type="button" id="mobilePrev" aria-label="前のシーン"><span aria-hidden="true">‹</span><small>前へ</small></button>
 <button type="button" data-tab="scenes"><span aria-hidden="true">☷</span><small>一覧</small></button>
 <button type="button" data-tab="view" class="current"><span aria-hidden="true">▣</span><small>表示</small></button>
@@ -295,11 +339,12 @@ function updateScale(resetScroll=false){
 }
 function renderNav(){let last='',html='';const q=$('sceneSearch').value.trim().toLowerCase();SCENES.forEach((s,i)=>{if(q&&!`${s.name} ${s.group} ${s.info}`.toLowerCase().includes(q))return;if(s.group!==last){last=s.group;html+=`<h3>${esc(last)}</h3>`}const r=db.reviews[s.id]||{};html+=`<button class="scene ${i===current?'current':''}" data-index="${i}" aria-current="${i===current?'step':'false'}"><span class="n">${String(i+1).padStart(2,'0')}</span>${esc(s.name)}<i class="mark ${esc(r.rating||'')}"></i></button>`});$('navList').innerHTML=html||'<p style="padding:12px">該当するシーンがありません</p>';$('navList').querySelectorAll('button[data-index]').forEach(b=>b.onclick=()=>choose(Number(b.dataset.index)));if(mobileTab==='scenes')$('navList').querySelector('.current')?.scrollIntoView({block:'nearest',inline:'nearest'});} 
 function renderReview(){const r=state();$('note').value=r.note||'';$('rating').querySelectorAll('[data-rate]').forEach(b=>b.classList.toggle('selected',b.dataset.rate===(r.rating||'none')));$('notes').innerHTML=(r.areas||[]).map((n,i)=>`<div class="note"><strong>${esc(n.name)}<button data-delete="${i}" title="このメモを削除">削除</button></strong><div>${esc(n.text)}</div></div>`).join('');$('notes').querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{r.areas.splice(Number(b.dataset.delete),1);persist();renderReview()});}
-function choose(i){if(i<0||i>=SCENES.length)return;saveDraft();current=i;selectedElement=null;pickMode=false;syncPick();const draft=db.drafts?.[SCENES[current].id]||{};$('areaName').value=draft.name||'';$('areaNote').value=draft.text||'';const s=SCENES[i];$('sceneName').textContent=s.name;$('sceneInfo').textContent=s.info;$('sceneCounter').textContent=`${i+1} / ${SCENES.length} シーン`;renderNav();renderReview();$('prev').disabled=i===0;$('next').disabled=i===SCENES.length-1;$('mobilePrev').disabled=i===0;$('mobileNext').disabled=i===SCENES.length-1;updateBadge();setMobileTab(isMobile()?'notes':'view');void render()}
-function md(){const lines=[`# Illustro 現行UIレビュー`,'',`対象: ${REPO}`,`基準: quality/C03-C10-integration (${SHA})`,'方式: GitHubのUI生成コード・CSSから直接表示（動的な描画と保存作品は未表示）',''];const rates={needs:'改善したい',good:'このままでよい',unsure:'判断に迷う',none:'未評価'};let count=0;for(const s of SCENES){const r=db.reviews[s.id];if(!r||(!r.note&&!r.areas?.length&&(!r.rating||r.rating==='none')))continue;count++;lines.push(`## ${s.name}`,`評価: ${rates[r.rating]||rates.none}`,'');if(r.note)lines.push(r.note.trim(),'');for(const a of r.areas||[])lines.push(`- **${a.name}**: ${a.text.replace(/\n/g,' / ')}`);lines.push('');}if(!count)lines.push('（メモ未入力）');return lines.join('\n')}
+function choose(i){if(i<0||i>=SCENES.length)return;if(document.activeElement instanceof HTMLElement&&editingKind(document.activeElement))document.activeElement.blur();saveDraft();current=i;selectedElement=null;pickMode=false;syncPick();const draft=db.drafts?.[SCENES[current].id]||{};$('areaName').value=draft.name||'';$('areaNote').value=draft.text||'';const s=SCENES[i];$('sceneName').textContent=s.name;$('sceneInfo').textContent=s.info;$('sceneCounter').textContent=`${i+1} / ${SCENES.length} シーン`;renderNav();renderReview();$('prev').disabled=i===0;$('next').disabled=i===SCENES.length-1;$('mobilePrev').disabled=i===0;$('mobileNext').disabled=i===SCENES.length-1;updateBadge();setMobileTab(isMobile()?'notes':'view');void render()}
+function md(){const lines=[`# Illustro 現行UIレビュー`,'',`対象: ${REPO}`,`基準: quality/C03-C10-integration (${SHA})`,'方式: GitHubのUI生成コード・CSSから直接表示（動的な描画と保存作品は未表示）',''];const rates={needs:'改善したい',good:'このままでよい',unsure:'判断に迷う',none:'未評価'};let count=0;for(const s of SCENES){const r=db.reviews[s.id]||{rating:'none',note:'',areas:[]};const draft=db.drafts?.[s.id];if(!r.note&&!r.areas?.length&&(!r.rating||r.rating==='none')&&!draft?.name?.trim()&&!draft?.text?.trim())continue;count++;lines.push(`## ${s.name}`,`評価: ${rates[r.rating]||rates.none}`,'');if(r.note)lines.push(r.note.trim(),'');for(const a of r.areas||[])lines.push(`- **${a.name}**: ${a.text.replace(/\n/g,' / ')}`);const d=db.drafts?.[s.id];if(d&&(d.name?.trim()||d.text?.trim()))lines.push(`- **記入途中の場所メモ** ${d.name?.trim()||'場所未指定'}: ${d.text?.trim()||'（指摘文は未入力）'}`);lines.push('');}if(!count)lines.push('（メモ未入力）');return lines.join('\n')}
 function download(name,text,type){const b=new Blob([text],{type});const url=URL.createObjectURL(b);const a=document.createElement('a');a.download=name;a.href=url;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}
 function isMobile(){return matchMedia('(max-width:680px)').matches}
 function setMobileTab(tab){
+ if(tab!=='notes'&&document.activeElement instanceof HTMLElement&&editingKind(document.activeElement))document.activeElement.blur();
  mobileTab=tab;document.body.dataset.mobileTab=tab;
  for(const b of document.querySelectorAll('.mobile-bar [data-tab]')){b.classList.toggle('current',b.dataset.tab===tab);b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false')}
  if($('stage').classList.contains('big'))toggleBig(false);
@@ -333,7 +378,47 @@ $('mobileSave').onclick=()=>$('saveMd').click();
 $('sceneSearch').oninput=renderNav;
 $('areaName').oninput=saveDraft;
 $('areaNote').oninput=saveDraft;
-$('rating').onclick=e=>{const b=e.target.closest('[data-rate]');if(!b)return;state().rating=b.dataset.rate;persist();renderReview();renderNav()};$('note').oninput=e=>{state().note=e.target.value;persist();updateBadge()};$('pick').onclick=()=>{pickMode=!pickMode;syncPick();if(pickMode&&isMobile())setMobileTab('notes');notify(pickMode?'Illustro画面の気になる部分をタップしてください':'場所の選択を中止しました')};$('add').onclick=()=>{const name=$('areaName').value.trim(),text=$('areaNote').value.trim();if(!name||!text){notify('場所とメモの両方を入力してください');return}state().areas.push({name,text});persist();$('areaName').value='';$('areaNote').value='';saveDraft();renderReview();notify('メモを追加しました')};$('prev').onclick=()=>choose(current-1);$('next').onclick=()=>choose(current+1);$('devices').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.device===device));$('devices').onclick=e=>{const b=e.target.closest('[data-device]');if(!b)return;device=b.dataset.device;zoomMode='fit';zoomMultiplier=1;$('devices').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));updateScale(true);void render()};$('big').onclick=()=>toggleBig(!$('stage').classList.contains('big'));$('retry').onclick=load;$('saveMd').onclick=()=>download('illustro-current-ui-review.md','\ufeff'+md(),'text/markdown;charset=utf-8');$('saveJson').onclick=()=>download('illustro-current-ui-review.json',JSON.stringify(db,null,2),'application/json;charset=utf-8');$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(md());notify('メモをコピーしました')}catch{notify('コピーできません。ファイルとして保存してください')}};$('loadJson').onclick=()=>$('loadFile').click();$('loadFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(parsed.version!==2||!parsed.reviews)throw Error('形式が違います');if(!confirm('現在のメモをこの控えで置き換えますか？'))return;db=parsed;persist();choose(current);notify('控えを読み込みました')}catch(err){notify(err.message)}e.target.value=''};window.addEventListener('resize',()=>updateScale(false));if(window.ResizeObserver)new ResizeObserver(updateScale).observe($('stage'));document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select'))return;if(e.key==='Escape'&&$('stage').classList.contains('big'))$('big').click();else if(e.key==='ArrowRight')choose(current+1);else if(e.key==='ArrowLeft')choose(current-1)});
+$('rating').onclick=e=>{const b=e.target.closest('[data-rate]');if(!b)return;state().rating=b.dataset.rate;persist();renderReview();renderNav()};$('note').oninput=e=>{state().note=e.target.value;persist();updateBadge()};$('pick').onclick=()=>{pickMode=!pickMode;syncPick();if(pickMode&&isMobile())setMobileTab('notes');notify(pickMode?'Illustro画面の気になる部分をタップしてください':'場所の選択を中止しました')};$('add').onclick=()=>{const name=$('areaName').value.trim(),text=$('areaNote').value.trim();if(!name||!text){notify('場所とメモの両方を入力してください');return}state().areas.push({name,text});persist();$('areaName').value='';$('areaNote').value='';saveDraft();renderReview();notify('メモを追加しました')};$('prev').onclick=()=>choose(current-1);$('next').onclick=()=>choose(current+1);$('devices').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.device===device));$('devices').onclick=e=>{const b=e.target.closest('[data-device]');if(!b)return;device=b.dataset.device;zoomMode='fit';zoomMultiplier=1;$('devices').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));updateScale(true);void render()};$('big').onclick=()=>toggleBig(!$('stage').classList.contains('big'));$('retry').onclick=load;$('saveMd').onclick=()=>{saveDraft();download('illustro-current-ui-review.md','\ufeff'+md(),'text/markdown;charset=utf-8')};$('saveJson').onclick=()=>download('illustro-current-ui-review.json',JSON.stringify(db,null,2),'application/json;charset=utf-8');$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(md());notify('メモをコピーしました')}catch{notify('コピーできません。ファイルとして保存してください')}};$('loadJson').onclick=()=>$('loadFile').click();$('loadFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(parsed.version!==2||!parsed.reviews)throw Error('形式が違います');if(!confirm('現在のメモをこの控えで置き換えますか？'))return;db=parsed;persist();choose(current);notify('控えを読み込みました')}catch(err){notify(err.message)}e.target.value=''};window.addEventListener('resize',()=>updateScale(false));if(window.ResizeObserver)new ResizeObserver(updateScale).observe($('stage'));document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select'))return;if(e.key==='Escape'&&$('stage').classList.contains('big'))$('big').click();else if(e.key==='ArrowRight')choose(current+1);else if(e.key==='ArrowLeft')choose(current-1)});
+
+/* Keyboard-aware phone mode: keep source-derived preview visible above the focused editor. */
+function updateVisibleArea(){
+  if(!isMobile())return;
+  const vv=window.visualViewport;
+  const height=Math.max(180,Math.round(vv?.height||window.innerHeight));
+  document.documentElement.style.setProperty('--review-visual-height',height+'px');
+  requestAnimationFrame(()=>updateScale(false));
+}
+function editingKind(node){
+  if(!isMobile()||!(node instanceof Element)||!node.closest('#review'))return '';
+  if(node.id==='note')return 'note';
+  if(node.id==='areaName'||node.id==='areaNote')return 'area';
+  return '';
+}
+function syncWritingMode(){
+  const kind=editingKind(document.activeElement);
+  if(kind){document.body.dataset.editing=kind;
+    if(mobileTab!=='notes')setMobileTab('notes');
+  }else delete document.body.dataset.editing;
+  updateVisibleArea();
+}
+document.addEventListener('focusin',e=>{
+  const kind=editingKind(e.target);if(!kind)return;
+  document.body.dataset.editing=kind;
+  if(mobileTab!=='notes')setMobileTab('notes');
+  $('review').scrollTop=0;
+  updateVisibleArea();
+});
+document.addEventListener('focusout',()=>setTimeout(syncWritingMode,30));
+$('doneTyping').addEventListener('click',()=>{
+  if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
+  delete document.body.dataset.editing;
+  updateVisibleArea();
+});
+window.visualViewport?.addEventListener('resize',updateVisibleArea);
+window.visualViewport?.addEventListener('scroll',updateVisibleArea);
+window.addEventListener('orientationchange',()=>setTimeout(updateVisibleArea,100));
+updateVisibleArea();
+
 document.body.dataset.mobileTab=mobileTab;setPanMode(panMode);updateScale(true);choose(current);void load();
 })();
 </script></body></html>
