@@ -6,7 +6,7 @@ export type Point=LegacyPoint&{pointerType?:string;origin?:string;velocity?:numb
 export type {Preset};
 export type BackendName = 'auto'|'webgpu'|'webgl2';
 export type LegacyStrokeRecord = Readonly<{version:2;engine:'illustro-rt-2.4'|'illustro-rt-2.5';smoothing:'local-regression-adaptive-48ms-bounded-2';fast:number;random:'philox4x32-10';seed:readonly [number,number];preset:Preset;raw:readonly Sample[];geometry:readonly Point[];commands:readonly (readonly number[])[]}>;
-export type FoundationStrokeRecord=Omit<LegacyStrokeRecord,'version'|'engine'>&{version:3;engine:'illustro-foundation-1';foundation:FoundationPreset;context:StrokeContext;releaseInput?:Sample};
+export type FoundationStrokeRecord=Omit<LegacyStrokeRecord,'version'|'engine'|'smoothing'>&{version:3;smoothing:LegacyStrokeRecord['smoothing']|'adaptive-freehand-1';engine:'illustro-foundation-1';foundation:FoundationPreset;context:StrokeContext;releaseInput?:Sample};
 export type StrokeRecord=LegacyStrokeRecord|FoundationStrokeRecord;
 export type StrokeDocument = {format:'illustro-rt-document-2';width:number;height:number;strokes:StrokeRecord[]};
 export type CompletionProxy = {stage:'gpu-complete-proxy';revision:number;completedAt:number;inputAge:number;latestInputAge:number;tip:Point;previewTip:Point;previewQueueAge:number;oldestQueueAge:number;confirmedLag:number;obsoletePreviewCount:number;formalJobs:number;inFlightSubmissions:1};
