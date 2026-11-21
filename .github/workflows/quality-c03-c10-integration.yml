@@ -42,7 +42,7 @@ jobs:
             # Integration-owner approval for PR #105 only. Its reviewed HEAD
             # includes the main.ts wiring required by the tablet UI overhaul.
             # Keep all other protected paths forbidden and reject HEAD changes.
-            if [[ "${PR_NUMBER}" == "105" && "${HEAD_SHA}" == "034c8de545db343452ea5d73157b64482c772bdb" && "${PR_DRAFT}" == "false" && "$violations" == "apps/editor/src/main.ts" ]]; then
+            if [[ "${PR_NUMBER}" == "105" && "${HEAD_SHA}" == "b854d083f0a1a7cd6ab8c3bf700b319ce97b0c3b" && "${PR_DRAFT}" == "false" && "$violations" == "apps/editor/src/main.ts" ]]; then
               echo "::notice::Integration-owned main.ts wiring reviewed for PR #105 at its pinned HEAD."
             else
               echo "::error::Integration-owned files changed by implementation PR:"
