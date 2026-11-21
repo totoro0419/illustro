@@ -15,6 +15,8 @@ import {exportSelectionSections,importSelectionSections} from './native';
 
 export type SelectionWorkbench=Readonly<{
   active:()=>MaskData|null;
+  open:()=>void;
+  stop:()=>void;
   isPending:()=>boolean;
   documentChanged:()=>void;
   refresh:()=>void;
@@ -40,8 +42,8 @@ const asButton=(label:string,fn:()=>void)=>{
 };
 export function installSelectionWorkbench(callbacks:SelectionCallbacks):SelectionWorkbench{
   const host=document.getElementById('documentBoxBody');
-  if(!host)return {active:()=>null,isPending:()=>false,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{},shiftActive:()=>{},replaceActive:()=>{},exportNative:async()=>[],importNative:async()=>{}};
-  const panel=document.createElement('details');panel.className='c06-selection-panel';
+  if(!host)return {active:()=>null,open:()=>{},stop:()=>{},isPending:()=>false,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{},shiftActive:()=>{},replaceActive:()=>{},exportNative:async()=>[],importNative:async()=>{}};
+  const panel=document.createElement('details');panel.className='c06-selection-panel';panel.dataset.toolPanel='selection';
   const summary=document.createElement('summary');summary.textContent='選択範囲を編集';
   const intro=document.createElement('p');
   intro.textContent='選択の形を作り、足す・引く・重なる部分だけ残す操作ができます。解除しても描いた画素は消えません。';
@@ -52,7 +54,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const autoTools=document.createElement('div');autoTools.className='c06-auto-selection';
   const saveArea=document.createElement('div');saveArea.className='c06-selection-save';
   const status=document.createElement('output');status.setAttribute('role','status');
-  const allowFinger=document.createElement('input');allowFinger.type='checkbox';allowFinger.checked=false;
+  const allowFinger=document.createElement('input');allowFinger.type='checkbox';allowFinger.checked=true;
   const fingerLabel=document.createElement('label');fingerLabel.className='c06-visibility';
   fingerLabel.append(allowFinger,document.createTextNode('指で選択範囲を描く（OFFなら指はキャンバス移動）'));
   const showSelection=document.createElement('input');showSelection.type='checkbox';showSelection.checked=true;
@@ -70,7 +72,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const mode=document.createElement('select');mode.setAttribute('aria-label','選択範囲を組み合わせる方法');
   for(const [key,label] of [
     ['replace','新しい範囲に置き換える'],['add','範囲を足す'],
-    ['subtract','範囲を引く'],['intersect','重なる部分だけ残す']
+    ['subtract','範囲を引く'],['intersect','重なる部分だけ残す'],['xor','重なる部分だけ除く']
   ] as const)mode.add(new Option(label,key));
   modes.append(mode);
   const shapeButtons=new Map<Tool,HTMLButtonElement>();
@@ -89,7 +91,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   }
   let raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
   // A pen stroke must not start against a stale mask while a new one is pending.
-  let pendingSelectionJob=0;
+  let pendingSelectionJob=0,pendingMagneticJob=0;
   let pendingStore:{id:string;mask:MaskData|null}|null=null;
   let storeTimer:number|null=null,storeQueue:Promise<void>=Promise.resolve();
   function flushStoredSelection(){
@@ -324,7 +326,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const doc=source();if(!doc)return;
     const current=++job,currentMode=mode.value as CombineMode,previous=active;
     pendingSelectionJob=current;
-    points=[];drawing=null;overlayPath();tool=null;magneticPixels=null;refresh();
+    points=[];drawing=null;overlayPath();
+    if(tool==='polygon'||tool==='magnetic')tool=null;
+    magneticPixels=null;refresh();
     status.textContent='選択の形を反映しています。キャンバス操作は続けられます。';
     void raster.shape(shape,previous,currentMode,doc.width,doc.height)
       .then(next=>{
@@ -350,7 +354,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       }
       const request=++job;
       tool=null;magneticPixels=null;points=[];drawing=null;
-      pendingSelectionJob=request;
+      pendingSelectionJob=pendingMagneticJob=request;
       callbacks.getSurface()?.setSelectionMode(false);
       refresh();overlayPath();
       status.textContent='磁気選択のため、画像の輪郭を準備しています。';
@@ -589,11 +593,13 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   quickButtons.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:5px;';
   const quickCopy=asButton('コピー',()=>document.getElementById('c06CopySelection')?.click());
   const quickCut=asButton('切り取る',()=>document.getElementById('c06CutSelection')?.click());
+  const quickTransform=asButton('変形',()=>document.getElementById('transform')?.click());
+  const quickMove=asButton('移動',()=>document.getElementById('move')?.click());
   const quickInvert=asButton('反転',()=>invert.click());
   const quickFeather=asButton('ぼかす',()=>feather.click());
-  for(const button of [quickCopy,quickCut,quickInvert,quickFeather])
+  for(const button of [quickTransform,quickMove,quickCopy,quickCut,quickInvert,quickFeather])
     button.style.cssText='min-height:40px;padding:5px;border:1px solid #aab9c1;border-radius:5px;background:var(--a-accent-soft,#fff5e7);color:inherit;';
-  quickButtons.append(quickCopy,quickCut,quickInvert,quickFeather);
+  quickButtons.append(quickTransform,quickMove,quickCopy,quickCut,quickInvert,quickFeather);
   quick.append(quickTitle,quickButtons);viewport?.append(quick);
   function updateQuickPosition(){
     const bounds=selectionBounds,drawingSurface=callbacks.getSurface();
@@ -792,6 +798,13 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   refresh();documentChanged();
   return {
     active:()=>active,
+    open:()=>{panel.open=true;if(!tool)arm('rectangle');},
+    stop:()=>{
+      if(pendingMagneticJob===job&&pendingMagneticJob!==0){
+        job++;pendingSelectionJob=0;pendingMagneticJob=0;
+      }
+      if(tool)arm(tool);
+    },
     isPending:()=>pendingSelectionJob!==0&&pendingSelectionJob===job,
     documentChanged,
     updateView:()=>{visual?.updateView();overlayPath();brushOverlayPath();updateQuickPosition();},

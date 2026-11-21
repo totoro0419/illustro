@@ -341,8 +341,18 @@ export async function encodePng(pixels:Uint8ClampedArray,width:number,height:num
   for(let y=0;y<height;y++)raw.set(pixels.subarray(y*stride,(y+1)*stride),y*(stride+1)+1);
   let zipped:Uint8Array;
   if(typeof CompressionStream!=='undefined'){
-    const stream=new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'));
-    zipped=new Uint8Array(await new Response(stream).arrayBuffer());
+    const compressor=new CompressionStream('deflate');
+    const writer=compressor.writable.getWriter();
+    const write=async()=>{
+      try{
+        const chunkSize=1024*1024;
+        for(let offset=0;offset<raw.length;offset+=chunkSize)
+          await writer.write(raw.subarray(offset,offset+chunkSize));
+        await writer.close();
+      }finally{writer.releaseLock();}
+    };
+    const [compressed]=await Promise.all([new Response(compressor.readable).arrayBuffer(),write()]);
+    zipped=new Uint8Array(compressed);
   }else zipped=deflateStored(raw);
   const head=new Uint8Array(13);write32(head,0,width);write32(head,4,height);head[8]=8;head[9]=6;
   const sig=Uint8Array.of(137,80,78,71,13,10,26,10),ihdr=pngChunk('IHDR',head),srgb=pngChunk('sRGB',Uint8Array.of(0)),idat=pngChunk('IDAT',zipped),end=pngChunk('IEND',new Uint8Array());

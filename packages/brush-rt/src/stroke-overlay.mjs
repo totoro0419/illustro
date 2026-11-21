@@ -47,6 +47,11 @@ export function directOverlaySupported(p,surfaceKey,backend){
  const style=backend.surfaceStyles?.get(surfaceKey);
  return ![...backend.surfaceStyles?.values()??[]].some(style=>style.clipKey!==undefined||style.isolation?.length||style.blend?.tone||style.blend?.effect?.enabled)&&!!p?.__foundation&&!p.__alphaLocked&&p.blend==='normal'&&surfaceKey===backend.surfaceStack.filter(key=>{const s=backend.surfaceStyles?.get(key);return s?.visible!==false&&(s?.opacity??1)>0;}).at(-1)&&(!style||(style.visible!==false&&(style.opacity??1)===1&&(!style.blend||(style.blend.mode==='normal'&&style.blend.space==='encoded'))&&!style.mask&&!style.clipping))&&!p.__foundation.readsCanvas;
 }
+// Broad round stamps have no rotated tip or grain to evaluate per pixel.
+function broadSoftRound(p){
+ return p.tip==='round'&&p.aspect===1&&p.hardness<=.5&&!p.grain&&!p.dual&&
+  !p.__foundation?.texture?.strength&&!p.__foundation?.solid&&!p.__foundation?.coverageUnion;
+}
 export function thinCoverage(radius,distance){return 2*radius*clamp(1-distance);}
 function accumulate(a,i,c,k,p){k*=c[6];const old=a[i+3];if(p.__foundation.coverageUnion||continuous(p)){const d=Math.max(0,k*c[5]-old);for(let j=0;j<3;j++)a[i+j]+=c[8+j]*d;a[i+3]+=d;}else if(p.__foundation.material){const x=k*c[5];for(let j=0;j<3;j++)a[i+j]=a[i+j]*(1-x)+c[8+j]*x;a[i+3]+=x*(1-old);}else{const d=Math.max(0,c[5]-old)*k;for(let j=0;j<3;j++)a[i+j]+=c[8+j]*d;a[i+3]+=d;}}
 
@@ -84,9 +89,13 @@ export class StrokeOverlay{
   const w=this.backend.width,h=this.backend.height;
   // One document pixel at high zoom. At fit, use the original screen coverage
   // evaluator at the start density, covering the entire document sparsely.
-  const density=Math.min(1,Math.max(1/128,this.view[0]/this.view[2]*this.view[6]));
+  const zoom=this.view[6],screenDensity=this.view[0]/this.view[2];
+  // A wide feathered edge varies slowly across the screen. Keep the same
+  // geometry/spacing and lower only the resolution of this disposable image.
+  const softLimit=ratio==='auto'&&broadSoftRound(preset)&&preset.size*zoom>=128?.5:Infinity;
+  const density=Math.min(1,Math.max(1/128,Math.min(screenDensity,softLimit)*zoom));
   const view=Float64Array.from([w*density,h*density,w,h,w,h,1,0,0,0,1,1,0,this.view[13],0,0]);
-  const plan=previewPlan(view,preset,1);plan.rasterView=view;if(density===1){plan.sampling='document-analytic';plan.samplesPerDocumentPixel=1;}return plan;
+  const plan=previewPlan(view,preset,1);plan.rasterView=view;plan.smooth=softLimit<screenDensity&&density<1;if(density===1){plan.sampling='document-analytic';plan.samplesPerDocumentPixel=1;}return plan;
  }
  setEnabled(value){this.enabled=value;this.invalidate();}
  setNavigationActive(value){this.navigationActive=!!value;if(value){
@@ -168,6 +177,8 @@ export class StrokeOverlay{
  *updateWork(v,state){
   v.coherent=false;if(v.prepared){this.preparedBytes-=v.prepared.size*CELL*CELL*4;delete v.prepared;}
   const source=state.stableSource??state.stableCommands??[],end=state.stableEnd??source.length;
+  // A frame notification can repeat the exact same prefix and no mutable tail.
+  if(end===v.cursor&&!v.tailKeys.size&&!state.commands?.length&&!v.dirty.size&&v.last){v.last=state;v.coherent=true;return;}
   if(end<v.cursor||end>source.length)throw Error('Overlay stable cursor mismatch');
   const oldTail=[...v.tailKeys];for(const key of oldTail){const t=v.tiles.get(key);t?.tail?.fill(0);if(t)t.tailLowerBound=0;v.dirty.add(key);}v.tailKeys.clear();
   for(let n=v.cursor;n<end;n++){yield* this.rasterWork(v,source,n,n+1,false);v.cursor=n+1;}
@@ -186,16 +197,35 @@ export class StrokeOverlay{
   // pixels remain private, and can never resurrect after cancel / view changes.
   for(const key of v.dirty)this.dirty.add(key);
  }
- *rasterWork(v,commands,start,end,tail){const plan=v.plan??this.plan,view=v.view??this.view,p=v.preset,z=view[6]*plan.scale,angle=view[7],cos=Math.cos(angle),sin=Math.sin(angle),stepX=cos*view[10]/z,stepY=-sin*view[11]/z,qPreset={...p,__foundation:undefined,grainScale:p.grainScale*z};
-  for(let n=start;n<end;n++){const c=commands[n];this.metrics.commands++;const b=commandBounds(c),corners=[[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]].map(([x,y])=>toScreen(view,x,y)),xs=corners.map(q=>q.x),ys=corners.map(q=>q.y),x0=Math.max(plan.clip?.[0]??0,Math.floor(Math.min(...xs)*plan.scale)-2),y0=Math.max(plan.clip?.[1]??0,Math.floor(Math.min(...ys)*plan.scale)-2),x1=Math.min(plan.clip?.[2]??plan.width,Math.ceil(Math.max(...xs)*plan.scale)+2),y1=Math.min(plan.clip?.[3]??plan.height,Math.ceil(Math.max(...ys)*plan.scale)+2);
-   const a=toScreen(view,c[0],c[1]),f=toScreen(view,c[16],c[17]),ax=a.x*plan.scale,ay=a.y*plan.scale,fx=f.x*plan.scale,fy=f.y*plan.scale,dx=ax-fx,dy=ay-fy,den=Math.max(1e-6,dx*dx+dy*dy),packed=Float64Array.from(c);packed[0]=ax;packed[1]=ay;packed[2]*=z;packed[4]=angle+Math.atan2(Math.sin(c[4])*view[11],Math.cos(c[4])*view[10]);packed[7]=0;
+ *rasterWork(v,commands,start,end,tail){const plan=v.plan??this.plan,view=v.view??this.view,p=v.preset,z=view[6]*plan.scale,angle=view[7],cos=Math.cos(angle),sin=Math.sin(angle),stepX=cos*view[10]/z,stepY=-sin*view[11]/z,qPreset={...p,__foundation:undefined,grainScale:p.grainScale*z},softRound=broadSoftRound(p);
+  for(let n=start;n<end;n++){
+   const c=commands[n];this.metrics.commands++;
+   const a=toScreen(view,c[0],c[1]),f=toScreen(view,c[16],c[17]),ax=a.x*plan.scale,ay=a.y*plan.scale,fx=f.x*plan.scale,fy=f.y*plan.scale;
+   const dx=ax-fx,dy=ay-fy,den=Math.max(1e-6,dx*dx+dy*dy);
+   const softStamp=softRound&&c[19]===0&&c[3]===1&&c[7]===0&&c[2]*z>=8;
+   const radius=c[2]*z/2,hard=radius*p.hardness,edge=radius+.5*z;
+   const hardSquared=hard*hard,edgeSquared=edge*edge,invFeather=1/Math.max(.5*z,radius-hard);
+   let leftEdge=ax-edge,topEdge=ay-edge,rightEdge=ax+edge,bottomEdge=ay+edge,packed=null;
+   if(!softStamp){
+    const b=commandBounds(c),corners=[[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]].map(([x,y])=>toScreen(view,x,y));
+    const xs=corners.map(q=>q.x*plan.scale),ys=corners.map(q=>q.y*plan.scale);
+    leftEdge=Math.min(...xs)-2;topEdge=Math.min(...ys)-2;
+    rightEdge=Math.max(...xs)+2;bottomEdge=Math.max(...ys)+2;
+    packed=Float64Array.from(c);packed[0]=ax;packed[1]=ay;packed[2]*=z;
+    packed[4]=angle+Math.atan2(Math.sin(c[4])*view[11],Math.cos(c[4])*view[10]);packed[7]=0;
+   }
+   const x0=Math.max(plan.clip?.[0]??0,Math.floor(leftEdge)),y0=Math.max(plan.clip?.[1]??0,Math.floor(topEdge));
+   const x1=Math.min(plan.clip?.[2]??plan.width,Math.ceil(rightEdge)),y1=Math.min(plan.clip?.[3]??plan.height,Math.ceil(bottomEdge));
    for(let ty=Math.floor(y0/CELL);ty<Math.ceil(y1/CELL);ty++)for(let tx=Math.floor(x0/CELL);tx<Math.ceil(x1/CELL);tx++){const key=tx+','+ty,name=tail?'tail':'prefix',left=Math.max(x0,tx*CELL),right=Math.min(x1,(tx+1)*CELL),top=Math.max(y0,ty*CELL),bottom=Math.min(y1,(ty+1)*CELL);let tile=v.tiles.get(key),pixels=tile?.[name],changed=false;const union=p.__foundation.coverageUnion||continuous(p),ceiling=c[5]*c[6];
     if(union&&(tail?Math.max(tile?.prefixLowerBound??0,tile?.tailLowerBound??0):tile?.prefixLowerBound??0)>=ceiling){this.metrics.skippedRasterPixels+=(right-left)*(bottom-top);yield;continue;}
     const corners=[[tx*CELL+.5,ty*CELL+.5],[(tx+1)*CELL-.5,ty*CELL+.5],[tx*CELL+.5,(ty+1)*CELL-.5],[(tx+1)*CELL-.5,(ty+1)*CELL-.5]],full=union&&!c[7]&&c[19]===1&&left===tx*CELL&&right===(tx+1)*CELL&&top===ty*CELL&&bottom===(ty+1)*CELL&&corners.every(([x,y])=>{const doc=toDocument(view,x/plan.scale,y/plan.scale),t=clamp(((x-fx)*dx+(y-fy)*dy)/den),radius=(c[18]+(c[2]/2-c[18])*t)*z;return doc.x>=0&&doc.y>=0&&doc.x<view[4]&&doc.y<view[5]&&Math.hypot(x-fx-dx*t,y-fy-dy*t)<=radius-.5;});
     for(let y=top;y<bottom;y++){const row=toDocument(view,(left+.5)/plan.scale,(y+.5)/plan.scale);let docX=row.x,docY=row.y;
      for(let x=left;x<right;x++,docX+=stepX,docY+=stepY){if(docX<0||docY<0||docX>=view[4]||docY>=view[5])continue;this.metrics.rasterPixels++;let k;
-      if(plan.sampling==='document-analytic')k=c[19]===1?capsuleCoverage(c,docX,docY):c[19]===2?sweptCoverage(c,docX,docY,p):referenceCoverage(c,docX,docY,p);
-      else if(c[19]>0){const t=clamp(((x+.5-fx)*dx+(y+.5-fy)*dy)/den),r=(c[18]+(c[2]/2-c[18])*t)*z,px=x+.5-fx-dx*t,py=y+.5-fy-dy*t,d=Math.sqrt(px*px+py*py),h=r*(c[19]===1?1:p.hardness);k=r<.5?thinCoverage(r,d):c[19]===1?clamp(r+.5-d):d<=h?1:clamp((r+.5-d)/Math.max(.5,r-h));}
+      if(full)k=1;
+      else if(softStamp){const dx=x+.5-ax,dy=y+.5-ay,d2=dx*dx+dy*dy;
+       k=d2<=hardSquared?1:d2>=edgeSquared?0:clamp((edge-Math.sqrt(d2))*invFeather);
+      }else if(plan.sampling==='document-analytic')k=c[19]===1?capsuleCoverage(c,docX,docY):c[19]===2?sweptCoverage(c,docX,docY,p):referenceCoverage(c,docX,docY,p);
+      else if(c[19]>0){const t=clamp(((x+.5-fx)*dx+(y+.5-fy)*dy)/den),r=(c[18]+(c[2]/2-c[18])*t)*z,px=x+.5-fx-dx*t,py=y+.5-fy-dy*t,d=Math.sqrt(px*px+py*py),h=r*(c[19]===1?1:p.hardness);k=r<.5?thinCoverage(r,d):c[19]===1?clamp(r+.5-d):d<=h?1:clamp((r+.5*z-d)/Math.max(.5*z,r-h));}
       else k=referenceCoverage(packed,x+.5,y+.5,qPreset);
       if(plan.sampling!=='document-analytic'&&c[7]&&k)k*=textureFactor(c,docX,docY,p);if(!k)continue;
       if(!tile){tile={prefix:null,tail:null};v.tiles.set(key,tile);if(!v.private){let ids=this.cells.get(key);if(!ids)this.cells.set(key,ids=new Set);ids.add(v.id);}}if(!pixels){const bytes=CELL*CELL*16;if(this.allocatedBytes+this.preparedBytes+bytes>MAX_BYTES)throw Error('Overlay memory pressure; exact GPU feedback retained');pixels=tile[name]=new Float32Array(CELL*CELL*4);this.allocatedBytes+=bytes;v.bytes=(v.bytes??0)+bytes;}const i=((y%CELL)*CELL+x%CELL)*4;accumulate(pixels,i,c,k,p);changed=true;

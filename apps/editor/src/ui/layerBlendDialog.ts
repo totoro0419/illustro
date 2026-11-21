@@ -4,7 +4,7 @@ export const layerBlendNames:Record<LayerBlendMode,string>={
   normal:'通常',darken:'比較（暗）',lighten:'比較（明）',multiply:'乗算',screen:'スクリーン',
   'color-burn':'焼き込みカラー','color-dodge':'覆い焼きカラー','hard-light':'ハードライト',overlay:'オーバーレイ',
   'soft-light':'ソフトライト',difference:'差の絶対値',exclusion:'除外','linear-burn':'焼き込み（リニア）',
-  'linear-dodge':'加算','vivid-light':'ビビッドライト','linear-light':'リニアライト','pin-light':'ピンライト',
+  'linear-dodge':'加算（発光）','vivid-light':'ビビッドライト','linear-light':'リニアライト','pin-light':'ピンライト',
   'hard-mix':'ハードミックス',subtract:'減算',divide:'除算',hue:'色相',saturation:'彩度',color:'カラー',
   luminosity:'輝度',dissolve:'ディザ合成',
 };

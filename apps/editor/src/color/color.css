@@ -214,3 +214,29 @@
  text-align:center;font-size:10px;color:var(--a-subtle);pointer-events:none;
 }
 @media(any-pointer:coarse){.color-mode-switch #colorPickerMode{height:44px;min-height:44px}}
+
+.color-mode-switch { grid-template-columns: repeat(2,minmax(0,1fr)) }
+.color-models { display: flex; margin-block: 6px; gap: 2px }
+.color-models button, .color-mode-switch button {
+  flex: 1;
+  min-height: 42px;
+  padding: 4px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+}
+.color-models button[aria-selected=true], .color-mode-switch button[aria-selected=true] {
+  border-bottom-color: var(--a-focus);
+  background: var(--a-accent-soft);
+}
+.color-palette-screen :is(.color-favorites-grid,.color-history-strip) {
+  max-height: none;
+  overflow: visible;
+  touch-action: pan-y;
+  overscroll-behavior: auto;
+}
+.color-palette-screen .color-swatch { touch-action: pan-y }
+#colorEyedropperOptions { width: min(400px, calc(100vw - 24px)); padding: 14px; border: 1px solid var(--a-border); border-radius: 12px; }
+#colorEyedropperOptions h3 { margin-block-start: 0 }
+#colorEyedropperOptions button { min-height: 44px }

@@ -4,7 +4,9 @@ import {DEFAULT_TOOL_ORDER} from './shell';
 export type ToolLayout=Readonly<{order:readonly string[];hidden:readonly string[]}>;
 export type ToolbarSettingsService=Readonly<{snapshot:()=>ToolLayout;restore:(layout:ToolLayout)=>void;reset:()=>void}>;
 const KEY='illustro.c04.toolbar-layout.v1';
-const DEFAULT_HIDDEN=['smudge','transform','move'];
+const DEFAULT_HIDDEN=['smudge'];
+const LEGACY_ORDER=DEFAULT_TOOL_ORDER.filter(id=>id!=='shapes'&&id!=='rulers');
+const LEGACY_HIDDEN=['smudge','transform','move'];
 const MUST_SHOW=new Set(['paint','erase']);
 const rail=()=>document.querySelector<HTMLElement>('.rail');
 const buttons=()=>[...document.querySelectorAll<HTMLButtonElement>('.rail>.tool-button[id]')];
@@ -20,8 +22,8 @@ const read=()=>{
   try{
     const saved=JSON.parse(localStorage.getItem(KEY)||'null');
     // The old shell automatically persisted its factory layout on first run.
-    if(saved?.version===1&&Array.isArray(saved.hidden)&&saved.hidden.length===0&&
-      Array.isArray(saved.order)&&saved.order.join(',')===DEFAULT_TOOL_ORDER.join(','))return defaultLayout();
+    if(Array.isArray(saved?.order)&&saved.order.join(',')===LEGACY_ORDER.join(',')&&Array.isArray(saved.hidden)&&
+      (saved.version===1&&saved.hidden.length===0||saved.hidden.join(',')===LEGACY_HIDDEN.join(',')))return defaultLayout();
     return normalize(saved);
   }catch{return defaultLayout();}
 };

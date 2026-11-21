@@ -1,3 +1,4 @@
+import {installWorkspaceDetails} from '../ui/workspaceDetails';
 import {validateGradientMap,type GradientMap,type GradientStop} from '@illustro/core';
 import {gradientMapIndex,gradientMapTable,mapGradientPixel} from '@illustro/brush-rt';
 import {button,labelledField,numberField,paintPreview,selectField} from './tools';
@@ -45,10 +46,14 @@ export function installGradientMapPanel(host:HTMLElement,api:{
   capture:(edit:boolean)=>Promise<GradientMapDraft>;
   storeColors:(colors:readonly string[])=>void;
 }){
-  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';panel.dataset.editPanel='gradient-map';
   const heading=document.createElement('summary');heading.textContent='グラデーションマップ・階調';
   const actions=document.createElement('div');actions.className='c06-clipboard-grid';
   const editor=document.createElement('div');editor.hidden=true;
+  const showSettings=document.createElement('button');
+  showSettings.type='button';showSettings.textContent='調整の設定を開く';showSettings.hidden=true;
+  const settings=installWorkspaceDetails('色と階調の設定','effectsBox',showSettings);
+  settings.body.append(editor);
   const fields=document.createElement('div');fields.className='c06-clipboard-grid';
   const status=document.createElement('output');status.setAttribute('role','status');
   const levels=numberField(fields,'階調数',256,2,256);
@@ -159,16 +164,16 @@ export function installGradientMapPanel(host:HTMLElement,api:{
     panel.open=true;
     const id=++sequence;
     status.textContent='元の絵を読み込んでいます。';
-    editor.hidden=true;draft=null;exactLabel.hidden=true;exactPreview.hidden=true;
+    editor.hidden=true;showSettings.hidden=true;settings.show(false);draft=null;exactLabel.hidden=true;exactPreview.hidden=true;
     const next=await api.capture(edit);
     if(id!==sequence)return;
     draft=next;
     stops=[...(next.map?.stops??defaults)];levels.value=String(next.map?.levels??256);
     dither.checked=next.map?.dither??false;view.value='after';
-    renderStops();editor.hidden=false;refresh();
+    renderStops();editor.hidden=false;showSettings.hidden=false;settings.show(true);refresh();
   }
   const close=()=>{
-    sequence++;draft=null;editor.hidden=true;exactLabel.hidden=true;exactPreview.hidden=true;
+    sequence++;draft=null;editor.hidden=true;showSettings.hidden=true;settings.show(false);exactLabel.hidden=true;exactPreview.hidden=true;
   };
   actions.append(
     button('調整レイヤーを作る',()=>start(false),status),
@@ -190,6 +195,6 @@ export function installGradientMapPanel(host:HTMLElement,api:{
   );
   panel.addEventListener('toggle',()=>{if(!panel.open)close();});
   editor.append(fields,mappingLabel,mapping,toneSwatch,toneInfo,comparison,exactLabel,exactPreview,stopFields,finish);
-  panel.append(heading,actions,editor,status);host.append(panel);
+  panel.append(heading,actions,showSettings,status);host.append(panel);
   return {show:(edit:boolean)=>{void start(edit).catch(error=>{status.textContent=String(error);});}};
 }

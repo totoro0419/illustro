@@ -1,3 +1,4 @@
+import {snapRightAngle} from '../canvasNavigation';
 import {validateArtworkGuides,type ArtworkGuide,type GuidePoint} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {button,labelledField,locate,numberField,selectField,type ArtworkActions} from './tools';
@@ -12,7 +13,7 @@ export function installRulerPanel(host:HTMLElement,api:ArtworkActions,store:Read
   read:()=>readonly ArtworkGuide[];
   save:(guides:readonly ArtworkGuide[],label:string)=>Promise<void>;
 }>){
-  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const panel=document.createElement('details');panel.className='c06-clipboard-panel';panel.dataset.toolPanel='rulers';
   const heading=document.createElement('summary');heading.textContent='定規・ガイド';
   const fields=document.createElement('div');fields.className='c06-clipboard-grid';
   const output=document.createElement('output');output.setAttribute('role','status');
@@ -27,6 +28,7 @@ export function installRulerPanel(host:HTMLElement,api:ArtworkActions,store:Read
   const enabled=check('描くときに使う',true),locked=check('位置をロック',false);
   const visible=check('定規を表示',true),eraser=check('消しゴムにも使う',false);
   const preferred=check('選んだ定規を優先',false);
+  const snapAngle=check('水平・垂直に吸着する',true);
   const angle=numberField(fields,'角度（°）',0,-360,360,.1);
   const rx=numberField(fields,'横の半径（px）',120,1,8192),ry=numberField(fields,'縦の半径（px）',72,1,8192);
   const spacing=numberField(fields,'線の間隔（px）',32,1,4096);
@@ -42,6 +44,10 @@ export function installRulerPanel(host:HTMLElement,api:ArtworkActions,store:Read
   let draftId=crypto.randomUUID();
   const current=()=>last.find(item=>item.id===selected.value);
   const px=(value:number)=>Math.round(value*10)/10;
+  const angleFor=(dx:number,dy:number)=>{
+    const radians=Math.atan2(dy,dx);
+    return px((snapAngle.checked?snapRightAngle(radians):radians)*180/Math.PI);
+  };
   const setPosition=(index:number,point:GuidePoint)=>{
     const row=position[index]!;
     row.x.value=String(px(point.x));row.y.value=String(px(point.y));
@@ -83,7 +89,7 @@ export function installRulerPanel(host:HTMLElement,api:ArtworkActions,store:Read
       const start=points[0]!,end=points.at(-1)!;setPosition(index,start);
       const dx=end.x-start.x,dy=end.y-start.y;
       if(!kind.value.startsWith('perspective')&&Math.hypot(dx,dy)>1){
-        angle.value=String(px(Math.atan2(dy,dx)*180/Math.PI));rx.value=String(Math.min(8192,px(Math.hypot(dx,dy))));
+        angle.value=String(angleFor(dx,dy));rx.value=String(Math.min(8192,px(Math.hypot(dx,dy))));
         if(kind.value==='ellipse'&&Math.abs(dy)>1)ry.value=String(Math.min(8192,px(Math.abs(dy))));
       }
       ctx.drawing.previewArtworkGuides(preview());
@@ -106,7 +112,10 @@ export function installRulerPanel(host:HTMLElement,api:ArtworkActions,store:Read
         else{
           const dx=point.x-item.origin.x,dy=point.y-item.origin.y,distance=Math.hypot(dx,dy);
           if(distance>1){
-            if(index===1){angle.value=String(px(Math.atan2(dy,dx)*180/Math.PI));rx.value=String(Math.min(8192,px(distance)));}
+            if(index===1){
+              angle.value=String(angleFor(dx,dy));
+              rx.value=String(Math.min(8192,px(distance)));
+            }
             else ry.value=String(Math.min(8192,px(distance)));
           }
         }
@@ -126,6 +135,7 @@ export function installRulerPanel(host:HTMLElement,api:ArtworkActions,store:Read
     rx.parentElement!.hidden=!round;ry.parentElement!.hidden=kind.value!=='ellipse';
     spacing.parentElement!.hidden=!['parallel','grid','isometric'].includes(kind.value);
     angle.parentElement!.hidden=kind.value.startsWith('perspective')||kind.value==='circle';
+    snapAngle.parentElement!.hidden=angle.parentElement!.hidden;
     pick.disabled=locked.checked;
     angle.disabled=rx.disabled=ry.disabled=spacing.disabled=locked.checked;
   }

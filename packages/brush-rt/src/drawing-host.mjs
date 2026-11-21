@@ -50,6 +50,12 @@ export class DrawingHost {
       if(!coverage?.covered)this.uncoveredVersion=Math.max(this.uncoveredVersion,m.version);
       this.pendingCoverage.delete(m.version);
       this.documentPresentation.update(this.viewportScene.baseView??this.backend.viewTransform);
+      if(coverage?.covered&&this.backend.viewTransform?.[12]<.5&&this.backend.viewTransform?.[14]<.5){
+       // Exact retained tiles and their translucent CPU strokes swap together.
+       // During incremental installation the preview would double-paint.
+       this.preferRetainedDocument=true;
+       this.retireOverlays(m.version);
+      }
       this.syncVisibility();
      }
      const request=this.presentationRequests.get(m.request);
@@ -57,7 +63,7 @@ export class DrawingHost {
      request?.resolve({accepted:current});
     };
     if(!accepted){for(const t of m.tiles)t.bitmap.close();complete();return;}
-    if(this.inputFirstProbe){
+    if(this.inputFirstProbe&&!this.pendingCoverage.get(m.version)?.covered){
      // Avoid a long sequence of bitmap uploads on the touch event thread.
      // Each group is exact. ACK only after all groups are installed.
      this.pendingDocumentInstall=this.pendingDocumentInstall.then(async()=>{
@@ -158,7 +164,13 @@ export class DrawingHost {
   for(const id of m.retired){if(this.pendingRetirements.has(id))continue;const layer=this.layers.get(id);layer?.element.remove();this.layers.delete(id);}
   const originX=this.canvas.offsetLeft,originY=this.canvas.offsetTop;
   for(const data of m.layers){let layer=this.layers.get(data.id);if(!layer){const element=document.createElement('canvas');element.className='illustro-stroke-overlay';element.setAttribute('aria-hidden','true');Object.assign(element.style,{position:'absolute',pointerEvents:'none',transformOrigin:'0 0',background:'transparent',aspectRatio:'auto'});layer={element,context:element.getContext('2d',{alpha:true})};if(!layer.context){element.remove();data.bitmap.close();this.fault('Transparent stroke preview Canvas2D unavailable');continue;}const next=[...this.layers].filter(([id])=>id>data.id).sort(([a],[b])=>a-b)[0]?.[1];if(next)next.element.before(element);else ([...this.layers].sort(([a],[b])=>a-b).at(-1)?.[1].element??this.canvas).after(element);this.layers.set(data.id,layer);}
-   layer.view=data.view;layer.rect=data.rect;layer.scale=data.scale;layer.polygon=data.polygon;if(layer.element.width!==data.bitmap.width)layer.element.width=data.bitmap.width;if(layer.element.height!==data.bitmap.height)layer.element.height=data.bitmap.height;/* Preview pixels need their original alpha. BitmapRenderer can present an opaque black backing on some mobile compositors. */layer.context.clearRect(0,0,layer.element.width,layer.element.height);layer.context.drawImage(data.bitmap,0,0);data.bitmap.close();
+   layer.view=data.view;layer.rect=data.rect;layer.scale=data.scale;layer.polygon=data.polygon;layer.smooth=data.smooth;
+   if(layer.element.width!==data.width)layer.element.width=data.width;
+   if(layer.element.height!==data.height)layer.element.height=data.height;
+   // Canvas2D keeps the real alpha on mobile. Replace only the changed pixels.
+   const [left,top]=data.patch??[0,0];
+   layer.context.clearRect(left,top,data.bitmap.width,data.bitmap.height);
+   layer.context.drawImage(data.bitmap,left,top);data.bitmap.close();
    const [x,y]=data.rect;Object.assign(layer.element.style,{left:originX+x+'px',top:originY+y+'px',width:layer.element.width/data.scale+'px',height:layer.element.height/data.scale+'px',display:this.hiddenStrokeIds.has(data.id)?'none':'block',clipPath:'polygon('+data.polygon.map(p=>(p.x-x)+'px '+(p.y-y)+'px').join(',')+')'});
   }
   this.retireOverlays(this.presentationVersion);this.reproject();this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
@@ -193,7 +205,7 @@ export class DrawingHost {
  }
  reproject(){const to=this.viewportScene.baseView??this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
   if(this.presentationView?.length){const from=this.presentationView,[a,b,c,d,e,f]=viewAffine(from,to),x=from[2]/to[2],y=from[3]/to[3];Object.assign(this.canvas.style,{transformOrigin:'0 0',imageRendering:to[13]>.5?'pixelated':'auto',transform:`matrix(${[a*x,b*x,c*y,d*y,e,f].join(',')})`});}
-  for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
+  for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5&&!layer.smooth?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
  }
  setViewTransform(view){
   const old=this.backend.viewTransform;
