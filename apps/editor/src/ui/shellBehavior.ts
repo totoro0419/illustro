@@ -364,7 +364,11 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     // and accidental non-activation, especially at tablet overlay widths.
     // A swatch action may replace its button before this bubbling click arrives.
     // The event path still identifies the original dock; a detached target does not.
-    const clickedInsideDock=event.composedPath().includes(rightDock)||
+    const path=event.composedPath();
+    // Dialog buttons can close their dialog before this click bubbles.
+    // A layer confirmation should leave the layer list in place.
+    if(layerOpen&&path.some(node=>node instanceof HTMLDialogElement))return;
+    const clickedInsideDock=path.includes(rightDock)||
       (t instanceof Element&&!!t.closest('.c04-panel-float'));
     if(floatingDockOpen()&&!clickedInsideDock&&
       ![toggle,drawer,layer,colorButton,brushButton,featurePanel].some(trigger=>trigger.contains(t)))close(false);
