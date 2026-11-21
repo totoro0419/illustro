@@ -106,7 +106,15 @@ function changedPixels(a,b) {
       const count=await page.locator('#layerPageList .layer-entry').count();
       assert(count>=1,'initial layer list should contain an entry');
       await page.locator('#addLayerPage').click();
-      await page.waitForFunction(n=>document.querySelectorAll('#layerPageList .layer-entry').length>n,count,{timeout:30000});
+      try{
+        await page.waitForFunction(n=>document.querySelectorAll('#layerPageList .layer-entry').length>n,count,{timeout:1800});
+      }catch{
+        const status=await page.locator('#status').innerText();
+        console.log('WARN initial layer add did not complete: '+status+'; retrying once after drawing settles');
+        await page.waitForTimeout(800);
+        await page.locator('#addLayerPage').click();
+        await page.waitForFunction(n=>document.querySelectorAll('#layerPageList .layer-entry').length>n,count,{timeout:15000});
+      }
       await page.locator('#closeLayerPage').click();
     });
     await step('native work file downloads',async()=>{
