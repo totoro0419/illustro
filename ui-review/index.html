@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Illustro｜現行UIレビュー（スマホ対応）</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#25334e;background:#eef2f8;font-size:13px;--edge:#dce3ed;--blue:#546fe3;--lite:#eaf0ff}*{box-sizing:border-box}body{margin:0}button,select,textarea,input{font:inherit}button{cursor:pointer}button:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #91a9ff;outline-offset:2px}button[disabled]{opacity:.5;cursor:default}.top{background:#fff;border-bottom:1px solid var(--edge);display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 17px}.top strong{font-size:17px;letter-spacing:-.2px}.top .sub{font-size:11px;color:#667590}.top .grow{flex:1}.action{border:1px solid #cbd6e9;border-radius:9px;background:#fff;padding:8px 11px;color:#405374;font-size:12px;font-weight:650}.action.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.status{font-size:12px;padding:9px 14px;background:#f5f8ff;color:#425b89;border-bottom:1px solid var(--edge);display:flex;align-items:center;gap:9px}.status.error{background:#fff1ed;color:#9a4230}.status.ready{background:#eef7f4;color:#256851}.dot{height:8px;width:8px;display:inline-block;border-radius:50%;background:currentColor;flex:none}.layout{display:grid;grid-template-columns:205px minmax(0,1fr) 294px;height:calc(100dvh - 104px);min-height:500px}.nav{background:#fff;border-right:1px solid var(--edge);padding:9px 8px;overflow:auto}.nav h3{font-size:11px;color:#71809b;margin:15px 8px 6px}.scene{border:1px solid transparent;background:transparent;color:#475979;border-radius:8px;padding:9px 7px;width:100%;text-align:left;font-size:12px;min-height:39px;display:flex;gap:7px;align-items:center}.scene .n{font-size:10px;color:#8c9ab0}.scene.current{background:#eaf0ff;border-color:#cad7fa;color:#324da0;font-weight:750}.scene .mark{width:7px;height:7px;border-radius:50%;margin-left:auto;background:#e1e8f1}.scene .mark.needs{background:#ed9a58}.scene .mark.good{background:#55b98d}.scene .mark.unsure{background:#a197eb}.middle{display:flex;flex-direction:column;gap:9px;min-width:0;min-height:0;padding:10px 12px}.scene-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.scene-head .heading{flex:1}.scene-head h2{font-size:15px;margin:0}.scene-head p{color:#667893;font-size:11px;margin:3px 0 0}.controls{display:flex;gap:3px;align-items:center;background:#fff;border:1px solid var(--edge);padding:3px;border-radius:10px}.controls button{border:0;border-radius:7px;color:#536783;padding:6px 8px;background:transparent;font-size:11px}.controls button.active{background:#e9efff;color:#3753a8;font-weight:750}.stage{flex:1;min-height:260px;position:relative;overflow:hidden;border:1px solid #cbd6e7;border-radius:12px;background:repeating-linear-gradient(45deg,#e1e8f2 0 12px,#e8edf6 12px 24px)}.stage-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}.device-frame{position:absolute;width:1200px;height:760px;background:#fff;border:1px solid #9faeca;box-shadow:0 16px 44px #1d315040;transform-origin:center;transform:scale(var(--zoom,1));overflow:hidden;border-radius:4px}.device-frame.phone{border-radius:18px}.device-frame iframe{display:block;width:100%;height:100%;border:0;background:#fff}.error-layer{position:absolute;inset:15px;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2}.error-layer span{padding:20px 25px;border-radius:11px;border:1px solid #f0beb2;box-shadow:0 10px 30px #3b415037;background:#fff;max-width:80%;font-size:13px;color:#973f32}.under{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#596d89;justify-content:space-between}.under .actions{display:flex;gap:5px;align-items:center}.under .action{padding:7px 10px}.review{border-left:1px solid var(--edge);background:#fff;padding:15px 13px;overflow:auto;display:flex;flex-direction:column;gap:12px}.review h3{font-size:15px;margin:0}.review p{font-size:11px;line-height:1.6;color:#667994;margin:0}.review label{font-size:12px;font-weight:700}.review textarea{width:100%;min-height:106px;border:1px solid #cad6e6;border-radius:9px;padding:10px;font-size:13px;resize:vertical;line-height:1.5;margin-top:5px}.review input{width:100%;border:1px solid #cad6e6;border-radius:8px;padding:9px;font-size:12px;margin-top:5px}.rating{display:grid;grid-template-columns:1fr 1fr;gap:5px}.rating button{border:1px solid #dce4f2;border-radius:8px;background:#f9fbff;color:#566b89;padding:8px 2px;font-size:11px}.rating button.selected{background:#e9efff;border-color:#8296ed;color:#3852a6;font-weight:750}.area{background:#f7f9fe;padding:11px;border:1px solid #dce5f4;border-radius:10px;display:flex;flex-direction:column;gap:7px}.area button{align-self:stretch}.area textarea{min-height:68px;margin-top:0}.notes{display:grid;gap:8px}.note{border:1px solid var(--edge);border-radius:8px;padding:9px;background:#fbfcff;overflow-wrap:anywhere;font-size:12px}.note strong{font-size:11px;color:#4965a2}.note button{float:right;color:#a64b4b;background:transparent;border:0;padding:2px}.note div{white-space:pre-wrap;line-height:1.5;margin-top:4px}.banner{background:#f5f8ff;border:1px solid #dae4f5;color:#516789;padding:9px 10px;border-radius:8px;font-size:11px;line-height:1.6}.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:99;padding:10px 15px;background:#203766;color:#fff;border-radius:8px;box-shadow:0 5px 20px #0004;font-size:12px}.hidden{display:none!important}.stage.big{position:fixed!important;inset:10px!important;z-index:60}.stage.big .device-frame{box-shadow:0 16px 50px #0004}
+@media(max-width:900px){.layout{grid-template-columns:142px minmax(0,1fr) 245px}.nav{padding:6px 3px}.scene{font-size:11px;padding:8px 4px}.review{padding:11px 8px}.middle{padding:8px}}
+@media(max-width:680px){.top{padding:9px 10px}.top strong{font-size:15px}.top .sub{display:none}.layout{display:flex;flex-direction:column;min-height:0;height:auto}.nav{display:flex;flex-direction:row;gap:3px;border-bottom:1px solid var(--edge);border-right:0;overflow-x:auto;overflow-y:hidden;padding:6px;flex:none}.nav h3{display:none}.scene{width:max-content;min-width:max-content;padding:9px 8px;white-space:nowrap;min-height:36px}.scene .mark{display:none}.middle{min-height:0}.scene-head{gap:6px}.stage{height:52dvh;flex:none;min-height:280px}.review{border-left:0;border-top:1px solid var(--edge);padding:15px;overflow:visible}.review textarea{min-height:82px}.review .area{gap:8px}.under{font-size:10px}.status{font-size:11px}.device-frame{box-shadow:0 8px 20px #21325040}}
+
+/* Smartphone review shell: does not modify source-derived Illustro UI inside the iframe. */
+:root{--bar-h:64px}
+.nav-search{position:sticky;top:0;z-index:2;padding:8px 6px 10px;background:#fff;border-bottom:1px solid var(--edge)}
+.nav-search label{display:block;color:#62718a;font-size:11px;font-weight:700;margin-bottom:5px}
+.nav-search input{width:100%;border:1px solid #cbd6e8;border-radius:10px;padding:10px;font-size:14px;background:#f9fbff;color:#263952}
+.stage-inner{overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:flex;align-items:safe center;justify-content:safe center}
+.zoom-wrap{position:relative;flex:none;margin:auto;min-width:1px;min-height:1px}
+.device-frame{position:absolute;top:0;left:0;transform-origin:top left}
+.pan-layer{display:none;position:absolute;inset:0;z-index:2;touch-action:pan-x pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.zoom-wrap.pan-mode .pan-layer{display:block}
+.zoom-wrap.pan-dragging .pan-layer{cursor:grabbing}
+.stage-tools #panMode[aria-pressed="true"]{background:#e7edff;color:#2d4aaf;font-weight:800}
+.stage-tools{position:absolute;top:7px;right:7px;z-index:4;display:flex;gap:3px;padding:3px;border-radius:11px;background:#fffffff0;box-shadow:0 2px 12px #192b3e30;max-width:calc(100% - 14px)}
+.stage-tools .action{min-width:36px;min-height:36px;padding:5px 9px;font-size:12px;border:0;background:transparent}
+.stage-tools .action:active{background:#dce7ff}
+.stage-tools .stage-close{display:none;background:#314c9a;color:#fff}
+.stage.big{inset:0!important;border-radius:0;z-index:80}
+.stage.big .stage-close{display:block}
+.pick-guide{position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:8;display:flex;gap:8px;align-items:center;justify-content:center;white-space:nowrap;padding:8px 10px;border-radius:11px;background:#243f77;color:white;box-shadow:0 4px 16px #1b2c4e44;font-size:12px;pointer-events:auto}
+.pick-guide button{background:#fff;color:#263e77;padding:6px 8px;border:0;border-radius:7px}
+.review-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#backToScene{display:none}
+.mobile-bar{display:none}
+@media(max-width:680px){
+ html,body{height:100%;overflow:hidden}
+ body{display:flex;flex-direction:column;min-height:0}
+ .top{flex:none;padding:7px 12px;min-height:51px;gap:6px;flex-wrap:nowrap}
+ .top strong{font-size:14px;line-height:1.25;white-space:nowrap}
+ .top>div:first-child{min-width:0;flex:1}
+ .top .grow,.top #retry,.top #copy{display:none}
+ .top #saveMd{font-size:11px;min-height:38px;padding:7px 9px;white-space:nowrap}
+ .status{flex:none;min-height:32px;max-height:48px;padding:6px 10px;overflow:hidden;font-size:10px;line-height:1.3}
+ .status #statusText{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .layout{flex:1;min-height:0;height:auto!important;display:block;position:relative;overflow:hidden}
+ .nav,.middle,.review{position:absolute;inset:0;display:none;min-height:0;height:100%;padding:0;overflow-y:auto;overscroll-behavior:contain}
+ body[data-mobile-tab="scenes"] .nav{display:block}
+ body[data-mobile-tab="view"] .middle{display:flex}
+ body[data-mobile-tab="notes"] .review{display:flex}
+ .nav{background:#fff;padding:6px 12px 20px;overflow-y:auto;border:0}
+ .nav h3{display:block;font-size:12px;margin:17px 8px 6px;color:#71809b}
+ .nav #navList{display:block}
+ .scene{width:100%;min-height:51px;padding:11px 13px;margin-bottom:4px;border:1px solid #e7ebf3;border-radius:11px;font-size:14px;white-space:normal}
+ .scene .n{font-size:11px;min-width:19px}
+ .scene .mark{display:block}
+ .nav-search{margin:0 -4px;padding:12px 4px}
+ .nav-search input{min-height:45px;font-size:16px}
+ .middle{gap:0!important;padding:0!important;overflow:hidden}
+ .scene-head{flex:none;padding:9px 11px 7px;gap:7px;min-height:72px;background:#fff;border-bottom:1px solid var(--edge)}
+ .scene-head .heading{flex:1 1 100%;width:100%}
+ .scene-head h2{font-size:16px}
+ .scene-head p{max-width:100%;font-size:10px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .controls{gap:0}
+ .controls button{min-height:35px;min-width:51px;font-size:11px;padding:7px 8px}
+ #big{min-height:35px;padding:6px 11px}
+ .stage{flex:1;min-height:0;height:auto;max-height:none;border:0;border-radius:0}
+ .stage-tools{top:6px;right:6px}
+ .stage-tools .action{min-height:38px;min-width:34px;font-size:11px;padding-inline:7px}
+ .under{flex:none;background:#fff;min-height:45px;padding:5px 10px;gap:5px;border-top:1px solid var(--edge);font-size:10px}
+ .under > span:nth-child(2){display:none}
+ .under .actions{display:none}
+ .review{border:0;gap:13px;padding:13px 15px 25px;overflow-y:auto;background:#fff}
+ .review-title{position:sticky;top:-13px;padding:8px 0;background:#fff;border-bottom:1px solid #e9edf6;z-index:3}
+ .review h3{font-size:16px}
+ #backToScene{display:inline-flex;align-items:center;justify-content:center;min-height:42px}
+ .review p{font-size:12px}
+ .review label{font-size:14px}
+ .review textarea{font-size:16px;min-height:124px;padding:12px;line-height:1.6}
+ .review input{font-size:16px;min-height:44px}
+ .rating{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .rating button{font-size:13px;min-height:49px;padding:10px 5px}
+ .review .area{gap:10px;padding:13px}
+ .review .area textarea{min-height:100px}
+ .review .action{min-height:45px;font-size:13px}
+ .note{padding:12px;font-size:13px}
+ .note button{min-height:30px}
+ .mobile-bar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:relative;flex:none;height:calc(var(--bar-h) + env(safe-area-inset-bottom,0px));padding:3px 4px calc(4px + env(safe-area-inset-bottom,0px));gap:3px;background:#fff;border-top:1px solid #cfd9e9;z-index:90;box-shadow:0 -2px 12px #25405c11}
+ .mobile-bar button{border:0;border-radius:9px;min-width:0;min-height:50px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;background:transparent;color:#586984;font-weight:650;position:relative}
+ .mobile-bar button.current{background:#e9efff;color:#3653ad}
+ .mobile-bar button>span{height:28px;line-height:27px;font-size:25px}
+ .mobile-bar button small{font-size:11px;line-height:13px}
+ .mobile-bar button b{position:absolute;top:0;right:-7px;display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 3px;border-radius:12px;background:#e67f41;color:#fff;font-size:10px}
+ .stage.big{bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px))!important}
+ .toast{bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px) + 13px);font-size:12px;width:max-content;max-width:calc(100vw - 26px);line-height:1.4;text-align:center;white-space:normal}
+}
+@media(max-width:360px){.top strong{font-size:12px}.mobile-bar button small{font-size:10px}.scene-head{padding-inline:7px}}
+</style></head>
+<body>
+<header class="top"><div><strong>Illustro · 現行UIレビュー</strong><div class="sub">GitHubの実際のUIコードから画面を生成／アプリ本体は変更しません</div></div><span class="grow"></span><button class="action" id="retry">UIを読み直す</button><button class="action" id="copy">メモをコピー</button><button class="action primary" id="saveMd">メモを保存 (.md)</button></header>
+<div id="status" class="status"><i class="dot"></i><span id="statusText">実装ファイルを読み込みます…</span></div>
+<div class="layout"><nav class="nav" id="nav" aria-label="場面の選択"><div class="nav-search"><label for="sceneSearch">シーンを探す</label><input id="sceneSearch" type="search" placeholder="例：投げ縄、ブラシ、色…" autocomplete="off"></div><div id="navList"></div></nav><section class="middle"><div class="scene-head"><div class="heading"><h2 id="sceneName"></h2><p id="sceneInfo"></p></div><div class="controls" id="devices"><button data-device="desktop">PC</button><button data-device="tablet" class="active">タブレット</button><button data-device="phone">スマホ</button></div><button id="big" class="action">拡大</button></div><div class="stage" id="stage"><div class="stage-inner" id="stageScroll"><div class="zoom-wrap" id="zoomWrap"><div class="device-frame" id="deviceFrame"><iframe id="sourceFrame" title="Illustroの実装コードから生成した画面" sandbox="allow-scripts allow-same-origin"></iframe></div><div id="panLayer" class="pan-layer" aria-hidden="true"></div></div></div><div class="stage-tools" role="group" aria-label="画面の拡大縮小"><button class="action" id="zoomOut" aria-label="縮小">－</button><button class="action" id="zoomIn" aria-label="拡大">＋</button><button class="action" id="zoomFit">全体</button><button class="action" id="zoomWidth">横幅</button><button class="action" id="panMode" aria-pressed="false">移動</button><button class="action stage-close" id="closeBig">閉じる</button></div><div class="pick-guide hidden" id="pickGuide">気になる場所をタップ <button id="cancelPick" type="button">中止</button></div><div id="errorLayer" class="error-layer hidden"><span id="errorText"></span></div></div><div class="under"><span id="sceneCounter"></span><span>※ 実装のUI構造・CSSを使用。描画・保存作品などの実行時データは再現しません。</span><div class="actions"><button id="prev" class="action">前</button><button id="next" class="action">次</button></div></div></section>
+<aside class="review" id="review"><div class="review-title"><h3>この画面への意見</h3><button class="action" id="backToScene" type="button">画面に戻る</button></div><p>「どこにあるか分からない」「ここを減らしたい」など、気付いたことを自由に記録してください。</p><div class="rating" id="rating"><button data-rate="needs">改善したい</button><button data-rate="good">このままでよい</button><button data-rate="unsure">判断に迷う</button><button data-rate="none">未評価</button></div><label>画面全体へのメモ<textarea id="note" placeholder="この画面全体で改善したいこと…"></textarea></label><div class="area"><button id="pick" class="action">画面内の場所を指定</button><label>対象の場所<input id="areaName" placeholder="例：ブラシの太さ"></label><label>改善案・指摘<textarea id="areaNote" placeholder="この操作はもっと簡単に…"></textarea></label><button class="action primary" id="add">このメモを追加</button></div><div id="notes" class="notes"></div><div class="banner">メモはこの端末のブラウザに一時保存されます。最後に <b>メモを保存 (.md)</b> を押してファイルを共有してください。操作できるのは主にシーン切替と、画面内の一部の開閉表示です。</div><button class="action" id="saveJson">作業の控え (.json)</button><button class="action" id="loadJson">控えを読み込む</button><input id="loadFile" type="file" accept="application/json,.json" hidden></aside></div><div class="mobile-bar" id="mobileBar" role="navigation" aria-label="レビュー操作">
+<button type="button" id="mobilePrev" aria-label="前のシーン"><span aria-hidden="true">‹</span><small>前へ</small></button>
+<button type="button" data-tab="scenes"><span aria-hidden="true">☷</span><small>一覧</small></button>
+<button type="button" data-tab="view" class="current"><span aria-hidden="true">▣</span><small>画面</small></button>
+<button type="button" data-tab="notes"><span aria-hidden="true">✎</span><small>メモ<b id="noteBadge" hidden></b></small></button>
+<button type="button" id="mobileNext" aria-label="次のシーン"><span aria-hidden="true">›</span><small>次へ</small></button>
+<button type="button" id="mobileSave" aria-label="レビュー結果を保存"><span aria-hidden="true">↓</span><small>保存</small></button>
+</div><div id="toast" class="toast hidden" role="status"></div>
+<script>
+(()=>{'use strict';
+const SHA='49ae46c465fa634ed20211b3ceedfc80a677cca9';
+const REPO='totoro0419/illustro';
+const ROOT=`https://raw.githubusercontent.com/${REPO}/${SHA}/apps/editor/src/`;
+const BACKUP_ROOT=`https://cdn.jsdelivr.net/gh/${REPO}@${SHA}/apps/editor/src/`;
+const TSURLS=['ui/icons.ts','color/orbitGeometry.ts','color/model.ts','color/orbit.ts','color/panel.ts','ui/shell.ts','ui/homeShell.ts','ui/shellBehavior.ts','selection/panel.ts'];
+const CSSURLS=['style.css','ui/shell.css','ui/aurora.css','ui/home.css','color/color.css','color/harmony.css','ui/c06.css','ui/c05.css','ui/c04.css','ui/workspaceProfiles.css','ui/floatingPanels.css','ui/brushEditor.css','ui/paintingWorkspace.css'];
+const SCENES=[
+{id:'home',group:'ホーム・作品',name:'ホーム',info:'実装のホーム画面（保存済み作品の情報は読み込みません）',kind:'home',screen:'home'},
+{id:'new',group:'ホーム・作品',name:'新しい作品',info:'実際の新規作成ダイアログ',kind:'home',screen:'home',dialog:'ihNewDialog'},
+{id:'new-size',group:'ホーム・作品',name:'キャンバスのサイズ設定',info:'新規作成のサイズ・背景の詳細設定',kind:'home',screen:'home',dialog:'ihNewDialog',open:'ihCanvasSetup'},
+{id:'works',group:'ホーム・作品',name:'マイ作品',info:'作品一覧の配置（実際の保存データは読み込みません）',kind:'home',screen:'works'},
+{id:'editor',group:'描画の基本',name:'描画画面全体',info:'本物の上部バー・道具欄・作業パネル。用紙は空白です',kind:'editor'},
+{id:'brush-select',group:'描画の基本',name:'ブラシを選ぶ',info:'実装の一覧と検索・絞り込み。標準ブラシ名だけコードから補完します',kind:'editor',panel:'brushBox',sections:['検索・絞り込み']},
+{id:'brush-tune',group:'ブラシ設定',name:'ブラシの描き味',info:'実装の「描き味を調整」を開いた状態',kind:'editor',panel:'brushBox',sections:['描き味を調整']},
+{id:'brush-pressure',group:'ブラシ設定',name:'筆圧の詳細設定',info:'筆圧に対する反応・手ブレ補正など（グラフの線は動的生成のため未表示）',kind:'editor',panel:'brushBox',sections:['描き味を調整','筆圧に対する反応の曲線','手ブレ補正の詳細']},
+{id:'brush-tip',group:'ブラシ設定',name:'ブラシ先端と紙の質感',info:'先端の形・質感の詳細設定',kind:'editor',panel:'brushBox',sections:['描き味を調整','ブラシ先端','紙の質感']},
+{id:'brush-end',group:'ブラシ設定',name:'入り抜きの設定',info:'線の始まり・終わりの詳細設定',kind:'editor',panel:'brushBox',sections:['描き味を調整','入り抜きの細かな調整']},
+{id:'brush-manage',group:'ブラシ設定',name:'ブラシの管理',info:'ブラシの複製・読み込み・書き出しなど',kind:'editor',panel:'brushBox',sections:['ブラシの管理']},
+{id:'color-classic',group:'色・パレット',name:'色選択・クラシック',info:'実装のカラー選択UIとCSS',kind:'editor',panel:'colorBox'},
+{id:'color-orbit',group:'色・パレット',name:'色選択・オービット',info:'実際のオービット描画コードで表示。色の値は初期値です',kind:'editor',panel:'colorBox',colorMode:'orbit'},
+{id:'palette',group:'色・パレット',name:'カラーパレット',info:'実装のパレット画面（登録済みの色は読み込みません）',kind:'editor',panel:'colorBox',colorMode:'palette'},
+{id:'lasso',group:'選択範囲',name:'投げ縄・図形選択',info:'実際の選択範囲パネル。選択結果は作成しません',kind:'editor',panel:'documentBox',selectMode:'lasso'},
+{id:'auto-select',group:'選択範囲',name:'色・線画による自動選択',info:'自動選択の参照先と許容範囲、選択ボタン',kind:'editor',panel:'documentBox',selectMode:'auto'},
+{id:'selection-brush',group:'選択範囲',name:'選択範囲を筆で編集',info:'追加・削除ブラシの設定',kind:'editor',panel:'documentBox',selectMode:'brush'},
+{id:'selection-actions',group:'選択範囲',name:'選択範囲の編集・保存',info:'選択解除、反転、ぼかし、移動、名前付き保存など',kind:'editor',panel:'documentBox',selectMode:'actions'},
+{id:'layers',group:'レイヤー',name:'レイヤー画面',info:'レイヤー一覧と操作（作品データがないため一覧は空）',kind:'editor',layerPage:true},
+{id:'layer-settings',group:'レイヤー',name:'レイヤーの詳細設定',info:'合成・ロック・並べ替え・マスクなど',kind:'editor',layerPage:true,layerDetails:true},
+{id:'tools-all',group:'その他',name:'すべての機能',info:'実装の機能カテゴリ一覧',kind:'editor',features:true},
+{id:'view',group:'その他',name:'キャンバス表示設定',info:'表示倍率・回転・反転等のポップオーバー',kind:'editor',popover:'viewActions'},
+{id:'file',group:'その他',name:'作品メニュー',info:'新規・開く・復元・書き出しなど',kind:'editor',popover:'fileActions'},
+{id:'export',group:'その他',name:'画像を書き出す',info:'実装の書き出しダイアログ',kind:'editor',dialog:'exportDialog'},
+{id:'workspace',group:'その他',name:'作業画面の設定',info:'右側の作業画面設定パネル',kind:'editor',panel:'workspaceBox'},
+];
+let source=null,tsReady=false,current=4,device=matchMedia('(max-width:680px)').matches?'phone':'tablet',pickMode=false,selectedElement=null,renderSeq=0;
+let mobileTab='view',zoomMode=matchMedia('(max-width:680px)').matches?'width':'fit',zoomMultiplier=1,panMode=matchMedia('(max-width:680px)').matches;
+let db={version:2,sha:SHA,reviews:{}};const $=id=>document.getElementById(id);
+try{const x=JSON.parse(localStorage.getItem('illustro-review-source-v2')||'null');if(x?.version===2&&x?.reviews)db=x;}catch{}
+function persist(){try{localStorage.setItem('illustro-review-source-v2',JSON.stringify(db));}catch{}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function notify(s){$('toast').textContent=s;$('toast').classList.remove('hidden');clearTimeout(notify.t);notify.t=setTimeout(()=>$('toast').classList.add('hidden'),2400)}
+function state(){const id=SCENES[current].id;return db.reviews[id]||(db.reviews[id]={rating:'none',note:'',areas:[]})}
+function status(message,kind=''){$('statusText').textContent=message;$('status').className='status '+kind}
+async function fetchText(path){let error;for(const base of [ROOT,BACKUP_ROOT]){try{const res=await fetch(base+path,{cache:'default'});if(!res.ok)throw Error(`HTTP ${res.status}`);return await res.text()}catch(e){error=e}}throw Error(`${path} を取得できません: ${error?.message||'接続失敗'}`)}
+function getScript(url){return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=url;script.onload=()=>resolve();script.onerror=()=>reject(Error('TypeScriptコンパイラを取得できません'));document.head.append(script)})}
+async function loadCompiler(){if(window.ts?.transpileModule){tsReady=true;return;}for(const url of ['https://cdn.jsdelivr.net/npm/typescript@5.8.3/lib/typescript.js','https://unpkg.com/typescript@5.8.3/lib/typescript.js']){try{await getScript(url);if(window.ts?.transpileModule){tsReady=true;return}}catch{}}throw Error('画面生成に必要なTypeScriptコンパイラを読み込めませんでした。ネット接続をご確認ください。')}
+async function load(){status('GitHubの現行UIソースを取得しています…');$('errorLayer').classList.add('hidden');try{const items=await Promise.all([...TSURLS,...CSSURLS].map(async p=>[p,await fetchText(p)]));const map=Object.fromEntries(items);await loadCompiler();const compiled={};for(const p of TSURLS){let s=map[p];if(p==='ui/homeShell.ts')s+='\nexport const __reviewTemplate = html;';const out=window.ts.transpileModule(s,{fileName:p,compilerOptions:{target:window.ts.ScriptTarget.ES2020,module:window.ts.ModuleKind.CommonJS,isolatedModules:true}});compiled[p]=out.outputText;}source={compiled,css:CSSURLS.map(p=>'/* '+p+' */\n'+map[p]).join('\n')};status('GitHubの実装コードとCSSを読み込みました。対象コミット '+SHA.slice(0,8),'ready');await render();}catch(e){source=null;status('読み込み失敗：'+e.message,'error');showError(e.message)}}
+function showError(message){$('errorText').textContent='UIを表示できません：'+message+'。実際のUIと異なる代替画面は表示しません。';$('errorLayer').classList.remove('hidden')}
+function evalModules(win){const cache={};function resolve(from,target){const prefix=from.split('/').slice(0,-1);for(const part of target.split('/')){if(part==='..')prefix.pop();else if(part==='.'||part==='')continue;else prefix.push(part)}return prefix.join('/')+'.ts'}
+ const empty=new Proxy({}, {get(_t,name){if(name==='__esModule')return true;return ()=>undefined}});
+ class EmptyRasterWorker{constructor(){this.supportsBrushPreview=false}destroy(){}}
+ class EmptySelectionOverlay{constructor(){}set(){}setVisible(){}updateView(){}}
+ function mod(name){if(cache[name])return cache[name].exports;if(!source.compiled[name])return empty;const module={exports:{}};cache[name]=module;const requireFn=path=>{const target=resolve(name,path);if(target==='selection/maskWorker.ts')return {MaskRasterWorker:EmptyRasterWorker};if(target==='selection/overlay.ts')return {SelectionOverlay:EmptySelectionOverlay};return mod(target)};win.Function('require','module','exports',source.compiled[name])(requireFn,module,module.exports);return module.exports}
+ return {icons:mod('ui/icons.ts'),home:mod('ui/homeShell.ts'),shell:mod('ui/shell.ts'),shellBehavior:mod('ui/shellBehavior.ts'),selection:mod('selection/panel.ts'),orbit:mod('color/orbit.ts'),color:mod('color/panel.ts')};}
+function openDetails(doc,names){for(const name of names||[]){const detail=[...doc.querySelectorAll('details')].find(d=>d.querySelector(':scope > summary')?.textContent?.trim()===name);if(detail)detail.open=true}}
+function findButton(doc,label){return [...doc.querySelectorAll('button')].find(b=>b.textContent.trim()===label)}
+function markSection(doc,selector){const node=doc.querySelector(selector);if(node)node.scrollIntoView({block:'start',behavior:'instant'})}
+function showPanel(doc,panel){const dock=doc.getElementById('rightDock'),section=doc.getElementById(panel+'Body')?.closest('.workspace-box');if(!dock||!section)return;dock.dataset.panel=(panel==='brushBox'||panel==='colorBox')?panel:'';if(panel!=='brushBox'&&panel!=='colorBox')for(const s of doc.querySelectorAll('.workspace-box')){if(s!==section)s.style.display='none'};section.querySelector('.box-body').hidden=false;section.querySelector('.box-toggle')?.setAttribute('aria-expanded','true');section.scrollIntoView({block:'start'});const stack=doc.querySelector('.box-stack');if(stack)stack.scrollTop=0;}
+function sceneSetup(doc,mods,scene){if(scene.kind==='home'){
+ doc.getElementById('app').hidden=true;const h=doc.getElementById('ihApp');h.hidden=false;for(const section of h.querySelectorAll('[data-ih-screen]'))section.hidden=section.dataset.ihScreen!==scene.screen;
+ if(scene.dialog){const dialog=doc.getElementById(scene.dialog);if(dialog){if(scene.open)doc.getElementById(scene.open).open=true;try{dialog.showModal()}catch{dialog.setAttribute('open','')}}}return;
+ }
+ doc.getElementById('ihApp').hidden=true;doc.getElementById('app').hidden=false;
+ // Names and order below are taken from this commit's foundation.mjs and brushStarterPresets.ts.
+ const preset=doc.getElementById('brush');if(preset && !preset.options.length){
+  for(const name of ['Gペン','丸ペン','ミリペン / 製図ペン','マーカー','鉛筆','硬い消しゴム','柔らかい消しゴム','細線ペン','柔らかい鉛筆','濃い塗りマーカー','エアブラシ']){preset.add(new doc.defaultView.Option(name,name));}
+  preset.value='Gペン';preset.disabled=false;
+ }
+ doc.body.classList.add('canvas-viewport');doc.documentElement.dataset.uiInput=device==='desktop'?'hover':'touch';doc.documentElement.style.setProperty('--workspace',device==='desktop'?'344px':'360px');
+ const compact=doc.defaultView.innerWidth<=760;
+ if(!compact&&!scene.panel&&!scene.layerPage)doc.body.classList.add('right-collapsed');
+ if(scene.panel||scene.layerPage){doc.getElementById('rightDock')?.classList.add('open');if(!compact&&(scene.layerPage||['brushBox','colorBox'].includes(scene.panel)))doc.body.classList.add('right-overlay');}
+ if(scene.panel){try{mods.shellControl?.openBox(scene.panel)}catch(e){console.warn('元のパネル制御に失敗',e)}showPanel(doc,scene.panel);}
+ if(scene.sections)openDetails(doc,scene.sections);
+ if(scene.colorMode==='palette'){doc.getElementById('colorScreen').hidden=true;doc.getElementById('colorPaletteScreen').hidden=false;doc.getElementById('colorShowColor').setAttribute('aria-selected','false');doc.getElementById('colorShowPalette').setAttribute('aria-selected','true')}
+ if(scene.colorMode==='orbit'){
+ const root=doc.getElementById('colorOrbitPicker');doc.getElementById('colorPicker').hidden=true;root.hidden=false;doc.getElementById('colorPickerMode').value='orbit';
+ try{let val={h:210,s:.65,v:.85};const o=mods.orbit.installOrbitPicker(root,{getHue:()=>val.h,getSv:()=>({s:val.s,v:val.v}),onPreview:(h,s,v)=>{val={h,s,v};o.reflect(h,s,v)},begin:()=>{},commit:()=>{},cancel:()=>{}});o.reflect(val.h,val.s,val.v);o.request();}catch(e){console.warn('Orbitを実装どおり描画できません',e);doc.getElementById('colorOrbitPicker').dataset.previewError='true';}
+ }
+ if(scene.selectMode){
+ const selection=doc.querySelector('.c06-selection-panel');if(selection)selection.open=true;
+ doc.getElementById('selection')?.setAttribute('aria-pressed','true');doc.getElementById('paint')?.setAttribute('aria-pressed','false');
+ if(scene.selectMode==='lasso')findButton(doc,'投げ縄')?.setAttribute('aria-pressed','true');
+ const selectors={auto:'.c06-auto-selection',brush:'.c06-selection-brush',actions:'.c06-selection-tools + .c06-selection-brush + .c06-auto-selection + .c06-selection-tools'};
+ // The original workbench is one long panel. Scroll only for sub-scenes.
+ const target=selectors[scene.selectMode];if(target)setTimeout(()=>markSection(doc,target),60);
+ }
+ if(scene.layerPage){try{mods.shellControl?.setLayerPage(true)}catch(e){console.warn('元のレイヤー表示制御に失敗',e)}doc.getElementById('rightDock').dataset.panel='layers';const layer=doc.getElementById('layerPage');layer.hidden=false;const stack=doc.getElementById('workspace');if(stack){stack.hidden=true;stack.style.display='none';}if(scene.layerDetails){openDetails(doc,['レイヤーの設定と操作','レイヤーマスク']);setTimeout(()=>markSection(doc,'.layer-details'),30)}}
+ if(scene.features)doc.getElementById('allFeaturesPanel').hidden=false;
+ if(scene.popover){const node=doc.getElementById(scene.popover);try{node.showPopover()}catch{node.setAttribute('data-review-open','true');node.style.display='flex'}}
+ if(scene.dialog){const node=doc.getElementById(scene.dialog);try{node.showModal()}catch{node.setAttribute('open','')}}
+ }
+async function render(){if(!source)return;const seq=++renderSeq;const frame=$('sourceFrame');frame.srcdoc='<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>'+source.css+'\n[hidden]{display:none!important}\n</style></head><body><div id="app"></div><div id="ihApp" class="ih-root" hidden></div></body></html>';
+ await new Promise(resolve=>{frame.onload=resolve;setTimeout(resolve,1600)});if(seq!==renderSeq)return;
+ try{const doc=frame.contentDocument,w=frame.contentWindow;if(!doc||!w)throw Error('埋め込み画面にアクセスできません');const mods=evalModules(w);doc.getElementById('app').innerHTML=mods.shell.shellMarkup(false,'');doc.getElementById('ihApp').innerHTML=mods.home.__reviewTemplate;
+ // Selection UI is dynamically created by the original selection workbench implementation.
+ mods.selection.installSelectionWorkbench({getSurface:()=>null,getDocument:()=>null,onMaskChanged:()=>{},capturePixels:async()=>new Uint8ClampedArray(0),moveContent:async()=>{}});
+ try{mods.shellControl=mods.shellBehavior.installShellUi()}catch(e){console.warn('元の基本UI制御の一部を初期化できませんでした',e)}
+ doc.addEventListener('submit',e=>e.preventDefault(),true);
+ doc.addEventListener('click',event=>{
+  const node=event.target instanceof w.Element?event.target.closest('button,summary,label,input,select,h2,h3,output,section'):null;if(!node)return;
+  if(pickMode){event.preventDefault();event.stopImmediatePropagation();const label=node.getAttribute('aria-label')||node.getAttribute('title')||node.textContent?.trim().replace(/\s+/g,' ').slice(0,70)||node.id||node.tagName;selectedElement?.style?.removeProperty('outline');selectedElement=node;node.style.outline='3px solid #e89b44';node.style.outlineOffset='2px';$('areaName').value=label;saveDraft();pickMode=false;syncPick();setMobileTab('notes');if(!isMobile())$('areaNote').focus();notify('場所を選びました。改善案をメモしてください');}
+ },true);
+ sceneSetup(doc,mods,SCENES[current]);$('errorLayer').classList.add('hidden');
+ }catch(e){console.error(e);showError(e.message)} }
+function updateScale(resetScroll=false){
+ const box=$('stageScroll'),size={desktop:[1360,810],tablet:[1040,780],phone:[430,860]}[device];
+ const ww=Math.max(220,box.clientWidth-16),hh=Math.max(220,box.clientHeight-16);
+ const fitScale=Math.min(ww/size[0],hh/size[1],1.6);
+ const widthScale=Math.min(ww/size[0],1.6);
+ const base=zoomMode==='width'?widthScale:fitScale;
+ const scale=Math.max(.12,Math.min(2.8,base*zoomMultiplier));
+ const wrap=$('zoomWrap');wrap.style.width=Math.ceil(size[0]*scale)+'px';wrap.style.height=Math.ceil(size[1]*scale)+'px';
+ const frame=$('deviceFrame');frame.style.width=size[0]+'px';frame.style.height=size[1]+'px';frame.style.setProperty('--zoom',String(scale));frame.classList.toggle('phone',device==='phone');
+ if(resetScroll){box.scrollTop=0;box.scrollLeft=0;}
+ $('zoomFit').setAttribute('aria-pressed',String(zoomMode==='fit'&&zoomMultiplier===1));
+ $('zoomWidth').setAttribute('aria-pressed',String(zoomMode==='width'&&zoomMultiplier===1));
+}
+function renderNav(){let last='',html='';const q=$('sceneSearch').value.trim().toLowerCase();SCENES.forEach((s,i)=>{if(q&&!`${s.name} ${s.group} ${s.info}`.toLowerCase().includes(q))return;if(s.group!==last){last=s.group;html+=`<h3>${esc(last)}</h3>`}const r=db.reviews[s.id]||{};html+=`<button class="scene ${i===current?'current':''}" data-index="${i}" aria-current="${i===current?'step':'false'}"><span class="n">${String(i+1).padStart(2,'0')}</span>${esc(s.name)}<i class="mark ${esc(r.rating||'')}"></i></button>`});$('navList').innerHTML=html||'<p style="padding:12px">該当するシーンがありません</p>';$('navList').querySelectorAll('button[data-index]').forEach(b=>b.onclick=()=>choose(Number(b.dataset.index)));if(mobileTab==='scenes')$('navList').querySelector('.current')?.scrollIntoView({block:'nearest',inline:'nearest'});} 
+function renderReview(){const r=state();$('note').value=r.note||'';$('rating').querySelectorAll('[data-rate]').forEach(b=>b.classList.toggle('selected',b.dataset.rate===(r.rating||'none')));$('notes').innerHTML=(r.areas||[]).map((n,i)=>`<div class="note"><strong>${esc(n.name)}<button data-delete="${i}" title="このメモを削除">削除</button></strong><div>${esc(n.text)}</div></div>`).join('');$('notes').querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{r.areas.splice(Number(b.dataset.delete),1);persist();renderReview()});}
+function choose(i){if(i<0||i>=SCENES.length)return;saveDraft();current=i;selectedElement=null;pickMode=false;syncPick();const draft=db.drafts?.[SCENES[current].id]||{};$('areaName').value=draft.name||'';$('areaNote').value=draft.text||'';const s=SCENES[i];$('sceneName').textContent=s.name;$('sceneInfo').textContent=s.info;$('sceneCounter').textContent=`${i+1} / ${SCENES.length} シーン`;renderNav();renderReview();$('prev').disabled=i===0;$('next').disabled=i===SCENES.length-1;$('mobilePrev').disabled=i===0;$('mobileNext').disabled=i===SCENES.length-1;updateBadge();setMobileTab('view');void render()}
+function md(){const lines=[`# Illustro 現行UIレビュー`,'',`対象: ${REPO}`,`基準: quality/C03-C10-integration (${SHA})`,'方式: GitHubのUI生成コード・CSSから直接表示（動的な描画と保存作品は未表示）',''];const rates={needs:'改善したい',good:'このままでよい',unsure:'判断に迷う',none:'未評価'};let count=0;for(const s of SCENES){const r=db.reviews[s.id];if(!r||(!r.note&&!r.areas?.length&&(!r.rating||r.rating==='none')))continue;count++;lines.push(`## ${s.name}`,`評価: ${rates[r.rating]||rates.none}`,'');if(r.note)lines.push(r.note.trim(),'');for(const a of r.areas||[])lines.push(`- **${a.name}**: ${a.text.replace(/\n/g,' / ')}`);lines.push('');}if(!count)lines.push('（メモ未入力）');return lines.join('\n')}
+function download(name,text,type){const b=new Blob([text],{type});const url=URL.createObjectURL(b);const a=document.createElement('a');a.download=name;a.href=url;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}
+function isMobile(){return matchMedia('(max-width:680px)').matches}
+function setMobileTab(tab){
+ mobileTab=tab;document.body.dataset.mobileTab=tab;
+ for(const b of document.querySelectorAll('.mobile-bar [data-tab]')){b.classList.toggle('current',b.dataset.tab===tab);b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false')}
+ if(tab!=='view'&&$('stage').classList.contains('big'))toggleBig(false);
+ if(tab==='scenes')renderNav();
+ if(tab==='view')requestAnimationFrame(()=>updateScale(false));
+ if(tab==='notes')$('review').scrollTop=0;
+}
+function saveDraft(){if(!db.drafts)db.drafts={};if(!SCENES[current])return;db.drafts[SCENES[current].id]={name:$('areaName').value,text:$('areaNote').value};persist()}
+function updateBadge(){const n=(state().areas||[]).length+(state().note?.trim()?1:0);const badge=$('noteBadge');badge.hidden=n===0;badge.textContent=String(n);}
+function syncPick(){if(pickMode)setPanMode(false);$('pick').textContent=pickMode?'選択を中止':'画面内の場所を指定';$('pickGuide').classList.toggle('hidden',!pickMode);}
+function toggleBig(value){$('stage').classList.toggle('big',value);$('big').textContent=value?'戻す':'拡大';requestAnimationFrame(()=>updateScale(false));}
+function setPanMode(value){panMode=Boolean(value);$('zoomWrap').classList.toggle('pan-mode',panMode);$('panMode').setAttribute('aria-pressed',String(panMode));$('panMode').textContent=panMode?'移動中':'移動';}
+let dragState=null;
+$('panLayer').addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;dragState={id:e.pointerId,x:e.clientX,y:e.clientY,l:$('stageScroll').scrollLeft,t:$('stageScroll').scrollTop};$('panLayer').setPointerCapture(e.pointerId);$('zoomWrap').classList.add('pan-dragging');});
+$('panLayer').addEventListener('pointermove',e=>{if(!dragState||e.pointerId!==dragState.id)return;$('stageScroll').scrollLeft=dragState.l+dragState.x-e.clientX;$('stageScroll').scrollTop=dragState.t+dragState.y-e.clientY;});
+for(const evt of ['pointerup','pointercancel','lostpointercapture'])$('panLayer').addEventListener(evt,()=>{dragState=null;$('zoomWrap').classList.remove('pan-dragging')});
+$('panMode').onclick=()=>setPanMode(!panMode);
+function adjustZoom(mult){zoomMultiplier=Math.max(.5,Math.min(6,zoomMultiplier*mult));updateScale(false);}
+$('zoomOut').onclick=()=>adjustZoom(1/1.3);
+$('zoomIn').onclick=()=>adjustZoom(1.3);
+$('zoomFit').onclick=()=>{zoomMode='fit';zoomMultiplier=1;updateScale(true)};
+$('zoomWidth').onclick=()=>{zoomMode='width';zoomMultiplier=1;updateScale(true)};
+$('closeBig').onclick=()=>toggleBig(false);
+$('cancelPick').onclick=()=>{pickMode=false;syncPick();notify('場所の選択を中止しました')};
+$('backToScene').onclick=()=>setMobileTab('view');
+$('mobileBar').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tab)setMobileTab(b.dataset.tab)};
+$('mobilePrev').onclick=()=>choose(current-1);
+$('mobileNext').onclick=()=>choose(current+1);
+$('mobileSave').onclick=()=>$('saveMd').click();
+$('sceneSearch').oninput=renderNav;
+$('areaName').oninput=saveDraft;
+$('areaNote').oninput=saveDraft;
+$('rating').onclick=e=>{const b=e.target.closest('[data-rate]');if(!b)return;state().rating=b.dataset.rate;persist();renderReview();renderNav()};$('note').oninput=e=>{state().note=e.target.value;persist();updateBadge()};$('pick').onclick=()=>{pickMode=!pickMode;syncPick();if(pickMode)setMobileTab('view');notify(pickMode?'Illustro画面の気になる部分をタップしてください':'場所の選択を中止しました')};$('add').onclick=()=>{const name=$('areaName').value.trim(),text=$('areaNote').value.trim();if(!name||!text){notify('場所とメモの両方を入力してください');return}state().areas.push({name,text});persist();$('areaName').value='';$('areaNote').value='';saveDraft();renderReview();notify('メモを追加しました')};$('prev').onclick=()=>choose(current-1);$('next').onclick=()=>choose(current+1);$('devices').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.device===device));$('devices').onclick=e=>{const b=e.target.closest('[data-device]');if(!b)return;device=b.dataset.device;zoomMode=isMobile()?'width':'fit';zoomMultiplier=1;$('devices').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));updateScale(true);void render()};$('big').onclick=()=>toggleBig(!$('stage').classList.contains('big'));$('retry').onclick=load;$('saveMd').onclick=()=>download('illustro-current-ui-review.md','\ufeff'+md(),'text/markdown;charset=utf-8');$('saveJson').onclick=()=>download('illustro-current-ui-review.json',JSON.stringify(db,null,2),'application/json;charset=utf-8');$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(md());notify('メモをコピーしました')}catch{notify('コピーできません。ファイルとして保存してください')}};$('loadJson').onclick=()=>$('loadFile').click();$('loadFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(parsed.version!==2||!parsed.reviews)throw Error('形式が違います');if(!confirm('現在のメモをこの控えで置き換えますか？'))return;db=parsed;persist();choose(current);notify('控えを読み込みました')}catch(err){notify(err.message)}e.target.value=''};window.addEventListener('resize',()=>updateScale(false));if(window.ResizeObserver)new ResizeObserver(updateScale).observe($('stage'));document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select'))return;if(e.key==='Escape'&&$('stage').classList.contains('big'))$('big').click();else if(e.key==='ArrowRight')choose(current+1);else if(e.key==='ArrowLeft')choose(current-1)});
+document.body.dataset.mobileTab=mobileTab;setPanMode(panMode);updateScale(true);choose(current);void load();
+})();
+</script></body></html>
