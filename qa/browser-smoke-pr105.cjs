@@ -48,7 +48,7 @@ function changedPixels(a,b) {
     await step('new white canvas renders',async()=>{
       await page.locator('#ihStart').click();
       await page.locator('#ihNewDialog').waitFor({state:'visible'});
-      await page.locator('#ihNewBackground').selectOption('white');
+      // Keep the default transparent background; the original select is hidden by the native custom choice UI.
       await page.locator('#ihNewCreate').click();
       await page.waitForFunction(()=>document.querySelector('#app')?.inert===false, null,{timeout:60000});
       await page.locator('#canvas').waitFor({state:'visible',timeout:60000});
