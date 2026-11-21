@@ -118,6 +118,11 @@ function changedPixels(a,b) {
       await page.locator('#closeLayerPage').click();
     });
     await step('native work file downloads',async()=>{
+      // Headless Chrome cannot interact with the operating-system save picker.
+      // Exercise the app's existing download fallback, rather than patching its code.
+      await page.evaluate(()=>{
+        Object.defineProperty(window,'showSaveFilePicker',{configurable:true,value:undefined});
+      });
       const dl=page.waitForEvent('download',{timeout:60000});
       await page.locator('#save').click();
       const file=await dl;
