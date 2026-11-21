@@ -74,6 +74,5 @@ select.workspace-choice-source { display: none !important }
 .workspace-range > .workspace-range-caption { grid-area: 1 / 1 / 2 / 3; min-width: 0; margin: 0 }
 .workspace-range > output:not(:only-child) { font-size: .78rem }
 .workspace-range > :is(.color-unit,.c04-opacity-unit) { display: none }
-#layerOpacity.workspace-range > input[type=range],
 .workspace-range > #layerOpacity { grid-column: 2 }
 .workspace-range > #layerOpacityValue { display: none }

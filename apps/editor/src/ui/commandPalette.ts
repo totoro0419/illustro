@@ -427,7 +427,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       penDrawing=null;lastPen={x:event.clientX,y:event.clientY};
       const position=lastPen;
       requestAnimationFrame(()=>{
-        if(penDrawing!==null||lastPen!==position||!followArmed||!followPen.checked||isConfiguring||document.querySelector('dialog:modal'))return;
+        if(penDrawing!==null||!followArmed||!followPen.checked||isConfiguring||document.querySelector('dialog:modal'))return;
         quick.hidden=false;renderQuick();positionRing(position.x,position.y);
         quickButton.setAttribute('aria-expanded','true');
       });

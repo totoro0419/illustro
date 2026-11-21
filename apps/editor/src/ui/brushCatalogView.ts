@@ -1,26 +1,14 @@
 import {CanonicalBuilder,cpuReference,type FoundationPreset} from '@illustro/brush-rt';
-import {icon} from './icons';
+import {installWorkspaceDetails} from './workspaceDetails';
 
 const width=116,height=36;
 export function installBrushCatalogView(picker:HTMLSelectElement){
-  const detail=document.createElement('aside');
-  detail.className='workspace-details-pane';
-  detail.setAttribute('aria-label','ブラシの詳しい設定');
-  detail.hidden=true;
-  const header=document.createElement('header');
-  const title=document.createElement('strong');title.textContent='ブラシ設定';
-  const close=document.createElement('button');close.type='button';close.innerHTML=icon('back');
-  close.setAttribute('aria-label','ブラシ設定だけ閉じる');
-  header.append(close,title);
-  const settings=document.createElement('div');settings.className='workspace-details-body';
-  const dock=document.getElementById('rightDock')!;
-  dock.append(detail);detail.append(header,settings);
-
   const basic=picker.closest('.m10-presets')!;
   const catalog=document.createElement('div');catalog.className='brush-catalog';
   catalog.setAttribute('role','group');catalog.setAttribute('aria-label','ブラシ一覧');
   const opener=document.createElement('button');opener.type='button';opener.className='brush-detail-open';
-  opener.textContent='ブラシ設定';opener.setAttribute('aria-expanded','false');
+  opener.textContent='ブラシ設定';
+  const {body:settings,show}=installWorkspaceDetails('ブラシ設定','brushBox',opener);
   picker.closest('label')!.after(catalog,opener);
   picker.closest('label')!.setAttribute('hidden','');
   const search=basic.querySelector('details');
@@ -30,21 +18,6 @@ export function installBrushCatalogView(picker:HTMLSelectElement){
   const opacity=document.getElementById('brushOpacity')!.closest('label');
   if(opacity)opener.before(opacity);
   if(brushSettings[0] instanceof HTMLDetailsElement)brushSettings[0].open=true;
-
-  const show=(open:boolean)=>{
-    detail.hidden=!open;dock.classList.toggle('with-brush-details',open);
-    opener.setAttribute('aria-expanded',String(open));
-  };
-  close.onclick=()=>{show(false);opener.focus({preventScroll:true});};
-  opener.onclick=()=>show(detail.hidden===true);
-  dock.addEventListener('keydown',event=>{
-    if(event.key==='Escape'&&!detail.hidden&&!document.querySelector(':popover-open')){
-      event.preventDefault();close.click();
-    }
-  });
-  new MutationObserver(()=>{
-    if(dock.dataset.panel!=='brushBox'||dock.classList.contains('dock-collapsed'))show(false);
-  }).observe(dock,{attributes:true,attributeFilter:['class','data-panel']});
 
   const cache=new Map<FoundationPreset,ImageData>(),waiting=new Map<HTMLCanvasElement,FoundationPreset>();
   let idle=0;

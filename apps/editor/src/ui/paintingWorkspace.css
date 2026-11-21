@@ -462,13 +462,13 @@ body.illustro-focus-mode .fixed-workspace-actions { display: none }
 .workspace-details-pane header { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--a-border) }
 .workspace-details-pane header button { min-width: 44px; min-height: 44px; border: 0; background: transparent }
 .workspace-details-body { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 5px 7px }
-#rightDock.with-brush-details { width: min(calc(var(--workspace) + 290px), calc(100vw - var(--rail))) }
-#rightDock.with-brush-details #workspace { flex: 1 }
+#rightDock.with-workspace-details { width: min(calc(var(--workspace) + 290px), calc(100vw - var(--rail))) }
+#rightDock.with-workspace-details #workspace { flex: 1 }
 @media (min-width: 761px) {
-  body:has(#rightDock.with-brush-details) #splitter { right: min(calc(var(--workspace) + 290px), calc(100vw - var(--rail))) }
+  body:has(#rightDock.with-workspace-details) #splitter { right: min(calc(var(--workspace) + 290px), calc(100vw - var(--rail))) }
 }
 @media (max-width: 760px) {
-  #rightDock.with-brush-details { width: auto }
+  #rightDock.with-workspace-details { width: auto }
   .workspace-details-pane { flex-basis: 43% }
 }
 .layer-properties { border-top: 1px solid var(--a-border) }

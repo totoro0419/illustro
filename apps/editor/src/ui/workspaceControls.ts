@@ -10,7 +10,11 @@ function bindSelect(select: HTMLSelectElement) {
   const caption = document.createElement('span');
   const listId = 'workspace-choices-' + ++nextList;
   const label = select.getAttribute('aria-label') ??
-    [...(select.labels ?? [])].map(item => item.textContent?.trim()).filter(Boolean).join(' ');
+    [...(select.labels ?? [])].map(item => {
+      const labelCopy = item.cloneNode(true) as HTMLLabelElement;
+      labelCopy.querySelectorAll('select, input, button, output, [aria-hidden=true]').forEach(child => child.remove());
+      return labelCopy.textContent?.trim();
+    }).filter(Boolean).join(' ');
   trigger.type = 'button';
   trigger.className = 'workspace-choice';
   trigger.setAttribute('role', 'combobox');
@@ -238,8 +242,7 @@ function bindRange(range: HTMLInputElement) {
         number.value = String(Number(value.toFixed(7)));
         number.dispatchEvent(new Event('change', {bubbles: true}));
       } else {
-        const unit = Number(range.step) || 1;
-        const step = Number.isInteger(1 / unit) ? 1 : unit;
+        const step = Number(range.step) || 1;
         range.value = String(Number((range.valueAsNumber + step * direction).toFixed(7)));
         commitRange();
       }
@@ -268,6 +271,8 @@ function bindRange(range: HTMLInputElement) {
 }
 
 export function installWorkspaceControls() {
+  window.addEventListener('resize', () =>
+    document.querySelector<HTMLElement>('.workspace-options:popover-open')?.hidePopover());
   const bound = new WeakSet<Element>();
   const selector = 'select,input[type=range]';
   const visit = (element: Element) => {

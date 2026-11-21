@@ -158,7 +158,7 @@ const admittedHistoryChanges:EditorHistoryChange[]=[];
 const historyInputs:Array<{at:number;eventAt:number;button:string;direction:string;phase:string;pointerType:string;disabled:boolean;reason?:string}>=[];
 function traceHistoryInput(button:HTMLButtonElement,direction:HistoryDirection,phase:string,event:Event,reason?:string){if(!perfMode)return;historyInputs.push({at:performance.now(),eventAt:event.timeStamp,button:button.id,direction,phase,pointerType:(event as PointerEvent).pointerType??'keyboard',disabled:button.disabled,...(reason?{reason}:{})});if(historyInputs.length>1200)historyInputs.shift();}
 
-const inputPreferences={finger:false,palmGuard:true,penBarrelErase:false,rotationSnap:false,brushCursorEnabled:false,eraserSizeLink:false};
+const inputPreferences={finger:false,palmGuard:true,penBarrelErase:false,rotationSnap:true,brushCursorEnabled:false,eraserSizeLink:false};
 try{
   const saved=JSON.parse(localStorage.getItem('illustro.input-preferences.v1')??'null');
   for(const key of Object.keys(inputPreferences) as (keyof typeof inputPreferences)[])
@@ -182,7 +182,7 @@ let c06ClipboardUI:ClipboardUI|undefined;
 let c06Selection:SelectionWorkbench|undefined;
 let fillPanel:ReturnType<typeof installFillPanel>|undefined;
 let transformPanel:ReturnType<typeof installTransformPanel>|undefined;
-let activeCanvasTool='';
+let activeCanvasTool='',canvasToolRequest=0;
 let imageLinkPanel:ReturnType<typeof installImageLinkPanel>|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
@@ -2913,6 +2913,7 @@ function refreshBrushCatalog(selectId?:string){
  if(selectId)selectPreset(selectId);else if(surface.preset)selectPreset(surface.preset.id);
 }
 function selectPreset(id:string,remember=true){
+ canvasToolRequest++;
  if(!surface||surface.inputActive)return;
  if(activeCanvasTool)leaveCanvasTool();
  surface.setSelectionMode(false);
@@ -3171,12 +3172,24 @@ function toggleSelectionMode(){
  surface.panTool=false;byId<HTMLButtonElement>('panView').setAttribute('aria-pressed','false');
  surface.setSelectionMode(!surface.selectingRectangle);
 }
-byId<HTMLButtonElement>('selection').onclick=()=>{if(openCanvasTool('selection'))c06Selection?.open();};
-byId('smartFill').onclick=()=>{if(openCanvasTool('smartFill'))fillPanel?.open();};
-for(const id of ['transform','move'])byId(id).onclick=()=>{
- if(openCanvasTool(id))transformPanel?.open(Boolean(c06Selection?.active()),id==='move');
-};
-for(const id of ['shapes','rulers'])byId(id).onclick=()=>openCanvasTool(id);
+function selectCanvasTool(id:string,start?:()=>void){
+ const request=++canvasToolRequest,drawing=surface,deadline=performance.now()+1500;
+ const open=()=>{
+   if(request!==canvasToolRequest||!drawing||surface!==drawing||!documentReady)return;
+   if(drawing.inputActive){
+     if(performance.now()<deadline)window.setTimeout(open,25);
+     else byId('status').textContent='描画が終わってから道具を選び直してください。';
+     return;
+   }
+   if(openCanvasTool(id))start?.();
+ };
+ open();
+}
+byId<HTMLButtonElement>('selection').onclick=()=>selectCanvasTool('selection',()=>c06Selection?.open());
+byId('smartFill').onclick=()=>selectCanvasTool('smartFill',()=>fillPanel?.open());
+for(const id of ['transform','move'])byId(id).onclick=()=>selectCanvasTool(id,
+ ()=>transformPanel?.open(Boolean(c06Selection?.active()),id==='move'));
+for(const id of ['shapes','rulers'])byId(id).onclick=()=>selectCanvasTool(id);
 byId<HTMLButtonElement>('selectionStart').onclick=toggleSelectionMode;
 byId<HTMLButtonElement>('selectionClear').onclick=()=>{
  if(c06Selection)c06Selection.clear();
