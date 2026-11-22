@@ -18,7 +18,7 @@ export function colorMarkup():string {
  return '<div class="color-workbench">'+
  '<div class="color-current" aria-label="現在の色">'+
   '<button id="colorCurrent" class="color-chip" type="button" aria-label="現在の色"></button>'+
-  '<div class="color-describe"><strong>現在の色</strong><output id="colorCode">#1F2633</output></div>'+
+  '<div class="color-describe"><strong>現在の色</strong><output id="colorCode">#1F2633</output><small id="colorName"></small></div>'+
  '</div>'+
  '<div class="color-mode-switch" role="tablist" aria-label="カラーウィンドウ">'+
   '<button type="button" id="colorShowColor" role="tab" aria-controls="colorScreen" aria-selected="true" tabindex="0">カラー</button>'+
@@ -84,7 +84,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  // Black RGB cannot encode the selected saturation. Preserve the SV marker
  // coordinate separately when Value reaches zero.
  let saturationMemory=rgbToHsv(state.current).s,orbitStartSaturation=saturationMemory;
- const current=id<HTMLElement>('colorCurrent'),code=id<HTMLOutputElement>('colorCode'),
+ const current=id<HTMLElement>('colorCurrent'),code=id<HTMLOutputElement>('colorCode'),name=id<HTMLElement>('colorName'),
   ring=id<HTMLElement>('colorRing'),plane=id<HTMLElement>('colorPlane'),hexField=id<HTMLInputElement>('colorHex'),
   notice=id<HTMLElement>('colorActionNotice'),
   colorScreen=id<HTMLElement>('colorScreen'),paletteScreen=id<HTMLElement>('colorPaletteScreen'),
@@ -127,6 +127,12 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   const displayS=hsv.v<=1e-7?saturationMemory:hsv.s;
   document.getElementById('colorPage')?.style.setProperty('--current-paint-color',hex(c));
   current.style.backgroundColor=hex(c);code.textContent=hex(c);
+  const hueNames=['赤','オレンジ','黄','黄緑','緑','青緑','水色','青','紫','赤紫'];
+  const hueIndex=[15,43,66,93,148,182,214,252,292,342,361].findIndex(limit=>hsv.h<limit);
+  const roughName=hsv.v<.1?'黒':hsv.s<.12?(hsv.v>.93?'白':'グレー'):
+    (hsv.v<.37?'暗い':hsv.s<.37&&hsv.v>.7?'淡い':'')+(hueNames[hueIndex%hueNames.length]??'赤');
+  name.textContent='目安：'+roughName;
+  current.setAttribute('aria-label','現在の色 '+roughName+'（目安） '+hex(c));
   id<HTMLInputElement>('c04BackgroundColor').value=hex(state.background);
   const opacity=Math.round(state.opacity*100);
   id<HTMLInputElement>('c04ColorOpacity').value=String(opacity);

@@ -7,7 +7,7 @@ import {openExchangePanel} from './export/exchangePanel';
 import {installWetTools,wetModes} from './wet/panel';
 import {createWetPatch,wetPatchTiles} from './wet/edit';
 import {installWetPad} from './wet/pad';
-import {installAccessibility} from './ui/accessibility';
+import {accessibilityFeedback,installAccessibility} from './ui/accessibility';
 import {applyPixelCell,pixelStroke} from './pixelStroke';
 import {openBatchExport} from './export/batchExport';
 import {installTimeline} from './recording/timeline';
@@ -3542,6 +3542,7 @@ async function saveWork(asCopy=false){
   try{
     const result=await persistence.save(document,layer,asCopy,pending,drawing.selectedRectangle);
     byId('status').textContent=explicitSaveStatus(result.output,result.verified,asCopy,formatFileSize(result.byteLength));
+    accessibilityFeedback();
   }catch(error){
     if(error instanceof ExternalFileConflict)showExternalSaveConflict(error,document);
     byId('status').textContent=error instanceof DOMException&&error.name==='AbortError'
@@ -3626,6 +3627,7 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
     const {blob,...evidence}=result;lastExport={...evidence,downloadBytes:blob.size};exportCount++;
     byId('exportStatus').textContent=filename+' を作成しました（'+result.width+'×'+result.height+'ピクセル、'+formatFileSize(blob.size)+'）。作品ファイルの保存状態は変わりません。';
     byId('status').textContent='画像を書き出しました（'+result.width+'×'+result.height+'ピクセル、'+formatFileSize(blob.size)+'）。引き続き描画できます。';
+    accessibilityFeedback();
   }catch(error){
     exportError=error instanceof Error?error.message:String(error);
     byId('exportStatus').textContent='画像を書き出せませんでした。'+exportError;

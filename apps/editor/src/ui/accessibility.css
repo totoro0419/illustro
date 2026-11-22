@@ -28,6 +28,10 @@
   transition-duration: 1ms !important;
   scroll-behavior: auto !important;
 }
-:root[data-illustro-gray] #canvasArea .surface canvas {
+:root[data-illustro-vision="gray"] #canvasArea .surface canvas {
   filter: grayscale(1);
 }
+
+:root[data-illustro-vision="protan"] #canvasArea .surface canvas { filter: url(#illustro-vision-protan); }
+:root[data-illustro-vision="deutan"] #canvasArea .surface canvas { filter: url(#illustro-vision-deutan); }
+:root[data-illustro-vision="tritan"] #canvasArea .surface canvas { filter: url(#illustro-vision-tritan); }
