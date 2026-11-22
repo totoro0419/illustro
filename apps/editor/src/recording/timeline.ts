@@ -219,11 +219,12 @@ export function installTimeline(host:HTMLElement,getArtwork:()=>CoreDocument|nul
           const w=bitmap.width*scale,h=bitmap.height*scale;
           context.drawImage(bitmap,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
           if(stamp){
-            const font=Math.max(11,Math.round(canvas.width/44));
+            const font=Math.max(1,Math.min(Math.round(canvas.height/5),Math.max(11,Math.round(canvas.width/44))));
+            const inset=Math.max(0,Math.min(10,Math.floor(Math.min(canvas.width,canvas.height)/8)));
             context.font=font+'px sans-serif';context.textAlign='right';context.textBaseline='bottom';
-            context.fillStyle='rgba(0,0,0,.68)';const width=Math.min(canvas.width-18,context.measureText(stamp).width);
-            context.fillRect(canvas.width-width-14,canvas.height-font-13,width+8,font+9);
-            context.fillStyle='#fff';context.fillText(stamp,canvas.width-10,canvas.height-8,canvas.width-20);
+            context.fillStyle='rgba(0,0,0,.68)';const width=Math.min(canvas.width-2*inset,context.measureText(stamp).width);
+            context.fillRect(canvas.width-width-2*inset,canvas.height-font-2*inset,width+2*inset,font+2*inset);
+            context.fillStyle='#fff';context.fillText(stamp,canvas.width-inset,canvas.height-inset,canvas.width-2*inset);
           }
         }finally{bitmap.close();}
         if(i===0)recorder?.start();

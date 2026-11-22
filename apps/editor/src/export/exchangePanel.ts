@@ -4,7 +4,7 @@ import type {CoreDocument} from '@illustro/core';
 import {resizeImagePixels} from '../canvasGeometry';
 import {captureExport,renderFrozenArtworkTiledPreview,renderFrozenArtwork} from './basicExport';
 import {button,labelledField,numberField,selectField} from '../artwork/tools';
-import {exchangeFileName,exchangeWarnings,exportExchange} from './exchange';
+import {exchangeFileName,exchangeWarnings,exportExchange,importExchange} from './exchange';
 import type {ExchangeFormat} from './exchangeTypes';
 
 export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(blob:Blob,name:string)=>void){
@@ -46,7 +46,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   preview.hidden=true;preview.className='exchange-print-preview';
   let comparison:ImageData|null=null;
   const svgComparison=document.createElement('figure'),svgImage=document.createElement('canvas'),svgCaption=document.createElement('figcaption');
-  svgImage.className=preview.className;svgImage.setAttribute('aria-label','出力されたSVGの見た目');
+  svgImage.className=preview.className;svgImage.setAttribute('aria-label','出力したファイルの見た目');
   svgComparison.hidden=true;svgComparison.append(svgImage,svgCaption);
   let comparisonVersion=0;
   function refresh(){
@@ -107,20 +107,34 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     preview.width=image.width;preview.height=image.height;preview.hidden=false;refresh();
     if(print.open)status.textContent='破線が仕上がりの位置です。市松模様が見える範囲が透明です。';
   },status);
-  const compareSvg=button('SVGの見た目を元の絵と比較',async()=>{
+  const compareExchange=button('出力の見た目を元の絵と比較',async()=>{
+    const selected=format.value;
+    if(selected!=='svg'&&selected!=='ora'&&selected!=='tiff')return;
     const ticket=++comparisonVersion,layered=style.value==='layered',revision=doc.head;
     const original=await captureComparison();
-    const svg=await exportExchange(doc,'svg',layered);
-    const url=URL.createObjectURL(svg);
+    const blob=await exportExchange(doc,selected,layered);
+    const url=selected==='svg'?URL.createObjectURL(blob):null;
     try{
-      const image=new Image();image.src=url;await image.decode();
+      let image:HTMLImageElement|null=null;
+      let decoded:ImageData|null=null;
+      if(url){
+        image=new Image();image.src=url;await image.decode();
+      }else{
+        const file=new File([blob],exchangeFileName('preview',selected),{type:blob.type});
+        const artwork=await importExchange(file);
+        const pixels=artwork.merged??(artwork.layers.length===1?artwork.layers[0]?.pixels:null);
+        if(!pixels)throw Error('出力に比較できる統合画像がありません。');
+        decoded=new ImageData(new Uint8ClampedArray(resizeImagePixels(pixels,artwork.width,artwork.height,original.width,original.height,'auto')),
+          original.width,original.height);
+      }
       if(!dialog.open||ticket!==comparisonVersion||!active()||doc.head!==revision)return;
       comparison=original;display.value='original';preview.width=original.width;preview.height=original.height;
       preview.hidden=false;drawPreview();
       svgImage.width=original.width;svgImage.height=original.height;
       const context=svgImage.getContext('2d');
       if(!context)throw Error('比較を表示できません。');
-      context.drawImage(image,0,0,original.width,original.height);
+      if(image)context.drawImage(image,0,0,original.width,original.height);
+      else if(decoded)context.putImageData(decoded,0,0);
       const rendered=context.getImageData(0,0,original.width,original.height).data;
       let count=0;
       for(let i=0;i<rendered.length;i+=4){
@@ -128,12 +142,13 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
         if(Math.abs(alpha-baseAlpha)>8||[0,1,2].some(c=>Math.abs(rendered[i+c]!*alpha-original.data[i+c]!*baseAlpha)>8*255))count++;
       }
       const total=original.width*original.height;
-      svgCaption.textContent='出力したSVG · 縮小比較で約 '+(count/total*100).toFixed(1)+'% の画素に差があります。';
+      svgCaption.textContent=(selected==='ora'?'OpenRasterの統合プレビュー':selected.toUpperCase()+'の出力')+
+        ' · 縮小比較で約 '+(count/total*100).toFixed(1)+'% の画素に差があります。';
       svgComparison.hidden=false;
-    }finally{URL.revokeObjectURL(url);}
+    }finally{if(url)URL.revokeObjectURL(url);}
   },status);
-  compareSvg.hidden=format.value!=='svg';
-  format.addEventListener('change',()=>{compareSvg.hidden=format.value!=='svg';});
+  const toggleExchangeComparison=()=>{compareExchange.hidden=!['svg','ora','tiff'].includes(format.value);};
+  toggleExchangeComparison();format.addEventListener('change',toggleExchangeComparison);
   const checkProof=button('出力先の色を確認',async()=>{
     const file=profileFile.files?.[0];
     if(!file||file.size>ICC_LIMIT)throw Error('4MB以内のICCプロファイルを選んでください。');
@@ -167,6 +182,6 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   },status);
   const close=button('閉じる',()=>dialog.close(),status);
   dialog.onclose=()=>{proofTicket++;comparison=proof=null;dialog.remove();};
-  actions.append(see,compareSvg,run,close);section.append(notes,preview,svgComparison,print,actions,status);dialog.append(section);
+  actions.append(see,compareExchange,run,close);section.append(notes,preview,svgComparison,print,actions,status);dialog.append(section);
   document.body.append(dialog);refresh();dialog.showModal();
 }
