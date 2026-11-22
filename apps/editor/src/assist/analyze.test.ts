@@ -32,3 +32,9 @@ it('learns which colors to keep and exclude from examples, preserving exact samp
   ]});
   expect(result).toEqual({kind:'area',count:8,alpha:Uint8Array.of(255,0,255,0,255,0,255,255,0,255,0,255,0,255)});
 });
+
+it('learns reference swatches from painted colors and ignores transparent pixels',async()=>{
+  const {learnReferencePalette}=await import('./referencePalette');
+  const colors=learnReferencePalette(Uint8ClampedArray.of(220,20,30,255,220,20,30,255,0,160,230,255,255,255,0,0));
+  expect(colors).toEqual([[220,20,30],[0,160,230]]);
+});

@@ -1,3 +1,4 @@
+import {readReferencePalette} from './referencePalette';
 import type {SelectionExample} from './exampleSelection';
 import type {LayerId} from '@illustro/core';
 import {button,labelledField,numberField,paintPreview,selectField} from '../artwork/tools';
@@ -31,6 +32,10 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       ['replace','置き換える'],['add','追加する'],['subtract','引く']
     ]);
     const palette=selectField(color,'使うパレット',[] as [string,string][]);
+    const reference=document.createElement('input');reference.type='file';reference.accept='image/png,image/jpeg,image/webp,image/avif';
+    labelledField(color,'資料画像から色を取り出す（任意）',reference);
+    const chips=document.createElement('div');chips.setAttribute('aria-label','使用するパレットの色');chips.className='box-actions';
+    color.append(chips);
     const strength=numberField(color,'強さ（%）',70,1,100);
     const size=numberField(repair,'ごみ候補の最大の画素数',6,1,48);
     const names=document.createElement('div'),spots=document.createElement('div');repair.append(spots,names);
@@ -58,6 +63,15 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
     let worker:Worker|null=null,stopJob:(()=>void)|null=null;
     let spotChecks:HTMLInputElement[]=[],nameChecks:HTMLInputElement[]=[];
     let examples:SelectionExample[]=[];
+    let referenceSet:Awaited<ReturnType<typeof readReferencePalette>>|null=null;
+    const available=()=>[...(frame?.palettes??[]),...(referenceSet?[referenceSet]:[])];
+    function paletteChips(){
+      chips.replaceChildren(...(available()[Number(palette.value)]?.colors??[]).slice(0,18).map(rgb=>{
+        const color=document.createElement('span'),label='#'+rgb.map(c=>Math.round(c).toString(16).padStart(2,'0')).join('');
+        color.style.cssText='display:inline-block;width:20px;height:20px;border:1px solid currentColor;background:'+label;
+        color.title=label;color.setAttribute('aria-label',label);return color;
+      }));
+    }
     const learning=()=>areaMode.value==='examples';
     const current=()=>mode.value as Kind;
     const visible=(kind:Kind)=>{area.hidden=kind!=='area';color.hidden=kind!=='color';repair.hidden=kind!=='specks';};
@@ -144,7 +158,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       if(!snapshot.selection)target.value='whole';
       x.max=String(snapshot.width-1);y.max=String(snapshot.height-1);
       x.value=String(Math.floor(snapshot.width/2));y.value=String(Math.floor(snapshot.height/2));
-      palette.replaceChildren(...snapshot.palettes.map((p,i)=>new Option(p.name,String(i))));
+      palette.replaceChildren(...available().map((p,i)=>new Option(p.name,String(i))));paletteChips();
       nameChecks=checks(names,snapshot.names.map(n=>n.current+' → '+n.next),refreshApply);
       analyze.disabled=kind!=='area'&&!snapshot.writable;
       for(const variant of Array.from(variants.querySelectorAll('button')))variant.disabled=!snapshot.writable||!snapshot.palettes.length;
@@ -164,7 +178,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       const kind=current();
       if(kind==='area')settings={kind,x:field(x),y:field(y),tolerance:learning()?32:field(tolerance),
         ...(learning()?{examples:[...examples],confidence:field(confidence)}:{})};
-      else if(kind==='color')settings={kind,style,strength:field(strength)/100,palette:f.palettes[Number(palette.value)]?.colors??[]};
+      else if(kind==='color')settings={kind,style,strength:field(strength)/100,palette:available()[Number(palette.value)]?.colors??[]};
       else settings={kind,maxArea:field(size)};
       const source=f.source.slice(),coverage=target.value==='selected'?f.selection?.alpha.slice():undefined,ticket=generation;
       status.textContent='候補を計算しています。';
@@ -212,11 +226,23 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
     const actions=document.createElement('div');actions.className='box-actions';actions.append(analyze,apply,reload,close);
     panel.append(actions,status);dialog.append(panel);document.body.append(dialog);dialog.showModal();
     mode.onchange=()=>{visible(current());void load().catch(error=>{status.textContent=String(error.message??error);});};
+    reference.onchange=async()=>{
+      const file=reference.files?.[0];
+      if(!file)return;
+      try{
+        const extracted=await readReferencePalette(file);
+        if(!dialog.open||reference.files?.[0]!==file)return;
+        referenceSet=extracted;invalidate();
+        palette.replaceChildren(...available().map((p,i)=>new Option(p.name,String(i))));
+        palette.value=String(available().length-1);paletteChips();
+        status.textContent=extracted.colors.length+'色を資料の色分布から取り出しました。色の候補を計算できます。';
+      }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+    };
     areaMode.onchange=()=>{
       invalidate();exampleOptions.hidden=!learning();tolerance.parentElement!.hidden=learning();drawExamples();
       status.textContent=learning()?'画像で残す例と外す例を指定し、候補を計算してください。':'画像をタップして、つながる範囲を確認できます。';
     };
-    for(const input of [target,tolerance,palette,strength,size,x,y,confidence])input.onchange=()=>{invalidate();refreshApply();};
+    for(const input of [target,tolerance,palette,strength,size,x,y,confidence])input.onchange=()=>{invalidate();if(input===palette)paletteChips();refreshApply();};
     dialog.onclose=()=>{generation++;cancelJob();dialog.remove();};
     visible(current());void load().catch(error=>{status.textContent=String(error.message??error);});
   };
