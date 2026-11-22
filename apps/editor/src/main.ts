@@ -1,3 +1,5 @@
+import {installImageAssist} from './assist/panel';
+import {ANALYSIS_MAX_PIXELS,type RGB as AssistRGB} from './assist/analyze';
 import {exchangeFormat,importExchange} from './export/exchange';
 import {createExchangeDocument} from './export/exchangeDocument';
 import {openExchangePanel} from './export/exchangePanel';
@@ -4994,6 +4996,63 @@ c04Commands.registerProvider(()=>[{
   id:'rasterEffects',label:'レイヤーのフィルターを開く',category:'色',aliases:'ぼかし シャープ ごみ取り ノイズ',
   availability:()=>documentReady?null:'先に作品を開いてください。',
   execute:()=>{shellUi.openBox('effectsBox');rasterEffectPanel.open();}
+}]);
+const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
+  const artwork=controller.document,drawing=surface,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
+  if(!drawing||!documentReady)throw Error('作品を開いてください。');
+  const {width,height}=root;
+  if(width*height>ANALYSIS_MAX_PIXELS)throw Error('画像の解析は約1677万画素までです。必要な部分を別の作品にコピーして試してください。');
+  const selection=c06Selection?.active()??null;
+  const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
+    controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
+  const writable=!layer.baseColor&&!layer.editable&&!layer.imageLink&&!layer.deformation&&!layer.lineRegions&&
+    !layer.blend?.gradientMap&&!root.isLayerContentLocked(layer.id)&&
+    (kind==='specks'?!layer.alphaLocked:root.isLayerVisible(layer.id));
+  await withClipboardAccess(async()=>'read');
+  const source=kind==='area'?await readFillReference(artwork,head,'merged',[]):await originalTransformPixels(artwork,layer,head);
+  if(!valid())throw Error('解析対象が変わりました。');
+  const colors=(list:readonly {color:{r:number;g:number;b:number}}[])=>list.map(({color})=>
+    [color.r*255,color.g*255,color.b*255] as AssistRGB);
+  const palettes=[{name:'描画色と背景色',colors:colors([{color:foreground.current},{color:foreground.background}])},
+    ...foreground.availablePalettes.filter(p=>p.swatches.length>=2).map(p=>({name:p.name,colors:colors(p.swatches)}))];
+  const names=root.rootLayerIds.flatMap((id,index)=>{
+    const item=root.getLayer(id);
+    if(!/^(?:Layer|レイヤー)\s*\d*$/i.test(item.name)||root.isLayerContentLocked(id)||item.baseColor)return [];
+    const category=item.editable?.kind==='path'?'ベクター':item.editable?.kind==='text'?'文字':
+      item.editable?.kind==='gradient'?'グラデーション':item.imageLink?'配置画像':item.lineRegions?'線画領域':'描画';
+    return [{id,current:item.name,next:category+' '+(index+1)}];
+  }).slice(0,24);
+  return {width,height,source,selection,name:layer.name,palettes,names,writable,valid,
+    select:mask=>{
+      if(!valid()||!c06Selection)throw Error('選択先が変わりました。');
+      c06Selection.replaceActive(mask);
+    },
+    adoptColor:pixels=>withClipboardAccess(async()=>{
+      if(!valid()||!writable||kind!=='color')throw Error('彩色するレイヤーが変わりました。');
+      const tx=artwork.begin('色の候補を別レイヤーに採用');
+      const id=tx.addRasterSnapshotAbove(layer.id,pixels,'パレットの彩色候補');
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      controller.selectLayer(id);
+      return 'edit';
+    }),
+    adoptRepair:(spots,proposedNames)=>withClipboardAccess(async()=>{
+      if(!valid()||kind!=='specks'||spots.length&&!writable)throw Error('整理するレイヤーが変わりました。');
+      if(!spots.length&&!proposedNames.length)return 'read';
+      const tx=artwork.begin('ごみ取り・名前の候補を採用');
+      if(spots.length){
+        const pixels=source.slice();
+        for(const indices of spots)for(const index of indices)pixels.fill(0,index*4,index*4+4);
+        tx.replaceLayerRaster(layer.id,pixels);
+      }
+      for(const proposal of proposedNames)tx.renameLayer(proposal.id,proposal.next);
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      return 'edit';
+    }),
+  };
+});
+c04Commands.registerProvider(()=>[{
+  id:'imageAssist',label:'画像から候補を出す',category:'色',aliases:'画像解析 選択補助 色の候補 ごみ取り 整理補助',
+  availability:()=>documentReady?null:'先に作品を開いてください。',execute:imageAssist.open,
 }]);
 const gradientMapPanel=installGradientMapPanel(byId('effectsBoxBody'),{
   storeColors:colors=>foreground.addSwatches(colors.map(color=>fromHex(color)!)),

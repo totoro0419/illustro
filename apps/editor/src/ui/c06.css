@@ -71,3 +71,9 @@
 
 .c06-mask-preview,.c06-selection-brush-raster { background: transparent }
 .c06-mask-preview[hidden],.c06-selection-brush-raster[hidden] { display: none }
+
+.assist-previews { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
+.assist-previews figure { margin:0;min-width:0; }
+.assist-previews canvas { display:block;max-width:100%;max-height:240px;object-fit:contain;
+  background:repeating-conic-gradient(#bebebe 0% 25%,#eee 0% 50%) 0 0/14px 14px; }
+.assist-previews canvas[hidden] { display:none; }
