@@ -3377,7 +3377,7 @@ byId('saveCopy').onclick=()=>{void saveWork(true);};
 const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTMLSelectElement>('exportFormat'),exportQuality=byId<HTMLInputElement>('exportQuality');
 function updateExportOptions(){
   const f=exportFormat.value as ImageFormat,lossy=f!=='png';
-  byId<HTMLLabelElement>('exportQualityRow').hidden=!lossy;
+  byId<HTMLElement>('exportQualityRow').hidden=!lossy;
   byId<HTMLOutputElement>('exportQualityValue').textContent=exportQuality.value+'%';
   byId('exportTransparencyInfo').textContent=f==='jpeg'
     ?'JPEGは透明部分を保存できません。背景を白にして書き出します（黒にはしません）。'

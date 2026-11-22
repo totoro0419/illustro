@@ -107,27 +107,10 @@ main#canvasArea, body.right-overlay main#canvasArea {
 }
 body.right-collapsed .drawing-controls, body.right-overlay .drawing-controls { right: 0 }
 .drawing-size {
+  --range-step-width: 44px;
   flex: 1 1 260px;
   max-width: 440px;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 12px;
-  white-space: nowrap;
-}
-.drawing-size label { margin: 0; }
-.drawing-size #size { flex: 1; min-width: 36px; margin: 0; min-height: 44px; accent-color: var(--a-focus) }
-.drawing-size #sizeNumber {
-  flex: none;
-  width: 5.3em;
-  height: 36px;
-  padding-inline: 4px;
-  border: 1px solid var(--a-border-strong);
-  border-radius: 8px;
-  background: var(--a-surface-soft);
-  text-align: center;
-  font-variant-numeric: tabular-nums;
 }
 .drawing-controls .ui-icon, #close .ui-icon { width: 20px; height: 20px }
 .editor-popover {
@@ -220,9 +203,8 @@ body.illustro-focus-mode .topbar > button:not(#c04FocusQuick, #c04FocusExit) { d
   #layerPageList { max-height: min(29dvh, 255px) }
 }
 @media (max-width: 540px) {
-  .drawing-controls button span, .drawing-size > span { display: none }
+  .drawing-controls button span { display: none }
   .drawing-size { gap: 4px }
-  .drawing-size #sizeNumber { width: 4.6em }
 }
 @media (max-width: 360px) {
   .topbar button { min-width: 42px }
@@ -306,9 +288,6 @@ body.workspace-left-handed .fixed-workspace-actions { inset-inline: 0 auto }
 body:is(.right-collapsed,.right-overlay) .fixed-workspace-actions { width: 225px }
 body:is(.right-collapsed,.right-overlay):not(.workspace-left-handed) .drawing-controls { right: 225px }
 body:is(.right-collapsed,.right-overlay).workspace-left-handed .drawing-controls { left: 225px }
-.drawing-size > span { display: none }
-.drawing-size.workspace-range > #size { min-height: 28px }
-.drawing-size.workspace-range > #sizeNumber { height: 26px; border: 0; border-bottom: 1px solid var(--a-border); border-radius: 0; background: transparent }
 body.illustro-focus-mode .fixed-workspace-actions { display: none }
 @media (min-width: 761px) {
   body.right-collapsed #rightDock { display: flex; width: var(--dock-tabs); top: var(--top); bottom: var(--bottom); height: auto }
@@ -352,15 +331,14 @@ body.illustro-focus-mode .fixed-workspace-actions { display: none }
 }
 #addLayerPage { color: var(--a-focus); background: var(--a-accent-soft); }
 .layer-properties {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: 8px;
   align-items: center;
   flex: none;
   padding: 6px 0;
 }
-.layer-properties label { display: grid; grid-template-columns: minmax(40px,1fr) auto; gap: 0 4px; flex: 1; min-width: 0; font-size: 11px; }
-#layerOpacity { grid-column: 1 / -1; grid-row: 2; min-width: 0; width: 100%; margin: 0; height: 28px; }
-#layerOpacityValue { grid-column: 2; grid-row: 1; font-variant-numeric: tabular-nums; }
+.layer-properties > .workspace-range { margin: 0; font-size: 11px; }
 #layerBlendMode { max-width: 55%; min-height: 44px; white-space: normal; }
 .layer-batch-summary { padding: 6px 4px; }
 .layer-actions-menu { position: fixed; inset: auto; margin: 0; padding: 12px; overflow: auto; overscroll-behavior: contain; }
@@ -508,7 +486,7 @@ body.illustro-focus-mode .fixed-workspace-actions { display: none }
 }
 .layer-entry input.layer-inline-name { border-bottom:1px solid var(--a-focus) }
 .layer-entry .layer-lock-indicator { display:none }
-.layer-blend-fields { display: flex; min-width:0; flex:1 1 auto; align-items: center; gap:2px }
+.layer-blend-fields { display: flex; min-width:0; align-items: center; gap:2px }
 .layer-blend-fields .workspace-choice { width:100%; min-width:0 }
 .layer-blend-fields #layerBlendMode { min-width:37px; padding-inline:2px; background:transparent; border:0 }
 
