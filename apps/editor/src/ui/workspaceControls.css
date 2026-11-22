@@ -44,35 +44,61 @@ select.workspace-choice-source { display: none !important }
 .workspace-options [role=option][aria-selected=true]::before { content: '✓'; margin-inline-end: 6px }
 .workspace-options [role=option][aria-disabled=true] { opacity: .47; cursor: default }
 .workspace-options [role=option].active { outline: 2px solid var(--a-focus, #565aad); outline-offset: -2px }
-.workspace-range {
-  display: grid !important;
-  grid-template-columns: 36px minmax(24px, 1fr) 36px;
+.workspace-range:not([hidden]) {
+  display: grid;
+  grid-template-columns: var(--range-step-width, 36px) minmax(0, 1fr) var(--range-step-width, 36px);
   gap: 0 5px;
   align-items: center;
   min-width: 0;
 }
-.workspace-range > label { grid-area: 1 / 1 / 2 / 3; min-width: 0; margin: 0 }
-.workspace-range > input[type=number] {
-  grid-area: 1 / 2 / 2 / 4;
-  justify-self: end;
-  width: 5.2em;
-  max-width: 65%;
-  min-height: 26px;
+.workspace-range-from-label { margin-block: 5px; font-size: 13px }
+.workspace-range-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+.workspace-range .workspace-range-header > label {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  font-size: inherit;
+  overflow-wrap: anywhere;
+}
+.workspace-range-value {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.workspace-range-value > input[type=number] {
+  appearance: textfield;
+  width: 7ch;
+  min-height: 30px;
   margin: 0;
   padding: 0 3px;
   text-align: end;
+  color: inherit;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--a-border-strong, #a5b0c3);
-  border-radius: 0;
+  border-radius: 4px;
+  cursor: text;
 }
-.workspace-range > input[type=range] { grid-area: 2 / 2; width: 100%; min-width: 0; margin: 0 }
-.workspace-range > output { grid-row: 3; grid-column: 1 / -1 }
+.workspace-range-value > input[type=number]::-webkit-inner-spin-button,
+.workspace-range-value > input[type=number]::-webkit-outer-spin-button { appearance: none; margin: 0 }
+.workspace-range-value > input[type=number]:focus {
+  background: var(--a-surface, #fff);
+  outline: 1px solid var(--a-focus, #565aad);
+  outline-offset: -1px;
+}
+.workspace-range-value > input[type=number]:focus-visible { outline-width: 2px }
+.workspace-range-value > input[type=number]:disabled { opacity: .55; cursor: default }
+.workspace-range > input[type=range] { grid-area: 2 / 2; width: 100%; min-width: 0; min-height: 28px; margin: 0 }
+/* Keep legacy output nodes for existing value updates, but never render duplicate values below the slider. */
+.workspace-range > output { display: none !important }
 .workspace-range-minus, .workspace-range-plus { grid-row: 2; min-height: 36px; padding: 0 }
 .workspace-range-minus { grid-column: 1 }
 .workspace-range-plus { grid-column: 3 }
-.workspace-range > .workspace-range-caption { grid-area: 1 / 1 / 2 / 3; min-width: 0; margin: 0 }
-.workspace-range > output:not(:only-child) { font-size: .78rem }
-.workspace-range > :is(.color-unit,.c04-opacity-unit) { display: none }
-.workspace-range > #layerOpacity { grid-column: 2 }
-.workspace-range > #layerOpacityValue { display: none }

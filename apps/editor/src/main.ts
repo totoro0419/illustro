@@ -1823,26 +1823,30 @@ function updateContextBar(){
   const tool=byId<HTMLButtonElement>('c04ContextTool'),layer=byId<HTMLButtonElement>('c04ContextLayer');
   const selection=byId<HTMLButtonElement>('c04ContextSelection'),source=byId<HTMLButtonElement>('c04ContextReference');
   tool.disabled=layer.disabled=selection.disabled=!active;
-  source.hidden=selectedTool!=='eyedropper';
+  const fill=activeCanvasTool==='smartFill'?fillPanel?.context():null;
+  source.hidden=!fill&&selectedTool!=='eyedropper';
   source.disabled=!active;
   const sampleSource=byId<HTMLSelectElement>('colorSampleSource').value;
   const sampleLayerId=byId<HTMLSelectElement>('colorSampleLayerId').value;
-  source.textContent='採色元: '+sampleSourceLabel({
+  source.textContent=fill?'塗り参照: '+fill.reference:'採色元: '+sampleSourceLabel({
     source:sampleSource==='layer'?'layer':sampleSource==='specific'?'specific':'composite',
     layerId:sampleLayerId?sampleLayerId as LayerId:null,
   },controller.layers.map(item=>({id:item.id,name:item.name})));
-  tool.textContent='道具: '+(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
-  layer.textContent='描画先: '+(active?controller.selectedLayer.name:'作品なし');
+  tool.textContent='道具: '+(fill?'塗りつぶし':selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
+  layer.textContent=fill?'塗り先: '+fill.destination:'描画先: '+(active?controller.selectedLayer.name:'作品なし');
   const selected=surface?.selectedRectangle;
-  selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):'選択なし';
+  selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):c06Selection?.active()?'選択範囲あり':'選択なし';
   byId('c04ContextPending').textContent=historyPending?'履歴を反映中':
     surface?.inputActive?'描画中':surface?.busy?'線の反映中':
-    geometryBusy?'変更を処理中':surface?.selectingRectangle?'範囲を指定中':'';
+    geometryBusy?'変更を処理中':fill?.pending?'塗り候補・未確定':surface?.selectingRectangle?'範囲を指定中':'';
 }
 byId<HTMLButtonElement>('c04ContextTool').onclick=()=>shellUi.openBox('brushBox');
 byId<HTMLButtonElement>('c04ContextLayer').onclick=()=>shellUi.setLayerPage(true);
 byId<HTMLButtonElement>('c04ContextSelection').onclick=()=>byId<HTMLButtonElement>('selection').click();
-byId<HTMLButtonElement>('c04ContextReference').onclick=()=>byId('openEyedropperSettings').click();
+byId<HTMLButtonElement>('c04ContextReference').onclick=()=>{
+  if(activeCanvasTool==='smartFill')fillPanel?.focusReference();
+  else byId('openEyedropperSettings').click();
+};
 const eyedropperDialog=byId<HTMLDialogElement>('colorEyedropperOptions');
 app.append(eyedropperDialog);
 byId('openEyedropperSettings').onclick=()=>{if(!eyedropperDialog.open)eyedropperDialog.showModal();};
@@ -3397,7 +3401,7 @@ byId('saveCopy').onclick=()=>{void saveWork(true);};
 const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTMLSelectElement>('exportFormat'),exportQuality=byId<HTMLInputElement>('exportQuality');
 function updateExportOptions(){
   const f=exportFormat.value as ImageFormat,lossy=f!=='png';
-  byId<HTMLLabelElement>('exportQualityRow').hidden=!lossy;
+  byId<HTMLElement>('exportQualityRow').hidden=!lossy;
   byId<HTMLOutputElement>('exportQualityValue').textContent=exportQuality.value+'%';
   byId('exportTransparencyInfo').textContent=f==='jpeg'
     ?'JPEGは透明部分を保存できません。背景を白にして書き出します（黒にはしません）。'
@@ -4418,6 +4422,7 @@ async function collectFillMask(mask:LayerMask,width:number,height:number,valid:(
   return {width,height,alpha};
 }
 fillPanel=installFillPanel(byId('documentBoxBody'),{
+  onContextChanged:updateContextBar,
   drawing:()=>documentReady?surface:null,
   color:()=>hex(foreground.current),
   documentId:()=>controller.document.root.documentId,

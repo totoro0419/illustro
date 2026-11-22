@@ -25,6 +25,7 @@ type Candidate={source:FillCapture;points:readonly Point[];asSelection:boolean;e
 type Entry={id:LayerId;name:string;data:LineRegions};
 
 export function installFillPanel(host:HTMLElement,api:{
+  onContextChanged?:()=>void;
   drawing:()=>BrushSurface|null;color:()=>string;documentId:()=>string;targetName:()=>string;
   references:()=>readonly {id:string;name:string;vector:boolean;visible:boolean}[];
   regionLayers:()=>readonly Entry[];
@@ -37,6 +38,7 @@ export function installFillPanel(host:HTMLElement,api:{
   const actions=document.createElement('div');actions.className='c06-clipboard-grid';
   const output=document.createElement('output');output.setAttribute('role','status');
   const targets=document.createElement('output');
+  let context={reference:'',destination:'',pending:false};
   const analysisState=document.createElement('output');analysisState.setAttribute('role','status');
   const preview=document.createElement('canvas');preview.hidden=true;preview.style.cssText='max-width:100%;border:1px solid currentColor;image-rendering:auto';
   preview.setAttribute('aria-label','塗り候補と線画領域のプレビュー');
@@ -81,6 +83,11 @@ export function installFillPanel(host:HTMLElement,api:{
     return control;
   };
   const method=select('塗る範囲',[['color','同じ色'],['line','線をなぞって領域を指定'],['lasso','囲い全体'],['lasso-closed','囲いの中の閉じた領域']]);
+  const confirmBeforeFill=checkbox('通常塗りも候補を確認してから適用');
+  try{confirmBeforeFill.checked=localStorage.getItem('illustro.fill.confirm-normal')==='true';}catch{}
+  confirmBeforeFill.onchange=()=>{
+    try{localStorage.setItem('illustro.fill.confirm-normal',String(confirmBeforeFill.checked));}catch{}
+  };
   const reference=select('参照する絵',[['active','選んだレイヤー'],['merged','見えている絵の全体'],
     ['layer','指定するレイヤー'],['layers','指定する複数のレイヤー'],
     ['vector','ベクターのパス'],['vector-visible','ベクターの見た目']]);
@@ -202,7 +209,9 @@ export function installFillPanel(host:HTMLElement,api:{
     const layerName=candidate?.hints?'色指示の彩色':fillLayerName(outputLayer,color);
     const placement=outputLayer==='under'?'の下':'の上';
     const targetName=outputLayer==='active'?api.targetName():api.targetName()+placement+'に「'+layerName+'」を作成';
-    targets.textContent='参照元 '+(pending&&candidate?candidate.source.name:sourceName)+'　塗り先 '+targetName;
+    context={reference:pending&&candidate?candidate.source.name:sourceName,destination:targetName,pending:!!pending};
+    targets.textContent='参照元 '+context.reference+'　塗り先 '+context.destination;
+    api.onContextChanged?.();
     const available=sourceAvailable(),usable=graphUsable();
     stopCalculation.disabled=!previewAbort&&!analysisAbort;
     analysisState.textContent=analyzing?'解析中…':analysisError?'⚠ 解析エラー '+analysisError:
@@ -390,7 +399,7 @@ export function installFillPanel(host:HTMLElement,api:{
     gestureEpoch++;endLiveGesture?.();endLiveGesture=null;
     gesture?.setCanvasEditGesture(null);gesture=null;
   }
-  function onCanvas(label:string,complete:(points:readonly Point[],prepared?:FillCapture)=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false,asSelection=false){
+  function onCanvas(label:string,complete:(points:readonly Point[],prepared:FillCapture|undefined,current:()=>boolean)=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false,asSelection=false){
     stopGesture();
     const epoch=gestureEpoch;
     const drawing=api.drawing();
@@ -459,7 +468,8 @@ export function installFillPanel(host:HTMLElement,api:{
       complete:points=>{
         const reusable=sourceValid()?prepared:undefined;
         stopGesture();
-        if(points.length)void work(()=>complete(points,reusable));
+        const completedEpoch=gestureEpoch;
+        if(points.length)void work(()=>complete(points,reusable,()=>completedEpoch===gestureEpoch&&drawing===api.drawing()));
       }});
     if(previewColor){
       void read(!asSelection,undefined,true).then(source=>{
@@ -514,7 +524,7 @@ export function installFillPanel(host:HTMLElement,api:{
       ?'オレンジは補った隙間、ピンクは縁の未塗り候補です。範囲と角を調整して適用できます。'
       :'塗り候補を表示しました。範囲や濃さを調整してから適用できます。';
   }
-  async function fill(points:readonly Point[],asSelection:boolean,prepared?:FillCapture){
+  async function fill(points:readonly Point[],asSelection:boolean,prepared?:FillCapture,current=()=>true){
     const options=settings();
     if(options.erase&&destination.value!=='active'&&!asSelection)throw Error('透明にする場合は、既存のレイヤーを選んでください。');
     if(usesRegions()&&(!graphUsable()||!currentGraph||!capture||!confirmed||options.tolerance!==graphTolerance||options.gap!==graphGap))
@@ -525,6 +535,7 @@ export function installFillPanel(host:HTMLElement,api:{
       if(!saved&&!capture?.referenceValid())throw Error('元の線画が変わりました。解析を更新してください。');
     }
     const source=prepared?.valid()?prepared:await read(!asSelection,usesRegions()?saved?.data:undefined);
+    if(!current())return;
     if(usesRegions()&&(!currentGraph||source.width!==currentGraph.width||source.height!==currentGraph.height||source.key!==capture?.key))
       throw Error('塗る作品と解析した線画の版が一致しません。');
     lastFill=null;
@@ -539,9 +550,24 @@ export function installFillPanel(host:HTMLElement,api:{
     rememberRefs();forgetAnalysis();sync();
     output.textContent='表示中のレイヤーから選んだ1枚を外しました。参照元を確認してから塗ってください。';
   });
-  const startFill=button('キャンバスで塗る',()=>onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',(points,source)=>fill(points,false,source),method.value.startsWith('lasso'),'#ffb742',true));
-  button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',(points,source)=>fill(points,true,source),method.value.startsWith('lasso'),'#ffb742',true,true));
-  const applyPaint=button('候補を適用',async()=>{
+  function armFill(){
+    const direct=method.value==='color'&&!confirmBeforeFill.checked;
+    onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',async(points,source,current)=>{
+      try{
+        await fill(points,false,source,current);
+        if(direct&&current()&&candidate&&pending?.pixels)await applyCandidate();
+      }finally{
+        if(direct&&current()&&panel.open){
+          const lastMessage=output.textContent;
+          armFill();
+          if(lastMessage)output.textContent=lastMessage;
+        }
+      }
+    },method.value.startsWith('lasso'),'#ffb742',true);
+  }
+  const startFill=button('キャンバスで塗る',armFill);
+  button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',(points,source,current)=>fill(points,true,source,current),method.value.startsWith('lasso'),'#ffb742',true,true));
+  async function applyCandidate(){
     if(!candidate||!candidateValid(candidate))throw Error('塗る対象が変わりました。');
     const {source,asSelection}=candidate;
     if(asSelection&&pending?.mask)source.select(pending.mask);
@@ -559,7 +585,8 @@ export function installFillPanel(host:HTMLElement,api:{
       }
     }else throw Error('変更される画素がありません。');
     candidate=null;pending=null;paint();output.textContent=asSelection?'領域を選択しました。':'塗りを反映しました。すぐに直すには「直前の塗りを調整」を押してください。';
-  });
+  }
+  const applyPaint=button('候補を適用',applyCandidate);
   const adjustPaint=button('直前の塗りを調整',async()=>{
     if(!lastFill?.source.canAdjust())throw Error('別の編集を開始したため、直前の塗りを置き換えられません。');
     candidate={...lastFill};await refreshCandidate();
@@ -575,7 +602,7 @@ export function installFillPanel(host:HTMLElement,api:{
   stopCalculation.type='button';
   stopCalculation.textContent='計算を中止';
   stopCalculation.onclick=()=>{
-    previewAbort?.abort();analysisAbort?.abort();
+    stopGesture();previewAbort?.abort();analysisAbort?.abort();
     previewAbort=null;analysisAbort=null;
     candidateGeneration++;candidate=null;pending=null;
     output.textContent='塗りつぶしの計算を中止しました。';
@@ -868,5 +895,5 @@ export function installFillPanel(host:HTMLElement,api:{
   advanced.append(advancedTitle,advancedOptions,advancedActions);
   panel.ontoggle=()=>{if(panel.open){sync();refreshReferences();refreshRegionList();}else stopGesture();};
   panel.append(summary,options,targets,analysisState,actions,advanced,preview,detailPreview,gapZoom,output);host.append(panel);sync();
-  return {refresh:()=>{if(panel.open)sync();},open:()=>{panel.open=true;sync();startFill.click();},stop:()=>{if(gesture)stopGesture();}};
+  return {context:()=>context,focusReference:()=>reference.focus(),refresh:()=>{if(panel.open)sync();},open:()=>{panel.open=true;sync();startFill.click();},stop:()=>{stopGesture();previewAbort?.abort();candidateGeneration++;candidate=null;pending=null;}};
 }

@@ -390,9 +390,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   autoSource.add(new Option('選択中のレイヤー','layer'));
   autoSource.add(new Option('見えている絵の合成','merged'));
   const tolerance=document.createElement('input');tolerance.type='range';tolerance.min='0';tolerance.max='100';tolerance.step='1';tolerance.value='18';
-  tolerance.setAttribute('aria-label','色の許容範囲');
-  const tolLabel=document.createElement('output');tolLabel.textContent='許容範囲：18';
-  tolerance.oninput=()=>{tolLabel.textContent='許容範囲：'+tolerance.value;};
+  const toleranceField=document.createElement('label');toleranceField.append('色の許容範囲',tolerance);
   const connected=document.createElement('input');connected.type='checkbox';connected.checked=true;
   const contiguous=document.createElement('label');contiguous.append(connected,document.createTextNode('つながった部分だけ選ぶ'));
   const low=document.createElement('input');low.type='number';low.min='0';low.max='255';low.step='1';low.value='0';
@@ -406,7 +404,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   brightRange.textContent='明るさの範囲（0〜255）';
   const levels=document.createElement('div');levels.className='c06-selection-brightness';levels.append(low,high);
   brightRange.append(levels);
-  autoTools.append(autoSource,tolLabel,tolerance,contiguous,brightRange,autoColor,autoBrightness,autoInk,alpha);
+  autoTools.append(autoSource,toleranceField,contiguous,brightRange,autoColor,autoBrightness,autoInk,alpha);
   const armAuto=(name:'autoColor'|'autoBrightness'|'autoInk')=>{
     if(!source())return;
     tool=tool===name?null:name;points=[];drawing=null;
@@ -442,15 +440,15 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const addByBrush=asButton('選択を筆で足す',()=>arm('brushAdd'));
   const eraseByBrush=asButton('選択を筆で消す',()=>arm('brushSubtract'));
   const brushSize=document.createElement('input');brushSize.type='number';brushSize.min='1';brushSize.max='800';brushSize.step='1';brushSize.value='28';
-  const brushDensity=document.createElement('input');brushDensity.type='range';brushDensity.min='1';brushDensity.max='100';brushDensity.value='100';
-  const brushHardness=document.createElement('input');brushHardness.type='range';brushHardness.min='0';brushHardness.max='100';brushHardness.value='65';
+  const brushDensity=document.createElement('input');brushDensity.type='range';brushDensity.min='1';brushDensity.max='100';brushDensity.value='100';brushDensity.dataset.unit='%';
+  const brushHardness=document.createElement('input');brushHardness.type='range';brushHardness.min='0';brushHardness.max='100';brushHardness.value='65';brushHardness.dataset.unit='%';
   const brushLabel=(label:string,control:HTMLInputElement)=>{
     const text=document.createElement('label');text.textContent=label;text.append(control);return text;
   };
   brushTools.append(addByBrush,eraseByBrush,
     brushLabel('選択ブラシの太さ（px）',brushSize),
-    brushLabel('選択の濃さ（%）',brushDensity),
-    brushLabel('縁の硬さ（%）',brushHardness));
+    brushLabel('選択の濃さ',brushDensity),
+    brushLabel('縁の硬さ',brushHardness));
   function addBrushPoint(event:PointerEvent){
     const point=toDoc(event),last=brushPoints.at(-1);
     const size=Number(brushSize.value);
