@@ -13,7 +13,8 @@ export function installBrushCatalogView(picker:HTMLSelectElement){
   picker.closest('label')!.setAttribute('hidden','');
   const search=basic.querySelector('details');
   if(search)search.open=true;
-  const brushSettings=Array.from(basic.querySelectorAll(':scope > details')).slice(2);
+  // The detailed controls are direct siblings of .m10-presets, not children of it.
+  const brushSettings=Array.from(basic.parentElement!.querySelectorAll<HTMLDetailsElement>(':scope > details.brush-disclosure'));
   for(const disclosure of brushSettings)settings.append(disclosure);
   const opacity=document.getElementById('brushOpacity')!.closest('label');
   if(opacity)opener.before(opacity);
