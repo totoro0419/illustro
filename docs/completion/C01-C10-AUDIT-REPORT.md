@@ -1,4 +1,152 @@
 # Illustro｜C01〜C10 完成状況監査報告（STEP 1）
+
+> **更新 2026-11-22：前回「未確認」104件はコード調査によるA/B/C判定に置換済み。以下の「11/22更新結果」が現時点の優先記録です。元の本文で「未確認104」とする箇所は11/22調査着手前の履歴としてのみ読むこと。アプリでの操作や新テスト実行は行っていません。**
+
+## 2026-11-22 更新結果｜104機能の実装有無を全件照合
+
+**調査対象の最新HEAD：** `49474fd56b36d91425e5df81f9c135c0424aecb4`。前回CSVの未確認104 IDを抽出し、GitHub上の描画UI/設定/呼出処理/Core/保存/既存テストを追跡した。証拠原本は [104件のコード調査JSON](C01-C10-104-CODE-EVIDENCE.json) と [更新された155件台帳](C01-C10-FEATURE-INVENTORY.csv)。
+
+**結論：104件 = A（実装あり）91件 + B（一部実装）12件 + C（未実装）1件。未処理0・取得不能0。** 104 IDが元の未確認104 IDと完全に一致すること、根拠に示したファイル145種が基準HEADのGitHubファイルツリーに存在することを確認した。**ファイルの存在だけでAにせず、UIから処理・履歴/保存への経路を読んで判定**した。関連テストはコード・テストファイルの存在を調査した証拠であり、今回新たに実行した結果ではない。
+
+| チャンク | 元の未確認 | A 実装あり | B 一部実装 | C 未実装 |
+|---|---:|---:|---:|---:|
+| C02 | 1 | 0 | 1 | 0 |
+| C03 | 21 | 19 | 2 | 0 |
+| C04 | 16 | 13 | 2 | 1 |
+| C05 | 13 | 12 | 1 | 0 |
+| C06 | 13 | 9 | 4 | 0 |
+| C07 | 11 | 10 | 1 | 0 |
+| C08 | 17 | 17 | 0 | 0 |
+| C09 | 8 | 8 | 0 | 0 |
+| C10 | 4 | 3 | 1 | 0 |
+| **合計** | **104** | **91** | **12** | **1** |
+
+**全155件の最新状態：** A実装あり91件、B一部実装12件、C未実装1件、前回の一部完成34件、前回の実装充足候補16件、以前からの品質問題あり1件。前回の51件については本104件監査だけを理由に無断で再分類していない。実装有無のAと、製品としての実機完成/画質合格を区別する。
+
+**Cと判定した機能はCOL-011だけ：知覚的な色選択・色域マスク。** `color/model.ts` はRGB/HSV/HSLの選択を扱い、`color/orbit.ts` もHSVの色相環を描く。両者と `color/panel.ts`、`color/harmony.ts` のUI・状態更新・保存経路に、必要な知覚的L/C/Hでの選択、色域マスク編集/保存、色域内候補表示がない。既存の一般色相環で代用できないためC。対照的に他の12件は既存処理があるためBとして不足箇所だけを実装する。
+
+**Bの12件：** PIX-001（1px・整数・アンチエイリアスOFF）、CAN-010（キャンバス外の内容保持）、SAV-008（バックアップ・版移行・旧形式）、DEV-005（能力差・低負荷・端末間移送）、UI-003（コンテキスト操作・対象帯）、REF-006（資料保存・不足・権利メモ）、CAN-005（トリミング・キャンバス拡張）、CAN-006（画像サイズ変更）、CLP-003（文書間の編集データ移送）、SEL-007（境界移動と内容移動）、PIX-002（画素を守る変形と出力）、VEC-003（線幅・筆風・ベクター消去）。一部実装の詳細と修正箇所は[更新実装計画](C01-C10-IMPLEMENTATION-PLAN.md)の先頭に列挙。
+
+旧M01〜M10の操作PASS **752件は全件維持**。過去の操作PASSは旧コード・旧UIでの検査であり、今回の後発機能を無条件に証明しない。PR #105の現行UIを前提とし、基準未統合の#104/#106の差分は現コードの実装実績に加算しない。
+
+### 104機能の個別照合結果
+表の経路表記は「参照ファイル：コード行と処理」の形式。各機能には詳細台帳に処理・UI・保存/Undo・関連テスト・欠落能力の列がある。Aは静的な実装有無であってAndroidの実機操作合格ではない。
+
+| 機能ID | チャンク | 判定 | 確認した機能 | 不足（あれば） | 処理・UIの根拠 |
+|---|---|---|---|---|---|
+| PIX-001 | C02 | B | 拡大時の画素表示切替、細いブラシの入力は存在 | 描画用の1px整数位置固定とアンチエイリアスOFFを独立操作する専用設定が確認できない | `packages/brush-rt/src/renderer.mjs:415 canvas.style.imageRendering` / `apps/editor/src/main.ts:3075 displayBrushCursor` |
+| CAN-010 | C03 | B | Crop・作品サイズ変更と過去版の保存がある | Crop後の領域外の元画素を通常編集で保持・再表示する専用経路が不明確 | `packages/core/src/transaction.ts:geometry operations` / `apps/editor/src/main.ts:1987 openGeometry` |
+| HIS-002 | C03 | A | 履歴一覧・プレビュー比較・過去版の復元がUIから接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/artworkHistoryView.ts:43 historyComparisonPreview` / `apps/editor/src/main.ts:2269 openArtworkHistory` |
+| HIS-003 | C03 | A | 名前とメモを付けて独立版として保持し後から呼び出せる | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/transaction.ts:577 pinRevision` / `apps/editor/src/main.ts:2049 saveNamedArtworkSnapshot` |
+| HIS-004 | C03 | A | 別案分岐・比較・復元と通常Undoに接続 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/transaction.ts:586 restoreRevision` / `apps/editor/src/main.ts:2024 restoreArtworkHistory` |
+| HIS-005 | C03 | A | 範囲選択・フェザーを考慮した過去版の部分復元/履歴ブラシ | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/historyBrush.ts:restoreHistoryPixels` / `apps/editor/src/main.ts:2082 copyHistoricalLayer` |
+| HIS-006 | C03 | A | 履歴保持上限の設定・縮小プレビューの制限と不要な候補の整理 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/coreDocument.ts:38 setHistoryUndoLimit` / `apps/editor/src/main.ts:2210 setHistoryUndoLimit` |
+| LAY-004 | C03 | A | クリッピング・透明部分ロックのUI切替→Core更新が存在 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/transaction.ts:883 setLayerClipping` / `apps/editor/src/main.ts:1533 layerClipping.onclick` |
+| LAY-005 | C03 | A | ピクセル/パス/選択範囲マスクの作成・直接編集・適用 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/transaction.ts:873 setVectorLayerMask` / `apps/editor/src/main.ts:488 pixelMaskAdd` |
+| LAY-006 | C03 | A | 複製・結合・統合コピーとUndo単位のCore操作 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/main.ts:368 createLayerFromPixels` / `apps/editor/src/ui/shell.ts:133 duplicateLayer/merge` |
+| LAY-008 | C03 | A | 全体/内容/位置ロックのそれぞれの操作・編集ガード | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/transaction.ts:896 setLayerContentLocked` / `apps/editor/src/main.ts:1545 layerContentLock.onclick` |
+| LAY-009 | C03 | A | Soloは一時表示で元のレイヤー内容を変更せず戻せる | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/brushSurface.ts:setLayerCompPreview` / `apps/editor/src/main.ts:1459 layerSoloToggle.onclick` |
+| LAY-010 | C03 | A | 作品の位置から層候補を取得し選択する操作が接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/brushSurface.ts:setLayerPick` / `apps/editor/src/main.ts:713 pickLayerOnCanvas` |
+| LAY-011 | C03 | A | 表示案の保存・比較・適用・更新・削除と保存形式が存在 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/transaction.ts:594 saveLayerComp` / `apps/editor/src/main.ts:1447 layerCompApply.onclick` |
+| LAY-012 | C03 | A | 白背景/空層/非描画対象に対し描画可能な層を保護し誤描画を防止 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/brushSurface.ts:804 nonexistent white raster` / `apps/editor/src/main.ts:2615 drawing controls` |
+| NDE-001 | C03 | A | 合成モードと色空間の変更・プレビュー・確定が接続 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/layerBlend.ts:3 LAYER_BLEND_MODES` / `apps/editor/src/ui/layerBlendDialog.ts:13 openLayerBlendDialog` |
+| NDE-002 | C03 | A | 階調条件に応じた合成詳細の入力とレイヤー保存に接続 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/layerBlend.ts:9 LayerTone` / `apps/editor/src/ui/layerBlendDialog.ts:37 tonePanel.open` |
+| SAV-004 | C03 | A | 保存中・保護待ち・失敗を可視化し、保護記録を順番に確定 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/persistence/coordinator.ts:212 drain` / `apps/editor/src/main.ts:1391 saveState` |
+| SAV-005 | C03 | A | 保護済みの復元候補選択・プレビュー・復旧を接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/persistence/coordinator.ts:122 listRecoveryCandidates` / `apps/editor/src/ui/homeShell.ts:393 recovery candidates` |
+| SAV-006 | C03 | A | 容量、同ID別起動の世代検査、外部保存の変更検知、失敗案内を実装 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/persistence/workLibrary.ts:55 publishWork` / `apps/editor/src/main.ts:289 retryWorkSave` |
+| SAV-007 | C03 | A | Service Workerによる必要ファイルの保護・ログイン不要のローカル編集・保存が実装 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/public/sw.js:51 fetch` / `apps/editor/src/main.ts:3650 serviceWorker.register` |
+| SAV-008 | C03 | B | 旧筆跡移行・旧原本の比較・バックアップ作品保存がある | 異なる全旧形式・外部依存の互換と複数作品のバックアップ一括復元は未充足または証拠不足 | `apps/editor/src/persistence/openLegacy.ts:21 convertLegacyStrokeFile` / `apps/editor/src/main.ts:3215 legacySourcePreview` |
+| COL-003 | C04 | A | 作品/資料、参照対象、面積、透明度の採色設定と描画色への反映がある | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/color/eyedropperSettings.ts:85 apply controls` / `apps/editor/src/main.ts:1850 installColorPanel / 1919 activateEyedropper` |
+| COL-004 | C04 | A | 色パレット作成/編集/順序/色の削除/交換・JSON読込/書出と保存が接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/color/model.ts:147 selectPalette` / `apps/editor/src/color/panel.ts:67-71 palette creation, reorder, import/export` |
+| COL-005 | C04 | A | 配色候補・明暗比・グレー/色覚比較の表示は作品の画素を変更しない | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/color/harmony.ts:45 harmonyColors` / `apps/editor/src/color/harmony.ts:53 installHarmonyTools` |
+| COL-011 | C04 | C | HSV/HSL/RGB色の選択と色相環は存在する | 必要能力の知覚的L/C/H空間の選択・色域マスクの編集/保存/色域内表示がcolor/model.ts、orbit.ts、panel.ts、harmony.ts、および現行UIに存在しない。既存の色相環を同等機能と取り違えない | `apps/editor/src/color/model.ts:16 rgbToHsv / 27 rgbToHsl` / `apps/editor/src/color/panel.ts:11 colorPickerMode classic/orbit` |
+| DEV-004 | C04 | A | 回転/幅変更時の表示再構築、パネル位置、タッチ/キーボードの適応が実装 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/shellBehavior.ts:263 window resize` / `apps/editor/src/ui/shellBehavior.ts:24 compact/touch matchMedia` |
+| DEV-005 | C04 | B | 端末別入力、空き容量検出、Native作品と設定の移送入口はある | 実入力の取得可否・実測負荷を機能別に説明する統合画面が見当たらず、能力差の提示は限定的 | `apps/editor/src/ui/inputDeviceProfiles.ts:16 installInputDeviceProfiles` / `apps/editor/src/ui/workspaceProfiles.ts:240 bundleExport` |
+| GST-002 | C04 | A | 実際に押したキーの割当・衝突案内、保持/切替/単発と解除の操作が接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/shortcutSettings.ts:139 captureKey` / `apps/editor/src/main.ts:3779 installShortcutSettings` |
+| GST-005 | C04 | A | キー/作業場設定の書出・取込・変更差分と未対応割当を保持 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/shortcutSettings.ts:185 parse imported` / `apps/editor/src/ui/workspaceProfiles.ts:255 bundleFile import` |
+| INP-008 | C04 | A | 入力欄/IME合成中のショートカット抑制と文字入力中の候補更新抑制が接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/shortcutSettings.ts:60 isText` / `apps/editor/src/artwork/textPanel.ts:173 compositionstart` |
+| UI-002 | C04 | A | Box折畳、順序変更、分離したパネルの移動/リサイズ/位置保存がある | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/floatingPanels.ts:85 dragButton` / `apps/editor/src/ui/shellBehavior.ts:168 togglePanel` |
+| UI-003 | C04 | B | ツール・保存状態と設定への近接表示が存在 | 描画先/塗り参照元/選択/未確定状態を常時同じ安定した対象帯にまとめる統合入口が不足 | `apps/editor/src/main.ts:1391 saveState` / `apps/editor/src/ui/workspaceDetails.ts:21 show` |
+| UI-004 | C04 | A | 6個の固定スロット・グループ/名称編集・保持キー/ペンボタンとUndo/Redo、個人設定の保存がある | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/commandPalette.ts:319 renderQuick` / `apps/editor/src/main.ts:3747 installCommandPalette` |
+| UI-005 | C04 | A | 機能・レイヤー・筆名等の横断検索から操作実行、非表示層も検索可能 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/commandPalette.ts:163 dynamicCommands` / `apps/editor/src/main.ts:3747 installCommandPalette` |
+| UI-006 | C04 | A | 作業場設定の保存/復元/左右反転、設定束ねて移送するUIが存在 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/workspaceProfiles.ts:120 snapshot` / `apps/editor/src/main.ts:3776 installWorkspaceProfiles` |
+| UI-007 | C04 | A | 集中表示、全画面、Escapeで戻す、Quick Controllerへの入口がある | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/focusMode.ts:2 installFocusMode` / `apps/editor/src/main.ts:3710 installFocusMode` |
+| UI-008 | C04 | A | ホーム・機能紹介・設定・ヘルプから編集入口へ到達可能 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/ui/homeShell.ts:123 installHomeShell` / `apps/editor/src/ui/help.ts:15 installEditorHelp` |
+| AST-001 | C05 | A | 素材の種類ごとに保存先と適用処理を分ける一覧・取込が接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/library.ts:5 ASSET_KINDS` / `apps/editor/src/assets/assetPanel.ts:34 installAssetPanel` |
+| AST-002 | C05 | A | 検索/タグ/フォルダー/最近使った/お気に入りが実際の素材DBに反映 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/library.ts:63 listAssets` / `apps/editor/src/assets/assetPanel.ts:42 query search` |
+| AST-003 | C05 | A | 個別素材とセットの入出力、インポートの安全性確認・途中再開 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/packs.ts:29 exportAssetPack` / `apps/editor/src/assets/assetPanel.ts:55 add/import pack` |
+| AST-004 | C05 | A | 版更新・複製・削除/復元・同名素材の取り込み分岐がDBに反映 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/library.ts:178 createAssetVersion` / `apps/editor/src/assets/assetPanel.ts:146 新版を保存` |
+| AST-005 | C05 | A | 端末内素材庫と任意の素材セット書出/取込が成立 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/packs.ts:6 PackManifest` / `apps/editor/src/assets/assetPanel.ts:56 素材セットを読み込む` |
+| CAN-007 | C05 | A | 作品ごとに切替前の保護処理を待ち、一覧から別作品を開く/前の作業に戻る | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/main.ts:3538 openWork` / `apps/editor/src/ui/homeShell.ts:231 open.onclick` |
+| IO-001 | C05 | A | 画像ファイルを作品に開く/貼付/配置/資料へ振り分け、元作品編集に接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/linkedImages.ts:91 decodeLinkedImage` / `apps/editor/src/main.ts:4737 installImageDropRouting` |
+| REF-001 | C05 | A | 複数資料の重ね合わせ、グループ化と切替・表示が保存に接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/referenceBoardStore.ts:3 BoardItem group` / `apps/editor/src/assets/referenceBoard.ts:77 groupRow` |
+| REF-002 | C05 | A | 資料の位置・拡縮・回転/固定を直接編集して再読込に保持 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/referenceBoard.ts:599 pinned guard` / `apps/editor/src/assets/referenceBoard.ts:481 pin button` |
+| REF-003 | C05 | A | 資料の反転、グレー、一時非表示・復帰を資料のメタデータに保持 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/referenceBoard.ts:577 grayscale filter` / `apps/editor/src/assets/referenceBoard.ts:586 グレー` |
+| REF-004 | C05 | A | 資料座標を逆変換して色を拾い、選択された資料から描画色を取得 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/referenceDirectSample.ts:12 referencePixelAtScreen` / `apps/editor/src/assets/referenceBoard.ts:487 sample button` |
+| REF-005 | C05 | A | 資料の全体と細部を併記するNavigatorを資料選択へ接続 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/assets/referenceBoard.ts:424 drawNavigator` / `apps/editor/src/assets/referenceBoard.ts:64 navFull/navDetail` |
+| REF-006 | C05 | B | 作品内に資料を埋込/外部参照し、欠損を表示・元データを保護する処理がある | 資料の権利・出典メモを利用者が入力/修正するUIが見当たらない。BoardItem.notesは保存構造にあるがreferenceBoard.tsで編集に接続されていない | `apps/editor/src/assets/referenceBoard.ts:262 exportLayout / 268 NATIVE_TYPE` / `apps/editor/src/assets/referenceBoard.ts:83 embedded/linked` |
+| CAN-005 | C06 | B | Crop・キャンバス拡張・基準点選択は描画/Undo/保存へ接続 | 正式仕様で既定とする外側画素保持/完全切除の別コマンドがない。main.ts:2503 はcropCanvasで外の画素を直接落とす。Crop後に保存・履歴整理しても外側を再編集する機能はない | `apps/editor/src/canvasGeometry.ts:19 cropCanvas / 11 changeCanvasBounds` / `apps/editor/src/main.ts:1987 openGeometry / 2000 cropStart` |
+| CAN-006 | C06 | B | 任意サイズと補間方式を指定し1回の画像Resize/Undoを実行できる | 比率ロック標準・変更前後の画質比較/結果寸法プレビュー・DPIだけの変更と連動説明が現行geometryDialogで不足 | `apps/editor/src/canvasGeometry.ts:45 resizeImagePixels` / `apps/editor/src/main.ts:1987 openGeometry / 2501 geometryFilter` |
+| CLP-001 | C06 | A | 選択/層/グループのコピー・切取・貼付が内部Clipboardから実際の対象層へ到達。切取はコピー成功後のみ変更 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/selection/clipboard.ts:107 copy / 219 cut` / `apps/editor/src/selection/clipboardPanel.ts:41 c06CopySelection / 46 c06CutSelection` |
+| CLP-002 | C06 | A | 合成コピー/同位置貼付と原位置の情報保持、UI/資料の作品表示への混入回避が実装 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/selection/clipboard.ts:107 copy merged` / `apps/editor/src/selection/clipboardPanel.ts:44 c06CopyMerged / 48 c06PasteInPlace` |
+| CLP-003 | C06 | B | 別作品に層・グループ・文字・パス・Mask・変形データを編集可能なままコピー可能 | 異なる作品色空間の色差や必要素材を含むポータブル移送/不足素材の解決は実装が限定的。フォントIDは通知するが元作品の依存素材データをまとめて移送しない | `apps/editor/src/selection/clipboard.ts:304 editable layers / 326 begin` / `apps/editor/src/selection/clipboardPanel.ts:42 c06CopyLayer / 43 c06CopyGroup` |
+| CLP-004 | C06 | A | OSクリップボードと画像ドロップの経路・権限拒否時の説明、貼付/素材/資料の用途選択がある | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/selection/clipboard.ts:369 writeSystemClipboard / 374 readSystemClipboard` / `apps/editor/src/selection/clipboardPanel.ts:55 c06SystemCopy / 200 paste event` |
+| SEL-002 | C06 | A | 色/明度/線画/レイヤーαから対象を作り、参照層・許容値・連続条件を設定して範囲マスクを確定 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/selection/autoSelect.ts:8 selectFromPixels` / `apps/editor/src/selection/panel.ts:389 autoSource / 416 pickAutomatic` |
+| SEL-003 | C06 | A | 幅指定の境界/ぼかし/拡縮をプレビュー・比較・取消し後に選択マスクへ反映 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/selection/mask.ts:122 featherMask / 147 growOrShrink` / `apps/editor/src/selection/panel.ts:540 feather / 554 grow / 555 shrink` |
+| SEL-004 | C06 | A | 全選択・解除・直前再選択・反転をUndo/Redo対応の現在選択範囲に反映 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/selection/mask.ts:63 invertSelection / 66 fullSelection` / `apps/editor/src/selection/panel.ts:478 all / 479 clear / 480 reselect` |
+| SEL-005 | C06 | A | 線画参照の領域と現レイヤー画素の透明度から範囲マスクを生成し加算/除外に使用 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/selection/autoSelect.ts:8 selectFromPixels` / `apps/editor/src/selection/panel.ts:403 alpha / 404 autoInk` |
+| SEL-006 | C06 | A | 名前付き選択と現在選択を分離保存、複合モードで読み込み・上書き、Native保存でも復元 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/selection/store.ts:32 saveNamedSelection / 68 loadNamedSelection` / `apps/editor/src/selection/panel.ts:615 save / 617 load / 687 loadCurrent` |
+| SEL-007 | C06 | B | 枠のみの平行移動と画素内容の平行移動を別UI・別操作で実行 | 選択境界そのものの拡縮・回転を濃度Maskを守って直接変形する操作がない。TRN側の画素変形で代用せず専用境界変形を追加 | `apps/editor/src/selection/mask.ts:76 translateSelection` / `apps/editor/src/selection/panel.ts:484 境界だけ移動 / 491 movePixels` |
+| SEL-008 | C06 | A | 縁/濃度の半透明表示は画面合成で操作でき、非表示にしても選択制限が維持される。PNGへは含めない | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/selection/overlay.ts:39 render selection alpha` / `apps/editor/src/selection/panel.ts:62 showSelection / 63 onchange` |
+| NDE-003 | C07 | A | 元の絵を保護した変形・効果を再編集/無効化/削除/マスクし、明示的に焼き込みができる | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/layerDeformation.ts:40 validateLayerDeformation` / `apps/editor/src/transform/panel.ts:567 toggleEffect / 570 removeEffect` |
+| NDE-004 | C07 | A | 画像リンク・埋込・同一元の複製・不足元の保持と再指定/独立化がUIから選べる | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/layerImageLink.ts:9 validateLayerImageLink` / `apps/editor/src/transform/imageLinkPanel.ts:58 link/embed / 60 instance` |
+| NDE-005 | C07 | A | グループ通過/隔離を処理順とマスク・クリッピングの説明付きで比較し構造を一Undoで変更 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/layerGroups.ts:9 compositing mode` / `apps/editor/src/main.ts:857 editGroupStructure / 866 mode` |
+| PIX-002 | C07 | B | 最近傍補間の明示・ドット絵向け提案と低画質化の注意がある | 整数倍・端数位置/回転に対して画素を守る専用の条件チェック/強制しない警告と、ピクセル用途の作品出力UIは不足 | `apps/editor/src/canvasGeometry.ts:45 resizeImagePixels / 51 nearest` / `apps/editor/src/transform/panel.ts:139 interpolation mode / 140 artworkKind` |
+| TRN-002 | C07 | A | 四隅/消失点/傾斜で変形を直接操作、退化はinverseTransformで拒否し編集可能な元を保持 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/transform/panel.ts:134 modes free/projective/skew` / `apps/editor/src/transform/panel.ts:274 refreshHandles / 553 vanishing` |
+| TRN-003 | C07 | A | メッシュ・ケージの固定点/追加/削除/分割と直接操作、元画像と制御点を再編集可能に保存 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/transform/mesh.ts:11 gridMesh / 20 cageMesh` / `apps/editor/src/transform/panel.ts:206 mesh points / 311 refreshHandles` |
+| TRN-004 | C07 | A | 押す/膨張/収縮/回す/戻す、圧力反映の半径・強さ、保護範囲と一筆Undo/全体Undoがある | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/transform/liquify.ts:7 makeLiquifyStroke / 24 liquifyMapping` / `apps/editor/src/transform/panel.ts:523 brushMode / 541 setCanvasEditGesture` |
+| TRN-005 | C07 | A | 定規/画素/他の層への吸着、一時解除と吸着先の表示、整列・等間隔をUndo一単位で適用 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/transform/layout.ts:alignLayers` / `apps/editor/src/transform/panel.ts:75 snapPixels / 81 skipSnap` |
+| TRN-006 | C07 | A | 元状態から都度変形を再評価し複数試行で画素劣化を重ねず、用途別の補間と画素保護を選択 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/transform/interpolationAdvice.ts:9 recommendInterpolation` / `apps/editor/src/transform/panel.ts:139 interpolation / 594 change` |
+| TRN-007 | C07 | A | ハンドル調整はセッション内Undo/Redo、取消で原本に復帰、適用は全体履歴一操作 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/transform/panel.ts:609 undo.push(prior)` / `apps/editor/src/transform/panel.ts:752 back / forward / apply / cancel` |
+| TRN-008 | C07 | A | 元画素の再編集/非破壊変形の再編集/明示焼込/上層追加の各経路とUndo・Native保持が存在 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/layerDeformation.ts:33 LayerDeformation` / `apps/editor/src/transform/panel.ts:439 openOriginal / 564 bakeButton` |
+| FIL-002 | C08 | A | 隙間補完の候補・塗り残しを表示し、元線を変更せず補完幅/角/範囲を調整して塗る | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/pixels.ts:79 fillBoundaries / 267 unpaintedFillEdges` / `apps/editor/src/fill/panel.ts:95 gap / 96 edge / 101 diagnostic` |
+| FIL-003 | C08 | A | 参照層現在/複数/合成/ベクター、特定層除外、塗り先の独立指定と版固定がある | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/reference.ts:14 readFillReference` / `apps/editor/src/fill/panel.ts:84 reference / 90 destination / 535 exclude` |
+| FIL-004 | C08 | A | ドラッグ中の通過領域候補を集約・重複除外し、一ドラッグ一回の塗り適用/Undoを提供 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/pixels.ts:284 fillMask / 333 contiguous` / `apps/editor/src/fill/panel.ts:393 onCanvas / 457 update complete` |
+| FIL-005 | C08 | A | 囲み全体/囲み内の閉領域を選び、色・透明消去・対象の濃さ条件を変えて一操作で反映 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/pixels.ts:292 lasso / 295 lasso-closed` / `apps/editor/src/fill/panel.ts:83 method / 542 startFill` |
+| FIL-006 | C08 | A | 線をなぞって接触した閉領域を候補表示、領域番号の加算・除外を選んで確定 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/pixels.ts:308 method line` / `apps/editor/src/fill/panel.ts:103 trace / 542 startFill` |
+| FIL-007 | C08 | A | 保存した線画領域版に基づく独立彩色、境界修正を優先、元線変更時に既存塗りを勝手に再彩色しない | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/pixels.ts:218 buildRegions` / `apps/editor/src/fill/panel.ts:600 confirmGraph / 611 use saved` |
+| FIL-008 | C08 | A | 色・透明の指示を独立保存し候補を作成、指示の移動/局所取消、焼込と区別して保存 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/pixels.ts:419 paintColorHints` / `apps/editor/src/fill/panel.ts:625 addHint / 637 changeHintColor / 683 removeHint` |
+| FIL-009 | C08 | A | 直後の塗りを元候補から再計算し新編集無しの場合だけ同一履歴へ置換する | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/panel.ts:563 adjustPaint` / `apps/editor/src/fill/panel.ts:544 applyPaint / 565 refreshCandidate` |
+| FIL-010 | C08 | A | 現在レイヤー/上新規/下新規/色名レイヤーを選び、透明消去の対象条件と一Undoを保持 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/main.ts:4477 addRasterSnapshotAbove` / `apps/editor/src/fill/panel.ts:90 destination / 115 erase` |
+| LIN-001 | C08 | A | 元Raster/複数参照から線画領域用の非描画レイヤーを作成・版と手修正を保存し元線を保護 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/pixels.ts:218 buildRegions` / `apps/editor/src/fill/panel.ts:585 analyze / 600 confirmGraph` |
+| LIN-002 | C08 | A | 境界/外側/穴/隣接・補完候補を別表示し、保存した区分を再呼出 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/pixels.ts:35 regionTopology` / `apps/editor/src/fill/panel.ts:92 view / 816 inspect` |
+| LIN-003 | C08 | A | 接続/切断/統合の手動修正と候補拒否が元線画を破壊せず版に残る | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/changedRegions.ts:7 updateChangedRegions` / `apps/editor/src/fill/panel.ts:715 境界線を足す / 716 切る / 776 接続採用` |
+| LIN-004 | C08 | A | 同じ保存済み線画領域を塗り・選択範囲作成の両方に利用し、成果物を分離 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/panel.ts:543 領域を選択範囲にする` / `apps/editor/src/fill/panel.ts:542 塗る / 543 選択する` |
+| LIN-005 | C08 | A | 生成元の変更を警告し手修正を維持しながら新旧解析を比較、変更版を明示採用。元の彩色は維持 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/changedRegions.ts:7 updateChangedRegions` / `apps/editor/src/fill/panel.ts:585 解析・更新 / 794 前回比較` |
+| LIN-006 | C08 | A | 端点/途中/交差/近接の候補を提示して接続可否を選び、判定内容を手修正に保存 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/pixels.ts:450 suggestLocalGaps / 529 sharedBoundary` / `apps/editor/src/fill/panel.ts:766 nextGap / 776 acceptGap / 780 rejectGap` |
+| LIN-007 | C08 | A | 未解析/処理中/候補/要レビュー/確定済み/参照元更新の状態を示し、使えない区分での確定を制限 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/lineRegions.ts:10 review state` / `apps/editor/src/fill/panel.ts:211 pending / 213 reviewed` |
+| LIN-008 | C08 | A | ベクターのパスと線幅の見た目を区別・比較して領域へ利用、元パスと線画領域版を保持 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/fill/reference.ts:14 readFillReference` / `apps/editor/src/fill/panel.ts:84 vector / vector-visible / 586 vectorCompare` |
+| GRA-002 | C09 | A | 色/透明度/中間位置をドラッグや数値で追加・削除・反転/繰返し、編集可能な停止点を作品に保存 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/editableArtwork.ts:19 GradientStop midpoint` / `apps/editor/src/artwork/shapeGradient.ts:615 redrawStops / 683 position / 686 opacity / 687 midpoint` |
+| GRA-003 | C09 | A | 範囲マスク・形状追従を前後比較して適用、あとからグラデーションの方向や停止点を再編集 | 主要要件の未接続・未実装は静的確認で発見せず | `packages/core/src/editableArtwork.ts:20 EditableGradient follow` / `apps/editor/src/artwork/shapeGradient.ts:413 boundary / 416 follow preview / 783 edit layer` |
+| GRA-004 | C09 | A | 階調の色置換、色停止点と段階数、ディザ切替、中央の原寸比較、非破壊の調整層として再編集 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/artwork/gradientMap.ts:87 validateGradientMap` / `apps/editor/src/artwork/gradientMap.ts:45 installGradientMapPanel / 60 dither` |
+| GUI-002 | C09 | A | 一点/二点/三点透視・等角/格子と画面外消失点の座標、ガイド位置のUndo/保存 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/artwork/ruler.ts:6 kinds perspective1/2/3` / `apps/editor/src/artwork/ruler.ts:37 axis / 38 coordinates / 82 pick` |
+| GUI-003 | C09 | A | 中心・角度・分割数を設定し仮線コピー/Undoを共有。Shiftを押しながら一筆だけ解除できる | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/strokeSymmetry.ts:8 normalizeSymmetry` / `apps/editor/src/artwork/symmetryPanel.ts:9 mirror/radial/kaleidoscope / 20 axis placement` |
+| GUI-005 | C09 | A | ペン保持時に形状補正候補、直線/楕円/矩形を比較・訂正・適用/取消・元筆跡へ復元 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/artwork/strokeCorrection.ts:13 correctionSuggestedShape` / `apps/editor/src/artwork/strokeCorrection.ts:64 enabled/hold / 104 apply / 107 cancel` |
+| GUI-006 | C09 | A | 定規の吸着先名、優先度/範囲/強さ・可視/ロック、一筆のみ吸着解除と保存可能な設定がある | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/artwork/guidedPath.ts:7 snapArtworkPathToGuide` / `apps/editor/src/artwork/ruler.ts:29 visible / 30 preferred / 35 strength / 36 range` |
+| GUI-007 | C09 | A | 定規セットと図形を素材として登録し、他作品の寸法比/元座標を選んでプレビュー・適用/取消 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/artwork/presets.ts:13 parsePreset / 25 place` / `apps/editor/src/artwork/presets.ts:131 register guides / 133 placement preview` |
+| VEC-003 | C10 | B | ベクターの線種と基本幅、線/区間/交点までの消去、筆圧による線の表現を実装 | 線の途中の任意点で線幅を直接編集する操作・消去範囲の確定前の画面プレビューが現行UIから不足 | `packages/core/src/editableArtwork.ts:18 ArtPoint pressure / 32 pressure lineStyle` / `apps/editor/src/artwork/vectorPanel.ts:256 erase segment / 313 eraseBetweenIntersections` |
+| VEC-004 | C10 | A | 許容幅を指定した簡略化・平滑化、和差交差排他、元図形と結果の連動・編集/Undo/保存を実装 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/artwork/pathOperations.ts:12 simplifyPath / 27 smoothPath / 216 combineShapes` / `apps/editor/src/artwork/vectorPanel.ts:296 simplify / 335 boolean` |
+| VEC-006 | C10 | A | フォントの端末/素材庫取込、書体の選択・欠落レイヤー通知・輪郭化対応の診断と編集正本の保持 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/artwork/fonts.ts:16 importFont / 89 fontOutlineCapability` / `apps/editor/src/artwork/textPanel.ts:59 refreshFonts / 235 import font` |
+| VEC-007 | C10 | A | 文字輪郭化/画像化の元文字と結果比較・失う編集性の説明・Undoによる元へ復帰が実装 | 主要要件の未接続・未実装は静的確認で発見せず | `apps/editor/src/artwork/fonts.ts:220 outlineText` / `apps/editor/src/artwork/textPanel.ts:240 outline / 254 rasterize` |
+
+### 調査の限界
+- 実機/ブラウザの操作・画質比較・GPU性能の実測は今回の禁止事項であり、A判定を利用者の操作感までのPASSとはしない。
+- テストファイルの存在や従来の自動試験成功は新規実行証拠ではない。13件の不足/欠落は必要な修正を追加した後、関連する分岐と保存/Undoを自動検査する。
+- 既存の17+18機能（C01/C02旧35件）および前回「実装充足候補」16件・「一部完成」34件・品質問題1件の検証状況は維持し、今回104件の調査結果と混同しない。
+- 機能単位の実装有無についてA/B/Cの判定を確定した。将来新しいコード・不具合証拠が出たときの訂正は可能だが、現時点で104件を「未確認」に戻さない。
+
+---
+
 **調査日：2026-11-22 JST。基準：`quality/C03-C10-integration`、HEAD `49474fd56b36d91425e5df81f9c135c0424aecb4`。** GitHubの公開ソースと資料だけを調査。実機/ブラウザ操作・アプリ本体修正・新たな自動テスト実行はしていない。
 
 ## 1. 結果と重要な限界
