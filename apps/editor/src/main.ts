@@ -88,7 +88,8 @@ import {installShellUi} from './ui/shellBehavior';
 import {installBrushCatalogView} from './ui/brushCatalogView';
 import {installWorkspaceControls} from './ui/workspaceControls';
 import {installCommandPalette} from './ui/commandPalette';
-import {installSimpleMacros} from './ui/simpleMacros';
+import {installSimpleMacros,type SimpleMacroService} from './ui/simpleMacros';
+import {moveRecordedBrush} from './ui/macroArtwork';
 import {installWorkspaceProfiles} from './ui/workspaceProfiles';
 import {installFloatingPanels} from './ui/floatingPanels';
 import {installInputDeviceProfiles,readPointerRoles} from './ui/inputDeviceProfiles';
@@ -119,7 +120,7 @@ import {BrushUsage} from './brushUsage';
 import {installBrushAdvancedEditor} from './brushAdvancedEditor';
 import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
-import {compilePreset,layerMaskTile,TILE,type FoundationPreset} from '@illustro/brush-rt';
+import {compilePreset,layerMaskTile,TILE,type FoundationPreset,type StrokeRecord} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,resizeImageRegion,type ImageResample} from './canvasGeometry';
 import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportOptions,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
@@ -198,6 +199,7 @@ let c05ReferenceBoard:ReferenceBoardService|undefined;
 let c06ClipboardUI:ClipboardUI|undefined;
 let c06Selection:SelectionWorkbench|undefined;
 let timeline:ReturnType<typeof installTimeline>|undefined;
+let activeMacroService:SimpleMacroService|null=null;
 let fillPanel:ReturnType<typeof installFillPanel>|undefined;
 let transformPanel:ReturnType<typeof installTransformPanel>|undefined;
 let activeCanvasTool='',canvasToolRequest=0;
@@ -1685,6 +1687,11 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   inputFreezeTrace?.mark('save-prepare:start');persistence.noteCommit(controller.document,handoff);inputFreezeTrace?.mark('save-prepare:end');if(controller.document.head!==handoff.resultRevisionId)persistence.noteNavigation(controller.document);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
   timeline?.record(controller.document,revision.id);
+  if(operations.some(operation=>operation.kind==='brush.stroke'))activeMacroService?.recordArtwork(()=>{
+    const brushes=operations.filter(operation=>operation.kind==='brush.stroke');
+    if(brushes.some(operation=>operation.targetEntityIds[0]!==brushes[0]?.targetEntityIds[0]))return null;
+    return {kind:'stroke',records:brushes.map(operation=>operation.parameters.strokeRecord as StrokeRecord)};
+  });
 }
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const drawing=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'||reason==='view-command')scheduleViewSave(drawing);if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();if(releasedColorHold)restoreDrawingTool();return;}
@@ -3993,15 +4000,35 @@ const c04MacroService=installSimpleMacros(c04Commands,{
   },
   applyLayer:async(target,steps,name,signal)=>{
     let changed=false;
-    await withClipboardAccess(async()=>{
+    await withClipboardAccess(async drawing=>{
       signal.throwIfAborted();
-      const artwork=controller.document,root=artwork.root,id=target as LayerId;
+      const artwork=controller.document,revision=artwork.head,root=artwork.root,id=target as LayerId;
       if(!root.hasLayer(id)||root.getLayer(id).baseColor||root.isLayerLocked(id))
         throw Error('対象レイヤーが見つからないか、ロックされています。');
       const layer=root.getLayer(id);
       let alpha=!!layer.alphaLocked,clip=!!layer.clipSourceId,opacity=layer.opacity,layerName=layer.name;
-      for(const [index,{id:step,value}] of steps.entries()){
-        if(step==='layerAlphaLock')alpha=!alpha;
+      let pixels:Uint8Array|undefined,mask=layer.vectorMask??null;
+      const {width,height}=root;
+      for(const [index,{id:step,value,artwork:action,offset}] of steps.entries()){
+        signal.throwIfAborted();
+        if(action){
+          if(root.isLayerContentLocked(id)||layer.editable||layer.imageLink||layer.deformation||layer.lineRegions||
+             layer.blend?.adjustment||layer.blend?.gradientMap||alpha||action.kind==='affine'&&root.isLayerPositionLocked(id))
+            throw Error((index+1)+'番目の手順には、内容と位置を編集できる描画レイヤーが必要です。');
+          const dx=offset?.[0]??0,dy=offset?.[1]??0;
+          if(!Number.isFinite(dx)||!Number.isFinite(dy)||Math.abs(dx)>8192||Math.abs(dy)>8192)throw Error('位置の指定を確認してください。');
+          pixels??=(await drawing.captureDocumentLayers(new Set([id]))).get(id);
+          if(!pixels)throw Error('対象レイヤーの画素が取得できません。');
+          if(action.kind==='stroke'){
+            const records=action.records.map(record=>moveRecordedBrush(record,dx,dy));
+            pixels=await replayBrushPasses([{selection:null,records}],width,height,pixels);
+          }else{
+            const settings={...initialTransform,...action.affine,dx,dy};
+            const output=await runTransform({pixels,width,height,settings,selection:null,outputWidth:width,outputHeight:height},signal);
+            pixels=new Uint8Array(output);
+            if(mask?.linked!==false&&mask)mask=transformLinkedMask(mask,settings,width,height);
+          }
+        }else if(step==='layerAlphaLock')alpha=!alpha;
         else if(step==='layerClipping'){
           if(!clip&&!root.availableClippingSource(id))throw Error((index+1)+'番目の手順に必要な下のレイヤーがありません。');
           clip=!clip;
@@ -4013,8 +4040,15 @@ const c04MacroService=installSimpleMacros(c04Commands,{
           layerName=value;
         }else throw Error('まとめて適用できない操作が含まれます。');
       }
-      if(alpha===!!layer.alphaLocked&&clip===!!layer.clipSourceId&&opacity===layer.opacity&&layerName===layer.name)return 'read';
+      signal.throwIfAborted();
+      if(controller.document!==artwork||artwork.head!==revision||surface!==drawing)throw Error('操作セットの実行先が変わりました。');
+      if(!pixels&&alpha===!!layer.alphaLocked&&clip===!!layer.clipSourceId&&opacity===layer.opacity&&layerName===layer.name)return 'read';
       const tx=artwork.begin(name);
+      if(pixels){
+        tx.replaceLayerRaster(id,pixels);
+        tx.activateDrawingLayer(id);
+        if(mask!==(layer.vectorMask??null))tx.setVectorLayerMask(id,mask);
+      }
       if(alpha!==!!layer.alphaLocked)tx.setLayerAlphaLocked(id,alpha);
       if(clip!==!!layer.clipSourceId)tx.setLayerClipping(id,clip);
       if(opacity!==layer.opacity)tx.setLayerOpacity(id,opacity);
@@ -4030,6 +4064,7 @@ const c04MacroService=installSimpleMacros(c04Commands,{
     else c06Download(blob,(name.replace(/[\/:*?"<>|]/g,'_')||'操作セット')+'.illustro-macro.json');
   },
 });
+activeMacroService=c04MacroService;
 installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
 const c04Toolbar=installToolbarSettings();
@@ -4728,6 +4763,8 @@ transformPanel=installTransformPanel(byId('documentBoxBody'),async target=>{
         if(mask)tx.setVectorLayerMask(layer.id,mask);
         if(editedOriginal)tx.replaceDeformationOriginal(layer.id,editedOriginal,original.vectorMask??null);
         controller.lastPersistenceHandoff=tx.commit().persistence;
+        activeMacroService?.recordArtwork(()=>target==='layer'&&deformation?.mode==='affine'&&!deformation.postPaint?.length
+          ?{kind:'affine',affine:deformation.affine}:null);
         return 'edit';
       });
     }

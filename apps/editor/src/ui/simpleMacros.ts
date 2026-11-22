@@ -1,4 +1,5 @@
 import {appConfirm} from './appDialogs';
+import {decodeMacroArtwork,encodeMacroArtwork,isMacroArtwork,type MacroArtworkStep} from './macroArtwork';
 /**
  * C04 UI-004 / UI-005 bridge to C16: simple repeatable UI command sequences.
  * C16 can replace the provider with timeline and action-aware macro execution.
@@ -16,7 +17,7 @@ const SAFE=new Set([
   'layer','colorPage','brushPage','workspaceToggle','c04FocusToggle','guideEnabled',
   'layerSoloToggle','layerAlphaLock','layerClipping','layerOpacityAtRun','layerNameAtRun'
 ]);
-const permitted=(id:string)=>SAFE.has(id)||id.startsWith('brush:')||id.startsWith('color:')||id.startsWith('workspace:');
+const permitted=(id:string)=>SAFE.has(id)||isMacroArtwork(id)||id.startsWith('brush:')||id.startsWith('color:')||id.startsWith('workspace:');
 /** Validate user-imported macros before storing or exposing any commands. */
 export function parseSimpleMacroFile(input:unknown):SimpleMacro[]{
   if(!input||typeof input!=='object'||Array.isArray(input))
@@ -34,7 +35,7 @@ export function parseSimpleMacroFile(input:unknown):SimpleMacro[]{
       typeof item.name!=='string'||!item.name.trim()||item.name.length>80||
       ids.has(item.id)||names.has(item.name)||
       !Array.isArray(item.steps)||item.steps.length<1||item.steps.length>MAX_STEPS||
-      !item.steps.every(step=>typeof step==='string'&&permitted(step)))
+      !item.steps.every(step=>typeof step==='string'&&permitted(step)&&(!isMacroArtwork(step)||decodeMacroArtwork(step)!==null)))
       throw Error('操作セットに使えない操作や重複した名前が含まれています。');
     ids.add(item.id);names.add(item.name);
     const disabled=item.disabled;
@@ -60,7 +61,7 @@ export async function invokeMacroSequence(
   try{
   for(const [i,id] of steps.entries()){
     const reason=stopped();if(reason)return {ok:false,reason,failedStep:i+1,unfinished};
-    if(!permitted(id))return {ok:false,reason:'対応していない操作が含まれています。',failedStep:i+1,unfinished};
+    if(!permitted(id)||isMacroArtwork(id))return {ok:false,reason:'対応していない操作が含まれています。',failedStep:i+1,unfinished};
     let result:Awaited<ReturnType<CommandService['invokeAsync']>>;
     try{result=await invoke(id);}catch(error){return {ok:false,reason:error instanceof Error?error.message:String(error),failedStep:i+1,unfinished};}
     const after=stopped();if(after)return {ok:false,reason:after,failedStep:i+1,unfinished:!result.settled};
@@ -87,7 +88,7 @@ const read=():SimpleMacro[]=>{
       if(!item||typeof item.id!=='string'||item.id.length>100||!item.id||
         ids.has(item.id)||typeof item.name!=='string'||!item.name.trim()||item.name.length>80||
         !Array.isArray(item.steps)||item.steps.length<1||item.steps.length>MAX_STEPS||
-        !item.steps.every((step:unknown)=>typeof step==='string'&&permitted(step)))return [];
+        !item.steps.every((step:unknown)=>typeof step==='string'&&permitted(step)&&(!isMacroArtwork(step)||decodeMacroArtwork(step)!==null)))return [];
       ids.add(item.id);
       const disabled=Array.isArray(item.disabled)?item.disabled.filter((i:number)=>Number.isInteger(i)&&i>=0&&i<item.steps.length):[];
       return [{id:item.id,name:item.name,steps:[...item.steps],...(disabled.length?{disabled}:{})}];
@@ -101,12 +102,12 @@ const persist=(items:readonly SimpleMacro[]):boolean=>{
 const uid=()=>typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'
   ?crypto.randomUUID():'macro-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 
-export type SimpleMacroService=Readonly<{importText:(json:string)=>Promise<number>}>;
+export type SimpleMacroService=Readonly<{importText:(json:string)=>Promise<number>;recordArtwork:(make:()=>MacroArtworkStep|null)=>void}>;
 const layerMacroValues={layerOpacityAtRun:'不透明度を設定',layerNameAtRun:'レイヤー名を設定'} as const;
 const parameterStep=(step:string)=>Object.hasOwn(layerMacroValues,step);
-export const layerMacroStep=(step:string)=>step==='layerAlphaLock'||step==='layerClipping'||parameterStep(step);
+export const layerMacroStep=(step:string)=>step==='layerAlphaLock'||step==='layerClipping'||parameterStep(step)||isMacroArtwork(step);
 export type MacroLayer=Readonly<{id:string;name:string;active:boolean;opacity:number}>;
-export type MacroLayerStep=Readonly<{id:string;value:string|number|null}>;
+export type MacroLayerStep=Readonly<{id:string;value:string|number|null;artwork?:MacroArtworkStep;offset?:readonly [number,number]}>;
 export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   layers:()=>readonly MacroLayer[];
   applyLayer:(id:string,steps:readonly MacroLayerStep[],name:string,signal:AbortSignal)=>Promise<boolean>;
@@ -115,7 +116,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   const workspace=document.getElementById('automationBoxBody');
   if(!workspace)return null;
   let macros=read(),playing=false,steps:string[]=[],muted:boolean[]=[],selectedId:string|null=null;
-  let playback:AbortController|null=null,unlisten:(()=>void)|null=null;
+  let playback:AbortController|null=null,unlisten:(()=>void)|null=null,recordContext:unknown;
   const root=document.createElement('details');root.className='c04-simple-macros';
   const summary=document.createElement('summary');summary.textContent='よく使う操作をまとめる';
   const help=document.createElement('p');
@@ -159,6 +160,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
     select.value=current&&macros.some(m=>m.id===current)?current:'';
     remove.disabled=!select.value;
   }
+  const recordedLabel=(step:string)=>step.startsWith('artwork:{"kind":"stroke"')?'記録したブラシの線':'記録した移動・回転・拡縮';
   function refreshSteps(){
     const lookup=new Map(options().map(c=>[c.id,c.label]));
     stepsList.replaceChildren();
@@ -166,7 +168,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
       const id=steps[i]!;
       const row=document.createElement('div');row.className='c04-macro-step';
       const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=!muted[i];
-      const label=document.createElement('label');label.append(enabled,(i+1)+'. '+(lookup.get(id)??id));
+      const label=document.createElement('label');label.append(enabled,(i+1)+'. '+(lookup.get(id)??(isMacroArtwork(id)?recordedLabel(id):id)));
       enabled.onchange=()=>{muted[i]=!enabled.checked;};
       const up=document.createElement('button');up.type='button';up.textContent='↑';up.title='前へ移動';up.disabled=i===0;
       const down=document.createElement('button');down.type='button';down.textContent='↓';down.title='後へ移動';down.disabled=i===steps.length-1;
@@ -187,7 +189,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   record.onclick=()=>{
     if(unlisten){stopRecording();return;}
     if(playing||steps.length>=MAX_STEPS||!commands.onCompleted)return;
-    const context=commands.contextKey?.();
+    const context=commands.contextKey?.();recordContext=context;
     unlisten=commands.onCompleted(id=>{
       if(commands.contextKey?.()!==context){stopRecording('作品が切り替わったため記録を停止しました。');return;}
       if(!permitted(id))return;
@@ -196,7 +198,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
       if(steps.length===MAX_STEPS)stopRecording('24件に達したため記録を停止しました。');
     });
     record.textContent='操作の記録を停止';refreshSteps();
-    status.textContent='記録中。「機能を探す」やよく使う操作から、記録に対応した操作を実行してください。';
+    status.textContent='記録中。通常のブラシとレイヤー全体の移動・回転・拡縮を記録できます。選択範囲つきの線・変形と特殊な筆は対象外です。';
   };
   function newMacro(){
     stopRecording();selectedId=null;name.value='';steps=[];muted=[];refreshSelect();refreshSteps();
@@ -259,17 +261,28 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
       const list=document.createElement('ol'),target=document.createElement('select');
       const lookup=new Map(options().map(command=>[command.id,command.label]));
       const fields:Array<HTMLInputElement|null>=[];
+      const artworkFields:Array<{step:MacroArtworkStep;dx:HTMLInputElement;dy:HTMLInputElement}|null>=[];
       for(const id of enabled){
-        const row=document.createElement('li'),label=lookup.get(id)??id;
+        const row=document.createElement('li'),artwork=decodeMacroArtwork(id),label=lookup.get(id)??(artwork?recordedLabel(id):id);
         let field:HTMLInputElement|null=null;
-        if(parameterStep(id)){
+        let coordinates:{step:MacroArtworkStep;dx:HTMLInputElement;dy:HTMLInputElement}|null=null;
+        if(artwork){
+          row.textContent=label;
+          const xy=(name:string,value:number)=>{
+            const input=document.createElement('input'),wrapper=document.createElement('label');
+            input.type='number';input.min='-8192';input.max='8192';input.step='any';input.required=true;
+            input.value=String(value);wrapper.append(name,input);row.append(wrapper);return input;
+          };
+          coordinates={step:artwork,dx:xy('横のずれ（px）',artwork.kind==='affine'?artwork.affine.dx:0),
+            dy:xy('縦のずれ（px）',artwork.kind==='affine'?artwork.affine.dy:0)};
+        }else if(parameterStep(id)){
           const wrapper=document.createElement('label');
           field=document.createElement('input');field.required=true;
           if(id==='layerOpacityAtRun'){field.type='number';field.min='0';field.max='100';field.step='.1';}
           else{field.type='text';field.maxLength=4096;}
           wrapper.append(label+(id==='layerOpacityAtRun'?'（%）':''),field);row.append(wrapper);
         }else row.textContent=label;
-        fields.push(field);list.append(row);
+        fields.push(field);artworkFields.push(coordinates);list.append(row);
       }
       section.append(title);
       if(layers.length){
@@ -301,7 +314,9 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
           field.oninput=()=>field.setCustomValidity('');return;
         }
         confirmed={id:target.value,steps:enabled.map((id,index)=>{
-          const field=fields[index];return {id,value:field?(field.type==='number'?field.valueAsNumber:field.value.trim()):null};
+          const field=fields[index],artwork=artworkFields[index];
+          return {id,value:field?(field.type==='number'?field.valueAsNumber:field.value.trim()):null,
+            ...(artwork?{artwork:artwork.step,offset:[artwork.dx.valueAsNumber,artwork.dy.valueAsNumber] as const}:{})};
         })};
         dialog.close();
       };
@@ -319,9 +334,12 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
     try{
       const enabled=macro.steps.filter((_,index)=>!macro.disabled?.includes(index));
       if(!enabled.length)throw Error('少なくとも1つの手順を有効にしてください。');
+      const dependencies=new Set(commands.list().map(command=>command.id));
+      const missing=enabled.filter(id=>!layerMacroStep(id)&&!dependencies.has(id));
+      if(missing.length)throw Error('この端末で使えない手順があります。'+missing.join('、'));
       const context=commands.contextKey?.();
       const atomic=!!api&&enabled.every(layerMacroStep);
-      if(!atomic&&enabled.some(parameterStep))throw Error('実行時に入力する手順は、レイヤー操作だけのセットで使えます。');
+      if(!atomic&&enabled.some(step=>parameterStep(step)||isMacroArtwork(step)))throw Error('実行時の指定・描画・変形を使うときは、表示・履歴の手順をこのセットから外してください。');
       const layers=atomic?api.layers():[];
       if(atomic&&!layers.length)throw Error('操作できるレイヤーがありません。');
       const target=await confirmSteps(macro,enabled,layers);
@@ -381,5 +399,12 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
     return safe.length;
   }
   refreshSelect();refreshOptions();refreshSteps();
-  return {importText};
+  return {importText,recordArtwork:make=>{
+    if(!unlisten||playing)return;
+    if(recordContext!==commands.contextKey?.()){stopRecording('作品が切り替わったため記録を停止しました。');return;}
+    const step=make(),encoded=step?encodeMacroArtwork(step):null;
+    if(!encoded){status.textContent='この描画・変形は記録の対象外か、手順の容量上限を超えています。';return;}
+    steps.push(encoded);muted.push(false);refreshSteps();status.textContent='記録中 · '+steps.length+'件';
+    if(steps.length>=MAX_STEPS)stopRecording('24件に達したため記録を停止しました。');
+  }};
 }
