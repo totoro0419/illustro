@@ -1,9 +1,10 @@
+import {selectFromExamples,type SelectionExample} from './exampleSelection';
 export type RGB=readonly [number,number,number];
 export type Speck=Readonly<{pixels:Uint32Array;x:number;y:number}>;
 export type AssistRequest=Readonly<{
   width:number;height:number;source:Uint8Array;coverage?:Uint8Array;
 }> & (
-  | {kind:'area';x:number;y:number;tolerance:number}
+  | {kind:'area';x:number;y:number;tolerance:number;examples?:readonly SelectionExample[];confidence?:number}
   | {kind:'color';palette:readonly RGB[];strength:number;style:'tone'|'accent'}
   | {kind:'specks';maxArea:number}
 );
@@ -21,6 +22,7 @@ export function analyzeImage(request:AssistRequest):AssistResult{
   if(!Number.isInteger(width)||!Number.isInteger(height)||width<1||height<1||size>ANALYSIS_MAX_PIXELS||
     source.length!==size*4||coverage&&coverage.length!==size)throw Error('解析する画像の大きさが正しくありません。');
   if(request.kind==='area'){
+    if(request.examples)return {kind:'area',...selectFromExamples(source,width,height,request.examples,request.confidence??50,coverage)};
     if(!Number.isFinite(request.x+request.y+request.tolerance))throw Error('中央の見本画像から起点を選んでください。');
     const x=clamp(Math.floor(request.x),0,width-1),y=clamp(Math.floor(request.y),0,height-1);
     const seed=y*width+x,s=seed*4,t=clamp(request.tolerance,1,255)**2;

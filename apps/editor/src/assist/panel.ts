@@ -1,3 +1,4 @@
+import type {SelectionExample} from './exampleSelection';
 import type {LayerId} from '@illustro/core';
 import {button,labelledField,numberField,paintPreview,selectField} from '../artwork/tools';
 import {resizeImagePixels} from '../canvasGeometry';
@@ -43,13 +44,21 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       caption.textContent=label;figure.append(canvas,caption);return figure;
     }
     images.append(figure(before,'元の画像'),figure(after,'候補'));
-    const x=numberField(area,'起点 X',0,0,8191),y=numberField(area,'起点 Y',0,0,8191);
+    const areaMode=selectField(area,'範囲の出し方',[['connected','似た色でつながる範囲'],['examples','残す部分と外す部分の例から学習']]);
+    const x=numberField(area,'起点・例の位置 X',0,0,8191),y=numberField(area,'起点・例の位置 Y',0,0,8191);
+    const exampleOptions=document.createElement('div');exampleOptions.className='c06-clipboard-grid';exampleOptions.hidden=true;
+    const sampleType=selectField(exampleOptions,'次に追加する例',[['include','残す'],['exclude','外す']]);
+    const confidence=numberField(exampleOptions,'残す判断の厳しさ（%）',50,0,100);
+    const exampleCount=document.createElement('output');exampleCount.setAttribute('role','status');
+    area.append(exampleOptions);
     const status=document.createElement('output');status.setAttribute('role','status');
     const variants=document.createElement('div');variants.className='box-actions';color.append(variants);
     panel.append(area,color,repair,images);
     let generation=0,frame:AssistFrame|null=null,result:AssistResult|null=null;
     let worker:Worker|null=null,stopJob:(()=>void)|null=null;
     let spotChecks:HTMLInputElement[]=[],nameChecks:HTMLInputElement[]=[];
+    let examples:SelectionExample[]=[];
+    const learning=()=>areaMode.value==='examples';
     const current=()=>mode.value as Kind;
     const visible=(kind:Kind)=>{area.hidden=kind!=='area';color.hidden=kind!=='color';repair.hidden=kind!=='specks';};
     const cancelJob=()=>{worker?.terminate();worker=null;stopJob?.();stopJob=null;};
@@ -60,6 +69,32 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       const pixels=w===f.width&&h===f.height?data:new Uint8ClampedArray(resizeImagePixels(data,f.width,f.height,w,h,'auto'));
       paintPreview(image,pixels,w,h);
     }
+    function drawExamples(){
+      if(!frame||current()!=='area')return;
+      const f=frame;render(before,new Uint8ClampedArray(f.source),f);
+      exampleCount.textContent=examples.filter(p=>p.include).length+'個を残す例、'+examples.filter(p=>!p.include).length+'個を外す例に指定済み。';
+      if(!learning())return;
+      const context=before.getContext('2d');if(!context)return;
+      for(const example of examples){
+        const x=(example.x+.5)*before.width/f.width,y=(example.y+.5)*before.height/f.height;
+        context.beginPath();context.arc(x,y,4,0,Math.PI*2);
+        context.fillStyle=example.include?'#1eb992':'#e25a59';context.fill();
+        context.strokeStyle='#fff';context.stroke();
+      }
+    }
+    function addExample(){
+      if(!frame?.valid())throw Error('解析する絵を読み込んでください。');
+      const px=field(x),py=field(y),at=examples.findIndex(p=>p.x===px&&p.y===py);
+      const value={x:px,y:py,include:sampleType.value==='include'};
+      if(at>=0)examples[at]=value;
+      else{
+        if(examples.length>=16)throw Error('例は16箇所まで指定できます。');
+        examples.push(value);
+      }
+      invalidate();drawExamples();
+    }
+    exampleOptions.append(button('入力した位置を例に追加',addExample,status),
+      button('例を消す',()=>{examples=[];invalidate();drawExamples();},status),exampleCount);
     function paintResult(){
       const f=frame,r=result;if(!f||!r)return;
       const pixels=new Uint8ClampedArray(f.source);
@@ -99,7 +134,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
         !result||(result.kind!=='specks'&&result.count===0));
     }
     async function load(){
-      invalidate();frame=null;before.hidden=true;spotChecks=[];nameChecks=[];names.replaceChildren();
+      invalidate();frame=null;before.hidden=true;examples=[];spotChecks=[];nameChecks=[];names.replaceChildren();
       const ticket=generation,kind=current();
       activeLayer.textContent='対象を読み込んでいます。';
       const snapshot=await capture(kind);
@@ -114,7 +149,8 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       analyze.disabled=kind!=='area'&&!snapshot.writable;
       for(const variant of Array.from(variants.querySelectorAll('button')))variant.disabled=!snapshot.writable||!snapshot.palettes.length;
       render(before,new Uint8ClampedArray(snapshot.source),snapshot);
-      status.textContent=kind==='area'?'画像をタップして起点を決め、候補を計算してください。':
+      if(kind==='area'&&learning())drawExamples();
+      status.textContent=kind==='area'?(learning()?'残す部分と外す部分の例を1箇所ずつ以上指定してください。':'画像をタップして起点を決め、候補を計算してください。'):
         !snapshot.writable?'ごみ取りや彩色には、編集可能な描画レイヤーを選んでください。':'候補を計算してください。';
     }
     function field(input:HTMLInputElement){
@@ -126,7 +162,8 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       if(!f||!f.valid())throw Error('作品が変わりました。対象を読み込み直してください。');
       let settings:RequestSettings;
       const kind=current();
-      if(kind==='area')settings={kind,x:field(x),y:field(y),tolerance:field(tolerance)};
+      if(kind==='area')settings={kind,x:field(x),y:field(y),tolerance:learning()?32:field(tolerance),
+        ...(learning()?{examples:[...examples],confidence:field(confidence)}:{})};
       else if(kind==='color')settings={kind,style,strength:field(strength)/100,palette:f.palettes[Number(palette.value)]?.colors??[]};
       else settings={kind,maxArea:field(size)};
       const source=f.source.slice(),coverage=target.value==='selected'?f.selection?.alpha.slice():undefined,ticket=generation;
@@ -156,7 +193,9 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       const rect=before.getBoundingClientRect();
       x.value=String(Math.min(frame.width-1,Math.max(0,Math.floor((event.clientX-rect.left)*frame.width/rect.width))));
       y.value=String(Math.min(frame.height-1,Math.max(0,Math.floor((event.clientY-rect.top)*frame.height/rect.height))));
-      void run().catch(error=>{status.textContent=String(error.message??error);});
+      if(learning()){
+        try{addExample();}catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+      }else void run().catch(error=>{status.textContent=String(error.message??error);});
     };
     const analyze=button('候補を計算',()=>run(),status);
     variants.append(button('パレットの明暗で試す',()=>run('tone'),status),button('中間の色を中心に試す',()=>run('accent'),status));
@@ -173,7 +212,11 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
     const actions=document.createElement('div');actions.className='box-actions';actions.append(analyze,apply,reload,close);
     panel.append(actions,status);dialog.append(panel);document.body.append(dialog);dialog.showModal();
     mode.onchange=()=>{visible(current());void load().catch(error=>{status.textContent=String(error.message??error);});};
-    for(const input of [target,tolerance,palette,strength,size,x,y])input.onchange=()=>{invalidate();refreshApply();};
+    areaMode.onchange=()=>{
+      invalidate();exampleOptions.hidden=!learning();tolerance.parentElement!.hidden=learning();drawExamples();
+      status.textContent=learning()?'画像で残す例と外す例を指定し、候補を計算してください。':'画像をタップして、つながる範囲を確認できます。';
+    };
+    for(const input of [target,tolerance,palette,strength,size,x,y,confidence])input.onchange=()=>{invalidate();refreshApply();};
     dialog.onclose=()=>{generation++;cancelJob();dialog.remove();};
     visible(current());void load().catch(error=>{status.textContent=String(error.message??error);});
   };

@@ -22,3 +22,13 @@ describe('local artwork assistance',()=>{
     expect(result).toEqual({kind:'specks',spots:[{x:6,y:2,pixels:Uint32Array.of(22)}],capped:false});
   });
 });
+
+it('learns which colors to keep and exclude from examples, preserving exact sample corrections',()=>{
+  const width=7,height=2,colors=[[230,40,30,255],[20,40,190,255],[190,65,50,255],[30,50,170,255],
+    [232,20,10,255],[24,35,220,255],[180,52,42,255]];
+  const source=Uint8Array.from([...colors.flat(),...colors.flat()]);
+  const result=analyzeImage({kind:'area',width,height,source,x:0,y:0,tolerance:32,examples:[
+    {x:0,y:0,include:true},{x:1,y:0,include:false},{x:2,y:1,include:true},
+  ]});
+  expect(result).toEqual({kind:'area',count:8,alpha:Uint8Array.of(255,0,255,0,255,0,255,255,0,255,0,255,0,255)});
+});
