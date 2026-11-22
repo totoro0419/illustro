@@ -6134,5 +6134,845 @@
       "status": "deferred",
       "reason": "Indexed文書/固定パレット特有の編集モードは将来比較。通常Pixelアート機能は維持。"
     }
-  ]
+  ],
+  "cross_quality": {
+    "name": "過去の129品質指摘を引き継ぐ。145件の機能タスクとは別の追跡キー",
+    "source": "docs/quality-integration/PROGRESS-129.md",
+    "count": 129,
+    "by_round": {
+      "R2-01": 13,
+      "R2-02": 31,
+      "R2-04": 52,
+      "R2-03": 33
+    },
+    "remaining_verification_cases": [
+      {
+        "id": "C03-001",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-002",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-003",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-004",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-005",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-006",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-007",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-008",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-009",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-010",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-011",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-012",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C03-013",
+        "round": "R2-01",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-001",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-002",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-003",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-004",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-005",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-006",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-007",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-008",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-009",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-010",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-011",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-012",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-013",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-014",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C04-015",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-001",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-002",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-003",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-004",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-005",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-006",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-007",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-008",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-009",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-010",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-011",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-012",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-013",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-014",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-015",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-016",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-017",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-018",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-019",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C05-020",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-001",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-002",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-003",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-004",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-005",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-006",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-007",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-008",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-009",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-010",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-011",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-012",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-013",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-014",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-015",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-016",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C06-017",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-001",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-002",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-003",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-004",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-005",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-006",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-007",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-008",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-009",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-010",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-011",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-012",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-013",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-014",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-015",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C07-016",
+        "round": "R2-03",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-001",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-002",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-003",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-004",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-005",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-006",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-007",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-008",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-009",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-010",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-011",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-012",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-013",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-014",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-015",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C08-016",
+        "round": "R2-02",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-001",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-002",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-003",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-004",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-005",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-006",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-007",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-008",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-009",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-010",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-011",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-012",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-013",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-014",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-015",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C09-016",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-001",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-002",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-003",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-004",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-005",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-006",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-007",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-008",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-009",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-010",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-011",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-012",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-013",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-014",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-015",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      },
+      {
+        "id": "C10-016",
+        "round": "R2-04",
+        "status": "独立解決は新コードで要再確認。既に修正済なら再実装禁止",
+        "source": "docs/quality-integration/PROGRESS-129.md; docs/quality-audit/"
+      }
+    ]
+  },
+  "user_reported_regressions": {
+    "count": 8,
+    "items": [
+      {
+        "id": "FEEDBACK-01",
+        "round": "R2-02",
+        "issue": "通常塗りつぶしの操作・結果が十分に使えるか。選択→候補→適用の余分な操作と正しい塗り・保存",
+        "state": "ユーザー指摘/静的に二段確定を確認。画素動作は未検証"
+      },
+      {
+        "id": "FEEDBACK-02",
+        "round": "R2-01",
+        "issue": "手ぶれ補正が速い曲線の角つきを抑えられず、遅い線でも効果が弱い",
+        "state": "ユーザー操作上の問題報告。現行HEADでの再現は未実施"
+      },
+      {
+        "id": "FEEDBACK-03",
+        "round": "R2-01",
+        "issue": "太いエアブラシを含む描画途中の仮線追従が重い。筆種をまたいで快適性",
+        "state": "ユーザー操作上の問題報告。現行HEADでの実測未実施"
+      },
+      {
+        "id": "FEEDBACK-04",
+        "round": "R2-01",
+        "issue": "鉛筆・細ペン確定時の一瞬のチラつき、ペンの入り抜きの凸凹",
+        "state": "ユーザー操作上の問題報告。現行HEADでの実機比較未実施"
+      },
+      {
+        "id": "FEEDBACK-05",
+        "round": "R2-01",
+        "issue": "加算発光：白色を入れた結果が期待どおり白になるかの合成精度",
+        "state": "ユーザー操作上の問題報告。現行HEADでの画素検証未実施"
+      },
+      {
+        "id": "FEEDBACK-06",
+        "round": "R2-02",
+        "issue": "スライダー項目名左上、数値右上、タップで直接数値入力、設定保存と同期",
+        "state": "2026-11-22ユーザー指定。全箇所で実際の反映を未確認"
+      },
+      {
+        "id": "FEEDBACK-07",
+        "round": "R2-04",
+        "issue": "レイヤー操作のボタン過多・直感性不足、プレビューを全レイヤーに適切に表示",
+        "state": "ユーザー操作上の問題報告。PR #105 UI統合後の状態と照合が必要"
+      },
+      {
+        "id": "FEEDBACK-08",
+        "round": "R2-02",
+        "issue": "色・選択・塗りの画面で情報を減らし過ぎず操作の優先度と導線を整理",
+        "state": "ユーザー指摘。UI改善12群の受入結果を別確認"
+      }
+    ]
+  }
 }
