@@ -285,6 +285,92 @@ function toneFilter(source:Bytes,width:number,step:EffectStep){
   return out;
 }
 
+function alphaExtrema(source:Bytes,width:number,height:number,radius:number,inside:boolean){
+  const original=Uint8Array.from({length:width*height},(_,i)=>byte(source,i*4+3));
+  function axis(input:Uint8Array,vertical:boolean){
+    const out=new Uint8Array(input.length),length=vertical?height:width,lines=vertical?width:height;
+    const advance=vertical?1:width,stride=vertical?width:1,queue=new Int32Array(length+2*radius);
+    for(let line=0;line<lines;line++){
+      const start=line*advance;
+      const sample=(i:number)=>i<0||i>=length?0:input[start+i*stride]!;
+      let head=0,tail=0;
+      for(let i=-radius;i<length+radius;i++){
+        while(head<tail&&queue[head]!<i-2*radius)head++;
+        while(head<tail&&(inside?sample(queue[tail-1]!)>=sample(i):sample(queue[tail-1]!)<=sample(i)))tail--;
+        queue[tail++]=i;
+        if(i>=radius)out[start+(i-radius)*stride]=sample(queue[head]!);
+      }
+    }
+    return out;
+  }
+  return axis(axis(original,false),true);
+}
+function alphaStyle(source:Bytes,width:number,height:number,step:EffectStep){
+  const shadow=step.kind==='shadow',outline=step.kind==='outline';
+  const [a=0,b=0,c=0,d=0,e=0,f=0]=step.values;
+  const radius=shadow?c:a,color=rgb24(shadow?d:b),inner=shadow?e:c,opacity=(shadow?f:d)/100;
+  if(!opacity)return source;
+  const outlineAlpha=outline?alphaExtrema(source,width,height,radius,!!inner):null;
+  const smooth=outline?null:blur(source,width,height,radius,radius,false);
+  const out=new Uint8ClampedArray(source);
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const i=(y*width+x)*4,original=byte(source,i+3)/255;
+    const sx=x-(shadow?a:0),sy=y-(shadow?b:0);
+    const coverage=outlineAlpha?(outlineAlpha[i/4]??0)/255:sx<0||sy<0||sx>=width||sy>=height?0:byte(smooth!,(sy*width+sx)*4+3)/255;
+    if(inner){
+      if(!original)continue;
+      const mix=(1-coverage)*opacity;
+      for(let c=0;c<3;c++)out[i+c]=byte(source,i+c)*(1-mix)+color[c]!*mix;
+    }else{
+      const lower=coverage*opacity*(1-original),alpha=original+lower;
+      if(!lower||!alpha)continue;
+      for(let c=0;c<3;c++)out[i+c]=(byte(source,i+c)*original+color[c]!*lower)/alpha;
+      out[i+3]=alpha*255;
+    }
+  }
+  return out;
+}
+function patternFilter(source:Bytes,width:number,height:number,step:EffectStep){
+  const [a=0,b=0,c=0,d=0,e=0,f=0]=step.values,out=new Uint8ClampedArray(source);
+  const mode=step.kind==='overlay',angle=(mode?d:b)*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);
+  const first=rgb24(mode?b:c),second=rgb24(c);
+  const length=Math.abs(width*cos)+Math.abs(height*sin),strength=f/100;
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const i=(y*width+x)*4;if(!source[i+3])continue;
+    const sx=(x-width/2)*cos+(y-height/2)*sin;
+    if(mode){
+      const t=a===0?0:a===1?clip(sx/Math.max(length,1)+.5,0,1):Math.floor(wrap(sx,2*e)/e);
+      for(let channel=0;channel<3;channel++)
+        out[i+channel]=byte(source,i+channel)*(1-strength)+(first[channel]!*(1-t)+second[channel]!*t)*strength;
+    }else{
+      const sy=-(x-width/2)*sin+(y-height/2)*cos;
+      const dx=wrap(sx,a)-a/2,dy=wrap(sy,a)-a/2;
+      const ink=1-luminance(byte(source,i),byte(source,i+1),byte(source,i+2))/255;
+      const radius=Math.sqrt(ink/Math.PI)*a;
+      const covered=clip(.5+radius-Math.hypot(dx,dy),0,1);
+      for(let channel=0;channel<3;channel++)out[i+channel]=d?first[channel]!:255+(first[channel]!-255)*covered;
+      if(d)out[i+3]=byte(source,i+3)*covered;
+    }
+  }
+  return out;
+}
+function edgeFilter(source:Bytes,width:number,height:number,step:EffectStep){
+  const [threshold=30,strength=100,ink=0,transparent=1]=step.values,color=rgb24(ink);
+  const out=new Uint8ClampedArray(source.length);
+  const sample=(x:number,y:number)=>{
+    const i=(clip(y,0,height-1)*width+clip(x,0,width-1))*4,alpha=byte(source,i+3)/255;
+    return 255*(1-alpha)+alpha*luminance(byte(source,i),byte(source,i+1),byte(source,i+2));
+  };
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const gx=sample(x+1,y-1)+2*sample(x+1,y)+sample(x+1,y+1)-sample(x-1,y-1)-2*sample(x-1,y)-sample(x-1,y+1);
+    const gy=sample(x-1,y+1)+2*sample(x,y+1)+sample(x+1,y+1)-sample(x-1,y-1)-2*sample(x,y-1)-sample(x+1,y-1);
+    const amount=clip((Math.hypot(gx,gy)/4-threshold)/(255-threshold)*strength/100,0,1),i=(y*width+x)*4;
+    for(let c=0;c<3;c++)out[i+c]=transparent?color[c]!:255+(color[c]!-255)*amount;
+    out[i+3]=transparent?amount*255:255;
+  }
+  return out;
+}
+
 export function applyRasterEffects(source:Bytes,width:number,height:number,recipe:readonly EffectStep[],mask:Uint8Array|null,alphaLocked=false){
   const steps=readEffectSteps(recipe);
   if(!steps||source.length!==width*height*4||mask&&mask.length!==width*height)throw Error('効果の設定を確認してください。');
@@ -300,6 +386,9 @@ export function applyRasterEffects(source:Bytes,width:number,height:number,recip
       case 'sharpen':case 'unsharp':case 'highPass':filtered=detailFilter(result,width,height,step);break;
       case 'noise':filtered=noiseFilter(result,width,step);break;
       case 'median':filtered=medianFilter(result,width,height,step);break;
+      case 'halftone':case 'overlay':filtered=patternFilter(result,width,height,step);break;
+      case 'outline':case 'glow':case 'shadow':filtered=alphaStyle(result,width,height,step);break;
+      case 'edges':filtered=edgeFilter(result,width,height,step);break;
       case 'emboss':filtered=emboss(result,width,height,step);break;
       case 'mosaic':case 'offset':filtered=geometryFilter(result,width,height,step);break;
       default:filtered=toneFilter(result,width,step);

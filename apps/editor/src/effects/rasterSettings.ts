@@ -40,7 +40,15 @@ export const toneEffects={
   threshold:{id:'FX-114',label:'二値化',parameters:[number('しきい値',0,255,128),number('明度（0）または赤・緑・青（1〜3）',0,3,0),color('暗い側の色',0),color('明るい側の色',0xffffff)]},
   mosaic:{id:'FX-126',label:'モザイク',parameters:[number('ブロックの幅（px）',1,256,12),number('ブロックの高さ（px）',1,256,12),flag('縦横を連動',1),number('格子の開始 X（px）',-256,256,0),number('格子の開始 Y（px）',-256,256,0),flag('中心色を使う（オフで平均色）')]},
   offset:{id:'FX-127',label:'オフセット',parameters:[number('横に移動（px）',-8192,8192,0),number('縦に移動（px）',-8192,8192,0),number('端の処理（0: 循環、1: 透明、2: 端の色）',0,2,0),flag('作品の縦横の半分を移動')]},
+  halftone:{id:'FX-129',label:'網点・スクリーントーン',parameters:[number('点の間隔（px）',2,128,12),number('網点の角度（°）',-180,180,45),color('点の色',0x212536),flag('点以外を透明にする',1)]},
+  edges:{id:'FX-130',label:'輪郭検出・線画抽出',parameters:[number('検出しきい値',0,254,30),number('線の強さ（%）',1,300,100),color('線の色',0x212536),flag('線以外を透明にする',1)]},
   recolor:{id:'FX-131',label:'線画の色を変える',parameters:[color('線の色',0x263550),flag('明るい画素を透明にする'),number('線と判定する明るさ',0,255,200)]},
+  outline:{id:'FX-132',label:'縁取り',parameters:[number('幅（px）',1,64,4),color('縁の色',0x202a4b),flag('内側に付ける'),number('縁の濃さ（%）',0,100,100)]},
+  shadow:{id:'FX-133',label:'影',parameters:[number('横のずれ（px）',-256,256,6),number('縦のずれ（px）',-256,256,6),
+    radius,color('影の色',0x141722),flag('内側に付ける'),number('影の濃さ（%）',0,100,60)]},
+  glow:{id:'FX-134',label:'光彩',parameters:[radius,color('光の色',0xffddb0),flag('内側に付ける'),number('光の濃さ（%）',0,100,75)]},
+  overlay:{id:'FX-135',label:'色・グラデーション・模様を重ねる',parameters:[number('模様（0: 単色、1: グラデーション、2: 縞）',0,2,0),
+    color('色1',0x879cf5),color('色2',0xffb0da),number('角度（°）',-180,180,0),number('縞の幅（px）',1,256,12),number('重ねる濃さ（%）',0,100,60)]},
   emboss:{id:'FX-136',label:'エンボス',parameters:[number('光の角度（°）',-180,180,45),number('距離（px）',1,24,2),number('深さ（%）',0,300,100),flag('元の色を残す')]},
 
 } as const satisfies Record<string,EffectDefinition>;
