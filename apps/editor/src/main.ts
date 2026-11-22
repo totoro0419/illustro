@@ -1,3 +1,4 @@
+import {installAccessibility} from './ui/accessibility';
 import {applyPixelCell,pixelStroke} from './pixelStroke';
 import {openBatchExport} from './export/batchExport';
 import {installTimeline} from './recording/timeline';
@@ -3927,6 +3928,12 @@ const c04Toolbar=installToolbarSettings();
 const c04WorkspaceService=installWorkspaceProfiles(c04FloatingPanels,c04Toolbar);
 installInputDeviceProfiles(()=>surface);
 installGestureShortcuts();
+const openAccessibility=installAccessibility(byId('workspaceBoxBody'));
+c04Commands.registerProvider(()=>[{
+  id:'editorAccessibility',label:'画面の見やすさを調整',category:'設定',aliases:'文字 コントラスト グレー 動き アクセシビリティ',
+  availability:()=>null,execute:()=>{shellUi.openBox('workspaceBox');openAccessibility();},
+}]);
+
 installShortcutSettings(c04Commands,()=>!surface||!surface.inputActive);
 
 // C05: personal asset vault and reference board remain independent of raster history.
