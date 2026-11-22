@@ -129,7 +129,7 @@ export function installWetTools(host:HTMLElement,api:{
       cancel:clear,
       end:()=>{clear();if(current()){pending?.abort();pending=null;cancelDrawing=null;api.left();}},
       update:points=>{
-        if(!points.length||pick||repair||pending||preview||reference.value==='merged'||performance.now()<previewAfter)return;
+        if(!points.length||pick||repair||pending||preview||performance.now()<previewAfter)return;
         const controller=new AbortController();
         // Only a short local segment is read from the renderer during contact.
         const tail=points.at(-1)!;

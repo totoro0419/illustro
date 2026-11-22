@@ -1,5 +1,5 @@
 import {srgbIccBytes} from './iccMetadata';
-import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId} from '@illustro/core';
+import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId,type DocumentRoot} from '@illustro/core';
 import {blendArtworkPixel,gradientMapTable,mapGradientPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {canUseTiledHistoryPreview,createTiledPreviewAccumulator,yieldHistoryRender} from './tiledPreview';
 import {rasterReplayKeys} from '../rasterReplayKeys';
@@ -25,13 +25,7 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
   if(!Number.isSafeInteger(root.width)||!Number.isSafeInteger(root.height)||root.width<1||root.height<1||root.width>8192||root.height>8192)throw new Error('作品の大きさが正しくありません。');
   if(root.colorProfileId!=='srgb')throw new Error('この作品の色設定はM06の書き出しに対応していません。');
   if(soloLayerId&&!root.hasLayer(soloLayerId))throw new Error('単独表示のレイヤーが見つかりません。');
-  const layers=root.rootLayerIds.map(id=>{
-    const layer=root.getLayer(id);
-    if(layer.kind!=='raster'||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1'||layer.surface.descriptor.workingColorSpaceRef!=='srgb')throw new Error('このレイヤーの色形式はM06に未対応です。');
-    const clip=soloLayerId?null:root.clippingSource(id);
-    const isolation=soloLayerId?[]:root.groupsForLayer(id).filter(group=>group.compositing==='isolated').map(group=>group.id);
-    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,...(isolation.length?{isolation}:{}),...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{}),...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),...(layer.blend&&!soloLayerId?{blend:layer.blend}:{}),visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
-  });
+  const layers=captureExportLayers(root,soloLayerId);
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
   const strokes: {surfaceId:string;record:StrokeRecord;keys?:readonly string[]}[]=[];
   const {operations:visibleOperations,followsGeometry,seededLayers,tileFilteredLayers}=document.rasterReplayPlan(revision);
@@ -49,6 +43,17 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
     }else if(op.kind==='raster.strict-delta')throw new Error('厳密なラスターデータの書き出しはまだ利用できません。');
   }
   return Object.freeze({revision,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,layers:Object.freeze(layers),strokes:Object.freeze(strokes),...(basePixels.length?{basePixels}:{})});
+}
+
+/** Capture only the stack. Live tools read local GPU tiles rather than replaying history. */
+export function captureExportLayers(root:DocumentRoot,soloLayerId?:LayerId):FrozenExport['layers'] {
+  return root.rootLayerIds.map(id=>{
+    const layer=root.getLayer(id);
+    if(layer.kind!=='raster'||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1'||layer.surface.descriptor.workingColorSpaceRef!=='srgb')throw new Error('このレイヤーの色形式はM06に未対応です。');
+    const clip=soloLayerId?null:root.clippingSource(id);
+    const isolation=soloLayerId?[]:root.groupsForLayer(id).filter(group=>group.compositing==='isolated').map(group=>group.id);
+    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,...(isolation.length?{isolation}:{}),...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{}),...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),...(layer.blend&&!soloLayerId?{blend:layer.blend}:{}),visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
+  });
 }
 
 /** Straight-alpha source-over; layer order is bottom to top. Output is never the presentation canvas. */
@@ -174,6 +179,69 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
  * but only one GPU tile is read and combined at a time. Advanced content falls
  * back to the unchanged full-resolution renderer.
  */
+export type ArtworkRegion=Readonly<{x:number;y:number;width:number;height:number}>;
+
+/** Compose a region using the same masks, opacity and group order as export. */
+export async function compositeArtworkRegion(
+  layers:FrozenExport['layers'],area:ArtworkRegion,
+  read:(surfaceId:string)=>Promise<Uint8Array|Uint8ClampedArray|null>,signal?:AbortSignal,
+):Promise<Uint8ClampedArray|null>{
+  const {x,y,width,height}=area,length=width*height*4;
+  const merged=new Uint8ClampedArray(length);
+  let white:Uint8ClampedArray|null=null;
+  const byId=new Map(layers.map(layer=>[layer.surfaceId,layer]));
+  const clippingSources=new Set(layers.flatMap(layer=>layer.clipSurfaceId?[layer.clipSurfaceId]:[]));
+  const clippedPixels=new Map<string,Uint8Array|Uint8ClampedArray>();
+  const groups:Array<{id:string;pixels:Uint8ClampedArray}>=[];
+  function closeGroup(){
+    const group=groups.pop()!;
+    compositeLayer(groups.at(-1)?.pixels??merged,group.pixels);
+  }
+  async function readLayer(layer:FrozenExport['layers'][number]){
+    signal?.throwIfAborted();
+    if(layer.baseColor==='white')return white??=new Uint8ClampedArray(length).fill(255);
+    const pixels=clippedPixels.get(layer.surfaceId)??await read(layer.surfaceId);
+    if(!pixels)return null;
+    if(pixels.length!==length)throw Error('合成に必要な画素が不足しています。');
+    if(clippingSources.has(layer.surfaceId))clippedPixels.set(layer.surfaceId,pixels);
+    return pixels;
+  }
+  for(const layer of layers){
+    signal?.throwIfAborted();
+    if(layer.referenceOnly||!layer.visible||layer.opacity<=0)continue;
+    const isolation=layer.isolation??[];
+    let common=0;
+    while(common<groups.length&&isolation[common]===groups[common]?.id)common++;
+    while(groups.length>common)closeGroup();
+    for(const id of isolation.slice(common))groups.push({id,pixels:new Uint8ClampedArray(length)});
+    const clip=layer.clipSurfaceId?byId.get(layer.clipSurfaceId):undefined;
+    if(clip&&(!clip.visible||clip.opacity<=0))continue;
+    const destination=groups.at(-1)?.pixels??merged,clipPixels=clip?await readLayer(clip):null;
+    if(clip&&!clipPixels)return null;
+    const map=layer.blend?.gradientMap;
+    if(map){
+      const table=gradientMapTable(map),cache=new Map<number,readonly [number|Uint8Array,number|Uint8Array]>();
+      for(let row=0;row<height;row++)for(let col=0;col<width;col++){
+        const px=x+col,py=y+row,tx=Math.floor(px/TILE),ty=Math.floor(py/TILE),key=ty*128+tx;
+        let masks=cache.get(key);
+        if(!masks){const tileKey=tx+','+ty;masks=[layerMaskTile(layer.mask,tileKey),layerMaskTile(clip?.mask,tileKey)];cache.set(key,masks);}
+        const [own,clipping]=masks,local=(py%TILE)*TILE+px%TILE,offset=(row*width+col)*4;
+        const coverage=layer.opacity*(typeof own==='number'?own:own[local]!)/255*
+          (clip&&clipPixels?clipPixels[offset+3]!*clip.opacity*(typeof clipping==='number'?clipping:clipping[local]!)/65025:1);
+        mapGradientPixel(destination,offset,table,map,px,py,coverage);
+      }
+      continue;
+    }
+    const pixels=await readLayer(layer);
+    if(!pixels)return null;
+    compositeLayer(destination,pixels,layer.opacity,clip&&clipPixels?{pixels:clipPixels,opacity:clip.opacity,mask:clip.mask??null}:undefined,
+      {width,originX:x,originY:y,mask:layer.mask??null,blend:layer.blend??null});
+  }
+  while(groups.length)closeGroup();
+  signal?.throwIfAborted();
+  return merged;
+}
+
 export async function renderFrozenArtworkTiledPreview(
   frozen:FrozenExport,targetWidth:number,targetHeight:number,
   options?:Readonly<{replacement:{surfaceId:string;pixels:Uint8ClampedArray};signal:AbortSignal}>,

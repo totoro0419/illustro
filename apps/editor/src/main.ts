@@ -4141,7 +4141,7 @@ wetTools=installWetTools(byId('documentBoxBody'),{
     const selection=c06Selection?.active()??null;
     if(!drawing||stroke.documentId!==artwork.root.documentId||!artwork.root.isLayerVisible(layer.id)||
       artwork.root.groupsForLayer(layer.id).some(group=>group.locked)||
-      !stroke.separate&&(artwork.root.isLayerContentLocked(layer.id)||layer.baseColor||layer.editable||layer.deformation||layer.imageLink||layer.lineRegions))return false;
+      !stroke.separate&&stroke.reference!=='merged'&&(artwork.root.isLayerContentLocked(layer.id)||layer.baseColor||layer.editable||layer.deformation||layer.imageLink||layer.lineRegions))return false;
     const patch=await createWetPatch(artwork,drawing,layer.id,selection,stroke,true);
     if(!patch||stroke.signal.aborted||surface!==drawing||controller.document!==artwork||artwork.head!==head||
       controller.selectedLayer.id!==layer.id||(c06Selection?.active()??null)!==selection)return false;

@@ -1,7 +1,7 @@
 import type {BrushSurface} from '../brushSurface';
 import type {CoreDocument,LayerId} from '@illustro/core';
 import {TILE} from '@illustro/brush-rt';
-import {captureExport,renderFrozenArtwork} from '../export/basicExport';
+import {captureExport,captureExportLayers,compositeArtworkRegion,renderFrozenArtwork} from '../export/basicExport';
 import {cropCanvas} from '../canvasGeometry';
 import {boundsOfSelection,cropSelectionMask,type MaskData} from '../selection/mask';
 import {needsSource,strokeArea,tileAlignedArea,type Area,type Patch} from './paint';
@@ -48,8 +48,17 @@ export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,l
   if(repair&&!box)throw Error('採取範囲がキャンバスの外にあります。');
   let reference:Patch|null=null;
   if(stroke.reference==='merged'&&box){
-    let merged=await renderFrozenArtwork(captureExport(artwork));
-    reference={area:box,pixels:new Uint8ClampedArray(cropCanvas(merged,width,height,box.x,box.y,box.width,box.height))};
+    const root=artwork.root,layerIds=new Map<string,LayerId>(root.rootLayerIds.map(id=>[root.getLayer(id).surface.descriptor.surfaceId,id]));
+    const local=await compositeArtworkRegion(captureExportLayers(root),box,async surfaceId=>{
+      const id=layerIds.get(surfaceId);
+      return id?drawing.captureDocumentLayerRegion(id,box):null;
+    },stroke.signal);
+    if(local)reference={area:box,pixels:local};
+    else if(preview)return null;
+    else{
+      const merged=await renderFrozenArtwork(captureExport(artwork));
+      reference={area:box,pixels:new Uint8ClampedArray(cropCanvas(merged,width,height,box.x,box.y,box.width,box.height))};
+    }
   }else if(repair&&box){
     const id=stroke.sourceLayerId as LayerId|null;
     if(!id||!artwork.root.hasLayer(id))throw Error('採取元のレイヤーがありません。元を選び直してください。');
