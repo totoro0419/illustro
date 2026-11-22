@@ -1,3 +1,5 @@
+import {validateEffectResource,type EffectResource} from './imageEffectResources';
+
 export type Parameter=Readonly<{label:string;min:number;max:number;step:number;initial:number}>;
 export type EffectDefinition=Readonly<{id:string;label:string;parameters:readonly Parameter[]}>;
 const number=(label:string,min:number,max:number,initial:number,step=1):Parameter=>({label,min,max,initial,step});
@@ -40,8 +42,11 @@ export const toneEffects={
   invert:{id:'FX-112',label:'色を反転',parameters:[flag('明るさだけを反転'),flag('透明度も反転')]},
   posterize:{id:'FX-113',label:'階調を減らす',parameters:[number('段階数',2,32,4),flag('明るさだけを階調化'),flag('格子状のディザを加える')]},
   threshold:{id:'FX-114',label:'二値化',parameters:[number('しきい値',0,255,128),number('明度（0）または赤・緑・青（1〜3）',0,3,0),color('暗い側の色',0),color('明るい側の色',0xffffff)]},
+  lut:{id:'FX-115',label:'LUT（色変換表）',parameters:[]},
   mosaic:{id:'FX-126',label:'モザイク',parameters:[number('ブロックの幅（px）',1,256,12),number('ブロックの高さ（px）',1,256,12),flag('縦横を連動',1),number('格子の開始 X（px）',-256,256,0),number('格子の開始 Y（px）',-256,256,0),flag('中心色を使う（オフで平均色）')]},
   offset:{id:'FX-127',label:'オフセット',parameters:[number('横に移動（px）',-8192,8192,0),number('縦に移動（px）',-8192,8192,0),number('端の処理（0: 循環、1: 透明、2: 端の色）',0,2,0),flag('作品の縦横の半分を移動')]},
+  displace:{id:'FX-128',label:'画像で位置をずらす',parameters:[number('赤で横にずらす（px）',-512,512,20),number('緑で縦にずらす（px）',-512,512,20),
+    number('端の処理（0: 循環、1: 透明、2: 端の色）',0,2,0),flag('参照画像を繰り返す')]},
   halftone:{id:'FX-129',label:'網点・スクリーントーン',parameters:[number('点の間隔（px）',2,128,12),number('網点の角度（°）',-180,180,45),color('点の色',0x212536),flag('点以外を透明にする',1)]},
   edges:{id:'FX-130',label:'輪郭検出・線画抽出',parameters:[number('検出しきい値',0,254,30),number('線の強さ（%）',1,300,100),color('線の色',0x212536),flag('線以外を透明にする',1)]},
   recolor:{id:'FX-131',label:'線画の色を変える',parameters:[color('線の色',0x263550),flag('明るい画素を透明にする'),number('線と判定する明るさ',0,255,200)]},
@@ -56,7 +61,7 @@ export const toneEffects={
 } as const satisfies Record<string,EffectDefinition>;
 export const rasterEffects={...neighborhoodEffects,...toneEffects};
 export type RasterEffect=keyof typeof rasterEffects;
-export type EffectStep=Readonly<{kind:RasterEffect;values:readonly number[];strength:number;enabled:boolean}>;
+export type EffectStep=Readonly<{kind:RasterEffect;values:readonly number[];strength:number;enabled:boolean;resource?:EffectResource}>;
 export function newEffect(kind:RasterEffect):EffectStep{
   return {kind,values:rasterEffects[kind].parameters.map(p=>p.initial),strength:100,enabled:true};
 }
@@ -70,7 +75,10 @@ export function readEffectSteps(input:unknown):EffectStep[]|null{
     if(!Array.isArray(step.values)||step.values.length!==parameters.length||
       !parameters.every((p,i)=>Number.isFinite(step.values[i])&&step.values[i]>=p.min&&step.values[i]<=p.max&&
         Math.abs((step.values[i]-p.min)/p.step-Math.round((step.values[i]-p.min)/p.step))<1e-5))return null;
-    steps.push({kind,values:[...step.values],strength:step.strength,enabled:step.enabled});
+    const resourceKind=kind==='lut'?'colorTable':kind==='displace'?'displacement':null;
+    const resource=resourceKind&&step.resource!==undefined?validateEffectResource(step.resource,resourceKind):null;
+    if(step.resource!==undefined&&!resource||resourceKind&&step.enabled&&step.strength>0&&!resource)return null;
+    steps.push({kind,values:[...step.values],strength:step.strength,enabled:step.enabled,...(resource?{resource}:{})});
   }
   return steps;
 }

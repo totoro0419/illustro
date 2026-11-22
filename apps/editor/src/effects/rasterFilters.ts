@@ -1,3 +1,4 @@
+import {applyColorTable,applyDisplacement} from './imageEffectResources';
 import {readEffectSteps,type EffectStep} from './rasterSettings';
 
 type Bytes=Uint8Array|Uint8ClampedArray;
@@ -420,6 +421,8 @@ export function applyRasterEffects(source:Bytes,width:number,height:number,recip
       case 'outline':case 'glow':case 'shadow':filtered=alphaStyle(result,width,height,step);break;
       case 'edges':filtered=edgeFilter(result,width,height,step);break;
       case 'emboss':filtered=emboss(result,width,height,step);break;
+      case 'lut':filtered=step.resource?.kind==='colorTable'?applyColorTable(result,step.resource):result;break;
+      case 'displace':filtered=step.resource?.kind==='displacement'?applyDisplacement(result,width,height,step.resource,a,b,c,!!d):result;break;
       case 'mosaic':case 'offset':filtered=geometryFilter(result,width,height,step);break;
       default:filtered=toneFilter(result,width,step);
     }

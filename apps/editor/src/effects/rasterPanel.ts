@@ -1,3 +1,4 @@
+import {parseCube,readDisplacementImage} from './imageEffectResources';
 import {button,labelledField,numberField} from '../artwork/tools';
 import {newEffect,neighborhoodEffects,rasterEffects,toneEffects,type EffectStep,type RasterEffect} from './rasterSettings';
 import type {RasterEffectRequest} from './raster.worker';
@@ -116,6 +117,24 @@ export function installRasterEffects(host:HTMLElement,api:{
         field.oninput=()=>{invalidate();if(field.validity.valid&&Number.isFinite(field.valueAsNumber))write(field.valueAsNumber);};
       }
     });
+    if(step.kind==='lut'||step.kind==='displace'){
+      const input=document.createElement('input');input.type='file';
+      const lut=step.kind==='lut',index=selected;
+      input.accept=lut?'.cube':'image/png,image/jpeg,image/webp';
+      labelledField(parameters,lut?'LUTファイル（.cube、出力色は8ビット）':'変位画像（赤: 横、緑: 縦）',input);
+      const fileStatus=document.createElement('span');fileStatus.textContent=step.resource?.name??'参照ファイルを選んでください。';
+      parameters.append(fileStatus);
+      input.onchange=async()=>{
+        const file=input.files?.[0],original=steps[index];
+        if(!file||!original||original.kind!==step.kind)return;
+        try{
+          if(lut&&file.size>4_194_304)throw Error('LUTファイルは4MBまでです。');
+          const resource=lut?parseCube(await file.text(),file.name):await readDisplacementImage(file);
+          if(steps[index]!==original)return;
+          steps[index]={...original,resource};invalidate();refresh();status.textContent='参照データを読み込みました。';
+        }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+      };
+    }
     const strength=numberField(parameters,'効果の強さ（%）',step.strength,0,100,1);
     strength.oninput=()=>{
       invalidate();
@@ -125,6 +144,8 @@ export function installRasterEffects(host:HTMLElement,api:{
   async function calculate(){
     if(running)return null;
     if(!steps.some(step=>step.enabled&&step.strength>0))throw Error('少なくとも1つの効果を有効にしてください。');
+    if(steps.some(step=>step.enabled&&step.strength>0&&(step.kind==='lut'||step.kind==='displace')&&!step.resource))
+      throw Error('LUTや変位の参照ファイルを選んでください。');
     if(parameters.querySelector('input:invalid')||[...parameters.querySelectorAll<HTMLInputElement>('input[type=number]')].some(field=>!field.value))
       throw Error('効果の設定値を確認してください。');
     if(result?.capture.valid())return result;
