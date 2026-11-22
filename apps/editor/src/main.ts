@@ -1,3 +1,4 @@
+import {applyPixelCell,pixelStroke} from './pixelStroke';
 import {openBatchExport} from './export/batchExport';
 import {installTimeline} from './recording/timeline';
 import {installWorkTime} from './recording/workTime';
@@ -1768,7 +1769,7 @@ try{
 }catch{}
 function updatePixelGrid(){
  const state=surface?.viewState;
- const visible=!!state&&gridToggle.checked&&state.zoom*100>=gridThreshold.valueAsNumber&&!state.seamless;
+ const visible=!!state&&(gridToggle.checked||activeCanvasTool==='pixels')&&state.zoom*100>=gridThreshold.valueAsNumber&&!state.seamless;
  gridOverlay.toggleAttribute('hidden',!visible);
  if(!visible||!state||!surface){pixelCoordinates.hidden=true;return;}
  const origin=surface.documentToScreen({x:0,y:0}),c=Math.cos(state.rotation),s=Math.sin(state.rotation);
@@ -1840,7 +1841,7 @@ function updateContextBar(){
     source:sampleSource==='layer'?'layer':sampleSource==='specific'?'specific':'composite',
     layerId:sampleLayerId?sampleLayerId as LayerId:null,
   },controller.layers.map(item=>({id:item.id,name:item.name})));
-  tool.textContent='道具: '+(fill?'塗りつぶし':selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
+  tool.textContent='道具: '+(fill?'塗りつぶし':activeCanvasTool==='pixels'?'1pxドットペン':selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
   layer.textContent=fill?'塗り先: '+fill.destination:'描画先: '+(active?controller.selectedLayer.name:'作品なし');
   const selected=surface?.selectedRectangle;
   selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):c06Selection?.active()?'選択範囲あり':'選択なし';
@@ -1889,11 +1890,11 @@ function reflectRailTool(){
 function leaveCanvasTool(){
  if(activeCanvasTool==='selection')c06Selection?.stop();
  if(activeCanvasTool==='smartFill')fillPanel?.stop();
- if(activeCanvasTool==='shapes'||activeCanvasTool==='rulers')surface?.setCanvasEditGesture(null);
+ if(activeCanvasTool==='shapes'||activeCanvasTool==='rulers'||activeCanvasTool==='pixels')surface?.setCanvasEditGesture(null);
  const tools=byId('documentBoxBody');
  if(activeCanvasTool)tools.querySelector<HTMLDetailsElement>('[data-tool-panel="'+(activeCanvasTool==='move'?'transform':activeCanvasTool)+'"]')?.removeAttribute('open');
  delete tools.dataset.activeToolPanel;
- activeCanvasTool='';
+ activeCanvasTool='';updatePixelGrid();
 }
 function openCanvasTool(id:string){
  if(!surface||!documentReady||surface.inputActive)return false;
@@ -3968,6 +3969,85 @@ async function withClipboardAccess(action:(drawing:BrushSurface)=>Promise<'edit'
     if(surface===drawing)drawing.setInputBarrier(false);
     c06ClipboardUI?.refresh();
   }
+}
+const pixelPanel=document.createElement('details');pixelPanel.className='c06-clipboard-panel';pixelPanel.dataset.toolPanel='pixels';
+const pixelTitle=document.createElement('summary');pixelTitle.textContent='1pxのドット絵';
+const pixelPen=document.createElement('button'),pixelErase=document.createElement('button'),pixelStatus=document.createElement('output');
+pixelPen.type=pixelErase.type='button';pixelPen.textContent='1pxで描く';pixelErase.textContent='1pxで消す';
+pixelStatus.setAttribute('role','status');
+const pixelActions=document.createElement('div');pixelActions.className='box-actions';pixelActions.append(pixelPen,pixelErase);
+pixelPanel.append(pixelTitle,pixelActions,pixelStatus);byId('documentBoxBody').append(pixelPanel);
+pixelPen.onclick=()=>selectCanvasTool('pixels',()=>startPixelTool(false));
+pixelErase.onclick=()=>selectCanvasTool('pixels',()=>startPixelTool(true));
+c04Commands.registerProvider(()=>[{
+  id:'pixelPen',label:'1pxのドットペン',category:'描画',aliases:'ドット絵 ピクセル アンチエイリアス',
+  availability:()=>documentReady?null:'先に作品を開いてください。',
+  execute:()=>selectCanvasTool('pixels',()=>startPixelTool(false)),
+}]);
+let pixelGestureGeneration=0;
+function startPixelTool(erase:boolean){
+  const drawing=surface;
+  if(!drawing)return;
+  const generation=++pixelGestureGeneration,pixelFill=()=>erase?'#E75162':hex(foreground.current);
+  pixelPen.setAttribute('aria-pressed',String(!erase));pixelErase.setAttribute('aria-pressed',String(erase));
+  pixelStatus.textContent='画素のマスに合わせて'+(erase?'消します。':'描きます。')+'筆圧と手ぶれ補正は使用しません。';
+  updatePixelGrid();
+  drawing.setCanvasEditGesture({continuous:true,path:false,width:1,color:pixelFill(),pixelFill,
+    end:()=>{if(activeCanvasTool==='pixels'&&generation===pixelGestureGeneration){
+      pixelPanel.open=false;activeCanvasTool='';delete byId('documentBoxBody').dataset.activeToolPanel;
+      updatePixelGrid();reflectRailTool();
+    }},
+    complete:points=>{
+      const artwork=controller.document,root=artwork.root,head=artwork.head,layer=controller.selectedLayer;
+      const selection=c06Selection?.active()??null,color=[foreground.current.r,foreground.current.g,foreground.current.b].map(v=>Math.round(v*255));
+      void withClipboardAccess(async viewport=>{
+        if(viewport!==drawing||activeCanvasTool!=='pixels'||layer.baseColor||layer.deformation||layer.editable||layer.lineRegions||layer.imageLink||
+          !root.isLayerVisible(layer.id)||root.isLayerContentLocked(layer.id)||erase&&layer.alphaLocked)
+          throw Error('表示中の、編集できる描画レイヤーを選んでください。');
+        const {width,height}=root,blockSize=TILE*2,blocks=new Map<string,number[]>();
+        for(const index of pixelStroke(points,width,height)){
+          if(selection&&!selection.alpha[index])continue;
+          const key=Math.floor(index%width/blockSize)+','+Math.floor(Math.floor(index/width)/blockSize);
+          const cells=blocks.get(key);
+          if(cells)cells.push(index);else blocks.set(key,[index]);
+        }
+        let full:Uint8Array|undefined;
+        const changed:string[]=[],tiles:{key:string;pixels:Uint8Array}[]=[];
+        for(const [key,cells] of blocks){
+          const [bx=0,by=0]=key.split(',').map(Number),x=bx*blockSize,y=by*blockSize;
+          const w=Math.min(blockSize,width-x),h=Math.min(blockSize,height-y);
+          let pixels=await viewport.captureDocumentLayerRegion(layer.id,{x,y,width:w,height:h});
+          if(!pixels){
+            full??=(await viewport.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
+            if(!full)throw Error('画素を取得できません。');
+            pixels=new Uint8ClampedArray(cropCanvas(full,width,height,x,y,w,h));
+          }
+          let edited=false;
+          for(const index of cells){
+            const at=((Math.floor(index/width)-y)*w+index%width-x)*4;
+            edited=applyPixelCell(pixels,at,color,(selection?.alpha[index]??255)/255,erase,!!layer.alphaLocked)||edited;
+          }
+          if(!edited)continue;
+          changed.push(key);
+          for(let ty=0;ty*TILE<h;ty++)for(let tx=0;tx*TILE<w;tx++){
+            const rgba=new Uint8Array(TILE*TILE*4),cols=Math.min(TILE,w-tx*TILE),rows=Math.min(TILE,h-ty*TILE);
+            for(let row=0;row<rows;row++){
+              const start=((ty*TILE+row)*w+tx*TILE)*4;
+              rgba.set(pixels.subarray(start,start+cols*4),row*TILE*4);
+            }
+            tiles.push({key:(bx*2+tx)+','+(by*2+ty),pixels:rgba});
+          }
+        }
+        if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==layer.id||
+          activeCanvasTool!=='pixels'||generation!==pixelGestureGeneration||(c06Selection?.active()??null)!==selection)return 'read';
+        if(!changed.length)return 'read';
+        const tx=artwork.begin(erase?'1pxの消しゴム':'1pxのドットペン');
+        tx.patchLayerRasterTiles(layer.id,changed,tiles);
+        controller.lastPersistenceHandoff=tx.commit().persistence;
+        return 'edit';
+      }).catch(error=>{pixelStatus.textContent=error instanceof Error?error.message:String(error);});
+    },
+  });
 }
 const c06Download=(blob:Blob,fileName:string)=>{
   const url=URL.createObjectURL(blob),link=document.createElement('a');

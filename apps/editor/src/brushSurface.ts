@@ -1,3 +1,4 @@
+import {pixelStroke} from './pixelStroke';
 import {correctionGeometry,correctionSuggestedShape,type CorrectionHold,type CorrectionStroke} from './artwork/strokeCorrection';
 import type {ArtworkGuide} from '@illustro/core';
 import {StrokeHandoff,type StrokeReservation} from './strokeHandoff';
@@ -45,7 +46,7 @@ type CanvasEditGesture=Readonly<{
   completeSamples?:(samples:readonly Sample[])=>void;
   updateSamples?:(samples:readonly Sample[])=>void;
   cancel?:()=>void;
-  continuous?:boolean;end?:()=>void;
+  continuous?:boolean;end?:()=>void;pixelFill?:()=>string;
   /** At most once per animation frame while tracing a canvas interaction. */
   update?:(points:readonly MaskStrokePoint[])=>void;
   pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;
@@ -771,6 +772,18 @@ export class BrushSurface{
         const point=this.editPoints.at(-1)!;
         gesture.pointEdit.preview?.(this.editPointIndex,{x:point.x,y:point.y});
       }
+      return;
+    }
+    if(gesture.pixelFill){
+      const {documentWidth:width,documentHeight:height}=v.state;
+      const origin=v.screen({x:0,y:0}),x=v.screen({x:1,y:0}),y=v.screen({x:0,y:1});
+      let cells:Set<number>;
+      try{cells=pixelStroke(this.editPoints,width,height,25000);}catch{cells=new Set();}
+      path.setAttribute('d',[...cells].map(index=>'M'+(index%width)+' '+Math.floor(index/width)+'h1v1h-1Z').join(' '));
+      path.setAttribute('shape-rendering','crispEdges');
+      path.setAttribute('transform','matrix('+[x.x-origin.x,x.y-origin.y,y.x-origin.x,y.y-origin.y,origin.x,origin.y].join(' ')+')');
+      path.setAttribute('fill',gesture.pixelFill());
+      path.setAttribute('fill-opacity','.75');
       return;
     }
     const points=this.editPoints.map(p=>v.screen(p));
