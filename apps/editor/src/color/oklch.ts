@@ -5,7 +5,7 @@ const linear=(c:number)=>c<.04045?c/12.92:((c+.055)/1.055)**2.4;
 const encoded=(c:number)=>c<=.0031308?12.92*c:1.055*c**(1/2.4)-.055;
 const angle=(h:number)=>((h%360)+360)%360;
 
-// D65 conversion matrices from Björn Ottosson's published Oklab definition.
+// D65 matrices from the Oklab definition: https://bottosson.github.io/posts/oklab/
 export function toOklch(c:RGB):Oklch{
   const r=linear(c.r),g=linear(c.g),b=linear(c.b);
   const l=Math.cbrt(.4122214708*r+.5363325363*g+.0514459929*b);

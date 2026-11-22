@@ -14,6 +14,24 @@ describe('M08 atomic geometry and preservation',()=>{
   const snap=d.capturePersistenceSnapshot();const restored=CoreDocument.restore({snapshot:snap,blockPayloads:d.persistenceBlockPayloads(snap)});
   expect(restored.root.width).toBe(2);expect(restored.readBaseRasterPixels(id)).toEqual(p);
  });
+ it('retains the original crop source and filter parameters through native restore',()=>{
+  const d=new CoreDocument({width:3,height:1}),id=d.defaultRasterLayerId;
+  const seed=d.begin('seed');seed.setPixel(id,0,0,[30,50,70,255]);seed.commit();
+  const original=d.head,crop=d.begin('keep outside');
+  crop.resizeDocument(2,1,'document.crop',new Map([[id,new Uint8Array(8)]]),{x:1,y:0,keepOutside:true});
+  crop.commit();
+  const cropped=d.head,filtered=d.begin('filter');
+  const pixels=Uint8Array.of(220,200,180,255,0,0,0,0),recipe={version:1,steps:[{kind:'invert',values:[0,0],strength:100,enabled:true}],mask:null};
+  filtered.replaceLayerRaster(id,pixels,cropped,undefined,undefined,recipe);filtered.commit();
+  const snapshot=d.capturePersistenceSnapshot(),opened=CoreDocument.restore({snapshot,blockPayloads:d.persistenceBlockPayloads(snapshot)});
+  const operations=opened.operationsTo();
+  expect(operations.find(op=>op.kind==='document.crop')?.sourceRevisionIds[0]).toBe(original);
+  expect(operations.at(-1)?.parameters.rasterFilter).toEqual(recipe);
+  expect(opened.readBaseRasterPixels(id)).toEqual(pixels);
+  expect(opened.readBaseRasterPixels(id,original).slice(0,4)).toEqual(Uint8Array.of(30,50,70,255));
+  opened.undo();expect(opened.nextRedoLabel).toBe('filter');
+  opened.redo();expect(opened.readPixel(id,0,0)).toEqual([220,200,180,255]);
+ });
  it('rejects missing layer pixels and invalid dimensions without publishing a revision',()=>{
   const d=new CoreDocument({width:4,height:3}),initial=d.head;
   const t=d.begin('bad');

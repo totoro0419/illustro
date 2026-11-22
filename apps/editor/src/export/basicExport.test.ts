@@ -37,6 +37,17 @@ describe('M06 exact export pixel and state contracts',()=>{
     const raw=inflateSync(zipped);
     expect([...raw]).toEqual([0,...pixels.slice(0,8),0,...pixels.slice(8)]);
   });
+  it('writes the requested physical resolution into a PNG without changing its pixels',async()=>{
+    const image=Uint8ClampedArray.of(24,30,48,175);
+    const blob=await encodePng(image,1,1,300);
+    const buffer=await blob.arrayBuffer(),view=new DataView(buffer),bytes=new Uint8Array(buffer);
+    let density:number[]|undefined;
+    for(let at=8;at<bytes.length;at+=12+view.getUint32(at)){
+      if(String.fromCharCode(...bytes.subarray(at+4,at+8))==='pHYs')
+        density=[view.getUint32(at+8),view.getUint32(at+12),view.getUint8(at+16)];
+    }
+    expect(density).toEqual([11811,11811,1]);
+  });
   it('freezes root and layer ordering at revision without altering history or save logic',()=>{
     const doc=new CoreDocument({width:64,height:48,name:'Drawing',colorProfileId:'srgb'});
     const before=doc.head,sequence=doc.commitSequence,old=captureExport(doc);

@@ -5,7 +5,6 @@ import {installTimeline} from './recording/timeline';
 import {installWorkTime} from './recording/workTime';
 import {installRasterEffects} from './effects/rasterPanel';
 import {readEffectSteps} from './effects/rasterSettings';
-import {validateLayerMask} from '@illustro/core';
 import {installPassiveTouchProbe} from './passiveTouchProbe';
 import {installInputFreezeTrace} from './inputFreezeTrace';
 import {HistoryNavigation,type HistoryDirection} from './historyNavigation';
@@ -118,7 +117,7 @@ import type {PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
 import {fingerprintRenderedPixels,sameRenderedPixels,type VisualFingerprint} from './persistence/visualIntegrity';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_BLEND_MODES,LAYER_COLOR_TAGS,type LayerBlendMode,parseLayerColorTag,validateEditableArtwork,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerImageLink,type LayerId} from '@illustro/core';
+import {CoreDocument,validateLayerMask,LAYER_BLEND_MODES,LAYER_COLOR_TAGS,type LayerBlendMode,parseLayerColorTag,validateEditableArtwork,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerImageLink,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');

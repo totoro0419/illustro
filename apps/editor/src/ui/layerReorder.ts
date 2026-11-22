@@ -49,7 +49,7 @@ export function bindLayerReorder(
   drop(row);
   const moved=[...list.querySelectorAll<HTMLElement>('[data-layer-drop]')]
     .find(item=>item.dataset.layerDrop===source.dataset.layerDrop);
-  if(moved&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+  if(moved&&!document.documentElement.hasAttribute('data-illustro-reduced-motion')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
     const offset=from-moved.getBoundingClientRect().top;
     if(offset)moved.animate([{transform:'translateY('+offset+'px)'},{transform:'none'}],{duration:130,easing:'ease-out'});
   }
