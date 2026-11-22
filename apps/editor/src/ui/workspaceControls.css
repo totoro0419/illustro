@@ -97,7 +97,8 @@ select.workspace-choice-source { display: none !important }
 .workspace-range-value > input[type=number]:focus-visible { outline-width: 2px }
 .workspace-range-value > input[type=number]:disabled { opacity: .55; cursor: default }
 .workspace-range > input[type=range] { grid-area: 2 / 2; width: 100%; min-width: 0; min-height: 28px; margin: 0 }
-.workspace-range > output { display: none }
+/* Keep legacy output nodes for existing value updates, but never render duplicate values below the slider. */
+.workspace-range > output { display: none !important }
 .workspace-range-minus, .workspace-range-plus { grid-row: 2; min-height: 36px; padding: 0 }
 .workspace-range-minus { grid-column: 1 }
 .workspace-range-plus { grid-column: 3 }
