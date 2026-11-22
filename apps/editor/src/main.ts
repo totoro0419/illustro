@@ -5014,18 +5014,24 @@ const rasterEffectPanel=installRasterEffects(byId('effectsBoxBody'),{
         return 'edit';
       })};
   },
-  bake:async()=>{
+  bake:async copy=>{
     const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
     if(!lastRasterFilter(artwork,layer.id))throw Error('設定を保持しているフィルターのレイヤーを選んでください。');
-    if(!await appConfirm('現在の効果を画素に固定します。効果の設定を開き直すには、この操作を取り消してください。実行しますか？'))
-      throw Error('固定を取り消しました。');
+    const message=copy?'効果を固定した非表示のコピーを作ります。元のレイヤーで効果を編集できます。':
+      '現在の効果を画素に固定します。効果の設定を開き直すには、この操作を取り消してください。';
+    if(!await appConfirm(message+' 実行しますか？'))return false;
     await withClipboardAccess(async()=>{
       if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==layer.id)
         throw Error('対象が変わりました。');
-      const result=await originalTransformPixels(artwork,layer,head),tx=artwork.begin('効果を画素に固定');
-      tx.replaceLayerRaster(layer.id,result);controller.lastPersistenceHandoff=tx.commit().persistence;
+      const result=await originalTransformPixels(artwork,layer,head),tx=artwork.begin(copy?'効果の固定コピーを作る':'効果を画素に固定');
+      if(copy){
+        const id=tx.addRasterSnapshotAbove(layer.id,result,layer.name.slice(0,4060)+'（効果を固定）',true);
+        tx.setLayerVisibility(id,false);
+      }else tx.replaceLayerRaster(layer.id,result);
+      controller.lastPersistenceHandoff=tx.commit().persistence;
       return 'edit';
     });
+    return true;
   }
 });
 c04Commands.registerProvider(()=>[{

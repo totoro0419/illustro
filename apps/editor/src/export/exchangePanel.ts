@@ -1,6 +1,6 @@
 import type {CoreDocument} from '@illustro/core';
 import {resizeImagePixels} from '../canvasGeometry';
-import {captureExport,renderFrozenArtworkTiledPreview,renderFrozenArtwork,encodePng} from './basicExport';
+import {captureExport,renderFrozenArtworkTiledPreview,renderFrozenArtwork} from './basicExport';
 import {button,labelledField,numberField,selectField} from '../artwork/tools';
 import {exchangeFileName,exchangeWarnings,exportExchange} from './exchange';
 import type {ExchangeFormat} from './exchangeTypes';
@@ -23,8 +23,9 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   const bleed=numberField(print,'片側の塗り足し（mm）',3,0,50,.1);
   const printResult=document.createElement('output');printResult.setAttribute('aria-live','polite');
   print.prepend(printTitle);print.append(printResult);
-  const preview=document.createElement('img');preview.alt='出力前の作品全体';preview.hidden=true;preview.style.cssText='max-width:100%;max-height:180px;object-fit:contain';
-  let previewUrl:string|null=null;
+  const preview=document.createElement('canvas');preview.setAttribute('aria-label','透明部分と仕上がり線を表示する出力前の作品全体');
+  preview.hidden=true;preview.className='exchange-print-preview';
+  let comparison:ImageData|null=null;
   function refresh(){
     const selected=format.value as ExchangeFormat,avif=selected==='avif';
     const layered=selected==='psd'||selected==='psb'||selected==='ora'||selected==='svg';
@@ -37,12 +38,28 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     const {width,height}=doc.root;
     const resolution=dpi.valueAsNumber,border=bleed.valueAsNumber;
     if(!dpi.validity.valid||!bleed.validity.valid||!Number.isFinite(resolution)||!Number.isFinite(border)){
-      printResult.textContent='DPIと塗り足しを範囲内で入力してください。';return;
+      printResult.textContent='DPIと塗り足しを範囲内で入力してください。';drawPreview();return;
     }
     const w=width*25.4/resolution,h=height*25.4/resolution,innerW=w-2*border,innerH=h-2*border;
+    drawPreview(border/w,border/h);
     printResult.textContent=`画像全体 ${w.toFixed(1)} × ${h.toFixed(1)} mm。仕上がり ${Math.max(0,innerW).toFixed(1)} × ${Math.max(0,innerH).toFixed(1)} mm。`+
       (innerW<=0||innerH<=0?' 塗り足しを引くと仕上がり範囲がありません。':' 参考値です。出力画像の画素・色・DPIは変わりません。');
   }
+  function drawPreview(insetX=0,insetY=0){
+    if(!comparison)return;
+    const context=preview.getContext('2d');if(!context)return;
+    context.putImageData(comparison,0,0);
+    if(!print.open||insetX<=0||insetY<=0||insetX>=.5||insetY>=.5)return;
+    const {width,height}=preview,x=insetX*width,y=insetY*height;
+    context.fillStyle='#30303666';
+    context.fillRect(0,0,width,y);context.fillRect(0,height-y,width,y);
+    context.fillRect(0,y,x,height-2*y);context.fillRect(width-x,y,x,height-2*y);
+    context.setLineDash([4,3]);context.strokeStyle='#fff';context.lineWidth=2;
+    context.strokeRect(x,y,width-2*x,height-2*y);
+    context.setLineDash([4,3]);context.lineDashOffset=3;context.strokeStyle='#444';
+    context.strokeRect(x,y,width-2*x,height-2*y);context.lineDashOffset=0;
+  }
+  print.ontoggle=refresh;
   for(const field of [format,style,quality,lossless,dpi,bleed])field.onchange=refresh;
   const actions=document.createElement('div');actions.className='box-actions';
   const see=button('作品全体の見た目を確認',async()=>{
@@ -51,10 +68,11 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     const width=Math.max(1,Math.round(fixed.width*ratio)),height=Math.max(1,Math.round(fixed.height*ratio));
     const pixels=await renderFrozenArtworkTiledPreview(fixed,width,height)??new Uint8ClampedArray(resizeImagePixels(
       await renderFrozenArtwork(fixed),fixed.width,fixed.height,width,height,'auto'));
-    const image=await encodePng(pixels,width,height);
     if(!dialog.open)return;
-    if(previewUrl)URL.revokeObjectURL(previewUrl);
-    previewUrl=URL.createObjectURL(image);preview.src=previewUrl;preview.hidden=false;
+    comparison=new ImageData(new Uint8ClampedArray(pixels),width,height);
+    preview.width=width;preview.height=height;preview.hidden=false;
+    refresh();
+    if(print.open)status.textContent='破線が仕上がりの位置です。市松模様が見える範囲が透明です。';
   },status);
   const run=button('書き出す',async()=>{
     if(!active())throw Error('作品が切り替わりました。');
@@ -66,7 +84,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     if(dialog.open){download(blob,outputName);status.textContent=outputName+' を作成しました。';}
   },status);
   const close=button('閉じる',()=>dialog.close(),status);
-  dialog.onclose=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);dialog.remove();};
+  dialog.onclose=()=>{comparison=null;dialog.remove();};
   actions.append(see,run,close);section.append(notes,preview,print,actions,status);dialog.append(section);
   document.body.append(dialog);refresh();dialog.showModal();
 }

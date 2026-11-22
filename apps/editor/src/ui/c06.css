@@ -77,3 +77,6 @@
 .assist-previews canvas { display:block;max-width:100%;max-height:240px;object-fit:contain;
   background:repeating-conic-gradient(#bebebe 0% 25%,#eee 0% 50%) 0 0/14px 14px; }
 .assist-previews canvas[hidden] { display:none; }
+
+.exchange-print-preview { max-inline-size:100%;max-block-size:220px;object-fit:contain;
+  background:repeating-conic-gradient(#bfc2c7 0% 25%,#ebebed 0% 50%) 0 0/16px 16px; }

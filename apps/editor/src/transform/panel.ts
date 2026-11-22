@@ -7,7 +7,7 @@ import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} fr
 import {createTransformPreviewRunner,runTransform} from './run';
 import {progressiveTransformPreviewSize} from './previewQuality';
 import {originalPreviewSize} from './originalPreview';
-import {recommendInterpolation,type ArtworkKind} from './interpolationAdvice';
+import {pixelGridWarning,recommendInterpolation,type ArtworkKind} from './interpolationAdvice';
 import {snapLayout,type SnapTargets} from './layout';
 import {makeLiquifyStroke} from './liquify';
 import {cornersTowardVanishingPoint,rectCorners} from './quadrilateral';
@@ -155,8 +155,9 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   artworkKind.onchange=()=>showInterpolationAdvice();
   function showInterpolationAdvice(){
     const recommended=recommendInterpolation(artworkKind.value as ArtworkKind,settings);
+    const warning=artworkKind.value==='pixel-art'||settings.interpolation==='nearest'?pixelGridWarning(settings):null;
     interpolationAdvice.textContent='おすすめ：'+recommended.label+'。'+recommended.reason+
-      ' 現在の設定は自動では変更しません。';
+      (warning?' '+warning:'')+' 現在の設定は自動では変更しません。';
   }
   showInterpolationAdvice();
   number('dx','横の移動（px）',-8192,8192,.5);number('dy','縦の移動（px）',-8192,8192,.5);

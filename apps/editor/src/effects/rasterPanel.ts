@@ -46,7 +46,7 @@ function showPreview(canvas:HTMLCanvasElement,source:Uint8Array|Uint8ClampedArra
 }
 
 export function installRasterEffects(host:HTMLElement,api:{
-  capture:(edit:boolean)=>Promise<EffectCapture>;bake:()=>Promise<void>;
+  capture:(edit:boolean)=>Promise<EffectCapture>;bake:(copy:boolean)=>Promise<boolean>;
 }){
   const panel=document.createElement('details');
   panel.className='c06-clipboard-panel raster-effects';
@@ -202,12 +202,16 @@ export function installRasterEffects(host:HTMLElement,api:{
   },status);
   const bake=button('効果を画素に固定',async()=>{
     if(applying||running)return;
-    await api.bake();session=null;invalidate();
-    status.textContent='現在の見た目を画素として固定しました。';
+    if(!await api.bake(false))return;
+    session=null;invalidate();status.textContent='現在の見た目を画素として固定しました。';
+  },status);
+  const bakeCopy=button('元を残して固定コピーを作る',async()=>{
+    if(applying||running||!await api.bake(true))return;
+    session=null;invalidate();status.textContent='元の効果を保ち、同じ画素の非表示コピーを作りました。';
   },status);
   controls.append(add,fresh,edit);
   const actions=document.createElement('div');actions.className='box-actions';
-  actions.append(compare,apply,cancel,bake);
+  actions.append(compare,apply,cancel,bakeCopy,bake);
   panel.append(title,controls,recipe,parameters,actions,status,comparison);
   panel.addEventListener('toggle',()=>{if(!panel.open){session=null;invalidate();}});
   host.append(panel);refresh();
