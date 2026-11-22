@@ -1380,12 +1380,12 @@ function updateHistoryButtons(){
   byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(surface?.canUndo||historyPending);
   byId<HTMLButtonElement>('redo').disabled=blocked||!(surface?.canRedo||historyPending);
   byId<HTMLButtonElement>('compactRedo').disabled=blocked||!(surface?.canRedo||historyPending);
-  const undoLabel=controller.document.currentRevision.command?.label;
+  const name=(label:string|null|undefined)=>label==='Brush stroke'?'描画':label==='Add raster layer'?'レイヤーを追加':label;
+  const undoLabel=name(controller.document.currentRevision.command?.label);
+  const redoLabel=name(controller.document.nextRedoLabel);
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
-  if(undoLabel){
-    const name=undoLabel==='Brush stroke'?'描画':undoLabel==='Add raster layer'?'レイヤーを追加':undoLabel;
-    for(const id of ['undo','compactUndo'])byId(id).title='元に戻す · '+name;
-  }else for(const id of ['undo','compactUndo'])byId(id).title='元に戻す';
+  for(const id of ['undo','compactUndo'])byId(id).title=undoLabel?'元に戻す · '+undoLabel:'元に戻す';
+  for(const id of ['redo','compactRedo'])byId(id).title=redoLabel?'やり直す · '+redoLabel:'やり直す';
 }
 function updatePersistenceDisplay(){
   const state=persistenceState,indicator=byId('saveState'),inputPending=historyPending||(surface?.hasUncommittedInput??false);
@@ -3199,8 +3199,26 @@ byId<HTMLButtonElement>('selectionClear').onclick=()=>{
 refreshSelectionControls();
 
 byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
-byId<HTMLInputElement>('openFile').onchange=async e=>{
-  const input=e.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file)return;
+const workFileInput=byId<HTMLInputElement>('openFile');
+workFileInput.multiple=true;
+let openingWorkFiles=false;
+workFileInput.onchange=async ()=>{
+  const files=Array.from(workFileInput.files??[]);
+  workFileInput.value='';
+  if(!files.length||openingWorkFiles)return;
+  openingWorkFiles=true;
+  try{
+    if(files.length===1){await openWorkFile(files[0]!);return;}
+    if(!await appConfirm(files.length+'件の作品を復元します。同じ作品がある場合は別作品として保存します。続けますか？'))return;
+    const failed:string[]=[];
+    for(const file of files)if(!await openWorkFile(file,true))failed.push(file.name);
+    const summary=(files.length-failed.length)+'件を復元しました。'+
+      (failed.length?' 復元できなかったファイル（'+failed.length+'件）：'+failed.join('、'):'');
+    byId('status').textContent=summary;
+    if(failed.length)homeUi?.notify(summary);
+  }finally{openingWorkFiles=false;}
+};
+async function openWorkFile(file:File,batch=false){
   byId('status').textContent='作品ファイルを確認しています。';let opened:PortableOpenResult;
   let migrationCopy=false;
   let migrationSource:(()=>Promise<FrozenExport>)|null=null,migrationNotices:readonly string[]=[];
@@ -3234,7 +3252,9 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
     if(!qaMode){
       if(!(await prepareWorkSwitch()))return;
       const same=await getWork(opened.document.root.documentId);
-      if(same){
+      if(same&&batch){
+        opened=copyOpened(opened,opened.document.root.name.slice(0,100)+'（バックアップ復元）');
+      }else if(same){
         const copyChoice={value:'copy',label:'別作品として複製'} as const;
         const decision=await appChoose(
           '同じ識別番号の作品が'+(same.trashedAt?'ごみ箱に':'マイ作品に')+'あります。\n'
@@ -3253,12 +3273,12 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
       ?'旧形式から移行コピーを開きました。元ファイルは変更していません。新形式を残すには「別名で保存」を押してください。'
       :'作品ファイルを開きました。自動保存を開始しました。';
     homeUi?.showEditor();
-    if(migrationSource)showMigrationDetails(migrationSource,opened.document,migrationNotices);
+    if(migrationSource&&!batch)showMigrationDetails(migrationSource,opened.document,migrationNotices);
     if(!qaMode){scheduleWorkThumbnail();void refreshWorks();}
   }
-  catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);}
-  updateQa();
-};
+  catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);return false;}
+  updateQa();return true;
+}
 function showMigrationDetails(source:()=>Promise<FrozenExport>,converted:CoreDocument,notices:readonly string[]){
   const dialog=document.createElement('dialog'),section=document.createElement('section');
   const title=document.createElement('h2'),message=document.createElement('p'),status=document.createElement('output');

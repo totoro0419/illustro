@@ -33,6 +33,7 @@ export class RevisionHistory<T>{
     if(limit!==null&&(!Number.isSafeInteger(limit)||limit<1))throw new Error('履歴の件数が正しくありません。');
     this.undoLimitValue=limit;
   }get canRedo(){return this.redoIds.length>0;}
+  get nextRedo(){const id=this.redoIds.at(-1);return id===undefined?null:this.get(id);}
   has(id:RevisionId){return this.revisions.has(id);}get(id:RevisionId){const r=this.revisions.get(id);if(!r)throw new Error('missing revision');return r;}
   snapshot():RevisionHistoryState<T>{return Object.freeze({revisions:Object.freeze([...this.revisions.values()]),head:this.headValue,redoIds:Object.freeze([...this.redoIds])});}
   assertHead(id:RevisionId){if(id!==this.headValue)throw new Error('stale transaction');}
