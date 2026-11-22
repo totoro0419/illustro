@@ -14,7 +14,7 @@
   ],
   "prior_evidence": "audit/c01-c10-completion-2026-11-22 (PR #107); historical audit status does not prove full completion",
   "round1_mapping": "planning/c01-c17-feature-reallocation-2026-11-22 (PR #108)",
-  "meaning": "R2は製品の必須236機能のうち、現状未完成または完成を認定できない残作業のみ。A91は既存実装の保護欄に置き、再実装せず第7群の横断検証に渡す。要確認145件=未実装確定145件ではない。",
+  "meaning": "R2は製品の必須236機能のうち、現状未完成または完成を認定できない残作業のみ。A91は既存実装の保護欄に置き、再実装せず第7群の横断検証に渡す。要確認145件=未実装確定145件ではない。 2026-11-22利用者決定によりR2実装対象は143件。除外COL-007/AI-004の2件を完了未達に数えない。軽量水彩と基本形式対応の新しい条件は各IDのrequiredが優先。",
   "scope_total": 247,
   "product_required": 236,
   "outside": 11,
@@ -168,13 +168,29 @@
       "old_status": "一部完成",
       "scope": "included",
       "scope_limit": null,
-      "goal": "旧部分完成の残条件を現行コードで照合して補修",
+      "goal": "sRGBで寸法・単位・DPI・背景を設定して新規作品を作る。",
       "known_deficit": "sRGB以外の対応プロファイル、色管理全体、物理端末の作成性能",
       "known_existing": "C01/C02正式35項目の旧実装台帳に一部完成として記録。後続PRによる差分を無条件に消失扱いしない",
       "prior_code": {
         "old_source": "https://github.com/totoro0419/illustro/blob/49474fd56b36d91425e5df81f9c135c0424aecb4/apps/editor/src/main.ts ; https://github.com/totoro0419/illustro/blob/49474fd56b36d91425e5df81f9c135c0424aecb4/apps/editor/src/canvasNavigation.ts"
       },
       "required": {
+        "operation": "ホームの新規→プリセット→作成",
+        "capability": "sRGBで寸法・単位・DPI・背景を設定して新規作品を作る。",
+        "parameters": "P3/16bit/HDR内部編集は不要。ICC変換等の別機能は維持。",
+        "preview": "寸法を入れると画素数と用紙比率を更新。作成で空作品、取消でホームへ",
+        "undo_native": "作成前は作品履歴なし。作成後は選択済みRaster1枚、属性を保存",
+        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
+        "state": "表示変更は現在表示→変更後表示で即反映。Crop/画像Resizeは枠/寸法編集→比較→適用/取消。文書切替は読込先表示→復帰済/失敗。"
+      },
+      "exit_conditions": [
+        "利用者決定の簡略化した条件を古い高度仕様より優先",
+        "既存の正常な実装は維持し不足のみ補完",
+        "関連する操作/Undo/保存・基本テストを確認"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "ホームの新規→プリセット→作成",
         "capability": "寸法・単位・DPI・背景・プロファイルを指定し描画レイヤーを1枚選択済みにする",
         "parameters": "幅高さ・px/mm・DPI・背景・ICC。標準は直前の安全な新規条件を表示、未選択時はsRGB",
@@ -183,15 +199,9 @@
         "quality_failure": "上限外や単位変換の端数を作成前に説明。DPIだけで画素数を変えない",
         "state": "表示変更は現在表示→変更後表示で即反映。Crop/画像Resizeは枠/寸法編集→比較→適用/取消。文書切替は読込先表示→復帰済/失敗。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "included_srgb_only",
+      "r2_implementation_target": true,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "CAN-002",
@@ -888,13 +898,29 @@
       "old_status": "一部完成",
       "scope": "included",
       "scope_limit": null,
-      "goal": "旧部分完成の残条件を現行コードで照合して補修",
+      "goal": "筆圧・速度と水彩風の入力変調を使う。",
       "known_deficit": "始終端の変調、詳細カーブ、硬さ・混色・水・顔料などの出力と全組み合わせ",
       "known_existing": "C01/C02正式35項目の旧実装台帳に一部完成として記録。後続PRによる差分を無条件に消失扱いしない",
       "prior_code": {
         "old_source": "https://github.com/totoro0419/illustro/blob/49474fd56b36d91425e5df81f9c135c0424aecb4/apps/editor/src/brushSurface.ts ; https://github.com/totoro0419/illustro/blob/49474fd56b36d91425e5df81f9c135c0424aecb4/apps/editor/src/brushPresets.ts"
       },
       "required": {
+        "operation": "各値の連動ボタン→カーブ",
+        "capability": "筆圧・速度と水彩風の入力変調を使う。",
+        "parameters": "水量/顔料量は見た目の係数。持続的な濡れの物理状態は不要。",
+        "preview": "各出力の変調ボタン→入力とRange/Invert/Curve。複数入力の関係と上限下限を可視化",
+        "undo_native": "対応表と乱数条件をプリセットへ。Redoで乱数を引き直さない",
+        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
+        "state": "筆待機→接地/描画→離筆受理→確定処理中→確定。一筆に適用ボタンを要求しない。筆編集だけ変更中→試筆→保存/取消。"
+      },
+      "exit_conditions": [
+        "利用者決定の簡略化した条件を古い高度仕様より優先",
+        "既存の正常な実装は維持し不足のみ補完",
+        "関連する操作/Undo/保存・基本テストを確認"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "各値の連動ボタン→カーブ",
         "capability": "筆圧/傾き/速度/方向/距離/時間/乱数からサイズ・色・質感等の範囲・反転・カーブを指定",
         "parameters": "入力:圧/傾き/方位/軸回転/速度/方向/距離/時間/始終端/乱数/カーブ。出力:径/不透明度/流量/間隔/回転/散布/形変形/HSV/硬さ/質感/混色/水/顔料/粒子",
@@ -903,15 +929,9 @@
         "quality_failure": "未取得センサーは未取得と表示。範囲外・曲線端・入力併用を試筆検査",
         "state": "筆待機→接地/描画→離筆受理→確定処理中→確定。一筆に適用ボタンを要求しない。筆編集だけ変更中→試筆→保存/取消。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "included_light_water_parameters",
+      "r2_implementation_target": true,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "BRU-007",
@@ -1126,11 +1146,27 @@
       "old_status": "C11-C16未照合",
       "scope": "included",
       "scope_limit": null,
-      "goal": "現行コードの処理/入口/保存を調査し未達のみ実装",
+      "goal": "色引き・ぼかし・色追加混色の軽量な筆を使う。",
       "known_deficit": null,
       "known_existing": null,
       "prior_code": null,
       "required": {
+        "operation": "混色ツールの色追加ON/OFF",
+        "capability": "色引き・ぼかし・色追加混色の軽量な筆を使う。",
+        "parameters": "描画途中の追従、一筆Undo、保存を維持。時間進行する濡れ状態は不要。",
+        "preview": "対象帯で既存色のみか色追加か明示、作品上の筆で局所プレビュー",
+        "undo_native": "一筆一Undo。参照合成を使っても出力層を分離",
+        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
+        "state": "設定→描画/試し描き→確定→Undo/保存。乾燥・加水など時間進行物理は行わない。"
+      },
+      "exit_conditions": [
+        "利用者決定の簡略化した条件を古い高度仕様より優先",
+        "既存の正常な実装は維持し不足のみ補完",
+        "関連する操作/Undo/保存・基本テストを確認"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "混色ツールの色追加ON/OFF",
         "capability": "既存色を引く操作と色を加えて混ぜる操作を区別",
         "parameters": "ぼかし/引きずり/色追加混色・径/強さ/色量・参照元",
@@ -1139,15 +1175,9 @@
         "quality_failure": "透明境界で黒い縁や不意な不透明化を作らない",
         "state": "乾/湿潤表示と、進行中/停止中を別状態で示す。一筆は離筆受理、乾燥/加水は個別Command。紙の再適用は候補→適用/取消。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "included_light_blending",
+      "r2_implementation_target": true,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "WET-002",
@@ -1158,11 +1188,27 @@
       "old_status": "C11-C16未照合",
       "scope": "included_limited",
       "scope_limit": "ブラシ操作時に見た目が確定する簡易水彩風のエッジ/粒状感/質感。水/顔料の時間進行物理は扱わない。",
-      "goal": "現行コードの処理/入口/保存を調査し未達のみ実装",
+      "goal": "混色・にじみ・筆端濃淡・粒状感の自然な軽量水彩を実現する。",
       "known_deficit": null,
       "known_existing": null,
       "prior_code": null,
       "required": {
+        "operation": "水彩プリセットと水分/混色量",
+        "capability": "混色・にじみ・筆端濃淡・粒状感の自然な軽量水彩を実現する。",
+        "parameters": "水量・顔料量・にじみを簡単に調整。時間経過する濡れ/乾燥/加水/再湿潤は不要。",
+        "preview": "濡れ状態と色の表示を分離、変化中を小さな状態表示",
+        "undo_native": "見た目と再開に必要な状態をNative保持。停止時点をUndoで再現",
+        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
+        "state": "設定→描画/試し描き→確定→Undo/保存。乾燥・加水など時間進行物理は行わない。"
+      },
+      "exit_conditions": [
+        "利用者決定の簡略化した条件を古い高度仕様より優先",
+        "既存の正常な実装は維持し不足のみ補完",
+        "関連する操作/Undo/保存・基本テストを確認"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "水彩プリセットと水分/混色量",
         "capability": "濡れた部分との相互作用、にじみ、エッジ、粒状感を再編集・復元できる",
         "parameters": "水量/顔料量/拡散/エッジ/粒状感、既定は再現性のある筆プリセット",
@@ -1171,15 +1217,9 @@
         "quality_failure": "物理精度より望む表現/予測可能性を評価。端末差や時間経過で勝手に変わらない",
         "state": "乾/湿潤表示と、進行中/停止中を別状態で示す。一筆は離筆受理、乾燥/加水は個別Command。紙の再適用は候補→適用/取消。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "included_simplified",
+      "r2_implementation_target": true,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "WET-005",
@@ -1190,11 +1230,27 @@
       "old_status": "C11-C16未照合",
       "scope": "included_limited",
       "scope_limit": "紙目/テクスチャ/粒状感とその適用範囲の編集は扱う。時間依存の吸収物理は扱わない。",
-      "goal": "現行コードの処理/入口/保存を調査し未達のみ実装",
+      "goal": "新しい筆に紙目・吸収感・かすれ・粒状感を反映する。",
       "known_deficit": null,
       "known_existing": null,
       "prior_code": null,
       "required": {
+        "operation": "紙素材変更→適用範囲確認",
+        "capability": "新しい筆に紙目・吸収感・かすれ・粒状感を反映する。",
+        "parameters": "筆の紙質設定と保存。過去画素への物理再計算・全画面紙再適用は不要。",
+        "preview": "紙サンプルと作品分割比較。既存へ変更する時のみ適用/取消",
+        "undo_native": "紙版と適用範囲を保持。再適用は一Undo、元絵保持",
+        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
+        "state": "設定→描画/試し描き→確定→Undo/保存。乾燥・加水など時間進行物理は行わない。"
+      },
+      "exit_conditions": [
+        "利用者決定の簡略化した条件を古い高度仕様より優先",
+        "既存の正常な実装は維持し不足のみ補完",
+        "関連する操作/Undo/保存・基本テストを確認"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "紙素材変更→適用範囲確認",
         "capability": "新しい線への紙変更と既存絵への再適用を分けて比較",
         "parameters": "紙の尺度/吸収/粒状感・新筆のみ/既存へ再適用",
@@ -1203,15 +1259,9 @@
         "quality_failure": "紙変更が既存絵へ及ぶ範囲を曖昧にしない",
         "state": "乾/湿潤表示と、進行中/停止中を別状態で示す。一筆は離筆受理、乾燥/加水は個別Command。紙の再適用は候補→適用/取消。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "included_simplified",
+      "r2_implementation_target": true,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "WET-006",
@@ -1222,11 +1272,27 @@
       "old_status": "C11-C16未照合",
       "scope": "included",
       "scope_limit": null,
-      "goal": "現行コードの処理/入口/保存を調査し未達のみ実装",
+      "goal": "独立試し描きパッドを維持する。",
       "known_deficit": null,
       "known_existing": null,
       "prior_code": null,
       "required": {
+        "operation": "資料横の試し描き枠",
+        "capability": "独立試し描きパッドを維持する。",
+        "parameters": "乾燥・加水の時間進行計算を追加しない。",
+        "preview": "作品を覆わないパッド、直接混色して長押し採色",
+        "undo_native": "パッドのUndoと保存は作品から独立、閉じても復帰",
+        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
+        "state": "設定→描画/試し描き→確定→Undo/保存。乾燥・加水など時間進行物理は行わない。"
+      },
+      "exit_conditions": [
+        "利用者決定の簡略化した条件を古い高度仕様より優先",
+        "既存の正常な実装は維持し不足のみ補完",
+        "関連する操作/Undo/保存・基本テストを確認"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "資料横の試し描き枠",
         "capability": "色とブラシを試し、採色して戻る、試し描き履歴は作品Undoと分離",
         "parameters": "パッド寸法/背景/紙/クリア/保存読込",
@@ -1235,15 +1301,9 @@
         "quality_failure": "パッド上のUndoで作品が戻らない。色空間を作品と一致表示",
         "state": "乾/湿潤表示と、進行中/停止中を別状態で示す。一筆は離筆受理、乾燥/加水は個別Command。紙の再適用は候補→適用/取消。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "included_normal",
+      "r2_implementation_target": true,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "WET-007",
@@ -1254,11 +1314,27 @@
       "old_status": "C11-C16未照合",
       "scope": "included",
       "scope_limit": null,
-      "goal": "現行コードの処理/入口/保存を調査し未達のみ実装",
+      "goal": "厚塗り風・油彩風・パステル風の見た目を保つ。",
       "known_deficit": null,
       "known_existing": null,
       "prior_code": null,
       "required": {
+        "operation": "油彩/パステル等プリセット",
+        "capability": "厚塗り風・油彩風・パステル風の見た目を保つ。",
+        "parameters": "顔料の立体厚み・光源に基づく再照明・物理的乾燥は不要。",
+        "preview": "媒体別の主要数値を先に出し、細目は筆編集へ",
+        "undo_native": "既存形状は動かさず、厚み表現の再編集範囲を保存",
+        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
+        "state": "設定→描画/試し描き→確定→Undo/保存。乾燥・加水など時間進行物理は行わない。"
+      },
+      "exit_conditions": [
+        "利用者決定の簡略化した条件を古い高度仕様より優先",
+        "既存の正常な実装は維持し不足のみ補完",
+        "関連する操作/Undo/保存・基本テストを確認"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "油彩/パステル等プリセット",
         "capability": "色の引き・盛り感・乾いたかすれを調整、既存線が勝手に動かない",
         "parameters": "油量/色の引き/厚み感/乾き/かすれ・照明表示",
@@ -1267,15 +1343,9 @@
         "quality_failure": "厚みの照明表示と実ピクセル色を区別し書出し外観を事前比較",
         "state": "乾/湿潤表示と、進行中/停止中を別状態で示す。一筆は離筆受理、乾燥/加水は個別Command。紙の再適用は候補→適用/取消。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "included_visual_only",
+      "r2_implementation_target": true,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "COL-001",
@@ -1386,11 +1456,26 @@
       "old_status": "C11-C16未照合",
       "scope": "included",
       "scope_limit": null,
-      "goal": "現行コードの処理/入口/保存を調査し未達のみ実装",
+      "goal": "R2では実装しない。sRGB/8ビット描画とICC入出力・色確認は保護する。",
       "known_deficit": null,
       "known_existing": null,
       "prior_code": null,
       "required": {
+        "operation": "新規の詳細色設定・変換比較",
+        "capability": "R2では実装しない。sRGB/8ビット描画とICC入出力・色確認は保護する。",
+        "parameters": "HDR/P3/16bit/32bitのネイティブ編集を作らない。基盤全面改修不要。",
+        "preview": "作品設定で対応機能と出力色域を表示、モード変更は外観比較",
+        "undo_native": "精度変更一Undo、旧精度復帰には原状態が必要。HDRは比較検証待ち",
+        "quality_failure": "対象外機能を実装済みと誤表示しない。既存機能を削除しない。",
+        "state": "色選択は元色/候補色→採用/取消、数値の候補を表示。ICC変換は現在/変換候補→適用/取消。Proofは表示ON/OFF。"
+      },
+      "exit_conditions": [
+        "今回不要のためR2の実装と完成判定の対象外",
+        "既存機能・保存互換性・端末内補助を削除しない"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "新規の詳細色設定・変換比較",
         "capability": "sRGB/P3、8-bit integer・16-bit integer・16-bit float・32-bit float/HDRの候補を区別し対応範囲を宣言。線形光合成も外観比較し、未対応で色/階調を無言切捨てしない",
         "parameters": "sRGB/P3・8整数/16整数/16float・32float候補、線形光の扱い",
@@ -1399,15 +1484,9 @@
         "quality_failure": "16bit整数/floatを一括表記しない。効果未対応時に8bitへ無言変換しない",
         "state": "色選択は元色/候補色→採用/取消、数値の候補を表示。ICC変換は現在/変換候補→適用/取消。Proofは表示ON/OFF。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "excluded_by_user",
+      "r2_implementation_target": false,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "COL-008",
@@ -2573,11 +2652,27 @@
       "old_status": "C11-C16未照合",
       "scope": "included",
       "scope_limit": null,
-      "goal": "現行コードの処理/入口/保存を調査し未達のみ実装",
+      "goal": "PSD/PSBの画像・主要レイヤー・透明度の基本交換を保つ。",
       "known_deficit": null,
       "known_existing": null,
       "prior_code": null,
       "required": {
+        "operation": "互換プレビュー→コピー書出し",
+        "capability": "PSD/PSBの画像・主要レイヤー・透明度の基本交換を保つ。",
+        "parameters": "未対応項目は警告。高度な文字/マスク/特殊効果の完全往復互換は不要。",
+        "preview": "互換検査→損失一覧→外観プレビュー→コピー出力",
+        "undo_native": "元Native保持、レイヤー/文字/効果ごとの保持状況をレポート",
+        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
+        "state": "形式/範囲/損失の確認→固定時点の出力中→検証済出力/項目別失敗。取込は読込候補→配置/取消。作品への適用前は原状を保持。"
+      },
+      "exit_conditions": [
+        "利用者決定の簡略化した条件を古い高度仕様より優先",
+        "既存の正常な実装は維持し不足のみ補完",
+        "関連する操作/Undo/保存・基本テストを確認"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "互換プレビュー→コピー書出し",
         "capability": "機能ごとの可読/可書/視覚維持/再編集性を別表示、損失レポート",
         "parameters": "機能別読込/書込・外観/再編集・PSD/PSB",
@@ -2586,15 +2681,9 @@
         "quality_failure": "完全互換と呼ばない。往復テストでα/ICC/マスク/合成を検証。往復試験は同じ作品で読込→再出力→対象アプリ再読込し外観/再編集を別記録",
         "state": "形式/範囲/損失の確認→固定時点の出力中→検証済出力/項目別失敗。取込は読込候補→配置/取消。作品への適用前は原状を保持。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "included_basic",
+      "r2_implementation_target": true,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "IO-004",
@@ -2669,11 +2758,27 @@
       "old_status": "C11-C16未照合",
       "scope": "included",
       "scope_limit": null,
-      "goal": "現行コードの処理/入口/保存を調査し未達のみ実装",
+      "goal": "EXR/AVIFの既存入出力と対応端末のHEIF入力を保つ。",
       "known_deficit": null,
       "known_existing": null,
       "prior_code": null,
       "required": {
+        "operation": "高度形式は対応状態表示",
+        "capability": "EXR/AVIFの既存入出力と対応端末のHEIF入力を保つ。",
+        "parameters": "HEIF出力・HDRを保持した編集と出力は不要。非対応は明示。",
+        "preview": "可能な範囲のみ選べ、SDR表示との違いを説明",
+        "undo_native": "原データ保持、色調マッピングは書出しコピー",
+        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
+        "state": "形式/範囲/損失の確認→固定時点の出力中→検証済出力/項目別失敗。取込は読込候補→配置/取消。作品への適用前は原状を保持。"
+      },
+      "exit_conditions": [
+        "利用者決定の簡略化した条件を古い高度仕様より優先",
+        "既存の正常な実装は維持し不足のみ補完",
+        "関連する操作/Undo/保存・基本テストを確認"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "高度形式は対応状態表示",
         "capability": "HDR/透明/圧縮/端末可用性を検証して範囲を宣言",
         "parameters": "EXR精度/チャンネル、AVIF/HEIF圧縮/α/HDR・端末対応",
@@ -2682,15 +2787,9 @@
         "quality_failure": "コーデック対応やライセンスは比較検証。未対応端末で正常出力と偽らない",
         "state": "形式/範囲/損失の確認→固定時点の出力中→検証済出力/項目別失敗。取込は読込候補→配置/取消。作品への適用前は原状を保持。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "included_basic",
+      "r2_implementation_target": true,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "IO-007",
@@ -3683,11 +3782,26 @@
       "old_status": "C11-C16未照合",
       "scope": "included",
       "scope_limit": null,
-      "goal": "現行コードの処理/入口/保存を調査し未達のみ実装",
+      "goal": "R2では実装しない。端末内AI補助を保護する。",
       "known_deficit": null,
       "known_existing": null,
       "prior_code": null,
       "required": {
+        "operation": "外部補助は明示有効化",
+        "capability": "R2では実装しない。端末内AI補助を保護する。",
+        "parameters": "外部モデル/API・作品外部送信・課金・認証・同意UIを新設しない。",
+        "preview": "実行前に範囲と見積、取消と手動代替",
+        "undo_native": "同意記録と結果出典を保持、基本制作は独立",
+        "quality_failure": "対象外機能を実装済みと誤表示しない。既存機能を削除しない。",
+        "state": "未実行→対象/送信範囲確認→候補生成中→候補/失敗→採用/取消。採用前は作品不変。"
+      },
+      "exit_conditions": [
+        "今回不要のためR2の実装と完成判定の対象外",
+        "既存機能・保存互換性・端末内補助を削除しない"
+      ],
+      "state": "NOT_COMPLETION_VERIFIED",
+      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "original_required_before_user_revision": {
         "operation": "外部補助は明示有効化",
         "capability": "ローカル基本制作を保ち、外部送信先/範囲/費用/保存を実行前に示す",
         "parameters": "送信先/範囲/費用/保存/学習条件・外部送信既定OFF",
@@ -3696,15 +3810,9 @@
         "quality_failure": "送信後の取消は送信撤回を意味しない。モデル/APIは未選定",
         "state": "未実行→対象/送信範囲確認→候補生成中→候補/失敗→採用/取消。採用前は作品不変。"
       },
-      "exit_conditions": [
-        "現行HEADのソースで画面の入口→入力→対象→処理→出力を確認",
-        "固有仕様の設定・例外・状態・プレビュー・キャンセルについて、未達だけ修正",
-        "Undo/再編集/Native保存・再読込を機能ごとの必要範囲でテスト",
-        "既存827件の実測PASSと影響する回帰を維持。未実行をPASSに変更しない",
-        "既に満たす能力はソース・テスト根拠を添え、再実装しない"
-      ],
-      "state": "NOT_COMPLETION_VERIFIED",
-      "affected_code_sha": "49474fd56b36d91425e5df81f9c135c0424aecb4"
+      "r2_disposition": "excluded_by_user",
+      "r2_implementation_target": false,
+      "r2_user_decision_date": "2026-11-22"
     },
     {
       "id": "CLP-003",
@@ -6974,5 +7082,40 @@
         "state": "ユーザー指摘。UI改善12群の受入結果を別確認"
       }
     ]
-  }
+  },
+  "r2_user_scope_revision": {
+    "date": "2026-11-22",
+    "historical_r2_candidates": 145,
+    "active_implementation_targets": 143,
+    "excluded_from_r2": 2,
+    "protected_prior_implementation": 91,
+    "previous_outside": 11,
+    "total_accounted": 247,
+    "all_active_with_protected": 234,
+    "excluded_ids": [
+      "COL-007",
+      "AI-004"
+    ],
+    "simplified_ids": [
+      "WET-002",
+      "WET-005",
+      "WET-007"
+    ],
+    "basic_compatibility_ids": [
+      "IO-003",
+      "IO-006"
+    ],
+    "policy": "Use row.required as the current R2 requirement. Do not reintroduce advanced HDR/16-bit, external AI, full PSD interoperability, HEIF export or physical oil simulation. Preserve existing functionality. Light watercolor must remain visually distinct from a simple transparent brush."
+  },
+  "effective_group_totals": {
+    "R2-01": 33,
+    "R2-02": 20,
+    "R2-03": 8,
+    "R2-04": 10,
+    "R2-05": 18,
+    "R2-06": 42,
+    "R2-07": 12
+  },
+  "effective_r2_implementation_targets": 143,
+  "effective_product_acceptance_targets": 234
 }
