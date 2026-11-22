@@ -14,7 +14,7 @@ const SAFE=new Set([
   'undo','redo','paint','erase','eyedropper','fitView','view100','actualPixels','resetRotation',
   'flipH','flipV','zoomIn','zoomOut','panView','selection','selectionClear',
   'layer','colorPage','brushPage','workspaceToggle','c04FocusToggle','guideEnabled',
-  'layerSoloToggle','layerAlphaLock','layerClipping'
+  'layerSoloToggle','layerAlphaLock','layerClipping','layerOpacityAtRun','layerNameAtRun'
 ]);
 const permitted=(id:string)=>SAFE.has(id)||id.startsWith('brush:')||id.startsWith('color:')||id.startsWith('workspace:');
 /** Validate user-imported macros before storing or exposing any commands. */
@@ -102,11 +102,14 @@ const uid=()=>typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'
   ?crypto.randomUUID():'macro-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 
 export type SimpleMacroService=Readonly<{importText:(json:string)=>Promise<number>}>;
-export const layerMacroStep=(step:string)=>step==='layerAlphaLock'||step==='layerClipping';
-export type MacroLayer=Readonly<{id:string;name:string;active:boolean}>;
+const layerMacroValues={layerOpacityAtRun:'不透明度を設定',layerNameAtRun:'レイヤー名を設定'} as const;
+const parameterStep=(step:string)=>Object.hasOwn(layerMacroValues,step);
+export const layerMacroStep=(step:string)=>step==='layerAlphaLock'||step==='layerClipping'||parameterStep(step);
+export type MacroLayer=Readonly<{id:string;name:string;active:boolean;opacity:number}>;
+export type MacroLayerStep=Readonly<{id:string;value:string|number|null}>;
 export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   layers:()=>readonly MacroLayer[];
-  applyLayer:(id:string,steps:readonly string[],name:string)=>Promise<boolean>;
+  applyLayer:(id:string,steps:readonly MacroLayerStep[],name:string,signal:AbortSignal)=>Promise<boolean>;
   share:(json:string,name:string,asset:boolean)=>Promise<void>;
 }>):SimpleMacroService|null{
   const workspace=document.getElementById('automationBoxBody');
@@ -139,7 +142,10 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   root.append(summary,help,select,name,commandSelect,stepsList,actions,status);
   workspace.append(root);
 
-  const options=()=>commands.list().filter(command=>permitted(command.id)&&!command.id.startsWith('macro:'));
+  const options=()=>[
+    ...commands.list().filter(command=>permitted(command.id)&&!command.id.startsWith('macro:')),
+    ...Object.entries(layerMacroValues).map(([id,label])=>({id,label,category:'実行時に入力'})),
+  ];
   const refreshOptions=()=>{
     const old=commandSelect.value;
     commandSelect.replaceChildren(...options().map(c=>new Option(c.label+' · '+c.category,c.id)));
@@ -154,7 +160,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
     remove.disabled=!select.value;
   }
   function refreshSteps(){
-    const lookup=new Map(commands.list().map(c=>[c.id,c.label]));
+    const lookup=new Map(options().map(c=>[c.id,c.label]));
     stepsList.replaceChildren();
     for(let i=0;i<steps.length;i++){
       const id=steps[i]!;
@@ -246,29 +252,63 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
     catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   };
   function confirmSteps(macro:SimpleMacro,enabled:readonly string[],layers:readonly MacroLayer[]){
-    return new Promise<string|null>(resolve=>{
+    return new Promise<Readonly<{id:string;steps:MacroLayerStep[]}>|null>(resolve=>{
       const dialog=document.createElement('dialog');dialog.className='export-dialog';dialog.setAttribute('aria-label','操作セットを確認');
-      const section=document.createElement('section'),title=document.createElement('h2');
+      const section=document.createElement('form'),title=document.createElement('h2');
       title.textContent=macro.name;section.className='c06-clipboard-grid';
-      const list=document.createElement('ol'),lookup=new Map(commands.list().map(command=>[command.id,command.label]));
-      for(const id of enabled){const row=document.createElement('li');row.textContent=lookup.get(id)??id;list.append(row);}
-      section.append(title,list);
-      const target=document.createElement('select');
+      const list=document.createElement('ol'),target=document.createElement('select');
+      const lookup=new Map(options().map(command=>[command.id,command.label]));
+      const fields:Array<HTMLInputElement|null>=[];
+      for(const id of enabled){
+        const row=document.createElement('li'),label=lookup.get(id)??id;
+        let field:HTMLInputElement|null=null;
+        if(parameterStep(id)){
+          const wrapper=document.createElement('label');
+          field=document.createElement('input');field.required=true;
+          if(id==='layerOpacityAtRun'){field.type='number';field.min='0';field.max='100';field.step='.1';}
+          else{field.type='text';field.maxLength=4096;}
+          wrapper.append(label+(id==='layerOpacityAtRun'?'（%）':''),field);row.append(wrapper);
+        }else row.textContent=label;
+        fields.push(field);list.append(row);
+      }
+      section.append(title);
       if(layers.length){
         for(const layer of layers)target.add(new Option(layer.name+(layer.active?'（選択中）':''),layer.id));
         target.value=layers.find(layer=>layer.active)?.id??layers[0]!.id;
         const label=document.createElement('label');label.append('対象レイヤー',target);section.append(label);
+        const resetFields=()=>{
+          const layer=layers.find(layer=>layer.id===target.value);
+          if(!layer)return;
+          for(const field of fields)if(field){
+            field.setCustomValidity('');
+            field.value=field.type==='number'?String(Math.round(layer.opacity*1000)/10):layer.name;
+          }
+        };
+        target.onchange=resetFields;resetFields();
       }else{
         const note=document.createElement('p');
         note.textContent='表示や履歴を含む手順は順番に実行します。途中で停止すると、実行済みの操作は残ります。';
         section.append(note);
       }
+      section.append(list);
       const accept=document.createElement('button'),decline=document.createElement('button');
-      accept.type=decline.type='button';accept.textContent='この内容で実行';decline.textContent='取り消す';
-      let confirmed=false;accept.onclick=()=>{confirmed=true;dialog.close();};decline.onclick=()=>dialog.close();
+      accept.type='submit';decline.type='button';accept.textContent='この内容で実行';decline.textContent='取り消す';
+      let confirmed:Readonly<{id:string;steps:MacroLayerStep[]}>|null=null;
+      section.onsubmit=event=>{
+        event.preventDefault();
+        for(const field of fields)if(field?.type==='text'&&!field.value.trim()){
+          field.setCustomValidity('レイヤー名を入力してください。');field.reportValidity();
+          field.oninput=()=>field.setCustomValidity('');return;
+        }
+        confirmed={id:target.value,steps:enabled.map((id,index)=>{
+          const field=fields[index];return {id,value:field?(field.type==='number'?field.valueAsNumber:field.value.trim()):null};
+        })};
+        dialog.close();
+      };
+      decline.onclick=()=>dialog.close();
       section.append(accept,decline);dialog.append(section);
       dialog.addEventListener('keydown',event=>event.stopPropagation());
-      dialog.onclose=()=>{dialog.remove();resolve(confirmed?target.value:null);};
+      dialog.onclose=()=>{dialog.remove();resolve(confirmed);};
       document.body.append(dialog);dialog.showModal();decline.focus();
     });
   }
@@ -281,13 +321,14 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
       if(!enabled.length)throw Error('少なくとも1つの手順を有効にしてください。');
       const context=commands.contextKey?.();
       const atomic=!!api&&enabled.every(layerMacroStep);
+      if(!atomic&&enabled.some(parameterStep))throw Error('実行時に入力する手順は、レイヤー操作だけのセットで使えます。');
       const layers=atomic?api.layers():[];
       if(atomic&&!layers.length)throw Error('操作できるレイヤーがありません。');
       const target=await confirmSteps(macro,enabled,layers);
       if(target===null||playback.signal.aborted){status.textContent='実行を取り消しました。';return;}
       if(context!==commands.contextKey?.())throw Error('対象の作品が切り替わりました。');
       if(atomic){
-        const changed=await api.applyLayer(target,enabled,macro.name);
+        const changed=await api.applyLayer(target.id,target.steps,macro.name,playback.signal);
         status.textContent=changed?'指定したレイヤーに適用しました。一度の取り消しで戻せます。':'指定した操作で変わる設定はありません。';
         return;
       }

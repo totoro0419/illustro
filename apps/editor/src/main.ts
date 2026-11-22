@@ -3969,29 +3969,38 @@ const c04MacroService=installSimpleMacros(c04Commands,{
     if(!documentReady)return [];
     const root=controller.document.root;
     return root.rootLayerIds.filter(id=>!root.getLayer(id).baseColor&&!root.isLayerLocked(id))
-      .map(id=>({id,name:root.getLayer(id).name,active:id===controller.selectedLayerId}));
+      .map(id=>({id,name:root.getLayer(id).name,opacity:root.getLayer(id).opacity,active:id===controller.selectedLayerId}));
   },
-  applyLayer:async(target,steps,name)=>{
+  applyLayer:async(target,steps,name,signal)=>{
     let changed=false;
     await withClipboardAccess(async()=>{
-    const artwork=controller.document,root=artwork.root,id=target as LayerId;
-    if(!root.hasLayer(id)||root.getLayer(id).baseColor||root.isLayerLocked(id))
-      throw Error('対象レイヤーが見つからないか、ロックされています。');
-    const layer=root.getLayer(id);
-    let alpha=!!layer.alphaLocked,clip=!!layer.clipSourceId;
-    for(const [index,step] of steps.entries()){
-      if(step==='layerAlphaLock')alpha=!alpha;
-      else if(step==='layerClipping'){
-        if(!clip&&!root.availableClippingSource(id))throw Error((index+1)+'番目の手順に必要な下のレイヤーがありません。');
-        clip=!clip;
-      }else throw Error('まとめて適用できない操作が含まれます。');
-    }
-    if(alpha===!!layer.alphaLocked&&clip===!!layer.clipSourceId)return 'read';
-    const tx=artwork.begin(name);
-    if(alpha!==!!layer.alphaLocked)tx.setLayerAlphaLocked(id,alpha);
-    if(clip!==!!layer.clipSourceId)tx.setLayerClipping(id,clip);
-    controller.lastPersistenceHandoff=tx.commit().persistence;changed=true;
-    return 'edit';
+      signal.throwIfAborted();
+      const artwork=controller.document,root=artwork.root,id=target as LayerId;
+      if(!root.hasLayer(id)||root.getLayer(id).baseColor||root.isLayerLocked(id))
+        throw Error('対象レイヤーが見つからないか、ロックされています。');
+      const layer=root.getLayer(id);
+      let alpha=!!layer.alphaLocked,clip=!!layer.clipSourceId,opacity=layer.opacity,layerName=layer.name;
+      for(const [index,{id:step,value}] of steps.entries()){
+        if(step==='layerAlphaLock')alpha=!alpha;
+        else if(step==='layerClipping'){
+          if(!clip&&!root.availableClippingSource(id))throw Error((index+1)+'番目の手順に必要な下のレイヤーがありません。');
+          clip=!clip;
+        }else if(step==='layerOpacityAtRun'){
+          if(typeof value!=='number'||!Number.isFinite(value)||value<0||value>100)throw Error('不透明度を0〜100で指定してください。');
+          opacity=value/100;
+        }else if(step==='layerNameAtRun'){
+          if(typeof value!=='string'||!value.trim()||value.length>4096)throw Error('レイヤー名を確認してください。');
+          layerName=value;
+        }else throw Error('まとめて適用できない操作が含まれます。');
+      }
+      if(alpha===!!layer.alphaLocked&&clip===!!layer.clipSourceId&&opacity===layer.opacity&&layerName===layer.name)return 'read';
+      const tx=artwork.begin(name);
+      if(alpha!==!!layer.alphaLocked)tx.setLayerAlphaLocked(id,alpha);
+      if(clip!==!!layer.clipSourceId)tx.setLayerClipping(id,clip);
+      if(opacity!==layer.opacity)tx.setLayerOpacity(id,opacity);
+      if(layerName!==layer.name)tx.renameLayer(id,layerName);
+      controller.lastPersistenceHandoff=tx.commit().persistence;changed=true;
+      return 'edit';
     });
     return changed;
   },
