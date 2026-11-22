@@ -109,7 +109,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   applyLayer:(id:string,steps:readonly string[],name:string)=>Promise<boolean>;
   share:(json:string,name:string,asset:boolean)=>Promise<void>;
 }>):SimpleMacroService|null{
-  const workspace=document.getElementById('workspaceBoxBody');
+  const workspace=document.getElementById('automationBoxBody');
   if(!workspace)return null;
   let macros=read(),playing=false,steps:string[]=[],muted:boolean[]=[],selectedId:string|null=null;
   let playback:AbortController|null=null,unlisten:(()=>void)|null=null;

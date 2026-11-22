@@ -62,6 +62,12 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     rightDock.classList.toggle('open',dockOpen);
     rightDock.dataset.panel=layerOpen?'layers':panel;
     rightDock.dataset.box=boxId(panel);
+    // When a specific tool/settings panel is selected, show only its section.
+    // The general workspace view (panel='') keeps the full configurable stack.
+    const selectedBox=boxId(panel);
+    for(const section of rightDock.querySelectorAll<HTMLElement>('#boxStack > .workspace-box')){
+      section.hidden=Boolean(selectedBox&&section.dataset.boxId!==selectedBox);
+    }
     rightDock.classList.toggle('dock-collapsed',!dockOpen);
     document.body.classList.toggle('right-collapsed',!isCompact&&!dockOpen);
     const overlay=dockOpen&&!isCompact&&innerWidth-width<620;
