@@ -2,6 +2,8 @@ import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId
 import {blendArtworkPixel,gradientMapTable,mapGradientPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {canUseTiledHistoryPreview,createTiledPreviewAccumulator,yieldHistoryRender} from './tiledPreview';
 import {rasterReplayKeys} from '../rasterReplayKeys';
+import {resizeImagePixels} from '../canvasGeometry';
+import {boundsOfSelection,cropSelectionMask,maskImage,type MaskData} from '../selection/mask';
 
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
@@ -335,7 +337,7 @@ function deflateStored(source:Uint8Array):Uint8Array{
   for(let i=0;i<source.length;i++){a=(a+source[i]!)%65521;b=(b+a)%65521;}
   write32(out,at,((b<<16)|a)>>>0);return out;
 }
-export async function encodePng(pixels:Uint8ClampedArray,width:number,height:number):Promise<Blob>{
+export async function encodePng(pixels:Uint8ClampedArray,width:number,height:number,dpi?:number):Promise<Blob>{
   if(pixels.length!==width*height*4)throw new Error('PNGの画素数が正しくありません。');
   const stride=width*4,raw=new Uint8Array((stride+1)*height);
   for(let y=0;y<height;y++)raw.set(pixels.subarray(y*stride,(y+1)*stride),y*(stride+1)+1);
@@ -356,7 +358,14 @@ export async function encodePng(pixels:Uint8ClampedArray,width:number,height:num
   }else zipped=deflateStored(raw);
   const head=new Uint8Array(13);write32(head,0,width);write32(head,4,height);head[8]=8;head[9]=6;
   const sig=Uint8Array.of(137,80,78,71,13,10,26,10),ihdr=pngChunk('IHDR',head),srgb=pngChunk('sRGB',Uint8Array.of(0)),idat=pngChunk('IDAT',zipped),end=pngChunk('IEND',new Uint8Array());
-  return new Blob([sig,ihdr,srgb,idat,end].map(bytes=>new Uint8Array(bytes).buffer as ArrayBuffer),{type:'image/png'});
+  const density:Uint8Array[]=[];
+  if(dpi!==undefined){
+    if(!Number.isFinite(dpi)||dpi<1||dpi>2400)throw Error('PNGのDPIは1〜2400で指定してください。');
+    const data=new Uint8Array(9),pixelsPerMetre=Math.round(dpi/.0254);
+    write32(data,0,pixelsPerMetre);write32(data,4,pixelsPerMetre);data[8]=1;
+    density.push(pngChunk('pHYs',data));
+  }
+  return new Blob([sig,ihdr,srgb,...density,idat,end].map(bytes=>new Uint8Array(bytes).buffer as ArrayBuffer),{type:'image/png'});
 }
 
 export async function verifyImage(blob:Blob,format:ImageFormat,width:number,height:number):Promise<void>{
@@ -371,14 +380,35 @@ export async function verifyImage(blob:Blob,format:ImageFormat,width:number,heig
   finally{bitmap.close();}
 }
 
-export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality=0.9):Promise<ImageExportResult>{
+export type ImageExportOptions=Readonly<{selection?:MaskData;pixelScale?:number;dpi?:number}>;
+export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality=0.9,options:ImageExportOptions={}):Promise<ImageExportResult>{
   const started=performance.now();
   if(!['png','jpeg','webp'].includes(format)||!Number.isFinite(quality)||quality<0||quality>1)throw new Error('書き出し設定が正しくありません。');
-  const pixels=await renderFrozenArtwork(frozen),encodedStart=performance.now();
-  const flattened=format==='jpeg'?flattenOnWhite(pixels):pixels;
-  const blob=format==='png'?await encodePng(pixels,frozen.width,frozen.height):await encodeBrowser(flattened,frozen.width,frozen.height,format,quality);
-  await verifyImage(blob,format,frozen.width,frozen.height);
-  return Object.freeze({blob,revision:frozen.revision,format,mime:blob.type,width:frozen.width,height:frozen.height,quality:format==='png'?null:quality,alpha:format!=='jpeg',background:format==='jpeg'?'white':'transparent',encodeMs:performance.now()-encodedStart,totalMs:performance.now()-started,estimatedPeakBytes:frozen.width*frozen.height*4*(frozen.layers.length+4)});
+  const {selection,pixelScale=1,dpi}=options;
+  if(!Number.isSafeInteger(pixelScale)||pixelScale<1||pixelScale>8)throw Error('整数倍の拡大率は1〜8で指定してください。');
+  if(selection&&(selection.width!==frozen.width||selection.height!==frozen.height||selection.alpha.length!==frozen.width*frozen.height))
+    throw Error('選択範囲と作品の大きさが一致しません。');
+  const bounds=selection?boundsOfSelection(selection):null;
+  if(selection&&!bounds)throw Error('書き出す範囲を選んでください。');
+  let width=bounds?.width??frozen.width,height=bounds?.height??frozen.height;
+  if(width*pixelScale>8192||height*pixelScale>8192)throw Error('書き出し後の長い辺を8192px以下にしてください。');
+  let pixels=await renderFrozenArtwork(frozen);
+  if(bounds&&selection){
+    const cropped=new Uint8ClampedArray(width*height*4);
+    for(let y=0;y<height;y++){
+      const start=((bounds.y+y)*frozen.width+bounds.x)*4;
+      cropped.set(pixels.subarray(start,start+width*4),y*width*4);
+    }
+    pixels=maskImage(cropped,cropSelectionMask(selection,bounds));
+  }
+  if(pixelScale!==1){
+    pixels=new Uint8ClampedArray(resizeImagePixels(pixels,width,height,width*pixelScale,height*pixelScale,'nearest'));
+    width*=pixelScale;height*=pixelScale;
+  }
+  const encodedStart=performance.now(),flattened=format==='jpeg'?flattenOnWhite(pixels):pixels;
+  const blob=format==='png'?await encodePng(pixels,width,height,dpi):await encodeBrowser(flattened,width,height,format,quality);
+  await verifyImage(blob,format,width,height);
+  return Object.freeze({blob,revision:frozen.revision,format,mime:blob.type,width,height,quality:format==='png'?null:quality,alpha:format!=='jpeg',background:format==='jpeg'?'white':'transparent',encodeMs:performance.now()-encodedStart,totalMs:performance.now()-started,estimatedPeakBytes:frozen.width*frozen.height*4*(frozen.layers.length+4)+(pixelScale!==1?width*height*8:0)});
 }
 
 async function seedBasePixels(renderer:GpuRenderer,layers:readonly {surfaceId:string;pixels:Uint8Array}[],width:number,height:number){

@@ -5,6 +5,7 @@ const clip=(value:number,min=0,max=255)=>Math.min(max,Math.max(min,value));
 const luminance=(r:number,g:number,b:number)=>.2126*r+.7152*g+.0722*b;
 const wrap=(v:number,n:number)=>((v%n)+n)%n;
 const byte=(values:Bytes,i:number)=>values[i]??0;
+const rgb24=(color:number)=>[color>>16&255,color>>8&255,color&255];
 
 function writeAverage(out:Uint8ClampedArray,i:number,r:number,g:number,b:number,a:number,count:number,alpha?:number){
   out[i+3]=alpha??a/count;
@@ -149,7 +150,7 @@ function geometryFilter(source:Bytes,width:number,height:number,step:EffectStep)
   const out=new Uint8ClampedArray(source.length);
   if(step.kind==='offset'){
     for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-      let sx=x-a,sy=y-b;
+      let sx=x-(ox?Math.floor(width/2):a),sy=y-(ox?Math.floor(height/2):b);
       if(c===0){sx=wrap(sx,width);sy=wrap(sy,height);}
       if(c===2){sx=clip(sx,0,width-1);sy=clip(sy,0,height-1);}
       if(sx<0||sx>=width||sy<0||sy>=height)continue;
@@ -186,9 +187,33 @@ function fromHsl(h:number,s:number,l:number){
     return 255*(l-a*Math.max(-1,Math.min(k-3,9-k,1)));
   });
 }
+function emboss(source:Bytes,width:number,height:number,step:EffectStep){
+  const [degrees=45,radius=2,depth=100,color=0]=step.values;
+  if(!depth)return source;
+  const dx=Math.round(radius*Math.cos(degrees*Math.PI/180)),dy=Math.round(radius*Math.sin(degrees*Math.PI/180));
+  const out=new Uint8ClampedArray(source);
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const i=(y*width+x)*4;if(!source[i+3])continue;
+    const sample=(x:number,y:number)=>{
+      const at=(clip(y,0,height-1)*width+clip(x,0,width-1))*4;
+      return luminance(byte(source,at),byte(source,at+1),byte(source,at+2))*byte(source,at+3)/255;
+    };
+    const bump=(sample(x-dx,y-dy)-sample(x+dx,y+dy))*.5*depth/100;
+    for(let c=0;c<3;c++)out[i+c]=(color?byte(source,i+c):128)+bump;
+  }
+  return out;
+}
 function toneFilter(source:Bytes,width:number,step:EffectStep){
   const [a=0,b=0,c=0,d=0,e=0,f=0]=step.values;
   if(step.kind==='levels'&&b<=a)throw Error('入力レベルの白は黒より大きくしてください。');
+  const curve=step.kind==='curves'?[0,b,d,f,255]:null;
+  const curveValues=step.kind==='curves'?[0,c,e,step.values[6]!,255]:null;
+  if(curve&&!(b<d&&d<f))throw Error('トーンカーブの入力値を暗部、中間、明部の順に指定してください。');
+  const curveTable=curve&&curveValues?Uint8ClampedArray.from({length:256},(_,v)=>{
+    const hi=curve.findIndex(x=>x>=v),lo=Math.max(0,hi-1);
+    return hi===lo?curveValues[hi]!:curveValues[lo]!+(curveValues[hi]!-curveValues[lo]!)*(v-curve[lo]!)/(curve[hi]!-curve[lo]!);
+  }):null;
+  const dark=rgb24(c),light=rgb24(d);
   const out=new Uint8ClampedArray(source),slope=(a:number)=>a<0?1+a/100:1/(1-Math.min(99,a)/100);
   const bayer=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
   const quantize=(v:number,offset:number)=>Math.round(clip(v+offset)/255*(a-1))*255/(a-1);
@@ -202,6 +227,7 @@ function toneFilter(source:Bytes,width:number,step:EffectStep){
         rgb=rgb.map(v=>c?v+change(y)-y:change(v));break;
       }
       case 'levels':rgb=rgb.map((v,k)=>f&&f!==k+1?v:d+(e-d)*clip((v-a)/(b-a),0,1)**(1/c));break;
+      case 'curves':rgb=rgb.map((v,k)=>a&&a!==k+1?v:curveTable![v]!);break;
       case 'exposure':rgb=rgb.map(v=>{
         const u=v/255,linear=u<=.04045?u/12.92:((u+.055)/1.055)**2.4;
         const adjusted=clip(linear*2**a+b,0,1)**(1/c);
@@ -222,12 +248,37 @@ function toneFilter(source:Bytes,width:number,step:EffectStep){
         break;
       }
       case 'temperature':rgb=[r+a*1.35-b*.65,g+b*1.25,bl-a*1.35-b*.65];break;
+      case 'grayscale':{
+        const {h,s}=hsl(r,g,bl),sector=h/60,k=Math.floor(sector),t=sector-k;
+        const weight=step.values[k]!*(1-t)+step.values[(k+1)%6]!*t,gray=clip(y+weight*s*2.55);
+        const tint=rgb24(step.values[7]!);
+        rgb=tint.map(v=>step.values[6]?gray+(v-128)*Math.min(gray,255-gray)/128:gray);
+        break;
+      }
+      case 'mixer':{
+        const original=rgb,monochrome=step.values[12];
+        rgb=original.map((_,k)=>{
+          const offset=monochrome?0:k*4;
+          return (step.values[offset]!*r+step.values[offset+1]!*g+step.values[offset+2]!*bl)/100+step.values[offset+3]!*2.55;
+        });break;
+      }
+      case 'selective':{
+        const {h,s,l}=hsl(r,g,bl);
+        const hz=(a-1)*60,dist=Math.abs(wrap(h-hz+180,360)-180);
+        const weight=a<=6?s*Math.max(0,1-dist/85):a===7?(1-s)*(1-Math.abs(2*l-1)):
+          a===8?(1-s)*l*l:(1-s)*(1-l)**2;
+        rgb=rgb.map((v,k)=>{
+          const delta=-(step.values[k+1]!+e)/100;
+          return v+delta*(f?255:delta<0?v:255-v)*weight;
+        });break;
+      }
+      case 'recolor':rgb=rgb24(a);if(b)out[i+3]=byte(source,i+3)*clip((c-y)/Math.max(1,c),0,1);break;
       case 'invert':rgb=rgb.map(v=>a?v+255-2*y:255-v);if(b)out[i+3]=255-byte(source,i+3);break;
       case 'posterize':{
         const offset=c?((bayer[(Math.floor(i/4/width)%4)*4+(i/4%width)%4]??0)+.5-8)/16*255/(a-1):0;
         rgb=rgb.map(v=>b?v+quantize(y,offset)-y:quantize(v,offset));break;
       }
-      case 'threshold':rgb.fill((b?rgb[b-1]!:y)>=a?d:c);break;
+      case 'threshold':rgb=(b?rgb[b-1]!:y)>=a?light:dark;break;
     }
     for(let channel=0;channel<3;channel++)out[i+channel]=rgb[channel]!;
   }
@@ -249,6 +300,7 @@ export function applyRasterEffects(source:Bytes,width:number,height:number,recip
       case 'sharpen':case 'unsharp':case 'highPass':filtered=detailFilter(result,width,height,step);break;
       case 'noise':filtered=noiseFilter(result,width,step);break;
       case 'median':filtered=medianFilter(result,width,height,step);break;
+      case 'emboss':filtered=emboss(result,width,height,step);break;
       case 'mosaic':case 'offset':filtered=geometryFilter(result,width,height,step);break;
       default:filtered=toneFilter(result,width,step);
     }

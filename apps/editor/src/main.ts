@@ -107,7 +107,7 @@ import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
 import {compilePreset,layerMaskTile,TILE,type FoundationPreset} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,resizeImageRegion,type ImageResample} from './canvasGeometry';
-import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportResult} from './export/basicExport';
+import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportOptions,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
@@ -3451,6 +3451,7 @@ const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTM
 function updateExportOptions(){
   const f=exportFormat.value as ImageFormat,lossy=f!=='png';
   byId<HTMLElement>('exportQualityRow').hidden=!lossy;
+  byId('exportDpiRow').hidden=f!=='png'||controller.document.root.info.dpi===null;
   byId<HTMLOutputElement>('exportQualityValue').textContent=exportQuality.value+'%';
   byId('exportTransparencyInfo').textContent=f==='jpeg'
     ?'JPEGは透明部分を保存できません。背景を白にして書き出します（黒にはしません）。'
@@ -3461,10 +3462,14 @@ byId<HTMLButtonElement>('exportImage').onclick=()=>{
   if(!documentReady)return;
   byId('exportStatus').textContent='';
   const inspected=surface?.inspectedLayer;
-  byId('exportLayerScopeRow').hidden=!inspected;
   const scope=byId<HTMLSelectElement>('exportLayerScope');
   scope.value='artwork';
-  byId('exportSoloOption').textContent=inspected?inspected.name+'だけ':'単独表示レイヤーだけ';
+  const soloOption=byId<HTMLOptionElement>('exportSoloOption');
+  soloOption.disabled=!inspected;
+  soloOption.textContent=inspected?inspected.name+'だけ':'単独表示レイヤーだけ';
+  byId<HTMLOptionElement>('exportSelectionOption').disabled=!c06Selection?.active();
+  byId<HTMLOptionElement>('exportActiveLayer').textContent=controller.selectedLayer.name+'だけ';
+  updateExportOptions();
   exportDialog.showModal();
 };
 byId<HTMLButtonElement>('exportCancel').onclick=()=>{if(!exportBusy)exportDialog.close();};
@@ -3473,12 +3478,21 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
   const format=exportFormat.value as ImageFormat,quality=Number(exportQuality.value)/100;
   // The snapshot is captured synchronously: later brush transactions cannot enter it.
   let fixed:ReturnType<typeof captureExport>;
-  const requestedSolo=byId<HTMLSelectElement>('exportLayerScope').value==='solo';
+  const scope=byId<HTMLSelectElement>('exportLayerScope').value;
+  const scale=byId<HTMLInputElement>('exportPixelScale');
+  if(!scale.validity.valid){byId('exportStatus').textContent='整数倍の拡大率は1〜8で指定してください。';return;}
+  let options:ImageExportOptions;
   try{
     await historyNavigation?.barrier();
     const solo=surface?.inspectedLayer;
-    if(requestedSolo&&!solo)throw new Error('単独表示を切り替えたため、書き出し範囲を選び直してください。');
-    fixed=captureExport(controller.document,requestedSolo?solo?.id:undefined);
+    if(scope==='solo'&&!solo)throw new Error('単独表示を切り替えたため、書き出し範囲を選び直してください。');
+    const selection=scope==='selection'?c06Selection?.active():null;
+    if(scope==='selection'&&!selection)throw Error('書き出す範囲を選んでください。');
+    const layer=scope==='active'?controller.selectedLayer.id:scope==='solo'?solo?.id:undefined;
+    fixed=captureExport(controller.document,layer);
+    const dpi=controller.document.root.info.dpi;
+    options={pixelScale:scale.valueAsNumber,...(selection?{selection}:{}),
+      ...(format==='png'&&dpi!==null&&byId<HTMLInputElement>('exportDpi').checked?{dpi}:{})};
   }
   catch(error){byId('exportStatus').textContent=String(error instanceof Error?error.message:error);return;}
   const filename=exportFileName(fixed.name,format);
@@ -3487,7 +3501,7 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
   exportDialog.close();byId('status').textContent='画像を書き出しています。描画は続けられます。';
   byId('exportStatus').textContent='画像を書き出しています。描画は続けられます。';updateQa();
   try{
-    const result=await exportImage(fixed,format,quality);
+    const result=await exportImage(fixed,format,quality,options);
     // Download works on Android and on browsers without the File System Access API.
     const url=URL.createObjectURL(result.blob),anchor=document.createElement('a');
     anchor.href=url;anchor.download=filename;anchor.hidden=true;document.body.append(anchor);anchor.click();anchor.remove();

@@ -1,5 +1,5 @@
 import {button,labelledField,numberField} from '../artwork/tools';
-import {newEffect,neighborhoodEffects,rasterEffects,type EffectStep,type RasterEffect} from './rasterSettings';
+import {newEffect,neighborhoodEffects,rasterEffects,toneEffects,type EffectStep,type RasterEffect} from './rasterSettings';
 import type {RasterEffectRequest} from './raster.worker';
 import './rasterPanel.css';
 
@@ -61,7 +61,11 @@ export function installRasterEffects(host:HTMLElement,api:{
     caption.textContent=label;canvas.setAttribute('aria-label',label);figure.append(caption,canvas);comparison.append(figure);
   }
   const choose=document.createElement('select');
-  for(const [kind,effect] of Object.entries(neighborhoodEffects))choose.add(new Option(effect.label,kind));
+  for(const [label,effects] of [['ぼかし・画質',neighborhoodEffects],['色・特殊効果',toneEffects]] as const){
+    const group=document.createElement('optgroup');group.label=label;
+    for(const [kind,effect] of Object.entries(effects))group.append(new Option(effect.label,kind));
+    choose.append(group);
+  }
   labelledField(controls,'追加する効果',choose);
   let steps:EffectStep[]=[newEffect('gaussian')],selected=0,session:EffectCapture|null=null;
   let running:AbortController|null=null,result:Result|null=null,applying=false;
@@ -100,7 +104,11 @@ export function installRasterEffects(host:HTMLElement,api:{
         const values=[...current.values];values[index]=value;
         steps[selected]={...current,values};invalidate();
       };
-      if(param.min===0&&param.max===1&&param.step===1){
+      if(param.max===0xffffff){
+        const field=document.createElement('input');field.type='color';
+        field.value='#'+step.values[index]!.toString(16).padStart(6,'0');
+        labelledField(parameters,param.label,field);field.oninput=()=>write(Number.parseInt(field.value.slice(1),16));
+      }else if(param.min===0&&param.max===1&&param.step===1){
         const control=document.createElement('input');control.type='checkbox';control.checked=!!step.values[index];
         labelledField(parameters,param.label,control);control.onchange=()=>write(Number(control.checked));
       }else{
