@@ -5103,14 +5103,35 @@ const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
     [color.r*255,color.g*255,color.b*255] as AssistRGB);
   const palettes=[{name:'描画色と背景色',colors:colors([{color:foreground.current},{color:foreground.background}])},
     ...foreground.availablePalettes.filter(p=>p.swatches.length>=2).map(p=>({name:p.name,colors:colors(p.swatches)}))];
+  const category=(item:typeof layer)=>item.editable?.kind==='path'?'ベクター':item.editable?.kind==='text'?'文字':
+    item.editable?.kind==='gradient'?'グラデーション':item.imageLink?'配置画像':item.lineRegions?'線画領域':'描画';
   const names=root.rootLayerIds.flatMap((id,index)=>{
     const item=root.getLayer(id);
     if(!/^(?:Layer|レイヤー)\s*\d*$/i.test(item.name)||root.isLayerContentLocked(id)||item.baseColor)return [];
-    const category=item.editable?.kind==='path'?'ベクター':item.editable?.kind==='text'?'文字':
-      item.editable?.kind==='gradient'?'グラデーション':item.imageLink?'配置画像':item.lineRegions?'線画領域':'描画';
-    return [{id,current:item.name,next:category+' '+(index+1)}];
+    return [{id,current:item.name,next:category(item)+' '+(index+1)}];
   }).slice(0,24);
+  const organize:{name:string;layers:{id:LayerId;name:string}[]}[]=[];
+  if(kind==='specks'){
+    const clipSources=new Set(root.rootLayerIds.map(id=>root.getLayer(id).clipSourceId));
+    let previous:{name:string;layers:{id:LayerId;name:string}[]}|null=null;
+    for(const id of root.rootLayerIds){
+      const item=root.getLayer(id),name=category(item);
+      if(item.baseColor||root.isLayerLocked(id)||root.groupsForLayer(id).length||item.clipSourceId||clipSources.has(id)){
+        previous=null;continue;
+      }
+      if(previous?.name!==name){previous={name,layers:[]};organize.push(previous);}
+      previous.layers.push({id,name:item.name});
+    }
+  }
   return {width,height,source,selection,name:layer.name,palettes,names,writable,valid,
+    organize:organize.filter(candidate=>candidate.layers.length>=2).slice(0,6),
+    adoptGroup:proposal=>withClipboardAccess(async()=>{
+      if(!valid()||kind!=='specks')throw Error('整理する作品が変わりました。');
+      const tx=artwork.begin('重なり順を保ってレイヤーを整理');
+      tx.createLayerGroup(new Set(proposal.layers.map(item=>item.id)),proposal.name);
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      return 'edit';
+    }),
     select:mask=>{
       if(!valid()||!c06Selection)throw Error('選択先が変わりました。');
       c06Selection.replaceActive(mask);
@@ -5129,7 +5150,7 @@ const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
       const tx=artwork.begin('ごみ取り・名前の候補を採用');
       if(spots.length){
         const pixels=source.slice();
-        for(const indices of spots)for(const index of indices)pixels.fill(0,index*4,index*4+4);
+        for(const spot of spots)for(const index of spot.pixels)pixels.set(spot.fill??[0,0,0,0],index*4);
         tx.replaceLayerRaster(layer.id,pixels);
       }
       for(const proposal of proposedNames)tx.renameLayer(proposal.id,proposal.next);

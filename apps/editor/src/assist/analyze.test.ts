@@ -38,3 +38,24 @@ it('learns reference swatches from painted colors and ignores transparent pixels
   const colors=learnReferencePalette(Uint8ClampedArray.of(220,20,30,255,220,20,30,255,0,160,230,255,255,255,0,0));
   expect(colors).toEqual([[220,20,30],[0,160,230]]);
 });
+
+it('finds a repairable speck on opaque paper and preserves an attached line',()=>{
+  const width=12,height=10,source=new Uint8Array(width*height*4);
+  for(let i=0;i<source.length;i+=4)source.set([240,231,210,255],i);
+  for(const [x,y] of [[2,3],[3,4],[4,4],[5,5],[9,3],[0,7]])source.set([22,32,42,255],(y!*width+x!)*4);
+  expect(analyzeImage({kind:'specks',width,height,source,maxArea:1,background:true})).toEqual({
+    kind:'specks',spots:[{x:9,y:3,fill:[240,231,210,255],pixels:Uint32Array.of(45)}],capped:false
+  });
+  const coverage=new Uint8Array(width*height).fill(255);coverage[45]=70;
+  expect(analyzeImage({kind:'specks',width,height,source,maxArea:1,background:true,coverage})).toEqual({kind:'specks',spots:[],capped:false});
+});
+
+it('separates shadow and highlight proposals while keeping the artwork intact',()=>{
+  const source=Uint8Array.of(30,30,30,255,130,130,130,255,230,230,230,255);
+  const input={kind:'color',width:3,height:1,source,strength:1,palette:[[0,0,20],[255,242,217]]} as const;
+  const shadow=analyzeImage({...input,style:'shadow'}),light=analyzeImage({...input,style:'light'});
+  if(shadow.kind!=='color'||light.kind!=='color')throw Error('wrong result');
+  expect(shadow.pixels[3]).toBeGreaterThan(shadow.pixels[11]!);
+  expect(light.pixels[11]).toBeGreaterThan(light.pixels[3]!);
+  expect(source[0]).toBe(30);
+});

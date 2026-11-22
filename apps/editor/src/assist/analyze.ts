@@ -1,12 +1,14 @@
+import {findBackgroundSpecks} from './backgroundSpecks';
 import {selectFromExamples,type SelectionExample} from './exampleSelection';
 export type RGB=readonly [number,number,number];
-export type Speck=Readonly<{pixels:Uint32Array;x:number;y:number}>;
+export type Speck=Readonly<{pixels:Uint32Array;x:number;y:number;fill?:readonly [number,number,number,number]}>;
+export type ColorStyle='tone'|'accent'|'shadow'|'light';
 export type AssistRequest=Readonly<{
   width:number;height:number;source:Uint8Array;coverage?:Uint8Array;
 }> & (
   | {kind:'area';x:number;y:number;tolerance:number;examples?:readonly SelectionExample[];confidence?:number}
-  | {kind:'color';palette:readonly RGB[];strength:number;style:'tone'|'accent'}
-  | {kind:'specks';maxArea:number}
+  | {kind:'color';palette:readonly RGB[];strength:number;style:ColorStyle}
+  | {kind:'specks';maxArea:number;background?:boolean}
 );
 export type AssistResult=
   | {kind:'area';alpha:Uint8Array<ArrayBuffer>;count:number}
@@ -62,8 +64,21 @@ export function analyzeImage(request:AssistRequest):AssistResult{
     for(let p=0;p<size;p++){
       const i=p*4,a=source[i+3]!,m=(coverage?.[p]??255)/255;
       if(!a||!m||!strength)continue;
-      const y=Math.round(lum(source[i]!,source[i+1]!,source[i+2]!)),target=tones[y]!;
-      const effective=strength*(request.style==='accent'?(1-Math.abs(y-127.5)/127.5)*.85+.15:1);
+      const y=Math.round(lum(source[i]!,source[i+1]!,source[i+2]!));
+      let target=tones[y]!,effective=strength;
+      if(request.style==='accent')effective*=(1-Math.abs(y-127.5)/127.5)*.85+.15;
+      else if(request.style==='shadow'||request.style==='light'){
+        const sample=(index:number)=>{
+          const at=index*4;
+          return source[at+3]!>=32?lum(source[at]!,source[at+1]!,source[at+2]!):y;
+        };
+        const x=p%width,left=sample(x?p-1:p),right=sample(x<width-1?p+1:p);
+        const top=sample(p>=width?p-width:p),bottom=sample(p<size-width?p+width:p);
+        const detail=clamp((y-(left+right+top+bottom)/4)*.9,-32,32);
+        const light=clamp((y+detail)/255,0,1),shade=request.style==='shadow';
+        effective*=shade?(1-light)**1.6:light**1.6;
+        target=tones[Math.round(clamp(y+(shade?-44:44),0,255))]!;
+      }
       for(let c=0;c<3;c++)result[i+c]=target[c]!*(request.style==='accent'?.8:1)+
         (request.style==='accent'?source[i+c]!*.2:0);
       result[i+3]=a*m*effective;
@@ -72,6 +87,7 @@ export function analyzeImage(request:AssistRequest):AssistResult{
     return {kind:'color',pixels:result,count};
   }
   const maxArea=clamp(Math.floor(request.maxArea),1,48);
+  if(request.background)return {kind:'specks',...findBackgroundSpecks(source,width,height,maxArea,coverage)};
   const seen=new Uint8Array(size),queue=new Uint32Array(size),spots:Speck[]=[];
   let capped=false;
   for(let start=0;start<size;start++){

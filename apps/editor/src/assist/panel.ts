@@ -4,16 +4,18 @@ import type {LayerId} from '@illustro/core';
 import {button,labelledField,numberField,paintPreview,selectField} from '../artwork/tools';
 import {resizeImagePixels} from '../canvasGeometry';
 import {combineSelection,type CombineMode,type MaskData} from '../selection/mask';
-import {type AssistRequest,type AssistResult,type RGB} from './analyze';
+import {type AssistRequest,type AssistResult,type ColorStyle,type RGB,type Speck} from './analyze';
 
 type Kind=AssistRequest['kind'];
 type NameProposal=Readonly<{id:LayerId;current:string;next:string}>;
+type GroupProposal=Readonly<{name:string;layers:readonly {id:LayerId;name:string}[]}>;
 type AssistFrame=Readonly<{
   width:number;height:number;source:Uint8Array;selection:MaskData|null;name:string;
   palettes:readonly {name:string;colors:readonly RGB[]}[];names:readonly NameProposal[];writable:boolean;
+  organize:readonly GroupProposal[]; adoptGroup:(proposal:GroupProposal)=>Promise<void>;
   valid:()=>boolean;select:(mask:MaskData)=>void;
   adoptColor:(pixels:Uint8ClampedArray)=>Promise<void>;
-  adoptRepair:(removed:Uint32Array[],names:NameProposal[])=>Promise<void>;
+  adoptRepair:(removed:Speck[],names:NameProposal[])=>Promise<void>;
 }>;
 type RequestSettings=AssistRequest extends infer T?T extends AssistRequest?Omit<T,'width'|'height'|'source'|'coverage'>:never:never;
 
@@ -38,7 +40,8 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
     color.append(chips);
     const strength=numberField(color,'強さ（%）',70,1,100);
     const size=numberField(repair,'ごみ候補の最大の画素数',6,1,48);
-    const names=document.createElement('div'),spots=document.createElement('div');repair.append(spots,names);
+    const cleanup=selectField(repair,'ごみの背景',[['transparent','透明'],['opaque','ほぼ均一な色の背景']]);
+    const names=document.createElement('div'),spots=document.createElement('div'),groups=document.createElement('div');repair.append(spots,names,groups);
     const images=document.createElement('div');images.className='assist-previews';
     const before=document.createElement('canvas'),after=document.createElement('canvas');
     before.hidden=after.hidden=true;
@@ -58,6 +61,9 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
     area.append(exampleOptions);
     const status=document.createElement('output');status.setAttribute('role','status');
     const variants=document.createElement('div');variants.className='box-actions';color.append(variants);
+    const gallery=document.createElement('div');gallery.className='assist-previews';color.append(gallery);
+    const styles=[['tone','明暗に合わせる'],['accent','中間色を強める'],['shadow','陰影を深める'],['light','光を強調する']] as const;
+    let colorSession=0;
     panel.append(area,color,repair,images);
     let generation=0,frame:AssistFrame|null=null,result:AssistResult|null=null;
     let worker:Worker|null=null,stopJob:(()=>void)|null=null;
@@ -78,6 +84,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
     const cancelJob=()=>{worker?.terminate();worker=null;stopJob?.();stopJob=null;};
     const invalidate=()=>{generation++;cancelJob();result=null;after.hidden=true;spots.replaceChildren();spotChecks=[];apply.disabled=true;};
 
+    function clearGallery(){colorSession++;gallery.replaceChildren();}
     function render(image:HTMLCanvasElement,data:Uint8ClampedArray<ArrayBuffer>,f:AssistFrame){
       const scale=Math.min(1,350/Math.max(f.width,f.height)),w=Math.max(1,Math.round(f.width*scale)),h=Math.max(1,Math.round(f.height*scale));
       const pixels=w===f.width&&h===f.height?data:new Uint8ClampedArray(resizeImagePixels(data,f.width,f.height,w,h,'auto'));
@@ -126,6 +133,9 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
           pixels[i+3]=out*255;
         }
       }
+      if(r.kind==='specks')r.spots.forEach((spot,i)=>{
+        if(spotChecks[i]?.checked)for(const pixel of spot.pixels)pixels.set(spot.fill??[0,0,0,0],pixel*4);
+      });
       render(after,pixels,f);
       if(r.kind==='specks'){
         const context=after.getContext('2d');if(!context)return;
@@ -148,7 +158,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
         !result||(result.kind!=='specks'&&result.count===0));
     }
     async function load(){
-      invalidate();frame=null;before.hidden=true;examples=[];spotChecks=[];nameChecks=[];names.replaceChildren();
+      invalidate();clearGallery();frame=null;before.hidden=true;examples=[];spotChecks=[];nameChecks=[];names.replaceChildren();groups.replaceChildren();
       const ticket=generation,kind=current();
       activeLayer.textContent='対象を読み込んでいます。';
       const snapshot=await capture(kind);
@@ -160,6 +170,14 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       x.value=String(Math.floor(snapshot.width/2));y.value=String(Math.floor(snapshot.height/2));
       palette.replaceChildren(...available().map((p,i)=>new Option(p.name,String(i))));paletteChips();
       nameChecks=checks(names,snapshot.names.map(n=>n.current+' → '+n.next),refreshApply);
+      for(const proposal of snapshot.organize){
+        const row=document.createElement('div'),members=document.createElement('p');
+        members.textContent=proposal.layers.map(layer=>layer.name).join('、')+'（重なり順を保持）';
+        row.append(members,button('「'+proposal.name+'」にまとめる',async()=>{
+          await snapshot.adoptGroup(proposal);dialog.close();
+        },status));
+        groups.append(row);
+      }
       analyze.disabled=kind!=='area'&&!snapshot.writable;
       for(const variant of Array.from(variants.querySelectorAll('button')))variant.disabled=!snapshot.writable||!snapshot.palettes.length;
       render(before,new Uint8ClampedArray(snapshot.source),snapshot);
@@ -171,7 +189,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       if(!input.validity.valid||!input.value)throw Error('数値を指定範囲内で入力してください。');
       return input.valueAsNumber;
     }
-    async function run(style:'tone'|'accent'='tone'){
+    async function run(style:ColorStyle='tone'){
       invalidate();const f=frame;
       if(!f||!f.valid())throw Error('作品が変わりました。対象を読み込み直してください。');
       let settings:RequestSettings;
@@ -179,7 +197,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       if(kind==='area')settings={kind,x:field(x),y:field(y),tolerance:learning()?32:field(tolerance),
         ...(learning()?{examples:[...examples],confidence:field(confidence)}:{})};
       else if(kind==='color')settings={kind,style,strength:field(strength)/100,palette:available()[Number(palette.value)]?.colors??[]};
-      else settings={kind,maxArea:field(size)};
+      else settings={kind,maxArea:field(size),background:cleanup.value==='opaque'};
       const source=f.source.slice(),coverage=target.value==='selected'?f.selection?.alpha.slice():undefined,ticket=generation;
       status.textContent='候補を計算しています。';
       const device=new Worker(new URL('./worker.ts',import.meta.url),{type:'module'});worker=device;
@@ -201,6 +219,23 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
           (next.capped?' 先頭の32件を表示しています。':'');
       }else status.textContent=next.count?(next.kind==='area'?'青い部分が選択の候補です。':'明暗とパレットの色から作った案です。'):'該当する画素がありません。';
       paintResult();refreshApply();
+      if(next.kind==='color'&&next.count){
+        const label=styles.find(([id])=>id===style)![1];
+        const card=button(label,()=>{colorSession++;return run(style);},status),thumb=document.createElement('canvas');
+        thumb.width=Math.round(after.width*.34);thumb.height=Math.round(after.height*.34);
+        if(thumb.width&&thumb.height)thumb.getContext('2d')?.drawImage(after,0,0,thumb.width,thumb.height);
+        thumb.style.maxWidth='100%';thumb.setAttribute('aria-hidden','true');card.prepend(thumb);
+        card.dataset.style=style;
+        const previous=Array.from(gallery.children).find(item=>(item as HTMLElement).dataset.style===style);
+        if(previous)previous.replaceWith(card);else gallery.append(card);
+      }
+    }
+    async function compareVariants(limit:number){
+      const ticket=++colorSession;gallery.replaceChildren();
+      for(const [style] of styles.slice(0,limit)){
+        if(ticket!==colorSession||!dialog.open||current()!=='color')return;
+        await run(style);
+      }
     }
     before.onclick=event=>{
       if(current()!=='area'||!frame)return;
@@ -211,11 +246,12 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
         try{addExample();}catch(error){status.textContent=error instanceof Error?error.message:String(error);}
       }else void run().catch(error=>{status.textContent=String(error.message??error);});
     };
-    const analyze=button('候補を計算',()=>run(),status);
-    variants.append(button('パレットの明暗で試す',()=>run('tone'),status),button('中間の色を中心に試す',()=>run('accent'),status));
+    const variantCount=numberField(color,'比較する案の数',4,2,4);
+    const analyze=button('候補を計算',()=>current()==='color'?compareVariants(field(variantCount)):run(),status);
+    for(const [style,label] of styles)variants.append(button(label,()=>{colorSession++;return run(style);},status));
     const apply=button('選んだ内容を採用する',async()=>{
       const f=frame,r=result;if(!f||!f.valid())throw Error('作品が変わりました。対象を読み込み直してください。');
-      if(current()==='specks')await f.adoptRepair(r?.kind==='specks'?r.spots.filter((_,i)=>spotChecks[i]?.checked).map(s=>s.pixels):[],
+      if(current()==='specks')await f.adoptRepair(r?.kind==='specks'?r.spots.filter((_,i)=>spotChecks[i]?.checked):[],
         f.names.filter((_,i)=>nameChecks[i]?.checked));
       else if(r?.kind==='color'&&r.count)await f.adoptColor(r.pixels);
       else if(r?.kind==='area'&&r.count)f.select(combineSelection(f.selection,{width:f.width,height:f.height,alpha:r.alpha},combine.value as CombineMode));
@@ -232,7 +268,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       try{
         const extracted=await readReferencePalette(file);
         if(!dialog.open||reference.files?.[0]!==file)return;
-        referenceSet=extracted;invalidate();
+        referenceSet=extracted;invalidate();clearGallery();
         palette.replaceChildren(...available().map((p,i)=>new Option(p.name,String(i))));
         palette.value=String(available().length-1);paletteChips();
         status.textContent=extracted.colors.length+'色を資料の色分布から取り出しました。色の候補を計算できます。';
@@ -242,7 +278,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       invalidate();exampleOptions.hidden=!learning();tolerance.parentElement!.hidden=learning();drawExamples();
       status.textContent=learning()?'画像で残す例と外す例を指定し、候補を計算してください。':'画像をタップして、つながる範囲を確認できます。';
     };
-    for(const input of [target,tolerance,palette,strength,size,x,y,confidence])input.onchange=()=>{invalidate();if(input===palette)paletteChips();refreshApply();};
+    for(const input of [target,tolerance,palette,strength,size,cleanup,variantCount,x,y,confidence])input.onchange=()=>{invalidate();clearGallery();if(input===palette)paletteChips();refreshApply();};
     dialog.onclose=()=>{generation++;cancelJob();dialog.remove();};
     visible(current());void load().catch(error=>{status.textContent=String(error.message??error);});
   };
