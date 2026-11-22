@@ -93,6 +93,7 @@ import {moveRecordedBrush} from './ui/macroArtwork';
 import {installWorkspaceProfiles} from './ui/workspaceProfiles';
 import {installFloatingPanels} from './ui/floatingPanels';
 import {installInputDeviceProfiles,readPointerRoles} from './ui/inputDeviceProfiles';
+import {readPressureRange} from './ui/inputDiagnostics';
 import {installEditorHelp} from './ui/help';
 import {installGestureShortcuts} from './ui/gestureShortcuts';
 import {installToolbarSettings} from './ui/toolbarSettings';
@@ -176,6 +177,7 @@ const admittedHistoryChanges:EditorHistoryChange[]=[];
 const historyInputs:Array<{at:number;eventAt:number;button:string;direction:string;phase:string;pointerType:string;disabled:boolean;reason?:string}>=[];
 function traceHistoryInput(button:HTMLButtonElement,direction:HistoryDirection,phase:string,event:Event,reason?:string){if(!perfMode)return;historyInputs.push({at:performance.now(),eventAt:event.timeStamp,button:button.id,direction,phase,pointerType:(event as PointerEvent).pointerType??'keyboard',disabled:button.disabled,...(reason?{reason}:{})});if(historyInputs.length>1200)historyInputs.shift();}
 
+let pressureRange=readPressureRange();
 const inputPreferences={finger:false,palmGuard:true,penBarrelErase:false,rotationSnap:true,brushCursorEnabled:false,eraserSizeLink:false};
 try{
   const saved=JSON.parse(localStorage.getItem('illustro.input-preferences.v1')??'null');
@@ -1738,6 +1740,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
 function applyInputPreferences(drawing:BrushSurface){
  drawing.fingerDrawing=inputPreferences.finger;drawing.palmGuard=inputPreferences.palmGuard;drawing.barrelErases=inputPreferences.penBarrelErase;
  drawing.setRotationSnap(inputPreferences.rotationSnap);
+ drawing.setPressureRange(pressureRange);
  drawing.setPointerRoles(readPointerRoles());
 }
 surface=makeSurface();
@@ -4069,7 +4072,7 @@ installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
 const c04Toolbar=installToolbarSettings();
 const c04WorkspaceService=installWorkspaceProfiles(c04FloatingPanels,c04Toolbar);
-installInputDeviceProfiles(()=>surface);
+installInputDeviceProfiles(()=>surface,range=>{pressureRange=range;surface?.setPressureRange(range);});
 installGestureShortcuts();
 const openAccessibility=installAccessibility(byId('workspaceBoxBody'));
 c04Commands.registerProvider(()=>[{

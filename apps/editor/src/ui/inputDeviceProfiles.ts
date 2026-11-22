@@ -1,4 +1,5 @@
 /** GST-003: device roles are applied at pointer dispatch, never to document pixels. */
+import {installInputDiagnostics,type PressureRange} from './inputDiagnostics';
 import type {BrushSurface,PointerRoleSettings,InputPointerRole} from '../brushSurface';
 const KEY='illustro.c04.input.pointer-roles.v1';
 const DEFAULT:PointerRoleSettings={pen:'draw',mouse:'draw'};
@@ -13,7 +14,7 @@ export function readPointerRoles():PointerRoleSettings{
 const safeWrite=(roles:PointerRoleSettings)=>{
   try{localStorage.setItem(KEY,JSON.stringify({version:1,...roles}));return true;}catch{return false;}
 };
-export function installInputDeviceProfiles(getSurface:()=>BrushSurface|null){
+export function installInputDeviceProfiles(getSurface:()=>BrushSurface|null,pressure:(range:PressureRange)=>void){
   const workspace=document.getElementById('workspaceBoxBody');
   if(!workspace)return;
   let roles=readPointerRoles();
@@ -72,10 +73,6 @@ export function installInputDeviceProfiles(getSurface:()=>BrushSurface|null){
     status.textContent=label+'の入力を認識しました。利用可能な操作だけ登録してください。';
     event.stopPropagation();
   }
-  capture.onclick=()=>{
-    if(!capturing)return;
-    // A click may follow pointerdown; the capture handler owns pointer detection.
-  };
   const originalListener=(event:PointerEvent)=>{
     if(!capturing){
       capturing=true;capture.textContent='もう一度触れて機器を確認（Escで中止）';
@@ -90,6 +87,7 @@ export function installInputDeviceProfiles(getSurface:()=>BrushSurface|null){
     capturing=false;capture.textContent='接続した機器を確認';status.textContent='確認を中止しました。';
   };
   document.addEventListener('keydown',cancelCapture);
+  installInputDiagnostics(body,pressure);
   reset.onclick=()=>{
     roles={...DEFAULT};pen.value=roles.pen;mouse.value=roles.mouse;sync();
     finger.value='navigate';finger.onchange?.(new Event('change'));

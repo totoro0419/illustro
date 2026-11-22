@@ -3,6 +3,7 @@ import {correctionGeometry,correctionSuggestedShape,type CorrectionHold,type Cor
 import type {ArtworkGuide} from '@illustro/core';
 import {StrokeHandoff,type StrokeReservation} from './strokeHandoff';
 import {nativeBrushSensors} from './brushInput';
+import type {PressureRange} from './ui/inputDiagnostics';
 import {drawMaskPreview,type MaskStrokePoint} from './layerMaskEditing';
 import {penEraserInput} from './stylusButtons';
 import {EmptyStrokeError} from './strokeCommit';
@@ -164,6 +165,8 @@ export class BrushSurface{
   private suppressedTouches=new Set<number>();
   private commonStabilization=0.25;
   private pressureCalibrationMidpoint=0.5;
+  private pressureRange:PressureRange={minimum:0,maximum:1,fixed:null};
+  setPressureRange(range:PressureRange){this.pressureRange=range;}
   private selectionRect:SelectionRect|null=null;
   private selectionVisible=true;
   private selectionMode=false;private selectionPointer:number|null=null;private selectionAnchor:Point|null=null;
@@ -541,7 +544,10 @@ export class BrushSurface{
   }
   setSeamless(enabled:boolean){if(this.view){this.view.seamless=enabled;this.updateView(true);}}
   setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView(true);}}
-  private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e),p=snapToStraightGuide({x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0)},this.activeGuide);return {x:p.x,y:p.y,t:e.timeStamp,...nativeBrushSensors(e)};}
+  private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e),p=snapToStraightGuide({x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0)},this.activeGuide);const sensors=nativeBrushSensors(e),range=this.pressureRange;
+    const pressure=sensors.pressure;
+    const mapped=pressure!==undefined&&pressure>0?range.fixed??Math.max(0,Math.min(1,(pressure-range.minimum)/(range.maximum-range.minimum))):pressure;
+    return {x:p.x,y:p.y,t:e.timeStamp,...sensors,...(mapped===undefined?{}:{pressure:mapped})};}
   private layerPick:((ids:readonly LayerId[])=>void)|null=null;
   onLayerPickShortcut:(point:Point)=>void=()=>{};
   private layerPickHold:{pointer:number;position:Point;timer:number}|null=null;
@@ -887,6 +893,7 @@ export class BrushSurface{
       e.preventDefault();
       const penActive=(this.pointer!==null&&this.strokePointerType==='pen')||this.editPointerType==='pen';
       if(this.palmGuard&&penActive&&Math.max(e.width,e.height)>=45){
+        if(!this.suppressedTouches.size)this.status('大きな接触を抑えました。入力設定から手のひら抑止を切り替えられます。');
         this.suppressedTouches.add(e.pointerId);this.inputViewport.setPointerCapture(e.pointerId);return;
       }
       if(this.navigation?.touchCount&&this.strokePointerType==='touch'){
