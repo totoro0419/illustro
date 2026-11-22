@@ -59,6 +59,7 @@ type CanvasEditGesture=Readonly<{
 export class BrushSurface{
   private editGesture:CanvasEditGesture|null=null;
   private editTraceVisible=true;
+  get hasCanvasEditPreview(){return this.artworkPreview!==null||this.fillGesturePreview!==null;}
   private editPointer:number|null=null;
   private editPointIndex:number|null=null;
   private editPointerType='';
@@ -601,9 +602,11 @@ export class BrushSurface{
   }
   /** A safe replacement overlay hides the original raster only while shown. */
   showArtworkPreview(image:ImageData|null,isolated=false,replacementLayerId:LayerId|null=null,replacementOpacity=1){
+    const hadPreview=!!this.artworkPreview;
     if(!image){
       this.artworkPreview?.remove();this.artworkPreview=null;
       this.setArtworkPreviewReplacement(null);
+      if(hadPreview)this.onStateChanged();
       return;
     }
     const root=this.controller.document.root;
@@ -624,6 +627,7 @@ export class BrushSurface{
     if(!this.artworkPreview)this.inputViewport.append(canvas);
     this.artworkPreview=canvas;this.positionDocumentOverlay(canvas);
     this.setArtworkPreviewReplacement(replacement);
+    if(!hadPreview)this.onStateChanged();
   }
   /** Temporary fill-region guide. Never hides an artwork layer or changes its pixels. */
   showFillGesturePreview(image:ImageData|null,region?:Readonly<{x:number;y:number;width:number;height:number}>){
@@ -1362,13 +1366,17 @@ export class BrushSurface{
     return output.convertToBlob({type:'image/png'});
   }
   /** Small selection clipboard copy without a full-size GPU readback. */
-  async captureDocumentLayerRegion(id:LayerId,area:TileCaptureArea):Promise<Uint8ClampedArray|null>{
-    if(!this.renderer||this.busy||this.disposed)throw Error('コピー中に画像を変更できません。');
+  async captureDocumentLayerRegion(id:LayerId,area:TileCaptureArea,allowEditPreview=false):Promise<Uint8ClampedArray|null>{
+    // A canvas edit gesture has only coordinates until release. Reading its
+    // source tiles is safe during this gesture, alongside no actual paint.
+    const blocked=()=>this.busy&&!(allowEditPreview&&this.editPointer!==null&&this.pointer===null&&
+      !this.finishing&&!this.historySyncing&&!this.hasPendingStrokes);
+    if(!this.renderer||blocked()||this.disposed)throw Error('処理中のレイヤーの画素を読み取れません。');
     const host=this.renderer as unknown as Parameters<typeof captureLayerRegion>[0];
     if(typeof host.inspect!=='function'||typeof host.backend?.readTiles!=='function')return null;
     const root=this.controller.document.root,revision=this.controller.document.head;
     if(!root.hasLayer(id))throw Error('コピー対象のレイヤーが見つかりません。');
-    const valid=()=>!this.disposed&&!this.busy&&this.controller.document.head===revision;
+    const valid=()=>!this.disposed&&!blocked()&&this.controller.document.head===revision;
     return captureLayerRegion(host,root.getLayer(id).surface.descriptor.surfaceId,
       root.width,root.height,area,valid);
   }

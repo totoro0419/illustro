@@ -1791,13 +1791,22 @@ try{
 }catch{}
 function updatePixelGrid(){
  const state=surface?.viewState;
- const visible=!!state&&(gridToggle.checked||activeCanvasTool==='pixels')&&state.zoom*100>=gridThreshold.valueAsNumber&&!state.seamless;
+ const visible=!!state&&(gridToggle.checked||activeCanvasTool==='pixels')&&state.zoom*100>=gridThreshold.valueAsNumber;
  gridOverlay.toggleAttribute('hidden',!visible);
  if(!visible||!state||!surface){pixelCoordinates.hidden=true;return;}
  const origin=surface.documentToScreen({x:0,y:0}),c=Math.cos(state.rotation),s=Math.sin(state.rotation);
  const scaleX=state.zoom*(state.flipX?-1:1),scaleY=state.zoom*(state.flipY?-1:1);
  gridPage.setAttribute('transform',`matrix(${c*scaleX} ${s*scaleX} ${-s*scaleY} ${c*scaleY} ${origin.x} ${origin.y})`);
- gridPage.setAttribute('width',String(state.documentWidth));gridPage.setAttribute('height',String(state.documentHeight));
+ let x=0,y=0,width=state.documentWidth,height=state.documentHeight;
+ if(state.seamless){
+  const corners=[{x:0,y:0},{x:state.cssWidth,y:0},{x:0,y:state.cssHeight},{x:state.cssWidth,y:state.cssHeight}]
+   .map(point=>surface!.screenToDocument(point));
+  x=Math.floor(Math.min(...corners.map(point=>point.x)));
+  y=Math.floor(Math.min(...corners.map(point=>point.y)));
+  width=Math.ceil(Math.max(...corners.map(point=>point.x)))-x;
+  height=Math.ceil(Math.max(...corners.map(point=>point.y)))-y;
+ }
+ for(const [name,value] of Object.entries({x,y,width,height}))gridPage.setAttribute(name,String(value));
 }
 for(const input of [gridToggle,gridThreshold,gridColor])input.onchange=()=>{
  if(!gridThreshold.checkValidity()||!gridThreshold.value)gridThreshold.value='800';
@@ -1810,7 +1819,10 @@ const canvasViewport=byId('canvas').closest('.surface')!;
 canvasViewport.addEventListener('pointermove',event=>{
  if(gridOverlay.hasAttribute('hidden')||!surface||!(event instanceof PointerEvent))return;
  const rect=surface.viewportRect,point=surface.screenToDocument({x:event.clientX-rect.left,y:event.clientY-rect.top}),root=controller.document.root;
- const x=Math.floor(point.x),y=Math.floor(point.y);
+ const wrap=(value:number,span:number)=>((value%span)+span)%span;
+ const seamless=surface.viewState?.seamless;
+ const x=seamless?wrap(Math.floor(point.x),root.width):Math.floor(point.x);
+ const y=seamless?wrap(Math.floor(point.y),root.height):Math.floor(point.y);
  pixelCoordinates.hidden=x<0||y<0||x>=root.width||y>=root.height;
  if(!pixelCoordinates.hidden)pixelCoordinates.textContent='X '+x+' · Y '+y;
 },{passive:true});
@@ -1849,33 +1861,40 @@ byId('panView').onclick=()=>{
  byId('status').textContent=surface.panTool?'キャンバスをドラッグして移動できます。':'描画に戻りました。';
 };
 const shellUi=installShellUi(scheduleLayerDrawingThumbnail),workspace=shellUi.workspace;
+const contextToolLabels:Record<string,string>={selection:'選択',transform:'変形',move:'移動',shapes:'図形',rulers:'定規',pixels:'1pxドットペン'};
 function updateContextBar(){
   const active=documentReady&&!!surface;
   const tool=byId<HTMLButtonElement>('c04ContextTool'),layer=byId<HTMLButtonElement>('c04ContextLayer');
   const selection=byId<HTMLButtonElement>('c04ContextSelection'),source=byId<HTMLButtonElement>('c04ContextReference');
   tool.disabled=layer.disabled=selection.disabled=!active;
   const fill=activeCanvasTool==='smartFill'?fillPanel?.context():null;
-  source.hidden=!fill&&selectedTool!=='eyedropper';
+  const wet=activeCanvasTool==='smudge'?wetTools?.context():null;
+  source.hidden=!fill&&!wet&&selectedTool!=='eyedropper';
   source.disabled=!active;
   const sampleSource=byId<HTMLSelectElement>('colorSampleSource').value;
   const sampleLayerId=byId<HTMLSelectElement>('colorSampleLayerId').value;
-  source.textContent=fill?'塗り参照: '+fill.reference:'採色元: '+sampleSourceLabel({
+  source.textContent=fill?'塗り参照: '+fill.reference:wet?'混色の参照: '+wet.reference:'採色元: '+sampleSourceLabel({
     source:sampleSource==='layer'?'layer':sampleSource==='specific'?'specific':'composite',
     layerId:sampleLayerId?sampleLayerId as LayerId:null,
   },controller.layers.map(item=>({id:item.id,name:item.name})));
-  tool.textContent='道具: '+(fill?'塗りつぶし':activeCanvasTool==='smudge'?'混色・修復':activeCanvasTool==='pixels'?'1pxドットペン':selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
-  layer.textContent=fill?'塗り先: '+fill.destination:'描画先: '+(active?controller.selectedLayer.name:'作品なし');
+  tool.textContent='道具: '+(fill?'塗りつぶし':wet?wet.tool:contextToolLabels[activeCanvasTool]??(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ'));
+  layer.textContent=fill?'塗り先: '+fill.destination:wet?.separate?'描画先: 新規レイヤー':'描画先: '+(active?controller.selectedLayer.name:'作品なし');
   const selected=surface?.selectedRectangle;
   selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):c06Selection?.active()?'選択範囲あり':'選択なし';
   byId('c04ContextPending').textContent=historyPending?'履歴を反映中':
-    surface?.inputActive?'描画中':surface?.busy?'線の反映中':
-    geometryBusy?'変更を処理中':fill?.pending?'塗り候補・未確定':surface?.selectingRectangle?'範囲を指定中':'';
+    wet?.pending?'混色を確定中':surface?.inputActive?'描画中':surface?.busy?'線の反映中':
+    geometryBusy?'変更を処理中':surface?.hasCanvasEditPreview?'操作候補・未確定':fill?.pending?'塗り候補・未確定':surface?.selectingRectangle?'範囲を指定中':'';
 }
-byId<HTMLButtonElement>('c04ContextTool').onclick=()=>shellUi.openBox('brushBox');
+byId<HTMLButtonElement>('c04ContextTool').onclick=()=>{
+  if(activeCanvasTool){shellUi.openBox('documentBox');return;}
+  if(selectedTool==='eyedropper'){byId('openEyedropperSettings').click();return;}
+  shellUi.openBox('brushBox');
+};
 byId<HTMLButtonElement>('c04ContextLayer').onclick=()=>shellUi.setLayerPage(true);
 byId<HTMLButtonElement>('c04ContextSelection').onclick=()=>byId<HTMLButtonElement>('selection').click();
 byId<HTMLButtonElement>('c04ContextReference').onclick=()=>{
   if(activeCanvasTool==='smartFill')fillPanel?.focusReference();
+  else if(activeCanvasTool==='smudge')wetTools?.focusReference();
   else byId('openEyedropperSettings').click();
 };
 const eyedropperDialog=byId<HTMLDialogElement>('colorEyedropperOptions');
@@ -4184,6 +4203,7 @@ async function withClipboardAccess(action:(drawing:BrushSurface)=>Promise<'edit'
   }
 }
 wetTools=installWetTools(byId('documentBoxBody'),{
+  onContext:updateContextBar,
   activate:start=>selectCanvasTool('smudge',start),
   hasSelection:()=>!!c06Selection?.active(),
   current:()=>documentReady&&surface?{drawing:surface,documentId:controller.document.root.documentId,

@@ -17,7 +17,7 @@ export type WetStroke=Readonly<{
 
 export function installWetTools(host:HTMLElement,api:{
   current:()=>{drawing:BrushSurface;documentId:string;layerId:string;layerName:string}|null;
-  activate:(start:()=>void)=>void;hasSelection:()=>boolean;color:()=>readonly number[];draw:(stroke:WetStroke)=>Promise<boolean>;preview:(stroke:WetStroke)=>Promise<boolean>;left:()=>void;
+  activate:(start:()=>void)=>void;hasSelection:()=>boolean;color:()=>readonly number[];draw:(stroke:WetStroke)=>Promise<boolean>;preview:(stroke:WetStroke)=>Promise<boolean>;left:()=>void;onContext?:()=>void;
 }){
   const panel=document.createElement('details');
   panel.className='c06-clipboard-panel';panel.dataset.toolPanel='smudge';
@@ -87,6 +87,7 @@ export function installWetTools(host:HTMLElement,api:{
     sourceButton.hidden=!needsSource(selected())||transfer();
     selectedPatch.parentElement!.hidden=selected()!=='patch';
     if(transfer())target.textContent+=' ／ 選択範囲の形を採取';
+    api.onContext?.();
   }
   function leave(){
     revision++;pending?.abort();pending=null;
@@ -158,7 +159,7 @@ export function installWetTools(host:HTMLElement,api:{
         let job:WetStroke|null;
         try{job=request(points,controller.signal);}catch(error){status.textContent=(error as Error).message;return;}
         if(!job)return;
-        pending=controller;status.textContent='画素を処理しています…';
+        pending=controller;status.textContent='画素を処理しています…';api.onContext?.();
         void api.draw(job)
           .then(changed=>{
             if(!current())return;
@@ -166,7 +167,7 @@ export function installWetTools(host:HTMLElement,api:{
             status.textContent=changed?'一筆を反映しました。取り消しで戻せます。':'この範囲で変わる画素がありません。';
           }).catch(error=>{
             if(current()&&!controller.signal.aborted)status.textContent=error instanceof Error?error.message:String(error);
-          }).finally(()=>{if(pending===controller)pending=null;});
+          }).finally(()=>{if(pending===controller){pending=null;api.onContext?.();}});
       },
     });
   }
@@ -183,6 +184,10 @@ export function installWetTools(host:HTMLElement,api:{
   panel.append(summary,options,target,advanced,actions,status);
   host.append(panel);describe();
   return {open:()=>{panel.open=true;arm();},stop:leave,settings,refresh:describe,
+    focusReference:()=>{panel.open=true;reference.focus();},
+    context:()=>({tool:wetModes.find(([name])=>name===selected())?.[1]??'混色・修復',
+      reference:reference.value==='merged'?'全レイヤー':anchor&&needsSource(selected())?anchor.layerName:'描画先のレイヤー',
+      separate:separate.checked||reference.value==='merged',pending:!!pending}),
     exportNative():PortableSectionInput{
       return {id:sectionId,type:sectionType,required:false,bytes:new TextEncoder().encode(snapshot())};
     },

@@ -32,7 +32,7 @@ export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,l
     stroke.signal.throwIfAborted();
     const layer=artwork.root.getLayer(id);
     if(layer.baseColor==='white')return {area:frame,pixels:new Uint8ClampedArray(frame.width*frame.height*4).fill(255)};
-    const region=await drawing.captureDocumentLayerRegion(id,frame);
+    const region=await drawing.captureDocumentLayerRegion(id,frame,preview);
     if(region)return {area:frame,pixels:region};
     if(preview)throw Error('この描画方式では途中の表示を作れません。');
     let pixels=cache.get(id);
@@ -51,7 +51,7 @@ export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,l
     const root=artwork.root,layerIds=new Map<string,LayerId>(root.rootLayerIds.map(id=>[root.getLayer(id).surface.descriptor.surfaceId,id]));
     const local=await compositeArtworkRegion(captureExportLayers(root),box,async surfaceId=>{
       const id=layerIds.get(surfaceId);
-      return id?drawing.captureDocumentLayerRegion(id,box):null;
+      return id?drawing.captureDocumentLayerRegion(id,box,preview):null;
     },stroke.signal);
     if(local)reference={area:box,pixels:local};
     else if(preview)return null;
