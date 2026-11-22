@@ -38,7 +38,7 @@ replaceExactlyOnce(
 replaceExactlyOnce(
   'apps/editor/index.html',
   '<script type="module" src="/src/main.ts"></script>',
-  '<script type="module" src="/src/r2-preview-bootstrap.ts"></script>',
+  '<script type="module" src="/src/r2-preview-bootstrap.js"></script>',
 );
 
 // Local/session storage are origin-scoped, not URL-path-scoped.
@@ -100,5 +100,5 @@ try {
   if(app) app.textContent='R2プレビューを安全に開始できませんでした。ブラウザーの保存設定をご確認ください。';
 }
 `;
-writeFileSync('apps/editor/src/r2-preview-bootstrap.ts', bootstrap);
+writeFileSync('apps/editor/src/r2-preview-bootstrap.js', bootstrap);
 console.log('R2 preview isolation applied to build workspace only');
