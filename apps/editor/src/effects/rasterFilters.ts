@@ -1,4 +1,4 @@
-import {applyColorTable,applyDisplacement} from './imageEffectResources';
+import {applyColorTable,applyDisplacement,readEffectImageChannels} from './imageEffectResources';
 import {readEffectSteps,type EffectStep} from './rasterSettings';
 
 type Bytes=Uint8Array|Uint8ClampedArray;
@@ -91,6 +91,24 @@ function lensBlur(source:Bytes,width:number,height:number,step:EffectStep){
     const direction=k*Math.PI*(3-Math.sqrt(5)),u=Math.sqrt(k/24);
     const aperture=sector?Math.cos(sector/2)/Math.cos(wrap(direction+sector/2,sector)-sector/2):1;
     taps.push({x:u*aperture*Math.cos(direction+rotation),y:u*aperture*Math.sin(direction+rotation)});
+  }
+  const map=step.resource?.kind==='displacement'?step.resource:null,depth=map?readEffectImageChannels(map):null;
+  if(map&&depth){
+    for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+      const from=(Math.floor(y*map.height/height)*map.width+Math.floor(x*map.width/width))*2;
+      const z=depth[from]!/255*100;
+      const scale=radius*clip((Math.abs(z-focus)-band/2)/Math.max(1,Math.max(focus,100-focus)-band/2),0,1);
+      const at=(y*width+x)*4;
+      if(scale<.5){out.set(source.subarray(at,at+4),at);continue;}
+      let r=0,g=0,b=0,a=0;
+      for(const tap of taps){
+        const i=(clip(Math.round(y+tap.y*scale),0,height-1)*width+clip(Math.round(x+tap.x*scale),0,width-1))*4;
+        const alpha=byte(source,i+3);
+        r+=byte(source,i)*alpha;g+=byte(source,i+1)*alpha;b+=byte(source,i+2)*alpha;a+=alpha;
+      }
+      writeAverage(out,at,r,g,b,a,taps.length);
+    }
+    return out;
   }
   for(let y=0;y<height;y++){
     const scale=radius*clip((Math.abs(y-center)-sharpBand)/falloff,0,1);

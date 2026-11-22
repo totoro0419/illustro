@@ -117,13 +117,17 @@ export function installRasterEffects(host:HTMLElement,api:{
         field.oninput=()=>{invalidate();if(field.validity.valid&&Number.isFinite(field.valueAsNumber))write(field.valueAsNumber);};
       }
     });
-    if(step.kind==='lut'||step.kind==='displace'){
+    if(step.kind==='lut'||step.kind==='displace'||step.kind==='lens'){
       const input=document.createElement('input');input.type='file';
       const lut=step.kind==='lut',index=selected;
       input.accept=lut?'.cube':'image/png,image/jpeg,image/webp';
-      labelledField(parameters,lut?'LUTファイル（.cube、出力色は8ビット）':'変位画像（赤: 横、緑: 縦）',input);
-      const fileStatus=document.createElement('span');fileStatus.textContent=step.resource?.name??'参照ファイルを選んでください。';
+      labelledField(parameters,lut?'LUTファイル（.cube、出力色は8ビット）':step.kind==='lens'?'深度画像（任意。グレー画像の赤成分を使う）':'変位画像（赤: 横、緑: 縦）',input);
+      const fileStatus=document.createElement('span');fileStatus.textContent=step.resource?.name??(step.kind==='lens'?'未指定時は画面の高さで焦点を決めます。':'参照ファイルを選んでください。');
       parameters.append(fileStatus);
+      if(step.kind==='lens'&&step.resource)parameters.append(button('深度画像を外す',()=>{
+        const {resource,...settings}=steps[index]!;
+        steps[index]=settings;invalidate();refresh();
+      },status));
       input.onchange=async()=>{
         const file=input.files?.[0],original=steps[index];
         if(!file||!original||original.kind!==step.kind)return;

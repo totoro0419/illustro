@@ -102,6 +102,10 @@ export function applyColorTable(source:Bytes,table:ColorTable){
   return out;
 }
 
+export function readEffectImageChannels(map:Displacement){
+  return fromBase64(map.bytes);
+}
+
 export function applyDisplacement(source:Bytes,width:number,height:number,map:Displacement,horizontal:number,vertical:number,edge:number,tile:boolean){
   const out=new Uint8ClampedArray(source.length),bytes=fromBase64(map.bytes);
   const wrap=(p:number,length:number)=>((p%length)+length)%length;

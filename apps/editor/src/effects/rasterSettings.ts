@@ -13,7 +13,7 @@ export const neighborhoodEffects={
   box:{id:'FX-117',label:'ボックスぼかし',parameters:[number('横半径（px）',0,128,4),number('縦半径（px）',0,128,4),flag('縦横を連動',1),alpha]},
   motion:{id:'FX-118',label:'移動ぼかし',parameters:[number('距離（px）',0,256,14),number('角度（°）',-180,180,0),flag('片方向'),alpha]},
   radial:{id:'FX-119',label:'放射ぼかし',parameters:[number('量',0,100,20),number('中心 X（%）',0,100,50),number('中心 Y（%）',0,100,50),flag('回転（オフでズーム）'),number('中心を保護（%）',0,100,8)]},
-  lens:{id:'FX-120',label:'レンズぼかし',parameters:[number('最大半径（px）',0,48,12),number('焦点の位置（高さの%）',0,100,50),
+  lens:{id:'FX-120',label:'レンズぼかし',parameters:[number('最大半径（px）',0,48,12),number('焦点の位置・深度（%）',0,100,50),
     number('焦点付近を保つ幅（%）',0,100,20),number('絞りの辺数（0: 円、3〜12: 多角形）',0,12,6),number('絞りの角度（°）',-180,180,0)]},
   sharpen:{id:'FX-121',label:'シャープ',parameters:[number('強さ（%）',0,300,50),number('細かさ（px）',1,8,1),number('強い輪郭を保護（%）',0,100,50)]},
   unsharp:{id:'FX-122',label:'アンシャープマスク',parameters:[number('強さ（%）',0,300,60),radius,number('しきい値',0,255,5),flag('明るさだけ',1)]},
@@ -75,9 +75,9 @@ export function readEffectSteps(input:unknown):EffectStep[]|null{
     if(!Array.isArray(step.values)||step.values.length!==parameters.length||
       !parameters.every((p,i)=>Number.isFinite(step.values[i])&&step.values[i]>=p.min&&step.values[i]<=p.max&&
         Math.abs((step.values[i]-p.min)/p.step-Math.round((step.values[i]-p.min)/p.step))<1e-5))return null;
-    const resourceKind=kind==='lut'?'colorTable':kind==='displace'?'displacement':null;
+    const resourceKind=kind==='lut'?'colorTable':kind==='displace'||kind==='lens'?'displacement':null;
     const resource=resourceKind&&step.resource!==undefined?validateEffectResource(step.resource,resourceKind):null;
-    if(step.resource!==undefined&&!resource||resourceKind&&step.enabled&&step.strength>0&&!resource)return null;
+    if(step.resource!==undefined&&!resource||resourceKind&&kind!=='lens'&&step.enabled&&step.strength>0&&!resource)return null;
     steps.push({kind,values:[...step.values],strength:step.strength,enabled:step.enabled,...(resource?{resource}:{})});
   }
   return steps;

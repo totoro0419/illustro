@@ -18,3 +18,12 @@ it('uses the saved reference red channel for horizontal displacement with transp
     .toEqual(Uint8ClampedArray.of(70,80,90,128,20,40,60,255));
   expect(readEffectSteps([{...newEffect('displace'),resource:{...resource,bytes:'bad'}}])).toBeNull();
 });
+
+it('lens blur accepts a depth reference and preserves the selected focus plane',()=>{
+  const source=new Uint8Array(12*4);
+  for(let i=0;i<12;i++){source[i*4]=i%2?220:0;source[i*4+3]=255;}
+  const resource={kind:'displacement' as const,width:2,height:1,name:'depth.png',bytes:btoa(String.fromCharCode(128,128,255,255))};
+  const pixels=applyRasterEffects(source,12,1,[{...newEffect('lens'),values:[5,50,10,0,0],resource}],null);
+  expect(Array.from(pixels.slice(0,24))).toEqual(Array.from(source.slice(0,24)));
+  expect(Array.from(pixels.slice(24))).not.toEqual(Array.from(source.slice(24)));
+});
