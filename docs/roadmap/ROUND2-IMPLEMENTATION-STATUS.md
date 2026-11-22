@@ -1,5 +1,16 @@
 # Illustro 第二ラウンド 機能別の実装状況
 
+## 2026-11-22 利用者決定：R2完成条件の変更（最優先）
+
+[計画PR #109の更新計画](https://github.com/totoro0419/illustro/blob/planning/round2-seven-groups-2026-11-22/docs/roadmap/ROUND2-REMAINING-7-GROUPS.md) と [機械向け条件表](https://github.com/totoro0419/illustro/blob/planning/round2-seven-groups-2026-11-22/docs/roadmap/ROUND2-REMAINING-7-GROUPS.json) が現在のR2実装・完成判定の基準である。
+
+- **旧145件のうち143件が今回の実装対象。** COL-007（HDR・広色域・高精度ネイティブ編集）とAI-004（外部AI/API連携）は利用者の明示的判断で不要とし、R2未完成数から除外。コードや既存機能は削除しない。
+- 水彩WET-002は、自然な混色・にじみ・濃淡・粒状感・水量/顔料量調整を伴う**軽量な近似**を完成条件とする。乾燥・加水・持続水分物理は不要。WET-005は筆の紙質に限定、WET-007は既存の厚塗り風・油彩風の外観のみ保持。
+- IO-003はPSD/PSB基本交換のみを完成条件とし、高度な全要素の完全互換を要求しない。IO-006は既存のEXR・AVIF対応とHEIF入力を保護し、HEIF出力とHDR保持編集は不要。
+- CAN-001等の関連機能にもP3/HDR内部編集を要求しない。既存のICC・色確認・端末内AI補助、他の入出力を削除しない。
+- **計数**：正式247 ID＝既存実装保護91＋今回実装143＋今回不要2＋従来対象外11。製品の元の247件仕様を改ざんせず、R2での利用者決定として管理する。
+- 後述の「完成86・部分実装57・外部条件未達2」は上記判断以前の実装評価のスナップショット。現在のR2対象は143件だが、その143件の最新完成判定は実装後に更新する。未検査を完成扱いしない。
+
 対象は [計画PR #109](https://github.com/totoro0419/illustro/pull/109) の145件。実装は [Draft PR #110](https://github.com/totoro0419/illustro/pull/110) に集約しています。
 正式仕様は `docs/DESIGN_AUTHORITY.md` と `docs/product-planning` の製品採否表・個別仕様、および [第2ラウンド計画ブランチ](https://github.com/totoro0419/illustro/tree/planning/round2-seven-groups-2026-11-22/docs/roadmap) を使用しました。
 基準は `quality/C03-C10-integration` の `49474fd5`。今回は作業ブランチの `d244127b` から再開し、#111・#112のパネル変更を維持しました。保護対象91件、保留・対象外11件、過去の品質指摘129件とユーザー報告8件の割り当ては正式計画を参照してください。
