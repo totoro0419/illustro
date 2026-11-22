@@ -1,3 +1,6 @@
+import {exchangeFormat,importExchange} from './export/exchange';
+import {createExchangeDocument} from './export/exchangeDocument';
+import {openExchangePanel} from './export/exchangePanel';
 import {installWetTools,wetModes} from './wet/panel';
 import {createWetPatch,wetPatchTiles} from './wet/edit';
 import {installWetPad} from './wet/pad';
@@ -3317,6 +3320,7 @@ refreshSelectionControls();
 byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
 const workFileInput=byId<HTMLInputElement>('openFile');
 workFileInput.multiple=true;
+workFileInput.accept+=',.psd,.psb,.ora,.tif,.tiff,.avif';
 let openingWorkFiles=false;
 workFileInput.onchange=async ()=>{
   const files=Array.from(workFileInput.files??[]);
@@ -3335,6 +3339,32 @@ workFileInput.onchange=async ()=>{
   }finally{openingWorkFiles=false;}
 };
 async function openWorkFile(file:File,batch=false){
+  const exchange=exchangeFormat(file.name);
+  if(exchange){
+    try{
+      const imported=await importExchange(file);
+      let flatten=false;
+      if(imported.warnings.length){
+        const message='読み込み時の変更\n'+imported.warnings.slice(0,20).join('\n')+
+          (imported.warnings.length>20?'\nほか '+(imported.warnings.length-20)+' 件':'');
+        const choice=await appChoose(message,[{value:'layers',label:'編集用に開く'},
+          ...(imported.layers.length&&imported.merged?[{value:'flat',label:'統合画像で開く'}]:[])]);
+        if(choice===null)return false;
+        flatten=choice==='flat';
+      }
+      if(!qaMode&&!(await prepareWorkSwitch()))return false;
+      const {artwork,selected}=createExchangeDocument(imported,flatten);
+      await activateOpened({document:artwork,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},
+        generationId:'exchange',snapshotRevisionId:artwork.head});
+      homeUi?.showEditor();byId('status').textContent='交換用ファイルを新しい作品として開きました。';
+      if(!qaMode){scheduleWorkThumbnail();void refreshWorks();}
+      return true;
+    }catch(error){
+      const message='交換用ファイルを開けません。'+(error instanceof Error?error.message:String(error));
+      homeUi?.notify(message);byId('status').textContent=message;return false;
+    }
+  }
+
   byId('status').textContent='作品ファイルを確認しています。';let opened:PortableOpenResult;
   let migrationCopy=false;
   let migrationSource:(()=>Promise<FrozenExport>)|null=null,migrationNotices:readonly string[]=[];
@@ -3510,6 +3540,12 @@ async function saveWork(asCopy=false){
 byId('save').onclick=()=>{void saveWork();};
 byId('saveCopy').onclick=()=>{void saveWork(true);};
 
+byId<HTMLButtonElement>('exchangeExport').onclick=()=>{
+  if(!documentReady)return;
+  const artwork=controller.document;
+  byId<HTMLDialogElement>('exportDialog').close();
+  openExchangePanel(artwork,()=>documentReady&&controller.document===artwork,c06Download);
+};
 const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTMLSelectElement>('exportFormat'),exportQuality=byId<HTMLInputElement>('exportQuality');
 function updateExportOptions(){
   const f=exportFormat.value as ImageFormat,lossy=f!=='png';

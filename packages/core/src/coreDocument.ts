@@ -119,7 +119,17 @@ export class CoreDocument{
     commands.reverse();return Object.freeze(commands.flatMap(command=>command.operations));
   }
   rasterReplayPlan(revisionId:RevisionId=this.head){
-    const operations=this.operationsTo(revisionId);
+    const newlyAdded=new Map<LayerId,string>();
+    // Earlier sparse imports recorded their initial pixels as a strict delta.
+    // Treat that first write as a snapshot only when the same transaction added the layer.
+    const operations=this.operationsTo(revisionId).map(operation=>{
+      const layer=operation.targetEntityIds[0];
+      if(!layer)return operation;
+      if(operation.kind==='layer.add-raster')newlyAdded.set(layer,operation.key.transactionId);
+      if(operation.kind==='raster.strict-delta'&&newlyAdded.get(layer)===operation.key.transactionId)
+        return Object.freeze({...operation,kind:'layer.snapshot'});
+      return operation;
+    });
     const geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
     const visible=operations.slice(geometryIndex+1),baselines=new Map<LayerId,number>();
     const seededLayers=new Set<LayerId>(),tileFilteredLayers=new Set<LayerId>();

@@ -11,6 +11,9 @@
   "dependencies": {
     "@illustro/brush-rt": "*",
     "@illustro/core": "*",
+    "@jsquash/avif": "2.1.1",
+    "ag-psd": "34.2.2",
+    "fflate": "0.8.3",
     "fontkit": "3.0.0",
     "opentype.js": "1.3.4",
     "polygon-clipping": "0.15.7"
