@@ -1,4 +1,4 @@
-import {appConfirm,appPrompt} from './appDialogs';
+import {appConfirm} from './appDialogs';
 /**
  * C04 UI-004 / UI-005 bridge to C16: simple repeatable UI command sequences.
  * C16 can replace the provider with timeline and action-aware macro execution.
@@ -6,7 +6,7 @@ import {appConfirm,appPrompt} from './appDialogs';
  */
 import type {CommandService,CommandDefinition} from './commandPalette';
 
-type SimpleMacro=Readonly<{id:string;name:string;steps:readonly string[]}>;
+type SimpleMacro=Readonly<{id:string;name:string;steps:readonly string[];disabled?:readonly number[]}>;
 type Stored=Readonly<{schema:'illustro.macros.simple';version:1;items:readonly SimpleMacro[]}>;
 const KEY='illustro.macros.simple.v1';
 const MAX_MACROS=32,MAX_STEPS=24;
@@ -37,7 +37,10 @@ export function parseSimpleMacroFile(input:unknown):SimpleMacro[]{
       !item.steps.every(step=>typeof step==='string'&&permitted(step)))
       throw Error('操作セットに使えない操作や重複した名前が含まれています。');
     ids.add(item.id);names.add(item.name);
-    result.push({id:item.id,name:item.name,steps:[...item.steps] as string[]});
+    const disabled=item.disabled;
+    if(disabled!==undefined&&(!Array.isArray(disabled)||new Set(disabled).size!==disabled.length||
+      !disabled.every(i=>Number.isInteger(i)&&i>=0&&i<(item.steps as unknown[]).length)))throw Error('無効にする手順の指定が正しくありません。');
+    result.push({id:item.id,name:item.name,steps:[...item.steps] as string[],...(disabled?.length?{disabled:[...disabled] as number[]}:{})});
   }
   return result;
 }
@@ -86,7 +89,8 @@ const read=():SimpleMacro[]=>{
         !Array.isArray(item.steps)||item.steps.length<1||item.steps.length>MAX_STEPS||
         !item.steps.every((step:unknown)=>typeof step==='string'&&permitted(step)))return [];
       ids.add(item.id);
-      return [{id:item.id,name:item.name,steps:[...item.steps]}];
+      const disabled=Array.isArray(item.disabled)?item.disabled.filter((i:number)=>Number.isInteger(i)&&i>=0&&i<item.steps.length):[];
+      return [{id:item.id,name:item.name,steps:[...item.steps],...(disabled.length?{disabled}:{})}];
     });
   }catch{return [];}
 };
@@ -98,10 +102,16 @@ const uid=()=>typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'
   ?crypto.randomUUID():'macro-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 
 export type SimpleMacroService=Readonly<{importText:(json:string)=>Promise<number>}>;
-export function installSimpleMacros(commands:CommandService):SimpleMacroService|null{
+export const layerMacroStep=(step:string)=>step==='layerAlphaLock'||step==='layerClipping';
+export type MacroLayer=Readonly<{id:string;name:string;active:boolean}>;
+export function installSimpleMacros(commands:CommandService,api?:Readonly<{
+  layers:()=>readonly MacroLayer[];
+  applyLayer:(id:string,steps:readonly string[],name:string)=>Promise<boolean>;
+  share:(json:string,name:string,asset:boolean)=>Promise<void>;
+}>):SimpleMacroService|null{
   const workspace=document.getElementById('workspaceBoxBody');
   if(!workspace)return null;
-  let macros=read(),playing=false,steps:string[]=[],selectedId:string|null=null;
+  let macros=read(),playing=false,steps:string[]=[],muted:boolean[]=[],selectedId:string|null=null;
   let playback:AbortController|null=null,unlisten:(()=>void)|null=null;
   const root=document.createElement('details');root.className='c04-simple-macros';
   const summary=document.createElement('summary');summary.textContent='よく使う操作をまとめる';
@@ -122,7 +132,10 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='実行を中止';cancel.disabled=true;
   cancel.onclick=()=>playback?.abort();
   window.addEventListener('keydown',event=>{if(event.key==='Escape')playback?.abort();});
-  actions.append(record,add,save,run,cancel,reset,remove);
+  const share=document.createElement('button'),asset=document.createElement('button');
+  share.type=asset.type='button';share.textContent='操作セットを書き出す';asset.textContent='素材に登録';
+  share.hidden=asset.hidden=!api;
+  actions.append(record,add,save,run,cancel,reset,remove,share,asset);
   root.append(summary,help,select,name,commandSelect,stepsList,actions,status);
   workspace.append(root);
 
@@ -146,13 +159,15 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     for(let i=0;i<steps.length;i++){
       const id=steps[i]!;
       const row=document.createElement('div');row.className='c04-macro-step';
-      const label=document.createElement('span');label.textContent=(i+1)+'. '+(lookup.get(id)??id);
+      const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=!muted[i];
+      const label=document.createElement('label');label.append(enabled,(i+1)+'. '+(lookup.get(id)??id));
+      enabled.onchange=()=>{muted[i]=!enabled.checked;};
       const up=document.createElement('button');up.type='button';up.textContent='↑';up.title='前へ移動';up.disabled=i===0;
       const down=document.createElement('button');down.type='button';down.textContent='↓';down.title='後へ移動';down.disabled=i===steps.length-1;
       const del=document.createElement('button');del.type='button';del.textContent='×';del.title='この操作を削除';
-      up.onclick=()=>{[steps[i-1],steps[i]]=[steps[i]!,steps[i-1]!];refreshSteps();};
-      down.onclick=()=>{[steps[i+1],steps[i]]=[steps[i]!,steps[i+1]!];refreshSteps();};
-      del.onclick=()=>{steps.splice(i,1);refreshSteps();};
+      up.onclick=()=>{[steps[i-1],steps[i]]=[steps[i]!,steps[i-1]!];[muted[i-1],muted[i]]=[muted[i]!,muted[i-1]!];refreshSteps();};
+      down.onclick=()=>{[steps[i+1],steps[i]]=[steps[i]!,steps[i+1]!];[muted[i+1],muted[i]]=[muted[i]!,muted[i+1]!];refreshSteps();};
+      del.onclick=()=>{steps.splice(i,1);muted.splice(i,1);refreshSteps();};
       row.append(label,up,down,del);stepsList.append(row);
     }
     if(!steps.length){const empty=document.createElement('p');empty.textContent='下の候補から操作を登録してください。';stepsList.append(empty);}
@@ -170,7 +185,7 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     unlisten=commands.onCompleted(id=>{
       if(commands.contextKey?.()!==context){stopRecording('作品が切り替わったため記録を停止しました。');return;}
       if(!permitted(id))return;
-      steps.push(id);refreshSteps();
+      steps.push(id);muted.push(false);refreshSteps();
       status.textContent='記録中 · '+steps.length+'件';
       if(steps.length===MAX_STEPS)stopRecording('24件に達したため記録を停止しました。');
     });
@@ -178,13 +193,13 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     status.textContent='記録中。「機能を探す」やよく使う操作から、記録に対応した操作を実行してください。';
   };
   function newMacro(){
-    stopRecording();selectedId=null;name.value='';steps=[];refreshSelect();refreshSteps();
+    stopRecording();selectedId=null;name.value='';steps=[];muted=[];refreshSelect();refreshSteps();
     status.textContent='新しい操作セットを作れます。';
   }
   function load(id:string){
     stopRecording();const macro=macros.find(m=>m.id===id);
     if(!macro){newMacro();return;}
-    selectedId=macro.id;name.value=macro.name;steps=[...macro.steps];
+    selectedId=macro.id;name.value=macro.name;steps=[...macro.steps];muted=steps.map((_,i)=>!!macro.disabled?.includes(i));
     refreshSelect();refreshSteps();
   }
   select.onchange=()=>load(select.value);
@@ -193,7 +208,7 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     const id=commandSelect.value;
     if(!id||!permitted(id))return;
     if(steps.length>=MAX_STEPS){status.textContent='登録できる操作は24件までです。';return;}
-    steps.push(id);refreshSteps();status.textContent='操作を追加しました。';
+    steps.push(id);muted.push(false);refreshSteps();status.textContent='操作を追加しました。';
   };
   save.onclick=()=>{
     stopRecording();const title=name.value.trim();
@@ -203,7 +218,7 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     if(!selectedId&&macros.length>=MAX_MACROS){status.textContent='保存できる操作セットは32件までです。';return;}
     const duplicate=macros.find(x=>x.name===title&&x.id!==selectedId);
     if(duplicate){status.textContent='別の操作セットと同じ名前は使えません。';return;}
-    const id=selectedId??uid(),item:SimpleMacro={id,name:title,steps:[...steps]};
+    const id=selectedId??uid(),item=currentDraft(id,title);
     const next=macros.filter(m=>m.id!==id).concat(item);
     if(!persist(next)){status.textContent='端末に保存できませんでした。';return;}
     macros=next;selectedId=id;
@@ -217,12 +232,66 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     if(!persist(next)){status.textContent='端末に保存できませんでした。';return;}
     macros=next;newMacro();commands.refresh();status.textContent='操作セットを削除しました。';
   };
+  function currentDraft(id:string,title:string):SimpleMacro{
+    const disabled=steps.flatMap((_,index)=>muted[index]?[index]:[]);
+    return {id,name:title,steps:[...steps],...(disabled.length?{disabled}:{})};
+  }
+  for(const [control,asAsset] of [[share,false],[asset,true]] as const)control.onclick=async()=>{
+    if(!api)return;
+    const title=name.value.trim();
+    if(!title||!steps.length){status.textContent='名前と1つ以上の手順を入力してください。';return;}
+    const item=currentDraft(selectedId??uid(),title);
+    const json=JSON.stringify({schema:'illustro.macros.simple',version:1,items:[item]} satisfies Stored);
+    try{await api.share(json,title,asAsset);status.textContent=asAsset?'素材に登録しました。':'操作セットを書き出しました。';}
+    catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+  };
+  function confirmSteps(macro:SimpleMacro,enabled:readonly string[],layers:readonly MacroLayer[]){
+    return new Promise<string|null>(resolve=>{
+      const dialog=document.createElement('dialog');dialog.className='export-dialog';dialog.setAttribute('aria-label','操作セットを確認');
+      const section=document.createElement('section'),title=document.createElement('h2');
+      title.textContent=macro.name;section.className='c06-clipboard-grid';
+      const list=document.createElement('ol'),lookup=new Map(commands.list().map(command=>[command.id,command.label]));
+      for(const id of enabled){const row=document.createElement('li');row.textContent=lookup.get(id)??id;list.append(row);}
+      section.append(title,list);
+      const target=document.createElement('select');
+      if(layers.length){
+        for(const layer of layers)target.add(new Option(layer.name+(layer.active?'（選択中）':''),layer.id));
+        target.value=layers.find(layer=>layer.active)?.id??layers[0]!.id;
+        const label=document.createElement('label');label.append('対象レイヤー',target);section.append(label);
+      }else{
+        const note=document.createElement('p');
+        note.textContent='表示や履歴を含む手順は順番に実行します。途中で停止すると、実行済みの操作は残ります。';
+        section.append(note);
+      }
+      const accept=document.createElement('button'),decline=document.createElement('button');
+      accept.type=decline.type='button';accept.textContent='この内容で実行';decline.textContent='取り消す';
+      let confirmed=false;accept.onclick=()=>{confirmed=true;dialog.close();};decline.onclick=()=>dialog.close();
+      section.append(accept,decline);dialog.append(section);
+      dialog.addEventListener('keydown',event=>event.stopPropagation());
+      dialog.onclose=()=>{dialog.remove();resolve(confirmed?target.value:null);};
+      document.body.append(dialog);dialog.showModal();decline.focus();
+    });
+  }
   async function play(macro:SimpleMacro):Promise<void>{
     if(unlisten){status.textContent='記録を停止してから実行してください。';return;}
     if(playing){status.textContent='ほかの操作セットが実行中です。';return;}
     playing=true;run.disabled=true;cancel.disabled=false;playback=new AbortController();
     try{
-      const result=await invokeMacroSequence([...macro.steps],commands.invokeAsync,{contextKey:commands.contextKey,signal:playback.signal});
+      const enabled=macro.steps.filter((_,index)=>!macro.disabled?.includes(index));
+      if(!enabled.length)throw Error('少なくとも1つの手順を有効にしてください。');
+      const context=commands.contextKey?.();
+      const atomic=!!api&&enabled.every(layerMacroStep);
+      const layers=atomic?api.layers():[];
+      if(atomic&&!layers.length)throw Error('操作できるレイヤーがありません。');
+      const target=await confirmSteps(macro,enabled,layers);
+      if(target===null||playback.signal.aborted){status.textContent='実行を取り消しました。';return;}
+      if(context!==commands.contextKey?.())throw Error('対象の作品が切り替わりました。');
+      if(atomic){
+        const changed=await api.applyLayer(target,enabled,macro.name);
+        status.textContent=changed?'指定したレイヤーに適用しました。一度の取り消しで戻せます。':'指定した操作で変わる設定はありません。';
+        return;
+      }
+      const result=await invokeMacroSequence(enabled,commands.invokeAsync,{contextKey:commands.contextKey,signal:playback.signal});
       if(!result.ok){
         status.textContent=result.failedStep+'番目の操作で停止しました。'+result.reason;
         throw Error(status.textContent);
@@ -236,7 +305,7 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     }finally{playing=false;playback=null;cancel.disabled=true;refreshSteps();}
   }
   run.onclick=()=>{
-    if(steps.length)void play({id:selectedId??'preview',name:name.value.trim()||'仮の操作セット',steps}).catch(()=>{});
+    if(steps.length)void play(currentDraft(selectedId??'preview',name.value.trim()||'仮の操作セット')).catch(()=>{});
   };
   const provider=():readonly CommandDefinition[]=>macros.map(macro=>({
     id:'macro:'+macro.id,label:macro.name,category:'マクロ',

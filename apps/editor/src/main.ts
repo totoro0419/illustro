@@ -3964,7 +3964,43 @@ const c04Commands=installCommandPalette(shellUi,foreground,{
     if(!qaMode)await persistence.selectWorkLayer(selectedId);
   },
 },{resolve:macroExecutor,contextKey:()=>documentReady&&!documentActivationPending?controller.document:null});
-const c04MacroService=installSimpleMacros(c04Commands);
+const c04MacroService=installSimpleMacros(c04Commands,{
+  layers:()=>{
+    if(!documentReady)return [];
+    const root=controller.document.root;
+    return root.rootLayerIds.filter(id=>!root.getLayer(id).baseColor&&!root.isLayerLocked(id))
+      .map(id=>({id,name:root.getLayer(id).name,active:id===controller.selectedLayerId}));
+  },
+  applyLayer:async(target,steps,name)=>{
+    let changed=false;
+    await withClipboardAccess(async()=>{
+    const artwork=controller.document,root=artwork.root,id=target as LayerId;
+    if(!root.hasLayer(id)||root.getLayer(id).baseColor||root.isLayerLocked(id))
+      throw Error('対象レイヤーが見つからないか、ロックされています。');
+    const layer=root.getLayer(id);
+    let alpha=!!layer.alphaLocked,clip=!!layer.clipSourceId;
+    for(const [index,step] of steps.entries()){
+      if(step==='layerAlphaLock')alpha=!alpha;
+      else if(step==='layerClipping'){
+        if(!clip&&!root.availableClippingSource(id))throw Error((index+1)+'番目の手順に必要な下のレイヤーがありません。');
+        clip=!clip;
+      }else throw Error('まとめて適用できない操作が含まれます。');
+    }
+    if(alpha===!!layer.alphaLocked&&clip===!!layer.clipSourceId)return 'read';
+    const tx=artwork.begin(name);
+    if(alpha!==!!layer.alphaLocked)tx.setLayerAlphaLocked(id,alpha);
+    if(clip!==!!layer.clipSourceId)tx.setLayerClipping(id,clip);
+    controller.lastPersistenceHandoff=tx.commit().persistence;changed=true;
+    return 'edit';
+    });
+    return changed;
+  },
+  share:async(json,name,asAsset)=>{
+    const blob=new Blob([json],{type:'application/json'});
+    if(asAsset)await addAsset({kind:'macro',name,data:blob});
+    else c06Download(blob,(name.replace(/[\/:*?"<>|]/g,'_')||'操作セット')+'.illustro-macro.json');
+  },
+});
 installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
 const c04Toolbar=installToolbarSettings();
