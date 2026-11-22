@@ -35,7 +35,7 @@ function runEffect(request:RasterEffectRequest,signal:AbortSignal):Promise<Uint8
 }
 
 function showPreview(canvas:HTMLCanvasElement,source:Uint8Array|Uint8ClampedArray,width:number,height:number,
-  options?:{base:Uint8Array;difference:boolean;outerMask:Uint8Array|null;stepMask:PixelLayerMask|undefined}){
+  options?:{base:Uint8Array;difference:boolean;outerMask:Uint8Array|null;stepMask:PixelLayerMask|undefined;strength:number}){
   const ratio=Math.min(1,300/Math.max(width,height));
   canvas.width=Math.max(1,Math.round(width*ratio));canvas.height=Math.max(1,Math.round(height*ratio));
   const preview=new ImageData(canvas.width,canvas.height);
@@ -52,7 +52,7 @@ function showPreview(canvas:HTMLCanvasElement,source:Uint8Array|Uint8ClampedArra
       }else{
         const {outerMask,stepMask}=options;
         const stepCoverage=stepMask?.enabled?samplePixelMask(stepMask,sx+.5,sy+.5):255;
-        value=stepCoverage*(outerMask?.[index/4]??255)/255;
+        value=stepCoverage*(outerMask?.[index/4]??255)*options.strength/25500;
       }
       preview.data.set([value,value,value,255],out);
     }else for(let channel=0;channel<4;channel++)preview.data[out+channel]=source[index+channel]!;
@@ -96,11 +96,11 @@ export function installRasterEffects(host:HTMLElement,api:{
     if(!result)return;
     const {capture,pixels}=result;
     const {source,width,height}=capture;
-    const mode=display.value,label=display.selectedOptions[0]?.label??'適用後';
+    const mode=display.value,label=display.selectedOptions[0]?.label??'適用後',step=steps[selected];
     afterCaption.textContent=label+(mode==='difference'?'（明るいほど変化が大きい）':mode==='scope'?'（白いほど強く適用）':'');
     after.setAttribute('aria-label',label);
     showPreview(after,pixels,width,height,mode==='result'?undefined:{
-      base:source,difference:mode==='difference',outerMask:capture.mask,stepMask:steps[selected]?.mask
+      base:source,difference:mode==='difference',outerMask:capture.mask,stepMask:step?.mask,strength:step?.enabled?step.strength:0
     });
   }
   display.onchange=drawComparison;

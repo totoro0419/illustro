@@ -4,6 +4,9 @@ import {installHarmonyTools} from './harmony';
 import {ORBIT_WHEEL,orbitHuePaths} from './orbitGeometry';
 import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
 
+const hueNames=['赤','オレンジ','黄','黄緑','緑','青緑','水色','青','紫','赤紫','赤'];
+const hueLimits=[15,43,66,93,148,182,214,252,292,342,361];
+
 const id=<T extends HTMLElement>(name:string)=>document.getElementById(name) as T;
 const button=(label:string,action:string,cls='')=>'<button type="button" class="'+cls+'" data-color-action="'+action+'">'+label+'</button>';
 
@@ -127,10 +130,9 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   const displayS=hsv.v<=1e-7?saturationMemory:hsv.s;
   document.getElementById('colorPage')?.style.setProperty('--current-paint-color',hex(c));
   current.style.backgroundColor=hex(c);code.textContent=hex(c);
-  const hueNames=['赤','オレンジ','黄','黄緑','緑','青緑','水色','青','紫','赤紫'];
-  const hueIndex=[15,43,66,93,148,182,214,252,292,342,361].findIndex(limit=>hsv.h<limit);
+  const hueIndex=hueLimits.findIndex(limit=>hsv.h<limit);
   const roughName=hsv.v<.1?'黒':hsv.s<.12?(hsv.v>.93?'白':'グレー'):
-    (hsv.v<.37?'暗い':hsv.s<.37&&hsv.v>.7?'淡い':'')+(hueNames[hueIndex%hueNames.length]??'赤');
+    (hsv.v<.37?'暗い':hsv.s<.37&&hsv.v>.7?'淡い':'')+(hueNames[hueIndex]??'赤');
   name.textContent='目安：'+roughName;
   current.setAttribute('aria-label','現在の色 '+roughName+'（目安） '+hex(c));
   id<HTMLInputElement>('c04BackgroundColor').value=hex(state.background);
