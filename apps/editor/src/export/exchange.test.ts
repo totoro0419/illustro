@@ -54,3 +54,11 @@ describe('exchange formats',()=>{
       expect(Array.from(zip[entry]!.subarray(0,8))).toEqual([137,80,78,71,13,10,26,10]);
   });
 });
+
+it('round-trips linear OpenEXR and keeps semi-transparent straight sRGB values',async()=>{
+  const {encodeExr,decodeExr}=await import('./exr');
+  const pixels=Uint8ClampedArray.of(16,32,48,128,253,156,11,255,0,0,0,0,12,120,74,1);
+  const bytes=encodeExr(pixels,2,2);
+  expect(decodeExr(bytes)).toMatchObject({width:2,height:2,pixels});
+  expect(()=>decodeExr(bytes.subarray(0,-1))).toThrow(/走査線/);
+});

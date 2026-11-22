@@ -3322,7 +3322,7 @@ refreshSelectionControls();
 byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
 const workFileInput=byId<HTMLInputElement>('openFile');
 workFileInput.multiple=true;
-workFileInput.accept+=',.psd,.psb,.ora,.tif,.tiff,.avif';
+workFileInput.accept+=',.psd,.psb,.ora,.tif,.tiff,.avif,.exr,.heif,.heic';
 let openingWorkFiles=false;
 workFileInput.onchange=async ()=>{
   const files=Array.from(workFileInput.files??[]);

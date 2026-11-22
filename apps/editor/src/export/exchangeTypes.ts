@@ -1,5 +1,5 @@
 import type {LayerBlendMode} from '@illustro/core';
-export type ExchangeFormat='psd'|'psb'|'ora'|'tiff'|'svg'|'avif';
+export type ExchangeFormat='psd'|'psb'|'ora'|'tiff'|'svg'|'avif'|'exr';
 export type ExchangeLayer=Readonly<{
   name:string;x:number;y:number;width:number;height:number;pixels:Uint8ClampedArray;
   opacity:number;visible:boolean;blend:LayerBlendMode;

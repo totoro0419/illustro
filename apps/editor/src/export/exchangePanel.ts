@@ -11,7 +11,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   const section=document.createElement('section');section.className='c06-clipboard-grid';
   const title=document.createElement('h2');title.textContent='交換用ファイルを書き出す';section.append(title);
   const format=selectField(section,'形式',[
-    ['psd','PSD'],['psb','PSB'],['ora','OpenRaster (.ora)'],['tiff','TIFF'],['svg','SVG'],['avif','AVIF']
+    ['psd','PSD'],['psb','PSB'],['ora','OpenRaster (.ora)'],['tiff','TIFF'],['svg','SVG'],['avif','AVIF'],['exr','OpenEXR（線形RGB）']
   ]);
   const style=selectField(section,'出力内容',[['flat','見た目を1枚にまとめる'],['layered','レイヤーを保つ']]);
   const quality=numberField(section,'AVIFの画質',90,1,100);

@@ -3,9 +3,9 @@ import {captureExport,compositeLayer,encodePng,renderFrozenArtwork,type FrozenEx
 import {assertImageSize,cleanFileName,imageLayer,MAX_EXCHANGE_BYTES,supportsOraBlend,xmlText,type ExchangeArtwork,type ExchangeFormat,type ExchangeLayer} from './exchangeTypes';
 import {decodeTiff,encodeTiff} from './tiff';
 
-const formats:Record<string,ExchangeFormat>={psd:'psd',psb:'psb',ora:'ora',tif:'tiff',tiff:'tiff',avif:'avif',svg:'svg'};
+const formats:Record<string,ExchangeFormat|'heif'>={psd:'psd',psb:'psb',ora:'ora',tif:'tiff',tiff:'tiff',avif:'avif',svg:'svg',exr:'exr',heic:'heif',heif:'heif'};
 const types:Record<ExchangeFormat,string>={psd:'image/vnd.adobe.photoshop',psb:'application/octet-stream',ora:'image/openraster',
-  tiff:'image/tiff',svg:'image/svg+xml',avif:'image/avif'};
+  tiff:'image/tiff',svg:'image/svg+xml',avif:'image/avif',exr:'image/x-exr'};
 export function exchangeFormat(name:string){
   return formats[name.split('.').pop()?.toLowerCase()??'']??null;
 }
@@ -25,14 +25,21 @@ export function readExchangeDimensions(blob:Blob){
 export async function importExchange(file:File):Promise<ExchangeArtwork>{
   const format=exchangeFormat(file.name),name=cleanFileName(file.name);
   if(file.size>MAX_EXCHANGE_BYTES)throw Error('交換用ファイルは256MBまでです。');
-  if(format==='avif'){
-    const {width,height,pixels}=await readExchangeDimensions(file).catch(()=>{throw Error('この端末のブラウザーはこのAVIFを読み込めません。');});
+  if(format==='avif'||format==='heif'){
+    const media=file.type?file:new Blob([file],{type:format==='avif'?'image/avif':file.name.toLowerCase().endsWith('.heic')?'image/heic':'image/heif'});
+    const {width,height,pixels}=await readExchangeDimensions(media).catch(()=>{
+      throw Error('このブラウザーではこの'+format.toUpperCase()+'画像を開けません。PNGまたはTIFFに変換してから開いてください。');
+    });
     return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings:['編集用のsRGB・8ビット画像として取り込みます。']};
   }
   if(format==='svg')throw Error('SVGはこの画面では出力専用です。PNGに変換してから読み込んでください。');
   const bytes=new Uint8Array(await file.arrayBuffer());
   if(format==='psd'||format==='psb')return (await import('./psdExchange')).decodePhotoshop(bytes,name);
   if(format==='ora')return (await import('./oraExchange')).decodeOra(bytes,name,data=>readExchangeDimensions(new Blob([new Uint8Array(data)],{type:'image/png'})));
+  if(format==='exr'){
+    const {width,height,pixels,warnings}=(await import('./exr')).decodeExr(bytes);
+    return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings};
+  }
   if(format==='tiff'){
     const {width,height,pixels,dpi,warnings}=decodeTiff(bytes);
     return {width,height,name,dpi,layers:[imageLayer(name,width,height,pixels)],warnings};
@@ -42,7 +49,8 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
 
 export function exchangeWarnings(doc:CoreDocument,format:ExchangeFormat,layered:boolean){
   const root=doc.root,warnings=new Set<string>();
-  if(format==='avif'||format==='tiff'||!layered)warnings.add('表示中の作品を1枚のsRGB・8ビット画像にします。レイヤーや編集履歴は含まれません。');
+  if(format==='exr')warnings.add('表示中の絵をリニアsRGBの32ビット浮動小数点で出力します。元の8ビット作品と同じ色の範囲で、HDRには広がりません。');
+  else if(format==='avif'||format==='tiff'||!layered)warnings.add('表示中の作品を1枚のsRGB・8ビット画像にします。レイヤーや編集履歴は含まれません。');
   else {
     if(root.layerGroups.length)warnings.add('グループを展開します。グループの合成は交換先で変わることがあります。');
     for(const id of root.rootLayerIds){
@@ -114,6 +122,10 @@ export async function exportExchange(doc:CoreDocument,format:ExchangeFormat,laye
   const {width,height,name}=fixed;assertImageSize(width,height);
   const merged=await renderFrozenArtwork(fixed);
   const mime=types[format];
+  if(format==='exr'){
+    const {encodeExr}=await import('./exr');
+    return new Blob([encodeExr(merged,width,height)],{type:mime});
+  }
   if(format==='tiff')return new Blob([encodeTiff(merged,width,height,root.info.dpi??96)],{type:mime});
   if(format==='avif'){
     const buffer=await encodeAvif(merged,width,height,quality,lossless);
