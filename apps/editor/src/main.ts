@@ -103,7 +103,7 @@ import {installBrushAdvancedEditor} from './brushAdvancedEditor';
 import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
 import {compilePreset,layerMaskTile,TILE,type FoundationPreset} from '@illustro/brush-rt';
-import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
+import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,resizeImageRegion,type ImageResample} from './canvasGeometry';
 import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
@@ -1973,6 +1973,52 @@ type GeometryMode='document.crop'|'document.canvas-resize'|'document.image-resiz
 let geometryMode:GeometryMode|null=null,geometryBusy=false;
 const geometryDialog=byId<HTMLDialogElement>('geometryDialog'),cropOverlay=document.getElementById('cropOverlay') as unknown as SVGSVGElement;
 const dimensionInput=(id:string)=>byId<HTMLInputElement>(id);
+let geometryPreviewEpoch=0;
+function refreshResizeSize(changed?:string){
+ if(geometryMode!=='document.image-resize')return;
+ const {width,height}=controller.document.root;
+ const w=dimensionInput('geometryWidth'),h=dimensionInput('geometryHeight');
+ if(dimensionInput('geometryKeepRatio').checked&&changed){
+   const source=changed===w.id?w:h,target=source===w?h:w,ratio=source===w?height/width:width/height;
+   if(source.validity.valid)target.value=String(Math.max(1,Math.round(source.valueAsNumber*ratio)));
+ }
+ const valid=w.validity.valid&&h.validity.valid;
+ byId('geometryResultSize').textContent=valid?`結果 ${w.value} × ${h.value} px（元の画像 ${width} × ${height} px）`:'幅・高さを1〜8192pxで指定してください。';
+ byId<HTMLButtonElement>('geometryCompare').disabled=!valid;
+ const comparison=byId('geometryComparison');comparison.hidden=true;comparison.replaceChildren();
+ geometryPreviewEpoch++;
+}
+byId('geometryFilter').addEventListener('change',()=>refreshResizeSize());
+byId('geometryDpiOnly').onclick=()=>{closeGeometry();byId('documentInfoOpen').click();dimensionInput('documentInfoDpi').focus();};
+byId('geometryCompare').onclick=async ()=>{
+ if(geometryMode!=='document.image-resize'||geometryBusy)return;
+ const w=dimensionInput('geometryWidth'),h=dimensionInput('geometryHeight');
+ if(!w.validity.valid||!h.validity.valid)return;
+ const artwork=controller.document,head=artwork.head,{width,height}=artwork.root;
+ const newWidth=w.valueAsNumber,newHeight=h.valueAsNumber,method=dimensionInput('geometryFilter').value as ImageResample;
+ const preview=++geometryPreviewEpoch,output=byId('geometryComparison');
+ const current=()=>geometryPreviewEpoch===preview&&geometryDialog.open&&artwork===controller.document&&head===artwork.head;
+ output.hidden=false;output.textContent='比較画像を準備しています。';
+ try{
+   const pixels=await renderFrozenArtwork(captureExport(artwork,undefined,head));
+   if(!current())return;
+   const centre=(w:number,h:number)=>({x:Math.max(0,Math.floor((w-112)/2)),y:Math.max(0,Math.floor((h-112)/2)),
+     width:Math.min(w,112),height:Math.min(h,112)});
+   const before=centre(width,height),after=centre(newWidth,newHeight);
+   const previewImage=(label:string,rgba:Uint8Array,area:typeof before)=>{
+     const figure=document.createElement('div'),caption=document.createElement('p'),canvas=document.createElement('canvas');
+     caption.textContent=label;canvas.setAttribute('aria-label',label);canvas.width=area.width;canvas.height=area.height;
+     canvas.style.imageRendering='pixelated';
+     canvas.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(rgba),area.width,area.height),0,0);
+     figure.append(caption,canvas);return figure;
+   };
+   output.replaceChildren(
+     previewImage('変更前・100%',cropCanvas(pixels,width,height,before.x,before.y,before.width,before.height),before),
+     previewImage('変更後・100%',resizeImageRegion(pixels,width,height,newWidth,newHeight,after,method),after),
+   );
+ }catch(error){if(current())output.textContent=error instanceof Error?error.message:'比較画像を作れませんでした。';}
+};
+
 function geometryRect(){
  const root=controller.document.root;
  const x=Number(dimensionInput('geometryX').value),y=Number(dimensionInput('geometryY').value),w=Number(dimensionInput('geometryWidth').value),h=Number(dimensionInput('geometryHeight').value);
@@ -1987,10 +2033,10 @@ function redrawCrop(){
  const points=[a,b,c,d];(document.getElementById('cropPolygon') as unknown as SVGPolygonElement).setAttribute('points',points.map(p=>p.x+','+p.y).join(' '));
  for(const [corner,index] of [['tl',0],['tr',1],['br',2],['bl',3]] as const){const handle=cropOverlay.querySelector<SVGCircleElement>('[data-corner="'+corner+'"]');if(handle){handle.setAttribute('cx',String(points[index]!.x));handle.setAttribute('cy',String(points[index]!.y));}}
 }
-function closeGeometry(){if(geometryBusy)return;geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');byId('geometryStatus').textContent='';}
+function closeGeometry(){if(geometryBusy)return;geometryPreviewEpoch++;geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');byId('geometryStatus').textContent='';}
 function openGeometry(mode:GeometryMode){
  if(!documentReady||!surface?.canChangeGeometry){byId('status').textContent='描画が終わってから変更してください。';return;}
- geometryMode=mode;const root=controller.document.root;
+ geometryPreviewEpoch++;geometryMode=mode;const root=controller.document.root;
  dimensionInput('geometryWidth').value=String(root.width);dimensionInput('geometryHeight').value=String(root.height);
  dimensionInput('geometryX').value='0';dimensionInput('geometryY').value='0';
  for(const element of geometryDialog.querySelectorAll<HTMLElement>('.crop-coordinate'))element.hidden=mode!=='document.crop';
@@ -1999,14 +2045,14 @@ function openGeometry(mode:GeometryMode){
  byId('geometryTitle').textContent=mode==='document.crop'?'切り抜き':mode==='document.canvas-resize'?'キャンバスサイズ変更':'画像サイズ変更';
  byId('geometryHelp').textContent=mode==='document.crop'?'黄色い枠の四隅をドラッグするか、数値で正確に指定できます。拡大・移動しながら調整できます。':mode==='document.canvas-resize'?'作品の範囲だけを変更します。絵の大きさは変えません。':'絵のピクセル数を変更します。画質を比較してから適用してください。';
  byId('geometryStatus').textContent='';
- if(!geometryDialog.open)geometryDialog.show();redrawCrop();
+ if(!geometryDialog.open)geometryDialog.show();refreshResizeSize();redrawCrop();
 }
 byId('cropStart').onclick=()=>openGeometry('document.crop');
 byId('canvasResizeStart').onclick=()=>openGeometry('document.canvas-resize');
 byId('imageResizeStart').onclick=()=>openGeometry('document.image-resize');
 byId('geometryCancel').onclick=closeGeometry;
 geometryDialog.addEventListener('cancel',e=>{e.preventDefault();closeGeometry();});
-for(const id of ['geometryWidth','geometryHeight','geometryX','geometryY'])dimensionInput(id).addEventListener('input',redrawCrop);
+for(const id of ['geometryWidth','geometryHeight','geometryX','geometryY'])dimensionInput(id).addEventListener('input',()=>{refreshResizeSize(id);redrawCrop();});
 let draggingCrop:{corner:string;startX:number;startY:number;endX:number;endY:number}|null=null;
 cropOverlay.addEventListener('pointerdown',e=>{
  const target=e.target as SVGElement,corner=target.dataset.corner,rect=geometryRect();

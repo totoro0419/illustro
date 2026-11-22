@@ -43,18 +43,25 @@ function forWeights(x:number,ratio:number,method:'bilinear'|'bicubic'|'area',lim
 }
 /** Premultiplied-alpha weighted color prevents dark/bright fringe at transparent boundaries. */
 export function resizeImagePixels(source:Pixels,w:number,h:number,newW:number,newH:number,requested:ImageResample='auto'){
+ return resizeImageRegion(source,w,h,newW,newH,{x:0,y:0,width:newW,height:newH},requested);
+}
+export function resizeImageRegion(source:Pixels,w:number,h:number,newW:number,newH:number,
+ area:{x:number;y:number;width:number;height:number},requested:ImageResample='auto'){
  verify(source,w,h);dimensions(newW,newH);
+ const {x:left,y:top,width,height}=area;
+ if(![left,top,width,height].every(Number.isSafeInteger)||left<0||top<0||width<1||height<1||left+width>newW||top+height>newH)
+  throw Error('Invalid preview region');
  const method:Exclude<ImageResample,'auto'>=requested==='auto'?(newW<w/1.5||newH<h/1.5?'area':'bicubic'):requested;
  if(!['nearest','bilinear','bicubic','area'].includes(method))throw Error('Unsupported interpolation');
- if(newW===w&&newH===h)return Uint8Array.from(source);
- const out=new Uint8Array(newW*newH*4),rx=w/newW,ry=h/newH;
+ if(newW===w&&newH===h)return cropCanvas(source,w,h,left,top,width,height);
+ const out=new Uint8Array(width*height*4),rx=w/newW,ry=h/newH;
  if(method==='nearest'){
-   for(let y=0;y<newH;y++)for(let x=0;x<newW;x++){const sx=clamp(Math.floor((x+.5)*rx),0,w-1),sy=clamp(Math.floor((y+.5)*ry),0,h-1),a=(sy*w+sx)*4,b=(y*newW+x)*4;out.set(source.subarray(a,a+4),b);}return out;
+   for(let y=top;y<top+height;y++)for(let x=left;x<left+width;x++){const sx=clamp(Math.floor((x+.5)*rx),0,w-1),sy=clamp(Math.floor((y+.5)*ry),0,h-1),a=(sy*w+sx)*4,b=((y-top)*width+x-left)*4;out.set(source.subarray(a,a+4),b);}return out;
  }
  const sampleMethod=method;
- for(let y=0;y<newH;y++){
+ for(let y=top;y<top+height;y++){
    const wy:Array<[number,number]>=[];forWeights(y,ry,sampleMethod,h,(i,w)=>wy.push([i,w]));
-   for(let x=0;x<newW;x++){
+   for(let x=left;x<left+width;x++){
      const wx:Array<[number,number]>=[];forWeights(x,rx,sampleMethod,w,(i,weight)=>wx.push([i,weight]));
      let a=0,r=0,g=0,b=0,total=0;
      for(const [sy,wyv] of wy)for(const [sx,wxv] of wx){
