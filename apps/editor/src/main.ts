@@ -4133,6 +4133,18 @@ wetTools=installWetTools(byId('documentBoxBody'),{
     layerId:controller.selectedLayer.id,layerName:controller.selectedLayer.name}:null,
   color:()=>[foreground.current.r,foreground.current.g,foreground.current.b].map(channel=>Math.round(channel*255)),
   left:()=>{if(activeCanvasTool==='smudge'){leaveCanvasTool();reflectRailTool();}},
+  preview:async stroke=>{
+    const drawing=surface,artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
+    const selection=c06Selection?.active()??null;
+    if(!drawing||stroke.documentId!==artwork.root.documentId||!artwork.root.isLayerVisible(layer.id)||
+      artwork.root.groupsForLayer(layer.id).some(group=>group.locked)||
+      !stroke.separate&&(artwork.root.isLayerContentLocked(layer.id)||layer.baseColor||layer.editable||layer.deformation||layer.imageLink||layer.lineRegions))return false;
+    const patch=await createWetPatch(artwork,drawing,layer.id,selection,stroke,true);
+    if(!patch||stroke.signal.aborted||surface!==drawing||controller.document!==artwork||artwork.head!==head||
+      controller.selectedLayer.id!==layer.id||(c06Selection?.active()??null)!==selection)return false;
+    drawing.showFillGesturePreview(new ImageData(new Uint8ClampedArray(patch.pixels),patch.area.width,patch.area.height),patch.area);
+    return true;
+  },
   draw:async stroke=>{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
     const selection=c06Selection?.active()??null;

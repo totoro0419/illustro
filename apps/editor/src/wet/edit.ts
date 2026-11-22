@@ -8,7 +8,7 @@ import {needsSource,strokeArea,tileAlignedArea,type Area,type Patch} from './pai
 import {runWet} from './run';
 import type {WetStroke} from './panel';
 
-export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,layerId:LayerId,mask:MaskData|null,stroke:WetStroke){
+export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,layerId:LayerId,mask:MaskData|null,stroke:WetStroke,preview=false){
   const {width,height}=artwork.root,mode=stroke.settings.mode,repair=needsSource(mode);
   const separate=stroke.separate||stroke.reference==='merged';
   let {points,offset}=stroke;
@@ -24,7 +24,8 @@ export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,l
   const margin=mode==='patch'?2:Math.ceil(stroke.settings.size+2);
   const bounds=strokeArea(points,margin,width,height);
   if(!bounds)return null;
-  const area=separate?bounds:tileAlignedArea(bounds,width,height,TILE*2);
+  const area=separate||preview?bounds:tileAlignedArea(bounds,width,height,TILE*2);
+  if(preview&&area.width*area.height>320000)return null;
   if(area.width*area.height>4800000)throw Error('一度に処理する範囲が大きすぎます。線を分けてください。');
   const cache=new Map<LayerId,Uint8Array>();
   async function read(id:LayerId,frame:Area):Promise<Patch>{
@@ -33,6 +34,7 @@ export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,l
     if(layer.baseColor==='white')return {area:frame,pixels:new Uint8ClampedArray(frame.width*frame.height*4).fill(255)};
     const region=await drawing.captureDocumentLayerRegion(id,frame);
     if(region)return {area:frame,pixels:region};
+    if(preview)throw Error('この描画方式では途中の表示を作れません。');
     let pixels=cache.get(id);
     if(!pixels){
       pixels=(await drawing.captureDocumentLayers(new Set([id]))).get(id);
@@ -57,7 +59,14 @@ export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,l
   const result=await runWet({destination,reference,selection:clip,
     points,offset,shapePatch:!!sourceShape,alphaLocked:!separate&&!!artwork.root.getLayer(layerId).alphaLocked,
     settings:stroke.settings},stroke.signal);
-  return result.changed?{area,pixels:result.pixels,separate}:null;
+  if(!result.changed)return null;
+  if(preview&&!separate){
+    for(let i=0;i<result.pixels.length;i+=4){
+      if(result.pixels[i]===destination.pixels[i]&&result.pixels[i+1]===destination.pixels[i+1]&&
+        result.pixels[i+2]===destination.pixels[i+2]&&result.pixels[i+3]===destination.pixels[i+3])result.pixels[i+3]=0;
+    }
+  }
+  return {area,pixels:result.pixels,separate};
 }
 // The selection belongs to the source; sample its coverage at each moved pixel.
 export function movePatchCoverage(mask:MaskData,area:Area,offset:{x:number;y:number}){

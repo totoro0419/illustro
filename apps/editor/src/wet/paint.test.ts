@@ -37,3 +37,17 @@ it('copies a shaped patch with the original feathered coverage and no rectangula
   expect([...result.pixels.slice(at(5,4),at(5,4)+4)]).toEqual([30,60,90,128]);
   expect(result.pixels[at(6,4)+3]).toBe(0);
 });
+
+it('uses independent water and pigment settings to soften and mix a watercolor stroke',()=>{
+  const run=job();
+  for(let y=0;y<area.height;y++) for(let x=0;x<6;x++)run.destination.pixels.set([30,65,235,180],at(x,y));
+  const settings={...run.settings,mode:'water' as const,pigment:.8,diffusion:.75};
+  const dry=paintWet({...run,settings:{...settings,water:0}}).pixels;
+  const wet=paintWet({...run,settings:{...settings,water:1}}).pixels;
+  const noPigment=paintWet({...run,settings:{...settings,water:1,pigment:0}}).pixels;
+  expect(wet).not.toEqual(dry);
+  expect(wet).not.toEqual(noPigment);
+  expect(wet[at(6,4)]).toBeGreaterThan(30);
+  expect(wet[at(6,4)+2]).toBeGreaterThan(0);
+  expect(noPigment[at(6,4)+2]).toBeGreaterThan(200);
+});

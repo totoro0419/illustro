@@ -14,7 +14,7 @@ export type WetStroke=Readonly<{
 
 export function installWetTools(host:HTMLElement,api:{
   current:()=>{drawing:BrushSurface;documentId:string;layerId:string;layerName:string}|null;
-  activate:(start:()=>void)=>void;hasSelection:()=>boolean;color:()=>readonly number[];draw:(stroke:WetStroke)=>Promise<boolean>;left:()=>void;
+  activate:(start:()=>void)=>void;hasSelection:()=>boolean;color:()=>readonly number[];draw:(stroke:WetStroke)=>Promise<boolean>;preview:(stroke:WetStroke)=>Promise<boolean>;left:()=>void;
 }){
   const panel=document.createElement('details');
   panel.className='c06-clipboard-panel';panel.dataset.toolPanel='smudge';
@@ -27,7 +27,8 @@ export function installWetTools(host:HTMLElement,api:{
   const advanced=document.createElement('details'),advancedTitle=document.createElement('summary');
   advancedTitle.textContent='顔料・にじみ・紙';
   const fine=document.createElement('div');fine.className='c06-clipboard-grid';
-  const pigment=numberField(fine,'色を足す量（%）',45,0,100);
+  const pigment=numberField(options,'顔料量・足す色の量（%）',45,0,100);
+  const water=numberField(options,'水量（%）',50,0,100);
   const diffusion=numberField(fine,'にじみ（%）',40,0,100);
   const edge=numberField(fine,'水彩のふち・パッチの硬さ（%）',35,0,100);
   const grain=numberField(fine,'粒状感（%）',25,0,100);
@@ -46,7 +47,7 @@ export function installWetTools(host:HTMLElement,api:{
   const target=document.createElement('p');target.setAttribute('role','status');
   let anchor:{point:Point;documentId:string;layerId:string;layerName:string}|null=null,offset:Point|null=null;
   let cancelDrawing:(()=>void)|null=null,pending:AbortController|null=null,revision=0;
-  const fields=[size,strength,pigment,diffusion,edge,grain,paperScale,absorb,thickness];
+  const fields=[size,strength,pigment,diffusion,edge,grain,paperScale,absorb,thickness,water];
   const key='illustro.round2.wet.v1';
   try{
     const saved=JSON.parse(localStorage.getItem(key)??'null');
@@ -65,7 +66,7 @@ export function installWetTools(host:HTMLElement,api:{
     if(fields.some(field=>!field.validity.valid||!field.value))throw Error('筆の設定を範囲内で指定してください。');
     return {mode:selected(),size:size.valueAsNumber,strength:strength.valueAsNumber/100,pigment:pigment.valueAsNumber/100,
       diffusion:diffusion.valueAsNumber/100,edge:edge.valueAsNumber/100,grain:grain.valueAsNumber/100,
-      paperScale:paperScale.valueAsNumber,absorb:absorb.valueAsNumber/100,thickness:thickness.valueAsNumber/100,color:api.color()};
+      paperScale:paperScale.valueAsNumber,absorb:absorb.valueAsNumber/100,thickness:thickness.valueAsNumber/100,water:water.valueAsNumber/100,color:api.color()};
   }
   function describe(){
     const context=api.current();
@@ -74,6 +75,8 @@ export function installWetTools(host:HTMLElement,api:{
     target.textContent='参照 '+ref+' ／ 描画先 '+(separate.checked||reference.value==='merged'?'新規レイヤー':context?.layerName??'なし')+
       (anchor&&needsSource(selected())?' ／ 採取点 '+Math.floor(anchor.point.x)+', '+Math.floor(anchor.point.y):'');
     aligned.parentElement!.hidden=!needsSource(selected());
+    water.parentElement!.hidden=selected()!=='water';
+    pigment.parentElement!.hidden=!['water','mix','oil','pastel'].includes(selected());
     sourceButton.hidden=!needsSource(selected())||transfer();
     selectedPatch.parentElement!.hidden=selected()!=='patch';
     if(transfer())target.textContent+=' ／ 選択範囲の形を採取';
@@ -97,12 +100,46 @@ export function installWetTools(host:HTMLElement,api:{
       return;
     }
     const current=()=>revision===token&&api.current()?.drawing===context.drawing;
+    let preview:AbortController|null=null,previewAfter=0,strokeActive=false;
+    const clear=()=>{
+      strokeActive=false;preview?.abort();preview=null;previewAfter=0;
+      context.drawing.showFillGesturePreview(null);
+    };
+    const request=(points:readonly Point[],signal:AbortSignal):WetStroke|null=>{
+      const first=points[0],next=api.current();
+      if(!first||!next||next.documentId!==context.documentId)return null;
+      const tail=points.at(-1)!;
+      const origin=brush==='patch'?{x:Math.min(first.x,tail.x),y:Math.min(first.y,tail.y)}:first;
+      const delta=anchor&&(offset&&aligned.checked?offset:{x:anchor.point.x-origin.x,y:anchor.point.y-origin.y});
+      return {settings:settings(),source:anchor?.point??null,reference:reference.value==='merged'?'merged':'active',
+        sourceLayerId:transfer()?next.layerId:anchor?.layerId??null,selectedPatch:transfer(),separate:separate.checked,
+        offset:delta??{x:0,y:0},points,signal,documentId:next.documentId};
+    };
     status.textContent=pick?'キャンバスで採取する位置を選んでください。':brush==='patch'?(transfer()?'貼り付ける場所までドラッグしてください。':'貼り付け先の対角線をドラッグしてください。'):'離すと一筆の結果を適用します。';
     cancelDrawing=context.drawing.setCanvasEditGesture({
       continuous:true,path:false,width:pick||brush==='patch'?2:Math.max(1,size.valueAsNumber),color:repair?'#2a8cc8':'#5c8c68',
       referencePoint:()=>repair&&!pick&&anchor?.documentId===context.documentId?anchor.point:null,
-      end:()=>{if(current()){pending?.abort();pending=null;cancelDrawing=null;api.left();}},
+      cancel:clear,
+      end:()=>{clear();if(current()){pending?.abort();pending=null;cancelDrawing=null;api.left();}},
+      update:points=>{
+        if(!points.length||pick||repair||pending||preview||reference.value==='merged'||performance.now()<previewAfter)return;
+        const controller=new AbortController();
+        // Only a short local segment is read from the renderer during contact.
+        const tail=points.at(-1)!;
+        let start=points.length-1;
+        while(start>Math.max(0,points.length-64)&&Math.hypot(points[start-1]!.x-tail.x,points[start-1]!.y-tail.y)<360)start--;
+        let job:WetStroke|null;
+        try{job=request(points.slice(start),controller.signal);}catch{return;}
+        if(!job)return;
+        strokeActive=true;preview=controller;
+        void api.preview(job).then(shown=>{
+          if(shown&&strokeActive&&!controller.signal.aborted&&current())context.drawing.showCanvasEditTrace(false);
+        }).catch(()=>{/* The position guide is available when a preview cannot be rendered. */}).finally(()=>{
+          if(preview===controller){preview=null;previewAfter=performance.now()+45;}
+        });
+      },
       complete:points=>{
+        clear();
         const first=points[0];
         const next=api.current();
         if(!first||!next||next.documentId!==context.documentId||pending)return;
@@ -110,17 +147,15 @@ export function installWetTools(host:HTMLElement,api:{
           anchor={point:first,documentId:next.documentId,layerId:next.layerId,layerName:next.layerName};
           offset=null;arm();return;
         }
-        let chosen:WetSettings;
-        try{chosen=settings();}catch(error){status.textContent=(error as Error).message;return;}
-        const controller=new AbortController();pending=controller;
-        const origin=brush==='patch'&&points.at(-1)?{x:Math.min(first.x,points.at(-1)!.x),y:Math.min(first.y,points.at(-1)!.y)}:first;
-        const delta=anchor&&(offset&&aligned.checked?offset:{x:anchor.point.x-origin.x,y:anchor.point.y-origin.y});
-        status.textContent='画素を処理しています…';
-        void api.draw({settings:chosen,source:anchor?.point??null,reference:reference.value==='merged'?'merged':'active',
-          sourceLayerId:transfer()?next.layerId:anchor?.layerId??null,selectedPatch:transfer(),separate:separate.checked,offset:delta??{x:0,y:0},points,signal:controller.signal,documentId:next.documentId})
+        const controller=new AbortController();
+        let job:WetStroke|null;
+        try{job=request(points,controller.signal);}catch(error){status.textContent=(error as Error).message;return;}
+        if(!job)return;
+        pending=controller;status.textContent='画素を処理しています…';
+        void api.draw(job)
           .then(changed=>{
             if(!current())return;
-            if(changed&&repair&&aligned.checked)offset=delta;
+            if(changed&&repair&&aligned.checked)offset=job.offset;
             status.textContent=changed?'一筆を反映しました。取り消しで戻せます。':'この範囲で変わる画素がありません。';
           }).catch(error=>{
             if(current()&&!controller.signal.aborted)status.textContent=error instanceof Error?error.message:String(error);

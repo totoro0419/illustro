@@ -4,7 +4,7 @@ export type Area=Readonly<{x:number;y:number;width:number;height:number}>;
 export type Patch=Readonly<{area:Area;pixels:Uint8ClampedArray}>;
 export type WetSettings=Readonly<{
   mode:WetMode;size:number;strength:number;pigment:number;diffusion:number;edge:number;grain:number;
-  paperScale:number;absorb:number;thickness:number;color:readonly number[];
+  paperScale:number;absorb:number;thickness:number;water?:number;color:readonly number[];
 }>;
 export type WetJob=Readonly<{
   destination:Patch;reference:Patch|null;selection:Uint8Array|null;shapePatch?:boolean;points:readonly Point[];
@@ -18,7 +18,7 @@ const mix=(a:Sample,b:Sample,t:number):Sample=>[
   a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t,a[3]+(b[3]-a[3])*t,
 ];
 export const needsSource=(mode:WetMode)=>mode==='clone'||mode==='heal'||mode==='patch';
-export const defaultWet:WetSettings={mode:'smudge',size:36,strength:.65,pigment:.45,diffusion:.4,edge:.35,grain:.25,paperScale:3,absorb:.45,thickness:.5,color:[0,0,0]};
+export const defaultWet:WetSettings={mode:'smudge',size:36,strength:.65,pigment:.45,diffusion:.4,edge:.35,grain:.25,paperScale:3,absorb:.45,thickness:.5,water:.5,color:[0,0,0]};
 
 export function strokeArea(points:readonly Point[],padding:number,width:number,height:number):Area|null{
   if(!points.length)return null;
@@ -96,6 +96,7 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
   if(needsSource(settings.mode)&&!reference)throw Error('採取元の画素を読み込めません。');
   const {mode,size,strength,pigment,diffusion,edge,grain,paperScale,absorb,thickness,color}=settings;
   const out=new Uint8ClampedArray(pixels),dest={area,pixels:out},source=reference??destination;
+  const water=clamp(settings.water??.5);
   const radius=size/2,sampleStep=Math.max(1,Math.round(radius*.45));
   const pigmentColor:Sample=[(color[0]??0)/255,(color[1]??0)/255,(color[2]??0)/255,1];
   let changed=false,work=0;
@@ -121,13 +122,20 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
       const textured=mode==='water'||mode==='oil'||mode==='pastel';
       const noise=textured?paper(x,y,paperScale):.5;
       const dry=mode==='pastel'?clamp((noise-absorb*.78)*2):1;
-      const spread=mode==='water'?clamp((1-distance)*(1+2*diffusion)):1;
+      const spread=mode==='water'?clamp((1-distance)*(1+2*diffusion+water*.8)):1;
       const rim=mode==='water'?1+edge*Math.max(0,1-Math.abs(distance-.78)*6):1;
       const texture=textured?(1-grain+grain*noise)*dry:1;
       const ink=mode==='oil'?mix(pigmentColor,[1,1,1,1],thickness*.18*(1-distance)):pigmentColor;
-      const retrieved=mode==='water'?average(source,x,y,Math.max(1,Math.round(diffusion*sampleStep))):carried;
-      const paint=sourceOver(retrieved,ink,clamp(pigment*spread*rim*texture));
-      value=sourceOver(old,paint,weight*(mode==='water'?(.45-.25*absorb):.65));
+      if(mode==='water'){
+        const diffusionRadius=Math.max(1,Math.round(diffusion*sampleStep*(.5+water)));
+        const retrieved=mix(average(source,x,y,diffusionRadius),carried,water*.24);
+        const dye=clamp(pigment*spread*rim*texture*(1-water*.45));
+        const paint=sourceOver(retrieved,ink,dye);
+        value=mix(old,paint,weight*(.62-.25*absorb));
+      }else {
+        const paint=sourceOver(carried,ink,clamp(pigment*spread*rim*texture));
+        value=sourceOver(old,paint,weight*.65);
+      }
     }
     changed=write(out,at,value,alphaLocked)||changed;
   }
@@ -147,7 +155,7 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
 
   let previous=points[0]??{x:0,y:0},carried=sample(source,previous.x,previous.y);
   for(const dab of dabs(points,Math.max(.9,radius*.5))){
-    const r=Math.max(.65,radius*(.4+.6*clamp(dab.pressure??1)));
+    const r=Math.max(.65,radius*(.4+.6*clamp(dab.pressure??1))*(mode==='water'?1+water*diffusion*.28:1));
     const drag={x:dab.x-previous.x,y:dab.y-previous.y};
     const bounds={x:int(dab.x-r,area.x,area.x+area.width),y:int(dab.y-r,area.y,area.y+area.height),
       endX:int(dab.x+r+1,area.x,area.x+area.width),endY:int(dab.y+r+1,area.y,area.y+area.height)};

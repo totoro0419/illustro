@@ -620,7 +620,7 @@ export class BrushSurface{
     this.setArtworkPreviewReplacement(replacement);
   }
   /** Temporary fill-region guide. Never hides an artwork layer or changes its pixels. */
-  showFillGesturePreview(image:ImageData|null){
+  showFillGesturePreview(image:ImageData|null,region?:Readonly<{x:number;y:number;width:number;height:number}>){
     if(!image){this.fillGesturePreview?.remove();this.fillGesturePreview=null;return;}
     const canvas=this.fillGesturePreview??document.createElement('canvas');
     if(canvas.width!==image.width)canvas.width=image.width;
@@ -628,7 +628,8 @@ export class BrushSurface{
     const {width,height}=this.controller.document.root;
     canvas.setAttribute('aria-hidden','true');
     canvas.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:3;transform-origin:0 0;';
-    canvas.style.width=width+'px';canvas.style.height=height+'px';
+    canvas.style.width=(region?.width??width)+'px';canvas.style.height=(region?.height??height)+'px';
+    canvas.dataset.docX=String(region?.x??0);canvas.dataset.docY=String(region?.y??0);
     canvas.getContext('2d')?.putImageData(image,0,0);
     if(!this.fillGesturePreview)this.inputViewport.append(canvas);
     this.fillGesturePreview=canvas;this.positionDocumentOverlay(canvas);
@@ -641,7 +642,8 @@ export class BrushSurface{
   }
   private positionDocumentOverlay(overlay:HTMLCanvasElement){
     if(!this.view)return;
-    const origin=this.view.screen({x:0,y:0}),x=this.view.screen({x:1,y:0}),y=this.view.screen({x:0,y:1});
+    const ox=Number(overlay.dataset.docX??0),oy=Number(overlay.dataset.docY??0);
+    const origin=this.view.screen({x:ox,y:oy}),x=this.view.screen({x:ox+1,y:oy}),y=this.view.screen({x:ox,y:oy+1});
     overlay.style.transform='matrix('+[x.x-origin.x,x.y-origin.y,y.x-origin.x,y.y-origin.y,origin.x,origin.y].join(',')+')';
   }
   async layerThumbnail(id:LayerId){
