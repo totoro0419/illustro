@@ -168,8 +168,7 @@ aside#workspace .dock-close {
   padding: 5px;
 }
 #workspace > .box-stack { height: auto; flex: 1; min-height: 0 }
-.right-dock[data-panel="brushBox"] .box-stack > :not([data-box-id="right.brush"]),
-.right-dock[data-panel="colorBox"] .box-stack > :not([data-box-id="right.color"]) { display: none }
+#boxStack > .workspace-box[hidden] { display: none !important; }
 #splitter { bottom: var(--bottom) }
 body:has(.right-dock[data-panel]:not([data-panel=""])) #splitter { display: none }
 .layer-page {
@@ -256,11 +255,7 @@ body.illustro-focus-mode .topbar > button:not(#c04FocusQuick, #c04FocusExit) { d
 .workspace-tabs .workspace-paint-tabs { margin-block-start: auto; padding-block: 4px }
 .workspace-tabs .current-color { width: 20px; height: 20px }
 #rightDock > #workspace, #rightDock > #layerPage { flex: 1; width: auto; min-width: 0 }
-#rightDock[data-box]:not([data-box=""]) #boxStack > .workspace-box:not([data-box-id]) { display: none }
-#rightDock[data-box="right.effects"] #boxStack > :not([data-box-id="right.effects"]),
-#rightDock[data-box="right.navigator"] #boxStack > :not([data-box-id="right.navigator"]),
-#rightDock[data-box="right.history"] #boxStack > :not([data-box-id="right.history"]),
-#rightDock[data-box="right.document"] #boxStack > :not([data-box-id="right.document"]) { display: none }
+
 #workspace .workspace-box { border: 0; border-bottom: 1px solid var(--a-border); border-radius: 0; box-shadow: none; margin: 0 }
 #workspace .box-stack { touch-action: pan-y; overscroll-behavior: contain }
 #workspace :is(input[type=text],input[type=search],input[type=number]) { border-radius: 0; border-width: 0 0 1px }
