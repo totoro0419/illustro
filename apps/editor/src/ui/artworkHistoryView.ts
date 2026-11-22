@@ -40,6 +40,10 @@ async function renderHistoryPreview(artwork:CoreDocument,revision:RevisionId,max
   }finally{bitmap.close();}
 }
 
+export function historyRecordingPreview(artwork:CoreDocument,revision:RevisionId,limit:number){
+  return historyPreviewQueue.run(()=>renderHistoryPreview(artwork,revision,limit,limit),'foreground');
+}
+
 export function historyComparisonPreview(artwork:CoreDocument,revision:RevisionId){
   return historyPreviewQueue.run(()=>renderHistoryPreview(artwork,revision,1600,1200),'foreground');
 }

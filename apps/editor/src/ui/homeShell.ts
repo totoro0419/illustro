@@ -12,6 +12,7 @@ export type HomeActions = Readonly<{
   onBlankDraftChange?: (width:number,height:number,name:string,background:'transparent'|'white',dpi:number,author:string,description:string)=>void;
   listWorks:()=>Promise<{works:WorkEntry[];lastWorkId:string|null}>;
   openWork:(id:string)=>Promise<boolean>;
+  exportWorks:(works:readonly WorkEntry[])=>void;
   readThumbnail:(id:string,revisionId:string)=>Promise<Blob|null>;
   renameWork:(id:string,name:string)=>Promise<void>;
   duplicateWork:(id:string)=>Promise<void>;
@@ -89,7 +90,7 @@ const html = [
     '<section class="ih-screen ih-inner-screen" data-ih-screen="works" hidden aria-labelledby="ihWorksTitle">',
       '<div class="ih-page-top"><span class="ih-overline">YOUR WORKSPACE</span><h1 id="ihWorksTitle">マイ作品<span class="ih-period">.</span></h1><p>作品を選び、続きを描くための場所。</p></div>',
       '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><div class="ih-works-controls"><button type="button" id="ihWorksRecovery" class="ih-quiet-button">作業を復元</button><span class="ih-works-count">作品を確認しています</span><button id="ihWorksReset" type="button" class="ih-debug-reset" hidden>初期化（全作品を削除）</button></div></div>',
-      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名・タグ・フォルダーで検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option><option value="favorite">お気に入り優先</option></select></label><label>フォルダー<select id="ihWorkFolder"><option value="">すべてのフォルダー</option></select></label><label>表示<select id="ihWorkFavorites"><option value="all">すべて</option><option value="only">お気に入りだけ</option></select></label></div><div id="ihWorkBatch" class="ih-work-batch" hidden><strong id="ihWorkSelectionCount">0件選択</strong><button type="button" id="ihWorkSelectAll">表示中をすべて選ぶ</button><button type="button" id="ihWorkMoveSelected">フォルダーへ</button><button type="button" id="ihWorkFavoriteSelected">お気に入りにする</button><button type="button" id="ihWorkTrashSelected">ゴミ箱へ移動</button><button type="button" id="ihWorkClearSelected">選択解除</button></div><details id="ihWorkTrash" class="ih-work-trash"><summary>ゴミ箱（復元・完全削除）</summary><div id="ihWorkTrashGrid" class="ih-work-trash-list"></div></details><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
+      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名・タグ・フォルダーで検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option><option value="favorite">お気に入り優先</option></select></label><label>フォルダー<select id="ihWorkFolder"><option value="">すべてのフォルダー</option></select></label><label>表示<select id="ihWorkFavorites"><option value="all">すべて</option><option value="only">お気に入りだけ</option></select></label></div><div id="ihWorkBatch" class="ih-work-batch" hidden><strong id="ihWorkSelectionCount">0件選択</strong><button type="button" id="ihWorkSelectAll">表示中をすべて選ぶ</button><button type="button" id="ihWorkExportSelected">一括出力</button><button type="button" id="ihWorkMoveSelected">フォルダーへ</button><button type="button" id="ihWorkFavoriteSelected">お気に入りにする</button><button type="button" id="ihWorkTrashSelected">ゴミ箱へ移動</button><button type="button" id="ihWorkClearSelected">選択解除</button></div><details id="ihWorkTrash" class="ih-work-trash"><summary>ゴミ箱（復元・完全削除）</summary><div id="ihWorkTrashGrid" class="ih-work-trash-list"></div></details><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
       '<div class="ih-empty-works"><div class="ih-empty-art" aria-hidden="true"><span class="ih-empty-sheet ih-sheet-one"></span><span class="ih-empty-sheet ih-sheet-two"></span><span class="ih-empty-spark">'+icon('effects')+'</span></div>',
         '<h2>最初の作品を、ここから。</h2><p>新しく作った作品は自動保存され、ここからいつでも続きを描けます。</p>',
         '<button id="ihWorksStart" type="button" class="ih-solid-button">新しい作品を作る <span aria-hidden="true">↗</span></button>',
@@ -301,6 +302,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   el<HTMLButtonElement>('ihWorkClearSelected').onclick=()=>{
     selectedWorkIds.clear();renderWorks();
   };
+  el<HTMLButtonElement>('ihWorkExportSelected').onclick=()=>actions.exportWorks(selectedWorks());
   batchAction('ihWorkMoveSelected',async()=>{
     const selected=selectedWorks();if(!selected.length)return;
     const folder=await appPrompt(selected.length+'件の作品を移動するフォルダー名（空欄なら未分類）');

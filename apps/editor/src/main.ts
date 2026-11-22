@@ -1,3 +1,6 @@
+import {openBatchExport} from './export/batchExport';
+import {installTimeline} from './recording/timeline';
+import {installWorkTime} from './recording/workTime';
 import {installRasterEffects} from './effects/rasterPanel';
 import {readEffectSteps} from './effects/rasterSettings';
 import {validateLayerMask} from '@illustro/core';
@@ -183,6 +186,7 @@ let symmetryPanel:ReturnType<typeof installSymmetryPanel>|undefined;
 let c05ReferenceBoard:ReferenceBoardService|undefined;
 let c06ClipboardUI:ClipboardUI|undefined;
 let c06Selection:SelectionWorkbench|undefined;
+let timeline:ReturnType<typeof installTimeline>|undefined;
 let fillPanel:ReturnType<typeof installFillPanel>|undefined;
 let transformPanel:ReturnType<typeof installTransformPanel>|undefined;
 let activeCanvasTool='',canvasToolRequest=0;
@@ -1668,6 +1672,7 @@ function resetCheckpointTracking(){checkpointOperations=[];checkpointOpsSinceLas
 function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   inputFreezeTrace?.mark('save-prepare:start');persistence.noteCommit(controller.document,handoff);inputFreezeTrace?.mark('save-prepare:end');if(controller.document.head!==handoff.resultRevisionId)persistence.noteNavigation(controller.document);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
+  timeline?.record(controller.document,revision.id);
 }
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const drawing=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'||reason==='view-command')scheduleViewSave(drawing);if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();if(releasedColorHold)restoreDrawingTool();return;}
@@ -2569,6 +2574,8 @@ async function applyGeometry(){
 byId('geometryApply').onclick=()=>{void applyGeometry();};
 
 const documentInfoDialog=byId<HTMLDialogElement>('documentInfoDialog');
+const workTime=installWorkTime(documentInfoDialog.querySelector('form')!,byId('canvasArea'),
+  ()=>documentReady&&!app.inert&&!documentActivationPending?controller.document.root.documentId:null);
 byId('documentInfoOpen').onclick=()=>{
   if(!documentReady||!surface)return;
   const root=controller.document.root,info=root.info;
@@ -2579,7 +2586,7 @@ byId('documentInfoOpen').onclick=()=>{
   byId('documentInfoSize').textContent=root.width+' × '+root.height+' px · '+(root.colorProfileId==='srgb'?'sRGB':root.colorProfileId);
   byId('documentInfoStatus').textContent='';
   byId<HTMLInputElement>('canvasTemplateName').value='';
-  documentInfoDialog.showModal();
+  workTime.refresh();documentInfoDialog.showModal();
 };
 byId('documentInfoClose').onclick=()=>documentInfoDialog.close();
 byId<HTMLFormElement>('documentInfoForm').onsubmit=event=>{
@@ -2767,6 +2774,10 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     void importFonts(controller.document.root,opened.preserved).catch(error=>{
       byId('status').textContent=error instanceof Error?error.message:String(error);
     });
+  }
+  if(opened.generationId!=='library'){
+    try{timeline?.restoreNative(opened.document,opened.preserved.optionalSections);}
+    catch(error){console.warn('Optional timelapse metadata could not be read',error);}
   }
   // Prefer the exact palette embedded in this native file to device-local data.
   eyedropperSettings.refreshLayers();eyedropperSettings.apply();
@@ -3650,6 +3661,13 @@ if(!qaMode){
       return true;},
     listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
     openWork,
+    exportWorks:entries=>openBatchExport(entries,async id=>{
+      if(documentReady&&controller.document.root.documentId===id){
+        await persistence.barrier();
+        if(controller.document.root.documentId===id)return controller.document;
+      }
+      return (await persistence.loadWork(id)).opened.document;
+    }),
     readThumbnail:(id,revisionId)=>persistence.readThumbnail(id,revisionId),
     previewRecovery:async(documentId,writerEpochId)=>{
       const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
@@ -3956,6 +3974,13 @@ const c06Download=(blob:Blob,fileName:string)=>{
   link.href=url;link.download=fileName;document.body.append(link);link.click();link.remove();
   window.setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
+timeline=installTimeline(byId('workspaceBoxBody'),()=>documentReady&&!documentActivationPending?controller.document:null,c06Download);
+c04Commands.registerProvider(()=>[{
+  id:'workTimeline',label:'制作記録を開く',category:'作品',aliases:'タイムラプス 動画',
+  availability:()=>documentReady?null:'先に作品を開いてください。',
+  execute:()=>{shellUi.openBox('workspaceBox');timeline?.open();}
+}]);
+
 c06Selection=installSelectionWorkbench({
   getSurface:()=>documentReady?surface:null,
   getDocument:()=>documentReady?{
@@ -3999,6 +4024,7 @@ c06Selection=installSelectionWorkbench({
 persistence.setSaveAttachmentProvider(()=>{
   const preserved=persistence.preservedData;
   const documentPalette=foreground.exportDocumentPaletteSection();
+  const recording=timeline?.exportNative(controller.document);
   const symmetry={id:SYMMETRY_SECTION,type:SYMMETRY_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(symmetrySettings))};
   const referenceDocumentId=controller.document.root.documentId;
   const safeReference=c05References.exportNative().catch(reason=>{
@@ -4018,7 +4044,7 @@ persistence.setSaveAttachmentProvider(()=>{
     const result=await editingState;
     if('error' in result)throw result.error;
     const [reference,selections]=result.values,fonts=await exportFonts(root,preserved);
-    return [...(reference?[reference]:[]),...selections,...fonts,...(documentPalette?[documentPalette]:[]),symmetry];
+    return [...(reference?[reference]:[]),...selections,...fonts,...(documentPalette?[documentPalette]:[]),...(recording?[recording]:[]),symmetry];
   };
 });
 const unavailableImageLinks=new Set<string>();

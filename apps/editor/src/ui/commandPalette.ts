@@ -28,6 +28,7 @@ export type CommandService=Readonly<{
   invoke:(id:string)=>Readonly<{ok:boolean;reason:string|null}>;
   invokeAsync:(id:string)=>Promise<Readonly<{ok:boolean;reason:string|null;settled:boolean}>>;
   registerProvider:(provider:()=>readonly CommandDefinition[])=>()=>void;
+  onCompleted?:(receive:(id:string)=>void)=>()=>void;
   refresh:()=>void;
   contextKey?: (()=>unknown)|undefined;
 }>;
@@ -218,6 +219,20 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     recents=[id,...recents.filter(key=>key!==id)].slice(0,24);
     write(RECENTS_KEY,JSON.stringify(recents));
   };
+  const completionListeners=new Set<(id:string)=>void>();
+  function notifyCompletion(command:CommandDefinition,listeners:readonly ((id:string)=>void)[]){
+    if(command.completion===false)return;
+    for(const receive of listeners)if(completionListeners.has(receive))receive(command.id);
+  }
+  function launch(command:CommandDefinition){
+    const listeners=[...completionListeners],context=execution?.contextKey();
+    const outcome=command.execute();
+    const complete=()=>{if(!execution||execution.contextKey()===context)notifyCompletion(command,listeners);};
+    if(outcome instanceof Promise)void outcome.then(complete,error=>{
+      status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
+    });
+    else complete();
+  }
   const searchButton=document.createElement('button');
   searchButton.id='commandSearchOpen';searchButton.type='button';searchButton.className='c04-command-open';
   searchButton.textContent='⌕ 機能を探す';
@@ -309,10 +324,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     if(reason){status.textContent=reason;return;}
     dialog.close();quick.hidden=true;quickButton.setAttribute('aria-expanded','false');
     try{
-      const outcome=command.execute();
-      if(outcome instanceof Promise)void outcome.catch(error=>{
-        status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
-      });
+      launch(command);
       remember(command.id);renderQuick();
     }catch(error){status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';}
   }
@@ -564,16 +576,14 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       return ()=>{const i=providers.indexOf(provider);if(i>=0)providers.splice(i,1);refresh();};
     },
     refresh,contextKey:execution?.contextKey,
+    onCompleted:receive=>{completionListeners.add(receive);return ()=>completionListeners.delete(receive);},
     invoke:(id:string)=>{
       const command=find(id);
       if(!command)return {ok:false,reason:'この機能はまだ利用できません。'};
       const reason=command.availability();
       if(reason)return {ok:false,reason};
       try{
-        const outcome=command.execute();
-        if(outcome instanceof Promise)void outcome.catch(error=>{
-          status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
-        });
+        launch(command);
         remember(id);renderQuick();
         return {ok:true,reason:null};
       }catch(error){return {ok:false,reason:error instanceof Error?error.message:'実行できませんでした。'};}
@@ -581,8 +591,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     invokeAsync:async(id:string)=>{
       const command=find(id);
       if(!command)return {ok:false,reason:'この機能はまだ利用できません。',settled:false};
+      const listeners=[...completionListeners];
       const result=await invokeCommandAsync(command,execution?.contextKey);
-      if(result.ok){remember(id);renderQuick();}
+      if(result.ok){remember(id);renderQuick();if(result.settled)notifyCompletion(command,listeners);}
       return result;
     },
   };

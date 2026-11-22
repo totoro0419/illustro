@@ -102,7 +102,7 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
   const workspace=document.getElementById('workspaceBoxBody');
   if(!workspace)return null;
   let macros=read(),playing=false,steps:string[]=[],selectedId:string|null=null;
-  let playback:AbortController|null=null;
+  let playback:AbortController|null=null,unlisten:(()=>void)|null=null;
   const root=document.createElement('details');root.className='c04-simple-macros';
   const summary=document.createElement('summary');summary.textContent='よく使う操作をまとめる';
   const help=document.createElement('p');
@@ -118,10 +118,11 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
   save.textContent='保存';run.textContent='実行';reset.textContent='新しく作る';remove.textContent='削除';
   const status=document.createElement('output');status.setAttribute('role','status');
   const actions=document.createElement('div');actions.className='c04-workspace-actions';
+  const record=document.createElement('button');record.type='button';record.textContent='操作の記録を開始';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='実行を中止';cancel.disabled=true;
   cancel.onclick=()=>playback?.abort();
   window.addEventListener('keydown',event=>{if(event.key==='Escape')playback?.abort();});
-  actions.append(add,save,run,cancel,reset,remove);
+  actions.append(record,add,save,run,cancel,reset,remove);
   root.append(summary,help,select,name,commandSelect,stepsList,actions,status);
   workspace.append(root);
 
@@ -155,14 +156,33 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
       row.append(label,up,down,del);stepsList.append(row);
     }
     if(!steps.length){const empty=document.createElement('p');empty.textContent='下の候補から操作を登録してください。';stepsList.append(empty);}
-    run.disabled=steps.length===0||playing;
+    run.disabled=steps.length===0||playing||!!unlisten;
   }
+  function stopRecording(message?:string){
+    if(!unlisten)return;
+    unlisten();unlisten=null;record.textContent='操作の記録を開始';refreshSteps();
+    status.textContent=message??'記録を停止しました。操作順を確認し、名前を付けて保存できます。';
+  }
+  record.onclick=()=>{
+    if(unlisten){stopRecording();return;}
+    if(playing||steps.length>=MAX_STEPS||!commands.onCompleted)return;
+    const context=commands.contextKey?.();
+    unlisten=commands.onCompleted(id=>{
+      if(commands.contextKey?.()!==context){stopRecording('作品が切り替わったため記録を停止しました。');return;}
+      if(!permitted(id))return;
+      steps.push(id);refreshSteps();
+      status.textContent='記録中 · '+steps.length+'件';
+      if(steps.length===MAX_STEPS)stopRecording('24件に達したため記録を停止しました。');
+    });
+    record.textContent='操作の記録を停止';refreshSteps();
+    status.textContent='記録中。「機能を探す」やよく使う操作から、記録に対応した操作を実行してください。';
+  };
   function newMacro(){
-    selectedId=null;name.value='';steps=[];refreshSelect();refreshSteps();
+    stopRecording();selectedId=null;name.value='';steps=[];refreshSelect();refreshSteps();
     status.textContent='新しい操作セットを作れます。';
   }
   function load(id:string){
-    const macro=macros.find(m=>m.id===id);
+    stopRecording();const macro=macros.find(m=>m.id===id);
     if(!macro){newMacro();return;}
     selectedId=macro.id;name.value=macro.name;steps=[...macro.steps];
     refreshSelect();refreshSteps();
@@ -176,7 +196,7 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     steps.push(id);refreshSteps();status.textContent='操作を追加しました。';
   };
   save.onclick=()=>{
-    const title=name.value.trim();
+    stopRecording();const title=name.value.trim();
     if(!title){status.textContent='名前を入力してください。';return;}
     if(!steps.length){status.textContent='操作を1つ以上追加してください。';return;}
     if(steps.some(id=>!permitted(id))){status.textContent='実行できない種類の操作が含まれています。';return;}
@@ -198,6 +218,7 @@ export function installSimpleMacros(commands:CommandService):SimpleMacroService|
     macros=next;newMacro();commands.refresh();status.textContent='操作セットを削除しました。';
   };
   async function play(macro:SimpleMacro):Promise<void>{
+    if(unlisten){status.textContent='記録を停止してから実行してください。';return;}
     if(playing){status.textContent='ほかの操作セットが実行中です。';return;}
     playing=true;run.disabled=true;cancel.disabled=false;playback=new AbortController();
     try{
