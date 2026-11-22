@@ -1,6 +1,7 @@
 import {ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE} from './export/iccMetadata';
 import {installImageAssist} from './assist/panel';
 import {installAdjustmentPanel} from './effects/adjustmentPanel';
+import {openLayerBatch} from './export/layerBatch';
 import {ANALYSIS_MAX_PIXELS,type RGB as AssistRGB} from './assist/analyze';
 import {convertExchangeColors,exchangeFormat,importExchange} from './export/exchange';
 import {createExchangeDocument} from './export/exchangeDocument';
@@ -3598,6 +3599,20 @@ byId<HTMLButtonElement>('exportImage').onclick=()=>{
   byId<HTMLOptionElement>('exportActiveLayer').textContent=controller.selectedLayer.name+'だけ';
   updateExportOptions();
   exportDialog.showModal();
+};
+const exportSeparateLayers=document.createElement('button');exportSeparateLayers.type='button';
+exportSeparateLayers.textContent='レイヤーを別々の画像に書き出す';
+byId('exchangeExport').before(exportSeparateLayers);
+exportSeparateLayers.onclick=async()=>{
+  if(!documentReady||exportBusy||!exportDialog.open)return;
+  const artwork=controller.document;
+  try{
+    await historyNavigation?.barrier();
+    if(controller.document!==artwork||!exportDialog.open)return;
+    const ids=new Set<LayerId>(layerBatchIds);ids.add(controller.selectedLayerId);
+    openLayerBatch(artwork,ids);
+    exportDialog.close();
+  }catch(error){byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
 };
 byId<HTMLButtonElement>('exportCancel').onclick=()=>{if(!exportBusy)exportDialog.close();};
 byId<HTMLButtonElement>('exportRun').onclick=async()=>{
