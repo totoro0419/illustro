@@ -1,0 +1,6 @@
+.raster-effect-recipe { list-style:none; display:grid; gap:4px; padding:0; }
+.raster-effect-recipe li { display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
+.raster-effect-recipe [aria-pressed="true"] { font-weight:700; }
+.raster-effect-comparison:not([hidden]) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.raster-effect-comparison figure { margin:0; }
+.raster-effect-comparison canvas { max-width:100%; height:auto; background:repeating-conic-gradient(#ddd 0% 25%,#fff 0% 50%) 0 0/12px 12px; }

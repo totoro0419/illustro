@@ -1,3 +1,6 @@
+import {installRasterEffects} from './effects/rasterPanel';
+import {readEffectSteps} from './effects/rasterSettings';
+import {validateLayerMask} from '@illustro/core';
 import {installPassiveTouchProbe} from './passiveTouchProbe';
 import {installInputFreezeTrace} from './inputFreezeTrace';
 import {HistoryNavigation,type HistoryDirection} from './historyNavigation';
@@ -4684,6 +4687,65 @@ c04Commands.registerProvider(()=>[{
   execute:()=>{shellUi.openBox('documentBox');strokeCorrection?.show();}
 }]);
 installShapeGradientPanel(byId('documentBoxBody'),artworkActions);
+function lastRasterFilter(artwork:CoreDocument,id:LayerId){
+  const operation=artwork.operationsTo().findLast(op=>
+    ['document.crop','document.canvas-resize','document.image-resize'].includes(op.kind)||
+    op.targetEntityIds[0]===id&&['layer.snapshot','raster.strict-delta','brush.stroke'].includes(op.kind));
+  const source=operation?.sourceRevisionIds.at(-1);
+  const value=operation?.parameters.rasterFilter;
+  if(!source||!value||typeof value!=='object'||!artwork.hasRevision(source))return null;
+  const {version,steps,mask}=value as {version:unknown;steps:unknown;mask:Parameters<typeof validateLayerMask>[0]};
+  const recipe=readEffectSteps(steps);
+  if(version!==1||!recipe)return null;
+  const decoded=mask?validateLayerMask(mask):null;
+  if(decoded&&decoded.shape!=='pixels')return null;
+  return {source,steps:recipe,mask:decoded};
+}
+const rasterEffectPanel=installRasterEffects(byId('effectsBoxBody'),{
+  capture:async edit=>{
+    const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer,drawing=surface;
+    if(!drawing||!documentReady)throw Error('作品を開いてください。');
+    if(layer.baseColor||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||root.isLayerContentLocked(layer.id))
+      throw Error('編集できる、ロックされていない描画レイヤーを選んでください。');
+    const saved=edit?lastRasterFilter(artwork,layer.id):null;
+    if(edit&&!saved)throw Error('再編集できる効果がありません。効果の後に描いた線がある場合はその編集を戻してください。');
+    const {width,height}=root,source=saved?.source??head,original=artwork.revision(source).root;
+    if(original.width!==width||original.height!==height||!original.hasLayer(layer.id))throw Error('効果の原本が見つかりません。');
+    const currentSelection=c06Selection?.active()??null;
+    const mask=saved?(saved.mask?readSelectionMask(saved.mask,width,height):null):currentSelection;
+    const valid=()=>artwork===controller.document&&head===artwork.head&&controller.selectedLayer.id===layer.id&&
+      surface===drawing&&(edit||(c06Selection?.active()??null)===currentSelection);
+    const pixels=await originalTransformPixels(artwork,original.getLayer(layer.id),source);
+    if(!valid())throw Error('選んだレイヤーや範囲が変更されました。');
+    return {source:pixels,width,height,mask:mask?.alpha??null,alphaLocked:!!layer.alphaLocked,name:layer.name,
+      steps:saved?.steps??[],valid,apply:async(result,steps)=>withClipboardAccess(async()=>{
+        if(!valid())throw Error('効果の適用先が変わりました。');
+        const tx=artwork.begin('レイヤーのフィルター');
+        const savedMask=saved?.mask??(mask?selectionAsLayerMask(mask):null);
+        tx.replaceLayerRaster(layer.id,result,source,undefined,undefined,{version:1,steps,mask:savedMask});
+        controller.lastPersistenceHandoff=tx.commit().persistence;
+        return 'edit';
+      })};
+  },
+  bake:async()=>{
+    const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
+    if(!lastRasterFilter(artwork,layer.id))throw Error('設定を保持しているフィルターのレイヤーを選んでください。');
+    if(!await appConfirm('現在の効果を画素に固定します。効果の設定を開き直すには、この操作を取り消してください。実行しますか？'))
+      throw Error('固定を取り消しました。');
+    await withClipboardAccess(async()=>{
+      if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==layer.id)
+        throw Error('対象が変わりました。');
+      const result=await originalTransformPixels(artwork,layer,head),tx=artwork.begin('効果を画素に固定');
+      tx.replaceLayerRaster(layer.id,result);controller.lastPersistenceHandoff=tx.commit().persistence;
+      return 'edit';
+    });
+  }
+});
+c04Commands.registerProvider(()=>[{
+  id:'rasterEffects',label:'レイヤーのフィルターを開く',category:'色',aliases:'ぼかし シャープ ごみ取り ノイズ',
+  availability:()=>documentReady?null:'先に作品を開いてください。',
+  execute:()=>{shellUi.openBox('effectsBox');rasterEffectPanel.open();}
+}]);
 const gradientMapPanel=installGradientMapPanel(byId('effectsBoxBody'),{
   storeColors:colors=>foreground.addSwatches(colors.map(color=>fromHex(color)!)),
   capture:async edit=>{
