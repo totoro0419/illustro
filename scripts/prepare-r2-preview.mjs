@@ -25,6 +25,16 @@ replaceExactlyOnce(
   'value.root=await storage.getDirectory();',
   "value.root=await (await storage.getDirectory()).getDirectoryHandle('illustro-r2-preview',{create:true});",
 );
+// IndexedDB names are origin-scoped just like localStorage.
+for (const [path, name] of [
+  ['assets/library.ts', 'illustro-c05-assets-v1'],
+  ['assets/referenceBoardStore.ts', 'illustro-c05-reference-boards-v1'],
+  ['assets/assetImportRecovery.ts', 'illustro-c05-import-recovery-v1'],
+  ['assets/linkedImages.ts', 'illustro-linked-images-v1'],
+  ['selection/store.ts', 'illustro-c06-selections-v1'],
+]) {
+  replaceExactlyOnce('apps/editor/src/' + path, "'" + name + "'", "'illustro-r2-preview-" + name.slice(9) + "'");
+}
 replaceExactlyOnce(
   'apps/editor/public/sw.js',
   "const CACHE_PREFIX='illustro-m05-';",
