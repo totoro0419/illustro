@@ -1,3 +1,5 @@
+import {validateLayerMask,type PixelLayerMask} from '@illustro/core';
+import {readCurve,type CurvePoint} from './toneCurve';
 import {validateEffectResource,type EffectResource} from './imageEffectResources';
 
 export type Parameter=Readonly<{label:string;min:number;max:number;step:number;initial:number}>;
@@ -61,7 +63,10 @@ export const toneEffects={
 } as const satisfies Record<string,EffectDefinition>;
 export const rasterEffects={...neighborhoodEffects,...toneEffects};
 export type RasterEffect=keyof typeof rasterEffects;
-export type EffectStep=Readonly<{kind:RasterEffect;values:readonly number[];strength:number;enabled:boolean;resource?:EffectResource}>;
+export const effectBlends=['normal','multiply','screen','difference'] as const;
+export type EffectBlend=typeof effectBlends[number];
+export type EffectStep=Readonly<{kind:RasterEffect;values:readonly number[];strength:number;enabled:boolean;resource?:EffectResource;
+  curve?:readonly CurvePoint[];mask?:PixelLayerMask;blend?:EffectBlend}>;
 export function newEffect(kind:RasterEffect):EffectStep{
   return {kind,values:rasterEffects[kind].parameters.map(p=>p.initial),strength:100,enabled:true};
 }
@@ -78,7 +83,15 @@ export function readEffectSteps(input:unknown):EffectStep[]|null{
     const resourceKind=kind==='lut'?'colorTable':kind==='displace'||kind==='lens'?'displacement':null;
     const resource=resourceKind&&step.resource!==undefined?validateEffectResource(step.resource,resourceKind):null;
     if(step.resource!==undefined&&!resource||resourceKind&&kind!=='lens'&&step.enabled&&step.strength>0&&!resource)return null;
-    steps.push({kind,values:[...step.values],strength:step.strength,enabled:step.enabled,...(resource?{resource}:{})});
+    const curve=step.curve===undefined?null:kind==='curves'?readCurve(step.curve):null;
+    if(step.curve!==undefined&&!curve)return null;
+    let mask;
+    try{mask=validateLayerMask(step.mask);}catch{return null;}
+    if(mask&&mask.shape!=='pixels')return null;
+    const blend=step.blend;
+    if(blend!==undefined&&!effectBlends.includes(blend))return null;
+    steps.push({kind,values:[...step.values],strength:step.strength,enabled:step.enabled,...(resource?{resource}:{}),
+      ...(curve?{curve}:{}),...(mask?{mask}:{}),...(blend?{blend}:{})});
   }
   return steps;
 }

@@ -1,3 +1,5 @@
+import {samplePixelMask} from '@illustro/brush-rt';
+import {curveFromLegacy,curveTable} from './toneCurve';
 import {applyColorTable,applyDisplacement,readEffectImageChannels} from './imageEffectResources';
 import {readEffectSteps,type EffectStep} from './rasterSettings';
 
@@ -254,13 +256,9 @@ function emboss(source:Bytes,width:number,height:number,step:EffectStep){
 function toneFilter(source:Bytes,width:number,step:EffectStep){
   const [a=0,b=0,c=0,d=0,e=0,f=0]=step.values;
   if(step.kind==='levels'&&b<=a)throw Error('入力レベルの白は黒より大きくしてください。');
-  const curve=step.kind==='curves'?[0,b,d,f,255]:null;
-  const curveValues=step.kind==='curves'?[0,c,e,step.values[6]!,255]:null;
-  if(curve&&!(b<d&&d<f))throw Error('トーンカーブの入力値を暗部、中間、明部の順に指定してください。');
-  const curveTable=curve&&curveValues?Uint8ClampedArray.from({length:256},(_,v)=>{
-    const hi=curve.findIndex(x=>x>=v),lo=Math.max(0,hi-1);
-    return hi===lo?curveValues[hi]!:curveValues[lo]!+(curveValues[hi]!-curveValues[lo]!)*(v-curve[lo]!)/(curve[hi]!-curve[lo]!);
-  }):null;
+  const curve=step.kind==='curves'?step.curve??curveFromLegacy(step.values):null;
+  if(step.kind==='curves'&&!curve)throw Error('トーンカーブの入力点を順に指定してください。');
+  const table=curve?curveTable(curve):null;
   const dark=rgb24(c),light=rgb24(d);
   const out=new Uint8ClampedArray(source),slope=(a:number)=>a<0?1+a/100:1/(1-Math.min(99,a)/100);
   const bayer=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
@@ -275,7 +273,7 @@ function toneFilter(source:Bytes,width:number,step:EffectStep){
         rgb=rgb.map(v=>c?v+change(y)-y:change(v));break;
       }
       case 'levels':rgb=rgb.map((v,k)=>f&&f!==k+1?v:d+(e-d)*clip((v-a)/(b-a),0,1)**(1/c));break;
-      case 'curves':rgb=rgb.map((v,k)=>a&&a!==k+1?v:curveTable![v]!);break;
+      case 'curves':rgb=rgb.map((v,k)=>a&&a!==k+1?v:table![v]!);break;
       case 'exposure':rgb=rgb.map(v=>{
         const u=v/255,linear=u<=.04045?u/12.92:((u+.055)/1.055)**2.4;
         const adjusted=clip(linear*2**a+b,0,1)**(1/c);
@@ -445,13 +443,19 @@ export function applyRasterEffects(source:Bytes,width:number,height:number,recip
       default:filtered=toneFilter(result,width,step);
     }
     if(filtered===result)continue;
-    if(step.strength===100&&!mask&&!alphaLocked){result=filtered;continue;}
+    if(step.strength===100&&!mask&&!step.mask&&!alphaLocked&&(!step.blend||step.blend==='normal')){result=filtered;continue;}
     const blended=new Uint8ClampedArray(result.length),strength=step.strength/100;
     for(let i=0;i<blended.length;i+=4){
-      const w=strength*(mask?byte(mask,i/4)/255:1),oldA=byte(result,i+3),newA=byte(filtered,i+3);
+      const p=i/4,clipMask=step.mask?.enabled?samplePixelMask(step.mask,p%width+.5,Math.floor(p/width)+.5)/255:1;
+      const w=strength*clipMask*(mask?byte(mask,p)/255:1),oldA=byte(result,i+3),newA=byte(filtered,i+3);
       if(w===0||alphaLocked&&oldA===0){blended.set(result.subarray(i,i+4),i);continue;}
       const amount=alphaLocked?w:((1-w)*oldA+w*newA)>0?w*newA/((1-w)*oldA+w*newA):0;
-      for(let k=0;k<3;k++)blended[i+k]=byte(result,i+k)*(1-amount)+byte(filtered,i+k)*amount;
+      for(let k=0;k<3;k++){
+        const old=byte(result,i+k),added=byte(filtered,i+k);
+        const color=!oldA?added:step.blend==='multiply'?old*added/255:step.blend==='screen'?255-(255-old)*(255-added)/255:
+          step.blend==='difference'?Math.abs(old-added):added;
+        blended[i+k]=old*(1-amount)+color*amount;
+      }
       blended[i+3]=alphaLocked?oldA:oldA*(1-w)+newA*w;
     }
     result=blended;

@@ -5027,7 +5027,11 @@ function lastRasterFilter(artwork:CoreDocument,id:LayerId){
   return {source,steps:recipe,mask:decoded};
 }
 const rasterEffectPanel=installRasterEffects(byId('effectsBoxBody'),{
-  capture:async edit=>{
+  selectionMask:()=>{
+    const selection=c06Selection?.active();
+    return selection?selectionAsLayerMask(selection):null;
+  },
+  capture:async (edit,explicitMasks)=>{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer,drawing=surface;
     if(!drawing||!documentReady)throw Error('作品を開いてください。');
     if(layer.baseColor||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||root.isLayerContentLocked(layer.id))
@@ -5037,7 +5041,7 @@ const rasterEffectPanel=installRasterEffects(byId('effectsBoxBody'),{
     const {width,height}=root,source=saved?.source??head,original=artwork.revision(source).root;
     if(original.width!==width||original.height!==height||!original.hasLayer(layer.id))throw Error('効果の原本が見つかりません。');
     const currentSelection=c06Selection?.active()??null;
-    const mask=saved?(saved.mask?readSelectionMask(saved.mask,width,height):null):currentSelection;
+    const mask=saved?(saved.mask?readSelectionMask(saved.mask,width,height):null):explicitMasks?null:currentSelection;
     const valid=()=>artwork===controller.document&&head===artwork.head&&controller.selectedLayer.id===layer.id&&
       surface===drawing&&(edit||(c06Selection?.active()??null)===currentSelection);
     const pixels=await originalTransformPixels(artwork,original.getLayer(layer.id),source);

@@ -1,6 +1,8 @@
 import {parseCube,readDisplacementImage} from './imageEffectResources';
-import {button,labelledField,numberField} from '../artwork/tools';
-import {newEffect,neighborhoodEffects,rasterEffects,toneEffects,type EffectStep,type RasterEffect} from './rasterSettings';
+import type {PixelLayerMask} from '@illustro/core';
+import {installToneCurvePanel} from './toneCurvePanel';
+import {button,labelledField,numberField,selectField} from '../artwork/tools';
+import {newEffect,neighborhoodEffects,rasterEffects,toneEffects,type EffectBlend,type EffectStep,type RasterEffect} from './rasterSettings';
 import type {RasterEffectRequest} from './raster.worker';
 import './rasterPanel.css';
 
@@ -46,7 +48,7 @@ function showPreview(canvas:HTMLCanvasElement,source:Uint8Array|Uint8ClampedArra
 }
 
 export function installRasterEffects(host:HTMLElement,api:{
-  capture:(edit:boolean)=>Promise<EffectCapture>;bake:(copy:boolean)=>Promise<boolean>;
+  capture:(edit:boolean,explicitMasks?:boolean)=>Promise<EffectCapture>;selectionMask:()=>PixelLayerMask|null;bake:(copy:boolean)=>Promise<boolean>;
 }){
   const panel=document.createElement('details');
   panel.className='c06-clipboard-panel raster-effects';
@@ -70,25 +72,38 @@ export function installRasterEffects(host:HTMLElement,api:{
   labelledField(controls,'追加する効果',choose);
   let steps:EffectStep[]=[newEffect('gaussian')],selected=0,session:EffectCapture|null=null;
   let running:AbortController|null=null,result:Result|null=null,applying=false;
+  let curve:ReturnType<typeof installToneCurvePanel>|null=null,lastCompared:EffectCapture|null=null,dragFrom:number|null=null;
+  let samplePointer:{id:number;y:number}|null=null;
 
   function clearResult(){
-    result=null;comparison.hidden=true;
+    result=null;lastCompared=null;comparison.hidden=true;after.hidden=false;samplePointer=null;
     before.width=after.width=1;
   }
   function invalidate(){
     running?.abort();clearResult();
   }
+  function moveStep(from:number,to:number){
+    if(from===to||!steps[from]||!steps[to])return;
+    const [step]=steps.splice(from,1);steps.splice(to,0,step!);
+    selected=to;invalidate();refresh();
+  }
   function refresh(){
+    curve=null;
     recipe.replaceChildren(...steps.map((step,index)=>{
       const li=document.createElement('li');
+      li.draggable=true;
+      li.ondragstart=event=>{dragFrom=index;event.dataTransfer?.setData('text/plain',String(index));};
+      li.ondragover=event=>{if(dragFrom!==null)event.preventDefault();};
+      li.ondragend=()=>{dragFrom=null;};
+      li.ondrop=event=>{
+        if(dragFrom===null)return;
+        event.preventDefault();const from=dragFrom;dragFrom=null;moveStep(from,index);
+      };
       const select=button(rasterEffects[step.kind].label,()=>{selected=index;refresh();},status);
       select.setAttribute('aria-pressed',String(index===selected));
       const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=step.enabled;enabled.ariaLabel=rasterEffects[step.kind].label+'を有効にする';
       enabled.onchange=()=>{steps[index]={...steps[index]!,enabled:enabled.checked};invalidate();};
-      const move=(offset:number)=>{
-        [steps[index],steps[index+offset]]=[steps[index+offset]!,steps[index]!];
-        selected=index+offset;invalidate();refresh();
-      };
+      const move=(offset:number)=>moveStep(index,index+offset);
       const up=button('↑',()=>move(-1),status),down=button('↓',()=>move(1),status);
       up.disabled=index===0;down.disabled=index===steps.length-1;
       up.ariaLabel='効果を前へ';down.ariaLabel='効果を後ろへ';
@@ -99,7 +114,15 @@ export function installRasterEffects(host:HTMLElement,api:{
     const step=steps[selected];
     if(!step)return;
     const definition=rasterEffects[step.kind];
-    definition.parameters.forEach((param,index)=>{
+    if(step.kind==='curves'){
+      const index=selected;
+      curve=installToneCurvePanel(parameters,step,edited=>{
+        const current=steps[index];
+        if(!current||current.kind!=='curves')return;
+        steps[index]={...current,values:edited.values,curve:edited.curve!};running?.abort();result=null;
+        if(lastCompared){after.hidden=true;status.textContent='カーブを調整しました。前後を比較して更新できます。';}
+      },status);
+    }else definition.parameters.forEach((param,index)=>{
       const write=(value:number)=>{
         const current=steps[selected]!;
         const values=[...current.values];values[index]=value;
@@ -139,6 +162,23 @@ export function installRasterEffects(host:HTMLElement,api:{
         }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
       };
     }
+    const blend=selectField(parameters,'効果の合成',[
+      ['normal','通常'],['multiply','乗算'],['screen','スクリーン'],['difference','差の絶対値'],
+    ]);
+    blend.value=step.blend??'normal';
+    blend.onchange=()=>{steps[selected]={...steps[selected]!,blend:blend.value as EffectBlend};invalidate();};
+    const maskInfo=document.createElement('span');
+    maskInfo.textContent=step.mask?'この効果に範囲マスクを保存しています。':'この効果に個別の範囲マスクはありません。';
+    const setMask=button('現在の選択範囲をこの効果に固定',()=>{
+      const mask=api.selectionMask();
+      if(!mask)throw Error('先に選択範囲を作ってください。');
+      steps[selected]={...steps[selected]!,mask};invalidate();refresh();
+    },status);
+    const removeMask=button('この効果のマスクを外す',()=>{
+      const {mask,...plain}=steps[selected]!;steps[selected]=plain;invalidate();refresh();
+    },status);
+    removeMask.disabled=!step.mask;
+    parameters.append(maskInfo,setMask,removeMask);
     const strength=numberField(parameters,'効果の強さ（%）',step.strength,0,100,1);
     strength.oninput=()=>{
       invalidate();
@@ -157,7 +197,7 @@ export function installRasterEffects(host:HTMLElement,api:{
     const snapshot=[...steps];
     try{
       status.textContent='レイヤーの画素を取得しています。';
-      const capture=session??await api.capture(false);
+      const capture=session??await api.capture(false,snapshot.some(step=>step.mask));
       abort.signal.throwIfAborted();
       if(!capture.valid())throw Error('対象が変わりました。「新しい効果」から開き直してください。');
       status.textContent='効果を計算しています。';
@@ -189,9 +229,28 @@ export function installRasterEffects(host:HTMLElement,api:{
     const {capture,pixels}=ready;
     showPreview(before,capture.source,capture.width,capture.height);
     showPreview(after,pixels,capture.width,capture.height);
-    comparison.hidden=false;
+    lastCompared=capture;after.hidden=false;comparison.hidden=false;
     status.textContent=capture.name+'の比較。選択範囲がある場合はその内側を編集します。';
   },status);
+  before.style.touchAction='none';
+  function sampleImage(event:PointerEvent){
+    if(!curve||!lastCompared)return;
+    const bounds=before.getBoundingClientRect();
+    const x=Math.min(before.width-1,Math.max(0,Math.floor((event.clientX-bounds.left)*before.width/bounds.width)));
+    const y=Math.min(before.height-1,Math.max(0,Math.floor((event.clientY-bounds.top)*before.height/bounds.height)));
+    const value=before.getContext('2d')?.getImageData(x,y,1,1).data;
+    if(value)curve.inspect(value);
+  }
+  before.onpointerdown=event=>{
+    if(!curve||!lastCompared||event.button!==0)return;
+    sampleImage(event);samplePointer={id:event.pointerId,y:event.clientY};before.setPointerCapture(event.pointerId);
+    curve.drag(event,null);
+  };
+  before.onpointermove=event=>{
+    if(samplePointer?.id===event.pointerId)curve?.drag(event,event.clientY-samplePointer.y);
+    else sampleImage(event);
+  };
+  before.onlostpointercapture=()=>{samplePointer=null;curve?.release();};
   const cancel=button('計算を中止',()=>{invalidate();status.textContent='計算を中止しました。';},status);
   cancel.disabled=true;
   const apply=button('レイヤーに適用',async()=>{
