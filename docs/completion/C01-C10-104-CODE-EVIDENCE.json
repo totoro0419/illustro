@@ -775,6 +775,138 @@
       "missing": "",
       "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
       "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "NDE-003",
+      "status": "A",
+      "process": "packages/core/src/layerDeformation.ts:40 validateLayerDeformation",
+      "ui": "apps/editor/src/transform/panel.ts:567 toggleEffect / 570 removeEffect",
+      "save": "apps/editor/src/transform/panel.ts:564 bakeButton",
+      "test": "packages/core/src/layerDeformation.test.ts",
+      "present": "元の絵を保護した変形・効果を再編集/無効化/削除/マスクし、明示的に焼き込みができる",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "NDE-004",
+      "status": "A",
+      "process": "packages/core/src/layerImageLink.ts:9 validateLayerImageLink",
+      "ui": "apps/editor/src/transform/imageLinkPanel.ts:58 link/embed / 60 instance",
+      "save": "apps/editor/src/main.ts:3989 LayerImageLink",
+      "test": "apps/editor/src/assets/linkedImages.test.ts",
+      "present": "画像リンク・埋込・同一元の複製・不足元の保持と再指定/独立化がUIから選べる",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "NDE-005",
+      "status": "A",
+      "process": "packages/core/src/layerGroups.ts:9 compositing mode",
+      "ui": "apps/editor/src/main.ts:857 editGroupStructure / 866 mode",
+      "save": "packages/core/src/transaction.ts:668 updateLayerGroup",
+      "test": "packages/core/src/layerGroupPacking.test.ts",
+      "present": "グループ通過/隔離を処理順とマスク・クリッピングの説明付きで比較し構造を一Undoで変更",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "PIX-002",
+      "status": "B",
+      "process": "apps/editor/src/canvasGeometry.ts:45 resizeImagePixels / 51 nearest",
+      "ui": "apps/editor/src/transform/panel.ts:139 interpolation mode / 140 artworkKind",
+      "save": "apps/editor/src/transform/interpolationAdvice.ts:9 recommendInterpolation",
+      "test": "apps/editor/src/transform/interpolationAdvice.test.ts",
+      "present": "最近傍補間の明示・ドット絵向け提案と低画質化の注意がある",
+      "missing": "整数倍・端数位置/回転に対して画素を守る専用の条件チェック/強制しない警告と、ピクセル用途の作品出力UIは不足",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "TRN-002",
+      "status": "A",
+      "process": "apps/editor/src/transform/panel.ts:134 modes free/projective/skew",
+      "ui": "apps/editor/src/transform/panel.ts:274 refreshHandles / 553 vanishing",
+      "save": "packages/core/src/layerDeformation.ts:40 validateLayerDeformation",
+      "test": "apps/editor/src/transform/c07Quality.test.ts",
+      "present": "四隅/消失点/傾斜で変形を直接操作、退化はinverseTransformで拒否し編集可能な元を保持",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "TRN-003",
+      "status": "A",
+      "process": "apps/editor/src/transform/mesh.ts:11 gridMesh / 20 cageMesh",
+      "ui": "apps/editor/src/transform/panel.ts:206 mesh points / 311 refreshHandles",
+      "save": "packages/core/src/layerDeformation.ts:40 validateLayerDeformation",
+      "test": "apps/editor/src/transform/warpArea.test.ts",
+      "present": "メッシュ・ケージの固定点/追加/削除/分割と直接操作、元画像と制御点を再編集可能に保存",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "TRN-004",
+      "status": "A",
+      "process": "apps/editor/src/transform/liquify.ts:7 makeLiquifyStroke / 24 liquifyMapping",
+      "ui": "apps/editor/src/transform/panel.ts:523 brushMode / 541 setCanvasEditGesture",
+      "save": "packages/core/src/layerDeformation.ts:11 LiquifyStroke",
+      "test": "apps/editor/src/transform/warpArea.test.ts",
+      "present": "押す/膨張/収縮/回す/戻す、圧力反映の半径・強さ、保護範囲と一筆Undo/全体Undoがある",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "TRN-005",
+      "status": "A",
+      "process": "apps/editor/src/transform/layout.ts:alignLayers",
+      "ui": "apps/editor/src/transform/panel.ts:75 snapPixels / 81 skipSnap",
+      "save": "apps/editor/src/transform/layoutPanel.ts:133 apply",
+      "test": "apps/editor/src/transform/c07Quality.test.ts",
+      "present": "定規/画素/他の層への吸着、一時解除と吸着先の表示、整列・等間隔をUndo一単位で適用",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "TRN-006",
+      "status": "A",
+      "process": "apps/editor/src/transform/interpolationAdvice.ts:9 recommendInterpolation",
+      "ui": "apps/editor/src/transform/panel.ts:139 interpolation / 594 change",
+      "save": "packages/core/src/layerDeformation.ts:40 validateLayerDeformation",
+      "test": "apps/editor/src/transform/interpolationAdvice.test.ts",
+      "present": "元状態から都度変形を再評価し複数試行で画素劣化を重ねず、用途別の補間と画素保護を選択",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "TRN-007",
+      "status": "A",
+      "process": "apps/editor/src/transform/panel.ts:609 undo.push(prior)",
+      "ui": "apps/editor/src/transform/panel.ts:752 back / forward / apply / cancel",
+      "save": "apps/editor/src/transform/panel.ts:584 current.apply",
+      "test": "apps/editor/src/transform/workerSession.test.ts",
+      "present": "ハンドル調整はセッション内Undo/Redo、取消で原本に復帰、適用は全体履歴一操作",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
+    },
+    {
+      "id": "TRN-008",
+      "status": "A",
+      "process": "packages/core/src/layerDeformation.ts:33 LayerDeformation",
+      "ui": "apps/editor/src/transform/panel.ts:439 openOriginal / 564 bakeButton",
+      "save": "apps/editor/src/transform/panel.ts:567 toggleEffect",
+      "test": "packages/core/src/persistence.test.ts",
+      "present": "元画素の再編集/非破壊変形の再編集/明示焼込/上層追加の各経路とUndo・Native保持が存在",
+      "missing": "",
+      "source_head": "49474fd56b36d91425e5df81f9c135c0424aecb4",
+      "verified_type": "read-source-static-not-device"
     }
   ]
 }
