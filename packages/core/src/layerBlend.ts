@@ -14,7 +14,10 @@ export type LayerColorEffect=Readonly<{
   enabled:boolean;brightness:number;contrast:number;saturation:number;invert:boolean;mask:LayerMask|null;
 }>;
 export type GradientMap=Readonly<{stops:readonly GradientStop[];levels:number;dither:boolean}>;
-export type LayerBlend=Readonly<{mode:LayerBlendMode;space:'encoded'|'linear';seed:number;tone?:LayerTone;effect?:LayerColorEffect;gradientMap?:GradientMap}>;
+export const ADJUSTMENT_KINDS=['brightness','levels','curves','exposure','hue','vibrance','balance','temperature'] as const;
+export type LayerAdjustment=Readonly<{kind:typeof ADJUSTMENT_KINDS[number];values:readonly number[];
+  curve?:readonly Readonly<{x:number;y:number}>[];cube:string}>;
+export type LayerBlend=Readonly<{mode:LayerBlendMode;space:'encoded'|'linear';seed:number;tone?:LayerTone;effect?:LayerColorEffect;gradientMap?:GradientMap;adjustment?:LayerAdjustment}>;
 
 export function validateGradientMap(value:GradientMap):GradientMap{
   if(!value||!Array.isArray(value.stops)||value.stops.length<2||value.stops.length>64||
@@ -30,10 +33,23 @@ export function validateGradientMap(value:GradientMap):GradientMap{
   return Object.freeze({stops:Object.freeze(stops),levels:value.levels,dither:value.dither});
 }
 
+function validateLayerAdjustment(value:LayerAdjustment):LayerAdjustment{
+  if(!value||!ADJUSTMENT_KINDS.includes(value.kind)||!Array.isArray(value.values)||value.values.length<1||
+    value.values.length>8||value.values.some(n=>!Number.isFinite(n)||Math.abs(n)>4096)||
+    typeof value.cube!=='string'||value.cube.length!==16384||!/^[A-Za-z0-9+/]+$/.test(value.cube))
+    throw Error('調整レイヤーの設定を確認してください。');
+  const curve=value.curve;
+  if(curve!==undefined&&(!Array.isArray(curve)||value.kind!=='curves'||curve.length<2||curve.length>16||
+    curve[0]?.x!==0||curve.at(-1)?.x!==255||curve.some((p,i)=>!p||!Number.isInteger(p.x)||!Number.isInteger(p.y)||
+      p.x<0||p.x>255||p.y<0||p.y>255||i>0&&p.x<=curve[i-1]!.x)))throw Error('調整レイヤーのカーブを確認してください。');
+  return Object.freeze({kind:value.kind,values:Object.freeze([...value.values]),cube:value.cube,
+    ...(curve?{curve:Object.freeze(curve.map(point=>Object.freeze({x:point.x,y:point.y})))}:{})});
+}
+
 export function validateLayerBlend(value:unknown):LayerBlend|null{
   if(value===null||value===undefined)return null;
   if(!value||typeof value!=='object')throw new Error('合成モードの設定が正しくありません。');
-  const {mode,space,seed,tone,effect,gradientMap}=value as Partial<LayerBlend>;
+  const {mode,space,seed,tone,effect,gradientMap,adjustment}=value as Partial<LayerBlend>;
   if(!mode||!LAYER_BLEND_MODES.includes(mode)||(space!=='encoded'&&space!=='linear')||
     typeof seed!=='number'||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw new Error('合成モードの設定が正しくありません。');
   let checkedTone:LayerTone|undefined;
@@ -53,5 +69,6 @@ export function validateLayerBlend(value:unknown):LayerBlend|null{
       throw Error('色の効果の設定が正しくありません。');
     checkedEffect=Object.freeze({enabled,brightness,contrast,saturation,invert,mask:validateLayerMask(mask)});
   }
-  return Object.freeze({mode,space,seed,...(gradientMap===undefined?{}:{gradientMap:validateGradientMap(gradientMap)}),...(checkedTone?{tone:checkedTone}:{}),...(checkedEffect?{effect:checkedEffect}:{})});
+  if(gradientMap&&adjustment)throw Error('一枚のレイヤーで複数の色調整を重ねられません。');
+  return Object.freeze({mode,space,seed,...(adjustment===undefined?{}:{adjustment:validateLayerAdjustment(adjustment)}),...(gradientMap===undefined?{}:{gradientMap:validateGradientMap(gradientMap)}),...(checkedTone?{tone:checkedTone}:{}),...(checkedEffect?{effect:checkedEffect}:{})});
 }

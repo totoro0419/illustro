@@ -1,6 +1,6 @@
 import {srgbIccBytes} from './iccMetadata';
 import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId,type DocumentRoot} from '@illustro/core';
-import {blendArtworkPixel,gradientMapTable,mapGradientPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
+import {blendArtworkPixel,gradientMapTable,mapGradientPixel,adjustmentCube,mapAdjustmentPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {canUseTiledHistoryPreview,createTiledPreviewAccumulator,yieldHistoryRender} from './tiledPreview';
 import {rasterReplayKeys} from '../rasterReplayKeys';
 import {resizeImagePixels} from '../canvasGeometry';
@@ -123,54 +123,13 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
       renderer.document.append(++id,preset,record.commands,keys?new Set(keys):null,surfaceId);
       renderer.document.end(id,preset,surfaceId);
     }
-    const composite=new Uint8ClampedArray(width*height*4);
     await renderer.drain();
-    const layerBySurface=new Map(layers.map(layer=>[layer.surfaceId,layer]));
-    const clippingSources=new Set(layers.flatMap(layer=>layer.clipSurfaceId?[layer.clipSurfaceId]:[]));
-    const sourcePixels=new Map<string,Uint8Array|Uint8ClampedArray>();
-    const readLayer=async(layer:FrozenExport['layers'][number])=>{
-      const image=sourcePixels.get(layer.surfaceId)??(layer.baseColor==='white'
-        ?new Uint8ClampedArray(width*height*4).fill(255)
-        :await renderer!.read(layer.surfaceId));
-      if(clippingSources.has(layer.surfaceId))sourcePixels.set(layer.surfaceId,image);
-      return image;
-    };
-    const groups:Array<{id:string;pixels:Uint8ClampedArray}>=[];
-    const closeGroup=()=>{
-      const group=groups.pop()!;
-      compositeLayer(groups.at(-1)?.pixels??composite,group.pixels);
-    };
-    for(const layer of layers){
-      if(layer.referenceOnly||!layer.visible||layer.opacity<=0)continue;
-      const isolation=layer.isolation??[];
-      let common=0;
-      while(common<groups.length&&isolation[common]===groups[common]?.id)common++;
-      while(groups.length>common)closeGroup();
-      for(const id of isolation.slice(common))groups.push({id,pixels:new Uint8ClampedArray(width*height*4)});
-      const clip=layer.clipSurfaceId?layerBySurface.get(layer.clipSurfaceId):undefined;
-      if(clip&&(!clip.visible||clip.opacity<=0))continue;
-      const destination=groups.at(-1)?.pixels??composite;
-      const map=layer.blend?.gradientMap;
-      if(map){
-        const table=gradientMapTable(map);
-        const clipPixels=clip?await readLayer(clip):null;
-        for(let ty=0;ty<Math.ceil(height/TILE);ty++)for(let tx=0;tx<Math.ceil(width/TILE);tx++){
-          const key=tx+','+ty,mask=layerMaskTile(layer.mask,key),clipMask=layerMaskTile(clip?.mask,key);
-          for(let y=ty*TILE;y<Math.min(height,(ty+1)*TILE);y++)for(let x=tx*TILE;x<Math.min(width,(tx+1)*TILE);x++){
-            const offset=(y*width+x)*4,local=(y%TILE)*TILE+x%TILE;
-            const coverage=layer.opacity*(typeof mask==='number'?mask:mask[local]!)/255*
-              (clipPixels&&clip?clipPixels[offset+3]!*clip.opacity*(typeof clipMask==='number'?clipMask:clipMask[local]!)/65025:1);
-            mapGradientPixel(destination,offset,table,map,x,y,coverage);
-          }
-        }
-        continue;
-      }
-      const pixels=await readLayer(layer);
-      compositeLayer(destination,pixels,layer.opacity,clip?{pixels:await readLayer(clip),opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,{width,...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
-      // Let pointer input and normal drawing frames execute between layers.
+    const composite=await compositeArtworkRegion(layers,{x:0,y:0,width,height},async id=>{
+      // Yield between full layer readbacks so the work area stays responsive.
       await yieldHistoryRender();
-    }
-    while(groups.length)closeGroup();
+      return renderer!.read(id);
+    });
+    if(!composite)throw Error('作品の合成に必要な画素を読み取れません。');
     return composite;
   }finally{renderer?.destroy();canvas.width=1;canvas.height=1;}
 }
@@ -185,6 +144,7 @@ export type ArtworkRegion=Readonly<{x:number;y:number;width:number;height:number
 export async function compositeArtworkRegion(
   layers:FrozenExport['layers'],area:ArtworkRegion,
   read:(surfaceId:string)=>Promise<Uint8Array|Uint8ClampedArray|null>,signal?:AbortSignal,
+  tables=new Map<object,Uint8Array>(),
 ):Promise<Uint8ClampedArray|null>{
   const {x,y,width,height}=area,length=width*height*4;
   const merged=new Uint8ClampedArray(length);
@@ -218,9 +178,11 @@ export async function compositeArtworkRegion(
     if(clip&&(!clip.visible||clip.opacity<=0))continue;
     const destination=groups.at(-1)?.pixels??merged,clipPixels=clip?await readLayer(clip):null;
     if(clip&&!clipPixels)return null;
-    const map=layer.blend?.gradientMap;
-    if(map){
-      const table=gradientMapTable(map),cache=new Map<number,readonly [number|Uint8Array,number|Uint8Array]>();
+    const map=layer.blend?.gradientMap,adjustment=layer.blend?.adjustment,lookup=map??adjustment;
+    if(lookup){
+      let table=tables.get(lookup);
+      if(!table){table=map?gradientMapTable(map):adjustmentCube(adjustment!);tables.set(lookup,table);}
+      const cache=new Map<number,readonly [number|Uint8Array,number|Uint8Array]>();
       for(let row=0;row<height;row++)for(let col=0;col<width;col++){
         const px=x+col,py=y+row,tx=Math.floor(px/TILE),ty=Math.floor(py/TILE),key=ty*128+tx;
         let masks=cache.get(key);
@@ -228,7 +190,8 @@ export async function compositeArtworkRegion(
         const [own,clipping]=masks,local=(py%TILE)*TILE+px%TILE,offset=(row*width+col)*4;
         const coverage=layer.opacity*(typeof own==='number'?own:own[local]!)/255*
           (clip&&clipPixels?clipPixels[offset+3]!*clip.opacity*(typeof clipping==='number'?clipping:clipping[local]!)/65025:1);
-        mapGradientPixel(destination,offset,table,map,px,py,coverage);
+        if(map)mapGradientPixel(destination,offset,table,map,px,py,coverage);
+        else mapAdjustmentPixel(destination,offset,table,coverage);
       }
       continue;
     }
@@ -271,78 +234,23 @@ export async function renderFrozenArtworkTiledPreview(
     await renderer.drain();
     check();
     const accumulator=createTiledPreviewAccumulator(width,height,targetWidth,targetHeight);
-    const plainWhite=new Uint8Array(TILE*TILE*4).fill(255);
-    const layerBySurface=new Map(layers.map(layer=>[layer.surfaceId,layer]));
-    const clippingSources=new Set(layers.flatMap(layer=>layer.clipSurfaceId?[layer.clipSurfaceId]:[]));
-    const gradientTables=new WeakMap<object,Uint8Array>();
-    // Reuse exactly the same per-pixel compositing as full export, except that
-    // every allocation and GPU readback is confined to the current 128px tile.
+    const tables=new Map<object,Uint8Array>();
     for(let ty=0;ty<Math.ceil(height/TILE);ty++){
       for(let tx=0;tx<Math.ceil(width/TILE);tx++){
         check();
-        const composite=new Uint8ClampedArray(TILE*TILE*4),key=tx+','+ty;
-        const sourcePixels=new Map<string,Uint8Array|Uint8ClampedArray>();
-        const readLayer=async(layer:FrozenExport['layers'][number])=>{
-          if(layer.surfaceId===replacement?.surfaceId){
-            let pixels=sourcePixels.get(layer.surfaceId);
-            if(!pixels){
-              pixels=new Uint8ClampedArray(TILE*TILE*4);
-              for(let y=0;y<TILE&&ty*TILE+y<height;y++){
-                const from=((ty*TILE+y)*width+tx*TILE)*4;
-                pixels.set(replacement.pixels.subarray(from,from+Math.min(TILE,width-tx*TILE)*4),y*TILE*4);
-              }
-              sourcePixels.set(layer.surfaceId,pixels);
-            }
-            return pixels;
+        const x=tx*TILE,y=ty*TILE,key=tx+','+ty;
+        const composite=await compositeArtworkRegion(layers,{x,y,width:TILE,height:TILE},async id=>{
+          if(id!==replacement?.surfaceId)return await renderer!.readTile(id,key)??new Uint8Array(TILE*TILE*4);
+          const pixels=new Uint8ClampedArray(TILE*TILE*4);
+          for(let row=0;row<TILE&&y+row<height;row++){
+            const from=((y+row)*width+x)*4;
+            pixels.set(replacement.pixels.subarray(from,from+Math.min(TILE,width-x)*4),row*TILE*4);
           }
-          const pixels=sourcePixels.get(layer.surfaceId)??(layer.baseColor==='white'
-            ?plainWhite
-            :await renderer!.readTile(layer.surfaceId,key)??new Uint8Array(TILE*TILE*4));
-          if(clippingSources.has(layer.surfaceId))sourcePixels.set(layer.surfaceId,pixels);
           return pixels;
-        };
-        const groups:Array<{id:string;pixels:Uint8ClampedArray}>=[];
-        const closeGroup=()=>{
-          const group=groups.pop()!;
-          compositeLayer(groups.at(-1)?.pixels??composite,group.pixels);
-        };
-        for(const layer of layers){
-          if(layer.referenceOnly||!layer.visible||layer.opacity<=0)continue;
-          const isolation=layer.isolation??[];
-          let common=0;
-          while(common<groups.length&&isolation[common]===groups[common]?.id)common++;
-          while(groups.length>common)closeGroup();
-          for(const id of isolation.slice(common))groups.push({id,pixels:new Uint8ClampedArray(TILE*TILE*4)});
-          const clip=layer.clipSurfaceId?layerBySurface.get(layer.clipSurfaceId):undefined;
-          if(clip&&(!clip.visible||clip.opacity<=0))continue;
-          const destination=groups.at(-1)?.pixels??composite;
-          const map=layer.blend?.gradientMap;
-          if(map){
-            let table=gradientTables.get(map);
-            if(!table){table=gradientMapTable(map);gradientTables.set(map,table);}
-            const clipPixels=clip?await readLayer(clip):null;
-            const mask=layerMaskTile(layer.mask,key),clipMask=layerMaskTile(clip?.mask,key);
-            for(let ly=0;ly<TILE&&ty*TILE+ly<height;ly++)
-              for(let lx=0;lx<TILE&&tx*TILE+lx<width;lx++){
-                const offset=(ly*TILE+lx)*4,local=ly*TILE+lx;
-                const coverage=layer.opacity*(typeof mask==='number'?mask:mask[local]!)/255*
-                  (clipPixels&&clip?clipPixels[offset+3]!*clip.opacity*
-                   (typeof clipMask==='number'?clipMask:clipMask[local]!)/65025:1);
-                mapGradientPixel(destination,offset,table,map,tx*TILE+lx,ty*TILE+ly,coverage);
-              }
-            continue;
-          }
-          const pixels=await readLayer(layer);
-          const clipped=clip?await readLayer(clip):null;
-          compositeLayer(destination,pixels,layer.opacity,
-            clip&&clipped?{pixels:clipped,opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,
-            {width:TILE,originX:tx*TILE,originY:ty*TILE,
-             ...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
-        }
-        while(groups.length)closeGroup();
-        accumulator.addTile(composite,tx*TILE,ty*TILE,TILE);
+        },options?.signal,tables);
+        if(!composite)return null;
+        accumulator.addTile(composite,x,y,TILE);
       }
-      // History rendering must leave time for normal pointer input.
       await yieldHistoryRender();
     }
     check();

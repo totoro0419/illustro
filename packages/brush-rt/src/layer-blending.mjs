@@ -80,6 +80,29 @@ export function mapGradientPixel(pixels,offset,table,map,x,y,coverage=1){
  const amount=coverage*table[index+3]/255;
  for(let c=0;c<3;c++)pixels[offset+c]=Math.round(pixels[offset+c]+(table[index+c]-pixels[offset+c])*amount);
 }
+export function adjustmentCube(adjustment){
+ const packed=atob(adjustment.cube),rgba=new Uint8Array(16**3*4);
+ for(let i=0,j=0;i<packed.length;i+=3,j+=4){
+  rgba[j]=packed.charCodeAt(i);rgba[j+1]=packed.charCodeAt(i+1);rgba[j+2]=packed.charCodeAt(i+2);rgba[j+3]=255;
+ }
+ return rgba;
+}
+export function mapAdjustmentPixel(pixels,offset,cube,amount){
+ if(!pixels[offset+3]||amount<=0)return;
+ const r=pixels[offset]/17,g=pixels[offset+1]/17,b=pixels[offset+2]/17;
+ const r0=Math.floor(r),g0=Math.floor(g),b0=Math.floor(b);
+ const fr=r-r0,fg=g-g0,fb=b-b0;
+ let rr=0,gg=0,bb=0;
+ for(let z=0;z<2;z++)for(let y=0;y<2;y++)for(let x=0;x<2;x++){
+  const weight=(x?fr:1-fr)*(y?fg:1-fg)*(z?fb:1-fb);
+  if(!weight)continue;
+  const index=(((b0+z)*16+g0+y)*16+r0+x)*4;
+  rr+=cube[index]*weight;gg+=cube[index+1]*weight;bb+=cube[index+2]*weight;
+ }
+ pixels[offset]=Math.round(pixels[offset]+(rr-pixels[offset])*amount);
+ pixels[offset+1]=Math.round(pixels[offset+1]+(gg-pixels[offset+1])*amount);
+ pixels[offset+2]=Math.round(pixels[offset+2]+(bb-pixels[offset+2])*amount);
+}
 export function artworkToneWeight(tone,channels){
  const value=toneColor(channels,layerToneChannel(tone.channel));
  const upper=tone.lightStart===tone.lightEnd?Number(value<=tone.lightEnd):1-ease(value,tone.lightStart,tone.lightEnd);
@@ -232,6 +255,23 @@ export function makeLayerBlendShader(source,wg,tile){
 @group(0)@binding(14)var effectMaskImage:texture_2d<f32>;
 fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
  let dst=textureLoad(layerBackdrop,q,0);
+ if(p.v[3].w<0.){
+  let paper=(1.-dst.a)*p.v[6].w;
+  let alpha=dst.a+paper;
+  if(alpha<=0.||coverage<=0.){return dst;}
+  let color=clamp((dst.rgb+vec3f(paper))/alpha,vec3f(0.),vec3f(1.));
+  let scaled=color*15.;
+  let base=vec3i(floor(scaled));
+  let f=fract(scaled);
+  var mapped=vec3f(0.);
+  for(var z=0;z<2;z++){for(var y=0;y<2;y++){for(var x=0;x<2;x++){
+   let d=vec3i(x,y,z);
+   let q0=min(base+d,vec3i(15));
+   let w=mix(vec3f(1.)-f,f,vec3f(d));
+   mapped+=textureLoad(effectMaskImage,vec2i(q0.x+16*q0.y,q0.z),0).rgb*w.x*w.y*w.z;
+  }}}
+  return vec4f(mix(color,mapped,coverage)*alpha,alpha);
+ }
  if(p.v[3].w>0.){
   if(coverage<=0.){return dst;}
   let paper=(1.-dst.a)*p.v[6].w;
@@ -297,6 +337,20 @@ fn compositeArtwork(q:vec2i,src:vec4f,coverage:f32)->vec4f{
 vec4 compositeArtwork(ivec2 q,vec4 src,float coverage){
  int bottom=int(min(128.,params[4].y-params[0].y))-1-q.y;
  vec4 dst=texelFetch(layerBackdrop,ivec2(q.x,bottom),0);
+ if(params[3].w<0.){
+  float paper=(1.-dst.a)*params[6].w,alpha=dst.a+paper;
+  if(alpha<=0.||coverage<=0.)return dst;
+  vec3 color=clamp((dst.rgb+paper)/alpha,0.,1.);
+  vec3 scaled=color*15.;
+  ivec3 base=ivec3(floor(scaled));
+  vec3 f=fract(scaled),mapped=vec3(0.);
+  for(int z=0;z<2;z++)for(int y=0;y<2;y++)for(int x=0;x<2;x++){
+   ivec3 d=ivec3(x,y,z),q0=min(base+d,ivec3(15));
+   vec3 w=mix(1.-f,f,vec3(d));
+   mapped+=texelFetch(effectMaskImage,ivec2(q0.x+16*q0.y,q0.z),0).rgb*w.x*w.y*w.z;
+  }
+  return vec4(mix(color,mapped,coverage)*alpha,alpha);
+ }
  if(params[3].w>0.){
   if(coverage<=0.)return dst;
   float paper=(1.-dst.a)*params[6].w;

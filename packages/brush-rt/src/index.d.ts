@@ -33,6 +33,8 @@ export function traceMaskPath(context:CanvasRenderingContext2D,mask:import('@ill
 export function samplePixelMask(mask:import('@illustro/core').PixelLayerMask,x:number,y:number):number;
 export function blendArtworkPixel(destination:Uint8ClampedArray,offset:number,source:Uint8Array|Uint8ClampedArray,alpha:number,blend:import('@illustro/core').LayerBlend,x:number,y:number,effectCoverage?:number):void;
 
+export function adjustmentCube(value:import('@illustro/core').LayerAdjustment):Uint8Array<ArrayBuffer>;
+export function mapAdjustmentPixel(pixels:Uint8ClampedArray,offset:number,cube:Uint8Array,amount:number):void;
 export function gradientMapTable(map:import('@illustro/core').GradientMap):Uint8Array<ArrayBuffer>;
 export function gradientMapIndex(map:import('@illustro/core').GradientMap,brightness:number,x:number,y:number):number;
 export function mapGradientPixel(pixels:Uint8ClampedArray,offset:number,table:Uint8Array,map:import('@illustro/core').GradientMap,x:number,y:number,coverage?:number):void;

@@ -86,7 +86,7 @@ export function exchangeWarnings(doc:CoreDocument,format:ExchangeFormat,layered:
 }
 
 function special(layer:ReturnType<CoreDocument['root']['getLayer']>){
-  return !!(layer.vectorMask?.enabled||layer.clipSourceId||layer.blend?.tone||layer.blend?.effect?.enabled||layer.blend?.gradientMap||
+  return !!(layer.vectorMask?.enabled||layer.clipSourceId||layer.blend?.tone||layer.blend?.effect?.enabled||layer.blend?.gradientMap||layer.blend?.adjustment||
     layer.blend?.space==='linear');
 }
 function exportablePath(content:EditableArtwork):content is EditablePath{

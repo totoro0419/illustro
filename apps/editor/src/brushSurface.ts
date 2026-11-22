@@ -934,7 +934,7 @@ export class BrushSurface{
       return;
     }
     if(layer.imageLink){this.status('参照画像に描くには、リンク・埋め込みの管理で独立した描画レイヤーにしてください。');return;}
-    if(layer.editable||layer.blend?.gradientMap){this.status('このレイヤーは専用の操作画面で編集できます。筆で描くには描画用レイヤーを選んでください。');return;}
+    if(layer.editable||layer.blend?.gradientMap||layer.blend?.adjustment){this.status('このレイヤーは専用の操作画面で編集できます。筆で描くには描画用レイヤーを選んでください。');return;}
     if(layer.alphaLocked&&preset.blend==='erase'){
       this.status('不透明度をロックしているため消しゴムは使えません。');
       return;

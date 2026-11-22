@@ -65,7 +65,8 @@ export function openLayerBlendDialog(options:{
   const selected=(preview=false):LayerBlendChoice=>({
     blend:{mode:mode.value as LayerBlendMode,space:space.value==='linear'?'linear':'encoded',seed:options.current.blend.seed,
       ...(toneEnabled.checked?{tone:tone()}:{}),...(effect?{effect}:{}),
-      ...(options.current.blend.gradientMap?{gradientMap:options.current.blend.gradientMap}:{})},
+      ...(options.current.blend.gradientMap?{gradientMap:options.current.blend.gradientMap}:{}),
+      ...(options.current.blend.adjustment?{adjustment:options.current.blend.adjustment}:{})},
     opacity,...(preview&&toneEnabled.checked&&highlight.checked?{tonePreview:true}:{})
   });
   let before=false;

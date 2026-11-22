@@ -1,5 +1,6 @@
 import {ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE} from './export/iccMetadata';
 import {installImageAssist} from './assist/panel';
+import {installAdjustmentPanel} from './effects/adjustmentPanel';
 import {ANALYSIS_MAX_PIXELS,type RGB as AssistRGB} from './assist/analyze';
 import {convertExchangeColors,exchangeFormat,importExchange} from './export/exchange';
 import {createExchangeDocument} from './export/exchangeDocument';
@@ -997,7 +998,7 @@ function editLayerBlend(){
       }
       changeLayer('レイヤーの合成設定を変更しました。',tx=>{
         const {blend,opacity}=choice;
-        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'&&!blend.tone&&!blend.effect&&!blend.gradientMap?null:blend);
+        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'&&!blend.tone&&!blend.effect&&!blend.gradientMap&&!blend.adjustment?null:blend);
         return tx.setLayerOpacity(layer.id,opacity)||changed;
       });
     },
@@ -4831,7 +4832,7 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
     const drawing=surface,selection=c06Selection?.active()??null;
     if(!drawing)throw Error('作品を開いてください。');
-    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||layer.blend?.gradientMap||root.isLayerContentLocked(layer.id)))
+    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||layer.blend?.gradientMap||layer.blend?.adjustment||root.isLayerContentLocked(layer.id)))
       throw Error('塗れるレイヤーを選ぶか、新しいレイヤーに塗ってください。');
     if(needTarget&&destination==='under'&&layer.baseColor==='white')throw Error('白い背景より上に塗りレイヤーを作ってください。');
     if(needTarget&&destination!=='active'&&root.groupsForLayer(layer.id).some(group=>group.locked))
@@ -5038,7 +5039,7 @@ const rasterEffectPanel=installRasterEffects(byId('effectsBoxBody'),{
   capture:async (edit,explicitMasks)=>{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer,drawing=surface;
     if(!drawing||!documentReady)throw Error('作品を開いてください。');
-    if(layer.baseColor||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||root.isLayerContentLocked(layer.id))
+    if(layer.baseColor||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||layer.blend?.adjustment||root.isLayerContentLocked(layer.id))
       throw Error('編集できる、ロックされていない描画レイヤーを選んでください。');
     const saved=edit?lastRasterFilter(artwork,layer.id):null;
     if(edit&&!saved)throw Error('再編集できる効果がありません。効果の後に描いた線がある場合はその編集を戻してください。');
@@ -5094,7 +5095,7 @@ const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
   const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
     controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
   const writable=!layer.baseColor&&!layer.editable&&!layer.imageLink&&!layer.deformation&&!layer.lineRegions&&
-    !layer.blend?.gradientMap&&!root.isLayerContentLocked(layer.id)&&
+    !layer.blend?.gradientMap&&!layer.blend?.adjustment&&!root.isLayerContentLocked(layer.id)&&
     (kind==='specks'?!layer.alphaLocked:root.isLayerVisible(layer.id));
   await withClipboardAccess(async()=>'read');
   const source=kind==='area'?await readFillReference(artwork,head,'merged',[]):await originalTransformPixels(artwork,layer,head);
@@ -5113,14 +5114,16 @@ const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
   const organize:{name:string;layers:{id:LayerId;name:string}[]}[]=[];
   if(kind==='specks'){
     const clipSources=new Set(root.rootLayerIds.map(id=>root.getLayer(id).clipSourceId));
-    let previous:{name:string;layers:{id:LayerId;name:string}[]}|null=null;
+    let separated=true;
     for(const id of root.rootLayerIds){
       const item=root.getLayer(id),name=category(item);
       if(item.baseColor||root.isLayerLocked(id)||root.groupsForLayer(id).length||item.clipSourceId||clipSources.has(id)){
-        previous=null;continue;
+        separated=true;continue;
       }
-      if(previous?.name!==name){previous={name,layers:[]};organize.push(previous);}
-      previous.layers.push({id,name:item.name});
+      const previous=organize.at(-1);
+      if(separated||previous?.name!==name)organize.push({name,layers:[{id,name:item.name}]});
+      else previous.layers.push({id,name:item.name});
+      separated=false;
     }
   }
   return {width,height,source,selection,name:layer.name,palettes,names,writable,valid,
@@ -5162,6 +5165,67 @@ const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
 c04Commands.registerProvider(()=>[{
   id:'imageAssist',label:'画像から候補を出す',category:'色',aliases:'画像解析 選択補助 色の候補 ごみ取り 整理補助',
   availability:()=>documentReady?null:'先に作品を開いてください。',execute:imageAssist.open,
+}]);
+const adjustmentPanel=installAdjustmentPanel(byId('effectsBoxBody'),async edit=>{
+  const artwork=controller.document,head=artwork.head,root=artwork.root,drawing=surface,layer=controller.selectedLayer;
+  const currentSelection=c06Selection?.active()??null,initial=edit?layer.blend?.adjustment??null:null;
+  if(!documentReady||!drawing)throw Error('作品を開いてください。');
+  if(edit&&!initial)throw Error('調整レイヤーを選んでください。');
+  if(edit?root.isLayerContentLocked(layer.id):root.groupsForLayer(layer.id).some(group=>group.locked))
+    throw Error('先にロックを解除してください。');
+  const clippedSource=(clipped:boolean)=>clipped?(edit?root.availableClippingSource(layer.id):root.clippingSource(layer.id)??layer):null;
+  const mask=currentSelection?selectionAsLayerMask(currentSelection):null;
+  const valid=()=>controller.document===artwork&&artwork.head===head&&surface===drawing&&controller.selectedLayer.id===layer.id&&
+    (c06Selection?.active()??null)===currentSelection;
+  const validOptions=(clipped:boolean,useSelection:boolean)=>{
+    if(!valid())throw Error('編集先または選択範囲が変わりました。');
+    const clip=clippedSource(clipped);
+    if(clipped&&!clip)throw Error('同じグループにクリッピング元がありません。');
+    if(useSelection&&!mask)throw Error('先に範囲を選択してください。');
+    return {clip,scope:useSelection?mask:edit?layer.vectorMask??null:null};
+  };
+  return {initial,strength:edit?Math.round(layer.opacity*100):100,clipped:!!(edit&&layer.clipSourceId),selected:!!mask,
+    preview:async (blend,opacity,clipped,useSelection)=>{
+      const {clip,scope}=validOptions(clipped,useSelection),base=captureExport(artwork,undefined,head),layers=[...base.layers];
+      const source=layer.surface.descriptor.surfaceId,position=layers.findIndex(item=>item.surfaceId===source);
+      const {clipSurfaceId:_oldClip,mask:_oldMask,...anchor}=layers[position]!;
+      const candidate={...anchor,surfaceId:edit?source:'adjustment-preview',opacity,blend,
+        ...(scope?.enabled?{mask:scope}:{}),...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{})};
+      layers.splice(position+(edit?0:1),edit?1:0,candidate);
+      const scale=Math.min(1,360/Math.max(base.width,base.height)),width=Math.max(1,Math.round(base.width*scale)),height=Math.max(1,Math.round(base.height*scale));
+      async function render(scene:FrozenExport){
+        const pixels=await renderFrozenArtworkTiledPreview(scene,width,height)??new Uint8ClampedArray(
+          resizeImagePixels(await renderFrozenArtwork(scene),base.width,base.height,width,height,'auto'));
+        if(!valid())throw Error('比較中に作品が変わりました。');
+        return new ImageData(new Uint8ClampedArray(pixels),width,height);
+      }
+      return [await render(base),await render({...base,layers})];
+    },
+    apply:(blend,opacity,clipped,useSelection,label)=>withClipboardAccess(async()=>{
+      const {scope}=validOptions(clipped,useSelection);
+      const tx=artwork.begin(edit?'調整レイヤーを編集':'調整レイヤーを追加');
+      const id=edit?layer.id:tx.addAdjustmentLayerAbove(layer.id,blend,clipped);
+      let changed=!edit;
+      if(edit){
+        changed=tx.setLayerBlend(id,blend);
+        changed=tx.setLayerClipping(id,clipped)||changed;
+      }else tx.renameLayer(id,label);
+      changed=tx.setLayerOpacity(id,opacity)||changed;
+      if(useSelection&&scope)changed=tx.setVectorLayerMask(id,scope)||changed;
+      if(!changed){tx.cancel();return 'read';}
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      controller.selectLayer(id);return 'edit';
+    }),
+  };
+});
+c04Commands.registerProvider(()=>[{
+  id:'colorAdjustment',label:'色の調整レイヤーを開く',category:'色',aliases:'明るさ コントラスト レベル カーブ 露出 彩度',
+  availability:()=>documentReady?null:'作品を開いてください。',
+  execute:()=>{shellUi.openBox('effectsBox');return adjustmentPanel.show(!!controller.selectedLayer.blend?.adjustment);}
+},{
+  id:'colorTemperatureAdjustment',label:'色温度・色かぶりを調整',category:'色',aliases:'全体 色調 Tint FX-108',
+  availability:()=>documentReady?null:'作品を開いてください。',
+  execute:()=>{shellUi.openBox('effectsBox');return adjustmentPanel.show(controller.selectedLayer.blend?.adjustment?.kind==='temperature','temperature');}
 }]);
 const gradientMapPanel=installGradientMapPanel(byId('effectsBoxBody'),{
   storeColors:colors=>foreground.addSwatches(colors.map(color=>fromHex(color)!)),

@@ -1,4 +1,4 @@
-import {layerBlendIndex,layerToneChannel,makeLayerBlendShader,gradientMapTable} from '@rt/layer-blending';
+import {layerBlendIndex,layerToneChannel,makeLayerBlendShader,gradientMapTable,adjustmentCube} from '@rt/layer-blending';
 import {layerMaskTile} from '@rt/layer-mask-coverage';
 import {TileHistory} from '@rt/tile-history';
 import {historyYield,releaseHistoryImage} from '@rt/history-io';
@@ -307,7 +307,7 @@ export class GpuRenderer {
   for(const {surfaceKey,visible,opacity,clipKey,mask,blend,white,isolation} of styles){
    if(typeof surfaceKey!=='string'||next.has(surfaceKey)||typeof visible!=='boolean'||!Number.isFinite(opacity)||opacity<0||opacity>1)throw Error('Invalid surface style');
    if(clipKey!==undefined&&typeof clipKey!=='string')throw Error('Invalid clipping source');
-   const before=previous.get(surfaceKey),blendTone=blend?.tone||blend?.effect||blend?.gradientMap?JSON.stringify([blend.tone,!!blend.tonePreview,blend.effect,blend.gradientMap]):null,maskSignature=mask?.enabled?JSON.stringify(mask):null;
+   const before=previous.get(surfaceKey),blendTone=blend?.tone||blend?.effect||blend?.gradientMap||blend?.adjustment?JSON.stringify([blend.tone,!!blend.tonePreview,blend.effect,blend.gradientMap,blend.adjustment]):null,maskSignature=mask?.enabled?JSON.stringify(mask):null;
    const activeMask=maskSignature===before?.maskSignature?before.mask:maskSignature?mask:null;
    changed||=!before||before.visible!==visible||before.opacity!==opacity||before.clipKey!==clipKey||before.mask!==activeMask||
     before.blend?.mode!==blend?.mode||before.blend?.space!==blend?.space||before.blend?.seed!==blend?.seed||before.blendTone!==blendTone||before.white!==white||before.isolationKey!==(isolation?.join(',')??'');
@@ -319,11 +319,11 @@ export class GpuRenderer {
   b.paperOpacity=[...next.values()].find(style=>style.white&&style.visible)?.opacity??0;
   const active=new Set([...next.values()].flatMap(style=>[style.mask,style.blend?.effect?.mask]));
   for(const mask of b.layerMaskTextures?.keys()??[])if(!active.has(mask))releaseLayerMaskTextures(b,mask);
-  const maps=new Set([...next.values()].flatMap(style=>style.blend?.gradientMap?[gradientMapKey(style.blend.gradientMap)]:[]));
+  const maps=new Set([...next.values()].flatMap(style=>style.blend?.adjustment?[adjustmentKey(style.blend.adjustment)]:style.blend?.gradientMap?[gradientMapKey(style.blend.gradientMap)]:[]));
   for(const key of b.gradientMapTextures?.keys()??[])if(!maps.has(key))releaseGradientMapTexture(b,key);
   const previousStyles=[...previous.values()];
   if((b.paperOpacity||previousStyles.some(style=>style.white&&style.visible&&style.opacity))&&
-     (maps.size||previousStyles.some(style=>style.blend?.gradientMap)))
+     (maps.size||previousStyles.some(style=>style.blend?.gradientMap||style.blend?.adjustment)))
    for(let y=0;y<Math.ceil(b.height/TILE);y++)for(let x=0;x<Math.ceil(b.width/TILE);x++)b.dirtyConfirmed.add(x+','+y);
   for(const t of b.tiles.values())b.dirtyConfirmed.add(t.key);
   for(const v of b.previews.values())for(const key of v.keys)b.dirtyConfirmed.add(key);
@@ -800,7 +800,7 @@ function sparseLayers(b,key){
   const style=b.surfaceStyles?.get(surfaceKey);
   if(style?.visible===false||(style?.opacity??1)===0)continue;
   const data=sparseLayer(b,key,surfaceKey);
-  if(data.t||data.overlays.length||style?.blend?.gradientMap)layers.push({...data,opacity:style?.opacity??1,clipKey:style?.clipKey,mask:style?.mask,blend:style?.blend,isolation:style?.isolation});
+  if(data.t||data.overlays.length||style?.blend?.gradientMap||style?.blend?.adjustment)layers.push({...data,opacity:style?.opacity??1,clipKey:style?.clipKey,mask:style?.mask,blend:style?.blend,isolation:style?.isolation});
  }
  return layers;
 }
@@ -916,7 +916,7 @@ function maskTexture(b,key,mask,params,base=22){
  return texture;
 }
 function needsBackdrop(blend){
- return blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone||blend.effect?.enabled||blend.gradientMap);
+ return blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone||blend.effect?.enabled||blend.gradientMap||blend.adjustment);
 }
 function artworkBlendParams(b,params,blend,insideIsolation){
  params[18]=blend.seed>>>16;
@@ -924,7 +924,7 @@ function artworkBlendParams(b,params,blend,insideIsolation){
  params[20]=layerBlendIndex(blend.mode);
  params[21]=blend.space==='linear'?1:0;
  params[27]=insideIsolation?0:b.paperOpacity??0;
- params[15]=blend.gradientMap?.levels??0;
+ params[15]=blend.adjustment?-1:blend.gradientMap?.levels??0;
  const tone=blend.tone;
  params[2]=tone?(tone.source==='backdrop'?2:1):0;
  if(tone){
@@ -937,34 +937,35 @@ function artworkBlendParams(b,params,blend,insideIsolation){
  }
 }
 const gradientMapKey=map=>JSON.stringify(map.stops);
+const adjustmentKey=adjustment=>adjustment.cube;
 function releaseGradientMapTexture(b,key){
  const texture=b.gradientMapTextures.get(key);
  b.gradientMapTextures.delete(key);
  if(b.gl)b.gl.deleteTexture(texture.t);else texture.destroy();
 }
-function gradientMapTexture(b,map){
- const key=gradientMapKey(map);
+function lookupTexture(b,key,makeTable,height){
  const textures=b.gradientMapTextures??=new Map();
  if(textures.has(key))return textures.get(key);
- const table=gradientMapTable(map);
+ const table=makeTable();
  let texture;
  if(b.gl){
   const g=b.gl,t=g.createTexture();
   g.bindTexture(g.TEXTURE_2D,t);
   g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.NEAREST);
   g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.NEAREST);
-  g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,256,1,0,g.RGBA,g.UNSIGNED_BYTE,table);
+  g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,256,height,0,g.RGBA,g.UNSIGNED_BYTE,table);
   texture={t};
  }else{
-  texture=b.device.createTexture({size:[256,1],format:'rgba8unorm',usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_DST});
-  b.device.queue.writeTexture({texture},table,{bytesPerRow:1024},[256,1]);
+  texture=b.device.createTexture({size:[256,height],format:'rgba8unorm',usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_DST});
+  b.device.queue.writeTexture({texture},table,{bytesPerRow:1024},[256,height]);
  }
  textures.set(key,texture);
  return texture;
 }
 function effectTexture(b,key,params,blend){
- const {effect,gradientMap}=blend;
- if(gradientMap){params[9]=gradientMap.dither?1:0;return gradientMapTexture(b,gradientMap);}
+ const {effect,gradientMap,adjustment}=blend;
+ if(adjustment)return lookupTexture(b,adjustmentKey(adjustment),()=>adjustmentCube(adjustment),16);
+ if(gradientMap){params[9]=gradientMap.dither?1:0;return lookupTexture(b,gradientMapKey(gradientMap),()=>gradientMapTable(gradientMap),1);}
  if(!effect?.enabled){params[9]=0;return b.zeroLayer;}
  const texture=maskTexture(b,key,effect.mask,params,9);
  if(!effect.mask?.enabled){params[9]=1;params[10]=1;}

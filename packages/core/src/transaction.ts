@@ -62,6 +62,16 @@ export class DocumentTransaction{
     }
     this.updatesValue.set(layerId,layer);this.slotsValue.push(Object.freeze({type:'structure' as const,layerId,surfaceId,insertIndex,name}));return layerId;
   }
+  addAdjustmentLayerAbove(referenceId:LayerId,blend:LayerBlend,clipped:boolean){
+    if(!blend.adjustment)throw Error('調整の設定を確認してください。');
+    const anchor=this.rootValue.getLayer(referenceId),id=this.addRasterLayerAbove(referenceId);
+    this.setLayerBlend(id,blend);
+    if(clipped){
+      const source=this.rootValue.clippingSource(anchor.id)??anchor;
+      this.meta(id,{clipSourceId:source.id});
+    }
+    return id;
+  }
   addRasterSnapshotAbove(referenceId:LayerId,pixels:RasterPixels,name:string,copyStyle=false,inheritGroup=true,below=false){
     const root=this.rootValue;
     if('tiles' in pixels){
@@ -871,7 +881,7 @@ export class DocumentTransaction{
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(layer.baseColor==='white'&&value)throw new Error('白背景の合成モードは通常に固定されています。');
     const blend=validateLayerBlend(value),before=layer.blend??null;
-    if(blend===before||(blend&&before&&blend.mode===before.mode&&blend.space===before.space&&blend.seed===before.seed&&JSON.stringify(blend.tone)===JSON.stringify(before.tone)&&JSON.stringify(blend.effect)===JSON.stringify(before.effect)&&JSON.stringify(blend.gradientMap)===JSON.stringify(before.gradientMap)))return false;
+    if(blend===before||(blend&&before&&blend.mode===before.mode&&blend.space===before.space&&blend.seed===before.seed&&JSON.stringify(blend.tone)===JSON.stringify(before.tone)&&JSON.stringify(blend.effect)===JSON.stringify(before.effect)&&JSON.stringify(blend.gradientMap)===JSON.stringify(before.gradientMap)&&JSON.stringify(blend.adjustment)===JSON.stringify(before.adjustment)))return false;
     return this.meta(id,{blend});
   }
   setVectorLayerMask(id:LayerId,mask:LayerMask|null){
