@@ -1,3 +1,4 @@
+import {srgbIccBytes} from './iccMetadata';
 import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId} from '@illustro/core';
 import {blendArtworkPixel,gradientMapTable,mapGradientPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {canUseTiledHistoryPreview,createTiledPreviewAccumulator,yieldHistoryRender} from './tiledPreview';
@@ -337,7 +338,8 @@ function deflateStored(source:Uint8Array):Uint8Array{
   for(let i=0;i<source.length;i++){a=(a+source[i]!)%65521;b=(b+a)%65521;}
   write32(out,at,((b<<16)|a)>>>0);return out;
 }
-export async function encodePng(pixels:Uint8ClampedArray,width:number,height:number,dpi?:number):Promise<Blob>{
+type PngMetadata=Readonly<{includeIcc?:boolean;author?:string;copyright?:string}>;
+export async function encodePng(pixels:Uint8ClampedArray,width:number,height:number,dpi?:number,metadata:PngMetadata={}):Promise<Blob>{
   if(pixels.length!==width*height*4)throw new Error('PNGの画素数が正しくありません。');
   const stride=width*4,raw=new Uint8Array((stride+1)*height);
   for(let y=0;y<height;y++)raw.set(pixels.subarray(y*stride,(y+1)*stride),y*(stride+1)+1);
@@ -357,7 +359,13 @@ export async function encodePng(pixels:Uint8ClampedArray,width:number,height:num
     zipped=new Uint8Array(compressed);
   }else zipped=deflateStored(raw);
   const head=new Uint8Array(13);write32(head,0,width);write32(head,4,height);head[8]=8;head[9]=6;
-  const sig=Uint8Array.of(137,80,78,71,13,10,26,10),ihdr=pngChunk('IHDR',head),srgb=pngChunk('sRGB',Uint8Array.of(0)),idat=pngChunk('IDAT',zipped),end=pngChunk('IEND',new Uint8Array());
+  const sig=Uint8Array.of(137,80,78,71,13,10,26,10),ihdr=pngChunk('IHDR',head),idat=pngChunk('IDAT',zipped),end=pngChunk('IEND',new Uint8Array());
+  const color=metadata.includeIcc?pngChunk('iCCP',new Uint8Array([...new TextEncoder().encode('sRGB\0\0'),...deflateStored(srgbIccBytes())])):
+    pngChunk('sRGB',Uint8Array.of(0));
+  const textChunks:Uint8Array[]=[];
+  for(const [label,value] of [['Author',metadata.author],['Copyright',metadata.copyright]] as const){
+    if(value?.trim())textChunks.push(pngChunk('iTXt',new TextEncoder().encode(label+'\0\0\0\0\0'+value.trim().slice(0,4096).replaceAll('\0',''))));
+  }
   const density:Uint8Array[]=[];
   if(dpi!==undefined){
     if(!Number.isFinite(dpi)||dpi<1||dpi>2400)throw Error('PNGのDPIは1〜2400で指定してください。');
@@ -365,7 +373,7 @@ export async function encodePng(pixels:Uint8ClampedArray,width:number,height:num
     write32(data,0,pixelsPerMetre);write32(data,4,pixelsPerMetre);data[8]=1;
     density.push(pngChunk('pHYs',data));
   }
-  return new Blob([sig,ihdr,srgb,...density,idat,end].map(bytes=>new Uint8Array(bytes).buffer as ArrayBuffer),{type:'image/png'});
+  return new Blob([sig,ihdr,color,...density,...textChunks,idat,end].map(bytes=>new Uint8Array(bytes).buffer as ArrayBuffer),{type:'image/png'});
 }
 
 export async function verifyImage(blob:Blob,format:ImageFormat,width:number,height:number):Promise<void>{
@@ -380,11 +388,11 @@ export async function verifyImage(blob:Blob,format:ImageFormat,width:number,heig
   finally{bitmap.close();}
 }
 
-export type ImageExportOptions=Readonly<{selection?:MaskData;pixelScale?:number;dpi?:number}>;
+export type ImageExportOptions=Readonly<{selection?:MaskData;pixelScale?:number;dpi?:number;pngMetadata?:PngMetadata}>;
 export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality=0.9,options:ImageExportOptions={}):Promise<ImageExportResult>{
   const started=performance.now();
   if(!['png','jpeg','webp'].includes(format)||!Number.isFinite(quality)||quality<0||quality>1)throw new Error('書き出し設定が正しくありません。');
-  const {selection,pixelScale=1,dpi}=options;
+  const {selection,pixelScale=1,dpi,pngMetadata}=options;
   if(!Number.isSafeInteger(pixelScale)||pixelScale<1||pixelScale>8)throw Error('整数倍の拡大率は1〜8で指定してください。');
   if(selection&&(selection.width!==frozen.width||selection.height!==frozen.height||selection.alpha.length!==frozen.width*frozen.height))
     throw Error('選択範囲と作品の大きさが一致しません。');
@@ -406,7 +414,7 @@ export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality
     width*=pixelScale;height*=pixelScale;
   }
   const encodedStart=performance.now(),flattened=format==='jpeg'?flattenOnWhite(pixels):pixels;
-  const blob=format==='png'?await encodePng(pixels,width,height,dpi):await encodeBrowser(flattened,width,height,format,quality);
+  const blob=format==='png'?await encodePng(pixels,width,height,dpi,pngMetadata):await encodeBrowser(flattened,width,height,format,quality);
   await verifyImage(blob,format,width,height);
   return Object.freeze({blob,revision:frozen.revision,format,mime:blob.type,width,height,quality:format==='png'?null:quality,alpha:format!=='jpeg',background:format==='jpeg'?'white':'transparent',encodeMs:performance.now()-encodedStart,totalMs:performance.now()-started,estimatedPeakBytes:frozen.width*frozen.height*4*(frozen.layers.length+4)+(pixelScale!==1?width*height*8:0)});
 }

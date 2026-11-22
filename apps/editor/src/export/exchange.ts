@@ -1,6 +1,7 @@
 import {type CoreDocument,type EditableArtwork,type EditablePath,type LayerId} from '@illustro/core';
 import {captureExport,compositeLayer,encodePng,renderFrozenArtwork,type FrozenExport} from './basicExport';
 import {assertImageSize,cleanFileName,imageLayer,MAX_EXCHANGE_BYTES,supportsOraBlend,xmlText,type ExchangeArtwork,type ExchangeFormat,type ExchangeLayer} from './exchangeTypes';
+import {runIcc} from './iccRun';
 import {decodeTiff,encodeTiff} from './tiff';
 
 const formats:Record<string,ExchangeFormat|'heif'>={psd:'psd',psb:'psb',ora:'ora',tif:'tiff',tiff:'tiff',avif:'avif',svg:'svg',exr:'exr',heic:'heif',heif:'heif'};
@@ -41,10 +42,21 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
     return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings};
   }
   if(format==='tiff'){
-    const {width,height,pixels,dpi,warnings}=decodeTiff(bytes);
-    return {width,height,name,dpi,layers:[imageLayer(name,width,height,pixels)],warnings};
+    const {width,height,pixels,dpi,warnings,sourceIcc}=decodeTiff(bytes);
+    return {width,height,name,dpi,layers:[imageLayer(name,width,height,pixels)],warnings,...(sourceIcc?{sourceIcc}:{})};
   }
   throw Error('対応する交換形式ではありません。');
+}
+
+export async function convertExchangeColors(source:ExchangeArtwork,applyProfile:boolean):Promise<ExchangeArtwork>{
+  if(!source.sourceIcc)return source;
+  if(!applyProfile)return {...source,warnings:[...source.warnings,'画素値を変更せずsRGBとして割り当てました。']};
+  const {layers,merged,sourceIcc}=source;
+  const input=layers.map(layer=>layer.pixels);
+  if(merged)input.push(merged);
+  const {name,converted}=await runIcc({profile:sourceIcc,layers:input,proof:false,intent:1,blackPoint:true,gamut:false},true);
+  return {...source,layers:layers.map((layer,index)=>({...layer,pixels:converted[index]!.pixels})),
+    ...(merged?{merged:converted[layers.length]!.pixels}:{}),warnings:[...source.warnings,'埋め込みICC「'+name+'」からsRGBへ画素を変換しました。']};
 }
 
 export function exchangeWarnings(doc:CoreDocument,format:ExchangeFormat,layered:boolean){

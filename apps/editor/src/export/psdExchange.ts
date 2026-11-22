@@ -1,4 +1,5 @@
 import {initializeCanvas,readPsd,writePsdUint8Array,type BlendMode,type Layer} from 'ag-psd';
+import {ICC_LIMIT} from './iccMetadata';
 import {LAYER_BLEND_MODES,type LayerBlendMode} from '@illustro/core';
 import {assertImageSize,imageLayer,type ExchangeArtwork,type ExchangeLayer} from './exchangeTypes';
 
@@ -37,7 +38,9 @@ export function decodePhotoshop(bytes:Uint8Array,name:string):ExchangeArtwork{
     imageResourcesWhitelist:['resolutionInfo','iccProfile']});
   const {width,height}=psd;
   const warnings=new Set<string>(),layers:ExchangeLayer[]=[];
-  if(psd.imageResources?.iccProfile)warnings.add('埋め込みICCは適用せず、RGB値をsRGBとして取り込みます。');
+  const embedded=psd.imageResources?.iccProfile;
+  const sourceIcc=embedded&&embedded.length<=ICC_LIMIT&&psd.colorMode===3?new Uint8Array(embedded):undefined;
+  if(embedded&&!sourceIcc)warnings.add('RGB以外のPSDのICC、または4MBを超えるICCは適用できません。');
   if(psd.bitsPerChannel&&psd.bitsPerChannel!==8)warnings.add('高精度の画素を8ビットに変換しました。');
   function read(children:readonly Layer[],opacity=1,visible=true){
     for(const layer of children){
@@ -66,5 +69,5 @@ export function decodePhotoshop(bytes:Uint8Array,name:string):ExchangeArtwork{
   const composite=psd.imageData?.data;
   const merged=composite instanceof Uint8Array||composite instanceof Uint8ClampedArray?new Uint8ClampedArray(composite):undefined;
   if(!layers.length&&!merged)throw Error('取り込める画像データがありません。');
-  return {width,height,name,dpi:psd.imageResources?.resolutionInfo?.horizontalResolution,layers,merged,warnings:[...warnings]};
+  return {width,height,name,dpi:psd.imageResources?.resolutionInfo?.horizontalResolution,layers,merged,...(sourceIcc?{sourceIcc}:{}),warnings:[...warnings]};
 }

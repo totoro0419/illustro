@@ -1,6 +1,7 @@
+import {ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE} from './export/iccMetadata';
 import {installImageAssist} from './assist/panel';
 import {ANALYSIS_MAX_PIXELS,type RGB as AssistRGB} from './assist/analyze';
-import {exchangeFormat,importExchange} from './export/exchange';
+import {convertExchangeColors,exchangeFormat,importExchange} from './export/exchange';
 import {createExchangeDocument} from './export/exchangeDocument';
 import {openExchangePanel} from './export/exchangePanel';
 import {installWetTools,wetModes} from './wet/panel';
@@ -3344,7 +3345,13 @@ async function openWorkFile(file:File,batch=false){
   const exchange=exchangeFormat(file.name);
   if(exchange){
     try{
-      const imported=await importExchange(file);
+      let imported=await importExchange(file);
+      if(imported.sourceIcc){
+        const choice=await appChoose('埋め込みICCが見つかりました。見た目を保つためにsRGBへ変換するか、画素値を変更せずsRGBとして扱うか選んでください。',[
+          {value:'convert',label:'プロファイルに従って色を変換'},{value:'assign',label:'画素値を変えずsRGBを割り当てる'}]);
+        if(choice===null)return false;
+        imported=await convertExchangeColors(imported,choice==='convert');
+      }
       let flatten=false;
       if(imported.warnings.length){
         const message='読み込み時の変更\n'+imported.warnings.slice(0,20).join('\n')+
@@ -3356,7 +3363,10 @@ async function openWorkFile(file:File,batch=false){
       }
       if(!qaMode&&!(await prepareWorkSwitch()))return false;
       const {artwork,selected}=createExchangeDocument(imported,flatten);
-      await activateOpened({document:artwork,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},
+      const profile=imported.sourceIcc;
+      const optionalSections=profile&&profile.length<=ICC_LIMIT?
+        [{id:ICC_ORIGINAL_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:profile}]:[];
+      await activateOpened({document:artwork,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections},
         generationId:'exchange',snapshotRevisionId:artwork.head});
       homeUi?.showEditor();byId('status').textContent='交換用ファイルを新しい作品として開きました。';
       if(!qaMode){scheduleWorkThumbnail();void refreshWorks();}
@@ -3552,6 +3562,7 @@ const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTM
 function updateExportOptions(){
   const f=exportFormat.value as ImageFormat,lossy=f!=='png';
   byId<HTMLElement>('exportQualityRow').hidden=!lossy;
+  byId('exportPngMetadata').hidden=f!=='png';
   byId('exportDpiRow').hidden=f!=='png'||controller.document.root.info.dpi===null;
   byId<HTMLOutputElement>('exportQualityValue').textContent=exportQuality.value+'%';
   byId('exportTransparencyInfo').textContent=f==='jpeg'
@@ -3562,6 +3573,8 @@ exportFormat.onchange=updateExportOptions;exportQuality.oninput=updateExportOpti
 byId<HTMLButtonElement>('exportImage').onclick=()=>{
   if(!documentReady)return;
   byId('exportStatus').textContent='';
+  byId<HTMLInputElement>('exportIncludeAuthor').checked=false;
+  byId<HTMLInputElement>('exportCopyright').value='';
   const inspected=surface?.inspectedLayer;
   const scope=byId<HTMLSelectElement>('exportLayerScope');
   scope.value='artwork';
@@ -3593,7 +3606,10 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
     fixed=captureExport(controller.document,layer);
     const dpi=controller.document.root.info.dpi;
     options={pixelScale:scale.valueAsNumber,...(selection?{selection}:{}),
-      ...(format==='png'&&dpi!==null&&byId<HTMLInputElement>('exportDpi').checked?{dpi}:{})};
+      ...(format==='png'&&dpi!==null&&byId<HTMLInputElement>('exportDpi').checked?{dpi}:{}),
+      ...(format==='png'?{pngMetadata:{includeIcc:byId<HTMLInputElement>('exportIncludeIcc').checked,
+        ...(byId<HTMLInputElement>('exportIncludeAuthor').checked?{author:controller.document.root.info.author}:{}),
+        copyright:byId<HTMLInputElement>('exportCopyright').value}}:{})};
   }
   catch(error){byId('exportStatus').textContent=String(error instanceof Error?error.message:error);return;}
   const filename=exportFileName(fixed.name,format);

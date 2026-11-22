@@ -1,3 +1,4 @@
+import {ICC_LIMIT} from './iccMetadata';
 import {assertImageSize} from './exchangeTypes';
 
 // TIFF 6.0 chunky RGB, unassociated alpha, unsigned samples.
@@ -34,15 +35,22 @@ export function decodeTiff(bytes:Uint8Array){
   const count=word(dir);
   if(count>512||dir+2+count*12+4>bytes.length)throw Error('TIFFの項目表が壊れています。');
   const tags=new Map<number,number[]>();
-  let dpi:number|undefined;
+  let dpi:number|undefined,sourceIcc:Uint8Array<ArrayBuffer>|undefined,invalidIcc=false;
   for(let i=0;i<count;i++){
     const at=dir+2+i*12,tag=word(at),type=word(at+2),n=long(at+4);
     if(tag===282&&type===5&&n===1){
       const pos=long(at+8);
       if(pos+8<=bytes.length&&long(pos+4))dpi=long(pos)/long(pos+4);
     }
-    if(![256,257,258,259,262,273,274,277,278,279,284,296,338,339,34675].includes(tag))continue;
-    if(type!==3&&type!==4){if(tag===34675)tags.set(tag,[]);continue;}
+    if(tag===34675){
+      const start=long(at+8);
+      if((type===7||type===1)&&n>=132&&n<=ICC_LIMIT&&start+n<=bytes.length&&view.getUint32(start+36)===0x61637370)
+        sourceIcc=new Uint8Array(bytes.subarray(start,start+n));
+      else invalidIcc=true;
+      continue;
+    }
+    if(![256,257,258,259,262,273,274,277,278,279,284,296,338,339].includes(tag))continue;
+    if(type!==3&&type!==4)continue;
     const length=type===3?2:4,position=n*length<=4?at+8:long(at+8);
     if(n>8192||position+n*length>bytes.length)throw Error('TIFFの画像情報が壊れています。');
     tags.set(tag,Array.from({length:n},(_,k)=>type===3?word(position+k*length):long(position+k*length)));
@@ -75,9 +83,9 @@ export function decodeTiff(bytes:Uint8Array){
   if(dpi!==undefined&&get(296,2)===1)dpi=undefined;
   const warnings:string[]=[];
   if(sampleBits===16)warnings.push('16ビットの画素を8ビットに変換しました。');
-  if(tags.has(34675))warnings.push('埋め込みICCプロファイルは適用せず、RGB値をsRGBとして取り込みます。');
+  if(invalidIcc)warnings.push('読み込めないICCが含まれるため、RGB値をsRGBとして扱います。');
   if(long(dir+2+count*12))warnings.push('複数ページのうち最初のページを読み込みました。');
-  return {width,height,pixels:out,dpi,warnings};
+  return {width,height,pixels:out,dpi,warnings,...(sourceIcc?{sourceIcc}:{})};
 }
 
 function unpackPackBits(bytes:Uint8Array,length:number){

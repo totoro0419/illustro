@@ -1,3 +1,5 @@
+import {runIcc} from './iccRun';
+import {ICC_LIMIT} from './iccMetadata';
 import type {CoreDocument} from '@illustro/core';
 import {resizeImagePixels} from '../canvasGeometry';
 import {captureExport,renderFrozenArtworkTiledPreview,renderFrozenArtwork} from './basicExport';
@@ -23,6 +25,19 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   const bleed=numberField(print,'片側の塗り足し（mm）',3,0,50,.1);
   const printResult=document.createElement('output');printResult.setAttribute('aria-live','polite');
   print.prepend(printTitle);print.append(printResult);
+  const profileFile=document.createElement('input');profileFile.type='file';profileFile.accept='.icc,.icm';
+  labelledField(print,'出力先のICCプロファイル（確認用）',profileFile);
+  const intent=selectField(print,'色域に収める方法',[
+    ['1','相対的な色を優先'],['0','色の見え方を優先'],['2','彩度を優先'],['3','紙の白色を含めて確認'],
+  ]);
+  const black=document.createElement('input');black.type='checkbox';black.checked=true;
+  labelledField(print,'出力先に合わせて黒を補正する',black);
+  const gamut=document.createElement('input');gamut.type='checkbox';
+  labelledField(print,'出力先の範囲外の色をピンクで強調する',gamut);
+  const display=selectField(print,'作品の表示',[['original','元の色'],['proof','出力先の色']]);
+  display.disabled=true;
+  const proofStatus=document.createElement('output');proofStatus.setAttribute('role','status');
+  let proof:ImageData|null=null,proofTicket=0;
   const preview=document.createElement('canvas');preview.setAttribute('aria-label','透明部分と仕上がり線を表示する出力前の作品全体');
   preview.hidden=true;preview.className='exchange-print-preview';
   let comparison:ImageData|null=null;
@@ -48,7 +63,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   function drawPreview(insetX=0,insetY=0){
     if(!comparison)return;
     const context=preview.getContext('2d');if(!context)return;
-    context.putImageData(comparison,0,0);
+    context.putImageData(display.value==='proof'&&print.open&&proof?proof:comparison,0,0);
     if(!print.open||insetX<=0||insetY<=0||insetX>=.5||insetY>=.5)return;
     const {width,height}=preview,x=insetX*width,y=insetY*height;
     context.fillStyle='#30303666';
@@ -59,21 +74,50 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     context.setLineDash([4,3]);context.lineDashOffset=3;context.strokeStyle='#444';
     context.strokeRect(x,y,width-2*x,height-2*y);context.lineDashOffset=0;
   }
-  print.ontoggle=refresh;
+  function clearProof(){
+    proofTicket++;proof=null;display.value='original';display.disabled=true;proofStatus.textContent='';refresh();
+  }
+  for(const control of [profileFile,intent,black,gamut])control.onchange=clearProof;
+  display.onchange=refresh;print.ontoggle=refresh;
   for(const field of [format,style,quality,lossless,dpi,bleed])field.onchange=refresh;
   const actions=document.createElement('div');actions.className='box-actions';
-  const see=button('作品全体の見た目を確認',async()=>{
+  async function captureComparison(){
     if(!active())throw Error('作品が切り替わりました。');
-    const fixed=captureExport(doc),ratio=Math.min(1,320/Math.max(fixed.width,fixed.height));
+    const fixed=captureExport(doc),ratio=Math.min(1,480/Math.max(fixed.width,fixed.height));
     const width=Math.max(1,Math.round(fixed.width*ratio)),height=Math.max(1,Math.round(fixed.height*ratio));
     const pixels=await renderFrozenArtworkTiledPreview(fixed,width,height)??new Uint8ClampedArray(resizeImagePixels(
       await renderFrozenArtwork(fixed),fixed.width,fixed.height,width,height,'auto'));
+    return new ImageData(new Uint8ClampedArray(pixels),width,height);
+  }
+  const see=button('作品全体の見た目を確認',async()=>{
+    const image=await captureComparison();
     if(!dialog.open)return;
-    comparison=new ImageData(new Uint8ClampedArray(pixels),width,height);
-    preview.width=width;preview.height=height;preview.hidden=false;
-    refresh();
+    clearProof();comparison=image;
+    preview.width=image.width;preview.height=image.height;preview.hidden=false;refresh();
     if(print.open)status.textContent='破線が仕上がりの位置です。市松模様が見える範囲が透明です。';
   },status);
+  const checkProof=button('出力先の色を確認',async()=>{
+    const file=profileFile.files?.[0];
+    if(!file||file.size>ICC_LIMIT)throw Error('4MB以内のICCプロファイルを選んでください。');
+    const ticket=++proofTicket;
+    const values={intent:Number(intent.value),blackPoint:black.checked,gamut:gamut.checked};
+    proofStatus.textContent='プロファイルを使って出力時の色を計算しています。';
+    const image=await captureComparison();
+    const result=await runIcc({profile:new Uint8Array(await file.arrayBuffer()),layers:[image.data],proof:true,...values});
+    if(!dialog.open||ticket!==proofTicket)return;
+    const output=result.converted[0]!;
+    let count=0;
+    if(output.outOfGamut)for(let i=0;i<output.outOfGamut.length;i++){
+      if(!output.outOfGamut[i])continue;
+      count++;output.pixels.set([255,45,140],i*4);
+    }
+    comparison=image;proof=new ImageData(output.pixels,image.width,image.height);
+    display.disabled=false;display.value='proof';
+    preview.width=image.width;preview.height=image.height;preview.hidden=false;refresh();
+    proofStatus.textContent='「'+result.name+'」の表示を比較しています。作品と出力ファイルの色は変更されません。'+
+      (values.gamut?(count?' ピンクは範囲外と判定した部分です。':' 縮小表示で範囲外の色は検出されませんでした。'):'');
+  },proofStatus);
+  print.append(checkProof,proofStatus);
   const run=button('書き出す',async()=>{
     if(!active())throw Error('作品が切り替わりました。');
     const selected=format.value as ExchangeFormat,layered=style.value==='layered'&&!style.parentElement!.hidden;
@@ -84,7 +128,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     if(dialog.open){download(blob,outputName);status.textContent=outputName+' を作成しました。';}
   },status);
   const close=button('閉じる',()=>dialog.close(),status);
-  dialog.onclose=()=>{comparison=null;dialog.remove();};
+  dialog.onclose=()=>{proofTicket++;comparison=proof=null;dialog.remove();};
   actions.append(see,run,close);section.append(notes,preview,print,actions,status);dialog.append(section);
   document.body.append(dialog);refresh();dialog.showModal();
 }
