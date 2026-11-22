@@ -2048,6 +2048,7 @@ function openGeometry(mode:GeometryMode){
  geometryPreviewEpoch++;geometryMode=mode;const root=controller.document.root;
  dimensionInput('geometryWidth').value=String(root.width);dimensionInput('geometryHeight').value=String(root.height);
  dimensionInput('geometryX').value='0';dimensionInput('geometryY').value='0';
+ if(mode==='document.crop')dimensionInput('geometryKeepOutside').checked=true;
  for(const element of geometryDialog.querySelectorAll<HTMLElement>('.crop-coordinate'))element.hidden=mode!=='document.crop';
  for(const element of geometryDialog.querySelectorAll<HTMLElement>('.resize-anchor'))element.hidden=mode!=='document.canvas-resize';
  for(const element of geometryDialog.querySelectorAll<HTMLElement>('.image-filter'))element.hidden=mode!=='document.image-resize';
@@ -2548,13 +2549,16 @@ async function applyGeometry(){
  if(!geometryMode||geometryBusy||!surface?.canChangeGeometry)return;
  const mode=geometryMode,old=controller.document.root,w=Number(dimensionInput('geometryWidth').value),h=Number(dimensionInput('geometryHeight').value);
  if(!Number.isSafeInteger(w)||!Number.isSafeInteger(h)||w<1||h<1||w>8192||h>8192){byId('geometryStatus').textContent='幅と高さを1〜8192pxで指定してください。';return;}
- let rect=geometryRect();
+ const rect=geometryRect();
  if(mode==='document.crop'&&!rect){byId('geometryStatus').textContent='切り抜き範囲が作品からはみ出しています。';return;}
  if(mode!=='document.crop'&&w===old.width&&h===old.height){byId('geometryStatus').textContent='元の大きさと同じです。';return;}
- geometryBusy=true;byId<HTMLButtonElement>('geometryApply').disabled=true;byId('geometryStatus').textContent='作品を変更しています。';
+ const drawing=surface,artwork=controller.document,head=artwork.head;
+ geometryBusy=true;drawing.setInputBarrier(true);byId<HTMLButtonElement>('geometryApply').disabled=true;byId('geometryStatus').textContent='作品を変更しています。';
  const canvas=byId<HTMLCanvasElement>('canvas');canvas.style.pointerEvents='none';
  try{
-  const source=await surface.captureDocumentLayers(),out=new Map<ReturnType<EditorController['target']>['layerId'],Uint8Array>();
+  const keepOutside=dimensionInput('geometryKeepOutside').checked;
+  const source=await drawing.captureDocumentLayers(),out=new Map<LayerId,Uint8Array>();
+  if(drawing!==surface||controller.document!==artwork||artwork.head!==head)throw Error('作品が変わりました。');
   const anchor=dimensionInput('geometryAnchor').value as 'center'|'top-left'|'top-right'|'bottom-left'|'bottom-right';
   const shift=shiftedForAnchor(old.width,old.height,w,h,anchor);
   const method=dimensionInput('geometryFilter').value as ImageResample;
@@ -2563,16 +2567,57 @@ async function applyGeometry(){
      mode==='document.canvas-resize'?changeCanvasBounds(pixels,old.width,old.height,w,h,shift.x,shift.y):
      resizeImagePixels(pixels,old.width,old.height,w,h,method));
   }
-  const tx=controller.document.begin(mode==='document.crop'?'Crop':mode==='document.canvas-resize'?'Canvas Resize':'Image Resize');
-  tx.resizeDocument(w,h,mode,out,mode==='document.crop'?{x:rect!.x,y:rect!.y}:{anchor,filter:method});
+  const tx=artwork.begin(mode==='document.crop'?(keepOutside?'外側を残して切り抜き':'外側を切り落とす'):
+    mode==='document.canvas-resize'?'キャンバスサイズを変更':'画像サイズを変更');
+  tx.resizeDocument(w,h,mode,out,mode==='document.crop'?{x:rect!.x,y:rect!.y,keepOutside}:{anchor,filter:method});
   const receipt=tx.commit();controller.lastPersistenceHandoff=receipt.persistence;queueLatestCommit();
   geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');
   await reloadGeometryProjection();scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
   byId('status').textContent='作品を'+w+'×'+h+'pxに変更しました。元に戻すこともできます。';
  }catch(error){byId('geometryStatus').textContent=error instanceof Error?error.message:'変更できませんでした。';}
- finally{canvas.style.pointerEvents='';geometryBusy=false;byId<HTMLButtonElement>('geometryApply').disabled=false;updateHistoryButtons();updateQa();}
+ finally{canvas.style.pointerEvents='';geometryBusy=false;if(surface===drawing)drawing.setInputBarrier(false);byId<HTMLButtonElement>('geometryApply').disabled=false;updateHistoryButtons();updateQa();}
 }
 byId('geometryApply').onclick=()=>{void applyGeometry();};
+
+async function restoreCropOutside(){
+  const drawing=surface,artwork=controller.document,head=artwork.head,root=artwork.root;
+  if(!documentReady||geometryBusy||historyPending||!drawing?.canChangeGeometry)return;
+  const operation=artwork.operationsTo().findLast(op=>
+    op.kind==='document.crop'||['document.canvas-resize','document.image-resize'].includes(op.kind)&&
+    (op.parameters.fromWidth!==op.parameters.toWidth||op.parameters.fromHeight!==op.parameters.toHeight));
+  const originalId=operation?.sourceRevisionIds[0];
+  if(operation?.kind!=='document.crop'||operation.parameters.keepOutside!==true||!originalId){
+    byId('status').textContent='外側を残して切り抜いた作品で使えます。その後にサイズを変えた場合は、サイズ変更を先に戻してください。';return;
+  }
+  const original=artwork.revision(originalId).root;
+  const x=Number(operation.parameters.x),y=Number(operation.parameters.y);
+  if(![x,y].every(Number.isSafeInteger)||x<0||y<0||x+root.width>original.width||y+root.height>original.height){
+    byId('status').textContent='切り抜き前の範囲を復元できません。';return;
+  }
+  geometryBusy=true;drawing.setInputBarrier(true);
+  byId('status').textContent='切り抜きの外側を復元しています。';
+  try{
+    const cropped=await drawing.captureDocumentLayers(),restored=new Map<LayerId,Uint8Array>();
+    for(const [id,pixels] of cropped){
+      const prior=original.hasLayer(id)?original.getLayer(id):null;
+      const target=prior?.baseColor==='white'?new Uint8Array(original.width*original.height*4).fill(255):
+        prior?await originalTransformPixels(artwork,prior,originalId):new Uint8Array(original.width*original.height*4);
+      for(let row=0;row<root.height;row++){
+        target.set(pixels.subarray(row*root.width*4,(row+1)*root.width*4),((y+row)*original.width+x)*4);
+      }
+      restored.set(id,target);
+    }
+    if(controller.document!==artwork||head!==artwork.head||surface!==drawing)throw Error('作品が変わりました。');
+    const tx=artwork.begin('切り抜きの外側を復元');
+    tx.resizeDocument(original.width,original.height,'document.canvas-resize',restored,{offsetX:x,offsetY:y});
+    controller.lastPersistenceHandoff=tx.commit().persistence;queueLatestCommit();
+    await reloadGeometryProjection();scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
+    byId('status').textContent='切り抜き後の編集を保ったまま、外側を復元しました。';
+  }catch(error){byId('status').textContent=error instanceof Error?error.message:'外側を復元できませんでした。';}
+  finally{geometryBusy=false;if(surface===drawing)drawing.setInputBarrier(false);updateHistoryButtons();}
+}
+byId('restoreCropOutside').onclick=()=>{void restoreCropOutside();};
+
 
 const documentInfoDialog=byId<HTMLDialogElement>('documentInfoDialog');
 const workTime=installWorkTime(documentInfoDialog.querySelector('form')!,byId('canvasArea'),

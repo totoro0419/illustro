@@ -810,6 +810,10 @@ export class DocumentTransaction{
     if(this.rootValue.rootLayerIds.some(id=>{const layer=this.rootValue.getLayer(id);return layer.editable||layer.deformation||layer.imageLink;}))throw new Error('図形・文字・グラデーション・変形・参照画像を描画用に変換してから、作品の大きさを変更してください。');
     if(layerPixels.size!==this.rootValue.rootLayerIds.length)throw new Error('each raster layer must be rebased');
     const byteLength=width*height*4,T=CANONICAL_TILE_SIZE;
+    const explicit=kind==='document.canvas-resize'&&(parameters.offsetX!==undefined||parameters.offsetY!==undefined);
+    const xOffset=Number(parameters.offsetX),yOffset=Number(parameters.offsetY);
+    if(explicit&&(!Number.isSafeInteger(xOffset)||!Number.isSafeInteger(yOffset)||Math.abs(xOffset)>8192||Math.abs(yOffset)>8192))
+      throw Error('キャンバスの移動距離が正しくありません。');
     for(const id of this.rootValue.rootLayerIds){
       const layer=this.rootValue.getLayer(id),rgba=layerPixels.get(id);
       if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('unsupported direct raster sample encoding');
@@ -825,8 +829,8 @@ export class DocumentTransaction{
           vectorMask=transformLayerMask(mask,scaleX,scaleY,0,0);
         }else{
           const deltaX=width-this.rootValue.width,deltaY=height-this.rootValue.height,anchor=parameters.anchor;
-          const shiftX=kind==='document.crop'?-Number(parameters.x??0):anchor==='center'?Math.floor(deltaX/2):anchor==='top-right'||anchor==='bottom-right'?deltaX:0;
-          const shiftY=kind==='document.crop'?-Number(parameters.y??0):anchor==='center'?Math.floor(deltaY/2):anchor==='bottom-left'||anchor==='bottom-right'?deltaY:0;
+          const shiftX=kind==='document.crop'?-Number(parameters.x??0):explicit?xOffset:anchor==='center'?Math.floor(deltaX/2):anchor==='top-right'||anchor==='bottom-right'?deltaX:0;
+          const shiftY=kind==='document.crop'?-Number(parameters.y??0):explicit?yOffset:anchor==='center'?Math.floor(deltaY/2):anchor==='bottom-left'||anchor==='bottom-right'?deltaY:0;
           vectorMask=transformLayerMask(mask,1,1,shiftX,shiftY);
         }
       }
