@@ -8,7 +8,7 @@ export function installBrushCatalogView(picker:HTMLSelectElement){
   catalog.setAttribute('role','group');catalog.setAttribute('aria-label','ブラシ一覧');
   const opener=document.createElement('button');opener.type='button';opener.className='brush-detail-open';
   opener.textContent='ブラシ設定';
-  const {body:settings,show}=installWorkspaceDetails('ブラシ設定','brushBox',opener);
+  const {body:settings}=installWorkspaceDetails('ブラシ設定','brushBox',opener);
   picker.closest('label')!.after(catalog,opener);
   picker.closest('label')!.setAttribute('hidden','');
   const search=basic.querySelector('details');
@@ -77,7 +77,7 @@ export function installBrushCatalogView(picker:HTMLSelectElement){
       const label=document.createElement('span');label.textContent=option.label;
       button.append(canvas,label);
       button.onclick=()=>{
-        picker.value=option.value;picker.dispatchEvent(new Event('change',{bubbles:true}));show(true);
+        picker.value=option.value;picker.dispatchEvent(new Event('change',{bubbles:true}));
       };
       return [button];
     }));
