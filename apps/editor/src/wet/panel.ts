@@ -1,6 +1,9 @@
 import {button,labelledField,numberField,selectField} from '../artwork/tools';
 import type {BrushSurface} from '../brushSurface';
+import type {PortableSectionInput} from '../persistence/format';
 import {defaultWet,needsSource,type Point,type WetMode,type WetSettings} from './paint';
+
+const sectionId='round2.wet-brush',sectionType='illustro.wet-brush.v1';
 
 export const wetModes=[
   ['smudge','色を引きずる'],['blur','筆でぼかす'],['mix','色を足して混ぜる'],
@@ -49,18 +52,20 @@ export function installWetTools(host:HTMLElement,api:{
   let cancelDrawing:(()=>void)|null=null,pending:AbortController|null=null,revision=0;
   const fields=[size,strength,pigment,diffusion,edge,grain,paperScale,absorb,thickness,water];
   const key='illustro.round2.wet.v1';
-  try{
-    const saved=JSON.parse(localStorage.getItem(key)??'null');
-    if(saved&&wetModes.some(([id])=>id===saved.mode)&&Array.isArray(saved.values)){
-      mode.value=saved.mode;
-      fields.forEach((field,i)=>{
-        const value=saved.values[i];
-        if(Number.isInteger(value)&&value>=Number(field.min)&&value<=Number(field.max))field.value=String(value);
-      });
-      reference.value=saved.reference==='merged'?'merged':'active';
-      separate.checked=saved.separate===true;aligned.checked=saved.aligned!==false;selectedPatch.checked=saved.selectedPatch===true;
-    }
-  }catch{/* defaults are usable when preferences cannot be read */}
+  function restorePreferences(raw:string|null){
+    const saved=JSON.parse(raw??'null');
+    if(!saved||!wetModes.some(([id])=>id===saved.mode)||!Array.isArray(saved.values))return;
+    mode.value=saved.mode;
+    fields.forEach((field,i)=>{
+      const value=saved.values[i];
+      if(Number.isInteger(value)&&value>=Number(field.min)&&value<=Number(field.max))field.value=String(value);
+    });
+    reference.value=saved.reference==='merged'?'merged':'active';
+    separate.checked=saved.separate===true;aligned.checked=saved.aligned!==false;selectedPatch.checked=saved.selectedPatch===true;
+  }
+  const snapshot=()=>JSON.stringify({mode:mode.value,reference:reference.value,values:fields.map(f=>f.valueAsNumber),
+    aligned:aligned.checked,separate:separate.checked,selectedPatch:selectedPatch.checked});
+  try{restorePreferences(localStorage.getItem(key));}catch{/* defaults remain usable */}
   const selected=()=>mode.value as WetMode;
   function settings():WetSettings{
     if(fields.some(field=>!field.validity.valid||!field.value))throw Error('筆の設定を範囲内で指定してください。');
@@ -72,8 +77,10 @@ export function installWetTools(host:HTMLElement,api:{
     const context=api.current();
     if(anchor&&anchor.documentId!==context?.documentId){anchor=null;offset=null;}
     const ref=reference.value==='merged'?'表示中の全レイヤー':anchor&&needsSource(selected())?anchor.layerName:context?.layerName??'なし';
+    const paintMode=selected();
     target.textContent='参照 '+ref+' ／ 描画先 '+(separate.checked||reference.value==='merged'?'新規レイヤー':context?.layerName??'なし')+
-      (anchor&&needsSource(selected())?' ／ 採取点 '+Math.floor(anchor.point.x)+', '+Math.floor(anchor.point.y):'');
+      (anchor&&needsSource(paintMode)?' ／ 採取点 '+Math.floor(anchor.point.x)+', '+Math.floor(anchor.point.y):'')+
+      (paintMode==='smudge'||paintMode==='blur'?' ／ 既存の色だけ':paintMode==='mix'?' ／ 描画色を足す':'');
     aligned.parentElement!.hidden=!needsSource(selected());
     water.parentElement!.hidden=selected()!=='water';
     pigment.parentElement!.hidden=!['water','mix','oil','pastel'].includes(selected());
@@ -169,12 +176,21 @@ export function installWetTools(host:HTMLElement,api:{
   const actions=document.createElement('div');actions.className='box-actions';actions.append(sourceButton,start,stop);
   for(const field of [mode,reference,...fields,separate,aligned,selectedPatch])field.onchange=()=>{
     if(field===mode||field===reference)offset=null;
-    try{localStorage.setItem(key,JSON.stringify({mode:mode.value,reference:reference.value,values:fields.map(f=>f.valueAsNumber),
-      aligned:aligned.checked,separate:separate.checked,selectedPatch:selectedPatch.checked}));}catch{/* the current tool still works */}
+    try{localStorage.setItem(key,snapshot());}catch{/* the current tool still works */}
     describe();
     if(cancelDrawing&&!pending)arm();
   };
   panel.append(summary,options,target,advanced,actions,status);
   host.append(panel);describe();
-  return {open:()=>{panel.open=true;arm();},stop:leave,settings,refresh:describe};
+  return {open:()=>{panel.open=true;arm();},stop:leave,settings,refresh:describe,
+    exportNative():PortableSectionInput{
+      return {id:sectionId,type:sectionType,required:false,bytes:new TextEncoder().encode(snapshot())};
+    },
+    restoreNative(sections:readonly PortableSectionInput[]){
+      const section=sections.find(part=>part.id===sectionId&&part.type===sectionType);
+      if(!section||section.bytes.byteLength>2048)return;
+      try{restorePreferences(new TextDecoder().decode(section.bytes));offset=null;describe();}
+      catch{/* a damaged optional section leaves the saved pixels and usable settings */}
+    }
+  };
 }

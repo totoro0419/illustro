@@ -2833,6 +2833,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     });
   }
   if(opened.generationId!=='library'){
+    wetTools?.restoreNative(opened.preserved.optionalSections);
     try{timeline?.restoreNative(opened.document,opened.preserved.optionalSections);}
     catch(error){console.warn('Optional timelapse metadata could not be read',error);}
   }
@@ -4312,6 +4313,7 @@ persistence.setSaveAttachmentProvider(()=>{
   const preserved=persistence.preservedData;
   const documentPalette=foreground.exportDocumentPaletteSection();
   const recording=timeline?.exportNative(controller.document);
+  const wetSettings=wetTools?.exportNative();
   const symmetry={id:SYMMETRY_SECTION,type:SYMMETRY_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(symmetrySettings))};
   const referenceDocumentId=controller.document.root.documentId;
   const safeReference=c05References.exportNative().catch(reason=>{
@@ -4331,7 +4333,7 @@ persistence.setSaveAttachmentProvider(()=>{
     const result=await editingState;
     if('error' in result)throw result.error;
     const [reference,selections]=result.values,fonts=await exportFonts(root,preserved);
-    return [...(reference?[reference]:[]),...selections,...fonts,...(documentPalette?[documentPalette]:[]),...(recording?[recording]:[]),symmetry];
+    return [...(reference?[reference]:[]),...selections,...fonts,...(documentPalette?[documentPalette]:[]),...(recording?[recording]:[]),...(wetSettings?[wetSettings]:[]),symmetry];
   };
 });
 const unavailableImageLinks=new Set<string>();
