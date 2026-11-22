@@ -9,12 +9,12 @@ export const wetModes=[
 ] as const satisfies readonly (readonly [WetMode,string])[];
 export type WetStroke=Readonly<{
   settings:WetSettings;source:Point|null;reference:'active'|'merged';separate:boolean;
-  offset:Point;points:readonly Point[];signal:AbortSignal;documentId:string;sourceLayerId:string|null;
+  offset:Point;points:readonly Point[];selectedPatch?:boolean;signal:AbortSignal;documentId:string;sourceLayerId:string|null;
 }>;
 
 export function installWetTools(host:HTMLElement,api:{
   current:()=>{drawing:BrushSurface;documentId:string;layerId:string;layerName:string}|null;
-  activate:(start:()=>void)=>void;color:()=>readonly number[];draw:(stroke:WetStroke)=>Promise<boolean>;left:()=>void;
+  activate:(start:()=>void)=>void;hasSelection:()=>boolean;color:()=>readonly number[];draw:(stroke:WetStroke)=>Promise<boolean>;left:()=>void;
 }){
   const panel=document.createElement('details');
   panel.className='c06-clipboard-panel';panel.dataset.toolPanel='smudge';
@@ -39,6 +39,9 @@ export function installWetTools(host:HTMLElement,api:{
   labelledField(options,'新しいレイヤーに結果を置く',separate);
   const aligned=document.createElement('input');aligned.type='checkbox';aligned.checked=true;
   labelledField(options,'次の一筆にも採取元との位置関係を保つ',aligned);
+  const selectedPatch=document.createElement('input');selectedPatch.type='checkbox';
+  labelledField(options,'選択中の形を採取し、ドラッグの終点へコピー',selectedPatch);
+  const transfer=()=>selected()==='patch'&&selectedPatch.checked;
   const status=document.createElement('output');status.setAttribute('role','status');
   const target=document.createElement('p');target.setAttribute('role','status');
   let anchor:{point:Point;documentId:string;layerId:string;layerName:string}|null=null,offset:Point|null=null;
@@ -54,7 +57,7 @@ export function installWetTools(host:HTMLElement,api:{
         if(Number.isInteger(value)&&value>=Number(field.min)&&value<=Number(field.max))field.value=String(value);
       });
       reference.value=saved.reference==='merged'?'merged':'active';
-      separate.checked=saved.separate===true;aligned.checked=saved.aligned!==false;
+      separate.checked=saved.separate===true;aligned.checked=saved.aligned!==false;selectedPatch.checked=saved.selectedPatch===true;
     }
   }catch{/* defaults are usable when preferences cannot be read */}
   const selected=()=>mode.value as WetMode;
@@ -71,7 +74,9 @@ export function installWetTools(host:HTMLElement,api:{
     target.textContent='参照 '+ref+' ／ 描画先 '+(separate.checked||reference.value==='merged'?'新規レイヤー':context?.layerName??'なし')+
       (anchor&&needsSource(selected())?' ／ 採取点 '+Math.floor(anchor.point.x)+', '+Math.floor(anchor.point.y):'');
     aligned.parentElement!.hidden=!needsSource(selected());
-    sourceButton.hidden=!needsSource(selected());
+    sourceButton.hidden=!needsSource(selected())||transfer();
+    selectedPatch.parentElement!.hidden=selected()!=='patch';
+    if(transfer())target.textContent+=' ／ 選択範囲の形を採取';
   }
   function leave(){
     revision++;pending?.abort();pending=null;
@@ -83,12 +88,16 @@ export function installWetTools(host:HTMLElement,api:{
     const old=cancelDrawing;cancelDrawing=null;old?.();
     const brush=selected(),repair=needsSource(brush);
     describe();
-    if(repair&&!anchor&&!pick){
+    if(transfer()&&!api.hasSelection()){
+      status.textContent='先に移したい形を選択してください。';
+      return;
+    }
+    if(repair&&!anchor&&!pick&&!transfer()){
       status.textContent='「元を指定」を押して、キャンバス上で採取元を選んでください。';
       return;
     }
     const current=()=>revision===token&&api.current()?.drawing===context.drawing;
-    status.textContent=pick?'キャンバスで採取する位置を選んでください。':brush==='patch'?'貼り付け先の対角線をドラッグしてください。':'離すと一筆の結果を適用します。';
+    status.textContent=pick?'キャンバスで採取する位置を選んでください。':brush==='patch'?(transfer()?'貼り付ける場所までドラッグしてください。':'貼り付け先の対角線をドラッグしてください。'):'離すと一筆の結果を適用します。';
     cancelDrawing=context.drawing.setCanvasEditGesture({
       continuous:true,path:false,width:pick||brush==='patch'?2:Math.max(1,size.valueAsNumber),color:repair?'#2a8cc8':'#5c8c68',
       referencePoint:()=>repair&&!pick&&anchor?.documentId===context.documentId?anchor.point:null,
@@ -108,7 +117,7 @@ export function installWetTools(host:HTMLElement,api:{
         const delta=anchor&&(offset&&aligned.checked?offset:{x:anchor.point.x-origin.x,y:anchor.point.y-origin.y});
         status.textContent='画素を処理しています…';
         void api.draw({settings:chosen,source:anchor?.point??null,reference:reference.value==='merged'?'merged':'active',
-          sourceLayerId:anchor?.layerId??null,separate:separate.checked,offset:delta??{x:0,y:0},points,signal:controller.signal,documentId:next.documentId})
+          sourceLayerId:transfer()?next.layerId:anchor?.layerId??null,selectedPatch:transfer(),separate:separate.checked,offset:delta??{x:0,y:0},points,signal:controller.signal,documentId:next.documentId})
           .then(changed=>{
             if(!current())return;
             if(changed&&repair&&aligned.checked)offset=delta;
@@ -123,10 +132,10 @@ export function installWetTools(host:HTMLElement,api:{
   const start=button('キャンバスで使う',()=>api.activate(()=>arm()),status);
   const stop=button('筆を終了',()=>{leave();api.left();},status);
   const actions=document.createElement('div');actions.className='box-actions';actions.append(sourceButton,start,stop);
-  for(const field of [mode,reference,...fields,separate,aligned])field.onchange=()=>{
+  for(const field of [mode,reference,...fields,separate,aligned,selectedPatch])field.onchange=()=>{
     if(field===mode||field===reference)offset=null;
     try{localStorage.setItem(key,JSON.stringify({mode:mode.value,reference:reference.value,values:fields.map(f=>f.valueAsNumber),
-      aligned:aligned.checked,separate:separate.checked}));}catch{/* the current tool still works */}
+      aligned:aligned.checked,separate:separate.checked,selectedPatch:selectedPatch.checked}));}catch{/* the current tool still works */}
     describe();
     if(cancelDrawing&&!pending)arm();
   };

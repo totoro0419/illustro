@@ -4103,6 +4103,7 @@ async function withClipboardAccess(action:(drawing:BrushSurface)=>Promise<'edit'
 }
 wetTools=installWetTools(byId('documentBoxBody'),{
   activate:start=>selectCanvasTool('smudge',start),
+  hasSelection:()=>!!c06Selection?.active(),
   current:()=>documentReady&&surface?{drawing:surface,documentId:controller.document.root.documentId,
     layerId:controller.selectedLayer.id,layerName:controller.selectedLayer.name}:null,
   color:()=>[foreground.current.r,foreground.current.g,foreground.current.b].map(channel=>Math.round(channel*255)),

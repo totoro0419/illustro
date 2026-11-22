@@ -26,3 +26,14 @@ describe('wet and repair brushes',()=>{
     expect(tileAlignedArea({x:290,y:10,width:60,height:2},400,700,256)).toEqual({x:256,y:0,width:144,height:256});
   });
 });
+
+it('copies a shaped patch with the original feathered coverage and no rectangular fringe',()=>{
+  const run=job(),reference=patch(),selection=new Uint8Array(area.width*area.height);
+  reference.pixels.set([30,60,90,255],at(2,2));
+  reference.pixels.set([170,90,20,255],at(3,2));
+  selection[at(5,4)/4]=128;
+  const result=paintWet({...run,reference,selection,shapePatch:true,offset:{x:-3,y:-2},
+    points:[{x:5,y:4},{x:7,y:5}],settings:{...run.settings,mode:'patch',strength:1}});
+  expect([...result.pixels.slice(at(5,4),at(5,4)+4)]).toEqual([30,60,90,128]);
+  expect(result.pixels[at(6,4)+3]).toBe(0);
+});

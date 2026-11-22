@@ -7,7 +7,7 @@ export type WetSettings=Readonly<{
   paperScale:number;absorb:number;thickness:number;color:readonly number[];
 }>;
 export type WetJob=Readonly<{
-  destination:Patch;reference:Patch|null;selection:Uint8Array|null;points:readonly Point[];
+  destination:Patch;reference:Patch|null;selection:Uint8Array|null;shapePatch?:boolean;points:readonly Point[];
   offset:Point;alphaLocked:boolean;settings:WetSettings;
 }>;
 type Sample=readonly [number,number,number,number]; // premultiplied RGB, alpha in 0..1
@@ -103,7 +103,7 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
     const index=(y-area.y)*area.width+x-area.x,at=index*4;
     const mask=(selection?.[index]??255)/255;if(!mask)return;
     const old=sample(dest,x,y);
-    const falloff=clamp((1-distance)/(mode==='patch'?Math.max(.05,1-edge):.6));
+    const falloff=job.shapePatch?1:clamp((1-distance)/(mode==='patch'?Math.max(.05,1-edge):.6));
     const weight=clamp(strength*falloff*mask);
     let value:Sample;
     if(mode==='clone'||mode==='heal'||mode==='patch'){

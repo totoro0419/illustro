@@ -3,7 +3,7 @@ import type {CoreDocument,LayerId} from '@illustro/core';
 import {TILE} from '@illustro/brush-rt';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 import {cropCanvas} from '../canvasGeometry';
-import {cropSelectionMask,type MaskData} from '../selection/mask';
+import {boundsOfSelection,cropSelectionMask,type MaskData} from '../selection/mask';
 import {needsSource,strokeArea,tileAlignedArea,type Area,type Patch} from './paint';
 import {runWet} from './run';
 import type {WetStroke} from './panel';
@@ -11,8 +11,18 @@ import type {WetStroke} from './panel';
 export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,layerId:LayerId,mask:MaskData|null,stroke:WetStroke){
   const {width,height}=artwork.root,mode=stroke.settings.mode,repair=needsSource(mode);
   const separate=stroke.separate||stroke.reference==='merged';
+  let {points,offset}=stroke;
+  let sourceShape:Area|null=null;
+  if(stroke.selectedPatch){
+    const target=points.at(-1);
+    sourceShape=mask?boundsOfSelection(mask):null;
+    if(!sourceShape||!target)throw Error('移す形を先に選択してください。');
+    const left=Math.floor(target.x-sourceShape.width/2),top=Math.floor(target.y-sourceShape.height/2);
+    points=[{x:left,y:top},{x:left+sourceShape.width,y:top+sourceShape.height}];
+    offset={x:sourceShape.x-left,y:sourceShape.y-top};
+  }
   const margin=mode==='patch'?2:Math.ceil(stroke.settings.size+2);
-  const bounds=strokeArea(stroke.points,margin,width,height);
+  const bounds=strokeArea(points,margin,width,height);
   if(!bounds)return null;
   const area=separate?bounds:tileAlignedArea(bounds,width,height,TILE*2);
   if(area.width*area.height>4800000)throw Error('一度に処理する範囲が大きすぎます。線を分けてください。');
@@ -32,7 +42,7 @@ export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,l
     return {area:frame,pixels:new Uint8ClampedArray(cropCanvas(pixels,width,height,frame.x,frame.y,frame.width,frame.height))};
   }
   const destination:Patch=separate?{area,pixels:new Uint8ClampedArray(area.width*area.height*4)}:await read(layerId,area);
-  const box=repair?strokeArea(stroke.points.map(p=>({x:p.x+stroke.offset.x,y:p.y+stroke.offset.y})),margin,width,height):area;
+  const box=repair?strokeArea(points.map(p=>({x:p.x+offset.x,y:p.y+offset.y})),margin,width,height):area;
   if(repair&&!box)throw Error('採取範囲がキャンバスの外にあります。');
   let reference:Patch|null=null;
   if(stroke.reference==='merged'&&box){
@@ -43,10 +53,22 @@ export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,l
     if(!id||!artwork.root.hasLayer(id))throw Error('採取元のレイヤーがありません。元を選び直してください。');
     reference=await read(id,box);
   }else if(separate)reference=await read(layerId,area);
-  const result=await runWet({destination,reference,selection:mask?cropSelectionMask(mask,area).alpha:null,
-    points:stroke.points,offset:stroke.offset,alphaLocked:!separate&&!!artwork.root.getLayer(layerId).alphaLocked,
+  const clip=sourceShape&&mask?movePatchCoverage(mask,area,offset):mask?cropSelectionMask(mask,area).alpha:null;
+  const result=await runWet({destination,reference,selection:clip,
+    points,offset,shapePatch:!!sourceShape,alphaLocked:!separate&&!!artwork.root.getLayer(layerId).alphaLocked,
     settings:stroke.settings},stroke.signal);
   return result.changed?{area,pixels:result.pixels,separate}:null;
+}
+// The selection belongs to the source; sample its coverage at each moved pixel.
+export function movePatchCoverage(mask:MaskData,area:Area,offset:{x:number;y:number}){
+  const alpha=new Uint8Array(area.width*area.height);
+  for(let y=0;y<area.height;y++){
+    const sy=area.y+y+offset.y;
+    if(sy<0||sy>=mask.height)continue;
+    const sx=area.x+offset.x,left=Math.max(0,-sx),right=Math.min(area.width,mask.width-sx);
+    if(left<right)alpha.set(mask.alpha.subarray(sy*mask.width+sx+left,sy*mask.width+sx+right),y*area.width+left);
+  }
+  return alpha;
 }
 export function wetPatchTiles(area:Area,pixels:Uint8ClampedArray){
   const blocks:string[]=[],tiles:{key:string;pixels:Uint8Array}[]=[];
