@@ -13,10 +13,6 @@
 .brush-editor-section-body>label select{flex:1;min-width:0;max-width:65%;padding:6px;border-radius:8px;border:1px solid #cbd7e6;background:#fff}
 .brush-editor-section-body>label.checkbox-line{justify-content:flex-start}
 .brush-editor-control{min-width:0;display:flex;flex-direction:column;gap:5px}
-.brush-editor-inputs{display:flex;align-items:center;gap:6px;min-width:0}
-.brush-editor-inputs input[type=range]{min-width:0;width:100%;flex:1;accent-color:#6884e3;touch-action:pan-y}
-.brush-editor-inputs input[type=number]{min-width:0;width:62px;flex:0 0 62px;padding:5px;border-radius:7px;border:1px solid #cbd7e6;background:#fff;color:#253a57;font:inherit;font-variant-numeric:tabular-nums}
-.brush-editor-inputs span{min-width:14px;color:#728099}
 .brush-curve-chart{width:min(100%,228px);aspect-ratio:1;background:linear-gradient(0deg,#f4f7ff,#fff);border:1px solid #c8d5ed;border-radius:9px;display:block;touch-action:none;cursor:crosshair;margin:auto}
 .brush-curve-grid{stroke:#d9e3f5;stroke-width:1;fill:none}
 .brush-curve-line{stroke:#456bc6;stroke-width:2.5;fill:none;stroke-linejoin:round}
@@ -29,8 +25,7 @@
 .brush-curve-coordinates{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .brush-curve-coordinates label{display:flex;align-items:center;gap:4px}
 .brush-curve-coordinates input{width:100%;min-width:0;padding:5px;border:1px solid #cbd7e6;border-radius:7px;font-variant-numeric:tabular-nums}
-.m10-brush-settings label>input[type=number]{width:65px;min-width:0;padding:4px;border:1px solid #cbd7e6;border-radius:7px;background:#fff}
-@media(max-width:600px){.brush-editor-section summary{padding:12px}.brush-editor-section-body{padding:12px}.brush-editor-inputs input[type=number]{width:70px;flex-basis:70px}}
+@media(max-width:600px){.brush-editor-section summary{padding:12px}.brush-editor-section-body{padding:12px}}
 
 /* M10 Dynamics editor: compact touch-friendly controls inside the Brush box. */
 #brushDynamicsList{display:flex;flex-direction:column;gap:7px}
