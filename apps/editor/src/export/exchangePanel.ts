@@ -45,6 +45,10 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   const preview=document.createElement('canvas');preview.setAttribute('aria-label','透明部分と仕上がり線を表示する出力前の作品全体');
   preview.hidden=true;preview.className='exchange-print-preview';
   let comparison:ImageData|null=null;
+  const svgComparison=document.createElement('figure'),svgImage=document.createElement('canvas'),svgCaption=document.createElement('figcaption');
+  svgImage.className=preview.className;svgImage.setAttribute('aria-label','出力されたSVGの見た目');
+  svgComparison.hidden=true;svgComparison.append(svgImage,svgCaption);
+  let comparisonVersion=0;
   function refresh(){
     const selected=format.value as ExchangeFormat,avif=selected==='avif';
     const layered=selected==='psd'||selected==='psb'||selected==='ora'||selected==='svg';
@@ -84,7 +88,9 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   }
   for(const control of [profileFile,intent,black,gamut])control.onchange=clearProof;
   display.onchange=refresh;print.ontoggle=refresh;
-  for(const field of [format,style,quality,lossless,dpi,bleed,paper,transparency])field.onchange=refresh;
+  for(const field of [format,style,quality,lossless,dpi,bleed,paper,transparency])field.onchange=()=>{
+    comparisonVersion++;svgComparison.hidden=true;refresh();
+  };
   const actions=document.createElement('div');actions.className='box-actions';
   async function captureComparison(){
     if(!active())throw Error('作品が切り替わりました。');
@@ -101,6 +107,33 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     preview.width=image.width;preview.height=image.height;preview.hidden=false;refresh();
     if(print.open)status.textContent='破線が仕上がりの位置です。市松模様が見える範囲が透明です。';
   },status);
+  const compareSvg=button('SVGの見た目を元の絵と比較',async()=>{
+    const ticket=++comparisonVersion,layered=style.value==='layered',revision=doc.head;
+    const original=await captureComparison();
+    const svg=await exportExchange(doc,'svg',layered);
+    const url=URL.createObjectURL(svg);
+    try{
+      const image=new Image();image.src=url;await image.decode();
+      if(!dialog.open||ticket!==comparisonVersion||!active()||doc.head!==revision)return;
+      comparison=original;display.value='original';preview.width=original.width;preview.height=original.height;
+      preview.hidden=false;drawPreview();
+      svgImage.width=original.width;svgImage.height=original.height;
+      const context=svgImage.getContext('2d');
+      if(!context)throw Error('比較を表示できません。');
+      context.drawImage(image,0,0,original.width,original.height);
+      const rendered=context.getImageData(0,0,original.width,original.height).data;
+      let count=0;
+      for(let i=0;i<rendered.length;i+=4){
+        const alpha=rendered[i+3]!,baseAlpha=original.data[i+3]!;
+        if(Math.abs(alpha-baseAlpha)>8||[0,1,2].some(c=>Math.abs(rendered[i+c]!*alpha-original.data[i+c]!*baseAlpha)>8*255))count++;
+      }
+      const total=original.width*original.height;
+      svgCaption.textContent='出力したSVG · 縮小比較で約 '+(count/total*100).toFixed(1)+'% の画素に差があります。';
+      svgComparison.hidden=false;
+    }finally{URL.revokeObjectURL(url);}
+  },status);
+  compareSvg.hidden=format.value!=='svg';
+  format.addEventListener('change',()=>{compareSvg.hidden=format.value!=='svg';});
   const checkProof=button('出力先の色を確認',async()=>{
     const file=profileFile.files?.[0];
     if(!file||file.size>ICC_LIMIT)throw Error('4MB以内のICCプロファイルを選んでください。');
@@ -134,6 +167,6 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   },status);
   const close=button('閉じる',()=>dialog.close(),status);
   dialog.onclose=()=>{proofTicket++;comparison=proof=null;dialog.remove();};
-  actions.append(see,run,close);section.append(notes,preview,print,actions,status);dialog.append(section);
+  actions.append(see,compareSvg,run,close);section.append(notes,preview,svgComparison,print,actions,status);dialog.append(section);
   document.body.append(dialog);refresh();dialog.showModal();
 }

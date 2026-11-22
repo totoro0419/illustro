@@ -83,3 +83,13 @@ it('embeds the standard sRGB profile and optional text in PNG without an overlap
   expect(labels.has('pHYs')).toBe(true);
   expect(text).toEqual(['Author     作者','Copyright     権利表記']);
 });
+
+it('writes simple SVG text as editable, escaped lines and retains complex text as artwork pixels',async()=>{
+  const {svgTextGeometry}=await import('./exchange');
+  const simple={kind:'text',text:'<x>&\n語',origin:{x:1,y:2},vertical:false,size:10,family:'sans-serif',
+    color:'#001234',align:'center',spacing:1,lineHeight:1.4} as const;
+  expect(svgTextGeometry(simple)).toContain('text-anchor="middle"');
+  expect(svgTextGeometry(simple)).toContain('<tspan x="1" y="2">&lt;x&gt;&amp;</tspan><tspan x="1" y="16">語</tspan>');
+  expect(svgTextGeometry({...simple,vertical:true})).toBeNull();
+  expect(svgTextGeometry({...simple,fontAsset:'custom'})).toBeNull();
+});

@@ -1,4 +1,4 @@
-import {type CoreDocument,type EditableArtwork,type EditablePath,type LayerId} from '@illustro/core';
+import {type CoreDocument,type EditableArtwork,type EditablePath,type EditableText,type LayerId} from '@illustro/core';
 import {captureExport,compositeLayer,encodePng,renderFrozenArtwork,type FrozenExport} from './basicExport';
 import {assertImageSize,cleanFileName,imageLayer,MAX_EXCHANGE_BYTES,supportsOraBlend,xmlText,type ExchangeArtwork,type ExchangeFormat,type ExchangeLayer} from './exchangeTypes';
 import {runIcc} from './iccRun';
@@ -61,14 +61,20 @@ export async function convertExchangeColors(source:ExchangeArtwork,applyProfile:
 
 export function exchangeWarnings(doc:CoreDocument,format:ExchangeFormat,layered:boolean){
   const root=doc.root,warnings=new Set<string>();
+  if(format==='ora')warnings.add(layered?'レイヤー名・順序・不透明度・対応する合成方法を保持します。マスクは見た目に反映した画像になり、組み直せません。':'透明度付きの統合画像をOpenRasterに保存します。');
+  if(format==='tiff')warnings.add('保存は非圧縮RGB・8ビット、透明度とDPI付き。読み込みは対応する非圧縮またはPackBitsの8/16ビットRGB。複数ページや編集用レイヤーは保持されません。');
+  if(format==='svg')warnings.add(layered?'通常のパスと対応する横書き文字は編集できます。可変幅、複雑な文字、その他の筆跡は画像にします。':'見た目を保つため、統合画像を埋め込みます。');
   if(format==='exr')warnings.add('表示中の絵をリニアsRGBの32ビット浮動小数点で出力します。元の8ビット作品と同じ色の範囲で、HDRには広がりません。');
   else if(format==='avif'||format==='tiff'||!layered)warnings.add('表示中の作品を1枚のsRGB・8ビット画像にします。レイヤーや編集履歴は含まれません。');
   else {
     if(root.layerGroups.length)warnings.add('グループを展開します。グループの合成は交換先で変わることがあります。');
     for(const id of root.rootLayerIds){
       const layer=root.getLayer(id);
-      if(layer.editable&&!(format==='svg'&&exportablePath(layer.editable)&&!special(layer)))
-        warnings.add('「'+layer.name+'」の文字・ベクター・グラデーションは画素で出力されます。');
+      if(layer.editable){
+        const editableSvg=format==='svg'&&!special(layer)&&(exportablePath(layer.editable)||exportableText(layer.editable));
+        if(!editableSvg)warnings.add('「'+layer.name+'」の文字・ベクター・グラデーションは画素で出力されます。');
+        else if(layer.editable.kind==='text')warnings.add('「'+layer.name+'」の文字は交換先のシステム書体（'+layer.editable.family+'）で表示されます。');
+      }
       if(special(layer))warnings.add('「'+layer.name+'」のマスク・クリッピング・色効果は編集用のレイヤーに引き継がれない場合があります。');
       if(format==='ora'&&layer.blend&&!supportsOraBlend(layer.blend.mode))
         warnings.add('「'+layer.name+'」の合成方法はOpenRasterでは通常に変換します。');
@@ -84,7 +90,21 @@ function special(layer:ReturnType<CoreDocument['root']['getLayer']>){
     layer.blend?.space==='linear');
 }
 function exportablePath(content:EditableArtwork):content is EditablePath{
-  return content.kind==='path'&&!content.empty&&!content.fillRuns&&(!content.width||!content.lineStyle||content.lineStyle==='solid');
+  return content.kind==='path'&&!content.empty&&!content.fillRuns&&(!content.width||!content.lineStyle||content.lineStyle==='solid')&&
+    content.points.every(point=>point.pressure===undefined||point.pressure===1);
+}
+function exportableText(content:EditableArtwork):content is EditableText{
+  return content.kind==='text'&&!content.vertical&&!content.fontAsset&&!content.styleRanges?.length&&
+    content.boxWidth===undefined&&content.boxHeight===undefined&&['sans-serif','serif','monospace'].includes(content.family);
+}
+export function svgTextGeometry(text:EditableText){
+  if(!exportableText(text))return null;
+  const {x,y}=text.origin,anchor=text.align==='center'?'middle':text.align==='right'?'end':'start';
+  const transform=text.transform?' transform="matrix('+[text.transform.a,text.transform.b,text.transform.c,text.transform.d,text.transform.e,text.transform.f].join(' ')+')"':'';
+  return '<text xml:space="preserve" dominant-baseline="text-before-edge" text-anchor="'+anchor+
+    '" fill="'+xmlText(text.color)+'" font-family="'+xmlText(text.family)+'" font-size="'+text.size+
+    '" letter-spacing="'+text.spacing+'"'+transform+'>'+
+    text.text.split(/\r?\n/).map((line,row)=>'<tspan x="'+x+'" y="'+(y+row*text.lineHeight*text.size)+'">'+xmlText(line)+'</tspan>').join('')+'</text>';
 }
 function svgGeometry(path:EditablePath){
   const first=path.points[0],last=path.points[1];if(!first)return '';
@@ -154,9 +174,13 @@ export async function exportExchange(doc:CoreDocument,format:ExchangeFormat,laye
       const layer=root.getLayer(id),source=fixed.layers.find(item=>item.surfaceId===layer.surface.descriptor.surfaceId);
       if(!source)continue;
       const opacity=source.opacity,visible=source.visible,blend=layer.blend?.mode??'normal';
-      if(format==='svg'&&layer.editable&&exportablePath(layer.editable)&&!special(layer)){
-        svg.push('<g aria-label="'+xmlText(layer.name)+'" opacity="'+opacity+'"'+(visible?'':' display="none"')+'>'+svgGeometry(layer.editable)+'</g>');
-        continue;
+      if(format==='svg'&&layer.editable&&!special(layer)){
+        const geometry=exportablePath(layer.editable)?svgGeometry(layer.editable):
+          exportableText(layer.editable)?svgTextGeometry(layer.editable):null;
+        if(geometry!==null){
+          svg.push('<g aria-label="'+xmlText(layer.name)+'" opacity="'+opacity+'"'+(visible?'':' display="none"')+'>'+geometry+'</g>');
+          continue;
+        }
       }
       const pixels=await layerPixels(fixed,id,root);
       if(format==='svg')svg.push('<g aria-label="'+xmlText(layer.name)+'" opacity="'+opacity+'"'+(visible?'':' display="none"')+'>'+
