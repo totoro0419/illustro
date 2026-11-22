@@ -1,5 +1,6 @@
 import {parseCube,readDisplacementImage} from './imageEffectResources';
 import type {PixelLayerMask} from '@illustro/core';
+import {samplePixelMask} from '@illustro/brush-rt';
 import {installToneCurvePanel} from './toneCurvePanel';
 import {button,labelledField,numberField,selectField} from '../artwork/tools';
 import {newEffect,neighborhoodEffects,rasterEffects,toneEffects,type EffectBlend,type EffectStep,type RasterEffect} from './rasterSettings';
@@ -33,14 +34,28 @@ function runEffect(request:RasterEffectRequest,signal:AbortSignal):Promise<Uint8
   });
 }
 
-function showPreview(canvas:HTMLCanvasElement,source:Uint8Array|Uint8ClampedArray,width:number,height:number){
+function showPreview(canvas:HTMLCanvasElement,source:Uint8Array|Uint8ClampedArray,width:number,height:number,
+  options?:{base:Uint8Array;difference:boolean;outerMask:Uint8Array|null;stepMask:PixelLayerMask|undefined}){
   const ratio=Math.min(1,300/Math.max(width,height));
   canvas.width=Math.max(1,Math.round(width*ratio));canvas.height=Math.max(1,Math.round(height*ratio));
   const preview=new ImageData(canvas.width,canvas.height);
   for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++){
     const sx=Math.floor((x+.5)*width/canvas.width),sy=Math.floor((y+.5)*height/canvas.height);
     const index=(sy*width+sx)*4,out=(y*canvas.width+x)*4;
-    for(let channel=0;channel<4;channel++)preview.data[out+channel]=source[index+channel]!;
+    if(options){
+      let value:number;
+      if(options.difference){
+        const {base}=options,oldAlpha=base[index+3]!,newAlpha=source[index+3]!;
+        value=Math.abs(oldAlpha-newAlpha);
+        for(let c=0;c<3;c++)value=Math.max(value,Math.abs(base[index+c]!*oldAlpha-source[index+c]!*newAlpha)/255);
+        value=Math.min(255,value*3);
+      }else{
+        const {outerMask,stepMask}=options;
+        const stepCoverage=stepMask?.enabled?samplePixelMask(stepMask,sx+.5,sy+.5):255;
+        value=stepCoverage*(outerMask?.[index/4]??255)/255;
+      }
+      preview.data.set([value,value,value,255],out);
+    }else for(let channel=0;channel<4;channel++)preview.data[out+channel]=source[index+channel]!;
   }
   const context=canvas.getContext('2d');
   if(!context)throw Error('比較画像を表示できません。');
@@ -63,6 +78,8 @@ export function installRasterEffects(host:HTMLElement,api:{
     const figure=document.createElement('figure'),caption=document.createElement('figcaption');
     caption.textContent=label;canvas.setAttribute('aria-label',label);figure.append(caption,canvas);comparison.append(figure);
   }
+  const display=selectField(comparison,'比較に表示',[['result','適用後'],['difference','変更された画素'],['scope','選択中の効果の作用範囲']]);
+  const afterCaption=after.parentElement!.querySelector('figcaption')!;
   const choose=document.createElement('select');
   for(const [label,effects] of [['ぼかし・画質',neighborhoodEffects],['色・特殊効果',toneEffects]] as const){
     const group=document.createElement('optgroup');group.label=label;
@@ -75,6 +92,18 @@ export function installRasterEffects(host:HTMLElement,api:{
   let curve:ReturnType<typeof installToneCurvePanel>|null=null,lastCompared:EffectCapture|null=null,dragFrom:number|null=null;
   let samplePointer:{id:number;y:number}|null=null;
 
+  function drawComparison(){
+    if(!result)return;
+    const {capture,pixels}=result;
+    const {source,width,height}=capture;
+    const mode=display.value,label=display.selectedOptions[0]?.label??'適用後';
+    afterCaption.textContent=label+(mode==='difference'?'（明るいほど変化が大きい）':mode==='scope'?'（白いほど強く適用）':'');
+    after.setAttribute('aria-label',label);
+    showPreview(after,pixels,width,height,mode==='result'?undefined:{
+      base:source,difference:mode==='difference',outerMask:capture.mask,stepMask:steps[selected]?.mask
+    });
+  }
+  display.onchange=drawComparison;
   function clearResult(){
     result=null;lastCompared=null;comparison.hidden=true;after.hidden=false;samplePointer=null;
     before.width=after.width=1;
@@ -99,7 +128,7 @@ export function installRasterEffects(host:HTMLElement,api:{
         if(dragFrom===null)return;
         event.preventDefault();const from=dragFrom;dragFrom=null;moveStep(from,index);
       };
-      const select=button(rasterEffects[step.kind].label,()=>{selected=index;refresh();},status);
+      const select=button(rasterEffects[step.kind].label,()=>{selected=index;refresh();drawComparison();},status);
       select.setAttribute('aria-pressed',String(index===selected));
       const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=step.enabled;enabled.ariaLabel=rasterEffects[step.kind].label+'を有効にする';
       enabled.onchange=()=>{steps[index]={...steps[index]!,enabled:enabled.checked};invalidate();};
@@ -226,9 +255,9 @@ export function installRasterEffects(host:HTMLElement,api:{
   const compare=button('前後を比較',async()=>{
     if(applying)return;
     const ready=await calculate();if(!ready)return;
-    const {capture,pixels}=ready;
+    const {capture}=ready;
     showPreview(before,capture.source,capture.width,capture.height);
-    showPreview(after,pixels,capture.width,capture.height);
+    drawComparison();
     lastCompared=capture;after.hidden=false;comparison.hidden=false;
     status.textContent=capture.name+'の比較。選択範囲がある場合はその内側を編集します。';
   },status);

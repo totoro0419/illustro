@@ -17,7 +17,7 @@ const simulation={
   tritan:[1.255528,-.076749,-.178779,-.078411,.930809,.147602,.004733,.691367,.303900]
 };
 
-function addVisionFilters(host:HTMLElement){
+function addVisionFilters(){
   const ns='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(ns,'svg');
   svg.setAttribute('aria-hidden','true');svg.setAttribute('width','0');svg.setAttribute('height','0');
@@ -31,7 +31,7 @@ function addVisionFilters(host:HTMLElement){
     matrix.setAttribute('values',[...values.slice(0,3),0,0,...values.slice(3,6),0,0,...values.slice(6),0,0,0,0,0,1,0].join(' '));
     filter.append(matrix);defs.append(filter);
   }
-  svg.append(defs);host.append(svg);
+  svg.append(defs);document.body.append(svg);
 }
 
 let notify=()=>{};
@@ -48,7 +48,7 @@ export function installAccessibility(host:HTMLElement){
         contrast:saved.contrast===true,motion:saved.motion===true,sound:saved.sound===true,vibration:saved.vibration===true};
     }
   }catch{}
-  addVisionFilters(host);
+  addVisionFilters();
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const summary=document.createElement('summary');summary.textContent='画面の見やすさ・通知';
   const controls=document.createElement('div');controls.className='c06-clipboard-grid';
