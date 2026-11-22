@@ -46,7 +46,7 @@ type CanvasEditGesture=Readonly<{
   completeSamples?:(samples:readonly Sample[])=>void;
   updateSamples?:(samples:readonly Sample[])=>void;
   cancel?:()=>void;
-  continuous?:boolean;end?:()=>void;pixelFill?:()=>string;
+  continuous?:boolean;end?:()=>void;pixelFill?:()=>string;referencePoint?:()=>MaskPoint|null;
   /** At most once per animation frame while tracing a canvas interaction. */
   update?:(points:readonly MaskStrokePoint[])=>void;
   pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;
@@ -330,7 +330,7 @@ export class BrushSurface{
     if(!this.navigation)return;
     e.preventDefault();this.navigation.wheelZoom(e.deltaY,this.pointerLocation(e));
   };
-  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.artworkGuideOverlay||this.artworkGuides.length||this.guidePreview)this.paintArtworkGuides();if(this.symmetry.mode!=='off'||this.symmetryOverlay)this.updateSymmetryOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.editPointer!==null||this.editGesture?.pointEdit)this.updateEditStrokeOutline();if(this.artworkPreview)this.positionDocumentOverlay(this.artworkPreview);if(this.fillGesturePreview)this.positionDocumentOverlay(this.fillGesturePreview);if(this.maskInspection)this.positionDocumentOverlay(this.maskInspection);if(this.layerOutline)this.positionDocumentOverlay(this.layerOutline);if(immediate)this.onStateChanged('view-command');}}
+  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.artworkGuideOverlay||this.artworkGuides.length||this.guidePreview)this.paintArtworkGuides();if(this.symmetry.mode!=='off'||this.symmetryOverlay)this.updateSymmetryOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(this.editPointer!==null||this.editGesture?.pointEdit||this.editGesture?.referencePoint)this.updateEditStrokeOutline();if(this.artworkPreview)this.positionDocumentOverlay(this.artworkPreview);if(this.fillGesturePreview)this.positionDocumentOverlay(this.fillGesturePreview);if(this.maskInspection)this.positionDocumentOverlay(this.maskInspection);if(this.layerOutline)this.positionDocumentOverlay(this.layerOutline);if(immediate)this.onStateChanged('view-command');}}
   get viewState(){return this.view?.state??null;}
   restoreView(state:SavedCanvasView){this.view?.restore(state);this.updateView(true);}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
@@ -682,7 +682,7 @@ export class BrushSurface{
     this.clearCanvasEditGestureStroke();
     const previous=this.editGesture;this.editGesture=gesture;
     if(previous!==gesture)previous?.end?.();
-    if(gesture?.pointEdit)this.updateEditStrokeOutline();
+    if(gesture?.pointEdit||gesture?.referencePoint)this.updateEditStrokeOutline();
     return ()=>{if(this.editGesture===gesture)this.setCanvasEditGesture(null);};
   }
   showCanvasEditTrace(visible:boolean){
@@ -726,7 +726,8 @@ export class BrushSurface{
   }
   private updateEditStrokeOutline(){
     const gesture=this.editGesture,v=this.view;
-    if(!gesture||!v||(!this.editPoints.length&&!gesture.pointEdit))return;
+    const source=gesture?.referencePoint?.();
+    if(!gesture||!v||(!this.editPoints.length&&!gesture.pointEdit&&!source))return;
     const svg='http://www.w3.org/2000/svg';
     if(!this.editStrokeOutline){
       const outline=document.createElementNS(svg,'svg');
@@ -774,6 +775,16 @@ export class BrushSurface{
       }
       return;
     }
+    if(source){
+      const pos=v.screen(source),ns='http://www.w3.org/2000/svg';
+      let mark=this.editStrokeOutline.querySelector('.edit-source-mark');
+      if(!mark){
+        mark=document.createElementNS(ns,'path');mark.setAttribute('class','edit-source-mark');
+        mark.setAttribute('stroke','#28bced');mark.setAttribute('stroke-width','3');
+        this.editStrokeOutline.append(mark);
+      }
+      mark.setAttribute('d',`M${pos.x-9} ${pos.y}h18 M${pos.x} ${pos.y-9}v18`);
+    }
     if(gesture.pixelFill){
       const {documentWidth:width,documentHeight:height}=v.state;
       const origin=v.screen({x:0,y:0}),x=v.screen({x:1,y:0}),y=v.screen({x:0,y:1});
@@ -811,6 +822,7 @@ export class BrushSurface{
     }
     if(gesture?.completeSamples)gesture.completeSamples(samples);
     else gesture?.complete(points);
+    if(this.editGesture?.referencePoint)this.updateEditStrokeOutline();
   }
   private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset)return;
     // Undo can restore a virtual background while it remains selected. Do not

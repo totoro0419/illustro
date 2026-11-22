@@ -459,7 +459,8 @@ body.illustro-focus-mode .fixed-workspace-actions { display: none }
 #documentBoxBody[data-active-tool-panel="transform"] > [data-tool-panel]:not([data-tool-panel="transform"]),
 #documentBoxBody[data-active-tool-panel="smartFill"] > [data-tool-panel]:not([data-tool-panel="smartFill"]),
 #documentBoxBody[data-active-tool-panel="shapes"] > [data-tool-panel]:not([data-tool-panel="shapes"]),
-#documentBoxBody[data-active-tool-panel="rulers"] > [data-tool-panel]:not([data-tool-panel="rulers"]) { display:none }
+#documentBoxBody[data-active-tool-panel="rulers"] > [data-tool-panel]:not([data-tool-panel="rulers"]),
+#documentBoxBody[data-active-tool-panel="smudge"] > [data-tool-panel]:not([data-tool-panel="smudge"]) { display:none }
 
 #layerPageList .layer-entry, #layerList .layer-entry {
   grid-template-columns: 38px 44px minmax(0,1fr) 36px 38px;

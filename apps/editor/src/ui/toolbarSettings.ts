@@ -4,7 +4,7 @@ import {DEFAULT_TOOL_ORDER} from './shell';
 export type ToolLayout=Readonly<{order:readonly string[];hidden:readonly string[]}>;
 export type ToolbarSettingsService=Readonly<{snapshot:()=>ToolLayout;restore:(layout:ToolLayout)=>void;reset:()=>void}>;
 const KEY='illustro.c04.toolbar-layout.v1';
-const DEFAULT_HIDDEN=['smudge'];
+const DEFAULT_HIDDEN:string[]=[];
 const LEGACY_ORDER=DEFAULT_TOOL_ORDER.filter(id=>id!=='shapes'&&id!=='rulers');
 const LEGACY_HIDDEN=['smudge','transform','move'];
 const MUST_SHOW=new Set(['paint','erase']);

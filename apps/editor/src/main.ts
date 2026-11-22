@@ -1,3 +1,6 @@
+import {installWetTools,wetModes} from './wet/panel';
+import {createWetPatch,wetPatchTiles} from './wet/edit';
+import {installWetPad} from './wet/pad';
 import {installAccessibility} from './ui/accessibility';
 import {applyPixelCell,pixelStroke} from './pixelStroke';
 import {openBatchExport} from './export/batchExport';
@@ -191,6 +194,7 @@ let timeline:ReturnType<typeof installTimeline>|undefined;
 let fillPanel:ReturnType<typeof installFillPanel>|undefined;
 let transformPanel:ReturnType<typeof installTransformPanel>|undefined;
 let activeCanvasTool='',canvasToolRequest=0;
+let wetTools:ReturnType<typeof installWetTools>|undefined;
 let imageLinkPanel:ReturnType<typeof installImageLinkPanel>|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
@@ -1841,7 +1845,7 @@ function updateContextBar(){
     source:sampleSource==='layer'?'layer':sampleSource==='specific'?'specific':'composite',
     layerId:sampleLayerId?sampleLayerId as LayerId:null,
   },controller.layers.map(item=>({id:item.id,name:item.name})));
-  tool.textContent='道具: '+(fill?'塗りつぶし':activeCanvasTool==='pixels'?'1pxドットペン':selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
+  tool.textContent='道具: '+(fill?'塗りつぶし':activeCanvasTool==='smudge'?'混色・修復':activeCanvasTool==='pixels'?'1pxドットペン':selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
   layer.textContent=fill?'塗り先: '+fill.destination:'描画先: '+(active?controller.selectedLayer.name:'作品なし');
   const selected=surface?.selectedRectangle;
   selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):c06Selection?.active()?'選択範囲あり':'選択なし';
@@ -1883,12 +1887,13 @@ function reflectRailTool(){
  const label=lastDrawingTool==='eraser'?'ブラシに切り替え':'消しゴムに切り替え';
  quick.title=label;quick.setAttribute('aria-label',label);quick.innerHTML=icon(lastDrawingTool==='eraser'?'brush':'eraser');
  const current=activeCanvasTool||(selectedTool==='brush'?'paint':selectedTool==='eraser'?'erase':'eyedropper');
- for(const id of ['paint','erase','eyedropper','smartFill','selection','transform','move','shapes','rulers'])
+ for(const id of ['paint','erase','eyedropper','smartFill','selection','transform','move','shapes','rulers','smudge'])
    byId(id).setAttribute('aria-pressed',String(id===current));
  updateContextBar();
 }
 function leaveCanvasTool(){
  if(activeCanvasTool==='selection')c06Selection?.stop();
+ if(activeCanvasTool==='smudge')wetTools?.stop();
  if(activeCanvasTool==='smartFill')fillPanel?.stop();
  if(activeCanvasTool==='shapes'||activeCanvasTool==='rulers'||activeCanvasTool==='pixels')surface?.setCanvasEditGesture(null);
  const tools=byId('documentBoxBody');
@@ -3296,6 +3301,7 @@ function selectCanvasTool(id:string,start?:()=>void){
  open();
 }
 byId<HTMLButtonElement>('selection').onclick=()=>selectCanvasTool('selection',()=>c06Selection?.open());
+byId('smudge').onclick=()=>selectCanvasTool('smudge',()=>wetTools?.open());
 byId('smartFill').onclick=()=>selectCanvasTool('smartFill',()=>fillPanel?.open());
 for(const id of ['transform','move'])byId(id).onclick=()=>selectCanvasTool(id,
  ()=>transformPanel?.open(Boolean(c06Selection?.active()),id==='move'));
@@ -4021,6 +4027,42 @@ async function withClipboardAccess(action:(drawing:BrushSurface)=>Promise<'edit'
     c06ClipboardUI?.refresh();
   }
 }
+wetTools=installWetTools(byId('documentBoxBody'),{
+  activate:start=>selectCanvasTool('smudge',start),
+  current:()=>documentReady&&surface?{drawing:surface,documentId:controller.document.root.documentId,
+    layerId:controller.selectedLayer.id,layerName:controller.selectedLayer.name}:null,
+  color:()=>[foreground.current.r,foreground.current.g,foreground.current.b].map(channel=>Math.round(channel*255)),
+  left:()=>{if(activeCanvasTool==='smudge'){leaveCanvasTool();reflectRailTool();}},
+  draw:async stroke=>{
+    const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
+    const selection=c06Selection?.active()??null;
+    let changed=false;
+    await withClipboardAccess(async drawing=>{
+      const valid=()=>!stroke.signal.aborted&&controller.document===artwork&&artwork.head===head&&
+        root.documentId===stroke.documentId&&controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
+      if(!valid())return 'read';
+      const separate=stroke.separate||stroke.reference==='merged';
+      if(!root.isLayerVisible(layer.id)||root.groupsForLayer(layer.id).some(group=>group.locked)||
+         !separate&&(root.isLayerContentLocked(layer.id)||layer.baseColor||layer.editable||layer.deformation||layer.imageLink||layer.lineRegions))
+        throw Error('表示中の描画レイヤーを選ぶか、新規レイヤーに結果を置いてください。');
+      const patch=await createWetPatch(artwork,drawing,layer.id,selection,stroke);
+      if(!patch||!valid())return 'read';
+      const name=wetModes.find(([id])=>id===stroke.settings.mode)?.[1]??'筆の加工';
+      const tx=artwork.begin(name);
+      const selected=patch.separate?tx.addRasterSnapshotAbove(layer.id,{...patch.area,pixels:patch.pixels},name):null;
+      if(!patch.separate){
+        const {blocks,tiles}=wetPatchTiles(patch.area,patch.pixels);
+        tx.patchLayerRasterTiles(layer.id,blocks,tiles);
+      }
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      if(selected)controller.selectLayer(selected);
+      changed=true;return 'edit';
+    });
+    wetTools?.refresh();
+    return changed;
+  },
+});
+installWetPad(byId('referenceBoxBody'),{settings:()=>wetTools?.settings(),sample:color=>foreground.choose(rgb(color[0]!/255,color[1]!/255,color[2]!/255))});
 const pixelPanel=document.createElement('details');pixelPanel.className='c06-clipboard-panel';pixelPanel.dataset.toolPanel='pixels';
 const pixelTitle=document.createElement('summary');pixelTitle.textContent='1pxのドット絵';
 const pixelPen=document.createElement('button'),pixelErase=document.createElement('button'),pixelStatus=document.createElement('output');

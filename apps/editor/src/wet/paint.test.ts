@@ -1,0 +1,28 @@
+import {describe,expect,it} from 'vitest';
+import {defaultWet,paintWet,tileAlignedArea,type WetJob} from './paint';
+const area={x:0,y:0,width:12,height:8};
+const patch=()=>({area,pixels:new Uint8ClampedArray(area.width*area.height*4)});
+const at=(x:number,y:number)=>(y*area.width+x)*4;
+const job=():WetJob=>({destination:patch(),reference:null,selection:null,
+  points:[{x:5.5,y:4.5}],offset:{x:0,y:0},alphaLocked:false,settings:{...defaultWet,size:5,strength:1,color:[255,0,0]}});
+describe('wet and repair brushes',()=>{
+  it('blurs a translucent edge in premultiplied color',()=>{
+    const run=job();run.destination.pixels.set([255,120,10,255],at(6,4));
+    const {pixels}=paintWet({...run,settings:{...run.settings,mode:'blur'}});
+    expect([...pixels.slice(at(5,4),at(5,4)+3)]).toEqual([255,120,10]);
+    expect(pixels[at(5,4)+3]).toBeGreaterThan(0);
+  });
+  it('clones from an immutable snapshot and honors the selection',()=>{
+    const run=job(),source=patch(),selection=new Uint8Array(area.width*area.height);
+    source.pixels.set([45,75,195,255],at(2,2));selection[at(5,4)/4]=255;
+    const result=paintWet({...run,reference:source,selection,offset:{x:-3,y:-2},settings:{...run.settings,mode:'clone'}});
+    expect([...result.pixels.slice(at(5,4),at(5,4)+4)]).toEqual([45,75,195,255]);
+    expect(run.destination.pixels.some(Boolean)).toBe(false);expect(source.pixels[at(2,2)]).toBe(45);
+  });
+  it('produces deterministic paper and pigment texture for a saved stroke',()=>{
+    const run=job(),settings={...run.settings,mode:'water' as const};
+    const a=paintWet({...run,settings}),b=paintWet({...run,settings});
+    expect(a.changed).toBe(true);expect(a).toEqual(b);
+    expect(tileAlignedArea({x:290,y:10,width:60,height:2},400,700,256)).toEqual({x:256,y:0,width:144,height:256});
+  });
+});

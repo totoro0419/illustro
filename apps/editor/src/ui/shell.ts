@@ -25,7 +25,7 @@ export const FEATURE_CATEGORIES=[
 ] as const;
 const railTools=[
   ['paint','brush','ブラシ',true],['erase','eraser','消しゴム',true],
-  ['smudge','smudge','ぼかし・混色',false],['eyedropper','eyedropper','スポイト',true],
+  ['smudge','smudge','ぼかし・混色',true],['eyedropper','eyedropper','スポイト',true],
   ['smartFill','smartFill','塗りつぶし',true],['selection','selection','選択範囲',true],
   ['transform','transform','変形',true],['move','move','移動',true],
   ['shapes','shape','図形',true],['rulers','guide','定規',true],
