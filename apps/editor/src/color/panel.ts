@@ -1,3 +1,4 @@
+import {installGamutPicker} from './gamutPicker';
 import {installOrbitPicker} from './orbit';
 import {installHarmonyTools} from './harmony';
 import {ORBIT_WHEEL,orbitHuePaths} from './orbitGeometry';
@@ -344,5 +345,6 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(!state.isEditing&&state.collectionsVersion!==renderedCollectionsVersion)renderCollections();
  });
  renderChannels();reflect();renderCollections();
- return {destroy:()=>{unsubscribe();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1)selectModel('RGB');}};
+ const abandonGamut=installGamutPicker(id('colorBoxBody'),state);
+ return {destroy:()=>{unsubscribe();abandonGamut();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1)selectModel('RGB');}};
 }
