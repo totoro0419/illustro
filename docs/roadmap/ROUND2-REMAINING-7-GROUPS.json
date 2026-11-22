@@ -1193,13 +1193,13 @@
       "known_existing": null,
       "prior_code": null,
       "required": {
-        "operation": "水彩プリセットと水分/混色量",
-        "capability": "混色・にじみ・筆端濃淡・粒状感の自然な軽量水彩を実現する。",
-        "parameters": "水量・顔料量・にじみを簡単に調整。時間経過する濡れ/乾燥/加水/再湿潤は不要。",
-        "preview": "濡れ状態と色の表示を分離、変化中を小さな状態表示",
-        "undo_native": "見た目と再開に必要な状態をNative保持。停止時点をUndoで再現",
-        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
-        "state": "設定→描画/試し描き→確定→Undo/保存。乾燥・加水など時間進行物理は行わない。"
+        "operation": "水彩ブラシ→水量・顔料量・にじみの調整→描画",
+        "capability": "軽量処理で自然な混色・エッジ・粒状感と濃淡を実現",
+        "parameters": "水量/顔料量/にじみ/エッジ/粒状感の簡単な値",
+        "preview": "描画中に見た目を追従表示し離筆で確定。乾湿物理状態は表示しない",
+        "undo_native": "筆跡の画素・設定を一筆Undo/RedoとNative保存・再読込で再現",
+        "quality_failure": "単純な半透明ペンへ退化させない。時間物理・厳密な乾燥・加水は要求しない",
+        "state": "設定→一筆描画→確定→Undo/再描画"
       },
       "exit_conditions": [
         "利用者決定の簡略化した条件を古い高度仕様より優先",
@@ -1235,13 +1235,13 @@
       "known_existing": null,
       "prior_code": null,
       "required": {
-        "operation": "紙素材変更→適用範囲確認",
-        "capability": "新しい筆に紙目・吸収感・かすれ・粒状感を反映する。",
-        "parameters": "筆の紙質設定と保存。過去画素への物理再計算・全画面紙再適用は不要。",
-        "preview": "紙サンプルと作品分割比較。既存へ変更する時のみ適用/取消",
-        "undo_native": "紙版と適用範囲を保持。再適用は一Undo、元絵保持",
-        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
-        "state": "設定→描画/試し描き→確定→Undo/保存。乾燥・加水など時間進行物理は行わない。"
+        "operation": "紙素材→筆の紙目・吸収感・かすれの設定",
+        "capability": "新しい筆跡に静的紙質を反映",
+        "parameters": "紙目・粗さ・吸収感・粒状感・強さ",
+        "preview": "試筆で比較。過去絵全体への紙再計算は不要",
+        "undo_native": "筆設定と筆跡を保存しUndo/Redoで再現",
+        "quality_failure": "既存の完成画へ紙を物理的に再適用したと偽らない",
+        "state": "紙/筆設定→試筆→描画→確定"
       },
       "exit_conditions": [
         "利用者決定の簡略化した条件を古い高度仕様より優先",
@@ -1319,13 +1319,13 @@
       "known_existing": null,
       "prior_code": null,
       "required": {
-        "operation": "油彩/パステル等プリセット",
-        "capability": "厚塗り風・油彩風・パステル風の見た目を保つ。",
-        "parameters": "顔料の立体厚み・光源に基づく再照明・物理的乾燥は不要。",
-        "preview": "媒体別の主要数値を先に出し、細目は筆編集へ",
-        "undo_native": "既存形状は動かさず、厚み表現の再編集範囲を保存",
-        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
-        "state": "設定→描画/試し描き→確定→Undo/保存。乾燥・加水など時間進行物理は行わない。"
+        "operation": "厚塗り風・油彩風・乾式媒体の既存ブラシを利用",
+        "capability": "色の引き・盛り感・乾いたかすれを視覚的に維持",
+        "parameters": "ブラシの既存の強さ・かすれ・混色など",
+        "preview": "描画中の見た目と保存後の見た目を確認",
+        "undo_native": "従来の筆跡をUndo/Redo・Native保存で保持",
+        "quality_failure": "立体的な顔料の厚さ・光源による物理再照明は今回不要",
+        "state": "画材プリセット→描画→確定"
       },
       "exit_conditions": [
         "利用者決定の簡略化した条件を古い高度仕様より優先",
@@ -1461,13 +1461,13 @@
       "known_existing": null,
       "prior_code": null,
       "required": {
-        "operation": "新規の詳細色設定・変換比較",
-        "capability": "R2では実装しない。sRGB/8ビット描画とICC入出力・色確認は保護する。",
-        "parameters": "HDR/P3/16bit/32bitのネイティブ編集を作らない。基盤全面改修不要。",
-        "preview": "作品設定で対応機能と出力色域を表示、モード変更は外観比較",
-        "undo_native": "精度変更一Undo、旧精度復帰には原状態が必要。HDRは比較検証待ち",
-        "quality_failure": "対象外機能を実装済みと誤表示しない。既存機能を削除しない。",
-        "state": "色選択は元色/候補色→採用/取消、数値の候補を表示。ICC変換は現在/変換候補→適用/取消。Proofは表示ON/OFF。"
+        "operation": "今回の実装対象外（既存sRGB/8ビット描画を維持）",
+        "capability": "P3・16ビット・HDR等のネイティブ編集は新規実装しない",
+        "parameters": "新しい広色域や高精度の内部編集設定を要求しない",
+        "preview": "既存の非対応案内と色確認は維持",
+        "undo_native": "既存作品の履歴・保存・復元を維持",
+        "quality_failure": "非対応を対応済みと偽らず、従来のICC・EXR交換を壊さない",
+        "state": "R2対象外。別仕様から再投入しない"
       },
       "exit_conditions": [
         "今回不要のためR2の実装と完成判定の対象外",
@@ -2657,13 +2657,13 @@
       "known_existing": null,
       "prior_code": null,
       "required": {
-        "operation": "互換プレビュー→コピー書出し",
-        "capability": "PSD/PSBの画像・主要レイヤー・透明度の基本交換を保つ。",
-        "parameters": "未対応項目は警告。高度な文字/マスク/特殊効果の完全往復互換は不要。",
-        "preview": "互換検査→損失一覧→外観プレビュー→コピー出力",
-        "undo_native": "元Native保持、レイヤー/文字/効果ごとの保持状況をレポート",
-        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
-        "state": "形式/範囲/損失の確認→固定時点の出力中→検証済出力/項目別失敗。取込は読込候補→配置/取消。作品への適用前は原状を保持。"
+        "operation": "PSD/PSB読込・書出し→対応状況と警告確認",
+        "capability": "対応する画像・レイヤー・透明度を安全に交換",
+        "parameters": "PSD/PSB、対応レイヤーと画像データ",
+        "preview": "未対応要素は明示し必要なら統合画像で外観を保つ。再編集性を偽らない",
+        "undo_native": "元Nativeを保護してコピー書出し",
+        "quality_failure": "全アプリ・特殊マスク/文字/効果の完全互換は今回の合格条件ではない",
+        "state": "形式/損失確認→読込・書出し→完了/失敗"
       },
       "exit_conditions": [
         "利用者決定の簡略化した条件を古い高度仕様より優先",
@@ -2763,13 +2763,13 @@
       "known_existing": null,
       "prior_code": null,
       "required": {
-        "operation": "高度形式は対応状態表示",
-        "capability": "EXR/AVIFの既存入出力と対応端末のHEIF入力を保つ。",
-        "parameters": "HEIF出力・HDRを保持した編集と出力は不要。非対応は明示。",
-        "preview": "可能な範囲のみ選べ、SDR表示との違いを説明",
-        "undo_native": "原データ保持、色調マッピングは書出しコピー",
-        "quality_failure": "省略した高度仕様を対応済みと誤表示しない。既存描画/保存を維持。",
-        "state": "形式/範囲/損失の確認→固定時点の出力中→検証済出力/項目別失敗。取込は読込候補→配置/取消。作品への適用前は原状を保持。"
+        "operation": "EXR/AVIFの対応入出力・HEIF入力",
+        "capability": "現在対応する交換経路を維持し端末対応を説明",
+        "parameters": "対応EXR/AVIFと対応端末HEIF入力。HEIF書出しは不要",
+        "preview": "HDR値は編集基盤で保持されないことを明示",
+        "undo_native": "元作品と原ファイルを保護し出力はコピー",
+        "quality_failure": "HEIF書出しとネイティブHDR編集は合格条件ではない。対応しない形式を対応済みと誤表示しない",
+        "state": "選択→形式確認→読込/出力→結果/エラー"
       },
       "exit_conditions": [
         "利用者決定の簡略化した条件を古い高度仕様より優先",
@@ -3787,13 +3787,13 @@
       "known_existing": null,
       "prior_code": null,
       "required": {
-        "operation": "外部補助は明示有効化",
-        "capability": "R2では実装しない。端末内AI補助を保護する。",
-        "parameters": "外部モデル/API・作品外部送信・課金・認証・同意UIを新設しない。",
-        "preview": "実行前に範囲と見積、取消と手動代替",
-        "undo_native": "同意記録と結果出典を保持、基本制作は独立",
-        "quality_failure": "対象外機能を実装済みと誤表示しない。既存機能を削除しない。",
-        "state": "未実行→対象/送信範囲確認→候補生成中→候補/失敗→採用/取消。採用前は作品不変。"
+        "operation": "今回の実装対象外（端末内AI補助は維持）",
+        "capability": "外部AI/API連携、作品の外部送信、課金・認証は追加しない",
+        "parameters": "外部モデル・費用・送信先を新設しない",
+        "preview": "端末内で動くAI-001〜003の候補比較は維持",
+        "undo_native": "端末内補助の採用/Undoと元作品の保護を維持",
+        "quality_failure": "未実装の外部生成AI機能を提供済みと示さない",
+        "state": "R2対象外。無断で外部送信しない"
       },
       "exit_conditions": [
         "今回不要のためR2の実装と完成判定の対象外",
