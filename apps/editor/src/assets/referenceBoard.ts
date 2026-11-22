@@ -236,6 +236,34 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const next={...item,...patch};
     syncAfter({...prior,items:prior.items.map(x=>x.id===itemId?next:x)},history);
   }
+  function editNotes(item:BoardItem){
+    const owner=currentDoc;
+    const dialog=document.createElement('dialog');
+    dialog.className='illustro-app-dialog';
+    dialog.setAttribute('aria-label','資料の出典と利用メモ');
+    const form=document.createElement('form');
+    form.className='illustro-app-dialog-content';
+    form.method='dialog';
+    const label=document.createElement('label');
+    label.textContent='出典URL・作者・利用条件など';
+    const notes=document.createElement('textarea');
+    notes.rows=5;
+    notes.maxLength=4000;
+    notes.value=item.notes;
+    label.append(notes);
+    const cancel=input('キャンセル',()=>dialog.close());
+    const save=document.createElement('button');
+    save.type='submit';save.textContent='メモを保存';
+    form.append(label,cancel,save);
+    form.onsubmit=event=>{
+      event.preventDefault();
+      if(currentDoc===owner&&notes.value!==item.notes)changeItem(item.id,{notes:notes.value});
+      dialog.close();
+    };
+    dialog.onclose=()=>dialog.remove();
+    dialog.append(form);document.body.append(dialog);dialog.showModal();
+    notes.focus();
+  }
   async function removeItem(itemId:string){
     const prior=snapshot();
     const target=prior.items.find(x=>x.id===itemId);if(!target)return;
@@ -484,7 +512,8 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       const reselect=input(item.assetId.startsWith('missing:')?'元画像を選び直す':'画像を入れ替える',
         ()=>reselectReferenceImage(item.id));
       const remove=input('外す',()=>removeItem(item.id));
-      row.append(name,groupButton,pin,visible,sample,reselect,remove);list.append(row);
+      const notes=input(item.notes?'出典・メモを編集':'出典・メモを追加',()=>editNotes(item));
+      row.append(name,groupButton,pin,visible,sample,notes,reselect,remove);list.append(row);
     }
   }
   async function sampleReferenceAt(

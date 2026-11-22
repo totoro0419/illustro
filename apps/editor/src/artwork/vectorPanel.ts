@@ -25,6 +25,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
   ] as const);
   lineStyle.value='pressure';
   const pointIndex=numberField(coordinates,'編集する点の番号',1,1,4096);
+  const pointWidth=numberField(coordinates,'この点の線幅（全体の線幅に対する%）',100,0,100,1);
   const pointX=numberField(coordinates,'点の X',0,-8192,16384,.1),pointY=numberField(coordinates,'点の Y',0,-8192,16384,.1);
   const inX=numberField(coordinates,'前の曲線ハンドル X',0,-8192,16384,.1),inY=numberField(coordinates,'前の曲線ハンドル Y',0,-8192,16384,.1);
   const outX=numberField(coordinates,'次の曲線ハンドル X',0,-8192,16384,.1),outY=numberField(coordinates,'次の曲線ハンドル Y',0,-8192,16384,.1);
@@ -55,6 +56,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     pointIndex.max=String(path?.points.length??1);pointIndex.value=String(index+1);
     const p=path?.points[index];
     if(!p)return;
+    pointWidth.value=String(Math.round((p.pressure??1)*100));
     const paint=path?.fillRuns?.find(run=>index>=run.start&&index<run.end);
     if(paint)fill.value=paint.color;
     for(const [input,value] of [[pointX,p.x],[pointY,p.y],[inX,p.inX??p.x],[inY,p.inY??p.y],[outX,p.outX??p.x],[outY,p.outY??p.y]] as const)
@@ -228,6 +230,13 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       changePoint(index,{...point,inX:point.inX??point.x-dx,inY:point.inY??point.y-dy,
         outX:point.outX??point.x+dx,outY:point.outY??point.y+dy});
       status.textContent='曲線ハンドルを追加しました。絵の上で直接動かせます。';
+    },status),
+    button('この点の線幅を変更',()=>{
+      const current=draft(),index=pointNumber(),point=current.points[index];
+      if(!point||current.shape==='rectangle'||current.shape==='ellipse'||!pointWidth.validity.valid)
+        throw Error('線の点を選び、線幅を0〜100%で指定してください。');
+      lineStyle.value='pressure';
+      changePoint(index,{...point,pressure:pointWidth.valueAsNumber/100});
     },status),
     button('点と曲線ハンドルを更新',()=>{
       const current=draft(),index=pointNumber(),previous=current.points[index];
