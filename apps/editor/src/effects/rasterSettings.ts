@@ -11,6 +11,8 @@ export const neighborhoodEffects={
   box:{id:'FX-117',label:'ボックスぼかし',parameters:[number('横半径（px）',0,128,4),number('縦半径（px）',0,128,4),flag('縦横を連動',1),alpha]},
   motion:{id:'FX-118',label:'移動ぼかし',parameters:[number('距離（px）',0,256,14),number('角度（°）',-180,180,0),flag('片方向'),alpha]},
   radial:{id:'FX-119',label:'放射ぼかし',parameters:[number('量',0,100,20),number('中心 X（%）',0,100,50),number('中心 Y（%）',0,100,50),flag('回転（オフでズーム）'),number('中心を保護（%）',0,100,8)]},
+  lens:{id:'FX-120',label:'レンズぼかし',parameters:[number('最大半径（px）',0,48,12),number('焦点の位置（高さの%）',0,100,50),
+    number('焦点付近を保つ幅（%）',0,100,20),number('絞りの辺数（0: 円、3〜12: 多角形）',0,12,6),number('絞りの角度（°）',-180,180,0)]},
   sharpen:{id:'FX-121',label:'シャープ',parameters:[number('強さ（%）',0,300,50),number('細かさ（px）',1,8,1),number('強い輪郭を保護（%）',0,100,50)]},
   unsharp:{id:'FX-122',label:'アンシャープマスク',parameters:[number('強さ（%）',0,300,60),radius,number('しきい値',0,255,5),flag('明るさだけ',1)]},
   highPass:{id:'FX-123',label:'細部を抽出（High Pass）',parameters:[radius,number('中間の明るさ',0,255,128),flag('元の画像に重ねる')]},

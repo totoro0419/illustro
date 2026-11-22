@@ -78,6 +78,35 @@ function sampledBlur(source:Bytes,width:number,height:number,step:EffectStep){
   }
   return out;
 }
+function lensBlur(source:Bytes,width:number,height:number,step:EffectStep){
+  const [radius=12,focus=50,band=20,blades=6,angle=0]=step.values;
+  if(blades===1||blades===2)throw Error('絞りは0（円）または3〜12辺を指定してください。');
+  if(!radius)return source;
+  const center=focus/100*Math.max(1,height-1),sharpBand=band/200*height;
+  const falloff=Math.max(1,Math.max(center,height-1-center)-sharpBand);
+  const out=new Uint8ClampedArray(source.length),taps=[{x:0,y:0}];
+  const rotation=angle*Math.PI/180,sector=blades?Math.PI*2/blades:0;
+  for(let k=1;k<=24;k++){
+    const direction=k*Math.PI*(3-Math.sqrt(5)),u=Math.sqrt(k/24);
+    const aperture=sector?Math.cos(sector/2)/Math.cos(wrap(direction+sector/2,sector)-sector/2):1;
+    taps.push({x:u*aperture*Math.cos(direction+rotation),y:u*aperture*Math.sin(direction+rotation)});
+  }
+  for(let y=0;y<height;y++){
+    const scale=radius*clip((Math.abs(y-center)-sharpBand)/falloff,0,1);
+    const start=y*width*4,end=start+width*4;
+    if(scale<.5){out.set(source.subarray(start,end),start);continue;}
+    const offsets=taps.map(p=>({dx:Math.round(p.x*scale),row:clip(y+Math.round(p.y*scale),0,height-1)*width}));
+    for(let x=0;x<width;x++){
+      let r=0,g=0,b=0,a=0;
+      for(const tap of offsets){
+        const i=(tap.row+clip(x+tap.dx,0,width-1))*4,alpha=byte(source,i+3);
+        r+=byte(source,i)*alpha;g+=byte(source,i+1)*alpha;b+=byte(source,i+2)*alpha;a+=alpha;
+      }
+      writeAverage(out,start+x*4,r,g,b,a,taps.length);
+    }
+  }
+  return out;
+}
 function detailFilter(source:Bytes,width:number,height:number,step:EffectStep){
   const [a=0,b=0,c=0,d=0]=step.values,high=step.kind==='highPass',sharp=step.kind==='sharpen';
   if(!high&&!a)return source;
@@ -383,6 +412,7 @@ export function applyRasterEffects(source:Bytes,width:number,height:number,recip
       case 'gaussian':filtered=blur(result,width,height,a,a,true);if(b)filtered=keepAlpha(filtered,result);break;
       case 'box':filtered=blur(result,width,height,a,c?a:b,false);if(d)filtered=keepAlpha(filtered,result);break;
       case 'motion':case 'radial':filtered=sampledBlur(result,width,height,step);break;
+      case 'lens':filtered=lensBlur(result,width,height,step);break;
       case 'sharpen':case 'unsharp':case 'highPass':filtered=detailFilter(result,width,height,step);break;
       case 'noise':filtered=noiseFilter(result,width,step);break;
       case 'median':filtered=medianFilter(result,width,height,step);break;
