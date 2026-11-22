@@ -62,3 +62,24 @@ it('round-trips linear OpenEXR and keeps semi-transparent straight sRGB values',
   expect(decodeExr(bytes)).toMatchObject({width:2,height:2,pixels});
   expect(()=>decodeExr(bytes.subarray(0,-1))).toThrow(/走査線/);
 });
+
+it('embeds the standard sRGB profile and optional text in PNG without an overlapping sRGB chunk',async()=>{
+  const {encodePng}=await import('./basicExport');
+  const {unzlibSync}=await import('fflate');
+  const {srgbIccBytes}=await import('./iccMetadata');
+  const png=await encodePng(Uint8ClampedArray.of(2,20,200,80),1,1,300,
+    {includeIcc:true,author:'作者',copyright:'権利表記'});
+  const bytes=new Uint8Array(await png.arrayBuffer()),view=new DataView(bytes.buffer),labels=new Set<string>(),text=[];
+  for(let at=8;at<bytes.length;){
+    const length=view.getUint32(at),kind=String.fromCharCode(...bytes.subarray(at+4,at+8));
+    labels.add(kind);
+    const part=bytes.subarray(at+8,at+8+length);
+    if(kind==='iCCP')expect(unzlibSync(part.subarray(part.indexOf(0)+2))).toEqual(srgbIccBytes());
+    if(kind==='iTXt')text.push(new TextDecoder().decode(part).replaceAll('\0',' '));
+    at+=length+12;
+  }
+  expect(labels.has('iCCP')).toBe(true);
+  expect(labels.has('sRGB')).toBe(false);
+  expect(labels.has('pHYs')).toBe(true);
+  expect(text).toEqual(['Author     作者','Copyright     権利表記']);
+});

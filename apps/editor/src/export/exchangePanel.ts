@@ -23,6 +23,10 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   const print=document.createElement('details'),printTitle=document.createElement('summary');printTitle.textContent='印刷時の大きさ';
   const dpi=numberField(print,'印刷の解像度（DPI）',doc.root.info.dpi??300,1,2400);
   const bleed=numberField(print,'片側の塗り足し（mm）',3,0,50,.1);
+  const paper=document.createElement('input');paper.type='color';paper.value='#ffffff';
+  labelledField(print,'確認する紙の色',paper);
+  const transparency=document.createElement('input');transparency.type='checkbox';transparency.checked=true;
+  labelledField(print,'透明部分を市松模様で表示する',transparency);
   const printResult=document.createElement('output');printResult.setAttribute('aria-live','polite');
   print.prepend(printTitle);print.append(printResult);
   const profileFile=document.createElement('input');profileFile.type='file';profileFile.accept='.icc,.icm';
@@ -56,6 +60,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
       printResult.textContent='DPIと塗り足しを範囲内で入力してください。';drawPreview();return;
     }
     const w=width*25.4/resolution,h=height*25.4/resolution,innerW=w-2*border,innerH=h-2*border;
+    preview.style.background=print.open&&!transparency.checked?paper.value:'';
     drawPreview(border/w,border/h);
     printResult.textContent=`画像全体 ${w.toFixed(1)} × ${h.toFixed(1)} mm。仕上がり ${Math.max(0,innerW).toFixed(1)} × ${Math.max(0,innerH).toFixed(1)} mm。`+
       (innerW<=0||innerH<=0?' 塗り足しを引くと仕上がり範囲がありません。':' 参考値です。出力画像の画素・色・DPIは変わりません。');
@@ -79,7 +84,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   }
   for(const control of [profileFile,intent,black,gamut])control.onchange=clearProof;
   display.onchange=refresh;print.ontoggle=refresh;
-  for(const field of [format,style,quality,lossless,dpi,bleed])field.onchange=refresh;
+  for(const field of [format,style,quality,lossless,dpi,bleed,paper,transparency])field.onchange=refresh;
   const actions=document.createElement('div');actions.className='box-actions';
   async function captureComparison(){
     if(!active())throw Error('作品が切り替わりました。');
