@@ -28,12 +28,12 @@ try{
   });
   // The default canvas is already 512x384; its advanced size fields are collapsed.
   await page.locator('#ihNewCreate').click();
-  await page.waitForFunction(()=>document.getElementById('brush')&&!document.getElementById('brush').disabled,{timeout:45000});
+  await page.waitForFunction(()=>document.getElementById('brush')&&!document.getElementById('brush').disabled,undefined,{timeout:45000});
   const canvas=page.locator('#canvas'),box=await canvas.boundingBox();
   assert.ok(box,'drawing surface not visible');
   await page.mouse.move(box.x+box.width*.25,box.y+box.height*.25);
   await page.mouse.down();await page.mouse.move(box.x+box.width*.55,box.y+box.height*.45,{steps:12});await page.mouse.up();
-  await page.waitForFunction(()=>Number(document.querySelector('#canvas')?.dataset.committedStrokes)>0,{timeout:45000});
+  await page.waitForFunction(()=>Number(document.querySelector('#canvas')?.dataset.committedStrokes)>0,undefined,{timeout:45000});
   mark('BRUSH-DRAWS-ON-PUBLIC-PREVIEW');
 
   await page.evaluate(()=>{
@@ -42,12 +42,12 @@ try{
     const toggle=document.getElementById('pixelGridToggle');
     toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));
   });
-  await page.waitForFunction(()=>!document.querySelector('#pixelGrid')?.hasAttribute('hidden'),{timeout:6000});
+  await page.waitForFunction(()=>!document.querySelector('#pixelGrid')?.hasAttribute('hidden'),undefined,{timeout:6000});
   await page.evaluate(()=>{
     const toggle=document.getElementById('pixelGridToggle');
     toggle.checked=false;toggle.dispatchEvent(new Event('change',{bubbles:true}));
   });
-  await page.waitForFunction(()=>{const grid=document.querySelector('#pixelGrid');return !!grid?.hasAttribute('hidden')&&getComputedStyle(grid).display==='none';},{timeout:6000});
+  await page.waitForFunction(()=>{const grid=document.querySelector('#pixelGrid');return !!grid?.hasAttribute('hidden')&&getComputedStyle(grid).display==='none';},undefined,{timeout:6000});
   mark('D-001-HIGH-ZOOM-GRID-OFF');
 
   await page.locator('#fileActionsOpen').click();
@@ -55,7 +55,7 @@ try{
   assert.equal(await page.locator('#documentInfoDialog').evaluate(el=>el.open),true);
   await page.locator('#documentInfoDpi').fill('300');
   await page.locator('#documentInfoForm button[type=submit]').click();
-  await page.waitForFunction(()=>!document.getElementById('documentInfoDialog').open,{timeout:6000});
+  await page.waitForFunction(()=>!document.getElementById('documentInfoDialog').open,undefined,{timeout:6000});
   mark('D-004-DOCUMENT-INFO-ENTRY-AND-DPI');
 
   const padButton=page.locator('#brushBoxBody button').filter({hasText:'このブラシを試し描き'}).first();
@@ -79,7 +79,7 @@ try{
     input.value='監査用レイヤー';
     input.dispatchEvent(new Event('change',{bubbles:true}));
   });
-  await page.waitForTimeout(350);
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.selectedLayerName==='監査用レイヤー',undefined,{timeout:11000}).catch(()=>{});
   const renamed=await page.evaluate(()=>{
     const canvas=document.getElementById('canvas'),name=document.getElementById('selectedLayerName');
     return {displayedLayer:canvas?.dataset.selectedLayerName,selectedLayerId:canvas?.dataset.selectedLayerId,
@@ -94,7 +94,7 @@ try{
 
   const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Z9sAAAAASUVORK5CYII=','base64');
   await page.locator('#c06ClipboardFile').setInputFiles({name:'one.png',mimeType:'image/png',buffer:tinyPng});
-  await page.waitForFunction(()=>!document.querySelector('#c06PastePreview')?.disabled,{timeout:8000});
+  await page.waitForFunction(()=>!document.querySelector('#c06PastePreview')?.disabled,undefined,{timeout:8000});
   await page.locator('#c06PastePreview').evaluate(button=>button.click());
   await page.locator('.c06-placement-preview').waitFor({timeout:8000});
   const label=page.locator('.c06-placement-toolbar output');
@@ -105,21 +105,21 @@ try{
   await page.waitForFunction(before=>document.querySelector('.c06-placement-toolbar output')?.textContent!==before,beforePlacement,{timeout:8000});
   assert.equal(await canvas.getAttribute('data-revision-id'),revisionBeforePaste,'moving paste preview edited the artwork');
   await page.locator('.c06-placement-toolbar button').last().click();
-  await page.waitForFunction(()=>!document.querySelector('.c06-placement-preview'),{timeout:5000});
+  await page.waitForFunction(()=>!document.querySelector('.c06-placement-preview'),undefined,{timeout:5000});
   mark('D-012-TAP-TO-POSITION-PASTE-PREVIEW');
   // R2 D-010: a UI merge is a single history operation, not a compound edit.
   await page.locator('#addLayer').evaluate(el=>el.click());
-  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='2',{timeout:10000});
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='2',undefined,{timeout:10000});
   await page.locator('#mergeLayerDown').evaluate(el=>el.click());
   await page.locator('.illustro-app-dialog-primary').waitFor({timeout:8000});
   await page.locator('.illustro-app-dialog-primary').click();
   await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='1'&&
-    !document.querySelector('#undo')?.disabled,{timeout:20000});
+    !document.querySelector('#undo')?.disabled,undefined,{timeout:20000});
   await page.locator('#undo').evaluate(el=>el.click());
   await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='2'&&
-    !document.querySelector('#redo')?.disabled,{timeout:20000});
+    !document.querySelector('#redo')?.disabled,undefined,{timeout:20000});
   await page.locator('#redo').evaluate(el=>el.click());
-  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='1',{timeout:20000});
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='1',undefined,{timeout:20000});
   mark('D-010-MERGE-UNDO-REDO-ON-PUBLIC-PREVIEW');
   report.status='PASS';
   await context.close();
