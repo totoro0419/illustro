@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {appConfirm,appPrompt} from '../ui/appDialogs';
 import {mapArtworkPoint,inverseArtworkAffine,validateEditableArtwork,type EditableText,type LayerId,type TextStyleRange} from '@illustro/core';
 import {fontAssets,fontFamily,fontOutlineCapability,importFont,outlineText} from './fonts';
@@ -233,10 +234,13 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       });
     },status),
     button('フォントを読み込む',()=>file.click(),status),
-    button('文字を適用',async()=>{
+    toolConfirmation(button('文字を適用',async()=>{
       if(composing)throw Error('変換中の文字を確定してください。');
       await api.save(draft(),'文字',editing);status.textContent='文字レイヤーに保存しました。';
-    },status),
+    },status),'apply'),
+    toolConfirmation(button('文字の変更を取り消す',()=>{
+      reset();preview.hidden=true;status.textContent='候補を取り消しました。';panel.open=false;
+    },status),'cancel'),
     button('文字の輪郭をパスへ変換',async()=>{
       const current=selectedText(),outline=await outlineText(current.content);
       await show(current.content,originalPreview);

@@ -1,3 +1,4 @@
+import {translateUi} from './language';
 import {appConfirm,appPrompt} from './appDialogs';
 /**
  * C04 UI-004 / UI-005: commands share the application's existing controls.
@@ -28,6 +29,7 @@ export type CommandService=Readonly<{
   invoke:(id:string)=>Readonly<{ok:boolean;reason:string|null}>;
   invokeAsync:(id:string)=>Promise<Readonly<{ok:boolean;reason:string|null;settled:boolean}>>;
   registerProvider:(provider:()=>readonly CommandDefinition[])=>()=>void;
+  onCompleted?:(receive:(id:string)=>void)=>()=>void;
   refresh:()=>void;
   contextKey?: (()=>unknown)|undefined;
 }>;
@@ -218,6 +220,20 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     recents=[id,...recents.filter(key=>key!==id)].slice(0,24);
     write(RECENTS_KEY,JSON.stringify(recents));
   };
+  const completionListeners=new Set<(id:string)=>void>();
+  function notifyCompletion(command:CommandDefinition,listeners:readonly ((id:string)=>void)[]){
+    if(command.completion===false)return;
+    for(const receive of listeners)if(completionListeners.has(receive))receive(command.id);
+  }
+  function launch(command:CommandDefinition){
+    const listeners=[...completionListeners],context=execution?.contextKey();
+    const outcome=command.execute();
+    const complete=()=>{if(!execution||execution.contextKey()===context)notifyCompletion(command,listeners);};
+    if(outcome instanceof Promise)void outcome.then(complete,error=>{
+      status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
+    });
+    else complete();
+  }
   const searchButton=document.createElement('button');
   searchButton.id='commandSearchOpen';searchButton.type='button';searchButton.className='c04-command-open';
   searchButton.textContent='⌕ 機能を探す';
@@ -309,10 +325,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     if(reason){status.textContent=reason;return;}
     dialog.close();quick.hidden=true;quickButton.setAttribute('aria-expanded','false');
     try{
-      const outcome=command.execute();
-      if(outcome instanceof Promise)void outcome.catch(error=>{
-        status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
-      });
+      launch(command);
       remember(command.id);renderQuick();
     }catch(error){status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';}
   }
@@ -476,7 +489,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     const q=field.value.trim().toLocaleLowerCase('ja-JP');
     const tokens=q.split(/\s+/).filter(Boolean);
     const sorted=commands.filter(command=>{
-      const haystack=[command.label,command.category,command.aliases,command.id].join(' ').toLocaleLowerCase('ja-JP');
+      const haystack=[command.label,translateUi(command.label),command.category,translateUi(command.category),command.aliases,command.id].join(' ').toLocaleLowerCase('ja-JP');
       return tokens.every(token=>haystack.includes(token));
     }).sort((a,b)=>{
       const score=(c:CommandDefinition)=>(slots.includes(c.id)?2:0)+(recents.includes(c.id)?1:0)+((q&&c.label.toLocaleLowerCase('ja-JP').startsWith(q))?5:0);
@@ -492,13 +505,13 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     for(const command of sorted.slice(0,70)){
       const row=document.createElement('div');row.className='c04-command-result';row.setAttribute('role','option');
       const run=document.createElement('button');run.type='button';run.className='c04-command-run';
-      const name=document.createElement('strong');name.textContent=command.label;
+      const name=document.createElement('strong');name.textContent=translateUi(command.label);
       const reason=command.availability();
       const desc=document.createElement('small');
       const key=shortcuts.find(binding=>binding.commandId===command.id);
       const displayKey=key?[key.ctrl?'Ctrl':null,key.meta?'Meta':null,key.alt?'Alt':null,key.shift?'Shift':null,
         key.physical?key.code:key.key].filter(Boolean).join('+'):'';
-      desc.textContent=(reason??command.category)+(displayKey?' · '+displayKey:'');
+      desc.textContent=translateUi(reason??command.category)+(displayKey?' · '+displayKey:'');
       run.append(name,desc);run.disabled=!!reason;
       run.onclick=()=>execute(command);
       const pin=document.createElement('button');pin.type='button';pin.className='c04-command-pin';
@@ -515,6 +528,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   }
   field.addEventListener('input',renderSearch);
   field.addEventListener('keydown',e=>{
+    if(e.isComposing)return;
     if(e.key==='Enter'){
       const first=results.querySelector<HTMLButtonElement>('.c04-command-run:not(:disabled)');
       if(first){e.preventDefault();first.click();}
@@ -557,23 +571,22 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   },{capture:true});
   renderQuick();
   const refresh=()=>{renderQuick();if(dialog.open)renderSearch();};
+  window.addEventListener('illustro:language-change',refresh);
   return {
-    list:()=>dynamicCommands().map(({id,label,category})=>({id,label,category})),
+    list:()=>dynamicCommands().map(({id,label,category})=>({id,label:translateUi(label),category:translateUi(category)})),
     registerProvider:(provider:()=>readonly CommandDefinition[])=>{
       providers.push(provider);refresh();
       return ()=>{const i=providers.indexOf(provider);if(i>=0)providers.splice(i,1);refresh();};
     },
     refresh,contextKey:execution?.contextKey,
+    onCompleted:receive=>{completionListeners.add(receive);return ()=>completionListeners.delete(receive);},
     invoke:(id:string)=>{
       const command=find(id);
       if(!command)return {ok:false,reason:'この機能はまだ利用できません。'};
       const reason=command.availability();
       if(reason)return {ok:false,reason};
       try{
-        const outcome=command.execute();
-        if(outcome instanceof Promise)void outcome.catch(error=>{
-          status.textContent=error instanceof Error?error.message:'操作を実行できませんでした。';
-        });
+        launch(command);
         remember(id);renderQuick();
         return {ok:true,reason:null};
       }catch(error){return {ok:false,reason:error instanceof Error?error.message:'実行できませんでした。'};}
@@ -581,8 +594,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     invokeAsync:async(id:string)=>{
       const command=find(id);
       if(!command)return {ok:false,reason:'この機能はまだ利用できません。',settled:false};
+      const listeners=[...completionListeners];
       const result=await invokeCommandAsync(command,execution?.contextKey);
-      if(result.ok){remember(id);renderQuick();}
+      if(result.ok){remember(id);renderQuick();if(result.settled)notifyCompletion(command,listeners);}
       return result;
     },
   };

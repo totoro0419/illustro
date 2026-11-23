@@ -1,7 +1,13 @@
-import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId} from '@illustro/core';
-import {blendArtworkPixel,gradientMapTable,mapGradientPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
+import {writeExif,type ImagePosition} from './imagePosition';
+import {addRasterMetadata} from './rasterMetadata';
+import {runIcc} from './iccRun';
+import {srgbIccBytes} from './iccMetadata';
+import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId,type DocumentRoot} from '@illustro/core';
+import {blendArtworkPixel,gradientMapTable,mapGradientPixel,adjustmentCube,mapAdjustmentPixel,cpuReference,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {canUseTiledHistoryPreview,createTiledPreviewAccumulator,yieldHistoryRender} from './tiledPreview';
 import {rasterReplayKeys} from '../rasterReplayKeys';
+import {resizeImagePixels} from '../canvasGeometry';
+import {boundsOfSelection,cropSelectionMask,maskImage,type MaskData} from '../selection/mask';
 
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
@@ -22,13 +28,7 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
   if(!Number.isSafeInteger(root.width)||!Number.isSafeInteger(root.height)||root.width<1||root.height<1||root.width>8192||root.height>8192)throw new Error('作品の大きさが正しくありません。');
   if(root.colorProfileId!=='srgb')throw new Error('この作品の色設定はM06の書き出しに対応していません。');
   if(soloLayerId&&!root.hasLayer(soloLayerId))throw new Error('単独表示のレイヤーが見つかりません。');
-  const layers=root.rootLayerIds.map(id=>{
-    const layer=root.getLayer(id);
-    if(layer.kind!=='raster'||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1'||layer.surface.descriptor.workingColorSpaceRef!=='srgb')throw new Error('このレイヤーの色形式はM06に未対応です。');
-    const clip=soloLayerId?null:root.clippingSource(id);
-    const isolation=soloLayerId?[]:root.groupsForLayer(id).filter(group=>group.compositing==='isolated').map(group=>group.id);
-    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,...(isolation.length?{isolation}:{}),...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{}),...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),...(layer.blend&&!soloLayerId?{blend:layer.blend}:{}),visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
-  });
+  const layers=captureExportLayers(root,soloLayerId);
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
   const strokes: {surfaceId:string;record:StrokeRecord;keys?:readonly string[]}[]=[];
   const {operations:visibleOperations,followsGeometry,seededLayers,tileFilteredLayers}=document.rasterReplayPlan(revision);
@@ -46,6 +46,17 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
     }else if(op.kind==='raster.strict-delta')throw new Error('厳密なラスターデータの書き出しはまだ利用できません。');
   }
   return Object.freeze({revision,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,layers:Object.freeze(layers),strokes:Object.freeze(strokes),...(basePixels.length?{basePixels}:{})});
+}
+
+/** Capture only the stack. Live tools read local GPU tiles rather than replaying history. */
+export function captureExportLayers(root:DocumentRoot,soloLayerId?:LayerId):FrozenExport['layers'] {
+  return root.rootLayerIds.map(id=>{
+    const layer=root.getLayer(id);
+    if(layer.kind!=='raster'||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1'||layer.surface.descriptor.workingColorSpaceRef!=='srgb')throw new Error('このレイヤーの色形式はM06に未対応です。');
+    const clip=soloLayerId?null:root.clippingSource(id);
+    const isolation=soloLayerId?[]:root.groupsForLayer(id).filter(group=>group.compositing==='isolated').map(group=>group.id);
+    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,...(isolation.length?{isolation}:{}),...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{}),...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),...(layer.blend&&!soloLayerId?{blend:layer.blend}:{}),visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
+  });
 }
 
 /** Straight-alpha source-over; layer order is bottom to top. Output is never the presentation canvas. */
@@ -106,7 +117,10 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
     // Use the same deterministic replay engine for exports regardless of live presentation backend.
     // WebGL2 is preferred here because it avoids acquiring a second WebGPU device.
     try{renderer=await GpuRenderer.create(canvas,width,height,'webgl2',{webglDesynchronized:false});}
-    catch{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
+    catch{
+      try{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
+      catch{return renderFrozenArtworkOnCpu(frozen);}
+    }
     renderer.setSurfaceStack(layers.map(l=>l.surfaceId));
     if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels,width,height);
     let id=0;
@@ -115,62 +129,124 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
       renderer.document.append(++id,preset,record.commands,keys?new Set(keys):null,surfaceId);
       renderer.document.end(id,preset,surfaceId);
     }
-    const composite=new Uint8ClampedArray(width*height*4);
     await renderer.drain();
-    const layerBySurface=new Map(layers.map(layer=>[layer.surfaceId,layer]));
-    const clippingSources=new Set(layers.flatMap(layer=>layer.clipSurfaceId?[layer.clipSurfaceId]:[]));
-    const sourcePixels=new Map<string,Uint8Array|Uint8ClampedArray>();
-    const readLayer=async(layer:FrozenExport['layers'][number])=>{
-      const image=sourcePixels.get(layer.surfaceId)??(layer.baseColor==='white'
-        ?new Uint8ClampedArray(width*height*4).fill(255)
-        :await renderer!.read(layer.surfaceId));
-      if(clippingSources.has(layer.surfaceId))sourcePixels.set(layer.surfaceId,image);
-      return image;
-    };
-    const groups:Array<{id:string;pixels:Uint8ClampedArray}>=[];
-    const closeGroup=()=>{
-      const group=groups.pop()!;
-      compositeLayer(groups.at(-1)?.pixels??composite,group.pixels);
-    };
-    for(const layer of layers){
-      if(layer.referenceOnly||!layer.visible||layer.opacity<=0)continue;
-      const isolation=layer.isolation??[];
-      let common=0;
-      while(common<groups.length&&isolation[common]===groups[common]?.id)common++;
-      while(groups.length>common)closeGroup();
-      for(const id of isolation.slice(common))groups.push({id,pixels:new Uint8ClampedArray(width*height*4)});
-      const clip=layer.clipSurfaceId?layerBySurface.get(layer.clipSurfaceId):undefined;
-      if(clip&&(!clip.visible||clip.opacity<=0))continue;
-      const destination=groups.at(-1)?.pixels??composite;
-      const map=layer.blend?.gradientMap;
-      if(map){
-        const table=gradientMapTable(map);
-        const clipPixels=clip?await readLayer(clip):null;
-        for(let ty=0;ty<Math.ceil(height/TILE);ty++)for(let tx=0;tx<Math.ceil(width/TILE);tx++){
-          const key=tx+','+ty,mask=layerMaskTile(layer.mask,key),clipMask=layerMaskTile(clip?.mask,key);
-          for(let y=ty*TILE;y<Math.min(height,(ty+1)*TILE);y++)for(let x=tx*TILE;x<Math.min(width,(tx+1)*TILE);x++){
-            const offset=(y*width+x)*4,local=(y%TILE)*TILE+x%TILE;
-            const coverage=layer.opacity*(typeof mask==='number'?mask:mask[local]!)/255*
-              (clipPixels&&clip?clipPixels[offset+3]!*clip.opacity*(typeof clipMask==='number'?clipMask:clipMask[local]!)/65025:1);
-            mapGradientPixel(destination,offset,table,map,x,y,coverage);
-          }
-        }
-        continue;
-      }
-      const pixels=await readLayer(layer);
-      compositeLayer(destination,pixels,layer.opacity,clip?{pixels:await readLayer(clip),opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,{width,...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
-      // Let pointer input and normal drawing frames execute between layers.
+    const composite=await compositeArtworkRegion(layers,{x:0,y:0,width,height},async id=>{
+      // Yield between full layer readbacks so the work area stays responsive.
       await yieldHistoryRender();
-    }
-    while(groups.length)closeGroup();
+      return renderer!.read(id);
+    });
+    if(!composite)throw Error('作品の合成に必要な画素を読み取れません。');
     return composite;
   }finally{renderer?.destroy();canvas.width=1;canvas.height=1;}
+}
+
+/** Bounded CPU tiles use the same canonical brush records when no GPU starts. */
+export async function renderFrozenArtworkOnCpu(frozen:FrozenExport,signal?:AbortSignal):Promise<Uint8ClampedArray<ArrayBuffer>>{
+  const {width,height,layers,strokes}=frozen;
+  const output=new Uint8ClampedArray(width*height*4);
+  const seeds=new Map(frozen.basePixels?.map(({surfaceId,pixels})=>[surfaceId,pixels]));
+  const bySurface=new Map<string,{record:StrokeRecord;keys:ReadonlySet<string>|null}[]>();
+  for(const {surfaceId,record,keys} of strokes){
+    const list=bySurface.get(surfaceId)??[];
+    list.push({record,keys:keys?new Set(keys):null});bySurface.set(surfaceId,list);
+  }
+  const tables=new Map<object,Uint8Array>();
+  for(let y=0;y<height;y+=TILE){
+    for(let x=0;x<width;x+=TILE){
+      signal?.throwIfAborted();
+      const w=Math.min(TILE,width-x),h=Math.min(TILE,height-y),key=(x/TILE)+','+(y/TILE);
+      const composited=await compositeArtworkRegion(layers,{x,y,width:w,height:h},async id=>{
+        let tile=new Uint8ClampedArray(w*h*4);
+        const seed=seeds.get(id);
+        if(seed)for(let row=0;row<h;row++){
+          const offset=((y+row)*width+x)*4;
+          tile.set(seed.subarray(offset,offset+w*4),row*w*4);
+        }
+        for(const {record,keys} of bySurface.get(id)??[]){
+          if(keys&&!keys.has(key))continue;
+          tile=new Uint8ClampedArray(cpuReference(record,w,h,tile,undefined,x,y));
+        }
+        return tile;
+      },signal,tables);
+      if(!composited)throw Error('作品の合成に必要な画素を読み取れません。');
+      for(let row=0;row<h;row++)output.set(composited.subarray(row*w*4,(row+1)*w*4),((y+row)*width+x)*4);
+    }
+    if(y+TILE<height)await yieldHistoryRender();
+  }
+  return output;
 }
 
 /** Thumbnail-only fast path: identical source-over compositing per source pixel,
  * but only one GPU tile is read and combined at a time. Advanced content falls
  * back to the unchanged full-resolution renderer.
  */
+export type ArtworkRegion=Readonly<{x:number;y:number;width:number;height:number}>;
+
+/** Compose a region using the same masks, opacity and group order as export. */
+export async function compositeArtworkRegion(
+  layers:FrozenExport['layers'],area:ArtworkRegion,
+  read:(surfaceId:string)=>Promise<Uint8Array|Uint8ClampedArray|null>,signal?:AbortSignal,
+  tables=new Map<object,Uint8Array>(),
+):Promise<Uint8ClampedArray|null>{
+  const {x,y,width,height}=area,length=width*height*4;
+  const merged=new Uint8ClampedArray(length);
+  let white:Uint8ClampedArray|null=null;
+  const byId=new Map(layers.map(layer=>[layer.surfaceId,layer]));
+  const clippingSources=new Set(layers.flatMap(layer=>layer.clipSurfaceId?[layer.clipSurfaceId]:[]));
+  const clippedPixels=new Map<string,Uint8Array|Uint8ClampedArray>();
+  const groups:Array<{id:string;pixels:Uint8ClampedArray}>=[];
+  function closeGroup(){
+    const group=groups.pop()!;
+    compositeLayer(groups.at(-1)?.pixels??merged,group.pixels);
+  }
+  async function readLayer(layer:FrozenExport['layers'][number]){
+    signal?.throwIfAborted();
+    if(layer.baseColor==='white')return white??=new Uint8ClampedArray(length).fill(255);
+    const pixels=clippedPixels.get(layer.surfaceId)??await read(layer.surfaceId);
+    if(!pixels)return null;
+    if(pixels.length!==length)throw Error('合成に必要な画素が不足しています。');
+    if(clippingSources.has(layer.surfaceId))clippedPixels.set(layer.surfaceId,pixels);
+    return pixels;
+  }
+  for(const layer of layers){
+    signal?.throwIfAborted();
+    if(layer.referenceOnly||!layer.visible||layer.opacity<=0)continue;
+    const isolation=layer.isolation??[];
+    let common=0;
+    while(common<groups.length&&isolation[common]===groups[common]?.id)common++;
+    while(groups.length>common)closeGroup();
+    for(const id of isolation.slice(common))groups.push({id,pixels:new Uint8ClampedArray(length)});
+    const clip=layer.clipSurfaceId?byId.get(layer.clipSurfaceId):undefined;
+    if(clip&&(!clip.visible||clip.opacity<=0))continue;
+    const destination=groups.at(-1)?.pixels??merged,clipPixels=clip?await readLayer(clip):null;
+    if(clip&&!clipPixels)return null;
+    const map=layer.blend?.gradientMap,adjustment=layer.blend?.adjustment,lookup=map??adjustment;
+    if(lookup){
+      let table=tables.get(lookup);
+      if(!table){table=map?gradientMapTable(map):adjustmentCube(adjustment!);tables.set(lookup,table);}
+      const cache=new Map<number,readonly [number|Uint8Array,number|Uint8Array]>();
+      for(let row=0;row<height;row++)for(let col=0;col<width;col++){
+        const px=x+col,py=y+row,tx=Math.floor(px/TILE),ty=Math.floor(py/TILE),key=ty*128+tx;
+        let masks=cache.get(key);
+        if(!masks){const tileKey=tx+','+ty;masks=[layerMaskTile(layer.mask,tileKey),layerMaskTile(clip?.mask,tileKey)];cache.set(key,masks);}
+        const [own,clipping]=masks,local=(py%TILE)*TILE+px%TILE,offset=(row*width+col)*4;
+        const coverage=layer.opacity*(typeof own==='number'?own:own[local]!)/255*
+          (clip&&clipPixels?clipPixels[offset+3]!*clip.opacity*(typeof clipping==='number'?clipping:clipping[local]!)/65025:1);
+        if(map)mapGradientPixel(destination,offset,table,map,px,py,coverage);
+        else mapAdjustmentPixel(destination,offset,table,coverage);
+      }
+      continue;
+    }
+    const pixels=await readLayer(layer);
+    if(!pixels)return null;
+    compositeLayer(destination,pixels,layer.opacity,clip&&clipPixels?{pixels:clipPixels,opacity:clip.opacity,mask:clip.mask??null}:undefined,
+      {width,originX:x,originY:y,mask:layer.mask??null,blend:layer.blend??null});
+  }
+  while(groups.length)closeGroup();
+  signal?.throwIfAborted();
+  return merged;
+}
+
 export async function renderFrozenArtworkTiledPreview(
   frozen:FrozenExport,targetWidth:number,targetHeight:number,
   options?:Readonly<{replacement:{surfaceId:string;pixels:Uint8ClampedArray};signal:AbortSignal}>,
@@ -186,7 +262,10 @@ export async function renderFrozenArtworkTiledPreview(
   let renderer:GpuRenderer|null=null;
   try{
     try{renderer=await GpuRenderer.create(canvas,width,height,'webgl2',{webglDesynchronized:false});}
-    catch{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
+    catch{
+      try{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
+      catch{return null;}
+    }
     renderer.setSurfaceStack(layers.map(layer=>layer.surfaceId));
     if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels.filter(layer=>layer.surfaceId!==replacement?.surfaceId),width,height);
     let id=0;
@@ -200,78 +279,23 @@ export async function renderFrozenArtworkTiledPreview(
     await renderer.drain();
     check();
     const accumulator=createTiledPreviewAccumulator(width,height,targetWidth,targetHeight);
-    const plainWhite=new Uint8Array(TILE*TILE*4).fill(255);
-    const layerBySurface=new Map(layers.map(layer=>[layer.surfaceId,layer]));
-    const clippingSources=new Set(layers.flatMap(layer=>layer.clipSurfaceId?[layer.clipSurfaceId]:[]));
-    const gradientTables=new WeakMap<object,Uint8Array>();
-    // Reuse exactly the same per-pixel compositing as full export, except that
-    // every allocation and GPU readback is confined to the current 128px tile.
+    const tables=new Map<object,Uint8Array>();
     for(let ty=0;ty<Math.ceil(height/TILE);ty++){
       for(let tx=0;tx<Math.ceil(width/TILE);tx++){
         check();
-        const composite=new Uint8ClampedArray(TILE*TILE*4),key=tx+','+ty;
-        const sourcePixels=new Map<string,Uint8Array|Uint8ClampedArray>();
-        const readLayer=async(layer:FrozenExport['layers'][number])=>{
-          if(layer.surfaceId===replacement?.surfaceId){
-            let pixels=sourcePixels.get(layer.surfaceId);
-            if(!pixels){
-              pixels=new Uint8ClampedArray(TILE*TILE*4);
-              for(let y=0;y<TILE&&ty*TILE+y<height;y++){
-                const from=((ty*TILE+y)*width+tx*TILE)*4;
-                pixels.set(replacement.pixels.subarray(from,from+Math.min(TILE,width-tx*TILE)*4),y*TILE*4);
-              }
-              sourcePixels.set(layer.surfaceId,pixels);
-            }
-            return pixels;
+        const x=tx*TILE,y=ty*TILE,key=tx+','+ty;
+        const composite=await compositeArtworkRegion(layers,{x,y,width:TILE,height:TILE},async id=>{
+          if(id!==replacement?.surfaceId)return await renderer!.readTile(id,key)??new Uint8Array(TILE*TILE*4);
+          const pixels=new Uint8ClampedArray(TILE*TILE*4);
+          for(let row=0;row<TILE&&y+row<height;row++){
+            const from=((y+row)*width+x)*4;
+            pixels.set(replacement.pixels.subarray(from,from+Math.min(TILE,width-x)*4),row*TILE*4);
           }
-          const pixels=sourcePixels.get(layer.surfaceId)??(layer.baseColor==='white'
-            ?plainWhite
-            :await renderer!.readTile(layer.surfaceId,key)??new Uint8Array(TILE*TILE*4));
-          if(clippingSources.has(layer.surfaceId))sourcePixels.set(layer.surfaceId,pixels);
           return pixels;
-        };
-        const groups:Array<{id:string;pixels:Uint8ClampedArray}>=[];
-        const closeGroup=()=>{
-          const group=groups.pop()!;
-          compositeLayer(groups.at(-1)?.pixels??composite,group.pixels);
-        };
-        for(const layer of layers){
-          if(layer.referenceOnly||!layer.visible||layer.opacity<=0)continue;
-          const isolation=layer.isolation??[];
-          let common=0;
-          while(common<groups.length&&isolation[common]===groups[common]?.id)common++;
-          while(groups.length>common)closeGroup();
-          for(const id of isolation.slice(common))groups.push({id,pixels:new Uint8ClampedArray(TILE*TILE*4)});
-          const clip=layer.clipSurfaceId?layerBySurface.get(layer.clipSurfaceId):undefined;
-          if(clip&&(!clip.visible||clip.opacity<=0))continue;
-          const destination=groups.at(-1)?.pixels??composite;
-          const map=layer.blend?.gradientMap;
-          if(map){
-            let table=gradientTables.get(map);
-            if(!table){table=gradientMapTable(map);gradientTables.set(map,table);}
-            const clipPixels=clip?await readLayer(clip):null;
-            const mask=layerMaskTile(layer.mask,key),clipMask=layerMaskTile(clip?.mask,key);
-            for(let ly=0;ly<TILE&&ty*TILE+ly<height;ly++)
-              for(let lx=0;lx<TILE&&tx*TILE+lx<width;lx++){
-                const offset=(ly*TILE+lx)*4,local=ly*TILE+lx;
-                const coverage=layer.opacity*(typeof mask==='number'?mask:mask[local]!)/255*
-                  (clipPixels&&clip?clipPixels[offset+3]!*clip.opacity*
-                   (typeof clipMask==='number'?clipMask:clipMask[local]!)/65025:1);
-                mapGradientPixel(destination,offset,table,map,tx*TILE+lx,ty*TILE+ly,coverage);
-              }
-            continue;
-          }
-          const pixels=await readLayer(layer);
-          const clipped=clip?await readLayer(clip):null;
-          compositeLayer(destination,pixels,layer.opacity,
-            clip&&clipped?{pixels:clipped,opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,
-            {width:TILE,originX:tx*TILE,originY:ty*TILE,
-             ...(layer.mask?{mask:layer.mask}:{}),...(layer.blend?{blend:layer.blend}:{})});
-        }
-        while(groups.length)closeGroup();
-        accumulator.addTile(composite,tx*TILE,ty*TILE,TILE);
+        },options?.signal,tables);
+        if(!composite)return null;
+        accumulator.addTile(composite,x,y,TILE);
       }
-      // History rendering must leave time for normal pointer input.
       await yieldHistoryRender();
     }
     check();
@@ -335,7 +359,8 @@ function deflateStored(source:Uint8Array):Uint8Array{
   for(let i=0;i<source.length;i++){a=(a+source[i]!)%65521;b=(b+a)%65521;}
   write32(out,at,((b<<16)|a)>>>0);return out;
 }
-export async function encodePng(pixels:Uint8ClampedArray,width:number,height:number):Promise<Blob>{
+type PngMetadata=Readonly<{includeIcc?:boolean;iccProfile?:Uint8Array;author?:string;copyright?:string;position?:ImagePosition}>;
+export async function encodePng(pixels:Uint8ClampedArray,width:number,height:number,dpi?:number,metadata:PngMetadata={}):Promise<Blob>{
   if(pixels.length!==width*height*4)throw new Error('PNGの画素数が正しくありません。');
   const stride=width*4,raw=new Uint8Array((stride+1)*height);
   for(let y=0;y<height;y++)raw.set(pixels.subarray(y*stride,(y+1)*stride),y*(stride+1)+1);
@@ -355,8 +380,27 @@ export async function encodePng(pixels:Uint8ClampedArray,width:number,height:num
     zipped=new Uint8Array(compressed);
   }else zipped=deflateStored(raw);
   const head=new Uint8Array(13);write32(head,0,width);write32(head,4,height);head[8]=8;head[9]=6;
-  const sig=Uint8Array.of(137,80,78,71,13,10,26,10),ihdr=pngChunk('IHDR',head),srgb=pngChunk('sRGB',Uint8Array.of(0)),idat=pngChunk('IDAT',zipped),end=pngChunk('IEND',new Uint8Array());
-  return new Blob([sig,ihdr,srgb,idat,end].map(bytes=>new Uint8Array(bytes).buffer as ArrayBuffer),{type:'image/png'});
+  const sig=Uint8Array.of(137,80,78,71,13,10,26,10),ihdr=pngChunk('IHDR',head),idat=pngChunk('IDAT',zipped),end=pngChunk('IEND',new Uint8Array());
+  const profile=metadata.iccProfile??(metadata.includeIcc?srgbIccBytes():null);
+  let color=pngChunk('sRGB',Uint8Array.of(0));
+  if(profile){
+    const label=new TextEncoder().encode((metadata.iccProfile?'Output ICC':'sRGB')+'\0\0');
+    const zipped=deflateStored(profile),payload=new Uint8Array(label.length+zipped.length);
+    payload.set(label);payload.set(zipped,label.length);color=pngChunk('iCCP',payload);
+  }
+  const textChunks:Uint8Array[]=[];
+  for(const [label,value] of [['Author',metadata.author],['Copyright',metadata.copyright]] as const){
+    if(value?.trim())textChunks.push(pngChunk('iTXt',new TextEncoder().encode(label+'\0\0\0\0\0'+value.trim().slice(0,4096).replaceAll('\0',''))));
+  }
+  if(metadata.position)textChunks.push(pngChunk('eXIf',writeExif(dpi,metadata.position)));
+  const density:Uint8Array[]=[];
+  if(dpi!==undefined){
+    if(!Number.isFinite(dpi)||dpi<1||dpi>2400)throw Error('PNGのDPIは1〜2400で指定してください。');
+    const data=new Uint8Array(9),pixelsPerMetre=Math.round(dpi/.0254);
+    write32(data,0,pixelsPerMetre);write32(data,4,pixelsPerMetre);data[8]=1;
+    density.push(pngChunk('pHYs',data));
+  }
+  return new Blob([sig,ihdr,color,...density,...textChunks,idat,end].map(bytes=>new Uint8Array(bytes).buffer as ArrayBuffer),{type:'image/png'});
 }
 
 export async function verifyImage(blob:Blob,format:ImageFormat,width:number,height:number):Promise<void>{
@@ -371,14 +415,86 @@ export async function verifyImage(blob:Blob,format:ImageFormat,width:number,heig
   finally{bitmap.close();}
 }
 
-export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality=0.9):Promise<ImageExportResult>{
+export type ImageExportOptions=Readonly<{selection?:MaskData;pixelScale?:number;dpi?:number;pngMetadata?:PngMetadata;
+  losslessWebp?:boolean;comparison?:(original:ImageData,compressed:ImageData)=>void}>;
+
+async function encodeLosslessWebp(pixels:Uint8ClampedArray,width:number,height:number){
+  const worker=new Worker(new URL('./webp.worker.ts',import.meta.url),{type:'module'});
+  try{
+    return await new Promise<Blob>((resolve,reject)=>{
+      worker.onmessage=(event:MessageEvent<{error:string}|{buffer:ArrayBuffer}>)=>{
+        if('error' in event.data)reject(Error(event.data.error));
+        else resolve(new Blob([event.data.buffer],{type:'image/webp'}));
+      };
+      worker.onerror=()=>reject(Error('WebPの可逆圧縮を開始できません。'));
+      const input=new Uint8ClampedArray(pixels);
+      worker.postMessage({pixels:input,width,height},[input.buffer]);
+    });
+  }finally{worker.terminate();}
+}
+
+function originalCrop(pixels:Uint8ClampedArray,width:number,height:number){
+  const w=Math.min(240,width),h=Math.min(180,height);
+  const x=Math.floor((width-w)/2),y=Math.floor((height-h)/2),image=new ImageData(w,h);
+  for(let row=0;row<h;row++){
+    const start=((y+row)*width+x)*4;
+    image.data.set(pixels.subarray(start,start+w*4),row*w*4);
+  }
+  return {x,y,w,h,image};
+}
+
+export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality=0.9,options:ImageExportOptions={}):Promise<ImageExportResult>{
   const started=performance.now();
   if(!['png','jpeg','webp'].includes(format)||!Number.isFinite(quality)||quality<0||quality>1)throw new Error('書き出し設定が正しくありません。');
-  const pixels=await renderFrozenArtwork(frozen),encodedStart=performance.now();
-  const flattened=format==='jpeg'?flattenOnWhite(pixels):pixels;
-  const blob=format==='png'?await encodePng(pixels,frozen.width,frozen.height):await encodeBrowser(flattened,frozen.width,frozen.height,format,quality);
-  await verifyImage(blob,format,frozen.width,frozen.height);
-  return Object.freeze({blob,revision:frozen.revision,format,mime:blob.type,width:frozen.width,height:frozen.height,quality:format==='png'?null:quality,alpha:format!=='jpeg',background:format==='jpeg'?'white':'transparent',encodeMs:performance.now()-encodedStart,totalMs:performance.now()-started,estimatedPeakBytes:frozen.width*frozen.height*4*(frozen.layers.length+4)});
+  const {selection,pixelScale=1,dpi,pngMetadata}=options;
+  if(!Number.isSafeInteger(pixelScale)||pixelScale<1||pixelScale>8)throw Error('整数倍の拡大率は1〜8で指定してください。');
+  if(selection&&(selection.width!==frozen.width||selection.height!==frozen.height||selection.alpha.length!==frozen.width*frozen.height))
+    throw Error('選択範囲と作品の大きさが一致しません。');
+  const bounds=selection?boundsOfSelection(selection):null;
+  if(selection&&!bounds)throw Error('書き出す範囲を選んでください。');
+  let width=bounds?.width??frozen.width,height=bounds?.height??frozen.height;
+  if(width*pixelScale>8192||height*pixelScale>8192)throw Error('書き出し後の長い辺を8192px以下にしてください。');
+  let pixels=await renderFrozenArtwork(frozen);
+  if(bounds&&selection){
+    const cropped=new Uint8ClampedArray(width*height*4);
+    for(let y=0;y<height;y++){
+      const start=((bounds.y+y)*frozen.width+bounds.x)*4;
+      cropped.set(pixels.subarray(start,start+width*4),y*width*4);
+    }
+    pixels=maskImage(cropped,cropSelectionMask(selection,bounds));
+  }
+  if(pixelScale!==1){
+    pixels=new Uint8ClampedArray(resizeImagePixels(pixels,width,height,width*pixelScale,height*pixelScale,'nearest'));
+    width*=pixelScale;height*=pixelScale;
+  }
+  const encodedStart=performance.now();
+  const original=options.comparison?originalCrop(pixels,width,height):null;
+  let output=format==='jpeg'?flattenOnWhite(pixels):pixels;
+  const profile=pngMetadata?.iccProfile??(pngMetadata?.includeIcc?srgbIccBytes():undefined);
+  if(pngMetadata?.iccProfile){
+    if(String.fromCharCode(...pngMetadata.iccProfile.subarray(16,20))!=='RGB ')
+      throw Error('RGBの出力用ICCを選んでください。');
+    const {converted}=await runIcc({profile:pngMetadata.iccProfile,layers:[output],proof:false,forExport:true,
+      intent:1,blackPoint:true,gamut:false},true);
+    output=converted[0]!.pixels;
+  }
+  let blob=format==='png'?await encodePng(output,width,height,dpi,pngMetadata):
+    format==='webp'&&options.losslessWebp?await encodeLosslessWebp(output,width,height):await encodeBrowser(output,width,height,format,quality);
+  if(format!=='png')blob=await addRasterMetadata(blob,format,width,height,{
+    ...(profile?{profile}:{}),...(dpi===undefined?{}:{dpi}),
+    ...(pngMetadata?.author?{author:pngMetadata.author}:{}),...(pngMetadata?.copyright?{copyright:pngMetadata.copyright}:{}),...(pngMetadata?.position?{position:pngMetadata.position}:{})
+  });
+  await verifyImage(blob,format,width,height);
+  if(original&&options.comparison){
+    const {x,y,w,h,image}=original,decoded=await createImageBitmap(blob);
+    try{
+      const canvas=createRenderCanvas(w,h),context=canvas.getContext('2d');
+      if(!context)throw Error('比較画像を表示できません。');
+      context.drawImage(decoded,x,y,w,h,0,0,w,h);
+      options.comparison(image,context.getImageData(0,0,w,h));
+    }finally{decoded.close();}
+  }
+  return Object.freeze({blob,revision:frozen.revision,format,mime:blob.type,width,height,quality:format==='png'||format==='webp'&&options.losslessWebp?null:quality,alpha:format!=='jpeg',background:format==='jpeg'?'white':'transparent',encodeMs:performance.now()-encodedStart,totalMs:performance.now()-started,estimatedPeakBytes:frozen.width*frozen.height*4*(frozen.layers.length+4)+(pixelScale!==1?width*height*8:0)});
 }
 
 async function seedBasePixels(renderer:GpuRenderer,layers:readonly {surfaceId:string;pixels:Uint8Array}[],width:number,height:number){

@@ -20,3 +20,13 @@ describe('C05-020 safe macro asset import',()=>{
     }))))).toThrow();
   });
 });
+
+it('round-trips editable affine parameters in the existing macro file and rejects invalid scale',async()=>{
+  const {encodeMacroArtwork,decodeMacroArtwork}=await import('./macroArtwork');
+  const operation={kind:'affine',affine:{dx:12,dy:-4,sx:1.5,sy:1,angle:.25,shear:0,cx:50,cy:40}} as const;
+  const entry=encodeMacroArtwork(operation);
+  expect(entry).toBeTruthy();
+  expect(decodeMacroArtwork(parseSimpleMacroFile(file([{...one,steps:[entry]}]))[0]!.steps[0]!)).toEqual(operation);
+  expect(encodeMacroArtwork({...operation,affine:{...operation.affine,sx:0}})).toBeNull();
+  expect(()=>parseSimpleMacroFile(file([{...one,steps:['artwork:{"kind":"stroke","records":[{}]}']}]))).toThrow();
+});

@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {CanvasView,parseSavedCanvasView} from './canvasView';
+import {CanvasView,parseSavedCanvasView,seamlessBounds} from './canvasView';
 describe('M08 Canvas View',()=>{
  it('keeps document pixels independent of screen density',()=>{const v=new CanvasView(3000,2000);v.resize(900,600);expect(v.zoom).toBeCloseTo(.3);expect(v.documentWidth).toBe(3000);expect(v.uniform(2250,1500)[0]).toBe(2250);});
  it('round trips non-integer zoom, rotation, pan and dual flip',()=>{const v=new CanvasView(2560,1440);v.resize(789,531);v.pan(17.25,-33.5);v.setZoom(1.37);v.rotateAt(Math.PI/7,{x:90,y:247});v.toggleFlip('x');v.toggleFlip('y');const p={x:1321.25,y:735.75},q=v.document(v.screen(p));expect(q.x).toBeCloseTo(p.x,8);expect(q.y).toBeCloseTo(p.y,8);});
@@ -21,4 +21,18 @@ it('restores a document view after the viewport size becomes available',()=>{
  view.restore(state!);view.resize(800,600);
  expect(view.state).toMatchObject(saved);
  expect(parseSavedCanvasView({...saved,zoom:Infinity})).toBeNull();
+});
+
+it('restores a bounded repeat view without changing the tile dimensions',()=>{
+ const view=new CanvasView(320,240);
+ view.resize(800,600);
+ view.seamless=true;view.repeatRadius=2;
+ const saved=parseSavedCanvasView(view.state)!;
+ const reopened=new CanvasView(320,240);
+ reopened.restore(saved);
+ expect(reopened.uniform(800,600)[12]).toBe(3);
+ expect(seamlessBounds(320,240,reopened.state.repeatRadius)).toEqual({x:-640,y:-480,width:1600,height:1200});
+ expect(parseSavedCanvasView({...saved,repeatRadius:5})).toBeNull();
+ reopened.seamless=false;
+ expect(reopened.uniform(800,600)[12]).toBe(0);
 });

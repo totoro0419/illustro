@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import type {ArtPoint,EditablePath} from '@illustro/core';
-import {appendPathStroke,combineShapes,eraseSegment,eraseWholeStroke,joinPaths,sampledPath} from './pathOperations';
+import {appendPathStroke,combineShapes,eraseSegment,eraseWholeStroke,insertPathWidthPoint,joinPaths,sampledPath} from './pathOperations';
 
 const line=(start:number,end:number):EditablePath=>({
   kind:'path',shape:'polyline',points:[{x:start,y:0},{x:end,y:0}],
@@ -111,4 +111,24 @@ describe('C10 vector editing geometry',()=>{
     expect(combined.booleanOperands).toEqual({mode:'union',a:first,b:second});
     expect(combined.points.length).toBeGreaterThan(2);
   });
+});
+
+it('adds a width point to the selected location of a transformed straight segment',()=>{
+  const input={...line(0,100),transform:{a:2,b:0,c:0,d:2,e:12,f:20}};
+  const {path,index}=insertPathWidthPoint(input,{x:62,y:22},.45);
+  expect(index).toBe(1);
+  expect(path.points[1]).toEqual({x:25,y:0,pressure:.45});
+  expect(path.lineStyle).toBe('pressure');
+});
+it('adds a width point to a curved section without changing its curve',()=>{
+  const input:EditablePath={...line(0,100),shape:'bezier',points:[
+    {x:0,y:0,outX:0,outY:100},{x:100,y:0,inX:100,inY:100}
+  ]};
+  const result=insertPathWidthPoint(input,{x:50,y:75},.6).path;
+  expect(result.points[1]!.x).toBeCloseTo(50,1);
+  expect(result.points[1]!.y).toBeCloseTo(75,1);
+  expect(result.points[1]!.pressure).toBe(.6);
+  const outline=sampledPath(result,.05)[0]!;
+  for(const point of sampledPath(input,.05)[0]!)
+    expect(Math.min(...outline.slice(1).map((end,i)=>distance(point,outline[i]!,end)))).toBeLessThan(.1);
 });

@@ -14,7 +14,7 @@ function enqueue<T>(run:()=>Promise<T>):Promise<T>{
   tail=result.then(()=>undefined,()=>undefined);
   return result;
 }
-function openDialog(kind:Kind,message:string,initial='',options:InputOptions={},choices:readonly Choice[]=[]):Promise<boolean|string|null>{
+function openDialog(kind:Kind,message:string,initial='',options:InputOptions={},choices:readonly Choice[]=[],detail?:HTMLElement):Promise<boolean|string|null>{
   return new Promise(resolve=>{
     const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;
     const dialog=document.createElement('dialog');dialog.className='illustro-app-dialog';
@@ -52,6 +52,7 @@ function openDialog(kind:Kind,message:string,initial='',options:InputOptions={},
       }
     }else buttons.append(accept);
     form.append(title,description);
+    if(detail)form.append(detail);
     if(input)form.append(input);
     form.append(error,buttons);dialog.append(form);
     let accepted=false;
@@ -83,7 +84,7 @@ export const appConfirm=(message:string):Promise<boolean>=>
 export const appPrompt=(message:string,initial='',options:InputOptions={}):Promise<string|null>=>
   enqueue(async()=>await openDialog('input',message,initial,options) as string|null);
 /** Esc and Cancel resolve to null, with Cancel focused by default. */
-export const appChoose=<T extends string>(message:string,choices:readonly Choice<T>[]):Promise<T|null>=>
-  enqueue(async()=>await openDialog('choice',message,'',{},choices) as T|null);
+export const appChoose=<T extends string>(message:string,choices:readonly Choice<T>[],detail?:HTMLElement):Promise<T|null>=>
+  enqueue(async()=>await openDialog('choice',message,'',{},choices,detail) as T|null);
 export const appAlert=(message:string):Promise<void>=>
   enqueue(async()=>{await openDialog('notice',message);});

@@ -1,4 +1,6 @@
+import {buttonActions,capturePointerButton,readPointerButtons,storePointerButtons,type PointerButtonBinding,type PointerPanBinding,type PointerButtonAction,type PointerButtonScope} from '../pointerPanBinding';
 /** GST-003: device roles are applied at pointer dispatch, never to document pixels. */
+import {installInputDiagnostics,type PressureRange} from './inputDiagnostics';
 import type {BrushSurface,PointerRoleSettings,InputPointerRole} from '../brushSurface';
 const KEY='illustro.c04.input.pointer-roles.v1';
 const DEFAULT:PointerRoleSettings={pen:'draw',mouse:'draw'};
@@ -13,7 +15,7 @@ export function readPointerRoles():PointerRoleSettings{
 const safeWrite=(roles:PointerRoleSettings)=>{
   try{localStorage.setItem(KEY,JSON.stringify({version:1,...roles}));return true;}catch{return false;}
 };
-export function installInputDeviceProfiles(getSurface:()=>BrushSurface|null){
+export function installInputDeviceProfiles(getSurface:()=>BrushSurface|null,pressure:(range:PressureRange)=>void){
   const workspace=document.getElementById('workspaceBoxBody');
   if(!workspace)return;
   let roles=readPointerRoles();
@@ -72,10 +74,6 @@ export function installInputDeviceProfiles(getSurface:()=>BrushSurface|null){
     status.textContent=label+'の入力を認識しました。利用可能な操作だけ登録してください。';
     event.stopPropagation();
   }
-  capture.onclick=()=>{
-    if(!capturing)return;
-    // A click may follow pointerdown; the capture handler owns pointer detection.
-  };
   const originalListener=(event:PointerEvent)=>{
     if(!capturing){
       capturing=true;capture.textContent='もう一度触れて機器を確認（Escで中止）';
@@ -90,11 +88,57 @@ export function installInputDeviceProfiles(getSurface:()=>BrushSurface|null){
     capturing=false;capture.textContent='接続した機器を確認';status.textContent='確認を中止しました。';
   };
   document.addEventListener('keydown',cancelCapture);
+  const buttonSetup=document.createElement('button'),buttonStatus=document.createElement('output');
+  buttonSetup.type='button';buttonStatus.setAttribute('role','status');
+  buttonSetup.textContent='ペン・マウスのボタンを登録';
+  const gesture=makeSelect('登録する動作',buttonActions.map(([id,title])=>[id,title]),'hold-pan');
+  const scope=makeSelect('使う場面',[['any','キャンバス全般'],['drawing','筆や消しゴムを使用中'],['tool','選択・変形などを使用中']],'any');
+  const list=document.createElement('ul');
+  let bindings=readPointerButtons(),listening=false,suppressMenuUntil=0;
+  const name=(binding:PointerPanBinding)=>binding.device==='mouse'?'マウスのボタン '+binding.button:
+    binding.button===5?'ペンの後端':'ペンの横ボタン';
+  const apply=(next:PointerButtonBinding[])=>{
+    bindings=next;getSurface()?.setPointerButtons(bindings);render();
+    try{storePointerButtons(bindings);return true;}
+    catch{buttonStatus.textContent='現在の画面には反映しました。端末への保存はできませんでした。';return false;}
+  };
+  function render(){
+    list.replaceChildren(...bindings.map((binding,index)=>{
+      const row=document.createElement('li'),remove=document.createElement('button');
+      const label=name(binding)+'／'+buttonActions.find(([id])=>id===binding.action)?.[1]+
+        '／'+[...scope.options].find(option=>option.value===binding.scope)?.label;
+      remove.type='button';remove.textContent='解除';remove.setAttribute('aria-label',label+'の割当を解除');
+      remove.onclick=()=>{if(apply(bindings.filter((_,i)=>i!==index)))buttonStatus.textContent='割当を解除しました。';};
+      row.append(label,' ',remove);return row;
+    }));
+  }
+  buttonSetup.onclick=()=>{
+    listening=true;
+    buttonStatus.textContent='この設定欄の上で、登録したい追加ボタンかペンの後端を押してください。Escで中止できます。';
+  };
+  outer.addEventListener('pointerdown',event=>{
+    if(!listening)return;
+    const button=capturePointerButton(event);
+    if(!button)return;
+    event.preventDefault();event.stopPropagation();
+    listening=false;suppressMenuUntil=performance.now()+1200;
+    const binding={...button,action:gesture.value as PointerButtonAction,scope:scope.value as PointerButtonScope};
+    const rest=bindings.filter(value=>value.device!==binding.device||value.button!==binding.button||value.scope!==binding.scope);
+    if(apply([...rest,binding]))buttonStatus.textContent=name(button)+'を登録しました。';
+  },true);
+  outer.addEventListener('contextmenu',event=>{
+    if(listening||performance.now()<suppressMenuUntil){suppressMenuUntil=0;event.preventDefault();}
+  });
+  document.addEventListener('keydown',event=>{
+    if(listening&&event.key==='Escape'){listening=false;buttonStatus.textContent='登録を中止しました。';}
+  });
+  body.append(buttonSetup,list,buttonStatus);render();
+  installInputDiagnostics(body,pressure);
   reset.onclick=()=>{
     roles={...DEFAULT};pen.value=roles.pen;mouse.value=roles.mouse;sync();
     finger.value='navigate';finger.onchange?.(new Event('change'));
     palm.checked=true;palm.onchange?.(new Event('change'));
-    barrelEnabled.checked=false;barrelEnabled.onchange?.(new Event('change'));
+    barrelEnabled.checked=false;barrelEnabled.onchange?.(new Event('change'));apply([]);
     status.textContent='各機器の標準操作に戻しました。';
   };
 }

@@ -1,7 +1,11 @@
+import {installGamutPicker} from './gamutPicker';
 import {installOrbitPicker} from './orbit';
 import {installHarmonyTools} from './harmony';
 import {ORBIT_WHEEL,orbitHuePaths} from './orbitGeometry';
 import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
+
+const hueNames=['赤','オレンジ','黄','黄緑','緑','青緑','水色','青','紫','赤紫','赤'];
+const hueLimits=[15,43,66,93,148,182,214,252,292,342,361];
 
 const id=<T extends HTMLElement>(name:string)=>document.getElementById(name) as T;
 const button=(label:string,action:string,cls='')=>'<button type="button" class="'+cls+'" data-color-action="'+action+'">'+label+'</button>';
@@ -17,7 +21,7 @@ export function colorMarkup():string {
  return '<div class="color-workbench">'+
  '<div class="color-current" aria-label="現在の色">'+
   '<button id="colorCurrent" class="color-chip" type="button" aria-label="現在の色"></button>'+
-  '<div class="color-describe"><strong>現在の色</strong><output id="colorCode">#1F2633</output></div>'+
+  '<div class="color-describe"><strong>現在の色</strong><output id="colorCode">#1F2633</output><small id="colorName"></small></div>'+
  '</div>'+
  '<div class="color-mode-switch" role="tablist" aria-label="カラーウィンドウ">'+
   '<button type="button" id="colorShowColor" role="tab" aria-controls="colorScreen" aria-selected="true" tabindex="0">カラー</button>'+
@@ -47,7 +51,7 @@ export function colorMarkup():string {
   '<div role="tablist" class="color-models" aria-label="色の数値形式">'+
    ['HSV','RGB','HSL'].map((m,i)=>'<button type="button" id="colorModel'+m+'" role="tab" aria-controls="colorValueChannels" aria-selected="'+(i===0)+'" tabindex="'+(i===0?0:-1)+'" value="'+m+'">'+m+'</button>').join('')+
   '</div><div id="colorValueChannels" role="tabpanel" aria-labelledby="colorModelHSV" class="color-value-channels"></div>'+
-  '<div class="c04-color-opacity"><label for="c04ColorOpacity">色の不透明度</label><input id="c04ColorOpacity" type="range" min="0" max="100" step="1" value="100" aria-label="描画色の不透明度"><input id="c04ColorOpacityNumber" type="number" min="0" max="100" step="1" value="100" aria-label="描画色の不透明度の数値"><span>%</span></div><small id="c04ColorOpacityStatus" role="status"></small>'+
+  '<div class="c04-color-opacity"><label for="c04ColorOpacity">色の不透明度</label><input id="c04ColorOpacity" type="range" data-unit="%" min="0" max="100" step="1" value="100" aria-label="描画色の不透明度"><input id="c04ColorOpacityNumber" type="number" min="0" max="100" step="1" value="100" aria-label="描画色の不透明度の数値"></div><small id="c04ColorOpacityStatus" role="status"></small>'+
   '</div></section>'+
   '<dialog id="colorEyedropperOptions" class="color-sample-options" aria-labelledby="eyedropperSettingsTitle"><h3 id="eyedropperSettingsTitle">スポイトの設定</h3><div class="color-detail-inner">'+
    '<label class="color-sample-source" for="colorSampleSource">取得する場所<select id="colorSampleSource"><option value="composite">見えている絵全体</option><option value="layer">選んでいるレイヤー</option><option value="specific">指定したレイヤー</option></select></label>'+
@@ -83,7 +87,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  // Black RGB cannot encode the selected saturation. Preserve the SV marker
  // coordinate separately when Value reaches zero.
  let saturationMemory=rgbToHsv(state.current).s,orbitStartSaturation=saturationMemory;
- const current=id<HTMLElement>('colorCurrent'),code=id<HTMLOutputElement>('colorCode'),
+ const current=id<HTMLElement>('colorCurrent'),code=id<HTMLOutputElement>('colorCode'),name=id<HTMLElement>('colorName'),
   ring=id<HTMLElement>('colorRing'),plane=id<HTMLElement>('colorPlane'),hexField=id<HTMLInputElement>('colorHex'),
   notice=id<HTMLElement>('colorActionNotice'),
   colorScreen=id<HTMLElement>('colorScreen'),paletteScreen=id<HTMLElement>('colorPaletteScreen'),
@@ -126,6 +130,11 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   const displayS=hsv.v<=1e-7?saturationMemory:hsv.s;
   document.getElementById('colorPage')?.style.setProperty('--current-paint-color',hex(c));
   current.style.backgroundColor=hex(c);code.textContent=hex(c);
+  const hueIndex=hueLimits.findIndex(limit=>hsv.h<limit);
+  const roughName=hsv.v<.1?'黒':hsv.s<.12?(hsv.v>.93?'白':'グレー'):
+    (hsv.v<.37?'暗い':hsv.s<.37&&hsv.v>.7?'淡い':'')+(hueNames[hueIndex]??'赤');
+  name.textContent='目安：'+roughName;
+  current.setAttribute('aria-label','現在の色 '+roughName+'（目安） '+hex(c));
   id<HTMLInputElement>('c04BackgroundColor').value=hex(state.background);
   const opacity=Math.round(state.opacity*100);
   id<HTMLInputElement>('c04ColorOpacity').value=String(opacity);
@@ -155,17 +164,20 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
    opacityStatus=id<HTMLElement>('c04ColorOpacityStatus');
  opacityRange.oninput=()=>{state.setOpacity(Number(opacityRange.value)/100);opacityStatus.textContent='';};
  const finishOpacity=()=>{
-  if(opacityNumeric.value===''||!opacityNumeric.validity.valid||!Number.isFinite(Number(opacityNumeric.value))){
+  if(!opacityNumeric.validity.valid||!Number.isFinite(opacityNumeric.valueAsNumber)){
     opacityStatus.textContent='0〜100の数字を入力してください。';
-    opacityNumeric.setCustomValidity('0〜100の数字を入力してください。');opacityNumeric.reportValidity();return;
+    return false;
   }
-  try{state.setOpacity(Number(opacityNumeric.value)/100);opacityNumeric.setCustomValidity('');opacityStatus.textContent='';}
-  catch(error){opacityStatus.textContent=error instanceof Error?error.message:String(error);}
+  const value=opacityNumeric.valueAsNumber/100;
+  if(value!==state.opacity)state.setOpacity(value);
+  opacityStatus.textContent='';
+  return true;
  };
  opacityNumeric.onchange=finishOpacity;
+ opacityNumeric.onblur=()=>{opacityNumeric.value=String(Math.round(state.opacity*100));};
  opacityNumeric.onkeydown=event=>{
-  if(event.key==='Enter'){event.preventDefault();finishOpacity();opacityNumeric.blur();}
-  if(event.key==='Escape'){event.preventDefault();opacityNumeric.setCustomValidity('');opacityNumeric.value=String(Math.round(state.opacity*100));opacityStatus.textContent='';opacityNumeric.blur();}
+  if(event.key==='Enter'){event.preventDefault();if(finishOpacity())opacityNumeric.blur();}
+  if(event.key==='Escape'){event.preventDefault();opacityNumeric.value=String(Math.round(state.opacity*100));opacityStatus.textContent='';opacityNumeric.blur();}
  };
  current.onclick=()=>{(pickerMode==='orbit'?id<HTMLElement>('colorOrbitWheel'):ring).focus({preventScroll:true});};
  id<HTMLInputElement>('c04BackgroundColor').onchange=event=>{const next=fromHex((event.target as HTMLInputElement).value);if(next)state.setBackground(next);};
@@ -250,16 +262,18 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  function renderChannels(){
   channels.replaceChildren();channelDef().forEach(([,label,max],i)=>{
    const row=document.createElement('div');row.className='color-value-row';
-   row.innerHTML='<label for="colorSlider'+i+'">'+label+'</label><input type="range" id="colorSlider'+i+'" min="0" max="'+max+'" step="0.1" aria-label="'+label+'のスライダー"><input type="number" id="colorNumber'+i+'" min="0" max="'+max+'" step="0.1" aria-label="'+label+'の数値"><span class="color-unit">'+(model==='RGB'?'':i===0?'°':'%')+'</span>';
+   row.innerHTML='<label for="colorSlider'+i+'">'+label+'</label><input type="range" id="colorSlider'+i+'" min="0" max="'+max+'" step="0.1" data-unit="'+(model==='RGB'?'':i===0?'°':'%')+'" aria-label="'+label+'のスライダー"><input type="number" id="colorNumber'+i+'" min="0" max="'+max+'" step="0.1" aria-label="'+label+'の数値">';
    channels.append(row);const slider=id<HTMLInputElement>('colorSlider'+i),number=id<HTMLInputElement>('colorNumber'+i);
    slider.onpointerdown=()=>state.begin();slider.oninput=()=>{state.begin();previewValue(i,Number(slider.value));};
    slider.onchange=()=>state.commit();slider.onpointercancel=()=>state.cancel();
    number.onfocus=()=>{channelEditing=true;state.begin();};
-   number.oninput=()=>{if(number.value!==''&&number.validity.valid)previewValue(i,Number(number.value));};
+   number.oninput=()=>{number.setCustomValidity('');if(number.value!==''&&number.validity.valid)previewValue(i,Number(number.value));};
    const finish=()=>{if(!channelEditing)return;const n=Number(number.value);
     if(number.value===''||!Number.isFinite(n)||!number.validity.valid||!previewValue(i,n)){
-     number.setCustomValidity('0〜'+max+'の数字を入力してください。');number.reportValidity();
-     if(document.activeElement!==number){channelEditing=false;state.cancel();}return;
+     if(document.activeElement===number){
+      number.setCustomValidity('0〜'+max+'の数字を入力してください。');number.reportValidity();
+     }else{number.setCustomValidity('');channelEditing=false;state.cancel();}
+     return;
     }number.setCustomValidity('');channelEditing=false;state.commit();
    };
    number.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();channelEditing=false;number.setCustomValidity('');state.cancel();updateChannels();number.blur();}else if(e.key==='Enter'){e.preventDefault();finish();if(!channelEditing)number.blur();}};
@@ -339,5 +353,6 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(!state.isEditing&&state.collectionsVersion!==renderedCollectionsVersion)renderCollections();
  });
  renderChannels();reflect();renderCollections();
- return {destroy:()=>{unsubscribe();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1)selectModel('RGB');}};
+ const abandonGamut=installGamutPicker(id('colorBoxBody'),state);
+ return {destroy:()=>{unsubscribe();abandonGamut();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1)selectModel('RGB');}};
 }

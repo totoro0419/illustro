@@ -1,3 +1,33 @@
+import {translateUi,uiLocale} from './ui/language';
+import {previewLegacyMacro} from './ui/legacyMacroPreview';
+import {decodeSavedPosition,describePosition,IMAGE_POSITION_SECTION} from './export/imagePosition';
+import {artworkComparison} from './ui/artworkComparison';
+import {installToolConfirmation,toolConfirmation} from './ui/toolConfirmation';
+import {readPointerButtons} from './pointerPanBinding';
+import {cropRestorePlan,mergeRetainedCrop} from './cropRetention';
+import {installStrokeComparison,type StrokeComparison} from './ui/strokeComparison';
+import {nativeBrushSensors} from './brushInput';
+import {deleteExportProfile,readSavedExportProfile,saveExportProfile,readRasterPresets,removeRasterPreset,writeRasterPreset} from './export/rasterPresets';
+import {installDeviceCapabilities} from './ui/deviceCapabilities';
+import {recordInputInterruption} from './persistence/inputInterruption';
+import {ICC_IMPORT_ACTION,ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ASSIGNED_SECTION,ICC_ORIGINAL_TYPE,validIccBytes} from './export/iccMetadata';
+import {installImageAssist} from './assist/panel';
+import {installAdjustmentPanel} from './effects/adjustmentPanel';
+import {openLayerBatch} from './export/layerBatch';
+import {ANALYSIS_MAX_PIXELS,type RGB as AssistRGB} from './assist/analyze';
+import {convertExchangeColors,exchangeProfileComparison,exchangeFormat,importExchange} from './export/exchange';
+import {createExchangeDocument} from './export/exchangeDocument';
+import {openExchangePanel} from './export/exchangePanel';
+import {installWetTools,wetModes} from './wet/panel';
+import {createWetPatch,wetPatchTiles} from './wet/edit';
+import {installWetPad} from './wet/pad';
+import {accessibilityFeedback,installAccessibility} from './ui/accessibility';
+import {applyPixelCell,pixelStroke} from './pixelStroke';
+import {openBatchExport} from './export/batchExport';
+import {installTimeline} from './recording/timeline';
+import {installWorkTime} from './recording/workTime';
+import {installRasterEffects} from './effects/rasterPanel';
+import {readEffectSteps} from './effects/rasterSettings';
 import {installPassiveTouchProbe} from './passiveTouchProbe';
 import {installInputFreezeTrace} from './inputFreezeTrace';
 import {HistoryNavigation,type HistoryDirection} from './historyNavigation';
@@ -10,7 +40,7 @@ import {installHomeShell,type HomeShell} from './ui/homeShell';
 import {appChoose,appConfirm,appPrompt} from './ui/appDialogs';
 import './color/color.css';
 import './color/harmony.css';
-import {ForegroundColor,rgb,hex,fromHex,DOCUMENT_PALETTE_SECTION} from './color/model';
+import {ForegroundColor,rgb,hex,fromHex,DOCUMENT_PALETTE_SECTION,DOCUMENT_PALETTE_TYPE} from './color/model';
 import {installColorPanel} from './color/panel';
 import {installEyedropperSettings,sampleSourceLabel} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
@@ -71,10 +101,12 @@ import {installShellUi} from './ui/shellBehavior';
 import {installBrushCatalogView} from './ui/brushCatalogView';
 import {installWorkspaceControls} from './ui/workspaceControls';
 import {installCommandPalette} from './ui/commandPalette';
-import {installSimpleMacros} from './ui/simpleMacros';
+import {installSimpleMacros,type SimpleMacroService} from './ui/simpleMacros';
+import {moveRecordedBrush} from './ui/macroArtwork';
 import {installWorkspaceProfiles} from './ui/workspaceProfiles';
 import {installFloatingPanels} from './ui/floatingPanels';
 import {installInputDeviceProfiles,readPointerRoles} from './ui/inputDeviceProfiles';
+import {readPressureRange} from './ui/inputDiagnostics';
 import {installEditorHelp} from './ui/help';
 import {installGestureShortcuts} from './ui/gestureShortcuts';
 import {installToolbarSettings} from './ui/toolbarSettings';
@@ -91,7 +123,7 @@ import {layerListSignature} from './ui/layerListSignature';
 import {drawMaskPreview,paintPixelMask,type MaskStrokePoint} from './layerMaskEditing';
 import {restoreHistoryPixels} from './historyBrush';
 import {penEraserInput} from './stylusButtons';
-import {parseSavedCanvasView,type Point} from './canvasView';
+import {parseSavedCanvasView,seamlessBounds,type Point} from './canvasView';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,type GuideSettings} from './strokeGuide';
 import {BrushPresetLibrary} from './brushPresets';
 import {readWorkBrushSettings,saveWorkBrushSettings} from './workBrushSettings';
@@ -102,15 +134,15 @@ import {BrushUsage} from './brushUsage';
 import {installBrushAdvancedEditor} from './brushAdvancedEditor';
 import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
-import {compilePreset,layerMaskTile,TILE,type FoundationPreset} from '@illustro/brush-rt';
-import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
-import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportResult} from './export/basicExport';
+import {cursorState,compilePreset,layerMaskTile,TILE,type FoundationPreset,type StrokeRecord} from '@illustro/brush-rt';
+import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,resizeImageRegion,type ImageResample} from './canvasGeometry';
+import {captureExport,captureExportLayers,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportOptions,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
-import type {PortableOpenResult} from './persistence/portable';
+import {createPortableDocument,openPortableDocument,type PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
 import {fingerprintRenderedPixels,sameRenderedPixels,type VisualFingerprint} from './persistence/visualIntegrity';
-import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_BLEND_MODES,LAYER_COLOR_TAGS,type LayerBlendMode,parseLayerColorTag,validateEditableArtwork,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerImageLink,type LayerId} from '@illustro/core';
+import {storeCreationTemplate,resolveDocumentDimensions,type TemplateContent} from './documentSetup';
+import {CoreDocument,validateLayerMask,LAYER_BLEND_MODES,LAYER_COLOR_TAGS,type LayerBlendMode,parseLayerColorTag,validateEditableArtwork,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerImageLink,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -131,7 +163,38 @@ for(const [id,label] of [['c04ContextTool','ブラシ'],['c04ContextLayer','描�
   const button=document.createElement('button');button.id=id;button.type='button';button.textContent=label;button.disabled=true;contextBar.append(button);
 }
 const contextPending=document.createElement('output');contextPending.id='c04ContextPending';contextPending.setAttribute('role','status');
-contextBar.append(contextPending);document.querySelector('.canvas-view-strip')?.append(contextBar);
+contextBar.append(contextPending);
+const contextStrip=document.querySelector('.canvas-view-strip');
+const phoneContext=matchMedia('(max-width: 570px)');
+function placeContextBar(){
+  const mobile=!qaMode&&phoneContext.matches;
+  contextBar.classList.toggle('phone-tool-context',mobile);
+  (mobile?app:contextStrip)?.append(contextBar);
+}
+const refreshPhoneConfirmation=installToolConfirmation(contextBar,app,()=>{
+  if(!phoneContext.matches||app.inert)return null;
+  const geometry=document.getElementById('geometryDialog');
+  if(geometry instanceof HTMLDialogElement&&geometry.open)return geometry;
+  const content=byId('documentBoxBody');
+  const panel=content.dataset.activeToolPanel;
+  const selected=panel?content.querySelector('details[open][data-tool-panel="'+panel+'"]'):null;
+  if(selected)return selected;
+  const candidates=[...app.querySelectorAll('details[open]')].filter(item=>
+    item.getClientRects().length&&item.querySelector('[data-tool-confirm]')&&
+    !item.querySelector('details[open] [data-tool-confirm]'));
+  const focused=document.activeElement;
+  return candidates.find(item=>focused&&item.contains(focused))??candidates.at(-1)??null;
+});
+function updatePhoneKeyboardInset(){
+  const viewport=window.visualViewport;
+  const inset=phoneContext.matches&&viewport&&viewport.scale===1?
+    Math.max(0,document.documentElement.clientHeight-viewport.height-Math.max(0,viewport.offsetTop)):0;
+  document.documentElement.style.setProperty('--phone-keyboard-inset',Math.round(inset)+'px');
+}
+window.visualViewport?.addEventListener('resize',updatePhoneKeyboardInset);
+window.visualViewport?.addEventListener('scroll',updatePhoneKeyboardInset);
+phoneContext.addEventListener('change',()=>{placeContextBar();refreshPhoneConfirmation();updatePhoneKeyboardInset();});
+placeContextBar();
 // Read-only TouchEvent/PointerEvent logger in opt-in QA builds. No gesture changes.
 installPassiveTouchProbe();
 // Opt-in physical-device trace; registers capture before editor input handlers.
@@ -158,7 +221,9 @@ const admittedHistoryChanges:EditorHistoryChange[]=[];
 const historyInputs:Array<{at:number;eventAt:number;button:string;direction:string;phase:string;pointerType:string;disabled:boolean;reason?:string}>=[];
 function traceHistoryInput(button:HTMLButtonElement,direction:HistoryDirection,phase:string,event:Event,reason?:string){if(!perfMode)return;historyInputs.push({at:performance.now(),eventAt:event.timeStamp,button:button.id,direction,phase,pointerType:(event as PointerEvent).pointerType??'keyboard',disabled:button.disabled,...(reason?{reason}:{})});if(historyInputs.length>1200)historyInputs.shift();}
 
-const inputPreferences={finger:false,palmGuard:true,penBarrelErase:false,rotationSnap:true,brushCursorEnabled:false,eraserSizeLink:false};
+let pressureRange=readPressureRange();
+let strokeComparisonListener:StrokeComparison|null=null;
+const inputPreferences={finger:false,palmGuard:true,penBarrelErase:false,rotationSnap:true,brushCursorEnabled:false,eraserSizeLink:false,paintBehind:false};
 try{
   const saved=JSON.parse(localStorage.getItem('illustro.input-preferences.v1')??'null');
   for(const key of Object.keys(inputPreferences) as (keyof typeof inputPreferences)[])
@@ -180,9 +245,14 @@ let symmetryPanel:ReturnType<typeof installSymmetryPanel>|undefined;
 let c05ReferenceBoard:ReferenceBoardService|undefined;
 let c06ClipboardUI:ClipboardUI|undefined;
 let c06Selection:SelectionWorkbench|undefined;
+let timeline:ReturnType<typeof installTimeline>|undefined;
+let activeMacroService:SimpleMacroService|null=null;
 let fillPanel:ReturnType<typeof installFillPanel>|undefined;
 let transformPanel:ReturnType<typeof installTransformPanel>|undefined;
 let activeCanvasTool='',canvasToolRequest=0;
+const contextToolLabels:Record<string,string>={selection:'選択',transform:'変形',move:'移動',shapes:'図形',rulers:'定規',pixels:'1pxドットペン'};
+let geometryBusy=false;
+let wetTools:ReturnType<typeof installWetTools>|undefined;
 let imageLinkPanel:ReturnType<typeof installImageLinkPanel>|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
@@ -210,11 +280,11 @@ let initialBlankWarmup:BlankWarmup|null=null;
 let documentActivationPending=false;
 // Keep the original editable raster background and the top drawing layer in the
 // Core document. Only the initial GPU upload differs from normal saved-work replay.
-function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white',dpi=72,author='',description='',emptyDrawingLayer=false){
+function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white',dpi=72,author='',description='',emptyDrawingLayer=false,content?:TemplateContent){
   // White is a logical base color, not 4*width*height initial raster bytes.
   // The upper transparent drawing layer is immediately usable. Native saves
   // carry the white-base metadata, and image export composites it on demand.
-  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',dpi,author,description,emptyDrawingLayer,...(background==='white'?{blankBackground:'white' as const}:{})});
+  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',dpi,author,description,emptyDrawingLayer,creationBackground:background,...(content?.guides?{artworkGuides:content.guides}:{}),...(background==='white'?{blankBackground:'white' as const}:{})});
   const first=document.root.rootLayerIds[0]!;
   if(background!=='white')return {document,selected:first,whiteSurfaceKey:null};
   const whiteSurfaceKey=document.root.getLayer(first).surface.descriptor.surfaceId;
@@ -979,7 +1049,7 @@ function editLayerBlend(){
       }
       changeLayer('レイヤーの合成設定を変更しました。',tx=>{
         const {blend,opacity}=choice;
-        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'&&!blend.tone&&!blend.effect&&!blend.gradientMap?null:blend);
+        const changed=tx.setLayerBlend(layer.id,blend.mode==='normal'&&blend.space==='encoded'&&!blend.tone&&!blend.effect&&!blend.gradientMap&&!blend.adjustment?null:blend);
         return tx.setLayerOpacity(layer.id,opacity)||changed;
       });
     },
@@ -1181,6 +1251,8 @@ const renderLayers=()=>{
     previousLayerListDocument=controller.document;previousLayerListKey=nextLayerListKey;
   for(const id of ['layerList','layerPageList']){
     const list=byId<HTMLDivElement>(id);
+    const focused=document.activeElement;
+    const focusedRow=focused instanceof HTMLButtonElement&&list.contains(focused)?focused.dataset.layerId:null;
     const matching=id==='layerPageList'?rows.filter(layer=>{
       const tagMatches=!tagFilter||(layer.colorTag??'none')===tagFilter;
       const kind=layer.baseColor==='white'?'background':layer.kind;
@@ -1364,6 +1436,7 @@ const renderLayers=()=>{
     }
     const scrollTop=list.scrollTop;
     list.replaceChildren(...entries);
+    if(focusedRow)list.querySelector<HTMLElement>('[data-layer-id="'+CSS.escape(focusedRow)+'"]')?.focus({preventScroll:true});
     list.scrollTop=scrollTop;
     if(!entries.length)list.textContent=selectedLayer.implicitRaster?'ひと筆描くとレイヤーができます。':'一致するレイヤーがありません。';
   }
@@ -1380,12 +1453,12 @@ function updateHistoryButtons(){
   byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(surface?.canUndo||historyPending);
   byId<HTMLButtonElement>('redo').disabled=blocked||!(surface?.canRedo||historyPending);
   byId<HTMLButtonElement>('compactRedo').disabled=blocked||!(surface?.canRedo||historyPending);
-  const undoLabel=controller.document.currentRevision.command?.label;
+  const name=(label:string|null|undefined)=>label==='Brush stroke'?'描画':label==='Add raster layer'?'レイヤーを追加':label;
+  const undoLabel=name(controller.document.currentRevision.command?.label);
+  const redoLabel=name(controller.document.nextRedoLabel);
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
-  if(undoLabel){
-    const name=undoLabel==='Brush stroke'?'描画':undoLabel==='Add raster layer'?'レイヤーを追加':undoLabel;
-    for(const id of ['undo','compactUndo'])byId(id).title='元に戻す · '+name;
-  }else for(const id of ['undo','compactUndo'])byId(id).title='元に戻す';
+  for(const id of ['undo','compactUndo'])byId(id).title=undoLabel?'元に戻す · '+undoLabel:'元に戻す';
+  for(const id of ['redo','compactRedo'])byId(id).title=redoLabel?'やり直す · '+redoLabel:'やり直す';
 }
 function updatePersistenceDisplay(){
   const state=persistenceState,indicator=byId('saveState'),inputPending=historyPending||(surface?.hasUncommittedInput??false);
@@ -1655,7 +1728,10 @@ async function createProjectionCheckpoint(){
       thumbnailRepairSkipped.delete(controller.document.root.documentId+':'+revisionId);
       if(app.inert)scheduleThumbnailRepair(100);
     }
-  }catch(error){const message=error instanceof Error?error.message:String(error);if(message.includes('stale'))checkpointCancelled++;else{checkpointErrors.push({at:new Date().toISOString(),message});if(checkpointErrors.length>12)checkpointErrors.shift();}}finally{
+  }catch(error){const message=error instanceof Error?error.message:String(error);if(message.includes('stale'))checkpointCancelled++;else{
+    if(message==='Projection checkpoint needs a full seed')checkpointNeedsFullSeed=true;
+    checkpointErrors.push({at:new Date().toISOString(),message});if(checkpointErrors.length>12)checkpointErrors.shift();
+  }}finally{
     projectionCheckpointBusy=false;
     if(surface===activeSurface&&(controller.document.head!==revisionId||checkpointOperations.length||checkpointNeedsFullSeed))scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
     updateQa();
@@ -1665,6 +1741,12 @@ function resetCheckpointTracking(){checkpointOperations=[];checkpointOpsSinceLas
 function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   inputFreezeTrace?.mark('save-prepare:start');persistence.noteCommit(controller.document,handoff);inputFreezeTrace?.mark('save-prepare:end');if(controller.document.head!==handoff.resultRevisionId)persistence.noteNavigation(controller.document);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
+  timeline?.record(controller.document,revision.id);
+  if(operations.some(operation=>operation.kind==='brush.stroke'))activeMacroService?.recordArtwork(()=>{
+    const brushes=operations.filter(operation=>operation.kind==='brush.stroke');
+    if(brushes.some(operation=>operation.targetEntityIds[0]!==brushes[0]?.targetEntityIds[0]))return null;
+    return {kind:'stroke',records:brushes.map(operation=>operation.parameters.strokeRecord as StrokeRecord)};
+  });
 }
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const drawing=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'||reason==='view-command')scheduleViewSave(drawing);if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();if(releasedColorHold)restoreDrawingTool();return;}
@@ -1685,6 +1767,16 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
  }
  else{byId('colorSampleLoupe').hidden=true;foreground.begin();foreground.commit(color);byId('status').textContent='キャンバスから '+hex(foreground.current)+' を取得しました。';if(!holdingColorKey&&selectedTool==='eyedropper')restoreDrawingTool();}
  });
+ drawing.onStrokeComparison=strokeComparisonListener;
+ drawing.onInputInterrupted=async()=>{
+   if(surface!==drawing||!documentReady)return false;
+   const root=documentController.document.root;
+   const choice=await appChoose('ペン・マウスなどの入力が途切れました。届いたところまでの線を残しますか？',[
+     {value:'keep',label:'途中まで残す'}]);
+   const keep=choice==='keep'&&surface===drawing&&documentController.document.root.documentId===root.documentId;
+   recordInputInterruption(root.name,keep);
+   return keep;
+ };
  drawing.correctionHold=()=>strokeCorrection?.hold()??null;
  drawing.eraserPreset=()=>{
   const active=drawing.preset;if(active?.blend==='erase')return active;
@@ -1709,9 +1801,18 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
  return drawing;
 }
 function applyInputPreferences(drawing:BrushSurface){
- drawing.fingerDrawing=inputPreferences.finger;drawing.palmGuard=inputPreferences.palmGuard;drawing.barrelErases=inputPreferences.penBarrelErase;
+ drawing.paintBehind=inputPreferences.paintBehind;drawing.fingerDrawing=inputPreferences.finger;drawing.palmGuard=inputPreferences.palmGuard;drawing.barrelErases=inputPreferences.penBarrelErase;
  drawing.setRotationSnap(inputPreferences.rotationSnap);
+ drawing.setPressureRange(pressureRange);
  drawing.setPointerRoles(readPointerRoles());
+ drawing.setPointerButtons(readPointerButtons());
+ drawing.onPointerButton=action=>{
+   if(surface!==drawing||!documentReady)return;
+   if(action==='fit'){drawing.fitView();return;}
+   if(action==='toggle-pan'){byId('panView').click();return;}
+   if(action==='toggle-eraser'){byId('switchDrawingTool').click();return;}
+   (byId<HTMLButtonElement>(action==='redo'?'redo':'undo')).click();
+ };
 }
 surface=makeSurface();
 function updateViewControls(){const state=surface?.viewState;if(!state)return;
@@ -1719,6 +1820,7 @@ function updateViewControls(){const state=surface?.viewState;if(!state)return;
   const angle=byId<HTMLInputElement>('angleDegree'),angleValue=String(Math.round(state.rotation*180/Math.PI*10)/10);if(angle.value!==angleValue)angle.value=angleValue;
   for(const [id,on] of [['flipH',state.flipX],['flipV',state.flipY]] as const){const button=byId<HTMLButtonElement>(id),value=String(on);if(button.getAttribute('aria-pressed')!==value)button.setAttribute('aria-pressed',value);}
   const tile=byId<HTMLInputElement>('seamless');if(tile)tile.checked=state.seamless;
+  const count=byId<HTMLSelectElement>('seamlessCount');count.disabled=!state.seamless;count.value=String(state.repeatRadius);
   updatePixelGrid();
   c06Selection?.updateView();
 }
@@ -1760,13 +1862,28 @@ try{
 }catch{}
 function updatePixelGrid(){
  const state=surface?.viewState;
- const visible=!!state&&gridToggle.checked&&state.zoom*100>=gridThreshold.valueAsNumber&&!state.seamless;
+ const visible=!!state&&(gridToggle.checked||activeCanvasTool==='pixels')&&state.zoom*100>=gridThreshold.valueAsNumber;
  gridOverlay.toggleAttribute('hidden',!visible);
  if(!visible||!state||!surface){pixelCoordinates.hidden=true;return;}
  const origin=surface.documentToScreen({x:0,y:0}),c=Math.cos(state.rotation),s=Math.sin(state.rotation);
  const scaleX=state.zoom*(state.flipX?-1:1),scaleY=state.zoom*(state.flipY?-1:1);
  gridPage.setAttribute('transform',`matrix(${c*scaleX} ${s*scaleX} ${-s*scaleY} ${c*scaleY} ${origin.x} ${origin.y})`);
- gridPage.setAttribute('width',String(state.documentWidth));gridPage.setAttribute('height',String(state.documentHeight));
+ let x=0,y=0,width=state.documentWidth,height=state.documentHeight;
+ if(state.seamless){
+  const corners=[{x:0,y:0},{x:state.cssWidth,y:0},{x:0,y:state.cssHeight},{x:state.cssWidth,y:state.cssHeight}]
+   .map(point=>surface!.screenToDocument(point));
+  x=Math.floor(Math.min(...corners.map(point=>point.x)));
+  y=Math.floor(Math.min(...corners.map(point=>point.y)));
+  width=Math.ceil(Math.max(...corners.map(point=>point.x)))-x;
+  height=Math.ceil(Math.max(...corners.map(point=>point.y)))-y;
+  const bounds=seamlessBounds(state.documentWidth,state.documentHeight,state.repeatRadius);
+  if(bounds){
+   const right=Math.min(x+width,bounds.x+bounds.width),bottom=Math.min(y+height,bounds.y+bounds.height);
+   x=Math.max(x,bounds.x);y=Math.max(y,bounds.y);
+   width=Math.max(0,right-x);height=Math.max(0,bottom-y);
+  }
+ }
+ for(const [name,value] of Object.entries({x,y,width,height}))gridPage.setAttribute(name,String(value));
 }
 for(const input of [gridToggle,gridThreshold,gridColor])input.onchange=()=>{
  if(!gridThreshold.checkValidity()||!gridThreshold.value)gridThreshold.value='800';
@@ -1779,7 +1896,14 @@ const canvasViewport=byId('canvas').closest('.surface')!;
 canvasViewport.addEventListener('pointermove',event=>{
  if(gridOverlay.hasAttribute('hidden')||!surface||!(event instanceof PointerEvent))return;
  const rect=surface.viewportRect,point=surface.screenToDocument({x:event.clientX-rect.left,y:event.clientY-rect.top}),root=controller.document.root;
- const x=Math.floor(point.x),y=Math.floor(point.y);
+ const wrap=(value:number,span:number)=>((value%span)+span)%span;
+ const state=surface.viewState,seamless=state?.seamless;
+ const bounds=seamless?seamlessBounds(root.width,root.height,state.repeatRadius):null;
+ if(bounds&&(point.x<bounds.x||point.y<bounds.y||point.x>=bounds.x+bounds.width||point.y>=bounds.y+bounds.height)){
+  pixelCoordinates.hidden=true;return;
+ }
+ const x=seamless?wrap(Math.floor(point.x),root.width):Math.floor(point.x);
+ const y=seamless?wrap(Math.floor(point.y),root.height):Math.floor(point.y);
  pixelCoordinates.hidden=x<0||y<0||x>=root.width||y>=root.height;
  if(!pixelCoordinates.hidden)pixelCoordinates.textContent='X '+x+' · Y '+y;
 },{passive:true});
@@ -1790,18 +1914,52 @@ function displayBrushCursor(x:number,y:number,size:number,zoom:number){
  const diameter=Math.max(8,Math.min(4096,size*zoom));
  brushCursor.style.width=brushCursor.style.height=diameter+'px';
  brushCursor.style.transform='translate('+x+'px,'+y+'px) translate(-50%,-50%)';
+ brushCursor.style.borderRadius='';
+ brushCursor.removeAttribute('data-tip-mask');
  brushCursor.hidden=false;
 }
-canvasViewport.addEventListener('pointermove',event=>{
- if(!inputPreferences.brushCursorEnabled||!surface||!(event instanceof PointerEvent)||event.pointerType==='touch')return;
- const drawing=surface,view=drawing.viewState;
- if(!view||drawing.panTool||event.buttons&1||selectedTool==='eyedropper'){hideBrushCursor();return;}
+const brushCursorMasks=new WeakMap<FoundationPreset['resources'][string],string>();
+let hoverCursorFrame=0,lastHoverEvent:PointerEvent|null=null;
+function updateHoverBrushCursor(){
+ hoverCursorFrame=0;
+ const event=lastHoverEvent,drawing=surface,view=drawing?.viewState;
+ if(!event||!drawing||!view||!inputPreferences.brushCursorEnabled)return;
+ if(drawing.panTool||event.buttons&1||selectedTool==='eyedropper'){hideBrushCursor();return;}
+ const preset=(penEraserInput(event,drawing.barrelErases)?drawing.eraserPreset():null)??drawing.preset;
+ if(!preset)return;
  const bounds=drawing.viewportRect;
- const eraser=penEraserInput(event,drawing.barrelErases)?drawing.eraserPreset():null;
- displayBrushCursor(event.clientX-bounds.left,event.clientY-bounds.top,eraser?.size??drawing.brushSize,view.zoom);
+ const state=cursorState(preset,{x:0,y:0,t:event.timeStamp,...nativeBrushSensors(event),
+   ...(event.pointerType==='pen'&&event.pressure<=0?{pressure:preset.pressure.fallback}:{})});
+ displayBrushCursor(event.clientX-bounds.left,event.clientY-bounds.top,state.size,view.zoom);
+ brushCursor.style.height=Math.max(4,Math.min(4096,state.size*state.aspect*view.zoom))+'px';
+ brushCursor.style.transform+=' rotate('+view.rotation+'rad) scale('+(view.flipX?-1:1)+','+(view.flipY?-1:1)+') rotate('+state.rotation+'rad)';
+ if(state.shape==='rect')brushCursor.style.borderRadius='2px';
+ const resource=state.resource?preset.resources[state.resource]:null;
+ if(state.shape==='mask'&&resource?.kind==='mask'){
+   let image=brushCursorMasks.get(resource);
+   if(!image){
+     const canvas=document.createElement('canvas');canvas.width=resource.width;canvas.height=resource.height;
+     const context=canvas.getContext('2d');
+     if(context){
+       const mask=new ImageData(resource.width,resource.height);
+       for(let i=0;i<resource.alpha.length;i++)mask.data[i*4+3]=resource.alpha[i]!;
+       context.putImageData(mask,0,0);
+       image=canvas.toDataURL();brushCursorMasks.set(resource,image);
+     }
+   }
+   if(image){
+     brushCursor.dataset.tipMask='';
+     brushCursor.style.setProperty('--brush-cursor-mask','url('+image+')');
+   }
+ }
+}
+canvasViewport.addEventListener('pointermove',event=>{
+ if(!inputPreferences.brushCursorEnabled||!(event instanceof PointerEvent)||event.pointerType==='touch')return;
+ lastHoverEvent=event;
+ if(!hoverCursorFrame)hoverCursorFrame=requestAnimationFrame(updateHoverBrushCursor);
 },{passive:true});
-canvasViewport.addEventListener('pointerdown',hideBrushCursor,{passive:true});
-canvasViewport.addEventListener('pointerleave',()=>{pixelCoordinates.hidden=true;hideBrushCursor();});
+canvasViewport.addEventListener('pointerleave',()=>{lastHoverEvent=null;pixelCoordinates.hidden=true;hideBrushCursor();});
+canvasViewport.addEventListener('pointerdown',()=>{lastHoverEvent=null;hideBrushCursor();},{passive:true});
 byId('showBrushSize').onclick=()=>{
  const view=surface?.viewState;
  if(!view||!surface||!documentReady)return;
@@ -1818,31 +1976,86 @@ byId('panView').onclick=()=>{
  byId('status').textContent=surface.panTool?'キャンバスをドラッグして移動できます。':'描画に戻りました。';
 };
 const shellUi=installShellUi(scheduleLayerDrawingThumbnail),workspace=shellUi.workspace;
+const keyboardCanvas=byId('canvas').parentElement!;
+const keyboardCanvasHelp=document.createElement('span');keyboardCanvasHelp.id='keyboardCanvasHelp';
+keyboardCanvasHelp.className='visually-hidden';
+keyboardCanvasHelp.textContent='矢印キーで表示を移動、プラスとマイナスで拡大縮小、Homeで全体表示。';
+keyboardCanvas.prepend(keyboardCanvasHelp);
+keyboardCanvas.tabIndex=0;keyboardCanvas.setAttribute('role','region');
+keyboardCanvas.setAttribute('aria-label','作品キャンバス');keyboardCanvas.setAttribute('aria-describedby',keyboardCanvasHelp.id);
+keyboardCanvas.addEventListener('keydown',event=>{
+  if(event.target!==keyboardCanvas||!surface||!documentReady||surface.inputActive||
+     event.altKey||event.ctrlKey||event.metaKey)return;
+  const step=event.shiftKey?100:24;
+  switch(event.key){
+    case 'ArrowLeft':surface.panViewBy(step,0);break;
+    case 'ArrowRight':surface.panViewBy(-step,0);break;
+    case 'ArrowUp':surface.panViewBy(0,step);break;
+    case 'ArrowDown':surface.panViewBy(0,-step);break;
+    case '+':case '=':surface.zoomView(1.2);break;
+    case '-':surface.zoomView(1/1.2);break;
+    case 'Home':surface.fitView();break;
+    default:return;
+  }
+  event.preventDefault();event.stopPropagation();
+});
+for(const listId of ['layerList','layerPageList']){
+  const list=byId(listId);
+  list.setAttribute('role','group');list.setAttribute('aria-label','レイヤー一覧');
+  list.addEventListener('keydown',event=>{
+    if(event.ctrlKey||event.altKey||event.metaKey||event.shiftKey||
+      !(event.target instanceof HTMLButtonElement)||!event.target.dataset.layerId)return;
+    const rows=[...list.querySelectorAll<HTMLButtonElement>('.layer-row[data-layer-id]')];
+    if(!rows.length)return;
+    const index=rows.indexOf(event.target);
+    let next:number;
+    switch(event.key){
+      case 'ArrowUp':next=Math.max(0,index-1);break;
+      case 'ArrowDown':next=Math.min(rows.length-1,index+1);break;
+      case 'Home':next=0;break;
+      case 'End':next=rows.length-1;break;
+      default:return;
+    }
+    event.preventDefault();event.stopPropagation();rows[next]?.focus();
+  });
+}
 function updateContextBar(){
+  refreshPhoneConfirmation();
   const active=documentReady&&!!surface;
   const tool=byId<HTMLButtonElement>('c04ContextTool'),layer=byId<HTMLButtonElement>('c04ContextLayer');
   const selection=byId<HTMLButtonElement>('c04ContextSelection'),source=byId<HTMLButtonElement>('c04ContextReference');
   tool.disabled=layer.disabled=selection.disabled=!active;
-  source.hidden=selectedTool!=='eyedropper';
+  const fill=activeCanvasTool==='smartFill'?fillPanel?.context():null;
+  const wet=activeCanvasTool==='smudge'?wetTools?.context():null;
+  source.hidden=!fill&&!wet&&selectedTool!=='eyedropper';
   source.disabled=!active;
   const sampleSource=byId<HTMLSelectElement>('colorSampleSource').value;
   const sampleLayerId=byId<HTMLSelectElement>('colorSampleLayerId').value;
-  source.textContent='採色元: '+sampleSourceLabel({
+  source.textContent=fill?'塗り参照: '+fill.reference:wet?'混色の参照: '+wet.reference:'採色元: '+sampleSourceLabel({
     source:sampleSource==='layer'?'layer':sampleSource==='specific'?'specific':'composite',
     layerId:sampleLayerId?sampleLayerId as LayerId:null,
   },controller.layers.map(item=>({id:item.id,name:item.name})));
-  tool.textContent='道具: '+(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
-  layer.textContent='描画先: '+(active?controller.selectedLayer.name:'作品なし');
+  tool.textContent=translateUi('道具')+': '+(fill?'塗りつぶし':wet?wet.tool:contextToolLabels[activeCanvasTool]??(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':(surface?.brushName??'ブラシ')+(inputPreferences.paintBehind?'（背面）':'')));
+  layer.textContent=fill?'塗り先: '+fill.destination:wet?.separate?'描画先: 新規レイヤー':translateUi('描画先')+': '+(active?controller.selectedLayer.name:'作品なし');
   const selected=surface?.selectedRectangle;
-  selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):'選択なし';
+  selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):c06Selection?.active()?'選択範囲あり':'選択なし';
   byId('c04ContextPending').textContent=historyPending?'履歴を反映中':
-    surface?.inputActive?'描画中':surface?.busy?'線の反映中':
-    geometryBusy?'変更を処理中':surface?.selectingRectangle?'範囲を指定中':'';
+    wet?.pending?'混色を確定中':surface?.inputActive?'描画中':surface?.busy?'線の反映中':
+    geometryBusy?'変更を処理中':surface?.hasCanvasEditPreview?'操作候補・未確定':fill?.pending?'塗り候補・未確定':surface?.selectingRectangle?'範囲を指定中':'';
 }
-byId<HTMLButtonElement>('c04ContextTool').onclick=()=>shellUi.openBox('brushBox');
+window.addEventListener('illustro:language-change',updateContextBar);
+byId<HTMLButtonElement>('c04ContextTool').onclick=()=>{
+  if(activeCanvasTool){shellUi.openBox('documentBox');return;}
+  if(selectedTool==='eyedropper'){byId('openEyedropperSettings').click();return;}
+  shellUi.openBox('brushBox');
+};
 byId<HTMLButtonElement>('c04ContextLayer').onclick=()=>shellUi.setLayerPage(true);
 byId<HTMLButtonElement>('c04ContextSelection').onclick=()=>byId<HTMLButtonElement>('selection').click();
-byId<HTMLButtonElement>('c04ContextReference').onclick=()=>byId('openEyedropperSettings').click();
+byId<HTMLButtonElement>('c04ContextReference').onclick=()=>{
+  if(activeCanvasTool==='smartFill')fillPanel?.focusReference();
+  else if(activeCanvasTool==='smudge')wetTools?.focusReference();
+  else byId('openEyedropperSettings').click();
+};
 const eyedropperDialog=byId<HTMLDialogElement>('colorEyedropperOptions');
 app.append(eyedropperDialog);
 byId('openEyedropperSettings').onclick=()=>{if(!eyedropperDialog.open)eyedropperDialog.showModal();};
@@ -1870,18 +2083,19 @@ function reflectRailTool(){
  const label=lastDrawingTool==='eraser'?'ブラシに切り替え':'消しゴムに切り替え';
  quick.title=label;quick.setAttribute('aria-label',label);quick.innerHTML=icon(lastDrawingTool==='eraser'?'brush':'eraser');
  const current=activeCanvasTool||(selectedTool==='brush'?'paint':selectedTool==='eraser'?'erase':'eyedropper');
- for(const id of ['paint','erase','eyedropper','smartFill','selection','transform','move','shapes','rulers'])
+ for(const id of ['paint','erase','eyedropper','smartFill','selection','transform','move','shapes','rulers','smudge'])
    byId(id).setAttribute('aria-pressed',String(id===current));
  updateContextBar();
 }
 function leaveCanvasTool(){
  if(activeCanvasTool==='selection')c06Selection?.stop();
+ if(activeCanvasTool==='smudge')wetTools?.stop();
  if(activeCanvasTool==='smartFill')fillPanel?.stop();
- if(activeCanvasTool==='shapes'||activeCanvasTool==='rulers')surface?.setCanvasEditGesture(null);
+ if(activeCanvasTool==='shapes'||activeCanvasTool==='rulers'||activeCanvasTool==='pixels')surface?.setCanvasEditGesture(null);
  const tools=byId('documentBoxBody');
  if(activeCanvasTool)tools.querySelector<HTMLDetailsElement>('[data-tool-panel="'+(activeCanvasTool==='move'?'transform':activeCanvasTool)+'"]')?.removeAttribute('open');
  delete tools.dataset.activeToolPanel;
- activeCanvasTool='';
+ activeCanvasTool='';updatePixelGrid();
 }
 function openCanvasTool(id:string){
  if(!surface||!documentReady||surface.inputActive)return false;
@@ -1946,7 +2160,8 @@ function syncPreset(){
  syncBrushSize(byId<HTMLInputElement>('size'),sizeNumber,p);
  byId('brushBoxSummary').textContent=(surface.brushName||selectedTool)+' · '+Math.round(p.size)+'px';
  byId<HTMLInputElement>('force').checked=p.forceFade?.enabled??false;
- for(const [id,value] of [['brushOpacity',p.opacity],['brushFlow',p.flow],['brushSpacing',p.spacing.value],['brushPressure',p.pressure.smoothing],['brushStabilization',p.stabilization.constant],['brushTexture',p.texture.paper.strength]] as const){
+ const stabilization=p.stabilization.scope==='common'?commonStabilization:p.stabilization.constant;
+ for(const [id,value] of [['brushOpacity',p.opacity],['brushFlow',p.flow],['brushSpacing',p.spacing.value],['brushPressure',p.pressure.smoothing],['brushStabilization',stabilization],['brushTexture',p.texture.paper.strength]] as const){
   const control=byId<HTMLInputElement>(id);control.value=String(Math.round(value*100));
   byId<HTMLOutputElement>(id+'Value').value=String(Math.round(value*100))+'%';
   const numeric=document.getElementById(id+'Number') as HTMLInputElement|null;
@@ -1966,9 +2181,55 @@ function syncPreset(){
  updateQa();
 }
 type GeometryMode='document.crop'|'document.canvas-resize'|'document.image-resize';
-let geometryMode:GeometryMode|null=null,geometryBusy=false;
+let geometryMode:GeometryMode|null=null;
 const geometryDialog=byId<HTMLDialogElement>('geometryDialog'),cropOverlay=document.getElementById('cropOverlay') as unknown as SVGSVGElement;
 const dimensionInput=(id:string)=>byId<HTMLInputElement>(id);
+let geometryPreviewEpoch=0;
+function refreshResizeSize(changed?:string){
+ if(geometryMode!=='document.image-resize')return;
+ const {width,height}=controller.document.root;
+ const w=dimensionInput('geometryWidth'),h=dimensionInput('geometryHeight');
+ if(dimensionInput('geometryKeepRatio').checked&&changed){
+   const source=changed===w.id?w:h,target=source===w?h:w,ratio=source===w?height/width:width/height;
+   if(source.validity.valid)target.value=String(Math.max(1,Math.round(source.valueAsNumber*ratio)));
+ }
+ const valid=w.validity.valid&&h.validity.valid;
+ byId('geometryResultSize').textContent=valid?`結果 ${w.value} × ${h.value} px（元の画像 ${width} × ${height} px）`:'幅・高さを1〜8192pxで指定してください。';
+ byId<HTMLButtonElement>('geometryCompare').disabled=!valid;
+ const comparison=byId('geometryComparison');comparison.hidden=true;comparison.replaceChildren();
+ geometryPreviewEpoch++;
+}
+byId('geometryFilter').addEventListener('change',()=>refreshResizeSize());
+byId('geometryDpiOnly').onclick=()=>{closeGeometry();byId('documentInfoOpen').click();dimensionInput('documentInfoDpi').focus();};
+byId('geometryCompare').onclick=async ()=>{
+ if(geometryMode!=='document.image-resize'||geometryBusy)return;
+ const w=dimensionInput('geometryWidth'),h=dimensionInput('geometryHeight');
+ if(!w.validity.valid||!h.validity.valid)return;
+ const artwork=controller.document,head=artwork.head,{width,height}=artwork.root;
+ const newWidth=w.valueAsNumber,newHeight=h.valueAsNumber,method=dimensionInput('geometryFilter').value as ImageResample;
+ const preview=++geometryPreviewEpoch,output=byId('geometryComparison');
+ const current=()=>geometryPreviewEpoch===preview&&geometryDialog.open&&artwork===controller.document&&head===artwork.head;
+ output.hidden=false;output.textContent='比較画像を準備しています。';
+ try{
+   const pixels=await renderFrozenArtwork(captureExport(artwork,undefined,head));
+   if(!current())return;
+   const centre=(w:number,h:number)=>({x:Math.max(0,Math.floor((w-112)/2)),y:Math.max(0,Math.floor((h-112)/2)),
+     width:Math.min(w,112),height:Math.min(h,112)});
+   const before=centre(width,height),after=centre(newWidth,newHeight);
+   const previewImage=(label:string,rgba:Uint8Array,area:typeof before)=>{
+     const figure=document.createElement('div'),caption=document.createElement('p'),canvas=document.createElement('canvas');
+     caption.textContent=label;canvas.setAttribute('aria-label',label);canvas.width=area.width;canvas.height=area.height;
+     canvas.style.imageRendering='pixelated';
+     canvas.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(rgba),area.width,area.height),0,0);
+     figure.append(caption,canvas);return figure;
+   };
+   output.replaceChildren(
+     previewImage('変更前・100%',cropCanvas(pixels,width,height,before.x,before.y,before.width,before.height),before),
+     previewImage('変更後・100%',resizeImageRegion(pixels,width,height,newWidth,newHeight,after,method),after),
+   );
+ }catch(error){if(current())output.textContent=error instanceof Error?error.message:'比較画像を作れませんでした。';}
+};
+
 function geometryRect(){
  const root=controller.document.root;
  const x=Number(dimensionInput('geometryX').value),y=Number(dimensionInput('geometryY').value),w=Number(dimensionInput('geometryWidth').value),h=Number(dimensionInput('geometryHeight').value);
@@ -1983,26 +2244,29 @@ function redrawCrop(){
  const points=[a,b,c,d];(document.getElementById('cropPolygon') as unknown as SVGPolygonElement).setAttribute('points',points.map(p=>p.x+','+p.y).join(' '));
  for(const [corner,index] of [['tl',0],['tr',1],['br',2],['bl',3]] as const){const handle=cropOverlay.querySelector<SVGCircleElement>('[data-corner="'+corner+'"]');if(handle){handle.setAttribute('cx',String(points[index]!.x));handle.setAttribute('cy',String(points[index]!.y));}}
 }
-function closeGeometry(){if(geometryBusy)return;geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');byId('geometryStatus').textContent='';}
+function closeGeometry(){if(geometryBusy)return;geometryPreviewEpoch++;geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');byId('geometryStatus').textContent='';}
 function openGeometry(mode:GeometryMode){
  if(!documentReady||!surface?.canChangeGeometry){byId('status').textContent='描画が終わってから変更してください。';return;}
- geometryMode=mode;const root=controller.document.root;
+ geometryPreviewEpoch++;geometryMode=mode;const root=controller.document.root;
  dimensionInput('geometryWidth').value=String(root.width);dimensionInput('geometryHeight').value=String(root.height);
  dimensionInput('geometryX').value='0';dimensionInput('geometryY').value='0';
+ if(mode==='document.crop')dimensionInput('geometryKeepOutside').checked=true;
  for(const element of geometryDialog.querySelectorAll<HTMLElement>('.crop-coordinate'))element.hidden=mode!=='document.crop';
  for(const element of geometryDialog.querySelectorAll<HTMLElement>('.resize-anchor'))element.hidden=mode!=='document.canvas-resize';
  for(const element of geometryDialog.querySelectorAll<HTMLElement>('.image-filter'))element.hidden=mode!=='document.image-resize';
  byId('geometryTitle').textContent=mode==='document.crop'?'切り抜き':mode==='document.canvas-resize'?'キャンバスサイズ変更':'画像サイズ変更';
  byId('geometryHelp').textContent=mode==='document.crop'?'黄色い枠の四隅をドラッグするか、数値で正確に指定できます。拡大・移動しながら調整できます。':mode==='document.canvas-resize'?'作品の範囲だけを変更します。絵の大きさは変えません。':'絵のピクセル数を変更します。画質を比較してから適用してください。';
  byId('geometryStatus').textContent='';
- if(!geometryDialog.open)geometryDialog.show();redrawCrop();
+ if(!geometryDialog.open)geometryDialog.show();refreshResizeSize();redrawCrop();
 }
 byId('cropStart').onclick=()=>openGeometry('document.crop');
 byId('canvasResizeStart').onclick=()=>openGeometry('document.canvas-resize');
 byId('imageResizeStart').onclick=()=>openGeometry('document.image-resize');
 byId('geometryCancel').onclick=closeGeometry;
+toolConfirmation(byId<HTMLButtonElement>('geometryApply'),'apply');
+toolConfirmation(byId<HTMLButtonElement>('geometryCancel'),'cancel');
 geometryDialog.addEventListener('cancel',e=>{e.preventDefault();closeGeometry();});
-for(const id of ['geometryWidth','geometryHeight','geometryX','geometryY'])dimensionInput(id).addEventListener('input',redrawCrop);
+for(const id of ['geometryWidth','geometryHeight','geometryX','geometryY'])dimensionInput(id).addEventListener('input',()=>{refreshResizeSize(id);redrawCrop();});
 let draggingCrop:{corner:string;startX:number;startY:number;endX:number;endY:number}|null=null;
 cropOverlay.addEventListener('pointerdown',e=>{
  const target=e.target as SVGElement,corner=target.dataset.corner,rect=geometryRect();
@@ -2053,7 +2317,7 @@ function saveNamedArtworkSnapshot(reopen:()=>void){
   const title=document.createElement('h2'),nameLabel=document.createElement('label'),memoLabel=document.createElement('label');
   const input=document.createElement('input'),memo=document.createElement('textarea');
   const save=document.createElement('button'),cancel=document.createElement('button');
-  const date=new Date(artwork.root.metadata.modifiedAt).toLocaleString('ja-JP');
+  const date=new Date(artwork.root.metadata.modifiedAt).toLocaleString(uiLocale());
   title.textContent='現在の状態を名前付きで残す';
   nameLabel.textContent='名前 ';
   input.required=true;input.maxLength=160;input.value=date;
@@ -2241,7 +2505,7 @@ function createHistorySettings(artwork:CoreDocument,entries:ReturnType<CoreDocum
   for(const entry of candidates){
     const item=document.createElement('li');
     const label=entry.label==='Brush stroke'?'描画':entry.label==='Add raster layer'?'レイヤーを追加':entry.label;
-    item.textContent=label+' · '+new Date(entry.committedAt).toLocaleString('ja-JP');
+    item.textContent=label+' · '+new Date(entry.committedAt).toLocaleString(uiLocale());
     removed.append(item);
   }
   removed.className='history-cleanup-list';
@@ -2337,7 +2601,7 @@ function openArtworkHistory(){
     const page=entries.slice(shown,shown+200);
     for(const entry of page){
       const label=entry.label==='Add raster layer'?'レイヤーを追加':entry.label==='Brush stroke'?'描画':entry.label;
-      const time=new Date(entry.committedAt).toLocaleString('ja-JP');
+      const time=new Date(entry.committedAt).toLocaleString(uiLocale());
       const description=entry.snapshot?'保存した状態「'+entry.snapshot.name+'」':label;
       list.add(new Option((entry.id===head?'現在 · ':'')+description+' · '+time,entry.id));
     }
@@ -2448,6 +2712,8 @@ byId<HTMLButtonElement>('openArtworkHistory').onclick=openArtworkHistory;
 async function reloadGeometryProjection(){
  const oldPreset=surface?.brushId,previousView=surface?.viewState;surface?.destroy();surface=makeSurface();
  await initializeCurrentSurface(true);surface?.setInputBarrier(historyPending);
+ // The prior checkpoint may describe a different raster size or surface layout.
+ checkpointNeedsFullSeed=true;
  if(previousView&&previousView.documentWidth===controller.document.root.width&&previousView.documentHeight===controller.document.root.height)surface?.restoreView(previousView);
  if(oldPreset){try{selectPreset(oldPreset);}catch{}}
  updateViewControls();renderLayers();updateQa();redrawCrop();
@@ -2489,13 +2755,16 @@ async function applyGeometry(){
  if(!geometryMode||geometryBusy||!surface?.canChangeGeometry)return;
  const mode=geometryMode,old=controller.document.root,w=Number(dimensionInput('geometryWidth').value),h=Number(dimensionInput('geometryHeight').value);
  if(!Number.isSafeInteger(w)||!Number.isSafeInteger(h)||w<1||h<1||w>8192||h>8192){byId('geometryStatus').textContent='幅と高さを1〜8192pxで指定してください。';return;}
- let rect=geometryRect();
+ const rect=geometryRect();
  if(mode==='document.crop'&&!rect){byId('geometryStatus').textContent='切り抜き範囲が作品からはみ出しています。';return;}
  if(mode!=='document.crop'&&w===old.width&&h===old.height){byId('geometryStatus').textContent='元の大きさと同じです。';return;}
- geometryBusy=true;byId<HTMLButtonElement>('geometryApply').disabled=true;byId('geometryStatus').textContent='作品を変更しています。';
+ const drawing=surface,artwork=controller.document,head=artwork.head;
+ geometryBusy=true;drawing.setInputBarrier(true);byId<HTMLButtonElement>('geometryApply').disabled=true;byId('geometryStatus').textContent='作品を変更しています。';
  const canvas=byId<HTMLCanvasElement>('canvas');canvas.style.pointerEvents='none';
  try{
-  const source=await surface.captureDocumentLayers(),out=new Map<ReturnType<EditorController['target']>['layerId'],Uint8Array>();
+  const keepOutside=dimensionInput('geometryKeepOutside').checked;
+  const source=await drawing.captureDocumentLayers(),out=new Map<LayerId,Uint8Array>();
+  if(drawing!==surface||controller.document!==artwork||artwork.head!==head)throw Error('作品が変わりました。');
   const anchor=dimensionInput('geometryAnchor').value as 'center'|'top-left'|'top-right'|'bottom-left'|'bottom-right';
   const shift=shiftedForAnchor(old.width,old.height,w,h,anchor);
   const method=dimensionInput('geometryFilter').value as ImageResample;
@@ -2504,18 +2773,91 @@ async function applyGeometry(){
      mode==='document.canvas-resize'?changeCanvasBounds(pixels,old.width,old.height,w,h,shift.x,shift.y):
      resizeImagePixels(pixels,old.width,old.height,w,h,method));
   }
-  const tx=controller.document.begin(mode==='document.crop'?'Crop':mode==='document.canvas-resize'?'Canvas Resize':'Image Resize');
-  tx.resizeDocument(w,h,mode,out,mode==='document.crop'?{x:rect!.x,y:rect!.y}:{anchor,filter:method});
+  const tx=artwork.begin(mode==='document.crop'?(keepOutside?'外側を残して切り抜き':'外側を切り落とす'):
+    mode==='document.canvas-resize'?'キャンバスサイズを変更':'画像サイズを変更');
+  tx.resizeDocument(w,h,mode,out,mode==='document.crop'?{x:rect!.x,y:rect!.y,keepOutside}:{anchor,filter:method});
   const receipt=tx.commit();controller.lastPersistenceHandoff=receipt.persistence;queueLatestCommit();
   geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');
   await reloadGeometryProjection();scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
   byId('status').textContent='作品を'+w+'×'+h+'pxに変更しました。元に戻すこともできます。';
  }catch(error){byId('geometryStatus').textContent=error instanceof Error?error.message:'変更できませんでした。';}
- finally{canvas.style.pointerEvents='';geometryBusy=false;byId<HTMLButtonElement>('geometryApply').disabled=false;updateHistoryButtons();updateQa();}
+ finally{canvas.style.pointerEvents='';geometryBusy=false;if(surface===drawing)drawing.setInputBarrier(false);byId<HTMLButtonElement>('geometryApply').disabled=false;updateHistoryButtons();updateQa();}
 }
 byId('geometryApply').onclick=()=>{void applyGeometry();};
 
+async function restoreCropOutside(){
+  const drawing=surface,artwork=controller.document,head=artwork.head,root=artwork.root;
+  if(!documentReady||geometryBusy||historyPending||!drawing?.canChangeGeometry)return;
+  let plan:ReturnType<typeof cropRestorePlan>;
+  try{plan=cropRestorePlan(artwork.operationsTo(),root);}
+  catch(error){byId('status').textContent=error instanceof Error?error.message:String(error);return;}
+  if(!plan){byId('status').textContent='外側を残した切り抜きが見つかりません。';return;}
+  const {source,output,placement,outside,currentX,currentY,filter}=plan;
+  const preview=document.createElement('canvas');
+  const caption=document.createElement('p');
+  caption.textContent='元の絵のうち、切り抜きの外側にあった部分を表示しています。';
+  const content=document.createElement('div');content.append(caption,preview);
+  try{
+    const frozen=captureExport(artwork,undefined,source);
+    const scale=Math.min(1,320/Math.max(frozen.width,frozen.height));
+    const width=Math.max(1,Math.round(frozen.width*scale)),height=Math.max(1,Math.round(frozen.height*scale));
+    const pixels=await renderFrozenArtworkTiledPreview(frozen,width,height)??new Uint8ClampedArray(
+      resizeImagePixels(await renderFrozenArtwork(frozen),frozen.width,frozen.height,width,height,'auto'));
+    preview.width=width;preview.height=height;
+    preview.style.cssText='display:block;max-width:100%;height:auto;background:repeating-conic-gradient(#fff 0% 25%,#e0e4e9 0% 50%) 0 0/16px 16px';
+    preview.setAttribute('aria-label','切り抜きの外側だけの見本');
+    const ctx=preview.getContext('2d')!;
+    ctx.putImageData(new ImageData(new Uint8ClampedArray(pixels),width,height),0,0);
+    const x=outside.x*width/frozen.width,y=outside.y*height/frozen.height;
+    const innerWidth=outside.width*width/frozen.width,innerHeight=outside.height*height/frozen.height;
+    ctx.clearRect(x,y,innerWidth,innerHeight);
+    ctx.strokeStyle='#315f91';ctx.setLineDash([4,3]);ctx.strokeRect(x,y,innerWidth,innerHeight);
+  }catch{
+    caption.textContent='この作品では外側の見本を表示できません。';
+    preview.hidden=true;
+  }
+  if(controller.document!==artwork||head!==artwork.head||surface!==drawing)return;
+  if(await appChoose('復元後は '+output.width+' × '+output.height+' px です。現在の範囲の絵は優先して残します。',
+    [{value:'restore',label:'外側を復元'}],content)!=='restore')return;
+  if(controller.document!==artwork||head!==artwork.head||surface!==drawing||geometryBusy||!drawing.canChangeGeometry)return;
+  geometryBusy=true;drawing.setInputBarrier(true);
+  byId('status').textContent='切り抜きの外側を復元しています。';
+  try{
+    const original=artwork.revision(source).root;
+    const cropped=await drawing.captureDocumentLayers(),restored=new Map<LayerId,Uint8Array>();
+    for(const [id,pixels] of cropped){
+      const prior=original.hasLayer(id)?original.getLayer(id):null;
+      const width=original.width,height=original.height;
+      const originalPixels=prior?.baseColor==='white'?new Uint8Array(width*height*4).fill(255):
+        prior?new Uint8Array(await originalTransformPixels(artwork,prior,source)):null;
+      let target:Uint8Array;
+      if(originalPixels){
+        for(let row=outside.y;row<outside.y+outside.height;row++){
+          const start=(row*width+outside.x)*4;
+          originalPixels.fill(0,start,start+outside.width*4);
+        }
+        const transformed=width===placement.width&&height===placement.height?originalPixels:
+          resizeImagePixels(originalPixels,width,height,placement.width,placement.height,filter);
+        target=new Uint8Array(changeCanvasBounds(transformed,placement.width,placement.height,output.width,output.height,placement.x,placement.y));
+      }else target=new Uint8Array(output.width*output.height*4);
+      mergeRetainedCrop(target,pixels,root,plan);
+      restored.set(id,target);
+    }
+    if(controller.document!==artwork||head!==artwork.head||surface!==drawing)throw Error('作品が変わりました。');
+    const tx=artwork.begin('切り抜きの外側を復元');
+    tx.resizeDocument(output.width,output.height,'document.canvas-resize',restored,{offsetX:currentX,offsetY:currentY,restoredCrop:source});
+    controller.lastPersistenceHandoff=tx.commit().persistence;queueLatestCommit();
+    await reloadGeometryProjection();scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
+    byId('status').textContent='切り抜き後の編集を保ったまま、外側を復元しました。';
+  }catch(error){byId('status').textContent=error instanceof Error?error.message:'外側を復元できませんでした。';}
+  finally{geometryBusy=false;if(surface===drawing)drawing.setInputBarrier(false);updateHistoryButtons();}
+}
+byId('restoreCropOutside').onclick=()=>{void restoreCropOutside();};
+
+
 const documentInfoDialog=byId<HTMLDialogElement>('documentInfoDialog');
+const workTime=installWorkTime(documentInfoDialog.querySelector('form')!,byId('canvasArea'),
+  ()=>documentReady&&!app.inert&&!documentActivationPending?controller.document.root.documentId:null);
 byId('documentInfoOpen').onclick=()=>{
   if(!documentReady||!surface)return;
   const root=controller.document.root,info=root.info;
@@ -2523,10 +2865,15 @@ byId('documentInfoOpen').onclick=()=>{
   byId<HTMLInputElement>('documentInfoAuthor').value=info.author;
   byId<HTMLInputElement>('documentInfoDpi').value=info.dpi===null?'':String(info.dpi);
   byId<HTMLTextAreaElement>('documentInfoDescription').value=info.description;
-  byId('documentInfoSize').textContent=root.width+' × '+root.height+' px · '+(root.colorProfileId==='srgb'?'sRGB':root.colorProfileId);
+  const originalIcc=persistence.preservedData?.optionalSections.find(part=>part.id===ICC_IMPORT_ACTION);
+  const action=originalIcc&&originalIcc.bytes.length<=32?new TextDecoder().decode(originalIcc.bytes):'';
+  const profileNote=action==='converted-to-srgb'?'（元のICCから変換）':action==='assigned-srgb'?'（画素値を保って割当）':
+    action==='decoder-to-srgb'?'（読込時に変換。元のICCを保持）':action==='assigned-icc'?'（指定したICCから変換）':'';
+  byId('documentInfoSize').textContent=root.width+' × '+root.height+' px · '+(root.colorProfileId==='srgb'?'sRGB':root.colorProfileId)+profileNote;
   byId('documentInfoStatus').textContent='';
   byId<HTMLInputElement>('canvasTemplateName').value='';
-  documentInfoDialog.showModal();
+  for(const id of ['canvasTemplateGuides','canvasTemplatePalette','canvasTemplateInfo'])byId<HTMLInputElement>(id).checked=false;
+  workTime.refresh();documentInfoDialog.showModal();
 };
 byId('documentInfoClose').onclick=()=>documentInfoDialog.close();
 byId<HTMLFormElement>('documentInfoForm').onsubmit=event=>{
@@ -2561,8 +2908,16 @@ byId<HTMLFormElement>('canvasTemplateForm').onsubmit=event=>{
     return;
   }
   try{
+    const checked=(id:string)=>byId<HTMLInputElement>(id).checked;
+    const palette=checked('canvasTemplatePalette')?foreground.exportDocumentPaletteSection():null;
+    const content:TemplateContent={
+      ...(checked('canvasTemplateGuides')?{guides:root.artworkGuides}:{}),
+      ...(palette?{palette:new TextDecoder().decode(palette.bytes)}:{}),
+      ...(checked('canvasTemplateInfo')?{title:root.info.name,author:root.info.author,description:root.info.description}:{})
+    };
     storeCreationTemplate(localStorage,{name:input.value,width:root.width,height:root.height,dpi:root.metadata.dpi??72,
-      background:root.getLayer(root.rootLayerIds[0]!).baseColor==='white'?'white':'transparent'});
+      background:root.metadata.creationBackground??(root.getLayer(root.rootLayerIds[0]!).baseColor==='white'?'white':'transparent'),
+      content});
     input.value='';
     byId('documentInfoStatus').textContent='新規作成用のテンプレートを保存しました。';
   }catch(error){byId('documentInfoStatus').textContent=error instanceof Error?error.message:String(error);}
@@ -2715,6 +3070,11 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       byId('status').textContent=error instanceof Error?error.message:String(error);
     });
   }
+  if(opened.generationId!=='library'){
+    wetTools?.restoreNative(opened.preserved.optionalSections);
+    try{timeline?.restoreNative(opened.document,opened.preserved.optionalSections);}
+    catch(error){console.warn('Optional timelapse metadata could not be read',error);}
+  }
   // Prefer the exact palette embedded in this native file to device-local data.
   eyedropperSettings.refreshLayers();eyedropperSettings.apply();
   const paletteSection=opened.preserved.optionalSections.find(
@@ -2779,7 +3139,7 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     throw error;
   }
 }
-async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description='',emptyDrawingLayer=false):Promise<boolean>{
+async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description='',emptyDrawingLayer=false,content?:TemplateContent):Promise<boolean>{
   const createStarted=performance.now();
   const trigger=byId<HTMLButtonElement>('new');
   if(trigger.disabled)return false;
@@ -2791,13 +3151,18 @@ async function createDocument(width:number,height:number,name='新しい作品',
   trigger.disabled=true;byId('status').textContent='キャンバスを準備しています。';
   try{
     const documentStarted=performance.now();
-    const warm=emptyDrawingLayer?null:matchedBlankWarmup(width,height,name,background,dpi,author,description);
+    const warm=emptyDrawingLayer||content?.guides?.length||content?.palette?null:matchedBlankWarmup(width,height,name,background,dpi,author,description);
     if(!warm)discardBlankWarmup();
-    const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background,dpi,author,description,emptyDrawingLayer);
+    const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background,dpi,author,description,emptyDrawingLayer,content);
     const {document,selected,whiteSurfaceKey}=blank;
     measureCanvasStage('new-document-model',documentStarted);
     if(warm)await activateFirstPrewarmedBlank(warm);
-    else await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head},false,null,whiteSurfaceKey);
+    else {
+      const optionalSections=content?.palette?[{id:DOCUMENT_PALETTE_SECTION,type:DOCUMENT_PALETTE_TYPE,
+        required:false,bytes:new TextEncoder().encode(content.palette)}]:[];
+      await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections},
+        generationId:'new',snapshotRevisionId:document.head},false,null,whiteSurfaceKey);
+    }
     if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,background);void refreshWorks();}
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
     byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
@@ -2833,8 +3198,18 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
   try{
     for(const direction of directions){const change=admittedHistoryChanges.shift();if(!change||change.direction!==direction)throw new Error('履歴操作の順序が一致しません。');if(change.changed)changes.push(change);}
     if(!changes.length){byId('status').textContent='これ以上その方向へ履歴を移動できません。';return;}
+    const macroViews=macroPresentations.get(controller.document);
+    const viewBefore=macroViews?.size?macroPresentationSignature():null;
     updateQa();
     if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'||op.kind==='layer.delete'||op.kind==='layer.snapshot'||op.kind==='document.history-restore')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
+    for(const change of changes){
+      const backwards=change.direction==='undo',id=backwards?change.fromRevision:change.toRevision;
+      const view=macroViews?.get(id);
+      if(view){
+        const expected=backwards?view.after:view.before,prepared=backwards?view.before:view.after;
+        if(expected.signature===viewBefore||expected.signature===macroPresentationSignature())prepared.restore();
+      }
+    }
     undoCount+=changes.filter(c=>c.direction==='undo').length;redoCount+=changes.filter(c=>c.direction==='redo').length;
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(changes.flatMap(c=>c.operations));
     const last=changes.at(-1)!;byId('status').textContent=last.direction==='undo'?'前の状態に戻しました。':'取り消した操作をやり直しました。';
@@ -2940,10 +3315,10 @@ function bindBrushNumber(input:HTMLInputElement,current:()=>number,apply:(value:
  input.addEventListener('blur',reflect);
  input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();input.blur();}});
 }
-function editBrushParameter(controlId:string,change:(preset:FoundationPreset,value:number)=>void){
+function editBrushParameter(controlId:string,change:(value:number)=>boolean){
  const input=byId<HTMLInputElement>(controlId);
  const changeValue=(number:number)=>{
-  if(!applyBrushChange(p=>change(p,number/100)))syncPreset();
+  if(!Number.isFinite(number)||number<0||number>100||!change(number/100))syncPreset();
  };
  input.addEventListener('input',()=>changeValue(input.valueAsNumber));
  const number=document.getElementById(controlId+'Number') as HTMLInputElement|null;
@@ -2954,9 +3329,17 @@ for(const [id,change] of [
  ['brushFlow',(p:FoundationPreset,v:number)=>{p.flow=v;}],
  ['brushSpacing',(p:FoundationPreset,v:number)=>{p.spacing.value=v;}],
  ['brushPressure',(p:FoundationPreset,v:number)=>{p.pressure.smoothing=v;}],
- ['brushStabilization',(p:FoundationPreset,v:number)=>{p.stabilization.constant=v;}],
  ['brushTexture',(p:FoundationPreset,v:number)=>{p.texture.paper.strength=v;}]
-] as const)editBrushParameter(id,change);
+] as const)editBrushParameter(id,value=>applyBrushChange(p=>change(p,value)));
+editBrushParameter('brushStabilization',value=>{
+ if(surface?.preset?.stabilization.scope!=='common')return applyBrushChange(p=>{p.stabilization.constant=value;});
+ if(surface.inputActive){brushMessage('描画中は設定を変更できません。線を離してから調整してください。');return false;}
+ commonStabilization=value;
+ surface.setCommonStabilization(value);
+ try{localStorage.setItem('illustro.common-stabilization.v1',String(value));}catch{}
+ syncPreset();
+ return true;
+});
 for(const [id,key] of [['brushAzimuth','azimuth'],['brushTwist','twist']] as const){
  byId<HTMLInputElement>(id).addEventListener('change',event=>{
   if(!applyBrushChange(p=>{p.tip[key]=(event.target as HTMLInputElement).checked;}))syncPreset();
@@ -2973,9 +3356,6 @@ byId<HTMLSelectElement>('brushStabilizationScope').onchange=event=>{
  const choice=(event.target as HTMLSelectElement).value;
  if(!applyBrushChange(p=>{p.stabilization.scope=choice==='common'?'common':'brush';}))syncPreset();
 };
-const commonStabilizationInput=byId<HTMLInputElement>('commonStabilization');
-commonStabilizationInput.value=String(Math.round(commonStabilization*100));
-byId<HTMLOutputElement>('commonStabilizationValue').textContent=Math.round(commonStabilization*100)+'%';
 const devicePressureInput=byId<HTMLInputElement>('devicePressureSensitivity');
 devicePressureInput.value=String(Math.round(devicePressureSensitivity*100));
 const pressureLabel=byId<HTMLOutputElement>('devicePressureSensitivityValue');
@@ -2985,12 +3365,6 @@ devicePressureInput.oninput=()=>{
  pressureLabel.textContent=devicePressureSensitivity===0.5?'標準':Math.round(devicePressureSensitivity*100)+'%';
  surface?.setPressureCalibration(devicePressureSensitivity);
  try{localStorage.setItem('illustro.device-pressure-midpoint.v1',String(devicePressureSensitivity));}catch{}
-};
-commonStabilizationInput.oninput=()=>{
- commonStabilization=Math.max(0,Math.min(1,Number(commonStabilizationInput.value)/100));
- byId<HTMLOutputElement>('commonStabilizationValue').textContent=Math.round(commonStabilization*100)+'%';
- surface?.setCommonStabilization(commonStabilization);
- try{localStorage.setItem('illustro.common-stabilization.v1',String(commonStabilization));}catch{}
 };
 byId<HTMLButtonElement>('brushReset').onclick=()=>{
  const current=surface?.preset;if(!current||surface?.inputActive)return;
@@ -3131,7 +3505,11 @@ document.addEventListener('keyup',event=>{
  if(event.key.toLowerCase()==='e')releaseTemporaryEraser();
 });
 window.addEventListener('blur',releaseTemporaryEraser);
-byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as HTMLInputElement).checked);
+function updateSeamlessSettings(){
+ surface?.setSeamless(byId<HTMLInputElement>('seamless').checked,Number(byId<HTMLSelectElement>('seamlessCount').value));
+}
+byId<HTMLInputElement>('seamless').onchange=updateSeamlessSettings;
+byId<HTMLSelectElement>('seamlessCount').onchange=updateSeamlessSettings;
 // C02 BRU-010: ruler changes affect the next stroke, not strokes already in progress.
 function refreshGuideSettings(){
  guidePreferences=normalizeGuideSettings({
@@ -3158,6 +3536,7 @@ byId<HTMLInputElement>('force').onchange=e=>{if(!applyBrushChange(p=>{if(p.force
  input.onchange=()=>{
   inputPreferences[id]=input.checked;if(surface)applyInputPreferences(surface);
   if(id==='brushCursorEnabled'&&!input.checked)hideBrushCursor();
+  if(id==='paintBehind')updateContextBar();
   try{localStorage.setItem('illustro.input-preferences.v1',JSON.stringify(inputPreferences));}catch{}
   updateQa();
  };
@@ -3186,6 +3565,7 @@ function selectCanvasTool(id:string,start?:()=>void){
  open();
 }
 byId<HTMLButtonElement>('selection').onclick=()=>selectCanvasTool('selection',()=>c06Selection?.open());
+byId('smudge').onclick=()=>selectCanvasTool('smudge',()=>wetTools?.open());
 byId('smartFill').onclick=()=>selectCanvasTool('smartFill',()=>fillPanel?.open());
 for(const id of ['transform','move'])byId(id).onclick=()=>selectCanvasTool(id,
  ()=>transformPanel?.open(Boolean(c06Selection?.active()),id==='move'));
@@ -3199,8 +3579,111 @@ byId<HTMLButtonElement>('selectionClear').onclick=()=>{
 refreshSelectionControls();
 
 byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
-byId<HTMLInputElement>('openFile').onchange=async e=>{
-  const input=e.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file)return;
+const workFileInput=byId<HTMLInputElement>('openFile');
+workFileInput.multiple=true;
+workFileInput.accept+=',.png,.jpg,.jpeg,.webp,.psd,.psb,.ora,.tif,.tiff,.avif,.exr,.heif,.heic';
+let openingWorkFiles=false;
+workFileInput.onchange=async ()=>{
+  const files=Array.from(workFileInput.files??[]);
+  workFileInput.value='';
+  if(!files.length||openingWorkFiles)return;
+  openingWorkFiles=true;
+  try{
+    if(files.length===1){await openWorkFile(files[0]!);return;}
+    if(!await appConfirm(files.length+'件の作品を復元します。同じ作品がある場合は別作品として保存します。続けますか？'))return;
+    const failed:string[]=[];
+    for(const file of files)if(!await openWorkFile(file,true))failed.push(file.name);
+    const summary=(files.length-failed.length)+'件を復元しました。'+
+      (failed.length?' 復元できなかったファイル（'+failed.length+'件）：'+failed.join('、'):'');
+    byId('status').textContent=summary;
+    if(failed.length)homeUi?.notify(summary);
+  }finally{openingWorkFiles=false;}
+};
+async function chooseImportProfile(source:Awaited<ReturnType<typeof importExchange>>){
+  const body=document.createElement('div'),label=document.createElement('label'),file=document.createElement('input');
+  const status=document.createElement('output'),preview=document.createElement('div');
+  status.setAttribute('role','status');file.type='file';file.accept='.icc,.icm';
+  let assigned:Uint8Array<ArrayBuffer>|undefined,version=0;
+  file.onchange=async()=>{
+    const ticket=++version;
+    assigned=undefined;preview.replaceChildren();
+    try{
+      const selected=file.files?.[0];
+      if(!selected||selected.size>ICC_LIMIT)throw Error('4MB以内のRGB ICCを選んでください。');
+      status.textContent='色を計算しています。';
+      const bytes=new Uint8Array(await selected.arrayBuffer()),comparison=await exchangeProfileComparison(source,bytes);
+      if(ticket!==version)return;
+      assigned=bytes;
+      if(comparison)preview.replaceChildren(comparison);
+      status.textContent='色を確認し、使う場合は「この色で開く」を押してください。';
+    }catch(error){if(ticket===version)status.textContent=error instanceof Error?error.message:String(error);}
+  };
+  label.append('割り当てるRGB ICC',file);body.append(label,status,preview);
+  const choice=await appChoose('読み込んだ画素をどのRGBの色として解釈するか指定できます。作品ではsRGBとして編集します。',
+    [{value:'profile',label:'この色で開く'}],body);
+  version++;
+  if(!choice)return null;
+  if(!assigned)throw Error(status.textContent||'有効なRGB ICCを選んでください。');
+  return convertExchangeColors(source,true,assigned);
+}
+async function openWorkFile(file:File,batch=false){
+  const exchange=exchangeFormat(file.name);
+  if(exchange){
+    try{
+      let imported=await importExchange(file);
+      if(imported.sourceIcc&&!imported.sourceIccBrowserConverted){
+        let comparison:HTMLElement|null=null,profileError='';
+        try{comparison=await exchangeProfileComparison(imported);}
+        catch(error){profileError=error instanceof Error?error.message:String(error);}
+        const choice=await appChoose(profileError?'埋め込みICCは保持します。色変換を開始できません。'+profileError:
+          '埋め込みICCが見つかりました。見た目を保つためにsRGBへ変換するか、画素値を変えずsRGBとして扱うか選んでください。',[
+          ...(profileError?[]:[{value:'convert' as const,label:'プロファイルに従って色を変換'}]),
+          {value:'assign' as const,label:'画素値を変えずsRGBを割り当てる'},
+          {value:'profile' as const,label:'別のRGB ICCを割り当てる'}],comparison??undefined);
+        if(choice===null)return false;
+        if(choice==='profile'){
+          const result=await chooseImportProfile(imported);
+          if(!result)return false;
+          imported=result;
+        }else imported=await convertExchangeColors(imported,choice==='convert');
+      }
+      let flatten=false;
+      if(imported.warnings.length){
+        const message='読み込み時の変更\n'+imported.warnings.slice(0,20).join('\n')+
+          (imported.warnings.length>20?'\nほか '+(imported.warnings.length-20)+' 件':'');
+        const choice=await appChoose(message,[{value:'layers',label:'編集用に開く'},
+          ...(imported.layers.length&&imported.merged?[{value:'flat',label:'統合画像で開く'}]:[]),
+          ...(!imported.sourceIcc&&!imported.assignedIcc?[{value:'profile',label:'RGB ICCを割り当てる'}]:[])]);
+        if(choice===null)return false;
+        if(choice==='profile'){
+          const result=await chooseImportProfile(imported);
+          if(!result)return false;
+          imported=result;
+        }
+        flatten=choice==='flat';
+      }
+      if(!qaMode&&!(await prepareWorkSwitch()))return false;
+      const {artwork,selected}=createExchangeDocument(imported,flatten);
+      const profile=imported.sourceIcc;
+      const optionalSections=[
+        ...(imported.position?[{id:IMAGE_POSITION_SECTION,type:'application/json',required:false,
+          bytes:new TextEncoder().encode(JSON.stringify(imported.position))}]:[]),
+        ...(profile&&profile.length<=ICC_LIMIT?[{id:ICC_ORIGINAL_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:profile}]:[]),
+        ...(imported.assignedIcc?[{id:ICC_ASSIGNED_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:imported.assignedIcc}]:[]),
+        ...(profile||imported.assignedIcc?[{id:ICC_IMPORT_ACTION,type:'text/plain',required:false,
+          bytes:new TextEncoder().encode(imported.sourceProfileAction??'decoder-to-srgb')}]:[]),
+      ];
+      await activateOpened({document:artwork,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections},
+        generationId:'exchange',snapshotRevisionId:artwork.head});
+      homeUi?.showEditor();byId('status').textContent='交換用ファイルを新しい作品として開きました。';
+      if(!qaMode){scheduleWorkThumbnail();void refreshWorks();}
+      return true;
+    }catch(error){
+      const message='交換用ファイルを開けません。'+(error instanceof Error?error.message:String(error));
+      homeUi?.notify(message);byId('status').textContent=message;return false;
+    }
+  }
+
   byId('status').textContent='作品ファイルを確認しています。';let opened:PortableOpenResult;
   let migrationCopy=false;
   let migrationSource:(()=>Promise<FrozenExport>)|null=null,migrationNotices:readonly string[]=[];
@@ -3234,7 +3717,9 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
     if(!qaMode){
       if(!(await prepareWorkSwitch()))return;
       const same=await getWork(opened.document.root.documentId);
-      if(same){
+      if(same&&batch){
+        opened=copyOpened(opened,opened.document.root.name.slice(0,100)+'（バックアップ復元）');
+      }else if(same){
         const copyChoice={value:'copy',label:'別作品として複製'} as const;
         const decision=await appChoose(
           '同じ識別番号の作品が'+(same.trashedAt?'ごみ箱に':'マイ作品に')+'あります。\n'
@@ -3253,12 +3738,12 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
       ?'旧形式から移行コピーを開きました。元ファイルは変更していません。新形式を残すには「別名で保存」を押してください。'
       :'作品ファイルを開きました。自動保存を開始しました。';
     homeUi?.showEditor();
-    if(migrationSource)showMigrationDetails(migrationSource,opened.document,migrationNotices);
+    if(migrationSource&&!batch)showMigrationDetails(migrationSource,opened.document,migrationNotices);
     if(!qaMode){scheduleWorkThumbnail();void refreshWorks();}
   }
-  catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);}
-  updateQa();
-};
+  catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);return false;}
+  updateQa();return true;
+}
 function showMigrationDetails(source:()=>Promise<FrozenExport>,converted:CoreDocument,notices:readonly string[]){
   const dialog=document.createElement('dialog'),section=document.createElement('section');
   const title=document.createElement('h2'),message=document.createElement('p'),status=document.createElement('output');
@@ -3316,7 +3801,7 @@ function showExternalSaveConflict(error:ExternalFileConflict,local:CoreDocument)
   const dialog=document.createElement('dialog'),section=document.createElement('section'),title=document.createElement('h2');
   const details=document.createElement('p'),status=document.createElement('output'),previews=document.createElement('div');
   title.textContent='保存先に別の版があります';
-  details.textContent=error.changedFile.name+' · '+new Date(error.changedFile.lastModified).toLocaleString('ja-JP');
+  details.textContent=error.changedFile.name+' · '+new Date(error.changedFile.lastModified).toLocaleString(uiLocale());
   status.setAttribute('aria-live','polite');
   previews.className='artwork-history-previews';
   dialog.className='export-dialog artwork-history-dialog';dialog.setAttribute('aria-label',title.textContent);
@@ -3364,6 +3849,7 @@ async function saveWork(asCopy=false){
   try{
     const result=await persistence.save(document,layer,asCopy,pending,drawing.selectedRectangle);
     byId('status').textContent=explicitSaveStatus(result.output,result.verified,asCopy,formatFileSize(result.byteLength));
+    accessibilityFeedback();
   }catch(error){
     if(error instanceof ExternalFileConflict)showExternalSaveConflict(error,document);
     byId('status').textContent=error instanceof DOMException&&error.name==='AbortError'
@@ -3374,47 +3860,219 @@ async function saveWork(asCopy=false){
 byId('save').onclick=()=>{void saveWork();};
 byId('saveCopy').onclick=()=>{void saveWork(true);};
 
+byId<HTMLButtonElement>('exchangeExport').onclick=()=>{
+  if(!documentReady)return;
+  const artwork=controller.document;
+  byId<HTMLDialogElement>('exportDialog').close();
+  openExchangePanel(artwork,()=>documentReady&&controller.document===artwork,c06Download,savedImagePosition());
+};
 const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTMLSelectElement>('exportFormat'),exportQuality=byId<HTMLInputElement>('exportQuality');
+const losslessWebp=byId<HTMLInputElement>('exportLosslessWebp');
+const exportIccFile=byId<HTMLInputElement>('exportColorProfile'),exportIncludeIcc=byId<HTMLInputElement>('exportIncludeIcc');
+const rasterPresetSelect=byId<HTMLSelectElement>('rasterExportPreset'),comparisonHost=byId('exportRasterComparison');
+function savedImagePosition(){
+  return decodeSavedPosition(persistence.preservedData?.optionalSections.find(section=>section.id===IMAGE_POSITION_SECTION)?.bytes);
+}
+const includePosition=document.createElement('input');includePosition.type='checkbox';
+const positionLabel=document.createElement('label'),positionText=document.createElement('span');
+positionLabel.append(includePosition,positionText);
+byId('exportPngMetadata').append(positionLabel);
+function syncPositionLabel(reset=false){
+  const position=savedImagePosition();
+  positionLabel.hidden=!position;
+  if(reset||!position)includePosition.checked=false;
+  positionText.textContent=position?' 読み込み元の位置情報を含める（'+describePosition(position)+'）':'';
+}
+let outputIcc:Uint8Array|null=null,needsOutputIcc=false,compareGeneration=0,profileRequest=0;
+function refreshRasterPresets(selected=''){
+  rasterPresetSelect.replaceChildren(new Option('設定を選ぶ',''),...readRasterPresets(localStorage).map(item=>new Option(item.name,item.name)));
+  rasterPresetSelect.value=selected;
+  byId<HTMLButtonElement>('rasterExportPresetRemove').disabled=!rasterPresetSelect.value;
+}
+function clearRasterComparison(){compareGeneration++;comparisonHost.hidden=true;comparisonHost.replaceChildren();}
 function updateExportOptions(){
-  const f=exportFormat.value as ImageFormat,lossy=f!=='png';
-  byId<HTMLLabelElement>('exportQualityRow').hidden=!lossy;
+  const f=exportFormat.value as ImageFormat,lossy=f!=='png'&&(f!=='webp'||!losslessWebp.checked);
+  byId('exportWebpMode').hidden=f!=='webp';
+  byId('exportQualityRow').hidden=!lossy;
+  byId('exportDpiRow').hidden=controller.document.root.info.dpi===null;
   byId<HTMLOutputElement>('exportQualityValue').textContent=exportQuality.value+'%';
   byId('exportTransparencyInfo').textContent=f==='jpeg'
-    ?'JPEGは透明部分を保存できません。背景を白にして書き出します（黒にはしません）。'
-    :f==='png'?'PNGは透明度を保ち、画像の色を劣化させずに保存します。':'WebPは透明度を保ち、画質を調整できます。';
+    ?'JPEGは透明部分を白にして書き出します。'
+    :f==='png'?'PNGは透明度を保ちます。':losslessWebp.checked?'WebPは透明度を保ち、画素を変えずに圧縮します。':'WebPは透明度を保ち、画質を調整できます。';
 }
-exportFormat.onchange=updateExportOptions;exportQuality.oninput=updateExportOptions;updateExportOptions();
+for(const control of [exportFormat,losslessWebp])control.onchange=updateExportOptions;
+exportQuality.oninput=()=>{updateExportOptions();clearRasterComparison();};
+exportDialog.addEventListener('change',clearRasterComparison);
+exportIccFile.onchange=async()=>{
+  profileRequest++;
+  const file=exportIccFile.files?.[0];
+  outputIcc=null;needsOutputIcc=!!file;
+  byId('exportProfileStatus').textContent='';
+  if(!file)return;
+  try{
+    if(file.size>ICC_LIMIT)throw Error('出力用のICCは4MBまでです。');
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    if(exportIccFile.files?.[0]!==file)return;
+    if(!validIccBytes(bytes)||String.fromCharCode(...bytes.subarray(16,20))!=='RGB ')throw Error('RGBのICCファイルを選んでください。');
+    outputIcc=bytes;needsOutputIcc=false;exportIncludeIcc.checked=true;
+    byId('exportProfileStatus').textContent=file.name+' に合わせて色を変換してから、そのICCを埋め込みます。';
+  }catch(error){
+    if(exportIccFile.files?.[0]!==file)return;
+    byId('exportProfileStatus').textContent=error instanceof Error?error.message:String(error);
+  }
+};
+rasterPresetSelect.onchange=async()=>{
+  const request=++profileRequest;
+  const preset=readRasterPresets(localStorage).find(item=>item.name===rasterPresetSelect.value);
+  byId<HTMLButtonElement>('rasterExportPresetRemove').disabled=!preset;
+  if(!preset)return;
+  exportFormat.value=preset.format;exportQuality.value=String(preset.quality);losslessWebp.checked=preset.lossless;
+  byId<HTMLInputElement>('exportPixelScale').value=String(preset.scale);
+  byId<HTMLInputElement>('exportDpi').checked=preset.dpi;
+  byId<HTMLInputElement>('exportIncludeAuthor').checked=preset.author;
+  includePosition.checked=!positionLabel.hidden&&preset.position===true;
+  byId<HTMLInputElement>('exportCopyright').value=preset.copyright;
+  exportIccFile.value='';outputIcc=null;needsOutputIcc=preset.icc==='custom';
+  exportIncludeIcc.checked=preset.icc!=='none';
+  byId('exportProfileStatus').textContent=needsOutputIcc?'出力用RGB ICCを選んでください。':'';
+  updateExportOptions();
+  if(preset.icc==='custom'&&preset.profileKey){
+    try{
+      const stored=await readSavedExportProfile(preset.profileKey);
+      if(request!==profileRequest||!exportDialog.open)return;
+      if(!stored||!validIccBytes(stored))throw Error('保存したICCを読み込めません。ファイルをもう一度選んでください。');
+      outputIcc=stored;needsOutputIcc=false;
+      byId('exportProfileStatus').textContent='設定に保存されたICCを使用します。';
+    }catch(error){
+      if(request===profileRequest)byId('exportProfileStatus').textContent=error instanceof Error?error.message:String(error);
+    }
+  }
+};
+byId<HTMLButtonElement>('rasterExportPresetSave').onclick=async()=>{
+  const name=await appPrompt('書き出し設定の名前',rasterPresetSelect.value,{required:true,maxLength:80});
+  if(!name||!exportDialog.open)return;
+  try{
+    const scale=byId<HTMLInputElement>('exportPixelScale');
+    if(!scale.value||!scale.validity.valid)throw Error('整数倍の拡大率を1〜8で指定してください。');
+    const old=readRasterPresets(localStorage).find(item=>item.name===name.trim());
+    const profileKey=exportIncludeIcc.checked&&outputIcc?crypto.randomUUID():undefined;
+    if(profileKey&&outputIcc)await saveExportProfile(profileKey,outputIcc);
+    try{writeRasterPreset(localStorage,{name,format:exportFormat.value as ImageFormat,quality:exportQuality.valueAsNumber,
+      scale:scale.valueAsNumber,lossless:losslessWebp.checked,dpi:byId<HTMLInputElement>('exportDpi').checked,
+      icc:exportIncludeIcc.checked?(outputIcc||needsOutputIcc?'custom':'srgb'):'none',
+      author:byId<HTMLInputElement>('exportIncludeAuthor').checked,position:includePosition.checked,
+      copyright:byId<HTMLInputElement>('exportCopyright').value,
+      ...(profileKey?{profileKey}:{})});}
+    catch(error){if(profileKey)void deleteExportProfile(profileKey).catch(()=>{});throw error;}
+    if(old?.profileKey)void deleteExportProfile(old.profileKey).catch(()=>{});
+    refreshRasterPresets(name.trim());
+    byId('exportStatus').textContent='書き出し設定を保存しました。';
+  }catch(error){byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
+};
+byId<HTMLButtonElement>('rasterExportPresetRemove').onclick=()=>{
+  try{
+    const old=readRasterPresets(localStorage).find(item=>item.name===rasterPresetSelect.value);
+    removeRasterPreset(localStorage,rasterPresetSelect.value);refreshRasterPresets();
+    if(old?.profileKey)void deleteExportProfile(old.profileKey).catch(()=>{});
+  }
+  catch(error){byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
+};
+updateExportOptions();
 byId<HTMLButtonElement>('exportImage').onclick=()=>{
   if(!documentReady)return;
   byId('exportStatus').textContent='';
+  clearRasterComparison();refreshRasterPresets();profileRequest++;
+  exportIccFile.value='';outputIcc=null;needsOutputIcc=false;
+  byId('exportProfileStatus').textContent='';
+  byId<HTMLInputElement>('exportIncludeAuthor').checked=false;
+  byId<HTMLInputElement>('exportCopyright').value='';
   const inspected=surface?.inspectedLayer;
-  byId('exportLayerScopeRow').hidden=!inspected;
   const scope=byId<HTMLSelectElement>('exportLayerScope');
   scope.value='artwork';
-  byId('exportSoloOption').textContent=inspected?inspected.name+'だけ':'単独表示レイヤーだけ';
+  const soloOption=byId<HTMLOptionElement>('exportSoloOption');
+  soloOption.disabled=!inspected;
+  soloOption.textContent=inspected?inspected.name+'だけ':'単独表示レイヤーだけ';
+  byId<HTMLOptionElement>('exportSelectionOption').disabled=!c06Selection?.active();
+  byId<HTMLOptionElement>('exportActiveLayer').textContent=controller.selectedLayer.name+'だけ';
+  updateExportOptions();
+  syncPositionLabel(true);
   exportDialog.showModal();
 };
-byId<HTMLButtonElement>('exportCancel').onclick=()=>{if(!exportBusy)exportDialog.close();};
-byId<HTMLButtonElement>('exportRun').onclick=async()=>{
-  if(exportBusy||!documentReady)return;
-  const format=exportFormat.value as ImageFormat,quality=Number(exportQuality.value)/100;
-  // The snapshot is captured synchronously: later brush transactions cannot enter it.
-  let fixed:ReturnType<typeof captureExport>;
-  const requestedSolo=byId<HTMLSelectElement>('exportLayerScope').value==='solo';
+const exportSeparateLayers=document.createElement('button');exportSeparateLayers.type='button';
+exportSeparateLayers.textContent='レイヤーを別々の画像に書き出す';
+byId('exchangeExport').before(exportSeparateLayers);
+exportSeparateLayers.onclick=async()=>{
+  if(!documentReady||exportBusy||!exportDialog.open)return;
+  const artwork=controller.document;
   try{
     await historyNavigation?.barrier();
-    const solo=surface?.inspectedLayer;
-    if(requestedSolo&&!solo)throw new Error('単独表示を切り替えたため、書き出し範囲を選び直してください。');
-    fixed=captureExport(controller.document,requestedSolo?solo?.id:undefined);
-  }
-  catch(error){byId('exportStatus').textContent=String(error instanceof Error?error.message:error);return;}
+    if(controller.document!==artwork||!exportDialog.open)return;
+    const ids=new Set<LayerId>(layerBatchIds);ids.add(controller.selectedLayerId);
+    openLayerBatch(artwork,ids);
+    exportDialog.close();
+  }catch(error){byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
+};
+byId<HTMLButtonElement>('exportCancel').onclick=()=>{if(!exportBusy)exportDialog.close();};
+async function captureRasterExport(){
+  const artwork=controller.document,format=exportFormat.value as ImageFormat,quality=exportQuality.valueAsNumber/100;
+  const scope=byId<HTMLSelectElement>('exportLayerScope').value;
+  const scale=byId<HTMLInputElement>('exportPixelScale');
+  if(!scale.value||!scale.validity.valid)throw Error('整数倍の拡大率は1〜8で指定してください。');
+  if(exportIncludeIcc.checked&&needsOutputIcc&&!outputIcc)throw Error('出力用のRGB ICCを選んでください。');
+  await historyNavigation?.barrier();
+  if(controller.document!==artwork||!exportDialog.open)throw Error('書き出し対象が変わりました。');
+  const solo=surface?.inspectedLayer;
+  if(scope==='solo'&&!solo)throw Error('単独表示を切り替えたため、書き出し範囲を選び直してください。');
+  const selection=scope==='selection'?c06Selection?.active():null;
+  if(scope==='selection'&&!selection)throw Error('書き出す範囲を選んでください。');
+  const layer=scope==='active'?controller.selectedLayer.id:scope==='solo'?solo?.id:undefined;
+  const dpi=artwork.root.info.dpi,position=includePosition.checked?savedImagePosition():undefined;
+  const options:ImageExportOptions={pixelScale:scale.valueAsNumber,losslessWebp:losslessWebp.checked,
+    ...(selection?{selection}:{}),...(dpi!==null&&byId<HTMLInputElement>('exportDpi').checked?{dpi}:{}),
+    pngMetadata:{includeIcc:exportIncludeIcc.checked,...(position?{position}:{}),...(exportIncludeIcc.checked&&outputIcc?{iccProfile:outputIcc}:{}),
+      ...(byId<HTMLInputElement>('exportIncludeAuthor').checked?{author:artwork.root.info.author}:{}),
+      copyright:byId<HTMLInputElement>('exportCopyright').value}};
+  return {fixed:captureExport(artwork,layer),format,quality,options};
+}
+const compareRaster=byId<HTMLButtonElement>('exportCompareRaster'),runRaster=byId<HTMLButtonElement>('exportRun');
+compareRaster.onclick=async()=>{
+  if(!exportDialog.open||compareRaster.disabled||runRaster.disabled)return;
+  clearRasterComparison();
+  const generation=compareGeneration;
+  compareRaster.disabled=runRaster.disabled=true;
+  byId('exportStatus').textContent='比較用に画像を作っています。';
+  try{
+    const {fixed,format,quality,options}=await captureRasterExport();
+    const result=await exportImage(fixed,format,quality,{...options,comparison:(original,compressed)=>{
+      if(generation!==compareGeneration||!exportDialog.open)return;
+      for(const [label,pixels] of [['元の絵',original],['書き出した画像',compressed]] as const){
+        const item=document.createElement('figure'),caption=document.createElement('figcaption'),canvas=document.createElement('canvas');
+        item.style.cssText='margin:0;overflow:auto';caption.textContent=label;
+        canvas.width=pixels.width;canvas.height=pixels.height;canvas.setAttribute('aria-label',label);
+        canvas.getContext('2d')?.putImageData(pixels,0,0);item.append(caption,canvas);comparisonHost.append(item);
+      }
+      comparisonHost.hidden=false;
+    }});
+    if(generation===compareGeneration&&exportDialog.open)
+      byId('exportStatus').textContent='中央を原寸で比較しています。画像全体は '+result.width+' × '+result.height+
+        ' px、'+formatFileSize(result.blob.size)+' です。';
+  }catch(error){if(generation===compareGeneration)byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
+  finally{compareRaster.disabled=runRaster.disabled=false;}
+};
+runRaster.onclick=async()=>{
+  if(exportBusy||!documentReady||runRaster.disabled)return;
+  runRaster.disabled=true;
+  let job:Awaited<ReturnType<typeof captureRasterExport>>;
+  try{job=await captureRasterExport();}
+  catch(error){runRaster.disabled=false;byId('exportStatus').textContent=error instanceof Error?error.message:String(error);return;}
+  const {fixed,format,quality,options}=job;
   const filename=exportFileName(fixed.name,format);
   exportBusy=true;exportError=null;byId<HTMLButtonElement>('exportRun').disabled=true;byId<HTMLButtonElement>('exportCancel').disabled=true;
   // A modal dialog would block canvas input during encoding; close it before heavy work.
   exportDialog.close();byId('status').textContent='画像を書き出しています。描画は続けられます。';
   byId('exportStatus').textContent='画像を書き出しています。描画は続けられます。';updateQa();
   try{
-    const result=await exportImage(fixed,format,quality);
+    const result=await exportImage(fixed,format,quality,options);
     // Download works on Android and on browsers without the File System Access API.
     const url=URL.createObjectURL(result.blob),anchor=document.createElement('a');
     anchor.href=url;anchor.download=filename;anchor.hidden=true;document.body.append(anchor);anchor.click();anchor.remove();
@@ -3422,6 +4080,7 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
     const {blob,...evidence}=result;lastExport={...evidence,downloadBytes:blob.size};exportCount++;
     byId('exportStatus').textContent=filename+' を作成しました（'+result.width+'×'+result.height+'ピクセル、'+formatFileSize(blob.size)+'）。作品ファイルの保存状態は変わりません。';
     byId('status').textContent='画像を書き出しました（'+result.width+'×'+result.height+'ピクセル、'+formatFileSize(blob.size)+'）。引き続き描画できます。';
+    accessibilityFeedback();
   }catch(error){
     exportError=error instanceof Error?error.message:String(error);
     byId('exportStatus').textContent='画像を書き出せませんでした。'+exportError;
@@ -3563,6 +4222,13 @@ if(!qaMode){
       return true;},
     listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
     openWork,
+    exportWorks:entries=>openBatchExport(entries,async id=>{
+      if(documentReady&&controller.document.root.documentId===id){
+        await persistence.barrier();
+        if(controller.document.root.documentId===id)return controller.document;
+      }
+      return (await persistence.loadWork(id)).opened.document;
+    }),
     readThumbnail:(id,revisionId)=>persistence.readThumbnail(id,revisionId),
     previewRecovery:async(documentId,writerEpochId)=>{
       const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
@@ -3769,13 +4435,318 @@ const c04Commands=installCommandPalette(shellUi,foreground,{
     if(!qaMode)await persistence.selectWorkLayer(selectedId);
   },
 },{resolve:macroExecutor,contextKey:()=>documentReady&&!documentActivationPending?controller.document:null});
-const c04MacroService=installSimpleMacros(c04Commands);
+async function artworkPreviewPixels(scene:FrozenExport,width:number,height:number,
+  options?:Readonly<{replacement:{surfaceId:string;pixels:Uint8ClampedArray};signal:AbortSignal}>){
+  const small=await renderFrozenArtworkTiledPreview(scene,width,height,options);
+  if(small)return small;
+  const replacement=options?.replacement,surfaceId=replacement?.surfaceId;
+  const full=await renderFrozenArtwork(replacement?{
+    ...scene,basePixels:[...(scene.basePixels??[]).filter(item=>item.surfaceId!==surfaceId),{surfaceId:replacement.surfaceId,pixels:new Uint8Array(replacement.pixels)}],
+    strokes:scene.strokes.filter(item=>item.surfaceId!==surfaceId),
+  }:scene);
+  options?.signal.throwIfAborted();
+  return new Uint8ClampedArray(resizeImagePixels(full,scene.width,scene.height,width,height,'auto'));
+}
+type MacroPresentation=Readonly<{signature:string;restore:()=>void}>;
+const macroPresentations=new WeakMap<CoreDocument,Map<RevisionId,Readonly<{before:MacroPresentation;after:MacroPresentation}>>>();
+let lastViewMacro:Readonly<{artwork:CoreDocument;before:MacroPresentation;after:MacroPresentation}>|null=null;
+function macroPresentationSignature(){
+  return JSON.stringify([surface?.viewState,surface?.brushId,selectedTool,surface?.panTool,activeCanvasTool,
+    surface?.inspectedLayer?.id,surface?.selectedRectangle,foreground.current,foreground.opacity,
+    byId<HTMLInputElement>('guideEnabled').checked,shellUi.layerPageOpen(),byId('workspaceToggle').getAttribute('aria-expanded'),
+    byId('c04FocusToggle').getAttribute('aria-pressed'),
+    Array.from(app.querySelectorAll<HTMLElement>('.workspace-box .box-toggle')).map(item=>item.getAttribute('aria-expanded'))]);
+}
+function captureMacroPresentation(artwork:CoreDocument):MacroPresentation{
+  const view=surface?.viewState,brush=surface?.brushId,wasEyedropper=selectedTool==='eyedropper',wasPan=surface?.panTool;
+  const solo=surface?.inspectedLayer?.id??null,selection=c06Selection?.active()??null,rect=surface?.selectedRectangle??null;
+  const guide=byId<HTMLInputElement>('guideEnabled'),guideEnabled=guide.checked,tool=activeCanvasTool;
+  const focus=byId('c04FocusToggle').getAttribute('aria-pressed'),resetShell=shellUi.checkpoint();
+  const resetLayout=c04WorkspaceService?.checkpoint(),resetColor=foreground.checkpoint();
+  return {signature:macroPresentationSignature(),restore:()=>{
+    const current=surface;
+    if(!current||controller.document!==artwork)return;
+    resetColor();resetLayout?.();
+    if(brush)selectPreset(brush);
+    if(wasEyedropper)activateEyedropper();
+    else if(tool==='selection')byId('selection').click();
+    else if(tool)openCanvasTool(tool);
+    current.panTool=!!wasPan;byId('panView').setAttribute('aria-pressed',String(!!wasPan));
+    current.setSoloLayer(solo&&artwork.root.hasLayer(solo)?solo:null);
+    if(selection&&selection.width===artwork.root.width&&selection.height===artwork.root.height)
+      c06Selection?.replaceActive(selection);
+    else c06Selection?.clear();
+    current.restoreRectangleSelection(rect);
+    if(view)current.restoreView(view);
+    guide.checked=guideEnabled;refreshGuideSettings();
+    resetShell();
+    if(byId('c04FocusToggle').getAttribute('aria-pressed')!==focus)byId('c04FocusToggle').click();
+    renderLayers();reflectRailTool();
+  }};
+}
+async function commitMacroRestore(artwork:CoreDocument,tx:ReturnType<CoreDocument['begin']>){
+  const layer=controller.selectedLayerId,order=artwork.root.rootLayerIds,prior=artwork.historyNavigationState();
+  const priorHandoff=controller.lastPersistenceHandoff,committed=tx.commit();
+  controller.lastPersistenceHandoff=committed.persistence;
+  controller.restoreEditHistory(order);checkpointNeedsFullSeed=true;
+  try{
+    await reloadGeometryProjection();
+  }catch(error){
+    if(controller.document===artwork&&artwork.discardUnpublishedHistoryRestore(committed.revision.id,prior)){
+      controller.lastPersistenceHandoff=priorHandoff;controller.restoreEditHistory(order);
+      if(artwork.root.hasLayer(layer))controller.selectLayer(layer);
+      try{await reloadGeometryProjection();}catch{/* The original Core revision remains available for reopening. */}
+    }
+    throw error;
+  }
+  queueLatestCommit();persistence.noteNavigation(artwork);
+  return committed;
+}
+const c04MacroService=installSimpleMacros(c04Commands,{
+  layers:()=>{
+    if(!documentReady)return [];
+    const root=controller.document.root;
+    return root.rootLayerIds.filter(id=>!root.getLayer(id).baseColor&&!root.isLayerLocked(id))
+      .map(id=>({id,name:root.getLayer(id).name,opacity:root.getLayer(id).opacity,active:id===controller.selectedLayerId}));
+  },
+  applyLegacy:async(steps,name,signal)=>{
+    const drawing=surface,artwork=controller.document,head=artwork.head,layer=controller.selectedLayerId;
+    const valid=()=>controller.document===artwork&&artwork.head===head&&surface===drawing&&
+      documentReady&&!documentActivationPending&&!geometryBusy&&!historyPending&&!drawing?.busy;
+    if(!drawing||!valid()||drawing.hasCanvasEditPreview||c06Selection?.isPending())
+      throw Error('今の操作が終わってから操作セットを実行してください。');
+    const plan=previewLegacyMacro(artwork,layer,steps),original=artwork.revision(plan.revision).root;
+    const changed=plan.revision!==head||plan.flags.some(flag=>{
+      const item=original.getLayer(flag.id);
+      return !!item.alphaLocked!==flag.alphaLocked||(item.clipSourceId??null)!==flag.clipSourceId;
+    });
+    if(!changed&&!plan.views.length){
+      if(plan.failed)throw Error(plan.failed.index+'番目の操作で停止しました。'+plan.failed.reason);
+      return false;
+    }
+    const before=captureExport(artwork),after={...captureExport(artwork,undefined,plan.revision),layers:captureExportLayers(plan.root)};
+    const ratio=Math.min(1,290/Math.max(before.width,before.height,after.width,after.height));
+    const w=Math.max(1,Math.round(Math.max(before.width,after.width)*ratio));
+    const h=Math.max(1,Math.round(Math.max(before.height,after.height)*ratio));
+    const compare=async(scene:FrozenExport)=>{
+      const width=Math.max(1,Math.round(scene.width*ratio)),height=Math.max(1,Math.round(scene.height*ratio));
+      const pixels=await artworkPreviewPixels(scene,width,height);signal.throwIfAborted();
+      const result=new Uint8ClampedArray(w*h*4);
+      for(let y=0;y<height;y++)result.set(pixels.subarray(y*width*4,(y+1)*width*4),y*w*4);
+      return result;
+    };
+    const beforePixels=await compare(before);
+    const detail=artworkComparison(w,h,[{label:'変更前',pixels:beforePixels},
+      {label:'操作セットの候補',pixels:changed?await compare(after):beforePixels}]);
+    const issue=plan.failed?plan.failed.index+'番目で停止しました。'+plan.failed.reason+'。ここまでを適用する場合は選んでください。':'操作セット「'+name+'」を適用しますか？';
+    if(await appChoose(issue,[{value:'apply',label:plan.failed?'ここまでを適用':'適用'}],detail)!=='apply')
+      throw new DOMException('実行を取り消しました。','AbortError');
+    if(!valid()||controller.selectedLayerId!==layer)throw Error('作品や履歴が変更されました。');
+    signal.throwIfAborted();
+    const previous=captureMacroPresentation(artwork);
+    const progress=document.createElement('dialog'),message=document.createElement('p'),cancel=document.createElement('button');
+    progress.className='illustro-app-dialog';progress.setAttribute('aria-label','操作セットを実行中');
+    message.setAttribute('role','status');cancel.textContent='操作を取り消す';
+    const cancelPlayback=new AbortController();
+    const stop=()=>cancelPlayback.abort();
+    cancel.onclick=stop;progress.oncancel=event=>{event.preventDefault();stop();};
+    const previousFocus=document.activeElement;
+    progress.append(message,cancel);document.body.append(progress);progress.showModal();
+    try{
+      for(const [index,step] of plan.views.entries()){
+        signal.throwIfAborted();cancelPlayback.signal.throwIfAborted();
+        if(!valid())throw Error('作品が変更されたため中止しました。');
+        message.textContent=(index+1)+' / '+plan.views.length+' 表示・道具設定を反映中';
+        const result=await c04Commands.invokeAsync(step);
+        if(!result.ok||!result.settled)throw Error('「'+(c04Commands.list().find(command=>command.id===step)?.label??step)+'」を実行できません。 '+(result.reason??''));
+      }
+      signal.throwIfAborted();cancelPlayback.signal.throwIfAborted();
+      if(!valid())throw Error('作品が変更されたため中止しました。');
+      if(changed){
+        cancel.disabled=true;message.textContent='作品に反映しています。';
+        const tx=artwork.begin(name);
+        if(tx.restoreRevision(plan.revision,plan.flags)){
+          const viewResult=plan.views.length?captureMacroPresentation(artwork):null;
+          geometryBusy=true;drawing.setInputBarrier(true);
+          try{
+            const committed=await commitMacroRestore(artwork,tx);
+            if(viewResult){
+              viewResult.restore();
+              const effects=macroPresentations.get(artwork)??new Map();
+              effects.set(committed.revision.id,{before:previous,after:captureMacroPresentation(artwork)});
+              if(effects.size>24)effects.delete(effects.keys().next().value!);
+              macroPresentations.set(artwork,effects);
+            }
+          }finally{
+            geometryBusy=false;surface?.setInputBarrier(historyPending);updateHistoryButtons();updateQa();
+          }
+        }else tx.cancel();
+      }
+      if(!changed&&plan.views.length)lastViewMacro={artwork,before:previous,after:captureMacroPresentation(artwork)};
+      return changed||plan.views.length>0;
+    }catch(error){
+      if(controller.document===artwork&&artwork.head===head)previous.restore();
+      throw error;
+    }finally{
+      progress.close();progress.remove();
+      if(previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});
+    }
+  },
+  undoPresentation:()=>{
+    const saved=lastViewMacro;
+    if(!saved||saved.artwork!==controller.document||!surface||surface.busy||geometryBusy||historyPending||
+      saved.after.signature!==macroPresentationSignature())return false;
+    lastViewMacro=null;saved.before.restore();return true;
+  },
+  applyHistory:async(steps,name,signal)=>{
+    const drawing=surface,artwork=controller.document,head=artwork.head;
+    if(!documentReady||!drawing||drawing.busy||historyPending||geometryBusy||documentActivationPending)
+      throw Error('今の操作が終わってから操作セットを実行してください。');
+    const next=artwork.previewHistoryNavigation(steps);
+    if(next===head)return false;
+    const before=captureExport(artwork),after=captureExport(artwork,undefined,next);
+    const ratio=Math.min(1,290/Math.max(before.width,before.height,after.width,after.height));
+    const w=Math.max(1,Math.round(Math.max(before.width,after.width)*ratio));
+    const h=Math.max(1,Math.round(Math.max(before.height,after.height)*ratio));
+    const compare=async(scene:FrozenExport)=>{
+      const width=Math.max(1,Math.round(scene.width*ratio)),height=Math.max(1,Math.round(scene.height*ratio));
+      const pixels=await artworkPreviewPixels(scene,width,height);signal.throwIfAborted();
+      const result=new Uint8ClampedArray(w*h*4);
+      for(let y=0;y<height;y++)result.set(pixels.subarray(y*width*4,(y+1)*width*4),y*w*4);
+      return result;
+    };
+    const details=artworkComparison(w,h,[
+      {label:'変更前',pixels:await compare(before)},{label:'履歴の操作後',pixels:await compare(after)}
+    ]);
+    const path=steps.map(step=>step==='undo'?'元に戻す':'やり直す').join(' → ');
+    if(await appChoose('「'+name+'」を実行しますか？\n'+path,[{value:'apply',label:'適用'}],details)!=='apply')return false;
+    signal.throwIfAborted();
+    if(artwork.head!==head||controller.document!==artwork||surface!==drawing||historyPending||geometryBusy||drawing.busy)
+      throw Error('作品や履歴が変更されたため、実行を取り消しました。');
+    geometryBusy=true;drawing.setInputBarrier(true);
+    try{
+      const tx=artwork.begin(name);
+      if(!tx.restoreRevision(next)){tx.cancel();return false;}
+      await commitMacroRestore(artwork,tx);
+      return true;
+    }finally{
+      geometryBusy=false;surface?.setInputBarrier(historyPending);updateHistoryButtons();updateQa();
+    }
+  },
+  applyLayer:async(target,steps,name,signal)=>{
+    let changed=false;
+    await withClipboardAccess(async drawing=>{
+      signal.throwIfAborted();
+      const artwork=controller.document,revision=artwork.head,root=artwork.root,id=target as LayerId;
+      if(!root.hasLayer(id)||root.getLayer(id).baseColor||root.isLayerLocked(id))
+        throw Error('対象レイヤーが見つからないか、ロックされています。');
+      const layer=root.getLayer(id);
+      let alpha=!!layer.alphaLocked,clip=!!layer.clipSourceId,opacity=layer.opacity,layerName=layer.name;
+      let pixels:Uint8Array|undefined,mask=layer.vectorMask??null;
+      const {width,height}=root;
+      for(const [index,{id:step,value,artwork:action,offset}] of steps.entries()){
+        signal.throwIfAborted();
+        if(action){
+          if(root.isLayerContentLocked(id)||layer.editable||layer.imageLink||layer.deformation||layer.lineRegions||
+             layer.blend?.adjustment||layer.blend?.gradientMap||alpha||action.kind==='affine'&&root.isLayerPositionLocked(id))
+            throw Error((index+1)+'番目の手順には、内容と位置を編集できる描画レイヤーが必要です。');
+          const dx=offset?.[0]??0,dy=offset?.[1]??0;
+          if(!Number.isFinite(dx)||!Number.isFinite(dy)||Math.abs(dx)>8192||Math.abs(dy)>8192)throw Error('位置の指定を確認してください。');
+          pixels??=(await drawing.captureDocumentLayers(new Set([id]))).get(id);
+          if(!pixels)throw Error('対象レイヤーの画素が取得できません。');
+          if(action.kind==='stroke'){
+            const records=action.records.map(record=>moveRecordedBrush(record,dx,dy));
+            pixels=await replayBrushPasses([{selection:null,records}],width,height,pixels);
+          }else{
+            const settings={...initialTransform,...action.affine,dx,dy};
+            const output=await runTransform({pixels,width,height,settings,selection:null,outputWidth:width,outputHeight:height},signal);
+            pixels=new Uint8Array(output);
+            if(mask?.linked!==false&&mask)mask=transformLinkedMask(mask,settings,width,height);
+          }
+        }else if(step==='layerAlphaLock')alpha=!alpha;
+        else if(step==='layerClipping'){
+          if(!clip&&!root.availableClippingSource(id))throw Error((index+1)+'番目の手順に必要な下のレイヤーがありません。');
+          clip=!clip;
+        }else if(step==='layerOpacityAtRun'){
+          if(typeof value!=='number'||!Number.isFinite(value)||value<0||value>100)throw Error('不透明度を0〜100で指定してください。');
+          opacity=value/100;
+        }else if(step==='layerNameAtRun'){
+          if(typeof value!=='string'||!value.trim()||value.length>4096)throw Error('レイヤー名を確認してください。');
+          layerName=value;
+        }else throw Error('まとめて適用できない操作が含まれます。');
+      }
+      signal.throwIfAborted();
+      if(controller.document!==artwork||artwork.head!==revision||surface!==drawing)throw Error('操作セットの実行先が変わりました。');
+      if(!pixels&&alpha===!!layer.alphaLocked&&clip===!!layer.clipSourceId&&opacity===layer.opacity&&layerName===layer.name)return 'read';
+      const frozen=captureExport(artwork),surfaceId=layer.surface.descriptor.surfaceId;
+      const clipSurfaceId=clip?root.availableClippingSource(id)?.surface.descriptor.surfaceId:undefined;
+      const next={...frozen,layers:frozen.layers.map(item=>{
+        if(item.surfaceId!==surfaceId)return item;
+        const {clipSurfaceId:previousClip,mask:previousMask,...other}=item;
+        return {...other,opacity,...(clipSurfaceId?{clipSurfaceId}:{}),...(mask?.enabled?{mask}:{})};
+      })};
+      const ratio=Math.min(1,300/Math.max(width,height)),w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio));
+      const before=await artworkPreviewPixels(frozen,w,h);
+      signal.throwIfAborted();
+      const after=await artworkPreviewPixels(next,w,h,pixels?{replacement:{surfaceId,pixels:new Uint8ClampedArray(pixels)},signal}:undefined);
+      signal.throwIfAborted();
+      const details=artworkComparison(w,h,[{label:'変更前',pixels:before},{label:'操作セットの候補',pixels:after}]);
+      const beforeName=layerName!==layer.name?' レイヤー名を「'+layerName+'」に変更します。':'';
+      if(await appChoose('操作セット「'+name+'」を適用しますか？'+beforeName,
+        [{value:'apply',label:'適用'}],details)!=='apply')throw new DOMException('実行を取り消しました。','AbortError');
+      signal.throwIfAborted();
+      if(controller.document!==artwork||artwork.head!==revision||surface!==drawing)throw Error('操作セットの実行先が変わりました。');
+      const tx=artwork.begin(name);
+      if(pixels){
+        tx.replaceLayerRaster(id,pixels);
+        tx.activateDrawingLayer(id);
+        if(mask!==(layer.vectorMask??null))tx.setVectorLayerMask(id,mask);
+      }
+      if(alpha!==!!layer.alphaLocked)tx.setLayerAlphaLocked(id,alpha);
+      if(clip!==!!layer.clipSourceId)tx.setLayerClipping(id,clip);
+      if(opacity!==layer.opacity)tx.setLayerOpacity(id,opacity);
+      if(layerName!==layer.name)tx.renameLayer(id,layerName);
+      controller.lastPersistenceHandoff=tx.commit().persistence;changed=true;
+      return 'edit';
+    });
+    return changed;
+  },
+  share:async(json,name,asAsset)=>{
+    const blob=new Blob([json],{type:'application/json'});
+    if(asAsset)await addAsset({kind:'macro',name,data:blob});
+    else c06Download(blob,(name.replace(/[\/:*?"<>|]/g,'_')||'操作セット')+'.illustro-macro.json');
+  },
+});
+activeMacroService=c04MacroService;
 installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
 const c04Toolbar=installToolbarSettings();
 const c04WorkspaceService=installWorkspaceProfiles(c04FloatingPanels,c04Toolbar);
-installInputDeviceProfiles(()=>surface);
+installInputDeviceProfiles(()=>surface,range=>{pressureRange=range;surface?.setPressureRange(range);});
+installStrokeComparison(byId('workspaceBoxBody'),listener=>{
+  strokeComparisonListener=listener;
+  if(surface)surface.onStrokeComparison=listener;
+});
+
 installGestureShortcuts();
+const openAccessibility=installAccessibility(byId('workspaceBoxBody'));
+const openDeviceCapabilities=installDeviceCapabilities(byId('workspaceBoxBody'),()=>({
+  renderer:documentReady?surface?.backend??null:null,
+  drawMs:surface?.lastCommitMs??null,
+  saveMs:persistence.state.saveDurationMs,
+  exportMs:lastExport?.totalMs??null,
+  protectedLocally:persistence.state.storagePersisted,
+}));
+c04Commands.registerProvider(()=>[{
+  id:'deviceCapabilities',label:'端末で使える操作と処理時間',category:'設定',aliases:'GPU ペン キーボード 保存 容量 性能',
+  availability:()=>null,execute:()=>{shellUi.openBox('workspaceBox');openDeviceCapabilities();},
+}]);
+
+c04Commands.registerProvider(()=>[{
+  id:'editorAccessibility',label:'画面の見やすさを調整',category:'設定',aliases:'文字 コントラスト グレー 動き アクセシビリティ',
+  availability:()=>null,execute:()=>{shellUi.openBox('workspaceBox');openAccessibility();},
+}]);
+
 installShortcutSettings(c04Commands,()=>!surface||!surface.inputActive);
 
 // C05: personal asset vault and reference board remain independent of raster history.
@@ -3864,11 +4835,155 @@ async function withClipboardAccess(action:(drawing:BrushSurface)=>Promise<'edit'
     c06ClipboardUI?.refresh();
   }
 }
+wetTools=installWetTools(byId('documentBoxBody'),{
+  onContext:updateContextBar,
+  activate:start=>selectCanvasTool('smudge',start),
+  hasSelection:()=>!!c06Selection?.active(),
+  current:()=>documentReady&&surface?{drawing:surface,documentId:controller.document.root.documentId,
+    layerId:controller.selectedLayer.id,layerName:controller.selectedLayer.name}:null,
+  color:()=>[foreground.current.r,foreground.current.g,foreground.current.b].map(channel=>Math.round(channel*255)),
+  left:()=>{if(activeCanvasTool==='smudge'){leaveCanvasTool();reflectRailTool();}},
+  preview:async stroke=>{
+    const drawing=surface,artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
+    const selection=c06Selection?.active()??null;
+    if(!drawing||stroke.documentId!==artwork.root.documentId||!artwork.root.isLayerVisible(layer.id)||
+      artwork.root.groupsForLayer(layer.id).some(group=>group.locked)||
+      !stroke.separate&&stroke.reference!=='merged'&&(artwork.root.isLayerContentLocked(layer.id)||layer.baseColor||layer.editable||layer.deformation||layer.imageLink||layer.lineRegions))return false;
+    const patch=await createWetPatch(artwork,drawing,layer.id,selection,stroke,true);
+    if(!patch||stroke.signal.aborted||surface!==drawing||controller.document!==artwork||artwork.head!==head||
+      controller.selectedLayer.id!==layer.id||(c06Selection?.active()??null)!==selection)return false;
+    drawing.showFillGesturePreview(new ImageData(new Uint8ClampedArray(patch.pixels),patch.area.width,patch.area.height),patch.area);
+    return true;
+  },
+  draw:async stroke=>{
+    const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
+    const selection=c06Selection?.active()??null;
+    let changed=false;
+    await withClipboardAccess(async drawing=>{
+      const valid=()=>!stroke.signal.aborted&&controller.document===artwork&&artwork.head===head&&
+        root.documentId===stroke.documentId&&controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
+      if(!valid())return 'read';
+      const separate=stroke.separate||stroke.reference==='merged';
+      if(!root.isLayerVisible(layer.id)||root.groupsForLayer(layer.id).some(group=>group.locked)||
+         !separate&&(root.isLayerContentLocked(layer.id)||layer.baseColor||layer.editable||layer.deformation||layer.imageLink||layer.lineRegions))
+        throw Error('表示中の描画レイヤーを選ぶか、新規レイヤーに結果を置いてください。');
+      const patch=await createWetPatch(artwork,drawing,layer.id,selection,stroke);
+      if(!patch||!valid())return 'read';
+      const name=wetModes.find(([id])=>id===stroke.settings.mode)?.[1]??'筆の加工';
+      const tx=artwork.begin(name);
+      const selected=patch.separate?tx.addRasterSnapshotAbove(layer.id,{...patch.area,pixels:patch.pixels},name):null;
+      if(!patch.separate){
+        const {blocks,tiles}=wetPatchTiles(patch.area,patch.pixels);
+        tx.patchLayerRasterTiles(layer.id,blocks,tiles);
+      }
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      if(selected)controller.selectLayer(selected);
+      changed=true;return 'edit';
+    });
+    wetTools?.refresh();
+    return changed;
+  },
+});
+installWetPad(byId('referenceBoxBody'),{
+  settings:()=>wetTools?.settings(),sample:color=>foreground.choose(rgb(color[0]!/255,color[1]!/255,color[2]!/255)),
+  brushes:()=>surface?.brushes.map(preset=>brushDrafts.get(preset.id)??(surface?.preset?.id===preset.id?surface.preset:preset))??[],
+  activeBrush:()=>surface?.brushId??'',context:()=>({
+    commonStabilization:{constant:commonStabilization,fast:surface?.preset?.stabilization.fast??0,
+      speedMode:surface?.preset?.stabilization.speedMode??'reduce',post:surface?.preset?.stabilization.post??0},
+    ...(devicePressureSensitivity===.5?{}:{deviceCurve:[[0,0],[.5,devicePressureSensitivity],[1,1]]}),
+  }),
+});
+const pixelPanel=document.createElement('details');pixelPanel.className='c06-clipboard-panel';pixelPanel.dataset.toolPanel='pixels';
+const pixelTitle=document.createElement('summary');pixelTitle.textContent='1pxのドット絵';
+const pixelPen=document.createElement('button'),pixelErase=document.createElement('button'),pixelStatus=document.createElement('output');
+pixelPen.type=pixelErase.type='button';pixelPen.textContent='1pxで描く';pixelErase.textContent='1pxで消す';
+pixelStatus.setAttribute('role','status');
+const pixelActions=document.createElement('div');pixelActions.className='box-actions';pixelActions.append(pixelPen,pixelErase);
+pixelPanel.append(pixelTitle,pixelActions,pixelStatus);byId('documentBoxBody').append(pixelPanel);
+pixelPen.onclick=()=>selectCanvasTool('pixels',()=>startPixelTool(false));
+pixelErase.onclick=()=>selectCanvasTool('pixels',()=>startPixelTool(true));
+c04Commands.registerProvider(()=>[{
+  id:'pixelPen',label:'1pxのドットペン',category:'描画',aliases:'ドット絵 ピクセル アンチエイリアス',
+  availability:()=>documentReady?null:'先に作品を開いてください。',
+  execute:()=>selectCanvasTool('pixels',()=>startPixelTool(false)),
+}]);
+let pixelGestureGeneration=0;
+function startPixelTool(erase:boolean){
+  const drawing=surface;
+  if(!drawing)return;
+  const generation=++pixelGestureGeneration,pixelFill=()=>erase?'#E75162':hex(foreground.current);
+  pixelPen.setAttribute('aria-pressed',String(!erase));pixelErase.setAttribute('aria-pressed',String(erase));
+  pixelStatus.textContent='画素のマスに合わせて'+(erase?'消します。':'描きます。')+'筆圧と手ぶれ補正は使用しません。';
+  updatePixelGrid();
+  drawing.setCanvasEditGesture({continuous:true,path:false,width:1,color:pixelFill(),pixelFill,
+    end:()=>{if(activeCanvasTool==='pixels'&&generation===pixelGestureGeneration){
+      pixelPanel.open=false;activeCanvasTool='';delete byId('documentBoxBody').dataset.activeToolPanel;
+      updatePixelGrid();reflectRailTool();
+    }},
+    complete:points=>{
+      const artwork=controller.document,root=artwork.root,head=artwork.head,layer=controller.selectedLayer;
+      const selection=c06Selection?.active()??null,color=[foreground.current.r,foreground.current.g,foreground.current.b].map(v=>Math.round(v*255));
+      void withClipboardAccess(async viewport=>{
+        if(viewport!==drawing||activeCanvasTool!=='pixels'||layer.baseColor||layer.deformation||layer.editable||layer.lineRegions||layer.imageLink||
+          !root.isLayerVisible(layer.id)||root.isLayerContentLocked(layer.id)||erase&&layer.alphaLocked)
+          throw Error('表示中の、編集できる描画レイヤーを選んでください。');
+        const {width,height}=root,blockSize=TILE*2,blocks=new Map<string,number[]>();
+        for(const index of pixelStroke(points,width,height)){
+          if(selection&&!selection.alpha[index])continue;
+          const key=Math.floor(index%width/blockSize)+','+Math.floor(Math.floor(index/width)/blockSize);
+          const cells=blocks.get(key);
+          if(cells)cells.push(index);else blocks.set(key,[index]);
+        }
+        let full:Uint8Array|undefined;
+        const changed:string[]=[],tiles:{key:string;pixels:Uint8Array}[]=[];
+        for(const [key,cells] of blocks){
+          const [bx=0,by=0]=key.split(',').map(Number),x=bx*blockSize,y=by*blockSize;
+          const w=Math.min(blockSize,width-x),h=Math.min(blockSize,height-y);
+          let pixels=await viewport.captureDocumentLayerRegion(layer.id,{x,y,width:w,height:h});
+          if(!pixels){
+            full??=(await viewport.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
+            if(!full)throw Error('画素を取得できません。');
+            pixels=new Uint8ClampedArray(cropCanvas(full,width,height,x,y,w,h));
+          }
+          let edited=false;
+          for(const index of cells){
+            const at=((Math.floor(index/width)-y)*w+index%width-x)*4;
+            edited=applyPixelCell(pixels,at,color,(selection?.alpha[index]??255)/255,erase,!!layer.alphaLocked)||edited;
+          }
+          if(!edited)continue;
+          changed.push(key);
+          for(let ty=0;ty*TILE<h;ty++)for(let tx=0;tx*TILE<w;tx++){
+            const rgba=new Uint8Array(TILE*TILE*4),cols=Math.min(TILE,w-tx*TILE),rows=Math.min(TILE,h-ty*TILE);
+            for(let row=0;row<rows;row++){
+              const start=((ty*TILE+row)*w+tx*TILE)*4;
+              rgba.set(pixels.subarray(start,start+cols*4),row*TILE*4);
+            }
+            tiles.push({key:(bx*2+tx)+','+(by*2+ty),pixels:rgba});
+          }
+        }
+        if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==layer.id||
+          activeCanvasTool!=='pixels'||generation!==pixelGestureGeneration||(c06Selection?.active()??null)!==selection)return 'read';
+        if(!changed.length)return 'read';
+        const tx=artwork.begin(erase?'1pxの消しゴム':'1pxのドットペン');
+        tx.patchLayerRasterTiles(layer.id,changed,tiles);
+        controller.lastPersistenceHandoff=tx.commit().persistence;
+        return 'edit';
+      }).catch(error=>{pixelStatus.textContent=error instanceof Error?error.message:String(error);});
+    },
+  });
+}
 const c06Download=(blob:Blob,fileName:string)=>{
   const url=URL.createObjectURL(blob),link=document.createElement('a');
   link.href=url;link.download=fileName;document.body.append(link);link.click();link.remove();
   window.setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
+timeline=installTimeline(byId('workspaceBoxBody'),()=>documentReady&&!documentActivationPending?controller.document:null,c06Download);
+c04Commands.registerProvider(()=>[{
+  id:'workTimeline',label:'制作記録を開く',category:'作品',aliases:'タイムラプス 動画',
+  availability:()=>documentReady?null:'先に作品を開いてください。',
+  execute:()=>{shellUi.openBox('workspaceBox');timeline?.open();}
+}]);
+
 c06Selection=installSelectionWorkbench({
   getSurface:()=>documentReady?surface:null,
   getDocument:()=>documentReady?{
@@ -3912,6 +5027,8 @@ c06Selection=installSelectionWorkbench({
 persistence.setSaveAttachmentProvider(()=>{
   const preserved=persistence.preservedData;
   const documentPalette=foreground.exportDocumentPaletteSection();
+  const recording=timeline?.exportNative(controller.document);
+  const wetSettings=wetTools?.exportNative();
   const symmetry={id:SYMMETRY_SECTION,type:SYMMETRY_TYPE,required:false,bytes:new TextEncoder().encode(JSON.stringify(symmetrySettings))};
   const referenceDocumentId=controller.document.root.documentId;
   const safeReference=c05References.exportNative().catch(reason=>{
@@ -3931,7 +5048,7 @@ persistence.setSaveAttachmentProvider(()=>{
     const result=await editingState;
     if('error' in result)throw result.error;
     const [reference,selections]=result.values,fonts=await exportFonts(root,preserved);
-    return [...(reference?[reference]:[]),...selections,...fonts,...(documentPalette?[documentPalette]:[]),symmetry];
+    return [...(reference?[reference]:[]),...selections,...fonts,...(documentPalette?[documentPalette]:[]),...(recording?[recording]:[]),...(wetSettings?[wetSettings]:[]),symmetry];
   };
 });
 const unavailableImageLinks=new Set<string>();
@@ -4325,6 +5442,8 @@ transformPanel=installTransformPanel(byId('documentBoxBody'),async target=>{
         if(mask)tx.setVectorLayerMask(layer.id,mask);
         if(editedOriginal)tx.replaceDeformationOriginal(layer.id,editedOriginal,original.vectorMask??null);
         controller.lastPersistenceHandoff=tx.commit().persistence;
+        activeMacroService?.recordArtwork(()=>target==='layer'&&deformation?.mode==='affine'&&!deformation.postPaint?.length
+          ?{kind:'affine',affine:deformation.affine}:null);
         return 'edit';
       });
     }
@@ -4398,6 +5517,7 @@ async function collectFillMask(mask:LayerMask,width:number,height:number,valid:(
   return {width,height,alpha};
 }
 fillPanel=installFillPanel(byId('documentBoxBody'),{
+  onContextChanged:updateContextBar,
   drawing:()=>documentReady?surface:null,
   color:()=>hex(foreground.current),
   documentId:()=>controller.document.root.documentId,
@@ -4428,7 +5548,7 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
     const drawing=surface,selection=c06Selection?.active()??null;
     if(!drawing)throw Error('作品を開いてください。');
-    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||layer.blend?.gradientMap||root.isLayerContentLocked(layer.id)))
+    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||layer.blend?.gradientMap||layer.blend?.adjustment||root.isLayerContentLocked(layer.id)))
       throw Error('塗れるレイヤーを選ぶか、新しいレイヤーに塗ってください。');
     if(needTarget&&destination==='under'&&layer.baseColor==='white')throw Error('白い背景より上に塗りレイヤーを作ってください。');
     if(needTarget&&destination!=='active'&&root.groupsForLayer(layer.id).some(group=>group.locked))
@@ -4613,6 +5733,265 @@ c04Commands.registerProvider(()=>[{
   execute:()=>{shellUi.openBox('documentBox');strokeCorrection?.show();}
 }]);
 installShapeGradientPanel(byId('documentBoxBody'),artworkActions);
+function lastRasterFilter(artwork:CoreDocument,id:LayerId){
+  const operation=artwork.operationsTo().findLast(op=>
+    ['document.crop','document.canvas-resize','document.image-resize'].includes(op.kind)||
+    op.targetEntityIds[0]===id&&['layer.snapshot','raster.strict-delta','brush.stroke'].includes(op.kind));
+  const source=operation?.sourceRevisionIds.at(-1);
+  const value=operation?.parameters.rasterFilter;
+  if(!source||!value||typeof value!=='object'||!artwork.hasRevision(source))return null;
+  const {version,steps,mask}=value as {version:unknown;steps:unknown;mask:Parameters<typeof validateLayerMask>[0]};
+  const recipe=readEffectSteps(steps);
+  if(version!==1||!recipe)return null;
+  const decoded=mask?validateLayerMask(mask):null;
+  if(decoded&&decoded.shape!=='pixels')return null;
+  return {source,steps:recipe,mask:decoded};
+}
+const rasterEffectPanel=installRasterEffects(byId('effectsBoxBody'),{
+  selectionMask:()=>{
+    const selection=c06Selection?.active();
+    return selection?selectionAsLayerMask(selection):null;
+  },
+  capture:async (edit,explicitMasks)=>{
+    const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer,drawing=surface;
+    if(!drawing||!documentReady)throw Error('作品を開いてください。');
+    if(layer.baseColor||layer.editable||layer.deformation||layer.lineRegions||layer.imageLink||layer.blend?.adjustment||root.isLayerContentLocked(layer.id))
+      throw Error('編集できる、ロックされていない描画レイヤーを選んでください。');
+    const saved=edit?lastRasterFilter(artwork,layer.id):null;
+    if(edit&&!saved)throw Error('再編集できる効果がありません。効果の後に描いた線がある場合はその編集を戻してください。');
+    const {width,height}=root,source=saved?.source??head,original=artwork.revision(source).root;
+    if(original.width!==width||original.height!==height||!original.hasLayer(layer.id))throw Error('効果の原本が見つかりません。');
+    const currentSelection=c06Selection?.active()??null;
+    const mask=saved?(saved.mask?readSelectionMask(saved.mask,width,height):null):explicitMasks?null:currentSelection;
+    const valid=()=>artwork===controller.document&&head===artwork.head&&controller.selectedLayer.id===layer.id&&
+      surface===drawing&&(edit||(c06Selection?.active()??null)===currentSelection);
+    const pixels=await originalTransformPixels(artwork,original.getLayer(layer.id),source);
+    if(!valid())throw Error('選んだレイヤーや範囲が変更されました。');
+    return {source:pixels,width,height,mask:mask?.alpha??null,alphaLocked:!!layer.alphaLocked,name:layer.name,
+      steps:saved?.steps??[],valid,apply:async(result,steps)=>withClipboardAccess(async()=>{
+        if(!valid())throw Error('効果の適用先が変わりました。');
+        const tx=artwork.begin('レイヤーのフィルター');
+        const savedMask=saved?.mask??(mask?selectionAsLayerMask(mask):null);
+        tx.replaceLayerRaster(layer.id,result,source,undefined,undefined,{version:1,steps,mask:savedMask});
+        controller.lastPersistenceHandoff=tx.commit().persistence;
+        return 'edit';
+      })};
+  },
+  bake:async (copy,composite=false)=>{
+    const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer,root=artwork.root;
+    if(composite){
+      const frozen=captureExport(artwork),{width,height}=frozen;
+      const ratio=Math.min(1,420/Math.max(width,height)),w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio));
+      const preview=await artworkPreviewPixels(frozen,w,h);
+      const action=await appChoose('合成を作品サイズ（'+width+' × '+height+' px、8ビット）で固定します。マスク・クリップ・グループの見た目を含みます。元のレイヤーは保持します。',
+        [{value:'copy',label:'非表示コピーを追加'},{value:'visible',label:'元を隠して統合版を表示'},
+          {value:'sized',label:'寸法を指定して別作品に保存'}],
+        artworkComparison(w,h,[{label:'固定する外観',pixels:preview}]));
+      if(!action)return false;
+      if(action==='sized'){
+        const dimensions=await appPrompt('別作品の幅と高さ（px）を指定します。色深度は8ビットです。',width+', '+height,{
+          validate:value=>{
+            const parts=value.trim().split(/[\s,、]+/).map(Number),[x,y]=parts;
+            return parts.length===2&&parts.every(Number.isInteger)&&x!>=1&&y!>=1&&x!<=8192&&y!<=8192&&x!*y!<=16_777_216
+              ?null:'1〜8192px、合計1677万画素以内で幅と高さを指定してください。';
+          }
+        });
+        if(dimensions===null)return false;
+        const [targetWidth,targetHeight]=dimensions.trim().split(/[\s,、]+/).map(Number) as [number,number];
+        const sourcePixels=await renderFrozenArtwork(frozen);
+        const resized=new Uint8Array(resizeImagePixels(sourcePixels,width,height,targetWidth,targetHeight,'auto'));
+        const title=root.name.slice(0,100)+'（統合コピー）';
+        const newWork=new CoreDocument({name:title,width:targetWidth,height:targetHeight,
+          ...(root.info.dpi?{dpi:root.info.dpi}:{}),...(root.info.author?{author:root.info.author}:{})});
+        const id=newWork.defaultRasterLayerId,tx=newWork.begin('選んだ寸法で外観を固定');
+        tx.replaceLayerRaster(id,resized);tx.commit();
+        const encoded=await createPortableDocument({document:newWork,selectedLayerId:id});
+        await openPortableDocument(encoded.bytes);
+        c06Download(new Blob([new Uint8Array(encoded.bytes)],{type:'application/octet-stream'}),title.replace(/[\/:*?"<>|]/g,'_')+'.illustro');
+        return true;
+      }
+      await withClipboardAccess(async()=>{
+        if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==layer.id)
+          throw Error('対象が変わりました。');
+        const result=await renderFrozenArtwork(frozen);
+        if(artwork!==controller.document||artwork.head!==head)throw Error('作品が変わりました。');
+        const tx=artwork.begin('マスク・合成を含めた外観を固定');
+        const id=tx.addRasterSnapshotAbove(root.rootLayerIds.at(-1)!,result,'外観を統合したコピー',false,false);
+        if(action==='copy')tx.setLayerVisibility(id,false);
+        else for(const source of root.rootLayerIds)if(root.getLayer(source).visible)tx.setLayerVisibility(source,false);
+        controller.lastPersistenceHandoff=tx.commit().persistence;controller.selectLayer(id);
+        return 'edit';
+      });
+      return true;
+    }
+    if(!lastRasterFilter(artwork,layer.id))throw Error('設定を保持しているフィルターのレイヤーを選んでください。');
+    const message=copy?'効果を固定した非表示のコピーを作ります。元のレイヤーで効果を編集できます。':
+      '現在の効果を画素に固定します。効果の設定を開き直すには、この操作を取り消してください。';
+    const frozen=captureExport(artwork),{width,height}=frozen;
+    const ratio=Math.min(1,340/Math.max(width,height)),w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio));
+    const preview=await artworkPreviewPixels(frozen,w,h);
+    if(await appChoose(message+' 解像度 '+width+' × '+height+' px、8ビット。',[{value:'bake',label:'固定する'}],
+      artworkComparison(w,h,[{label:'固定後の外観',pixels:preview}]))!=='bake')return false;
+    await withClipboardAccess(async()=>{
+      if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==layer.id)
+        throw Error('対象が変わりました。');
+      const result=await originalTransformPixels(artwork,layer,head),tx=artwork.begin(copy?'効果の固定コピーを作る':'効果を画素に固定');
+      if(copy){
+        const id=tx.addRasterSnapshotAbove(layer.id,result,layer.name.slice(0,4060)+'（効果を固定）',true);
+        tx.setLayerVisibility(id,false);
+      }else tx.replaceLayerRaster(layer.id,result);
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      return 'edit';
+    });
+    return true;
+  }
+});
+c04Commands.registerProvider(()=>[{
+  id:'rasterEffects',label:'レイヤーのフィルターを開く',category:'色',aliases:'ぼかし シャープ ごみ取り ノイズ',
+  availability:()=>documentReady?null:'先に作品を開いてください。',
+  execute:()=>{shellUi.openBox('effectsBox');rasterEffectPanel.open();}
+}]);
+const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
+  const artwork=controller.document,drawing=surface,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
+  if(!drawing||!documentReady)throw Error('作品を開いてください。');
+  const {width,height}=root;
+  if(width*height>ANALYSIS_MAX_PIXELS)throw Error('画像の解析は約1677万画素までです。必要な部分を別の作品にコピーして試してください。');
+  const selection=c06Selection?.active()??null;
+  const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
+    controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
+  const writable=!layer.baseColor&&!layer.editable&&!layer.imageLink&&!layer.deformation&&!layer.lineRegions&&
+    !layer.blend?.gradientMap&&!layer.blend?.adjustment&&!root.isLayerContentLocked(layer.id)&&
+    (kind==='specks'?!layer.alphaLocked:root.isLayerVisible(layer.id));
+  await withClipboardAccess(async()=>'read');
+  const source=kind==='area'?await readFillReference(artwork,head,'merged',[]):await originalTransformPixels(artwork,layer,head);
+  if(!valid())throw Error('解析対象が変わりました。');
+  const colors=(list:readonly {color:{r:number;g:number;b:number}}[])=>list.map(({color})=>
+    [color.r*255,color.g*255,color.b*255] as AssistRGB);
+  const palettes=[{name:'描画色と背景色',colors:colors([{color:foreground.current},{color:foreground.background}])},
+    ...foreground.availablePalettes.filter(p=>p.swatches.length>=2).map(p=>({name:p.name,colors:colors(p.swatches)}))];
+  const category=(item:typeof layer)=>item.editable?.kind==='path'?'ベクター':item.editable?.kind==='text'?'文字':
+    item.editable?.kind==='gradient'?'グラデーション':item.imageLink?'配置画像':item.lineRegions?'線画領域':'描画';
+  const names=root.rootLayerIds.flatMap((id,index)=>{
+    const item=root.getLayer(id);
+    if(!/^(?:Layer|レイヤー)\s*\d*$/i.test(item.name)||root.isLayerContentLocked(id)||item.baseColor)return [];
+    return [{id,current:item.name,next:category(item)+' '+(index+1)}];
+  }).slice(0,24);
+  const organize:{name:string;layers:{id:LayerId;name:string}[]}[]=[];
+  if(kind==='specks'){
+    const clipSources=new Set(root.rootLayerIds.map(id=>root.getLayer(id).clipSourceId));
+    let separated=true;
+    for(const id of root.rootLayerIds){
+      const item=root.getLayer(id),name=category(item);
+      if(item.baseColor||root.isLayerLocked(id)||root.groupsForLayer(id).length||item.clipSourceId||clipSources.has(id)){
+        separated=true;continue;
+      }
+      const previous=organize.at(-1);
+      if(separated||previous?.name!==name)organize.push({name,layers:[{id,name:item.name}]});
+      else previous.layers.push({id,name:item.name});
+      separated=false;
+    }
+  }
+  return {width,height,source,selection,name:layer.name,palettes,names,writable,valid,
+    organize:organize.filter(candidate=>candidate.layers.length>=2).slice(0,6),
+    adoptGroup:proposal=>withClipboardAccess(async()=>{
+      if(!valid()||kind!=='specks')throw Error('整理する作品が変わりました。');
+      const tx=artwork.begin('重なり順を保ってレイヤーを整理');
+      tx.createLayerGroup(new Set(proposal.layers.map(item=>item.id)),proposal.name);
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      return 'edit';
+    }),
+    select:mask=>{
+      if(!valid()||!c06Selection)throw Error('選択先が変わりました。');
+      c06Selection.replaceActive(mask);
+    },
+    adoptColor:pixels=>withClipboardAccess(async()=>{
+      if(!valid()||!writable||kind!=='color')throw Error('彩色するレイヤーが変わりました。');
+      const tx=artwork.begin('色の候補を別レイヤーに採用');
+      const id=tx.addRasterSnapshotAbove(layer.id,pixels,'パレットの彩色候補');
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      controller.selectLayer(id);
+      return 'edit';
+    }),
+    adoptRepair:(spots,proposedNames)=>withClipboardAccess(async()=>{
+      if(!valid()||kind!=='specks'||spots.length&&!writable)throw Error('整理するレイヤーが変わりました。');
+      if(!spots.length&&!proposedNames.length)return 'read';
+      const tx=artwork.begin('ごみ取り・名前の候補を採用');
+      if(spots.length){
+        const pixels=source.slice();
+        for(const spot of spots)for(const index of spot.pixels)pixels.set(spot.fill??[0,0,0,0],index*4);
+        tx.replaceLayerRaster(layer.id,pixels);
+      }
+      for(const proposal of proposedNames)tx.renameLayer(proposal.id,proposal.next);
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      return 'edit';
+    }),
+  };
+});
+c04Commands.registerProvider(()=>[{
+  id:'imageAssist',label:'画像から候補を出す',category:'色',aliases:'画像解析 選択補助 色の候補 ごみ取り 整理補助',
+  availability:()=>documentReady?null:'先に作品を開いてください。',execute:imageAssist.open,
+}]);
+const adjustmentPanel=installAdjustmentPanel(byId('effectsBoxBody'),async edit=>{
+  const artwork=controller.document,head=artwork.head,root=artwork.root,drawing=surface,layer=controller.selectedLayer;
+  const currentSelection=c06Selection?.active()??null,initial=edit?layer.blend?.adjustment??null:null;
+  if(!documentReady||!drawing)throw Error('作品を開いてください。');
+  if(edit&&!initial)throw Error('調整レイヤーを選んでください。');
+  if(edit?root.isLayerContentLocked(layer.id):root.groupsForLayer(layer.id).some(group=>group.locked))
+    throw Error('先にロックを解除してください。');
+  const clippedSource=(clipped:boolean)=>clipped?(edit?root.availableClippingSource(layer.id):root.clippingSource(layer.id)??layer):null;
+  const mask=currentSelection?selectionAsLayerMask(currentSelection):null;
+  const valid=()=>controller.document===artwork&&artwork.head===head&&surface===drawing&&controller.selectedLayer.id===layer.id&&
+    (c06Selection?.active()??null)===currentSelection;
+  const validOptions=(clipped:boolean,useSelection:boolean)=>{
+    if(!valid())throw Error('編集先または選択範囲が変わりました。');
+    const clip=clippedSource(clipped);
+    if(clipped&&!clip)throw Error('同じグループにクリッピング元がありません。');
+    if(useSelection&&!mask)throw Error('先に範囲を選択してください。');
+    return {clip,scope:useSelection?mask:edit?layer.vectorMask??null:null};
+  };
+  return {initial,strength:edit?Math.round(layer.opacity*100):100,clipped:!!(edit&&layer.clipSourceId),selected:!!mask,
+    preview:async (blend,opacity,clipped,useSelection)=>{
+      const {clip,scope}=validOptions(clipped,useSelection),base=captureExport(artwork,undefined,head),layers=[...base.layers];
+      const source=layer.surface.descriptor.surfaceId,position=layers.findIndex(item=>item.surfaceId===source);
+      const {clipSurfaceId:_oldClip,mask:_oldMask,...anchor}=layers[position]!;
+      const candidate={...anchor,surfaceId:edit?source:'adjustment-preview',opacity,blend,
+        ...(scope?.enabled?{mask:scope}:{}),...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{})};
+      layers.splice(position+(edit?0:1),edit?1:0,candidate);
+      const scale=Math.min(1,360/Math.max(base.width,base.height)),width=Math.max(1,Math.round(base.width*scale)),height=Math.max(1,Math.round(base.height*scale));
+      async function render(scene:FrozenExport){
+        const pixels=await renderFrozenArtworkTiledPreview(scene,width,height)??new Uint8ClampedArray(
+          resizeImagePixels(await renderFrozenArtwork(scene),base.width,base.height,width,height,'auto'));
+        if(!valid())throw Error('比較中に作品が変わりました。');
+        return new ImageData(new Uint8ClampedArray(pixels),width,height);
+      }
+      return [await render(base),await render({...base,layers})];
+    },
+    apply:(blend,opacity,clipped,useSelection,label)=>withClipboardAccess(async()=>{
+      const {scope}=validOptions(clipped,useSelection);
+      const tx=artwork.begin(edit?'調整レイヤーを編集':'調整レイヤーを追加');
+      const id=edit?layer.id:tx.addAdjustmentLayerAbove(layer.id,blend,clipped);
+      let changed=!edit;
+      if(edit){
+        changed=tx.setLayerBlend(id,blend);
+        changed=tx.setLayerClipping(id,clipped)||changed;
+      }else tx.renameLayer(id,label);
+      changed=tx.setLayerOpacity(id,opacity)||changed;
+      if(useSelection&&scope)changed=tx.setVectorLayerMask(id,scope)||changed;
+      if(!changed){tx.cancel();return 'read';}
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      controller.selectLayer(id);return 'edit';
+    }),
+  };
+});
+c04Commands.registerProvider(()=>[{
+  id:'colorAdjustment',label:'色の調整レイヤーを開く',category:'色',aliases:'明るさ コントラスト レベル カーブ 露出 彩度',
+  availability:()=>documentReady?null:'作品を開いてください。',
+  execute:()=>{shellUi.openBox('effectsBox');return adjustmentPanel.show(!!controller.selectedLayer.blend?.adjustment);}
+},{
+  id:'colorTemperatureAdjustment',label:'色温度・色かぶりを調整',category:'色',aliases:'全体 色調 Tint FX-108',
+  availability:()=>documentReady?null:'作品を開いてください。',
+  execute:()=>{shellUi.openBox('effectsBox');return adjustmentPanel.show(controller.selectedLayer.blend?.adjustment?.kind==='temperature','temperature');}
+}]);
 const gradientMapPanel=installGradientMapPanel(byId('effectsBoxBody'),{
   storeColors:colors=>foreground.addSwatches(colors.map(color=>fromHex(color)!)),
   capture:async edit=>{
@@ -4711,11 +6090,11 @@ c06ClipboardUI=installClipboardPanel({
     drawing:surface,width:controller.document.root.width,height:controller.document.root.height
   }:null,
   hasSelection:()=>!!surface?.selectedRectangle,
-  copy:(merged,selection)=>withClipboardAccess(async drawing=>{
-    await c06Clipboard.copy(controller,drawing,{merged,selectionOnly:selection});return 'read';
+  copy:(merged,selection,embedFonts=false)=>withClipboardAccess(async drawing=>{
+    await c06Clipboard.copy(controller,drawing,{merged,selectionOnly:selection,embedFonts});return 'read';
   }),
-  copyGroup:()=>withClipboardAccess(async drawing=>{
-    await c06Clipboard.copy(controller,drawing,{merged:false,selectionOnly:false,group:true});return 'read';
+  copyGroup:(embedFonts=false)=>withClipboardAccess(async drawing=>{
+    await c06Clipboard.copy(controller,drawing,{merged:false,selectionOnly:false,group:true,embedFonts});return 'read';
   }),
   cut:()=>withClipboardAccess(async drawing=>{
     await c06Clipboard.cut(controller,drawing);return 'edit';
@@ -4757,7 +6136,7 @@ if(perfMode){
  (window as unknown as {__illustroPerformance:unknown}).__illustroPerformance={
   read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,historyNavigation:historyNavigation?.diagnostics,historyInputs,...surface?.performanceDiagnostics,checkpointErrors}),
   saveExport:()=>({saveMs:persistence.state.saveDurationMs,snapshotMs:persistence.state.snapshotCaptureMs,
-                    exportMs:lastExport?.totalMs,encodeMs:lastExport?.encodeMs}),
+                    exportMs:lastExport?.totalMs??null,encodeMs:lastExport?.encodeMs}),
   probe:()=>surface?.handoffProbe(),
   isDrawingBusy:()=>surface?.busy??false,
   checkpoint:(fullSeed=false)=>{if(fullSeed)checkpointNeedsFullSeed=true;return createProjectionCheckpoint();},

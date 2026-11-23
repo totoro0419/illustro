@@ -1,4 +1,4 @@
-import {layerBlendIndex,layerToneChannel,makeLayerBlendShader,gradientMapTable} from '@rt/layer-blending';
+import {layerBlendIndex,layerToneChannel,makeLayerBlendShader,gradientMapTable,adjustmentCube} from '@rt/layer-blending';
 import {layerMaskTile} from '@rt/layer-mask-coverage';
 import {TileHistory} from '@rt/tile-history';
 import {historyYield,releaseHistoryImage} from '@rt/history-io';
@@ -118,7 +118,8 @@ vec4 takePixel(ivec2 p){
 }
 void main(){
  vec2 doc=documentPosition;
- if(viewOptions.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=viewDocument.x||doc.y>=viewDocument.y)){
+ vec2 margin=max(0.,viewOptions.x-1.)*viewDocument.xy;
+ if(viewOptions.x!=1.&&(any(lessThan(doc,-margin))||any(greaterThanEqual(doc,viewDocument.xy+margin)))){
   // The space around the paper never changes color as the document moves.
   outColor=vec4(.945,.955,.977,1.);return;
  }
@@ -132,7 +133,9 @@ void main(){
  color=accum/float(taps*taps);
  }else color=viewOptions.y>.5?takePixel(ivec2(floor(pixel+.5))):mix(mix(takePixel(at),takePixel(at+ivec2(1,0)),w.x),mix(takePixel(at+ivec2(0,1)),takePixel(at+ivec2(1,1)),w.x),w.y);
  vec3 paperColor=color.rgb+vec3(1.-color.a);
- float distanceToEdge=min(min(doc.x,doc.y),min(viewDocument.x-doc.x,viewDocument.y-doc.y))*viewDocument.z;
+ vec2 clamped=clamp(doc,vec2(0.),viewDocument.xy);
+ float edge=all(equal(doc,clamped))?min(min(doc.x,doc.y),min(viewDocument.x-doc.x,viewDocument.y-doc.y)):distance(doc,clamped);
+ float distanceToEdge=edge*viewDocument.z;
  float outline=(1.-smoothstep(0.,1.25,distanceToEdge))*.6;
  outColor=vec4(mix(paperColor,vec3(.60,.68,.81),outline),1.);
 }`;
@@ -156,7 +159,8 @@ fn takePixel(p:vec2i)->vec4f{
 }
 @fragment fn fragment(in:VertexOut)->@location(0) vec4f{
  let doc=in.doc;
- if(view.options.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=view.document.x||doc.y>=view.document.y)){
+ let margin=max(0.,view.options.x-1.)*view.document.xy;
+ if(view.options.x!=1.&&(any(doc < -margin)||any(doc >= view.document.xy+margin))){
   // Same fixed surround as CSS and the WebGL2 shader.
   return vec4f(.945,.955,.977,1.);
  }
@@ -172,7 +176,10 @@ fn takePixel(p:vec2i)->vec4f{
  }else if(view.options.y>.5){color=takePixel(vec2i(floor(pixel+.5)));}
  else{color=mix(mix(takePixel(at),takePixel(at+vec2i(1,0)),w.x),mix(takePixel(at+vec2i(0,1)),takePixel(at+vec2i(1,1)),w.x),w.y);}
  let paperColor=color.rgb+vec3f(1.-color.a);
- let distanceToEdge=min(min(doc.x,doc.y),min(view.document.x-doc.x,view.document.y-doc.y))*view.document.z;
+ let clamped=clamp(doc,vec2f(0.),view.document.xy);
+ let innerEdge=min(min(doc.x,doc.y),min(view.document.x-doc.x,view.document.y-doc.y));
+ let edge=select(distance(doc,clamped),innerEdge,all(doc==clamped));
+ let distanceToEdge=edge*view.document.z;
  let outline=(1.-smoothstep(0.,1.25,distanceToEdge))*.6;
  return vec4f(mix(paperColor,vec3f(.60,.68,.81),outline),1.);
 }`;
@@ -186,7 +193,7 @@ const PRESENT_WGSL_LINEAR=PRESENT_WGSL.replace(
  '@group(0) @binding(1) var<uniform> view:PresentView;\n@group(0) @binding(2) var linearSampler:sampler;').replace(
  'mix(mix(takePixel(at),takePixel(at+vec2i(1,0)),w.x),mix(takePixel(at+vec2i(0,1)),takePixel(at+vec2i(1,1)),w.x),w.y)',
  'textureSampleLevel(source,linearSampler,(pixel+vec2f(.5))/vec2f(textureDimensions(source)),0.)');
-export function parameters(p=emptyPreset,x=0,y=0,n=0,mode=0,w=2048,h=1536,cw=1024,ch=768,same=false,liveBlend=0,bandSectors=64){const out=new Float32Array([x,y,n,mode,p.hardness,p.bristles,p.dualAspect??p.aspect,p.grainScale,Math.cos(p.grainRotation),Math.sin(p.grainRotation),S.kinds[p.tip],p.dual?S.kinds[p.dual]:-1,S.grainKinds[p.grainKind],S.blends[p.blend]+(p.__alphaLocked?4:0),p.__foundation?.coverageUnion?2:p.__foundation?.material?1:0,p.__foundation?.opacity??1,w,h,0,0,cw,ch,0,0,same?1:0,liveBlend,0,liveAccumulation(p)?1:0,0,bandSectors,p.__legacyStarAa?1:0,0,...new Array(32).fill(0)]);const t=p.__foundation?.texture;if(t){out[32]=t.sizeMode==='relative'?1:0;out[33]=t.space==='tip'?1:0;out[34]=t.followDirection?1:0;out[35]=t.invert?1:0;out[36]=t.minimum;out[37]=t.aa?1:0;}return out;}
+export function parameters(p=emptyPreset,x=0,y=0,n=0,mode=0,w=2048,h=1536,cw=1024,ch=768,same=false,liveBlend=0,bandSectors=64){const out=new Float32Array([x,y,n,mode,p.hardness,p.bristles,p.dualAspect??p.aspect,p.grainScale,Math.cos(p.grainRotation),Math.sin(p.grainRotation),S.kinds[p.tip],p.dual?S.kinds[p.dual]:-1,S.grainKinds[p.grainKind],S.brushBlendIndex(p),p.__foundation?.coverageUnion?2:p.__foundation?.material?1:0,p.__foundation?.opacity??1,w,h,0,0,cw,ch,0,0,same?1:0,liveBlend,0,liveAccumulation(p)?1:0,0,bandSectors,p.__legacyStarAa?1:0,0,...new Array(32).fill(0)]);const t=p.__foundation?.texture;if(t){out[32]=t.sizeMode==='relative'?1:0;out[33]=t.space==='tip'?1:0;out[34]=t.followDirection?1:0;out[35]=t.invert?1:0;out[36]=t.minimum;out[37]=t.aa?1:0;}return out;}
 
 // GPU-only slots 12/15 carry rotation coefficients; canonical commands are untouched.
 function packInto(a,cs,offset=0){cs.forEach((c,i)=>{const at=offset+i*STRIDE;a.set(c,at);a[at+12]=Math.cos(c[4]);a[at+15]=Math.sin(c[4]);a[at+14]=c[22];});return a;}
@@ -307,7 +314,7 @@ export class GpuRenderer {
   for(const {surfaceKey,visible,opacity,clipKey,mask,blend,white,isolation} of styles){
    if(typeof surfaceKey!=='string'||next.has(surfaceKey)||typeof visible!=='boolean'||!Number.isFinite(opacity)||opacity<0||opacity>1)throw Error('Invalid surface style');
    if(clipKey!==undefined&&typeof clipKey!=='string')throw Error('Invalid clipping source');
-   const before=previous.get(surfaceKey),blendTone=blend?.tone||blend?.effect||blend?.gradientMap?JSON.stringify([blend.tone,!!blend.tonePreview,blend.effect,blend.gradientMap]):null,maskSignature=mask?.enabled?JSON.stringify(mask):null;
+   const before=previous.get(surfaceKey),blendTone=blend?.tone||blend?.effect||blend?.gradientMap||blend?.adjustment?JSON.stringify([blend.tone,!!blend.tonePreview,blend.effect,blend.gradientMap,blend.adjustment]):null,maskSignature=mask?.enabled?JSON.stringify(mask):null;
    const activeMask=maskSignature===before?.maskSignature?before.mask:maskSignature?mask:null;
    changed||=!before||before.visible!==visible||before.opacity!==opacity||before.clipKey!==clipKey||before.mask!==activeMask||
     before.blend?.mode!==blend?.mode||before.blend?.space!==blend?.space||before.blend?.seed!==blend?.seed||before.blendTone!==blendTone||before.white!==white||before.isolationKey!==(isolation?.join(',')??'');
@@ -319,11 +326,11 @@ export class GpuRenderer {
   b.paperOpacity=[...next.values()].find(style=>style.white&&style.visible)?.opacity??0;
   const active=new Set([...next.values()].flatMap(style=>[style.mask,style.blend?.effect?.mask]));
   for(const mask of b.layerMaskTextures?.keys()??[])if(!active.has(mask))releaseLayerMaskTextures(b,mask);
-  const maps=new Set([...next.values()].flatMap(style=>style.blend?.gradientMap?[gradientMapKey(style.blend.gradientMap)]:[]));
+  const maps=new Set([...next.values()].flatMap(style=>style.blend?.adjustment?[adjustmentKey(style.blend.adjustment)]:style.blend?.gradientMap?[gradientMapKey(style.blend.gradientMap)]:[]));
   for(const key of b.gradientMapTextures?.keys()??[])if(!maps.has(key))releaseGradientMapTexture(b,key);
   const previousStyles=[...previous.values()];
   if((b.paperOpacity||previousStyles.some(style=>style.white&&style.visible&&style.opacity))&&
-     (maps.size||previousStyles.some(style=>style.blend?.gradientMap)))
+     (maps.size||previousStyles.some(style=>style.blend?.gradientMap||style.blend?.adjustment)))
    for(let y=0;y<Math.ceil(b.height/TILE);y++)for(let x=0;x<Math.ceil(b.width/TILE);x++)b.dirtyConfirmed.add(x+','+y);
   for(const t of b.tiles.values())b.dirtyConfirmed.add(t.key);
   for(const v of b.previews.values())for(const key of v.keys)b.dirtyConfirmed.add(key);
@@ -800,7 +807,7 @@ function sparseLayers(b,key){
   const style=b.surfaceStyles?.get(surfaceKey);
   if(style?.visible===false||(style?.opacity??1)===0)continue;
   const data=sparseLayer(b,key,surfaceKey);
-  if(data.t||data.overlays.length||style?.blend?.gradientMap)layers.push({...data,opacity:style?.opacity??1,clipKey:style?.clipKey,mask:style?.mask,blend:style?.blend,isolation:style?.isolation});
+  if(data.t||data.overlays.length||style?.blend?.gradientMap||style?.blend?.adjustment)layers.push({...data,opacity:style?.opacity??1,clipKey:style?.clipKey,mask:style?.mask,blend:style?.blend,isolation:style?.isolation});
  }
  return layers;
 }
@@ -916,7 +923,7 @@ function maskTexture(b,key,mask,params,base=22){
  return texture;
 }
 function needsBackdrop(blend){
- return blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone||blend.effect?.enabled||blend.gradientMap);
+ return blend&&(blend.mode!=='normal'||blend.space==='linear'||blend.tone||blend.effect?.enabled||blend.gradientMap||blend.adjustment);
 }
 function artworkBlendParams(b,params,blend,insideIsolation){
  params[18]=blend.seed>>>16;
@@ -924,7 +931,7 @@ function artworkBlendParams(b,params,blend,insideIsolation){
  params[20]=layerBlendIndex(blend.mode);
  params[21]=blend.space==='linear'?1:0;
  params[27]=insideIsolation?0:b.paperOpacity??0;
- params[15]=blend.gradientMap?.levels??0;
+ params[15]=blend.adjustment?-1:blend.gradientMap?.levels??0;
  const tone=blend.tone;
  params[2]=tone?(tone.source==='backdrop'?2:1):0;
  if(tone){
@@ -937,34 +944,35 @@ function artworkBlendParams(b,params,blend,insideIsolation){
  }
 }
 const gradientMapKey=map=>JSON.stringify(map.stops);
+const adjustmentKey=adjustment=>adjustment.cube;
 function releaseGradientMapTexture(b,key){
  const texture=b.gradientMapTextures.get(key);
  b.gradientMapTextures.delete(key);
  if(b.gl)b.gl.deleteTexture(texture.t);else texture.destroy();
 }
-function gradientMapTexture(b,map){
- const key=gradientMapKey(map);
+function lookupTexture(b,key,makeTable,height){
  const textures=b.gradientMapTextures??=new Map();
  if(textures.has(key))return textures.get(key);
- const table=gradientMapTable(map);
+ const table=makeTable();
  let texture;
  if(b.gl){
   const g=b.gl,t=g.createTexture();
   g.bindTexture(g.TEXTURE_2D,t);
   g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.NEAREST);
   g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.NEAREST);
-  g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,256,1,0,g.RGBA,g.UNSIGNED_BYTE,table);
+  g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,256,height,0,g.RGBA,g.UNSIGNED_BYTE,table);
   texture={t};
  }else{
-  texture=b.device.createTexture({size:[256,1],format:'rgba8unorm',usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_DST});
-  b.device.queue.writeTexture({texture},table,{bytesPerRow:1024},[256,1]);
+  texture=b.device.createTexture({size:[256,height],format:'rgba8unorm',usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_DST});
+  b.device.queue.writeTexture({texture},table,{bytesPerRow:1024},[256,height]);
  }
  textures.set(key,texture);
  return texture;
 }
 function effectTexture(b,key,params,blend){
- const {effect,gradientMap}=blend;
- if(gradientMap){params[9]=gradientMap.dither?1:0;return gradientMapTexture(b,gradientMap);}
+ const {effect,gradientMap,adjustment}=blend;
+ if(adjustment)return lookupTexture(b,adjustmentKey(adjustment),()=>adjustmentCube(adjustment),16);
+ if(gradientMap){params[9]=gradientMap.dither?1:0;return lookupTexture(b,gradientMapKey(gradientMap),()=>gradientMapTable(gradientMap),1);}
  if(!effect?.enabled){params[9]=0;return b.zeroLayer;}
  const texture=maskTexture(b,key,effect.mask,params,9);
  if(!effect.mask?.enabled){params[9]=1;params[10]=1;}
@@ -1008,7 +1016,7 @@ function clipParameters(params,input,flipped){
  }
  return params;
 }
-function compositionParams(b,key,t,overlays,continuation=false,opacity=1){const [tx,ty]=key.split(',').map(Number),params=parameters(t?.preset??emptyPreset,tx*TILE,ty*TILE,0,0,b.width,b.height,b.width,b.height);params[24]=continuation||b.independentPreviewIds?.has(t?.active)?-1:t?.active??-1;params[25]=continuation?-1:t?.committedId??-1;params[26]=overlays.length;params[28]=-1;params[29]=0;params[31]=opacity;for(let i=0;i<8;i++){const o=overlays[i];params[32+i*4]=o?.id??-1;params[33+i*4]=S.blends[o?.preset.blend??'normal']+(o?.preset.__alphaLocked?4:0);params[34+i*4]=o?.preset.__foundation?.opacity??o?.preset.opacity??1;params[35+i*4]=o?.preset.__foundation?.coverageUnion?3:o?.preset.__foundation?.material?2:o&&liveAccumulation(o.preset)?1:0;}return params;}
+function compositionParams(b,key,t,overlays,continuation=false,opacity=1){const [tx,ty]=key.split(',').map(Number),params=parameters(t?.preset??emptyPreset,tx*TILE,ty*TILE,0,0,b.width,b.height,b.width,b.height);params[24]=continuation||b.independentPreviewIds?.has(t?.active)?-1:t?.active??-1;params[25]=continuation?-1:t?.committedId??-1;params[26]=overlays.length;params[28]=-1;params[29]=0;params[31]=opacity;for(let i=0;i<8;i++){const o=overlays[i];params[32+i*4]=o?.id??-1;params[33+i*4]=S.brushBlendIndex(o?.preset);params[34+i*4]=o?.preset.__foundation?.opacity??o?.preset.opacity??1;params[35+i*4]=o?.preset.__foundation?.coverageUnion?3:o?.preset.__foundation?.material?2:o&&liveAccumulation(o.preset)?1:0;}return params;}
 function glTextures(b,t,overlays,base){const textures={layer:base??publicationLayer(b,t),src:base||b.independentPreviewIds?.has(t?.active)?b.zeroStroke:t?.stroke?.[t.s]??b.zeroStroke,archiveImage:b.archiveTarget};for(let i=0;i<8;i++)textures['liveImage'+i]=overlays[i]?.texture??b.zeroLive;return textures;}
 function gpuTextures(b,t,overlays,base){return [base??publicationLayer(b,t),base||b.independentPreviewIds?.has(t?.active)?b.zeroStroke:t?.stroke?.[t.s]??b.zeroStroke,...Array.from({length:8},(_,i)=>overlays[i]?.texture??b.zeroLive),b.archiveTarget];}
 function glLiveDraw(b,target,commands,p,x,y,clear,vertexCount,sectors){

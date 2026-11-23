@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {CanonicalBuilder,type FoundationPreset,type Sample} from '@illustro/brush-rt';
 import {replayBrushPasses} from '../selection/brush';
 import type {DeformationBrushPass,LayerId,LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
@@ -7,7 +8,7 @@ import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} fr
 import {createTransformPreviewRunner,runTransform} from './run';
 import {progressiveTransformPreviewSize} from './previewQuality';
 import {originalPreviewSize} from './originalPreview';
-import {recommendInterpolation,type ArtworkKind} from './interpolationAdvice';
+import {pixelGridWarning,recommendInterpolation,type ArtworkKind} from './interpolationAdvice';
 import {snapLayout,type SnapTargets} from './layout';
 import {makeLiquifyStroke} from './liquify';
 import {cornersTowardVanishingPoint,rectCorners} from './quadrilateral';
@@ -155,8 +156,9 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   artworkKind.onchange=()=>showInterpolationAdvice();
   function showInterpolationAdvice(){
     const recommended=recommendInterpolation(artworkKind.value as ArtworkKind,settings);
+    const warning=artworkKind.value==='pixel-art'||settings.interpolation==='nearest'?pixelGridWarning(settings):null;
     interpolationAdvice.textContent='おすすめ：'+recommended.label+'。'+recommended.reason+
-      ' 現在の設定は自動では変更しません。';
+      (warning?' '+warning:'')+' 現在の設定は自動では変更しません。';
   }
   showInterpolationAdvice();
   number('dx','横の移動（px）',-8192,8192,.5);number('dy','縦の移動（px）',-8192,8192,.5);
@@ -749,6 +751,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }catch(error){if(id===previewId&&!controller.signal.aborted){current.drawing.showArtworkPreview(null);preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
   }
   compare.onchange=()=>void refreshPreview();
+  toolConfirmation(apply,'apply');toolConfirmation(cancel,'cancel');
   tools.append(start,direct,vanishing,flipX,flipY,back,forward,openOriginal,undoOriginal,redoOriginal,apply,cancel,newAbove,toggleEffect,removeEffect,bakeButton);
   panel.append(summary,target,status,tools,controls,snapFields,cornerFields,meshFields,liquifyFields,comparison,preview,originalCanvas);host.append(panel);
   panel.addEventListener('illustro:open-layer-settings',()=>{

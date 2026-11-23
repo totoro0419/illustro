@@ -29,7 +29,7 @@ export function openLayerBlendDialog(options:{
   space.value=options.current.blend.space;
   const amount=document.createElement('input');amount.type='range';
   amount.min='0';amount.max='100';amount.step='.1';amount.value=String(options.current.opacity*100);
-  const percentage=document.createElement('output');
+  amount.dataset.unit='%';
   let opacity=options.current.opacity;
   const comparison=document.createElement('button');comparison.type='button';
   const tonePanel=document.createElement('details'),toneTitle=document.createElement('summary');
@@ -65,13 +65,13 @@ export function openLayerBlendDialog(options:{
   const selected=(preview=false):LayerBlendChoice=>({
     blend:{mode:mode.value as LayerBlendMode,space:space.value==='linear'?'linear':'encoded',seed:options.current.blend.seed,
       ...(toneEnabled.checked?{tone:tone()}:{}),...(effect?{effect}:{}),
-      ...(options.current.blend.gradientMap?{gradientMap:options.current.blend.gradientMap}:{})},
+      ...(options.current.blend.gradientMap?{gradientMap:options.current.blend.gradientMap}:{}),
+      ...(options.current.blend.adjustment?{adjustment:options.current.blend.adjustment}:{})},
     opacity,...(preview&&toneEnabled.checked&&highlight.checked?{tonePreview:true}:{})
   });
   let before=false;
   const update=()=>{
     comparison.setAttribute('aria-pressed',String(before));
-    percentage.value=Math.round(opacity*1000)/10+'%';
     comparison.textContent=before?'変更後を見る':'変更前を見る';
     options.preview(before?null:selected(true));
   };
@@ -149,7 +149,7 @@ export function openLayerBlendDialog(options:{
   const invert=document.createElement('input');invert.type='checkbox';
   const effectFields=(['brightness','contrast','saturation'] as const).map((key,index)=>{
     const input=document.createElement('input');input.type='range';
-    input.min=index?'0':'-100';input.max=index?'400':'100';input.step='1';
+    input.min=index?'0':'-100';input.max=index?'400':'100';input.step='1';input.dataset.unit='%';
     return {key,input};
   });
   const effectDescription=document.createElement('output');effectDescription.setAttribute('role','status');
@@ -184,7 +184,7 @@ export function openLayerBlendDialog(options:{
   const cancel=document.createElement('button');cancel.type='submit';cancel.value='cancel';cancel.textContent='取り消す';
   const apply=document.createElement('button');apply.type='submit';apply.value='apply';apply.textContent='確定';
   actions.append(comparison,cancel,apply);
-  const strength=field('レイヤーの不透明度',amount);strength.append(percentage);
+  const strength=field('レイヤーの不透明度',amount);
   const stages=document.createElement('details'),stageTitle=document.createElement('summary');
   stageTitle.textContent='処理の順番と透明部分';
   const order=document.createElement('ol');

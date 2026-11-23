@@ -1,3 +1,4 @@
+import {getAsset,addAssetsAtomically,type AssetEntry} from '../assets/library';
 import {describe,it,expect,vi,afterEach} from 'vitest';
 import {CoreDocument} from '@illustro/core';
 import {EditorController} from '../controller';
@@ -7,6 +8,7 @@ import {createDeterministicIdFactory} from '../../../../packages/core/src/ids';
 
 // In headless tests, explicitly accept the app's async confirmation UI.
 vi.mock('../ui/appDialogs',()=>({appConfirm:vi.fn(async()=>true)}));
+vi.mock('../assets/library',()=>({getAsset:vi.fn(async()=>null),addAssetsAtomically:vi.fn(async()=>[])}));
 
 afterEach(()=>vi.unstubAllGlobals());
 describe('C06-015 editable group copy uses sparse painted tiles',()=>{
@@ -100,4 +102,26 @@ describe('C06-015 invalid clipboard selection fails before any pixel readback',(
   expect(region).not.toHaveBeenCalled();
   expect(clipboard.hasContent).toBe(false);
  });
+});
+
+
+it('keeps a copied font available for editable text even after its source disappears',async()=>{
+ const source=new CoreDocument({width:64,height:64});
+ const target=new CoreDocument({width:64,height:64});
+ const original=source.defaultRasterLayerId,fontId='11111111-1111-4111-8111-111111111111';
+ const tx=source.begin('prepare text');
+ tx.setEditableArtwork(original,{kind:'text',text:'AB',origin:{x:1,y:1},size:12,family:'sans-serif',
+   color:'#000000',vertical:false,align:'left',spacing:0,lineHeight:1.2,
+   styleRanges:[{start:0,end:1,fontAsset:fontId}]});
+ tx.commit();
+ const item={id:fontId,kind:'font',name:'試験フォント',version:1,bytes:4,data:new Blob(['font'])} as AssetEntry;
+ vi.mocked(getAsset).mockResolvedValueOnce(item).mockResolvedValue(null);
+ const drawing={selectedRectangle:null,captureDocumentLayers:async()=>new Map([[original,new Uint8Array(64*64*4)]])} as unknown as BrushSurface;
+ const clipboard=new ArtworkClipboard(),destination=EditorController.restored(target,target.defaultRasterLayerId);
+ await clipboard.copy(EditorController.restored(source,original),drawing,{merged:false,selectionOnly:false,embedFonts:true});
+ const pasted=await clipboard.paste(destination,'original');
+ expect(addAssetsAtomically).toHaveBeenCalledWith([item]);
+ expect(target.root.getLayer(pasted.layerId).editable).toMatchObject({kind:'text',embedFont:true,styleRanges:[{fontAsset:fontId}]});
+ target.undo();expect(target.root.hasLayer(pasted.layerId)).toBe(false);
+ target.redo();expect(target.root.getLayer(pasted.layerId).editable).toMatchObject({kind:'text'});
 });

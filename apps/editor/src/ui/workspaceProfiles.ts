@@ -57,7 +57,7 @@ function download(name:string,text:string){
   window.setTimeout(()=>URL.revokeObjectURL(url),0);
 }
 
-export type WorkspaceImportService=Readonly<{importText:(json:string)=>Promise<number>}>;
+export type WorkspaceImportService=Readonly<{importText:(json:string)=>Promise<number>;checkpoint:()=>()=>void}>;
 export function installWorkspaceProfiles(
   floating:FloatingPanelService,toolbar:ToolbarSettingsService
 ):WorkspaceImportService|null{
@@ -303,7 +303,7 @@ export function installWorkspaceProfiles(
   rearrange(orderSaved());
   setHanded(read(HANDED_KEY)==='true');setDensity(read(DENSITY_KEY)==='true');
   choices();bindMoving();
-  return {importText};
+  return {importText,checkpoint:()=>{const layout=snapshot();return ()=>applyLayout(layout);}};
 }
 const DEFAULT_ORDER=[
  'right.layers','right.color','right.brush','right.inspector','right.reference','right.assets',

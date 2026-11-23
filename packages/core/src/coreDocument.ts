@@ -1,4 +1,5 @@
 import {cryptoIdFactory,operationKeyText,type IdFactory,type LayerId,type RevisionId,type WriterEpochId} from './ids';
+import {validateArtworkGuides,type ArtworkGuide} from './artworkGuides';
 import {RevisionHistory,type Command} from './history';
 import {DocumentRoot,rasterLayer,validateDocumentInfo} from './model';
 import {PagedMap} from './pagedMap';
@@ -9,7 +10,7 @@ import {DocumentTransaction} from './transaction';
 import type {PersistenceHandoff} from './recovery';
 import {CORE_INTERNAL,type CoreInternalToken} from './internal';
 
-export type CoreOptions=Readonly<{width:number;height:number;name?:string;colorProfileId?:string;sampleEncoding?:RasterSampleEncoding;blankBackground?:'white';emptyDrawingLayer?:boolean;dpi?:number;author?:string;description?:string;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
+export type CoreOptions=Readonly<{width:number;height:number;name?:string;colorProfileId?:string;sampleEncoding?:RasterSampleEncoding;blankBackground?:'white';creationBackground?:'white'|'transparent';artworkGuides?:readonly ArtworkGuide[];emptyDrawingLayer?:boolean;dpi?:number;author?:string;description?:string;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
 export type CoreRestoreOptions=Readonly<{snapshot:unknown;blockPayloads:ReadonlyMap<string,Uint8Array>;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
 export class CoreDocument{
   readonly tileSize=CANONICAL_TILE_SIZE;readonly tileBytes:number;private readonly idsValue:IdFactory;private readonly clockValue:()=>number;
@@ -27,7 +28,8 @@ export class CoreDocument{
     const info=o.dpi!==undefined||o.author!==undefined||o.description!==undefined
       ?validateDocumentInfo({name,author:o.author??'',description:o.description??'',dpi:o.dpi??null}):null;
     const root=new DocumentRoot(this.idsValue.document(),o.width,o.height,info?.name??name,o.colorProfileId??'srgb',e.commit(),[id],
-      {createdAt:now,modifiedAt:now,...(info?.author?{author:info.author}:{}),
+      {createdAt:now,modifiedAt:now,...(o.creationBackground?{creationBackground:o.creationBackground}:{}),
+       ...(o.artworkGuides?.length?{artworkGuides:validateArtworkGuides(o.artworkGuides)}:{}),...(info?.author?{author:info.author}:{}),
        ...(info?.description?{description:info.description}:{}),...(info?.dpi?{dpi:info.dpi}:{})});
     this.defaultRasterLayerId=id;this.historyValue=new RevisionHistory(root,this.idsValue,now);
   }
@@ -79,6 +81,16 @@ export class CoreDocument{
     const revisions=snapshot.revisions.map(revision=>Object.freeze({...revision,root:Object.freeze({...revision.root,documentId,...(revision.id===this.head?{name:title}:{})})}));
     return CoreDocument.restore({snapshot:{...snapshot,revisions},blockPayloads:this.persistenceBlockPayloads(snapshot)});
   }
+  historyNavigationState(){return this.historyValue.navigationState();}
+  /** Roll back a local restore before its persistence handoff is sent. */
+  discardUnpublishedHistoryRestore(id:RevisionId,prior:Readonly<{head:RevisionId;redo:readonly RevisionId[]}>){
+    const stamp=this.currentRevision.commitStamp;
+    if(!stamp||stamp.writerEpochId!==this.writerEpochId||stamp.commitSequence!==this.commitSequenceValue||
+      !this.historyValue.discardUnpublishedRestore(id,prior))return false;
+    this.commitSequenceValue--;return true;
+  }
+  previewHistoryNavigation(steps:readonly ('undo'|'redo')[]){return this.historyValue.previewNavigation(steps);}
+  get nextRedoLabel(){return this.historyValue.nextRedo?.command?.label??null;}
   undo(){return this.historyValue.undo();}redo(){return this.historyValue.redo();}hasRevision(id:RevisionId){return this.historyValue.has(id);}revision(id:RevisionId){return this.historyValue.get(id);}
   historyEntries(){
     return this.historyValue.snapshot().revisions.map(({id,parentIds,command,committedAt})=>{
@@ -118,7 +130,17 @@ export class CoreDocument{
     commands.reverse();return Object.freeze(commands.flatMap(command=>command.operations));
   }
   rasterReplayPlan(revisionId:RevisionId=this.head){
-    const operations=this.operationsTo(revisionId);
+    const newlyAdded=new Map<LayerId,string>();
+    // Earlier sparse imports recorded their initial pixels as a strict delta.
+    // Treat that first write as a snapshot only when the same transaction added the layer.
+    const operations=this.operationsTo(revisionId).map(operation=>{
+      const layer=operation.targetEntityIds[0];
+      if(!layer)return operation;
+      if(operation.kind==='layer.add-raster')newlyAdded.set(layer,operation.key.transactionId);
+      if(operation.kind==='raster.strict-delta'&&newlyAdded.get(layer)===operation.key.transactionId)
+        return Object.freeze({...operation,kind:'layer.snapshot'});
+      return operation;
+    });
     const geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
     const visible=operations.slice(geometryIndex+1),baselines=new Map<LayerId,number>();
     const seededLayers=new Set<LayerId>(),tileFilteredLayers=new Set<LayerId>();

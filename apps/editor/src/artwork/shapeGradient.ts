@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {mapArtworkPoint,inverseArtworkAffine,validateEditableArtwork,type ArtPoint,type EditableGradient,type EditablePath,type GradientStop,type LayerId,type LayerMask} from '@illustro/core';
 import {layerMaskCoverage,samplePixelMask} from '@illustro/brush-rt';
 import {runArtwork} from './run';
@@ -806,7 +807,7 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
     },status),
     button('キャンバスで編集点を動かす',()=>editOnCanvas(),status),
     button('編集点の操作を終了',()=>{stopHandles();status.textContent='キャンバス上の編集点を閉じました。';},status),
-    button('適用',async()=>{
+    toolConfirmation(button('適用',async()=>{
       if(api.context()?.drawing!==draftDrawing)throw Error('作品を開き直したため、「新しく作る」か「選んだレイヤーを編集」を選んでください。');
       const content=data();
       previewAbort?.abort();
@@ -822,12 +823,12 @@ export function installShapeGradientPanel(host:HTMLElement,api:ArtworkActions){
         content.kind==='path'?output.value as 'vector'|'raster':'vector');
       status.textContent=content.kind==='path'&&output.value==='raster'
         ?'画像として反映しました。ブラシや消しゴムで編集できます。':'作品に反映しました。';
-    },status),
-    button('変更を取り消す',()=>{
+    },status),'apply'),
+    toolConfirmation(button('変更を取り消す',()=>{
       stopHandles();
       ++previewId;editing=undefined;editingMask=null;points=[];draftDrawing=undefined;draftMask=null;
       preview.hidden=true;panel.open=false;status.textContent='変更を取り消しました。';
-    },status)
+    },status),'cancel')
   );
   panel.ontoggle=()=>{
     if(!panel.open){stopHandles();++previewId;previewAbort?.abort();}

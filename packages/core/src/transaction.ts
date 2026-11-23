@@ -17,7 +17,8 @@ import type {SemanticOperationDraft} from './history';
 import {CANONICAL_TILE_SIZE,parseTileKey,pixelToTile,tileKey,RasterSurfaceManifest,type DirtyTileHint} from './raster/surface';
 
 export type DocumentGeometryKind='document.crop'|'document.canvas-resize'|'document.image-resize';
-type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'artwork-guides';guides:readonly ArtworkGuide[]}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;partial?:true;source?:RevisionId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
+export type HistoryLayerFlags=Readonly<{id:LayerId;alphaLocked:boolean;clipSourceId:LayerId|null}>;
+type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'artwork-guides';guides:readonly ArtworkGuide[]}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;partial?:true;source?:RevisionId;recipe?:Readonly<Record<string,unknown>>}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId;flags:readonly HistoryLayerFlags[]}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
 /** A small image in document coordinates; avoid creating a transparent full-canvas buffer. */
 export type RasterPixelRegion=Readonly<{
@@ -61,6 +62,16 @@ export class DocumentTransaction{
       this.editGroups('insert',layerId,groups.map(group=>group.members.includes(referenceId)?{...group,members:[...group.members,layerId]}:group));
     }
     this.updatesValue.set(layerId,layer);this.slotsValue.push(Object.freeze({type:'structure' as const,layerId,surfaceId,insertIndex,name}));return layerId;
+  }
+  addAdjustmentLayerAbove(referenceId:LayerId,blend:LayerBlend,clipped:boolean){
+    if(!blend.adjustment)throw Error('調整の設定を確認してください。');
+    const anchor=this.rootValue.getLayer(referenceId),id=this.addRasterLayerAbove(referenceId);
+    this.setLayerBlend(id,blend);
+    if(clipped){
+      const source=this.rootValue.clippingSource(anchor.id)??anchor;
+      this.meta(id,{clipSourceId:source.id});
+    }
+    return id;
   }
   addRasterSnapshotAbove(referenceId:LayerId,pixels:RasterPixels,name:string,copyStyle=false,inheritGroup=true,below=false){
     const root=this.rootValue;
@@ -212,7 +223,7 @@ export class DocumentTransaction{
       this.meta(id,{editable:validateEditableArtwork(editable),vectorMask:validateLayerMask(mask)});
     }
   }
-  replaceLayerRaster(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,source?:RevisionId,editable?:EditableArtwork|null,deformation?:LayerDeformation|null){
+  replaceLayerRaster(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,source?:RevisionId,editable?:EditableArtwork|null,deformation?:LayerDeformation|null,recipe?:Readonly<Record<string,unknown>>){
     this.open();
     if(this.slotsValue.length)throw new Error('Replace layer pixels as a standalone operation');
     if(source&&!this.doc.hasRevision(source))throw new Error('復元元の履歴が見つかりません。');
@@ -224,7 +235,7 @@ export class DocumentTransaction{
       !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId??id)))throw new Error('変形前の原本が見つかりません。');
     if(layer.editable&&editable===undefined)throw new Error('編集できるレイヤーです。専用の操作画面で編集するか、描画用に変換してください。');
     this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
-    this.seedRasterPixels(id,pixels,true,deformation?.sourceRevision??source);
+    this.seedRasterPixels(id,pixels,true,deformation?.sourceRevision??source,recipe);
     if(deformation!==undefined)this.meta(id,{deformation:validateLayerDeformation(deformation)});
     if(editable!==undefined)this.setEditableArtwork(id,editable);
     return true;
@@ -515,7 +526,7 @@ export class DocumentTransaction{
         });
       }
   }
-  private seedRasterPixels(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,replace=false,source?:RevisionId){
+  private seedRasterPixels(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,replace=false,source?:RevisionId,recipe?:Readonly<Record<string,unknown>>){
     const {width:documentWidth,height:documentHeight}=this.rootValue;
     if(pixels.length!==documentWidth*documentHeight*4)throw new Error('画像の大きさが作品と一致しません。');
     const layer=this.updatesValue.get(id)!;
@@ -535,7 +546,7 @@ export class DocumentTransaction{
     }
     if(working.changedTileCount||replace){
       this.workingValue.set(id,working);
-      this.slotsValue.push(Object.freeze({type:'working',layerId:id,initial:true,...(replace?{replace:true as const}:{}),...(source?{source}:{})}));
+      this.slotsValue.push(Object.freeze({type:'working',layerId:id,initial:true,...(replace?{replace:true as const}:{}),...(source?{source}:{}),...(recipe?{recipe}:{})}));
     }
   }
   deleteRasterLayers(ids:ReadonlySet<LayerId>){
@@ -583,12 +594,21 @@ export class DocumentTransaction{
     this.slotsValue.push(Object.freeze({type:'pin-revision',name,note}));
     return true;
   }
-  restoreRevision(revisionId:RevisionId){
+  restoreRevision(revisionId:RevisionId,flags:readonly HistoryLayerFlags[]=[]){
     this.open();
     if(this.slotsValue.length)throw new Error('History restore must be its own transaction');
-    if(revisionId===this.baseValue)return false;
-    this.doc.revision(revisionId);
-    this.slotsValue.push(Object.freeze({type:'restore-revision',revisionId}));
+    const root=this.doc.revision(revisionId).root,seen=new Set<LayerId>();
+    const changes=flags.filter(({id,alphaLocked,clipSourceId})=>{
+      if(seen.has(id)||!root.hasLayer(id)||typeof alphaLocked!=='boolean')throw Error('履歴のレイヤー設定が正しくありません。');
+      const layer=root.getLayer(id);seen.add(id);
+      if(clipSourceId&&clipSourceId!==layer.clipSourceId&&(!root.hasLayer(clipSourceId)||layer.baseColor||
+        root.rootLayerIds.indexOf(clipSourceId)>=root.rootLayerIds.indexOf(id)||
+        root.groupsForLayer(id).at(-1)?.id!==root.groupsForLayer(clipSourceId).at(-1)?.id))
+        throw Error('履歴のクリップ元が正しくありません。');
+      return alphaLocked!==!!layer.alphaLocked||clipSourceId!==(layer.clipSourceId??null);
+    }).map(flag=>Object.freeze({...flag}));
+    if(revisionId===this.baseValue&&!changes.length)return false;
+    this.slotsValue.push(Object.freeze({type:'restore-revision',revisionId,flags:Object.freeze(changes)}));
     return true;
   }
   saveLayerComp(name:string,saveVisibility:boolean,saveOpacity:boolean,existingId?:LayerId,saveBlend=false){
@@ -792,7 +812,7 @@ export class DocumentTransaction{
     return true;
   }
   editTile(layerId:LayerId,x:number,y:number,edit:(b:Uint8Array)=>void){this.open();tileKey(x,y);let w=this.workingValue.get(layerId);
-    if(!w){const l=this.editableRaster(layerId);if(l.baseColor==='white')throw new Error('Materialize the white background before direct pixel editing');if(l.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('direct byte edit requires rgba.unorm8.v1');w=new RasterWorkingSet(l.surface,this.doc._internal(CORE_INTERNAL).store);this.workingValue.set(layerId,w);this.slotsValue.push(Object.freeze({type:'working' as const,layerId}));}
+    if(!w){const l=this.editableRaster(layerId);if(l.baseColor==='white')throw new Error('Materialize the white background before direct pixel editing');if(l.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('direct byte edit requires rgba.unorm8.v1');w=new RasterWorkingSet(l.surface,this.doc._internal(CORE_INTERNAL).store);this.workingValue.set(layerId,w);this.slotsValue.push(Object.freeze({type:'working' as const,layerId,...(!this.rootValue.hasLayer(layerId)?{initial:true as const}:{})}));}
     try{w.editTile(x,y,edit);}catch(e){this.failed=true;throw e;}}
   setPixel(layerId:LayerId,x:number,y:number,rgba:readonly [number,number,number,number]){this.open();if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y))throw new Error('invalid pixel coordinate');for(const v of rgba)if(!Number.isInteger(v)||v<0||v>255)throw new Error('invalid channel');
     const tx=pixelToTile(x),ty=pixelToTile(y),p=(ty.local*CANONICAL_TILE_SIZE+tx.local)*4;this.editTile(layerId,tx.tile,ty.tile,b=>{b[p]=rgba[0];b[p+1]=rgba[1];b[p+2]=rgba[2];b[p+3]=rgba[3];});}
@@ -810,6 +830,10 @@ export class DocumentTransaction{
     if(this.rootValue.rootLayerIds.some(id=>{const layer=this.rootValue.getLayer(id);return layer.editable||layer.deformation||layer.imageLink;}))throw new Error('図形・文字・グラデーション・変形・参照画像を描画用に変換してから、作品の大きさを変更してください。');
     if(layerPixels.size!==this.rootValue.rootLayerIds.length)throw new Error('each raster layer must be rebased');
     const byteLength=width*height*4,T=CANONICAL_TILE_SIZE;
+    const explicit=kind==='document.canvas-resize'&&(parameters.offsetX!==undefined||parameters.offsetY!==undefined);
+    const xOffset=Number(parameters.offsetX),yOffset=Number(parameters.offsetY);
+    if(explicit&&(!Number.isSafeInteger(xOffset)||!Number.isSafeInteger(yOffset)||Math.abs(xOffset)>8192||Math.abs(yOffset)>8192))
+      throw Error('キャンバスの移動距離が正しくありません。');
     for(const id of this.rootValue.rootLayerIds){
       const layer=this.rootValue.getLayer(id),rgba=layerPixels.get(id);
       if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('unsupported direct raster sample encoding');
@@ -825,8 +849,8 @@ export class DocumentTransaction{
           vectorMask=transformLayerMask(mask,scaleX,scaleY,0,0);
         }else{
           const deltaX=width-this.rootValue.width,deltaY=height-this.rootValue.height,anchor=parameters.anchor;
-          const shiftX=kind==='document.crop'?-Number(parameters.x??0):anchor==='center'?Math.floor(deltaX/2):anchor==='top-right'||anchor==='bottom-right'?deltaX:0;
-          const shiftY=kind==='document.crop'?-Number(parameters.y??0):anchor==='center'?Math.floor(deltaY/2):anchor==='bottom-left'||anchor==='bottom-right'?deltaY:0;
+          const shiftX=kind==='document.crop'?-Number(parameters.x??0):explicit?xOffset:anchor==='center'?Math.floor(deltaX/2):anchor==='top-right'||anchor==='bottom-right'?deltaX:0;
+          const shiftY=kind==='document.crop'?-Number(parameters.y??0):explicit?yOffset:anchor==='center'?Math.floor(deltaY/2):anchor==='bottom-left'||anchor==='bottom-right'?deltaY:0;
           vectorMask=transformLayerMask(mask,1,1,shiftX,shiftY);
         }
       }
@@ -867,7 +891,7 @@ export class DocumentTransaction{
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(layer.baseColor==='white'&&value)throw new Error('白背景の合成モードは通常に固定されています。');
     const blend=validateLayerBlend(value),before=layer.blend??null;
-    if(blend===before||(blend&&before&&blend.mode===before.mode&&blend.space===before.space&&blend.seed===before.seed&&JSON.stringify(blend.tone)===JSON.stringify(before.tone)&&JSON.stringify(blend.effect)===JSON.stringify(before.effect)&&JSON.stringify(blend.gradientMap)===JSON.stringify(before.gradientMap)))return false;
+    if(blend===before||(blend&&before&&blend.mode===before.mode&&blend.space===before.space&&blend.seed===before.seed&&JSON.stringify(blend.tone)===JSON.stringify(before.tone)&&JSON.stringify(blend.effect)===JSON.stringify(before.effect)&&JSON.stringify(blend.gradientMap)===JSON.stringify(before.gradientMap)&&JSON.stringify(blend.adjustment)===JSON.stringify(before.adjustment)))return false;
     return this.meta(id,{blend});
   }
   setVectorLayerMask(id:LayerId,mask:LayerMask|null){

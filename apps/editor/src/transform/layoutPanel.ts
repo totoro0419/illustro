@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import type {LayerId} from '@illustro/core';
 import {button,selectField} from '../artwork/tools';
 import {alignLayers,type Arrangement,type LayoutItem,type LayoutMove} from './layout';
@@ -138,5 +139,5 @@ export function installLayoutPanel(host:HTMLElement,capture:()=>Promise<LayoutSo
   controls.onchange=()=>{try{render();}catch(error){moves=[];apply.disabled=true;status.textContent=error instanceof Error?error.message:String(error);}};
   apply.disabled=true;
   panel.ontoggle=()=>{if(!panel.open){source=null;moves=[];preview.hidden=true;groupPreview.hidden=true;apply.disabled=true;}};
-  panel.append(heading,controls,start,apply,cancel,preview,groupFields,status);host.append(panel);
+  panel.append(heading,controls,start,toolConfirmation(apply,'apply'),toolConfirmation(cancel,'cancel'),preview,groupFields,status);host.append(panel);
 }

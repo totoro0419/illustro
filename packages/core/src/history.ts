@@ -33,8 +33,36 @@ export class RevisionHistory<T>{
     if(limit!==null&&(!Number.isSafeInteger(limit)||limit<1))throw new Error('履歴の件数が正しくありません。');
     this.undoLimitValue=limit;
   }get canRedo(){return this.redoIds.length>0;}
+  get nextRedo(){const id=this.redoIds.at(-1);return id===undefined?null:this.get(id);}
   has(id:RevisionId){return this.revisions.has(id);}get(id:RevisionId){const r=this.revisions.get(id);if(!r)throw new Error('missing revision');return r;}
   snapshot():RevisionHistoryState<T>{return Object.freeze({revisions:Object.freeze([...this.revisions.values()]),head:this.headValue,redoIds:Object.freeze([...this.redoIds])});}
+  navigationState(){return {head:this.headValue,redo:[...this.redoIds],limit:this.undoLimitValue};}
+  discardUnpublishedRestore(id:RevisionId,prior:Readonly<{head:RevisionId;redo:readonly RevisionId[]}>){
+    const current=this.current;
+    if(current.id!==id||current.parentIds[0]!==prior.head||current.command?.operations.length!==1||
+      current.command.operations[0]?.kind!=='document.history-restore'||prior.redo.some(item=>item===id||!this.has(item)))
+      return false;
+    this.revisions.delete(id);this.headValue=prior.head;
+    this.redoIds.splice(0,this.redoIds.length,...prior.redo);
+    return true;
+  }
+  previewNavigation(steps:readonly ('undo'|'redo')[]){
+    let head=this.headValue;
+    const redo=[...this.redoIds];
+    for(const [index,step] of steps.entries()){
+      if(step==='undo'){
+        const parent=this.get(head).parentIds[0];
+        if(!parent||this.undoLimitValue!==null&&redo.length>=this.undoLimitValue)
+          throw Error((index+1)+'番目の手順で、これ以上元に戻せません。');
+        redo.push(head);head=parent;
+      }else{
+        const next=redo.pop();
+        if(!next)throw Error((index+1)+'番目の手順で、これ以上やり直せません。');
+        head=next;
+      }
+    }
+    return head;
+  }
   assertHead(id:RevisionId){if(id!==this.headValue)throw new Error('stale transaction');}
   publish(base:RevisionId,tx:TransactionId,root:T,command:Command,at:number,commitStamp:CommitStamp,id=this.ids.revision(),expected=base){
     this.assertHead(expected);if(this.revisions.has(id))throw Error('duplicate revision id');

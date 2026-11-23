@@ -1,17 +1,20 @@
+import {installLanguageSettings,uiLocale} from './language';
+import {readInputInterruptions} from '../persistence/inputInterruption';
 import {appConfirm,appPrompt} from './appDialogs';
 import type {WorkEntry} from '../persistence/workLibrary';
 import {icon} from './icons';
-import {resolveDocumentDimensions,pixelToMillimeters,listCreationTemplates,storeCreationTemplate,removeCreationTemplate,type DocumentUnit} from '../documentSetup';
+import {resolveDocumentDimensions,pixelToMillimeters,listCreationTemplates,storeCreationTemplate,removeCreationTemplate,type DocumentUnit,type TemplateContent} from '../documentSetup';
 
 /** Illustro first-party Home skeleton. Artwork and storage stay owned by the editor. */
 export type RecoverySummary = Readonly<{
   documentId: string; writerEpochId: string; title: string; protectedThrough: string; updatedAt: number;
 }>;
 export type HomeActions = Readonly<{
-  createDocument: (width:number,height:number,name:string,background:'transparent'|'white',dpi:number,author:string,description:string,emptyDrawingLayer?:boolean)=>Promise<boolean>;
+  createDocument: (width:number,height:number,name:string,background:'transparent'|'white',dpi:number,author:string,description:string,emptyDrawingLayer?:boolean,content?:TemplateContent)=>Promise<boolean>;
   onBlankDraftChange?: (width:number,height:number,name:string,background:'transparent'|'white',dpi:number,author:string,description:string)=>void;
   listWorks:()=>Promise<{works:WorkEntry[];lastWorkId:string|null}>;
   openWork:(id:string)=>Promise<boolean>;
+  exportWorks:(works:readonly WorkEntry[])=>void;
   readThumbnail:(id:string,revisionId:string)=>Promise<Blob|null>;
   renameWork:(id:string,name:string)=>Promise<void>;
   duplicateWork:(id:string)=>Promise<void>;
@@ -89,7 +92,7 @@ const html = [
     '<section class="ih-screen ih-inner-screen" data-ih-screen="works" hidden aria-labelledby="ihWorksTitle">',
       '<div class="ih-page-top"><span class="ih-overline">YOUR WORKSPACE</span><h1 id="ihWorksTitle">マイ作品<span class="ih-period">.</span></h1><p>作品を選び、続きを描くための場所。</p></div>',
       '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><div class="ih-works-controls"><button type="button" id="ihWorksRecovery" class="ih-quiet-button">作業を復元</button><span class="ih-works-count">作品を確認しています</span><button id="ihWorksReset" type="button" class="ih-debug-reset" hidden>初期化（全作品を削除）</button></div></div>',
-      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名・タグ・フォルダーで検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option><option value="favorite">お気に入り優先</option></select></label><label>フォルダー<select id="ihWorkFolder"><option value="">すべてのフォルダー</option></select></label><label>表示<select id="ihWorkFavorites"><option value="all">すべて</option><option value="only">お気に入りだけ</option></select></label></div><div id="ihWorkBatch" class="ih-work-batch" hidden><strong id="ihWorkSelectionCount">0件選択</strong><button type="button" id="ihWorkSelectAll">表示中をすべて選ぶ</button><button type="button" id="ihWorkMoveSelected">フォルダーへ</button><button type="button" id="ihWorkFavoriteSelected">お気に入りにする</button><button type="button" id="ihWorkTrashSelected">ゴミ箱へ移動</button><button type="button" id="ihWorkClearSelected">選択解除</button></div><details id="ihWorkTrash" class="ih-work-trash"><summary>ゴミ箱（復元・完全削除）</summary><div id="ihWorkTrashGrid" class="ih-work-trash-list"></div></details><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
+      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名・タグ・フォルダーで検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option><option value="favorite">お気に入り優先</option></select></label><label>フォルダー<select id="ihWorkFolder"><option value="">すべてのフォルダー</option></select></label><label>表示<select id="ihWorkFavorites"><option value="all">すべて</option><option value="only">お気に入りだけ</option></select></label></div><div id="ihWorkBatch" class="ih-work-batch" hidden><strong id="ihWorkSelectionCount">0件選択</strong><button type="button" id="ihWorkSelectAll">表示中をすべて選ぶ</button><button type="button" id="ihWorkExportSelected">一括出力</button><button type="button" id="ihWorkMoveSelected">フォルダーへ</button><button type="button" id="ihWorkFavoriteSelected">お気に入りにする</button><button type="button" id="ihWorkTrashSelected">ゴミ箱へ移動</button><button type="button" id="ihWorkClearSelected">選択解除</button></div><details id="ihWorkTrash" class="ih-work-trash"><summary>ゴミ箱（復元・完全削除）</summary><div id="ihWorkTrashGrid" class="ih-work-trash-list"></div></details><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
       '<div class="ih-empty-works"><div class="ih-empty-art" aria-hidden="true"><span class="ih-empty-sheet ih-sheet-one"></span><span class="ih-empty-sheet ih-sheet-two"></span><span class="ih-empty-spark">'+icon('effects')+'</span></div>',
         '<h2>最初の作品を、ここから。</h2><p>新しく作った作品は自動保存され、ここからいつでも続きを描けます。</p>',
         '<button id="ihWorksStart" type="button" class="ih-solid-button">新しい作品を作る <span aria-hidden="true">↗</span></button>',
@@ -105,14 +108,14 @@ const html = [
     '</section>',
     '<section class="ih-screen ih-inner-screen" data-ih-screen="settings" hidden aria-labelledby="ihSettingsTitle">',
       '<div class="ih-page-top"><span class="ih-overline">PREFERENCES</span><h1 id="ihSettingsTitle">設定<span class="ih-period">.</span></h1><p>Illustroの操作や表示を調整するためのページ。</p></div>',
-      '<div class="ih-settings-controls"><div id="ihColorSettings"></div><button type="button" class="ih-quiet-button" id="ihSettingsEditor">描画画面へ</button></div>',
+      '<div class="ih-settings-controls"><div id="ihColorSettings"></div><div id="ihLanguageSettings"></div><button type="button" class="ih-quiet-button" id="ihSettingsEditor">描画画面へ</button></div>',
     '</section>',
   '</main>',
   '<div class="ih-floating-notice" id="ihNotice" role="status" aria-live="polite" hidden></div>',
   '<dialog id="ihNewDialog" class="ih-new-dialog" aria-labelledby="ihNewTitle"><div class="ih-dialog-content">',
     '<div class="ih-dialog-head"><div><h2 id="ihNewTitle">新しい作品</h2></div><button type="button" id="ihNewClose" class="ih-dialog-close" aria-label="閉じる">×</button></div>',
     '<form id="ihBlankForm"><input id="ihNewName" name="name" type="hidden" value="新しい作品"><details id="ihCanvasSetup" class="ih-canvas-setup"><summary>サイズ・背景 <span id="ihSizeSummary">512 × 384 px</span></summary><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button><button type="button" data-ih-preset="4000x4000" aria-pressed="false">超高画質（4000×4000）</button><button type="button" id="ihA4Preset">A4（300 DPI）</button></div>',
-      '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="decimal"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="decimal"></label></div><div class="ih-dimensions"><label>単位<select id="ihNewUnit"><option value="px">px（画素）</option><option value="mm">mm（ミリメートル）</option></select></label><label>解像度（DPI）<input id="ihNewDpi" type="number" min="1" max="2400" step="1" value="72" inputmode="numeric"></label></div><p id="ihPixelPreview" class="ih-dialog-hint" aria-live="polite">512 × 384 px · 72 DPI</p>',
+      '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="decimal"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="decimal"></label></div><div class="ih-dimensions"><label>単位<select id="ihNewUnit"><option value="px">px（画素）</option><option value="mm">mm（ミリメートル）</option></select></label><label>解像度（DPI）<input id="ihNewDpi" type="number" min="1" max="2400" step="1" value="72" inputmode="numeric"></label></div><p id="ihPixelPreview" class="ih-dialog-hint" aria-live="polite">512 × 384 px · 72 DPI · 用紙比 4 : 3</p>',
       '<label class="ih-name-field">背景<select id="ihNewBackground"><option value="transparent">透明</option><option value="white">白い背景レイヤー</option></select></label><label class="ih-name-field"><input type="checkbox" id="ihNewEmptyLayers"> 空のレイヤー構成で始める</label><details><summary>作品情報（任意）</summary><label class="ih-name-field">作者<input id="ihNewAuthor" maxlength="160" autocomplete="off"></label><label class="ih-name-field">説明<textarea id="ihNewDescription" maxlength="2000" rows="2"></textarea></label></details><details><summary>サイズ設定の保存・読み込み</summary><label>保存した設定<select id="ihTemplateSelect"><option value="">選択してください</option></select></label><label>新しいテンプレート名<input id="ihTemplateName" maxlength="80" placeholder="例：A4 300DPI"></label><div class="ih-dialog-actions"><button type="button" id="ihTemplateSave" class="ih-quiet-button">設定を保存</button><button type="button" id="ihTemplateDelete" class="ih-quiet-button">選択した設定を削除</button></div></details></details><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
       '<div class="ih-dialog-actions"><button type="button" id="ihNewCancel" class="ih-quiet-button">キャンセル</button><button type="submit" id="ihNewCreate" class="ih-solid-button">キャンバスを作成 <span aria-hidden="true">↗</span></button></div>',
     '</form>',
@@ -179,7 +182,13 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const showNew=(mode:'blank'|'file'='blank')=>{
     if(mode==='file'){actions.openFile();return;}
     if(dialog.open)return;
-    refillTemplates(templatePicker.value);
+    if(templateContent){
+      el<HTMLInputElement>('ihNewName').value='新しい作品';
+      el<HTMLInputElement>('ihNewAuthor').value='';
+      el<HTMLTextAreaElement>('ihNewDescription').value='';
+    }
+    refillTemplates();
+    templateContent=undefined;
     el<HTMLDetailsElement>('ihCanvasSetup').open=false;
     el('ihNewError').textContent='';
     dialog.showModal();
@@ -230,11 +239,11 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       else{open.textContent='プレビューを準備中';}
       open.onclick=()=>void run(async()=>{if(await actions.openWork(work.documentId))navigate('editor');},open);
       const info=document.createElement('div');info.className='ih-work-info';
-      const title=document.createElement('button');title.type='button';title.className='ih-work-title';title.textContent=work.name;title.setAttribute('aria-label',work.name+'の名前を変更');
+      const title=document.createElement('button');title.type='button';title.className='ih-work-title';title.dataset.userContent='';title.textContent=work.name;title.setAttribute('aria-label',work.name+'の名前を変更');
       title.onclick=()=>showRename(work);
       const meta=document.createElement('p');
       meta.textContent=[work.favorite?'★ お気に入り':'',work.catalogFolder??'',(work.catalogTags??[]).join(' / '),
-        work.width+' × '+work.height+' px',new Date(work.updatedAt).toLocaleString('ja-JP')].filter(Boolean).join(' · ');
+        work.width+' × '+work.height+' px',new Date(work.updatedAt).toLocaleString(uiLocale())].filter(Boolean).join(' · ');
       const details=document.createElement('div');details.className='ih-work-menu';details.popover='auto';
       const menuToggle=document.createElement('button');menuToggle.type='button';menuToggle.className='ih-work-menu-toggle';
       menuToggle.innerHTML=icon('more');menuToggle.setAttribute('aria-label',work.name+'の作品操作');
@@ -301,6 +310,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   el<HTMLButtonElement>('ihWorkClearSelected').onclick=()=>{
     selectedWorkIds.clear();renderWorks();
   };
+  el<HTMLButtonElement>('ihWorkExportSelected').onclick=()=>actions.exportWorks(selectedWorks());
   batchAction('ihWorkMoveSelected',async()=>{
     const selected=selectedWorks();if(!selected.length)return;
     const folder=await appPrompt(selected.length+'件の作品を移動するフォルダー名（空欄なら未分類）');
@@ -338,9 +348,9 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       if(!trashed.length){grid.textContent='ゴミ箱は空です。';return;}
       for(const work of trashed){
         const row=document.createElement('div');row.className='ih-work-trash-entry';
-        const title=document.createElement('strong');title.textContent=work.name;
+        const title=document.createElement('strong');title.dataset.userContent='';title.textContent=work.name;
         const meta=document.createElement('small');
-        meta.textContent=work.trashedAt?new Date(work.trashedAt).toLocaleString('ja-JP'):'';
+        meta.textContent=work.trashedAt?new Date(work.trashedAt).toLocaleString(uiLocale()):'';
         const restore=document.createElement('button');restore.type='button';restore.textContent='復元する';
         restore.onclick=()=>void run(async()=>{
           await actions.restoreWork(work.documentId);await loadTrash();await loadWorks();notify('作品を元に戻しました。');
@@ -380,6 +390,18 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     const newer=last?recovery.filter(x=>x.documentId===last.documentId&&x.writerEpochId!==last.writerEpochId&&x.updatedAt>last.updatedAt):recovery;
     if(continueLast&&last&&!newer.length){if(await actions.openWork(last.documentId))navigate('editor');return;}
     const list=el('ihRecoveryList');list.replaceChildren();
+    const interruptions=readInputInterruptions();
+    if(interruptions.length){
+      const details=document.createElement('details'),title=document.createElement('summary'),events=document.createElement('ul');
+      title.textContent='入力が途切れたときの記録';
+      for(const entry of interruptions){
+        const item=document.createElement('li'),date=new Date(entry.at).toLocaleString(uiLocale());
+        item.textContent=date+' · '+entry.work+' · '+(entry.keep?'途中まで残す操作を選択':'途中の線を取り消し');
+        events.append(item);
+      }
+      details.append(title,events);list.append(details);
+    }
+
     for(const url of recoveryPreviewUrls)URL.revokeObjectURL(url);
     recoveryPreviewUrls.clear();
     if(last){
@@ -398,7 +420,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       const button=document.createElement('button');button.type='button';button.className='ih-quiet-button';
       card.className='ih-recovery-item';
       title.textContent=item.title||'名前のない作品';
-      const date=item.updatedAt?new Date(item.updatedAt).toLocaleString('ja-JP'):'時刻不明';
+      const date=item.updatedAt?new Date(item.updatedAt).toLocaleString(uiLocale()):'時刻不明';
       status.textContent=date+' · 記録 '+item.protectedThrough+'件。プレビューで復元内容を確認できます。';
       status.setAttribute('aria-live','polite');
       button.textContent='復元コピーを開く';
@@ -456,6 +478,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   let currentUnit:DocumentUnit='px';
   const templateStore=(()=>{try{return localStorage;}catch{return null;}})();
   const templatePicker=el<HTMLSelectElement>('ihTemplateSelect');
+  let templateContent:TemplateContent|undefined;
   const refillTemplates=(selected='')=>{
     templatePicker.replaceChildren(new Option('選択してください',''),...listCreationTemplates(templateStore).map(x=>new Option(x.name,x.name)));
     templatePicker.value=selected;
@@ -475,7 +498,10 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
         [el<HTMLInputElement>('ihNewHeight').valueAsNumber,d.height],
       ].some(([mm,px])=>Math.abs(mm!*scale-px!)>.0001);
       el('ihSizeSummary').textContent=d.width+' × '+d.height+' px';
-      el('ihPixelPreview').textContent=d.width+' × '+d.height+' px · '+d.dpi+' DPI'+(rounded?'（端数は最も近い画素に丸めます）':'');
+      let divisor=d.width,remainder=d.height;
+      while(remainder){[divisor,remainder]=[remainder,divisor%remainder];}
+      el('ihPixelPreview').textContent=d.width+' × '+d.height+' px · '+d.dpi+' DPI · 用紙比 '+
+        d.width/divisor+' : '+d.height/divisor+(rounded?'（端数は最も近い画素に丸めます）':'');
       return d;
     }
     catch(error){el('ihSizeSummary').textContent='サイズを確認';el('ihPixelPreview').textContent=error instanceof Error?error.message:String(error);return null;}
@@ -544,12 +570,22 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   el<HTMLSelectElement>('ihNewBackground').addEventListener('change',()=>{refreshEmptyLayers();prefetchDraft();});
   templatePicker.addEventListener('change',()=>{
     const template=listCreationTemplates(templateStore).find(x=>x.name===templatePicker.value);
-    if(!template)return;
+    const previous=templateContent;
+    templateContent=template?.content;
+    if(!template&&!previous)return;
+    const title=el<HTMLInputElement>('ihNewName'),authorInput=el<HTMLInputElement>('ihNewAuthor');
+    const descriptionInput=el<HTMLTextAreaElement>('ihNewDescription');
+    title.value=templateContent?.title??'新しい作品';
+    authorInput.value=templateContent?.author??'';
+    descriptionInput.value=templateContent?.description??'';
+    if(!template){el('ihNewError').textContent='テンプレートの追加設定を解除しました。';return;}
     // Stored templates retain exact pixel dimensions even if the dialog was in mm mode.
     setUnit('px');dpiInput.value=String(lastValidDpi=template.dpi);
     el<HTMLSelectElement>('ihNewBackground').value=template.background;refreshEmptyLayers();
     setFromPixels(template.width,template.height);refreshPresetSelection();
-    el('ihNewError').textContent='サイズ設定を読み込みました。作者情報はテンプレートに含めません。';
+    const items=['サイズ・背景',...(templateContent?.guides?.length?['定規']:[]),
+      ...(templateContent?.palette?['作品パレット']:[]),...(templateContent?.title?['作品情報']:[])];
+    el('ihNewError').textContent=items.join('、')+'を読み込みました。';
   });
   el<HTMLButtonElement>('ihTemplateSave').onclick=()=>{
     try{
@@ -560,7 +596,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   };
   el<HTMLButtonElement>('ihTemplateDelete').onclick=()=>{
     if(!templatePicker.value)return;
-    try{removeCreationTemplate(templateStore,templatePicker.value);refillTemplates();el('ihNewError').textContent='設定を削除しました。';}
+    try{removeCreationTemplate(templateStore,templatePicker.value);templateContent=undefined;refillTemplates();el('ihNewError').textContent='設定を削除しました。';}
     catch(error){el('ihNewError').textContent=error instanceof Error?error.message:String(error);}
   };
   const lastSetupKey='illustro.last-canvas-setup.v1';
@@ -591,7 +627,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       const name=el<HTMLInputElement>('ihNewName').value;
       const setup={width:el<HTMLInputElement>('ihNewWidth').valueAsNumber,height:el<HTMLInputElement>('ihNewHeight').valueAsNumber,
         unit:currentUnit,background:background(),dpi:d.dpi};
-      if(await actions.createDocument(d.width,d.height,name,setup.background,d.dpi,author(),description(),setup.background==='transparent'&&el<HTMLInputElement>('ihNewEmptyLayers').checked)){
+      if(await actions.createDocument(d.width,d.height,name,setup.background,d.dpi,author(),description(),setup.background==='transparent'&&el<HTMLInputElement>('ihNewEmptyLayers').checked,templateContent)){
         try{templateStore?.setItem(lastSetupKey,JSON.stringify(setup));}catch{}
         navigate('editor');
       }
@@ -617,5 +653,6 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   // The old milestone QA pages do not install this shell; normal startup is Home.
   const initial=location.hash.replace(/^#/,'');
   navigate(initial==='works'||initial==='settings'||initial==='recovery'?initial:'home',location.hash!==('#'+(initial==='works'||initial==='settings'||initial==='recovery'?initial:'home')));
+  installLanguageSettings(el('ihLanguageSettings'),renderWorks);
   return {showHome,showEditor:()=>navigate('editor'),showNew,showRecovery,setRecoveryCandidates,setWorks,notify};
 }

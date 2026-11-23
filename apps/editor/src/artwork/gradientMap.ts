@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {installWorkspaceDetails} from '../ui/workspaceDetails';
 import {validateGradientMap,type GradientMap,type GradientStop} from '@illustro/core';
 import {gradientMapIndex,gradientMapTable,mapGradientPixel} from '@illustro/brush-rt';
@@ -181,13 +182,13 @@ export function installGradientMapPanel(host:HTMLElement,api:{
   );
   const finish=document.createElement('div');finish.className='c06-clipboard-grid';
   finish.append(
-    button('確定',async()=>{
+    toolConfirmation(button('確定',async()=>{
       if(!draft)throw Error('調整を開き直してください。');
       const current=draft;
       await current.apply(data());
       if(draft===current){close();status.textContent='色の調整を作品に反映しました。';}
-    },status),
-    button('取り消す',()=>{close();status.textContent='色の調整を取り消しました。';},status),
+    },status),'apply'),
+    toolConfirmation(button('取り消す',()=>{close();status.textContent='色の調整を取り消しました。';},status),'cancel'),
     button('停止点の色をパレットへ追加',()=>{
       api.storeColors(data().stops.map(stop=>stop.color));
       status.textContent='停止点の色をパレットへ追加しました。';

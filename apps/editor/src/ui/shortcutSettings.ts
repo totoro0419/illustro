@@ -98,6 +98,7 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     if(all.some(c=>c.id===current))commandSelect.value=current;
   };
   updateCommands();
+  commandSelect.onfocus=updateCommands;
   commandSelect.onchange=()=>{if(!isHoldable(commandSelect.value)&&mode.value==='hold')mode.value='press';};
   mode.onchange=()=>{if(mode.value==='hold'&&!isHoldable(commandSelect.value)){mode.value='press';status.textContent='押している間だけ使えるのは、スポイト・消しゴム・表示移動です。';}};
   const active=new Map<string,{restore:()=>void;epoch:number}>();

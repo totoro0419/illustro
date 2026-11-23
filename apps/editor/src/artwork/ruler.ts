@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {snapRightAngle} from '../canvasNavigation';
 import {validateArtworkGuides,type ArtworkGuide,type GuidePoint} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
@@ -166,12 +167,12 @@ export function installRulerPanel(host:HTMLElement,api:ArtworkActions,store:Read
     if(panel.open)refresh();else{drawing?.setCanvasEditGesture(null);drawing?.previewArtworkGuides(null);}
   });
   panel.append(heading,fields,pick,button('位置・向きのハンドルを動かす',moveHandles,output),
-    button('定規を確定',async()=>{
+    toolConfirmation(button('定規を確定',async()=>{
       const id=current()?.id??draftId;
       await store.save(preview(),'定規・ガイドを配置');
       draftId=crypto.randomUUID();refresh();selected.value=id;selectGuide();output.textContent='作品に定規を保存しました。';
-    },output),
-    button('配置を取り消す',()=>{drawing?.setCanvasEditGesture(null);selectGuide();},output),
+    },output),'apply'),
+    toolConfirmation(button('配置を取り消す',()=>{drawing?.setCanvasEditGesture(null);selectGuide();},output),'cancel'),
     button('定規を削除',async()=>{
       const id=current()?.id;
       if(!id)throw Error('削除する定規を選んでください。');

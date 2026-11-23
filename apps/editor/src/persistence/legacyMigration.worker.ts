@@ -21,14 +21,20 @@ self.onmessage=async({data}:MessageEvent<{bytes:Uint8Array;name?:string}>)=>{
       '旧ファイルに保存されていない選択範囲、資料、レイヤー構成は復元できません。',
       ...(outside?[outside+'件の描線はキャンバスの外にあり、移行後の履歴には含まれません。']:[])
     ];
+    const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(data.bytes)));
+    const sourceSha256=Array.from(digest,value=>value.toString(16).padStart(2,'0')).join('');
+    const sketchReaderVersions=[...new Set(source.strokes.map(stroke=>stroke.engine))];
     const {bytes}=await createPortableDocument({document,selectedLayerId:document.defaultRasterLayerId,preserved:{
-      optionalSections:[],manifestExtras:{legacyMigration:{format:source.format,importedStrokes:source.strokes.length-outside,omittedStrokes:outside}}
+      optionalSections:[],manifestExtras:{legacyMigration:{format:source.format,sourceSha256,sketchReaderVersions,importedStrokes:source.strokes.length-outside,omittedStrokes:outside}}
     }});
     const reopened=await openPortableDocument(bytes);
     // Reject a portable file if migration/re-encoding lost any stroke, point,
     // brush parameter or original order. Pixel-level visual equality still
     // needs a separate render comparison on representative real artworks.
     assertLegacyStrokeIntegrity(accepted,reopened.document.rasterReplayPlan().operations);
+    if(reopened.document.root.width!==source.width||reopened.document.root.height!==source.height)
+      throw Error('移行後に作品サイズが一致しませんでした。');
+    notices.push('移行したデータを再読み込みし、作品サイズ、筆跡の順序、筆圧・ブラシ設定を照合しました。');
     const post=self as unknown as Worker;
     post.postMessage({bytes,notices},[bytes.buffer as ArrayBuffer]);
   }catch(error){

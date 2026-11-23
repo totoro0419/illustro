@@ -187,40 +187,56 @@ function bindSelect(select: HTMLSelectElement) {
   sync();
 }
 
+let nextRange = 0;
+
 function bindRange(range: HTMLInputElement) {
-  const row = range.parentElement;
-  if (!row || row.classList.contains('workspace-range') || row.querySelectorAll('input[type=range]').length !== 1) return;
-  const label = range.labels?.[0] ?? row.querySelector('label');
-  if (!label) return;
-  const implicit = row === label;
-  const labelText = implicit ? [...label.childNodes].filter(node=>node.nodeType===Node.TEXT_NODE) : [];
-  const name = (implicit ? labelText.map(node=>node.textContent).join('').trim() : label.textContent?.trim())
+  const parent = range.parentElement;
+  if (!parent || parent.querySelectorAll('input[type=range]').length !== 1) return;
+
+  const implicit = parent instanceof HTMLLabelElement;
+  const labelText = implicit ? [...parent.childNodes].filter(node => node.nodeType === Node.TEXT_NODE) : [];
+  const caption = implicit ? document.createElement('label') : parent.querySelector('label') ?? document.createElement('label');
+  const name = (implicit ? labelText.map(node => node.textContent).join('').trim() : caption.textContent?.trim())
     || range.getAttribute('aria-label') || '数値';
+  caption.textContent = name;
+  range.id ||= 'workspace-slider-' + ++nextRange;
+  caption.htmlFor = range.id;
+
+  // A label may only label one control. Keep the caption separate from the
+  // number field and step buttons even when the original label wrapped the bar.
+  let row = parent;
   if (implicit) {
-    const caption=document.createElement('span');caption.className='workspace-range-caption';caption.textContent=name;
-    labelText.forEach(node=>node.remove());
-    row.prepend(caption);
+    row = document.createElement('div');
+    for (const {name, value} of parent.attributes) row.setAttribute(name, value);
+    row.classList.add('workspace-range-from-label');
+    labelText.forEach(node => node.remove());
+    row.append(...parent.childNodes);
+    parent.replaceWith(row);
   }
-  if (!name) return;
+
   const existing = row.querySelector<HTMLInputElement>('input[type=number]');
   const number = existing ?? document.createElement('input');
   if (!existing) {
     number.type = 'number';
-    number.inputMode = 'decimal';
     number.setAttribute('aria-label', name + 'の数値');
-    range.after(number);
   }
+  if (!number.inputMode) number.inputMode = 'decimal';
+
+  const header = document.createElement('div');
+  header.className = 'workspace-range-header';
+  const valueField = document.createElement('div');
+  valueField.className = 'workspace-range-value';
+  valueField.append(number);
+  if (range.dataset.unit) {
+    const unit = document.createElement('span');
+    unit.textContent = range.dataset.unit;
+    unit.setAttribute('aria-hidden', 'true');
+    valueField.append(unit);
+  }
+  header.append(caption, valueField);
+  row.prepend(header);
   row.classList.add('workspace-range');
-  const sync = () => {
-    if (!existing) {
-      if (number.min !== range.min) number.min = range.min;
-      if (number.max !== range.max) number.max = range.max;
-      if (number.step !== range.step) number.step = range.step;
-      if (number.disabled !== range.disabled) number.disabled = range.disabled;
-      if (document.activeElement !== number) number.value = range.value;
-    }
-    for (const button of steps) button.disabled = range.disabled || number.disabled;
-  };
+
   const commitRange = () => {
     range.dispatchEvent(new Event('input', {bubbles: true}));
     range.dispatchEvent(new Event('change', {bubbles: true}));
@@ -247,26 +263,46 @@ function bindRange(range: HTMLInputElement) {
         commitRange();
       }
     };
-    row.append(button);
+    range.insertAdjacentElement(direction < 0 ? 'beforebegin' : 'afterend', button);
     return button;
   });
-  if (!existing) number.onchange = () => {
-    if (number.value && Number.isFinite(number.valueAsNumber)) {
-      range.value = number.value;
-      commitRange();
+  const sync = () => {
+    if (!existing) {
+      if (number.min !== range.min) number.min = range.min;
+      if (number.max !== range.max) number.max = range.max;
+      if (number.step !== range.step) number.step = range.step;
+      if (document.activeElement !== number) number.value = range.value;
     }
-    number.value = range.value;
+    if (number.disabled !== range.disabled) number.disabled = range.disabled;
+    for (const button of steps) if (button.disabled !== range.disabled) button.disabled = range.disabled;
   };
-  range.addEventListener('input', sync);
-  const property = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!;
-  if (!existing) Object.defineProperty(range, 'value', {
-    configurable: true,
-    get() { return property.get!.call(this); },
-    set(value: string) { property.set!.call(this, value); sync(); },
-  });
-  for (const input of [range, number]) {
-    new MutationObserver(sync).observe(input, {attributes: true, attributeFilter: ['min', 'max', 'step', 'disabled', 'value']});
+  if (!existing) {
+    number.onchange = () => {
+      if (Number.isFinite(number.valueAsNumber)) {
+        range.value = number.value;
+        commitRange();
+      }
+      number.value = range.value;
+    };
+    number.addEventListener('blur', sync);
+    const property = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!;
+    Object.defineProperty(range, 'value', {
+      configurable: true,
+      get() { return property.get!.call(this); },
+      set(value: string) { property.set!.call(this, value); sync(); },
+    });
   }
+  number.addEventListener('keydown', event => {
+    if (event.isComposing || (event.key !== 'Enter' && event.key !== 'Escape')) return;
+    // Existing numeric editors may already commit, cancel, or show an error.
+    event.stopPropagation();
+    if (event.defaultPrevented) return;
+    event.preventDefault();
+    if (event.key === 'Escape' && range.id !== 'size') number.value = range.value;
+    number.blur();
+  });
+  range.addEventListener('input', sync);
+  new MutationObserver(sync).observe(range, {attributes: true, attributeFilter: ['min', 'max', 'step', 'disabled', 'value']});
   sync();
 }
 

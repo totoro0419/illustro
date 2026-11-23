@@ -154,3 +154,43 @@ body.illustro-focus-mode .topbar #saveState{display:inline;max-width:65vw;overfl
   z-index: 1;
 }
 .quick-ring .c04-quick-heading button { pointer-events: auto; min-height: 34px; background: var(--a-surface,#fff) }
+
+@media (max-width: 570px) {
+ :root:has(#c04ContextBar.phone-tool-context){
+   --bottom:calc(156px + env(safe-area-inset-bottom, 0px));
+ }
+ #c04ContextBar.phone-tool-context{
+   box-sizing:border-box;
+   position:fixed;z-index:8;inset-inline:0;
+   bottom:calc(116px + env(safe-area-inset-bottom, 0px) + var(--phone-keyboard-inset, 0px));
+   height:40px;margin:0;padding:2px 7px;
+   border-top:1px solid var(--a-border);background:var(--a-surface);
+ }
+ #c04ContextBar.phone-tool-context button{min-block-size:34px;}
+ #c04ContextBar.phone-tool-context output{flex:none;}
+ body.illustro-focus-mode #c04ContextBar.phone-tool-context{display:none;}
+}
+
+.phone-tool-confirmation{display:none}
+#keyboardCanvasHelp{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media (max-width:570px){
+ #c04ContextBar.phone-tool-context .phone-tool-confirmation:not([hidden]){
+   order:-2;display:flex;gap:3px;flex:none;
+ }
+ #c04ContextBar.phone-tool-context .phone-tool-confirmation button{
+   min-inline-size:42px;padding-inline:5px;
+ }
+ #c04ContextBar.phone-tool-context .phone-tool-confirmation button:first-child:not(:disabled){
+   color:var(--a-accent,#245e8d);border-color:currentColor;font-weight:700;
+ }
+}
+
+@media (max-width:570px){
+ #c04ContextBar.phone-tool-context:has(.phone-tool-confirmation:not([hidden])) #c04ContextLayer{
+   order:-1;max-inline-size:min(38vw,154px);
+ }
+ .export-dialog .export-actions{position:sticky;bottom:0;background:var(--a-surface,#fff)}
+}
+html[lang="en"] .box-heading .box-name,
+html[lang="en"] .c06-clipboard-panel summary,
+html[lang="en"] .illustro-app-dialog button{overflow-wrap:anywhere}

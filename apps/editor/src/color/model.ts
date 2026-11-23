@@ -80,6 +80,10 @@ export class ForegroundColor {
   if(Array.isArray(d.palettes)){const items=d.palettes.slice(0,MAX_PALETTES).map((p:unknown):Palette|null=>{const q=p as Palette;if(typeof q?.id!=='string'||typeof q.name!=='string'||!Array.isArray(q.swatches))return null;return {id:q.id,name:cleanName(q.name),folder:typeof q.folder==='string'?cleanName(q.folder):'',swatches:q.swatches.slice(0,MAX_SWATCHES).filter(s=>typeof s?.id==='string'&&validRGB(s.color)).map(s=>({...s,tags:Array.isArray(s.tags)?s.tags.filter((t):t is string=>typeof t==='string').slice(0,12):[]}))};}).filter((p):p is Palette=>p!==null&&!!p.name);if(items.length)this.palettes=items;}
   if(typeof d.paletteId==='string'&&this.palettes.some(p=>p.id===d.paletteId))this.paletteId=d.paletteId;
  }catch{/* Corrupt workspace preferences never prevent startup. */}}
+ checkpoint(){
+   const {current,previous,background,opacity,origin}=this,history=[...this.history];
+   return ()=>{Object.assign(this,{current,previous,background,opacity,origin,history});this.save();this.notify();};
+ }
  get isEditing(){return this.origin!==null;}
  subscribe(f:()=>void){this.listeners.add(f);return ()=>this.listeners.delete(f);}
  private notify(){for(const f of this.listeners)f();}
