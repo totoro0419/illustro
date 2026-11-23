@@ -20,9 +20,13 @@ try{
   await page.goto(base+'?backend=webgl2&r2-fix-smoke=1',{waitUntil:'domcontentloaded',timeout:60000});
   await page.locator('#ihStart').waitFor({timeout:45000});
   await page.locator('#ihStart').click();
-  await page.locator('#ihNewName').fill('R2 audit fixes - browser smoke');
-  await page.locator('#ihNewWidth').fill('512');
-  await page.locator('#ihNewHeight').fill('384');
+  // The current new-work UI intentionally holds the name in a hidden field.
+  // Configure that actual form control without requiring it to be visible.
+  await page.locator('#ihNewName').evaluate(input=>{
+    input.value='R2 audit fixes - browser smoke';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  // The default canvas is already 512x384; its advanced size fields are collapsed.
   await page.locator('#ihNewCreate').click();
   await page.waitForFunction(()=>document.getElementById('brush')&&!document.getElementById('brush').disabled,{timeout:45000});
   const canvas=page.locator('#canvas'),box=await canvas.boundingBox();
