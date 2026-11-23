@@ -138,12 +138,22 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       });
       render(after,pixels,f);
       if(r.kind==='specks'){
-        const context=after.getContext('2d');if(!context)return;
-        context.strokeStyle='#ec6e21';context.lineWidth=1.5;
+        // Mark all candidates on the untouched original. Selected spots are highlighted;
+        // unchecked spots remain distinguishable, without altering saved pixels.
+        render(before,new Uint8ClampedArray(f.source),f);
+        const sourceContext=before.getContext('2d'),previewContext=after.getContext('2d');
+        if(!sourceContext||!previewContext)return;
         for(const [i,spot] of r.spots.entries()){
-          if(!spotChecks[i]?.checked)continue;
-          const sx=(spot.x+.5)*after.width/f.width,sy=(spot.y+.5)*after.height/f.height;
-          context.beginPath();context.arc(sx,sy,5,0,Math.PI*2);context.stroke();
+          const chosen=!!spotChecks[i]?.checked;
+          const sx=(spot.x+.5)*before.width/f.width,sy=(spot.y+.5)*before.height/f.height;
+          for(const context of [sourceContext,previewContext]){
+            context.save();
+            context.strokeStyle=chosen?'#ff245d':'#edb13b';
+            context.fillStyle=chosen?'#ff245d':'#edb13b';
+            context.lineWidth=2.5;context.beginPath();context.arc(sx,sy,5,0,Math.PI*2);context.stroke();
+            context.fillRect(sx-1,sy-1,2,2);
+            context.restore();
+          }
         }
       }
     }
@@ -215,7 +225,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
         spotChecks=checks(spots,next.spots.map(spot=>'ごみ候補 '+spot.x+', '+spot.y+'（'+spot.pixels.length+'画素）'),()=>{
           paintResult();refreshApply();
         });
-        status.textContent=next.spots.length+'箇所を検出しました。目印を確認して、取り除く項目を選んでください。'+
+        status.textContent=next.spots.length+'箇所を検出しました。ピンクは削除予定、黄は対象外です。元の画像と候補の両方に位置を表示します。目印を確認して、取り除く項目を選んでください。'+
           (next.capped?' 先頭の32件を表示しています。':'');
       }else status.textContent=next.count?(next.kind==='area'?'青い部分が選択の候補です。':'明暗とパレットの色から作った案です。'):'該当する画素がありません。';
       paintResult();refreshApply();
