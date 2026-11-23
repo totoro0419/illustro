@@ -9,6 +9,7 @@ on:
       - 'prototypes/brush-rt/**'
       - 'scripts/prepare-r2-audit-fix-preview.mjs'
       - 'scripts/r2-audit-fixes-browser-smoke.mjs'
+      - 'scripts/r2-audit-fixes-fill-browser-smoke.mjs'
       - 'scripts/prepare-r2-preview.mjs'
       - '.github/workflows/r2-audit-fixes-preview.yml'
   workflow_dispatch:
@@ -111,7 +112,7 @@ jobs:
           node-version: '24'
       - name: Use Ubuntu runner's preinstalled Google Chrome
         run: |
-          npm install --prefix /tmp/r2-audit-browser playwright@1.62.1 --no-audit --no-fund
+          npm install --prefix /tmp/r2-audit-browser playwright@1.62.1 pngjs@7.0.0 --no-audit --no-fund
           command -v google-chrome
       - name: Actually operate public fixes preview in Chromium
         env:
@@ -120,3 +121,11 @@ jobs:
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
           R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
         run: node scripts/r2-audit-fixes-browser-smoke.mjs
+      - name: Paint three closed regions and test Undo/Redo on public app
+        env:
+          R2_CHROME_CHANNEL: chrome
+          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
+          PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
+        run: node scripts/r2-audit-fixes-fill-browser-smoke.mjs
