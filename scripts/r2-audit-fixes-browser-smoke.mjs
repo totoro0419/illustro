@@ -93,9 +93,19 @@ try{
   mark('D-011-RENAME-SELECTED-LAYER');
   await page.locator('#closeLayerPage').click();
 
-  const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Z9sAAAAASUVORK5CYII=','base64');
-  await page.locator('#c06ClipboardFile').setInputFiles({name:'one.png',mimeType:'image/png',buffer:tinyPng});
-  await page.waitForFunction(()=>!document.querySelector('#c06PastePreview')?.disabled,undefined,{timeout:8000});
+  // Use an actual browser-encoded PNG from the rendered canvas, not a
+  // synthetic 1px base64 whose decoder support may vary between browsers.
+  const pngForPaste=await canvas.screenshot();
+  await page.locator('#c06ClipboardFile').setInputFiles({name:'audit-source.png',mimeType:'image/png',buffer:pngForPaste});
+  await page.waitForFunction(()=>!document.querySelector('#c06PastePreview')?.disabled,undefined,{timeout:12000}).catch(async error=>{
+    const diagnostics=await page.evaluate(()=>({
+      status:document.getElementById('status')?.textContent,
+      clipboardMessage:document.querySelector('#documentBoxBody .c06-clipboard-panel output')?.textContent,
+      pastePreviewDisabled:document.getElementById('c06PastePreview')?.disabled,
+      documentReady:!document.getElementById('brush')?.disabled
+    }));
+    throw new Error('Clipboard image load failed: '+JSON.stringify(diagnostics),{cause:error});
+  });
   await page.locator('#c06PastePreview').evaluate(button=>button.click());
   await page.locator('.c06-placement-preview').waitFor({timeout:8000});
   const label=page.locator('.c06-placement-toolbar output');
