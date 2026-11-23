@@ -1,0 +1,78 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const {chromium}=require(process.env.RT_PLAYWRIGHT_PATH??'playwright');
+const base=(process.env.R2_AUDIT_FIX_URL??'https://totoro0419.github.io/illustro/r2-audit-fixes/').replace(/\/$/,'')+'/';
+const expected=(process.env.EXPECTED_COMMIT_SHA??'').trim();
+const report={url:base,expectedCommit:expected,checks:[],errors:[],status:'RUNNING'};
+const mark=(id)=>{report.checks.push(id);console.log('PASS '+id);};
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+try{
+  const context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1});
+  const page=await context.newPage();
+  page.on('pageerror',e=>report.errors.push(e.message));
+  const response=await page.request.get(base+'release.json');
+  assert.equal(response.ok(),true,'isolated release metadata unavailable');
+  const release=await response.json();
+  assert.equal(release.sourceCommit,expected,'public release does not match source');
+  assert.equal(release.isolatedStorage,true);
+  mark('PREVIEW-RELEASE-MATCH');
+  await page.goto(base+'?backend=webgl2&r2-fix-smoke=1',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.locator('#ihStart').waitFor({timeout:45000});
+  await page.locator('#ihStart').click();
+  await page.locator('#ihNewName').fill('R2 audit fixes - browser smoke');
+  await page.locator('#ihNewWidth').fill('512');
+  await page.locator('#ihNewHeight').fill('384');
+  await page.locator('#ihNewCreate').click();
+  await page.waitForFunction(()=>document.getElementById('brush')&&!document.getElementById('brush').disabled,{timeout:45000});
+  const canvas=page.locator('#canvas'),box=await canvas.boundingBox();
+  assert.ok(box,'drawing surface not visible');
+  await page.mouse.move(box.x+box.width*.25,box.y+box.height*.25);
+  await page.mouse.down();await page.mouse.move(box.x+box.width*.55,box.y+box.height*.45,{steps:12});await page.mouse.up();
+  await page.waitForFunction(()=>Number(document.querySelector('#canvas')?.dataset.committedStrokes)>0,{timeout:45000});
+  mark('BRUSH-DRAWS-ON-PUBLIC-PREVIEW');
+
+  await page.evaluate(()=>{
+    const zoom=document.getElementById('zoomPercent');
+    zoom.value='1200';zoom.dispatchEvent(new Event('change',{bubbles:true}));
+    const toggle=document.getElementById('pixelGridToggle');
+    toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.waitForFunction(()=>!document.querySelector('#pixelGrid')?.hasAttribute('hidden'),{timeout:6000});
+  await page.evaluate(()=>{
+    const toggle=document.getElementById('pixelGridToggle');
+    toggle.checked=false;toggle.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.waitForFunction(()=>{const grid=document.querySelector('#pixelGrid');return grid?.hidden&&getComputedStyle(grid).display==='none';},{timeout:6000});
+  mark('D-001-HIGH-ZOOM-GRID-OFF');
+
+  await page.locator('#fileActionsOpen').click();
+  await page.locator('#fileDocumentInfo').click();
+  assert.equal(await page.locator('#documentInfoDialog').evaluate(el=>el.open),true);
+  await page.locator('#documentInfoDpi').fill('300');
+  await page.locator('#documentInfoForm button[type=submit]').click();
+  await page.waitForFunction(()=>!document.getElementById('documentInfoDialog').open,{timeout:6000});
+  mark('D-004-DOCUMENT-INFO-ENTRY-AND-DPI');
+
+  const padButton=page.locator('#brushBoxBody button').filter({hasText:'このブラシを試し描き'}).first();
+  assert.equal(await padButton.count(),1);
+  await padButton.evaluate(el=>el.click());
+  assert.equal(await page.locator('#sharedBrushTestPad').evaluate(el=>el.open),true);
+  const revisionBefore=await canvas.getAttribute('data-revision-id');
+  const padCanvas=page.locator('#sharedBrushTestPad canvas').first(),pad=await padCanvas.boundingBox();
+  assert.ok(pad,'independent brush pad not visible');
+  await page.mouse.move(pad.x+pad.width*.2,pad.y+pad.height*.3);await page.mouse.down();
+  await page.mouse.move(pad.x+pad.width*.7,pad.y+pad.height*.65,{steps:8});await page.mouse.up();
+  assert.equal(await canvas.getAttribute('data-revision-id'),revisionBefore);
+  mark('D-005-INDEPENDENT-BRUSH-PAD');
+
+  const hint=await page.locator('p').filter({hasText:'文字のパス化は'}).count();
+  assert.ok(hint>=1,'text outline conversion requirement missing');
+  mark('D-014-TEXT-OUTLINE-REQUIREMENT');
+
+  report.status='PASS';
+  await context.close();
+}catch(error){
+  report.status='FAIL';report.failure=error.stack??String(error);
+  throw error;
+}finally{console.log(JSON.stringify(report,null,2));await browser.close();}
