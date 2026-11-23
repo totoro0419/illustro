@@ -1,0 +1,34 @@
+name: R2 Round 1 fixes - isolated validation
+
+on:
+  push:
+    branches:
+      - fix/r2-audit-round1-2026-11-23
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r2-round1-fix-verification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install repository-locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build drawing runtime
+        run: npm run brush:build
+      - name: Core typecheck and unit tests
+        run: npm run core:check
+      - name: Editor unit tests
+        run: npm --workspace @illustro/editor exec -- vitest run
+      - name: Editor typecheck and production build (no deploy)
+        run: npm run editor:build
