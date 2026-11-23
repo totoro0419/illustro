@@ -394,6 +394,30 @@ function changeLayer(label:string, change:(tx:ReturnType<CoreDocument['begin']>)
   updateQa();
 }
 
+// Both the inline list editor and the detailed field use one safe commit path.
+let layerRenameGeneration=0;
+async function renameLayerSafely(id:LayerId,name:string):Promise<boolean>{
+  const artwork=controller.document,request=++layerRenameGeneration;
+  if(!name.trim()||!artwork.root.hasLayer(id)){
+    byId('status').textContent='名前を変更するレイヤーが見つからないか、名前が空です。';
+    return false;
+  }
+  const startAt=performance.now();
+  while(artwork===controller.document&&artwork.root.hasLayer(id)&&
+    (surface?.busy||historyPending||geometryBusy)){
+    if(request!==layerRenameGeneration)return false;
+    if(performance.now()-startAt>8000){
+      byId('status').textContent='レイヤー名をまだ保存できません。描画処理が終わってから再度確定してください。';
+      return false;
+    }
+    byId('status').textContent='描画処理が終わるとレイヤー名を変更します。';
+    await new Promise<void>(resolve=>setTimeout(resolve,50));
+  }
+  if(request!==layerRenameGeneration||artwork!==controller.document||!artwork.root.hasLayer(id))return false;
+  changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(id,name));
+  return artwork.root.getLayer(id).name===name;
+}
+
 let layerBatchDocument:CoreDocument|null=null;
 let layerBatchMode=false;
 let layerBatchAnchor:LayerId|null=null;
@@ -1336,7 +1360,7 @@ const renderLayers=()=>{
           const value=field.value.trim();
           field.replaceWith(liveButton);
           if(save&&value&&value!==layer.name)
-            changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(layer.id,value));
+            void renameLayerSafely(layer.id,value);
         };
         field.onkeydown=event=>{
           if(event.key!=='Enter'&&event.key!=='Escape')return;
@@ -1677,52 +1701,32 @@ layerTagField.onchange=()=>changeLayer('レイヤーの色タグを変更しま�
 byId<HTMLButtonElement>('moveLayerUp').onclick=()=>changeLayer('レイヤーを一つ上に移動しました。',tx=>tx.moveRasterLayer(controller.selectedLayerId,1));
 byId<HTMLButtonElement>('moveLayerDown').onclick=()=>changeLayer('レイヤーを一つ下に移動しました。',tx=>tx.moveRasterLayer(controller.selectedLayerId,-1));
 const layerNameField=byId<HTMLInputElement>('selectedLayerName');
-let layerRenameGeneration=0;
 layerNameField.onchange=()=>{
-  // Bind this edit to its original layer. Rendering/selection may change later.
-  const editedId=layerNameField.dataset.layerId as LayerId|undefined;
-  if(!editedId||!controller.document.root.hasLayer(editedId)){
+  // Preserve the original ID across list redraws and slow stroke commits.
+  const id=layerNameField.dataset.layerId as LayerId|undefined;
+  if(!id||!controller.document.root.hasLayer(id)){
     byId('status').textContent='名前を変更するレイヤーが見つかりません。';return;
   }
-  const nextName=layerNameField.value.trim();
-  if(!nextName){
-    layerNameField.value=controller.document.root.getLayer(editedId).name;
+  const name=layerNameField.value.trim(),artwork=controller.document;
+  if(!name){
+    layerNameField.value=artwork.root.getLayer(id).name;
     byId('status').textContent='レイヤー名を入力してください。';return;
   }
-  const artwork=controller.document,request=++layerRenameGeneration;
-  void (async()=>{
-    // A just-finished stroke can be committed but still have pending GPU/history
-    // work. Never silently discard the rename: wait asynchronously for the barrier.
-    const startAt=performance.now();
-    while(artwork===controller.document&&artwork.root.hasLayer(editedId)&&
-      (surface?.busy||historyPending||geometryBusy)){
-      if(request!==layerRenameGeneration)return;
-      if(performance.now()-startAt>8000){
-        byId('status').textContent='レイヤー名をまだ保存できません。描画処理が終わってから再度確定してください。';
-        return;
-      }
-      byId('status').textContent='描画処理の完了後にレイヤー名を確定します。';
-      await new Promise<void>(resolve=>setTimeout(resolve,50));
-    }
-    if(request!==layerRenameGeneration||artwork!==controller.document||!artwork.root.hasLayer(editedId))return;
-    changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(editedId,nextName));
-    const updated=artwork.root.getLayer(editedId).name;
-    if(controller.selectedLayerId===editedId)layerNameField.value=updated;
-    else{
-      layerNameField.value=controller.selectedLayer.name;
-      layerNameField.dataset.layerId=controller.selectedLayerId;
-    }
-    // changeLayer() already explains a failed transaction. Do not erase its cause.
-    if(updated===nextName)byId('status').textContent='レイヤー名を変更しました。';
-  })().catch(error=>{byId('status').textContent='レイヤー名を変更できませんでした。'+String(error);});
+  void renameLayerSafely(id,name).then(saved=>{
+    if(artwork!==controller.document||!artwork.root.hasLayer(id))return;
+    layerNameField.value=controller.selectedLayerId===id?artwork.root.getLayer(id).name:controller.selectedLayer.name;
+    if(controller.selectedLayerId!==id)layerNameField.dataset.layerId=controller.selectedLayerId;
+    if(!saved&&artwork.root.getLayer(id).name!==name&&!(byId('status').textContent??'').includes('できません'))
+      byId('status').textContent='変更を反映できませんでした。前の操作が終わってからもう一度確定してください。';
+  }).catch(error=>{byId('status').textContent='レイヤー名を変更できませんでした。'+String(error);});
 };
 layerNameField.onkeydown=event=>{
   if(event.key==='Enter'){event.preventDefault();layerNameField.blur();}
   if(event.key==='Escape'){
     event.preventDefault();layerRenameGeneration++;
-    const editedId=layerNameField.dataset.layerId as LayerId|undefined;
-    if(editedId&&controller.document.root.hasLayer(editedId))
-      layerNameField.value=controller.document.root.getLayer(editedId).name;
+    const id=layerNameField.dataset.layerId as LayerId|undefined;
+    if(id&&controller.document.root.hasLayer(id))
+      layerNameField.value=controller.document.root.getLayer(id).name;
     layerNameField.blur();
   }
 };
