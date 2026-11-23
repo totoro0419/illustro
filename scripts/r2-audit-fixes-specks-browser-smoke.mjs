@@ -34,7 +34,9 @@ try{
   await page.locator('#effectsBoxBody button').filter({hasText:'画像から候補を出す'}).first().evaluate(el=>el.click());
   const dialog=page.locator('dialog.export-dialog[aria-label="画像から候補を出す"]');
   await dialog.waitFor({timeout:12000});
-  await dialog.locator('select').first().selectOption('specks');
+  // The custom-choice control keeps its native select hidden; set the exact
+  // source select and dispatch its change event without depending on its CSS.
+  await dialog.locator('select:has(option[value="specks"])').first().selectOption('specks',{force:true});
   const run=dialog.getByRole('button',{name:'候補を計算',exact:true});
   await page.waitForFunction(()=>{const d=document.querySelector('dialog.export-dialog[aria-label="画像から候補を出す"]');return !!d&&![...d.querySelectorAll('button')].find(b=>b.textContent==='候補を計算')?.disabled;},undefined,{timeout:20000});
   await run.click();
