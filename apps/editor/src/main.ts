@@ -465,6 +465,11 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
   const label=mode==='duplicate'?'レイヤーを複製':mode==='copy'?'統合コピーを作成':'レイヤーを結合';
   byId('status').textContent=label+'しています。';
   try{
+    // Drain pending strokes before taking a merge snapshot so one Undo
+    // reverses this atomic merge rather than consuming an older reservation.
+    await drawing.settleStrokes();
+    await historyNavigation?.barrier();
+    if(surface!==drawing||controller.document!==document)throw Error('結合する作品が変わりました。');
     const head=document.head;
     const captureIds=new Set(ids);
     if(mode!=='duplicate')for(const id of ids){
@@ -493,6 +498,7 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
       :tx.addRasterSnapshotAbove(reference,pixels,mode==='copy'?'統合コピー':root.getLayer(reference).name.slice(0,4070)+' のコピー',mode==='duplicate',mode==='duplicate');
     controller.lastPersistenceHandoff=tx.commit().persistence;
     controller.selectLayer(id);
+    drawing.discardRedoProjection();
     queueLatestCommit();
     checkpointNeedsFullSeed=true;
     await drawing.restoreDocumentProjection();
