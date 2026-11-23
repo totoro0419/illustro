@@ -2,11 +2,11 @@
 
 **状態：本番未開始。** 準備資料の作成は実機検査の実施ではない。
 
-- 対象URL： https://totoro0419.github.io/illustro/r2-preview/
+- 対象URL： https://illustro-r2-njutprchn-ibukioike2009-7645s-projects.vercel.app/#home
 - Windows PCローカルWork接続：未確認（開始時に実操作で確認）
 - 実操作の端末/OS/ブラウザー/入力機器：未記録（開始時に記入）
 - 検査用ZIPの配置場所：未確認（使用する場合のみ記入）
-- 公開版コミット：未記録（開始時に release.json を確認）
+- 公開版コミット：未記録（VercelのDeployment DetailsのSourceで可能なら確認。GitHub Pagesのrelease.jsonを使用しない）
 - 完了段階：なし
 - 最後に実際に操作したID：なし
 - 次の操作：P00-01（`work-steps/00-BOOT.md`）

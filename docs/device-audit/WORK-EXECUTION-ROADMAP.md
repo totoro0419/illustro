@@ -1,15 +1,22 @@
 # Illustro R2｜Work 5時間枠・Windows PC実操作／234機能検査ロードマップ
 
-> **Windows PCのChatGPTデスクトップアプリで「Work locally」を選び、PC内のブラウザーを操作する。クラウドブラウザー、Chatモード、GitHubのコード検査は代替にならない。** 初回は[PC操作の準備・接続検査](PC-SETUP.md)、[検査用ファイル](QA-FIXTURES.md)を確認する。接続の実成否は本番時に確認。
+> **検査URLはユーザー指定のVercel版のみ。Windows PCのChatGPTデスクトップアプリで「Work locally」を選び、PC内のブラウザーを操作する。クラウドブラウザー、Chatモード、GitHubのコード検査は代替にならない。** 初回は[PC操作の準備・接続検査](PC-SETUP.md)、[検査用ファイル](QA-FIXTURES.md)を確認する。接続の実成否は本番時に確認。
 
 ## 目的・評価
 
 次回のWorkは**ユーザーのWindows PC上で動くブラウザーをWork自身が操作**して公開アプリを使用し、ユーザー体験として **「使える」「使いづらい」「使えない」「未検査」** を234機能に記録する。厳しい数値テストや実装証明ではなく、**不便な点・使えない点の洗い出し**と「こうしてほしい」を得ることが目的。**今回の作業は準備のみで本番操作は未実施。**
 
 - Repository：https://github.com/totoro0419/illustro ／ [R2実装PR #110](https://github.com/totoro0419/illustro/pull/110) ／ [検査準備PR #113](https://github.com/totoro0419/illustro/pull/113)
-- [R2公開URL](https://totoro0419.github.io/illustro/r2-preview/) ／ [公開版情報](https://totoro0419.github.io/illustro/r2-preview/release.json)
+- [R2公開URL](https://illustro-r2-njutprchn-ibukioike2009-7645s-projects.vercel.app/#home) ／ [R2ソースコード](https://github.com/totoro0419/illustro/tree/implementation/round2-seven-groups)
 - 対象：R2新規143件＋既存保護91件＝**234の固有ID**。 [WORK-COVERAGE.csv](WORK-COVERAGE.csv)で1 IDにつき主操作ID 1件。今回対象外13機能は含めない。
 - 操作入口は `apps/editor/src/ui/shell.ts` などの現行コードから確認した基本ラベル（ホーム、作品、表示、ブラシ、色、レイヤー、すべての機能、機能を探す、右側の素材・参考資料・補正・効果等）を用いる。**個々の詳細メニューが公開ブラウザーで実際に表示されるかは本番で確認**。存在しない詳細ボタン名をあるものとして扱わない。
+
+## 公開対象の識別と起動判定
+
+- **検査URL（固定）：** https://illustro-r2-njutprchn-ibukioike2009-7645s-projects.vercel.app/#home
+- ユーザーはこのURLを有効と報告済み。ただし**本チャットからの独立したブラウザー操作検証は未実施**。P00開始直後にホーム画面・新規作品作成・線の描画で、実際にR2本体が使用可能か確認する。
+- **古いGitHub Pages URLや別のVercelデプロイへ自動的に切り替えない。** 初回に古い「Illustro P0 prototype」の黒画面、白画面、アクセス権限エラー、画面の起動失敗があれば、状況を記録。最大1回再読込して判断する。アプリが起動しない状態を234機能の合格として埋めない。
+- デプロイのソース確認は必要ならVercelの該当Deployment DetailsにあるSourceのブランチ・コミットを見る。**GitHub Pages用のrelease.jsonを今回のVercel版の証拠として使わない。** 同一ソースか不明な時は未確認と記録する。
 
 ## Workが行う順番
 

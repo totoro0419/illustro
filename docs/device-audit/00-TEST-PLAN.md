@@ -1,3 +1,5 @@
+> **現行検査URLは https://illustro-r2-njutprchn-ibukioike2009-7645s-projects.vercel.app/#home（ユーザーが有効と報告）。** Workの正式な開始指示は[WORK-START-PROMPT.md](WORK-START-PROMPT.md)。以下に残るGitHub PagesのURL・公開コミットは**旧公開先についての履歴**であり、Vercel版の検査URLやリリース証明には利用しない。
+
 > **2026-11-23：今回の本番はユーザーのWindows PCをWork locallyで直接操作する検査です。正式な手順は[PC-SETUP.md](PC-SETUP.md)と[WORK-EXECUTION-ROADMAP.md](WORK-EXECUTION-ROADMAP.md)。下記のAndroidタブレットの記述は旧準備段階からの参考情報であり、今回の検査指示ではありません。**
 
 > **Work 5時間枠の234機能実用検査は [WORK-EXECUTION-ROADMAP.md](WORK-EXECUTION-ROADMAP.md) を正式な操作順とし、[work-steps/](work-steps/) と [WORK-COVERAGE.csv](WORK-COVERAGE.csv) を使って実行する。** 本書と従来の `steps/` は検査準備の参照資料であり、Work本番では機能ごとの独立した詳細試験や古い合格条件を再実施しない。

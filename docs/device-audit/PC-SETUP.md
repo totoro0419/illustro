@@ -8,14 +8,20 @@ OpenAI公式資料：
 - https://help.openai.com/en/articles/20001277-using-the-built-in-browser-in-the-chatgpt-desktop-app
 - https://developers.openai.com/training/walkthroughs/using-your-computer-and-browser
 
+## 今回の検査用URL
+
+https://illustro-r2-njutprchn-ibukioike2009-7645s-projects.vercel.app/#home
+
+このURLはユーザーが利用可能と報告したVercelデプロイ。**旧GitHub Pages版と混ぜない**。端末操作による起動検証はWorkの開始時に行う。Vercelでは旧GitHub Pagesの `release.json` に依存しない。
+
 ## 初回にだけ行う準備（PC側）
 
 1. WindowsのChatGPTデスクトップアプリを起動し、**ChatGPT → Work → Work locally** を選ぶ（表示や利用可否はアカウント・ワークスペースの設定に依存）。
 2. 必要な場合はプラグイン「Browser」（アプリ内ブラウザー）、または「Chrome」（普段のChrome）を接続する。Windowsデスクトップ上の他アプリ操作が必要な場合のみ「Computer Use」を許可する。利用できない権限を迂回しない。
-3. Work画面のツールバーからアプリ内ブラウザーを開く。Windowsショートカットは **Ctrl+Shift+B**。R2 URL `https://totoro0419.github.io/illustro/r2-preview/` を表示し、ブラウザー操作許可を承認する。
-4. **Work自身の操作で**画面上のボタンをクリック → 名前欄へ短い文字を入力 → キャンバスをマウスドラッグして短い線を描く。3つが実際に通ったら「PC操作接続成功」と記録する。読み取り専用でボタン操作できない場合は成功としない。
+3. Work画面のツールバーからアプリ内ブラウザーを開く。Windowsショートカットは **Ctrl+Shift+B**。R2 URL `https://illustro-r2-njutprchn-ibukioike2009-7645s-projects.vercel.app/#home` を表示し、ブラウザー操作許可を承認する。
+4. **Work自身の操作で**Illustro R2のホーム画面を確認 → 新規作品を作成 → マウスで短い線を描く。3つが実際に通ったら「Vercel版でPC操作接続成功」と記録し、作った作品をP00の作品Aとして再利用する。**別にもう一度同じ作品を作らない**。黒い「Illustro P0 Prototype」画面・起動エラー・操作不能は成功としない。
 5. [検査用ファイル](QA-FIXTURES.md)のZIPをPC上で開ける場所に置き、必要なものだけ参照する（他の個人ファイルには触れない）。
-6. 準備が済んだら[WORK-START-PROMPT.md](WORK-START-PROMPT.md)で本番開始。P00からP12までの102操作を実施する。
+6. 準備が済んだら[WORK-START-PROMPT.md](WORK-START-PROMPT.md)で本番開始。起動確認の実操作はP00の同じ確認を兼ねてよい。P00からP12までの102操作を無駄な再作成なしで実施する。
 
 ## 失敗した場合
 - アプリ内ブラウザーが使えない場合は、許可されたChromeブラウザー連携を**一度だけ**試してよい。操作がPC内で行われることを確認する。

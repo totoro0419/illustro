@@ -16,7 +16,7 @@
 | `qa-colors.exr` | EXR画像 |
 | `qa-srgb.icc` | sRGB色設定ファイル |
 
-ZIPの展開・読み込み可否は、Windows側で本番開始時に確認する。準備環境でZIPの完全性・PNG/JPEG/WebP/TIFF/AVIFの形式検証・ORA内構造・PSDのヘッダー・ICCの解析を確認したが、**Illustro自身が読み込めることは未検証**。
+ZIPの展開・読み込み可否は、Windows側で本番開始時に確認する。準備時のZIP内部整合性チェックは10ファイルすべて問題なし。準備環境でZIPの完全性・PNG/JPEG/WebP/TIFF/AVIFの形式検証・ORA内構造・PSDのヘッダー・ICCの解析を確認したが、**Illustro自身が読み込めることは未検証**。
 
 **このZIPにないもの**：PSB、HEIF/HEIC、旧Illustro形式、外部フォント。別の検査用ファイルがない場合、その固有の入力部分は理由付き未検査とし、生成や探索に長時間を使わない。既存のPNGは検査中にIllustroから書き出す方法でも準備可能。
 
