@@ -117,10 +117,18 @@ try{
   const label=page.locator('.c06-placement-toolbar output');
   const beforePlacement=await label.textContent();
   const revisionBeforePaste=await canvas.getAttribute('data-revision-id');
+  const strokesBeforePaste=await canvas.getAttribute('data-committed-strokes');
   const canvasBox=await canvas.boundingBox();
   await page.mouse.click(canvasBox.x+canvasBox.width*.77,canvasBox.y+canvasBox.height*.72);
-  await page.waitForFunction(before=>document.querySelector('.c06-placement-toolbar output')?.textContent!==before,beforePlacement,{timeout:8000});
-  assert.equal(await canvas.getAttribute('data-revision-id'),revisionBeforePaste,'moving paste preview edited the artwork');
+  await page.waitForFunction(before=>document.querySelector('.c06-placement-toolbar output')?.textContent!==before,beforePlacement, {timeout:8000});
+  // A queued accidental stroke may publish *after* pointerup; verify it did
+  // not commit even after the normal asynchronous completion window.
+  await page.waitForTimeout(250);
+  const revisionAfterPaste=await canvas.getAttribute('data-revision-id');
+  const strokesAfterPaste=await canvas.getAttribute('data-committed-strokes');
+  assert.deepEqual({revision:revisionAfterPaste,strokes:strokesAfterPaste},
+    {revision:revisionBeforePaste,strokes:strokesBeforePaste},
+    'moving paste preview edited the artwork');
   await page.locator('.c06-placement-toolbar button').last().click();
   await page.waitForFunction(()=>!document.querySelector('.c06-placement-preview'),undefined,{timeout:5000});
   mark('D-012-TAP-TO-POSITION-PASTE-PREVIEW');
