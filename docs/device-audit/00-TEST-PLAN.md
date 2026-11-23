@@ -1,3 +1,5 @@
+> **2026-11-23：今回の本番はユーザーのWindows PCをWork locallyで直接操作する検査です。正式な手順は[PC-SETUP.md](PC-SETUP.md)と[WORK-EXECUTION-ROADMAP.md](WORK-EXECUTION-ROADMAP.md)。下記のAndroidタブレットの記述は旧準備段階からの参考情報であり、今回の検査指示ではありません。**
+
 > **Work 5時間枠の234機能実用検査は [WORK-EXECUTION-ROADMAP.md](WORK-EXECUTION-ROADMAP.md) を正式な操作順とし、[work-steps/](work-steps/) と [WORK-COVERAGE.csv](WORK-COVERAGE.csv) を使って実行する。** 本書と従来の `steps/` は検査準備の参照資料であり、Work本番では機能ごとの独立した詳細試験や古い合格条件を再実施しない。
 
 # Illustro R2｜実機検査計画（2026-11-23）
