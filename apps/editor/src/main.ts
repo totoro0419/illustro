@@ -2068,7 +2068,8 @@ function syncPreset(){
  syncBrushSize(byId<HTMLInputElement>('size'),sizeNumber,p);
  byId('brushBoxSummary').textContent=(surface.brushName||selectedTool)+' · '+Math.round(p.size)+'px';
  byId<HTMLInputElement>('force').checked=p.forceFade?.enabled??false;
- for(const [id,value] of [['brushOpacity',p.opacity],['brushFlow',p.flow],['brushSpacing',p.spacing.value],['brushPressure',p.pressure.smoothing],['brushStabilization',p.stabilization.constant],['brushTexture',p.texture.paper.strength]] as const){
+ const stabilization=p.stabilization.scope==='common'?commonStabilization:p.stabilization.constant;
+ for(const [id,value] of [['brushOpacity',p.opacity],['brushFlow',p.flow],['brushSpacing',p.spacing.value],['brushPressure',p.pressure.smoothing],['brushStabilization',stabilization],['brushTexture',p.texture.paper.strength]] as const){
   const control=byId<HTMLInputElement>(id);control.value=String(Math.round(value*100));
   byId<HTMLOutputElement>(id+'Value').value=String(Math.round(value*100))+'%';
   const numeric=document.getElementById(id+'Number') as HTMLInputElement|null;
@@ -3178,10 +3179,10 @@ function bindBrushNumber(input:HTMLInputElement,current:()=>number,apply:(value:
  input.addEventListener('blur',reflect);
  input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();input.blur();}});
 }
-function editBrushParameter(controlId:string,change:(preset:FoundationPreset,value:number)=>void){
+function editBrushParameter(controlId:string,change:(value:number)=>boolean){
  const input=byId<HTMLInputElement>(controlId);
  const changeValue=(number:number)=>{
-  if(!applyBrushChange(p=>change(p,number/100)))syncPreset();
+  if(!Number.isFinite(number)||number<0||number>100||!change(number/100))syncPreset();
  };
  input.addEventListener('input',()=>changeValue(input.valueAsNumber));
  const number=document.getElementById(controlId+'Number') as HTMLInputElement|null;
@@ -3192,9 +3193,17 @@ for(const [id,change] of [
  ['brushFlow',(p:FoundationPreset,v:number)=>{p.flow=v;}],
  ['brushSpacing',(p:FoundationPreset,v:number)=>{p.spacing.value=v;}],
  ['brushPressure',(p:FoundationPreset,v:number)=>{p.pressure.smoothing=v;}],
- ['brushStabilization',(p:FoundationPreset,v:number)=>{p.stabilization.constant=v;}],
  ['brushTexture',(p:FoundationPreset,v:number)=>{p.texture.paper.strength=v;}]
-] as const)editBrushParameter(id,change);
+] as const)editBrushParameter(id,value=>applyBrushChange(p=>change(p,value)));
+editBrushParameter('brushStabilization',value=>{
+ if(surface?.preset?.stabilization.scope!=='common')return applyBrushChange(p=>{p.stabilization.constant=value;});
+ if(surface.inputActive){brushMessage('描画中は設定を変更できません。線を離してから調整してください。');return false;}
+ commonStabilization=value;
+ surface.setCommonStabilization(value);
+ try{localStorage.setItem('illustro.common-stabilization.v1',String(value));}catch{}
+ syncPreset();
+ return true;
+});
 for(const [id,key] of [['brushAzimuth','azimuth'],['brushTwist','twist']] as const){
  byId<HTMLInputElement>(id).addEventListener('change',event=>{
   if(!applyBrushChange(p=>{p.tip[key]=(event.target as HTMLInputElement).checked;}))syncPreset();
@@ -3211,9 +3220,6 @@ byId<HTMLSelectElement>('brushStabilizationScope').onchange=event=>{
  const choice=(event.target as HTMLSelectElement).value;
  if(!applyBrushChange(p=>{p.stabilization.scope=choice==='common'?'common':'brush';}))syncPreset();
 };
-const commonStabilizationInput=byId<HTMLInputElement>('commonStabilization');
-commonStabilizationInput.value=String(Math.round(commonStabilization*100));
-byId<HTMLOutputElement>('commonStabilizationValue').textContent=Math.round(commonStabilization*100)+'%';
 const devicePressureInput=byId<HTMLInputElement>('devicePressureSensitivity');
 devicePressureInput.value=String(Math.round(devicePressureSensitivity*100));
 const pressureLabel=byId<HTMLOutputElement>('devicePressureSensitivityValue');
@@ -3223,12 +3229,6 @@ devicePressureInput.oninput=()=>{
  pressureLabel.textContent=devicePressureSensitivity===0.5?'標準':Math.round(devicePressureSensitivity*100)+'%';
  surface?.setPressureCalibration(devicePressureSensitivity);
  try{localStorage.setItem('illustro.device-pressure-midpoint.v1',String(devicePressureSensitivity));}catch{}
-};
-commonStabilizationInput.oninput=()=>{
- commonStabilization=Math.max(0,Math.min(1,Number(commonStabilizationInput.value)/100));
- byId<HTMLOutputElement>('commonStabilizationValue').textContent=Math.round(commonStabilization*100)+'%';
- surface?.setCommonStabilization(commonStabilization);
- try{localStorage.setItem('illustro.common-stabilization.v1',String(commonStabilization));}catch{}
 };
 byId<HTMLButtonElement>('brushReset').onclick=()=>{
  const current=surface?.preset;if(!current||surface?.inputActive)return;

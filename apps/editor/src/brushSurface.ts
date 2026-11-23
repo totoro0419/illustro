@@ -985,7 +985,13 @@ export class BrushSurface{
       if(this.artworkGuides.length||bypass)this.onArtworkGuideTarget(picked?picked.name+'へ吸着（'+picked.distance.toFixed(1)+' px）':bypass?'この一筆は吸着を解除':'作品の定規への吸着なし');
       this.updateGuideOverlay();
       this.renderer?.setSeamlessPreview(this.view.seamless);
-      const context={stabilizationGeometry:'adaptive-v2' as const,...(layer.alphaLocked?{alphaLocked:true}:{}),...(this.pressureCalibrationMidpoint===0.5?{}:{deviceCurve:[[0,0],[0.5,this.pressureCalibrationMidpoint],[1,1]] as const}),...(preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{})};
+      const context={
+        // Ruler strokes already have a prescribed path. Preserve their existing evaluation.
+        ...(!this.activeGuide&&!this.pendingPerspectiveHeading?{freehandStabilizationScale:this.view.zoom}:{stabilizationGeometry:'adaptive-v2' as const}),
+        ...(layer.alphaLocked?{alphaLocked:true}:{}),
+        ...(this.pressureCalibrationMidpoint===0.5?{}:{deviceCurve:[[0,0],[0.5,this.pressureCalibrationMidpoint],[1,1]] as const}),
+        ...(preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{})
+      };
       // Color opacity applies to this stroke, not to the stored brush preset.
       // The eraser keeps its own separately configurable opacity.
       const strokePreset=preset.blend==='erase'||this.colorOpacity===1?preset:
