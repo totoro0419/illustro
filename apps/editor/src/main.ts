@@ -1,3 +1,5 @@
+import {cropRestorePlan,mergeRetainedCrop} from './cropRetention';
+import {installStrokeComparison,type StrokeComparison} from './ui/strokeComparison';
 import {nativeBrushSensors} from './brushInput';
 import {readRasterPresets,removeRasterPreset,writeRasterPreset} from './export/rasterPresets';
 import {installDeviceCapabilities} from './ui/deviceCapabilities';
@@ -192,6 +194,7 @@ const historyInputs:Array<{at:number;eventAt:number;button:string;direction:stri
 function traceHistoryInput(button:HTMLButtonElement,direction:HistoryDirection,phase:string,event:Event,reason?:string){if(!perfMode)return;historyInputs.push({at:performance.now(),eventAt:event.timeStamp,button:button.id,direction,phase,pointerType:(event as PointerEvent).pointerType??'keyboard',disabled:button.disabled,...(reason?{reason}:{})});if(historyInputs.length>1200)historyInputs.shift();}
 
 let pressureRange=readPressureRange();
+let strokeComparisonListener:StrokeComparison|null=null;
 const inputPreferences={finger:false,palmGuard:true,penBarrelErase:false,rotationSnap:true,brushCursorEnabled:false,eraserSizeLink:false};
 try{
   const saved=JSON.parse(localStorage.getItem('illustro.input-preferences.v1')??'null');
@@ -1728,6 +1731,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
  }
  else{byId('colorSampleLoupe').hidden=true;foreground.begin();foreground.commit(color);byId('status').textContent='キャンバスから '+hex(foreground.current)+' を取得しました。';if(!holdingColorKey&&selectedTool==='eyedropper')restoreDrawingTool();}
  });
+ drawing.onStrokeComparison=strokeComparisonListener;
  drawing.onInputInterrupted=async()=>{
    if(surface!==drawing||!documentReady)return false;
    const root=documentController.document.root;
@@ -2692,34 +2696,40 @@ byId('geometryApply').onclick=()=>{void applyGeometry();};
 async function restoreCropOutside(){
   const drawing=surface,artwork=controller.document,head=artwork.head,root=artwork.root;
   if(!documentReady||geometryBusy||historyPending||!drawing?.canChangeGeometry)return;
-  const operation=artwork.operationsTo().findLast(op=>
-    op.kind==='document.crop'||['document.canvas-resize','document.image-resize'].includes(op.kind)&&
-    (op.parameters.fromWidth!==op.parameters.toWidth||op.parameters.fromHeight!==op.parameters.toHeight));
-  const originalId=operation?.sourceRevisionIds[0];
-  if(operation?.kind!=='document.crop'||operation.parameters.keepOutside!==true||!originalId){
-    byId('status').textContent='外側を残して切り抜いた作品で使えます。その後にサイズを変えた場合は、サイズ変更を先に戻してください。';return;
-  }
-  const original=artwork.revision(originalId).root;
-  const x=Number(operation.parameters.x),y=Number(operation.parameters.y);
-  if(![x,y].every(Number.isSafeInteger)||x<0||y<0||x+root.width>original.width||y+root.height>original.height){
-    byId('status').textContent='切り抜き前の範囲を復元できません。';return;
-  }
+  let plan:ReturnType<typeof cropRestorePlan>;
+  try{plan=cropRestorePlan(artwork.operationsTo(),root);}
+  catch(error){byId('status').textContent=error instanceof Error?error.message:String(error);return;}
+  if(!plan){byId('status').textContent='外側を残した切り抜きが見つかりません。';return;}
+  const {source,output,placement,outside,currentX,currentY,filter}=plan;
+  if(!await appConfirm('切り抜きの外側を戻します。復元後は '+output.width+' × '+output.height+
+    ' px です。現在の範囲の絵は優先して残します。'))return;
+  if(controller.document!==artwork||head!==artwork.head||surface!==drawing||geometryBusy||!drawing.canChangeGeometry)return;
   geometryBusy=true;drawing.setInputBarrier(true);
   byId('status').textContent='切り抜きの外側を復元しています。';
   try{
+    const original=artwork.revision(source).root;
     const cropped=await drawing.captureDocumentLayers(),restored=new Map<LayerId,Uint8Array>();
     for(const [id,pixels] of cropped){
       const prior=original.hasLayer(id)?original.getLayer(id):null;
-      const target=prior?.baseColor==='white'?new Uint8Array(original.width*original.height*4).fill(255):
-        prior?await originalTransformPixels(artwork,prior,originalId):new Uint8Array(original.width*original.height*4);
-      for(let row=0;row<root.height;row++){
-        target.set(pixels.subarray(row*root.width*4,(row+1)*root.width*4),((y+row)*original.width+x)*4);
-      }
+      const width=original.width,height=original.height;
+      const originalPixels=prior?.baseColor==='white'?new Uint8Array(width*height*4).fill(255):
+        prior?new Uint8Array(await originalTransformPixels(artwork,prior,source)):null;
+      let target:Uint8Array;
+      if(originalPixels){
+        for(let row=outside.y;row<outside.y+outside.height;row++){
+          const start=(row*width+outside.x)*4;
+          originalPixels.fill(0,start,start+outside.width*4);
+        }
+        const transformed=width===placement.width&&height===placement.height?originalPixels:
+          resizeImagePixels(originalPixels,width,height,placement.width,placement.height,filter);
+        target=new Uint8Array(changeCanvasBounds(transformed,placement.width,placement.height,output.width,output.height,placement.x,placement.y));
+      }else target=new Uint8Array(output.width*output.height*4);
+      mergeRetainedCrop(target,pixels,root,plan);
       restored.set(id,target);
     }
     if(controller.document!==artwork||head!==artwork.head||surface!==drawing)throw Error('作品が変わりました。');
     const tx=artwork.begin('切り抜きの外側を復元');
-    tx.resizeDocument(original.width,original.height,'document.canvas-resize',restored,{offsetX:x,offsetY:y});
+    tx.resizeDocument(output.width,output.height,'document.canvas-resize',restored,{offsetX:currentX,offsetY:currentY,restoredCrop:source});
     controller.lastPersistenceHandoff=tx.commit().persistence;queueLatestCommit();
     await reloadGeometryProjection();scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
     byId('status').textContent='切り抜き後の編集を保ったまま、外側を復元しました。';
@@ -4297,6 +4307,11 @@ const c04FloatingPanels=installFloatingPanels();
 const c04Toolbar=installToolbarSettings();
 const c04WorkspaceService=installWorkspaceProfiles(c04FloatingPanels,c04Toolbar);
 installInputDeviceProfiles(()=>surface,range=>{pressureRange=range;surface?.setPressureRange(range);});
+installStrokeComparison(byId('workspaceBoxBody'),listener=>{
+  strokeComparisonListener=listener;
+  if(surface)surface.onStrokeComparison=listener;
+});
+
 installGestureShortcuts();
 const openAccessibility=installAccessibility(byId('workspaceBoxBody'));
 const openDeviceCapabilities=installDeviceCapabilities(byId('workspaceBoxBody'),()=>({

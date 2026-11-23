@@ -1,3 +1,4 @@
+import type {StrokeComparison} from './ui/strokeComparison';
 import {pixelStroke} from './pixelStroke';
 import {correctionGeometry,correctionSuggestedShape,type CorrectionHold,type CorrectionStroke} from './artwork/strokeCorrection';
 import type {ArtworkGuide} from '@illustro/core';
@@ -60,6 +61,8 @@ export class BrushSurface{
   private editGesture:CanvasEditGesture|null=null;
   private interruptedStroke:number|null=null;
   lastCommitMs:number|null=null;
+  onStrokeComparison:StrokeComparison|null=null;
+  private comparisonZoom=1;
   onInputInterrupted:()=>Promise<boolean>=async()=>false;
 
   private editTraceVisible=true;
@@ -964,6 +967,7 @@ export class BrushSurface{
     if(this.controller.selectedLayer.baseColor==='white'){this.status('背景レイヤーをもう一度選ぶと、背景にも直接描けます。');return;}
     const inputReason=e.button!==0&&!eraser?'button':this.pointer!==null?'pointer-active':this.finishing?'cancelling':this.historySyncing?'history':this.inputBarrier?'document-barrier':this.operationMode!=='idle'?this.operationMode:null;const attempt=this.traceHandoff?{at:performance.now(),eventAt:e.timeStamp,reason:inputReason,state:{finishing:this.finishing,historySyncing:this.historySyncing,inputBarrier:this.inputBarrier,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,formalCommands:(this.renderer as any)?.document.count??0,pendingRaw:this.session.pendingRawCount,protectionQueue:this.protectionQueueLength}} as (typeof this.inputAttempts)[number]:null;if(attempt){this.inputAttempts.push(attempt);if(this.inputAttempts.length>1200)this.inputAttempts.shift();}if(inputReason)return;if(this.handoffFault){if(attempt)attempt.reason='fault';this.handoffRejected++;this.status('描画処理が停止しています。'+this.handoffFault);return;}const r=this.renderer as any;if((this.handoff?.pending??0)+this.gpuFinishes.size>=64||r?.document.count>100000||this.session.pendingRawCount>50000||this.protectionQueueLength>=128){if(attempt)attempt.reason='resource-limit';this.handoffRejected++;this.status('処理量の上限に達しました。作品の処理が終わるまで次の一筆をお待ちください。');return;}e.preventDefault();
     const origin=this.view.document(this.pointerLocation(e));
+    if(this.onStrokeComparison)this.comparisonZoom=this.view.zoom;
     if(this.view.seamless){
       const bounds=seamlessBounds(root.width,root.height,this.view.repeatRadius);
       if(bounds&&(origin.x<bounds.x||origin.y<bounds.y||origin.x>=bounds.x+bounds.width||origin.y>=bounds.y+bounds.height))return;
@@ -1083,7 +1087,15 @@ export class BrushSurface{
     this.finishStroke(this.sample(e));};
   private finishStroke(release:Sample|null=null){if(!this.session||!this.target||this.pointer===null)return;const session=this.session,target=this.target,seamless=this.view?.seamless??false,strokeId=this.activeStrokeId,reservation=this.reservation,mask=this.strokeMask,symmetry=this.strokeSymmetry;session.predictions([]);const upAt=performance.now();this.pointer=null;this.strokeSymmetry=null;this.clearSymmetryStrokePreview();if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.pendingPerspectiveHeading=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.reservation=null;
     const hold=this.endCorrectionHold();
-    if(mask){void this.finishMaskedStroke(session,target,mask,seamless,release,symmetry,hold);return;}
+    const comparison=this.onStrokeComparison;
+    const fromZoom=this.comparisonZoom,toZoom=this.view?.zoom??1;
+    const report=comparison?(record:StrokeRecord)=>{
+      requestAnimationFrame(()=>{
+        if(this.disposed||this.onStrokeComparison!==comparison)return;
+        try{comparison(record,fromZoom,toZoom);}catch{/* The optional chart cannot affect drawing. */}
+      });
+    }:undefined;
+    if(mask){void this.finishMaskedStroke(session,target,mask,seamless,release,symmetry,hold,report);return;}
     if(!reservation)return;
     if(hold)this.heldReservations.set(reservation,hold);
     const promise=session.end(release?{...release,origin:'release'}:null),trace={id:strokeId!,upAt,readyMs:performance.now()-upAt} as (typeof this.handoffTraces)[number];if(this.traceHandoff){this.handoffTraces.push(trace);if(this.handoffTraces.length>1200)this.handoffTraces.shift();}const uiAt=performance.now();this.onStateChanged();trace.uiStateMs=performance.now()-uiAt;trace.readyMs=performance.now()-upAt;
@@ -1091,11 +1103,11 @@ export class BrushSurface{
       const copies=seamless?variants.flatMap((variant,index)=>[
         ...(index?[variant]:[]),...wrappedCopies(variant,target.width,target.height).map(copy=>copy.record)
       ]):variants.slice(1);
-      try{const result=await this.handoff!.release(reservation,record,copies);if(result)this.lastCommitMs=trace.logicalMs=performance.now()-upAt;else trace.parkedMs=performance.now()-upAt;}
+      try{const result=await this.handoff!.release(reservation,record,copies);if(result){this.lastCommitMs=trace.logicalMs=performance.now()-upAt;report?.(record);}else trace.parkedMs=performance.now()-upAt;}
       catch(error){if(error instanceof EmptyStrokeError){if(!this.handoff?.pending)this.pendingBranch=false;await session.discardUncommitted(record);this.status('作品の範囲外のため、線は追加されませんでした。');return;}throw error;}
     }).catch(error=>{if(this.disposed)return;this.handoffFault=error instanceof Error?error.message:String(error);this.handoff?.fail(error);this.status('線を確定できませんでした。'+this.handoffFault);}).finally(()=>{if(!this.handoff?.owns(reservation))this.pendingStrokeIds.delete(reservation);if(!this.disposed)this.onStateChanged();});}
 
-  private async finishMaskedStroke(session:RealtimeSession,target:DrawingTarget,mask:MaskData,seamless:boolean,release:Sample|null,symmetry:SymmetrySettings|null,hold?:CorrectionHold){
+  private async finishMaskedStroke(session:RealtimeSession,target:DrawingTarget,mask:MaskData,seamless:boolean,release:Sample|null,symmetry:SymmetrySettings|null,hold?:CorrectionHold,report?:(record:StrokeRecord)=>void){
     this.finishing=true;
     const started=performance.now();
     this.onStateChanged();
@@ -1186,6 +1198,7 @@ export class BrushSurface{
       this.finishing=false;
       await this.restoreDocumentProjection();
       this.status('選択範囲に反映しました。');
+      report?.(record);
       if(!seamless&&!symmetry)this.recordCorrectionStroke(record,target.layerId,artwork.head,mask,hold);
     }catch(error){if(!this.disposed)this.status(error instanceof Error?error.message:String(error));}
     finally{
