@@ -115,7 +115,7 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
   // The unmodified wall snapshot is only needed for automatic bridges or
   // preserve-ink erasure. Most fills have gap=0 and no such edits: avoid
   // allocating a second 4000x4000 wall buffer in that common case.
-  const radius=Math.round(limit(gap,0,12));
+  const radius=Math.round(limit(gap,0,32));
   const needsOriginal=radius>0||manual.some(edit=>edit.remove&&edit.preserveInk);
   const original=needsOriginal?walls.slice():walls;
   const bridges=new Uint8Array(count),candidates:GapCandidate[]=[];
