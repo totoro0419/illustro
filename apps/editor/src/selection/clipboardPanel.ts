@@ -76,6 +76,8 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
     let x=Math.round((view.width-item.width)/2),y=Math.round((view.height-item.height)/2);
     let working=false,frame=0;
     const overlay=document.createElement('section');overlay.className='c06-placement-preview';
+    // The BrushSurface uses this selector to ignore overlay pointer gestures.
+    overlay.setAttribute('data-canvas-no-input','');
     overlay.setAttribute('role','group');
     overlay.setAttribute('aria-label','貼り付ける画像の位置を決める');
     const image=document.createElement('canvas');image.className='c06-placement-image';
@@ -131,6 +133,7 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
     const relocate=(event:PointerEvent)=>{
       if(placementOverlay!==overlay||working||event.button!==0)return;
       const target=event.target;
+      if(!(target instanceof Node)||!surface.contains(target))return;
       if(target instanceof Element&&target.closest('.c06-placement-toolbar,.c06-placement-image'))return;
       const live=actions.getView();if(!live)return;
       const rect=surface.getBoundingClientRect();
@@ -140,11 +143,13 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
       event.preventDefault();event.stopImmediatePropagation();
       position();
     };
-    surface.addEventListener('pointerdown',relocate,{capture:true});
+    // Document-capture fires before BrushSurface's surface listener, even if
+    // the latter registered first. No accidental raster stroke can begin.
+    document.addEventListener('pointerdown',relocate,true);
     placementCleanup=()=>{
       cancelAnimationFrame(frame);
       document.removeEventListener('keydown',keyGuard,true);
-      surface.removeEventListener('pointerdown',relocate,true);
+      document.removeEventListener('pointerdown',relocate,true);
     };
     let drag:{id:number;screen:{x:number;y:number};x:number;y:number}|null=null;
     image.addEventListener('pointerdown',event=>{
