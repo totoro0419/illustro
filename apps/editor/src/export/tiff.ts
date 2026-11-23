@@ -1,11 +1,15 @@
+import {xmp,type RasterMetadata} from './rasterMetadata';
 import {ICC_LIMIT} from './iccMetadata';
 import {assertImageSize} from './exchangeTypes';
 
 // TIFF 6.0 chunky RGB, unassociated alpha, unsigned samples.
-export function encodeTiff(pixels:Uint8ClampedArray,width:number,height:number,dpi=96):Uint8Array<ArrayBuffer>{
+export function encodeTiff(pixels:Uint8ClampedArray,width:number,height:number,dpi=96,metadata:RasterMetadata={}):Uint8Array<ArrayBuffer>{
   assertImageSize(width,height);
   if(pixels.length!==width*height*4)throw Error('TIFFの画素データが正しくありません。');
-  const entries=14,offset=8,extra=offset+2+entries*12+4,strip=extra+24;
+  const description=xmp(metadata),profile=metadata.profile;
+  const entries=14+Number(!!description)+Number(!!profile),offset=8,extra=offset+2+entries*12+4;
+  const textOffset=extra+24,profileOffset=textOffset+((description?.length??0)+1&~1);
+  const strip=profileOffset+((profile?.length??0)+1&~1);
   const out=new Uint8Array(strip+pixels.length),view=new DataView(out.buffer);
   const u16=(at:number,n:number)=>view.setUint16(at,n,true),u32=(at:number,n:number)=>view.setUint32(at,n,true);
   out[0]=73;out[1]=73;u16(2,42);u32(4,offset);u16(offset,entries);
@@ -18,6 +22,8 @@ export function encodeTiff(pixels:Uint8ClampedArray,width:number,height:number,d
   field(259,3,1,1);field(262,3,1,2);field(273,4,1,strip);field(277,3,1,4);
   field(278,4,1,height);field(279,4,1,pixels.length);field(282,5,1,extra+8);field(283,5,1,extra+16);
   field(284,3,1,1);field(296,3,1,2);field(338,3,1,2);
+  if(description){field(700,1,description.length,textOffset);out.set(description,textOffset);}
+  if(profile){field(34675,7,profile.length,profileOffset);out.set(profile,profileOffset);}
   for(let i=0;i<4;i++)u16(extra+i*2,8);
   const density=Number.isFinite(dpi)&&dpi>=1&&dpi<=2400?dpi:96;
   u32(extra+8,Math.round(density*1000));u32(extra+12,1000);

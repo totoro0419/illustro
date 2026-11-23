@@ -1,4 +1,4 @@
-import type {PointerPanBinding} from './pointerPanBinding';
+import {matchPointerButton,type PointerButtonAction,type PointerButtonBinding} from './pointerPanBinding';
 import type {StrokeComparison} from './ui/strokeComparison';
 import {pixelStroke} from './pixelStroke';
 import {correctionGeometry,correctionSuggestedShape,type CorrectionHold,type CorrectionStroke} from './artwork/strokeCorrection';
@@ -64,34 +64,42 @@ export class BrushSurface{
   lastCommitMs:number|null=null;
   onStrokeComparison:StrokeComparison|null=null;
   private comparisonZoom=1;
-  private pointerPanBinding:PointerPanBinding|null=null;
+  private pointerButtons:readonly PointerButtonBinding[]=[];
+  private heldPanMask=0;
+  onPointerButton:(action:Exclude<PointerButtonAction,'hold-pan'|'sample'>)=>void=()=>{};
   private heldPanPointer:number|null=null;
   private ignoredPanPointer:number|null=null;
 
-  setPointerPanBinding(binding:PointerPanBinding|null){
+  setPointerButtons(bindings:readonly PointerButtonBinding[]){
     this.endHeldPan();
-    this.ignoredPanPointer=null;this.pointerPanBinding=binding;
+    this.ignoredPanPointer=null;this.pointerButtons=bindings;
   }
   private endHeldPan(ignoreUntilRelease=false){
     if(this.heldPanPointer===null)return;
     this.navigation?.mouseUp(this.heldPanPointer);
     if(ignoreUntilRelease)this.ignoredPanPointer=this.heldPanPointer;
     this.heldPanPointer=null;
+    if(!ignoreUntilRelease)this.heldPanMask=0;
     this.status('元の道具に戻りました。');
   }
-  private startHeldPan(event:PointerEvent){
-    const binding=this.pointerPanBinding;
+  private dispatchPointerButton(event:PointerEvent,allowHeld=false){
+    if(!this.pointerButtons.length)return false;
     if(event.pointerId===this.ignoredPanPointer){
-      if(binding&&(event.buttons&binding.mask)!==0&&event.type!=='pointerdown')return false;
-      this.ignoredPanPointer=null;
+      if((event.buttons&this.heldPanMask)!==0&&event.type!=='pointerdown')return false;
+      this.ignoredPanPointer=null;this.heldPanMask=0;
     }
-    if(!binding||this.heldPanPointer!==null||this.pointer!==null||this.editPointer!==null||
-      this.eyedropperPointer!==null||this.selectionPointer!==null||this.inputBarrier||this.navigation?.touchCount||
-      event.pointerType!==binding.device||(event.buttons&binding.mask)===0)return false;
-    this.heldPanPointer=event.pointerId;
-    this.navigation?.mouseDown(event.pointerId,this.pointerLocation(event));
-    if(event.type==='pointerdown')this.inputViewport.setPointerCapture(event.pointerId);
-    this.status('登録したボタンを離すと元の道具に戻ります。');
+    if(this.heldPanPointer!==null||this.pointer!==null||this.editPointer!==null||
+      this.eyedropperPointer!==null||this.selectionPointer!==null||this.inputBarrier||this.navigation?.touchCount)return false;
+    const scene=this.editGesture||this.selectionMode||this.panTool||this.eyedropper?'tool':'drawing';
+    const binding=matchPointerButton(this.pointerButtons,event,scene,allowHeld);
+    if(!binding)return false;
+    if(binding.action==='hold-pan'){
+      this.heldPanPointer=event.pointerId;this.heldPanMask=binding.mask;
+      this.navigation?.mouseDown(event.pointerId,this.pointerLocation(event));
+      if(event.type==='pointerdown')this.inputViewport.setPointerCapture(event.pointerId);
+      this.status('登録したボタンを離すと元の道具に戻ります。');
+    }else if(binding.action==='sample')this.queueSample(this.screenToDocument(this.pointerLocation(event)),'commit');
+    else this.onPointerButton(binding.action);
     event.preventDefault();
     return true;
   }
@@ -336,7 +344,7 @@ export class BrushSurface{
     window.addEventListener('keyup',this.keyNavigation,{signal:this.abort.signal});
     window.addEventListener('blur',this.interruptInput,{signal:this.abort.signal});
     this.inputViewport.addEventListener('contextmenu',event=>{if(event instanceof PointerEvent&&(event.pointerType==='pen'&&this.barrelErases||
-      this.pointerPanBinding?.device===event.pointerType&&this.pointerPanBinding.button===2))event.preventDefault();},{signal:this.abort.signal});
+      this.pointerButtons.some(value=>value.device===event.pointerType&&value.button===2)))event.preventDefault();},{signal:this.abort.signal});
     this.renderer.setSurfaceStack(this.surfaceKeys());this.syncLayerStyles();this.session=(this.renderer as any).session as RealtimeSession;this.handoff=new StrokeHandoff(this.controller,(reservation,record,additional,result,undone)=>this.publishStroke(reservation,record,additional,undone),(record,reservation)=>{this.session?.forgetStaged(record);this.pendingStrokeIds.delete(reservation);});this.brushes=referenceBrushes;this.preset=structuredClone(this.brushes[0]!);(this.renderer as any).proxy?.prepare(this.preset);
     const options={signal:this.abort.signal,capture:true},input=this.inputViewport;input.addEventListener('pointerdown',this.down,options);input.addEventListener('pointermove',this.move,options);input.addEventListener('pointerup',this.up,options);input.addEventListener('pointerleave',this.clearSymmetryCursor,options);input.addEventListener('pointercancel',this.cancel,options);input.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
   private pointerLocation(e:PointerEvent|WheelEvent):Point{const r=this.layoutRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
@@ -894,7 +902,7 @@ export class BrushSurface{
     // stroke / document layer becomes the hit target during formal painting.
     // Interactive editor controls inside the viewport must remain interactive.
     if(e.target instanceof Element&&e.target.closest('button,input,select,textarea,[contenteditable="true"],.crop-overlay,[data-canvas-no-input]'))return;
-    if(e.button!==0&&this.startHeldPan(e))return;
+    if(e.button!==0&&this.dispatchPointerButton(e))return;
     if(this.editGesture?.pointEdit){
       if(e.button!==0||this.busy||this.inputBarrier||this.editPointer!==null)return;
       const location=this.pointerLocation(e),v=this.view;
@@ -1051,11 +1059,11 @@ export class BrushSurface{
       }
       this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
   private move=(e:PointerEvent)=>{
-    if(e.pointerId===this.heldPanPointer&&!(e.buttons&(this.pointerPanBinding?.mask??0))){
+    if(e.pointerId===this.heldPanPointer&&!(e.buttons&this.heldPanMask)){
       this.endHeldPan();
       return;
     }
-    if(this.startHeldPan(e))return;
+    if(this.dispatchPointerButton(e,true))return;
     this.trackSymmetryCursor(e);
     if(this.layerPickHold?.pointer===e.pointerId){
       const p=this.pointerLocation(e),start=this.layerPickHold.position;

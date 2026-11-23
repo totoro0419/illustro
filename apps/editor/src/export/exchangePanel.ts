@@ -1,5 +1,5 @@
 import {runIcc} from './iccRun';
-import {ICC_LIMIT} from './iccMetadata';
+import {srgbIccBytes,ICC_LIMIT,validIccBytes} from './iccMetadata';
 import type {CoreDocument} from '@illustro/core';
 import {resizeImagePixels} from '../canvasGeometry';
 import {captureExport,renderFrozenArtworkTiledPreview,renderFrozenArtwork} from './basicExport';
@@ -19,6 +19,28 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   const quality=numberField(section,'AVIFの画質',90,1,100);
   const lossless=document.createElement('input');lossless.type='checkbox';labelledField(section,'AVIFを可逆圧縮する',lossless);
   const base=document.createElement('input');base.value=doc.root.name;base.maxLength=120;labelledField(section,'ファイル名',base);
+  const metadata=document.createElement('details'),metadataTitle=document.createElement('summary');
+  metadataTitle.textContent='出力ファイルに含める色と情報';metadata.append(metadataTitle);
+  const outputColor=selectField(metadata,'色のプロファイル',[
+    ['default','形式の標準色空間'],['srgb','sRGB ICCを含める'],['custom','選んだRGB ICCへ変換して含める'],
+  ]);
+  const outputProfile=document.createElement('input');outputProfile.type='file';outputProfile.accept='.icc,.icm';
+  labelledField(metadata,'RGB ICC',outputProfile);
+  const outputDensity=numberField(metadata,'DPI',doc.root.info.dpi??96,1,2400);
+  const author=document.createElement('input');author.maxLength=500;labelledField(metadata,'作者',author);
+  const rights=document.createElement('input');rights.maxLength=500;labelledField(metadata,'権利',rights);
+  const privacy=document.createElement('p');
+  privacy.textContent='位置情報と元の画像に含まれていたその他の情報は除外します。';
+  metadata.append(privacy);
+  const refreshMetadata=()=>{
+    const colorAllowed=['psd','psb','ora','tiff'].includes(format.value)||format.value==='svg'&&style.value==='flat';
+    outputColor.disabled=!colorAllowed;
+    outputProfile.parentElement!.hidden=!colorAllowed||outputColor.value!=='custom';
+    outputDensity.disabled=!['psd','psb','ora','tiff','svg'].includes(format.value);
+    author.disabled=rights.disabled=format.value==='avif';
+  };
+  for(const control of [format,style,outputColor])control.addEventListener('change',refreshMetadata);
+  refreshMetadata();
   const notes=document.createElement('ul'),status=document.createElement('output');status.setAttribute('role','status');
   const print=document.createElement('details'),printTitle=document.createElement('summary');printTitle.textContent='印刷時の大きさ';
   const dpi=numberField(print,'印刷の解像度（DPI）',doc.root.info.dpi??300,1,2400);
@@ -177,11 +199,23 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     if(selected==='avif'&&!lossless.checked&&(!quality.validity.valid||!quality.value))throw Error('画質を1〜100で指定してください。');
     const outputName=exchangeFileName(base.value,selected);
     status.textContent='交換用ファイルを作成しています。';
-    const blob=await exportExchange(doc,selected,layered,quality.valueAsNumber,lossless.checked);
+    let profile:Uint8Array|undefined;
+    if(!outputColor.disabled&&outputColor.value==='srgb')profile=srgbIccBytes();
+    if(!outputColor.disabled&&outputColor.value==='custom'){
+      const file=outputProfile.files?.[0];
+      if(!file||file.size>ICC_LIMIT)throw Error('4MB以内のICCプロファイルを選んでください。');
+      profile=new Uint8Array(await file.arrayBuffer());
+      if(!validIccBytes(profile))throw Error('ICCプロファイルが正しくありません。');
+    }
+    if(!outputDensity.disabled&&(!outputDensity.value||!outputDensity.validity.valid))throw Error('DPIを1〜2400で指定してください。');
+    const blob=await exportExchange(doc,selected,layered,quality.valueAsNumber,lossless.checked,{
+      ...(profile?{profile}:{}),...(!outputDensity.disabled?{dpi:outputDensity.valueAsNumber}:{}),
+      ...(!author.disabled?{author:author.value,copyright:rights.value}:{}),
+    });
     if(dialog.open){download(blob,outputName);status.textContent=outputName+' を作成しました。';}
   },status);
   const close=button('閉じる',()=>dialog.close(),status);
   dialog.onclose=()=>{proofTicket++;comparison=proof=null;dialog.remove();};
-  actions.append(see,compareExchange,run,close);section.append(notes,preview,svgComparison,print,actions,status);dialog.append(section);
+  actions.append(see,compareExchange,run,close);section.append(notes,preview,svgComparison,metadata,print,actions,status);dialog.append(section);
   document.body.append(dialog);refresh();dialog.showModal();
 }

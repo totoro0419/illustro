@@ -1,3 +1,4 @@
+import type {RasterMetadata} from './rasterMetadata';
 import {unzlibSync} from 'fflate';
 import {assertImageSize,MAX_EXCHANGE_BYTES} from './exchangeTypes';
 
@@ -17,7 +18,7 @@ function numericBytes(length:number,write:(view:DataView)=>void){
   const bytes=new Uint8Array(length);write(new DataView(bytes.buffer));return bytes;
 }
 
-export function encodeExr(rgba:Uint8ClampedArray,width:number,height:number):Uint8Array<ArrayBuffer>{
+export function encodeExr(rgba:Uint8ClampedArray,width:number,height:number,metadata:RasterMetadata={}):Uint8Array<ArrayBuffer>{
   assertImageSize(width,height);
   if(rgba.length!==width*height*4||width*height*16+height*16+1024>MAX_EXCHANGE_BYTES)
     throw Error('EXRの画素データが不正か、256MBの出力上限を超えています。');
@@ -42,6 +43,11 @@ export function encodeExr(rgba:Uint8ClampedArray,width:number,height:number):Uin
     ...attribute('pixelAspectRatio','float',one),
     ...attribute('screenWindowCenter','v2f',new Uint8Array(8)),
     ...attribute('screenWindowWidth','float',one),
+    ...attribute('chromaticities','chromaticities',numericBytes(32,v=>{
+      [0.64,0.33,0.3,0.6,0.15,0.06,0.3127,0.329].forEach((n,i)=>v.setFloat32(i*4,n,true));
+    })),
+    ...(metadata.author?.trim()?attribute('owner','string',new TextEncoder().encode(metadata.author.trim().slice(0,500))):[]),
+    ...(metadata.copyright?.trim()?attribute('copyright','string',new TextEncoder().encode(metadata.copyright.trim().slice(0,500))):[]),
     Uint8Array.of(0)];
   const table=header.reduce((length,entry)=>length+entry.length,0),rowBytes=width*16,chunk=rowBytes+8;
   const prefixBytes=table+height*8,out=new Uint8Array(prefixBytes+height*chunk),view=new DataView(out.buffer);

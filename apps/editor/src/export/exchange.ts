@@ -1,3 +1,5 @@
+import {xmp,type RasterMetadata} from './rasterMetadata';
+import {extractIsoImageIcc} from './isoImageIcc';
 import {type CoreDocument,type EditableArtwork,type EditablePath,type EditableText,type LayerId} from '@illustro/core';
 import {captureExport,compositeLayer,encodePng,renderFrozenArtwork,type FrozenExport} from './basicExport';
 import {assertImageSize,cleanFileName,imageLayer,MAX_EXCHANGE_BYTES,supportsOraBlend,xmlText,type ExchangeArtwork,type ExchangeFormat,type ExchangeLayer} from './exchangeTypes';
@@ -29,22 +31,22 @@ export function readExchangeDimensions(blob:Blob,colorSpaceConversion:ColorSpace
 export async function importExchange(file:File):Promise<ExchangeArtwork>{
   const format=exchangeFormat(file.name),name=cleanFileName(file.name);
   if(file.size>MAX_EXCHANGE_BYTES)throw Error('交換用ファイルは256MBまでです。');
-  if(format==='avif'||format==='heif'){
-    const media=file.type?file:new Blob([file],{type:format==='avif'?'image/avif':file.name.toLowerCase().endsWith('.heic')?'image/heic':'image/heif'});
-    const {width,height,pixels}=await readExchangeDimensions(media).catch(()=>{
-      throw Error('このブラウザーではこの'+format.toUpperCase()+'画像を開けません。PNGまたはTIFFに変換してから開いてください。');
-    });
-    return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings:['編集用のsRGB・8ビット画像として取り込みます。']};
-  }
-  if(format==='png'||format==='jpeg'||format==='webp'){
+  const isIsoImage=format==='avif'||format==='heif';
+  if(isIsoImage||format==='png'||format==='jpeg'||format==='webp'){
     const warnings:string[]=[];
     let sourceIcc:Uint8Array<ArrayBuffer>|null=null;
-    try{sourceIcc=await extractRasterIcc(new Uint8Array(await file.arrayBuffer()));}
-    catch(error){warnings.push(error instanceof Error?error.message:String(error));}
+    try{
+      const bytes=new Uint8Array(await file.arrayBuffer());
+      sourceIcc=isIsoImage?extractIsoImageIcc(bytes):await extractRasterIcc(bytes);
+    }catch(error){warnings.push(error instanceof Error?error.message:String(error));}
     const canConvert=!!sourceIcc&&String.fromCharCode(...sourceIcc.subarray(16,20))==='RGB ';
     if(!canConvert)warnings.push(sourceIcc?'元のICCを作品に保持し、ブラウザーがsRGBに展開した画素で開きます。':
       '利用できる埋め込みICCがないため、開いた画素をsRGBとして扱います。');
-    const {width,height,pixels}=await readExchangeDimensions(file,canConvert?'none':'default');
+    const media=file.type||!isIsoImage?file:new Blob([file],{type:format==='avif'?'image/avif':file.name.toLowerCase().endsWith('.heic')?'image/heic':'image/heif'});
+    const {width,height,pixels}=await readExchangeDimensions(media,canConvert?'none':'default').catch(error=>{
+      if(isIsoImage)throw Error('このブラウザーでは'+format.toUpperCase()+'画像を開けません。');
+      throw error;
+    });
     return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings,
       ...(sourceIcc?{sourceIcc,sourceIccBrowserConverted:!canConvert}:{})};
   }
@@ -164,8 +166,8 @@ function svgGeometry(path:EditablePath){
   return '<path d="'+d+'" fill-rule="evenodd"'+attrs+'/>';
 }
 
-async function embeddedPng(pixels:Uint8ClampedArray,width:number,height:number){
-  const png=new Uint8Array(await (await encodePng(pixels,width,height)).arrayBuffer());
+async function embeddedPng(pixels:Uint8ClampedArray,width:number,height:number,metadata:RasterMetadata){
+  const png=new Uint8Array(await (await encodePng(pixels,width,height,metadata.dpi,metadata.profile?{iccProfile:metadata.profile}:{})).arrayBuffer());
   const chunks:string[]=[];
   for(let i=0;i<png.length;i+=12288)chunks.push(btoa(String.fromCharCode(...png.subarray(i,i+12288))));
   return '<image width="'+width+'" height="'+height+'" href="data:image/png;base64,'+chunks.join('')+'"/>';
@@ -185,16 +187,24 @@ function encodeAvif(pixels:Uint8ClampedArray,width:number,height:number,quality:
   });
 }
 
-export async function exportExchange(doc:CoreDocument,format:ExchangeFormat,layered:boolean,quality=90,lossless=false){
+export async function exportExchange(doc:CoreDocument,format:ExchangeFormat,layered:boolean,quality=90,lossless=false,metadata:RasterMetadata={}){
   const fixed=captureExport(doc),root=doc.revision(fixed.revision).root;
   const {width,height,name}=fixed;assertImageSize(width,height);
-  const merged=await renderFrozenArtwork(fixed);
+  if(metadata.profile&&(!['psd','psb','ora','tiff'].includes(format)&&!(format==='svg'&&!layered)||
+    String.fromCharCode(...metadata.profile.subarray(16,20))!=='RGB '))
+    throw Error('この出力にはRGBのICCを設定できません。');
+  const convert=async(pixels:Uint8ClampedArray)=>{
+    if(!metadata.profile)return pixels;
+    const result=await runIcc({profile:metadata.profile,layers:[pixels],proof:false,forExport:true,intent:1,blackPoint:true,gamut:false});
+    return result.converted[0]!.pixels;
+  };
+  const merged=await convert(await renderFrozenArtwork(fixed));
   const mime=types[format];
   if(format==='exr'){
     const {encodeExr}=await import('./exr');
-    return new Blob([encodeExr(merged,width,height)],{type:mime});
+    return new Blob([encodeExr(merged,width,height,metadata)],{type:mime});
   }
-  if(format==='tiff')return new Blob([encodeTiff(merged,width,height,root.info.dpi??96)],{type:mime});
+  if(format==='tiff')return new Blob([encodeTiff(merged,width,height,metadata.dpi??root.info.dpi??96,metadata)],{type:mime});
   if(format==='avif'){
     const buffer=await encodeAvif(merged,width,height,quality,lossless);
     const head=new Uint8Array(buffer.slice(0,16));
@@ -218,18 +228,19 @@ export async function exportExchange(doc:CoreDocument,format:ExchangeFormat,laye
           continue;
         }
       }
-      const pixels=await layerPixels(fixed,id,root);
+      const pixels=await convert(await layerPixels(fixed,id,root));
       if(format==='svg')svg.push('<g aria-label="'+xmlText(layer.name)+'" opacity="'+opacity+'"'+(visible?'':' display="none"')+'>'+
-        await embeddedPng(pixels,width,height)+'</g>');
+        await embeddedPng(pixels,width,height,metadata)+'</g>');
       else layers.push({...imageLayer(layer.name,width,height,pixels),opacity,visible,blend});
     }
-  }else if(format==='svg')svg.push(await embeddedPng(merged,width,height));
+  }else if(format==='svg')svg.push(await embeddedPng(merged,width,height,metadata));
   else layers.push(imageLayer(name,width,height,merged));
+  const description=xmp(metadata);
   if(format==='svg')return new Blob(['<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="'+width+
-    '" height="'+height+'" viewBox="0 0 '+width+' '+height+'">'+svg.join('')+'</svg>'],{type:mime});
-  const art={width,height,name,layers,merged,warnings:[],dpi:root.info.dpi??undefined};
-  const bytes=format==='ora'?await (await import('./oraExchange')).encodeOra(art):
-    (await import('./psdExchange')).encodePhotoshop(art,format==='psb');
+    '" height="'+height+'" viewBox="0 0 '+width+' '+height+'">'+ (description?'<metadata>'+new TextDecoder().decode(description)+'</metadata>':'')+svg.join('')+'</svg>'],{type:mime});
+  const art={width,height,name,layers,merged,warnings:[],dpi:metadata.dpi??root.info.dpi??undefined};
+  const bytes=format==='ora'?await (await import('./oraExchange')).encodeOra(art,metadata):
+    (await import('./psdExchange')).encodePhotoshop(art,format==='psb',metadata);
   return new Blob([new Uint8Array(bytes)],{type:mime});
 }
 

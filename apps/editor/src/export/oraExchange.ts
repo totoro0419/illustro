@@ -1,13 +1,17 @@
+import type {RasterMetadata} from './rasterMetadata';
 import {strFromU8,strToU8,unzipSync,zipSync,type Zippable} from 'fflate';
 import type {LayerBlendMode} from '@illustro/core';
 import {encodePng} from './basicExport';
 import {resizeImagePixels} from '../canvasGeometry';
 import {assertImageSize,MAX_EXCHANGE_BYTES,xmlText,toComposite,fromComposite,type ExchangeArtwork,type ExchangeLayer} from './exchangeTypes';
 
-const pngBytes=async(pixels:Uint8ClampedArray,width:number,height:number)=>
-  new Uint8Array(await (await encodePng(pixels,width,height)).arrayBuffer());
+const pngBytes=async(pixels:Uint8ClampedArray,width:number,height:number,metadata:RasterMetadata)=>
+  new Uint8Array(await (await encodePng(pixels,width,height,metadata.dpi,{
+    ...(metadata.profile?{iccProfile:metadata.profile}:{}),
+    ...(metadata.author?{author:metadata.author}:{}),...(metadata.copyright?{copyright:metadata.copyright}:{}),
+  })).arrayBuffer());
 
-export async function encodeOra(art:ExchangeArtwork){
+export async function encodeOra(art:ExchangeArtwork,metadata:RasterMetadata={}){
   const {width,height,layers,merged}=art;
   assertImageSize(width,height);
   if(!merged||merged.length!==width*height*4)throw Error('作品全体の画像がありません。');
@@ -17,14 +21,14 @@ export async function encodeOra(art:ExchangeArtwork){
     const path='data/layer'+index+'.png';
     tree.push('<layer name="'+xmlText(layer.name)+'" src="'+path+'" x="'+layer.x+'" y="'+layer.y+'" opacity="'+layer.opacity+
       '" visibility="'+(layer.visible?'visible':'hidden')+'" composite-op="'+(toComposite[layer.blend]??'svg:src-over')+'"/>');
-    entries[path]=[await pngBytes(layer.pixels,layer.width,layer.height),{level:0}];
+    entries[path]=[await pngBytes(layer.pixels,layer.width,layer.height,metadata),{level:0}];
   }
   entries['stack.xml']=strToU8('<?xml version="1.0" encoding="UTF-8"?><image version="0.0.3" name="'+xmlText(art.name)+
     '" w="'+width+'" h="'+height+'"><stack>'+tree.join('')+'</stack></image>');
   const ratio=Math.min(1,256/Math.max(width,height)),w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio));
   const thumb=new Uint8ClampedArray(resizeImagePixels(merged,width,height,w,h,'auto'));
-  entries['Thumbnails/thumbnail.png']=[await pngBytes(thumb,w,h),{level:0}];
-  entries['mergedimage.png']=[await pngBytes(merged,width,height),{level:0}];
+  entries['Thumbnails/thumbnail.png']=[await pngBytes(thumb,w,h,metadata),{level:0}];
+  entries['mergedimage.png']=[await pngBytes(merged,width,height,metadata),{level:0}];
   return zipSync(entries);
 }
 

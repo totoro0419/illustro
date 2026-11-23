@@ -27,6 +27,7 @@ replaceExactlyOnce(
 );
 // IndexedDB names are origin-scoped just like localStorage.
 for (const [path, name] of [
+  ['export/rasterPresets.ts','illustro-export-profiles-v1'],
   ['assets/library.ts', 'illustro-c05-assets-v1'],
   ['assets/referenceBoardStore.ts', 'illustro-c05-reference-boards-v1'],
   ['assets/assetImportRecovery.ts', 'illustro-c05-import-recovery-v1'],

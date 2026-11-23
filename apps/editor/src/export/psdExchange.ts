@@ -1,3 +1,4 @@
+import {xmp,type RasterMetadata} from './rasterMetadata';
 import {initializeCanvas,readPsd,writePsdUint8Array,type BlendMode,type Layer} from 'ag-psd';
 import {ICC_LIMIT} from './iccMetadata';
 import {LAYER_BLEND_MODES,type LayerBlendMode} from '@illustro/core';
@@ -17,14 +18,20 @@ function useRawCanvas(){
   initializeCanvas((width,height)=>Object.assign(document.createElement('canvas'),{width,height}),
     (width,height)=>({width,height,data:new Uint8ClampedArray(width*height*4),colorSpace:'srgb'}));
 }
-export function encodePhotoshop(art:ExchangeArtwork,large:boolean){
+export function encodePhotoshop(art:ExchangeArtwork,large:boolean,metadata:RasterMetadata={}){
   assertImageSize(art.width,art.height);
   if(!art.merged||art.merged.length!==art.width*art.height*4)throw Error('作品全体の画像がありません。');
   useRawCanvas();
+  const description=xmp(metadata);
   return writePsdUint8Array({width:art.width,height:art.height,
     imageData:{width:art.width,height:art.height,data:art.merged},
-    ...(art.dpi?{imageResources:{resolutionInfo:{horizontalResolution:art.dpi,verticalResolution:art.dpi,
-      horizontalResolutionUnit:'PPI',verticalResolutionUnit:'PPI',widthUnit:'Inches',heightUnit:'Inches'}}}:{}),
+    imageResources:{
+      ...(art.dpi?{resolutionInfo:{horizontalResolution:art.dpi,verticalResolution:art.dpi,
+        horizontalResolutionUnit:'PPI' as const,verticalResolutionUnit:'PPI' as const,widthUnit:'Inches' as const,heightUnit:'Inches' as const}}:{}),
+      ...(metadata.profile?{iccProfile:metadata.profile}:{}),
+      ...(description?{xmpMetadata:new TextDecoder().decode(description)}:{}),
+      ...(metadata.copyright?.trim()?{copyrighted:true}:{}),
+    },
     children:art.layers.map(layer=>({name:layer.name,left:layer.x,top:layer.y,hidden:!layer.visible,opacity:layer.opacity,
       blendMode:toPsdMode(layer.blend),imageData:{width:layer.width,height:layer.height,data:layer.pixels}})),
   },{psb:large,trimImageData:true,noBackground:true});

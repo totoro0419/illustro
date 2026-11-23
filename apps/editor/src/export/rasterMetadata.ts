@@ -4,7 +4,7 @@ const encoder=new TextEncoder();
 const ascii=(bytes:Uint8Array,at:number,text:string)=>[...text].every((s,i)=>bytes[at+i]===s.charCodeAt(0));
 export type RasterMetadata=Readonly<{profile?:Uint8Array;dpi?:number;author?:string;copyright?:string}>;
 
-function xmp({author,copyright}:RasterMetadata){
+export function xmp({author,copyright}:RasterMetadata){
   const name=xmlText((author??'').trim().slice(0,500));
   const rights=xmlText((copyright??'').trim().slice(0,500));
   if(!name&&!rights)return null;

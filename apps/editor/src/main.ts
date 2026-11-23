@@ -1,8 +1,8 @@
-import {readPointerPanBinding} from './pointerPanBinding';
+import {readPointerButtons} from './pointerPanBinding';
 import {cropRestorePlan,mergeRetainedCrop} from './cropRetention';
 import {installStrokeComparison,type StrokeComparison} from './ui/strokeComparison';
 import {nativeBrushSensors} from './brushInput';
-import {readRasterPresets,removeRasterPreset,writeRasterPreset} from './export/rasterPresets';
+import {deleteExportProfile,readSavedExportProfile,saveExportProfile,readRasterPresets,removeRasterPreset,writeRasterPreset} from './export/rasterPresets';
 import {installDeviceCapabilities} from './ui/deviceCapabilities';
 import {recordInputInterruption} from './persistence/inputInterruption';
 import {ICC_IMPORT_ACTION,ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE,validIccBytes} from './export/iccMetadata';
@@ -1770,7 +1770,14 @@ function applyInputPreferences(drawing:BrushSurface){
  drawing.setRotationSnap(inputPreferences.rotationSnap);
  drawing.setPressureRange(pressureRange);
  drawing.setPointerRoles(readPointerRoles());
- drawing.setPointerPanBinding(readPointerPanBinding());
+ drawing.setPointerButtons(readPointerButtons());
+ drawing.onPointerButton=action=>{
+   if(surface!==drawing||!documentReady)return;
+   if(action==='fit'){drawing.fitView();return;}
+   if(action==='toggle-pan'){byId('panView').click();return;}
+   if(action==='toggle-eraser'){byId('switchDrawingTool').click();return;}
+   (byId<HTMLButtonElement>(action==='redo'?'redo':'undo')).click();
+ };
 }
 surface=makeSurface();
 function updateViewControls(){const state=surface?.viewState;if(!state)return;
@@ -3729,7 +3736,7 @@ const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTM
 const losslessWebp=byId<HTMLInputElement>('exportLosslessWebp');
 const exportIccFile=byId<HTMLInputElement>('exportColorProfile'),exportIncludeIcc=byId<HTMLInputElement>('exportIncludeIcc');
 const rasterPresetSelect=byId<HTMLSelectElement>('rasterExportPreset'),comparisonHost=byId('exportRasterComparison');
-let outputIcc:Uint8Array|null=null,needsOutputIcc=false,compareGeneration=0;
+let outputIcc:Uint8Array|null=null,needsOutputIcc=false,compareGeneration=0,profileRequest=0;
 function refreshRasterPresets(selected=''){
   rasterPresetSelect.replaceChildren(new Option('設定を選ぶ',''),...readRasterPresets(localStorage).map(item=>new Option(item.name,item.name)));
   rasterPresetSelect.value=selected;
@@ -3750,6 +3757,7 @@ for(const control of [exportFormat,losslessWebp])control.onchange=updateExportOp
 exportQuality.oninput=()=>{updateExportOptions();clearRasterComparison();};
 exportDialog.addEventListener('change',clearRasterComparison);
 exportIccFile.onchange=async()=>{
+  profileRequest++;
   const file=exportIccFile.files?.[0];
   outputIcc=null;needsOutputIcc=!!file;
   byId('exportProfileStatus').textContent='';
@@ -3766,7 +3774,8 @@ exportIccFile.onchange=async()=>{
     byId('exportProfileStatus').textContent=error instanceof Error?error.message:String(error);
   }
 };
-rasterPresetSelect.onchange=()=>{
+rasterPresetSelect.onchange=async()=>{
+  const request=++profileRequest;
   const preset=readRasterPresets(localStorage).find(item=>item.name===rasterPresetSelect.value);
   byId<HTMLButtonElement>('rasterExportPresetRemove').disabled=!preset;
   if(!preset)return;
@@ -3779,6 +3788,17 @@ rasterPresetSelect.onchange=()=>{
   exportIncludeIcc.checked=preset.icc!=='none';
   byId('exportProfileStatus').textContent=needsOutputIcc?'出力用RGB ICCを選んでください。':'';
   updateExportOptions();
+  if(preset.icc==='custom'&&preset.profileKey){
+    try{
+      const stored=await readSavedExportProfile(preset.profileKey);
+      if(request!==profileRequest||!exportDialog.open)return;
+      if(!stored||!validIccBytes(stored))throw Error('保存したICCを読み込めません。ファイルをもう一度選んでください。');
+      outputIcc=stored;needsOutputIcc=false;
+      byId('exportProfileStatus').textContent='設定に保存されたICCを使用します。';
+    }catch(error){
+      if(request===profileRequest)byId('exportProfileStatus').textContent=error instanceof Error?error.message:String(error);
+    }
+  }
 };
 byId<HTMLButtonElement>('rasterExportPresetSave').onclick=async()=>{
   const name=await appPrompt('書き出し設定の名前',rasterPresetSelect.value,{required:true,maxLength:80});
@@ -3786,23 +3806,33 @@ byId<HTMLButtonElement>('rasterExportPresetSave').onclick=async()=>{
   try{
     const scale=byId<HTMLInputElement>('exportPixelScale');
     if(!scale.value||!scale.validity.valid)throw Error('整数倍の拡大率を1〜8で指定してください。');
-    writeRasterPreset(localStorage,{name,format:exportFormat.value as ImageFormat,quality:exportQuality.valueAsNumber,
+    const old=readRasterPresets(localStorage).find(item=>item.name===name.trim());
+    const profileKey=exportIncludeIcc.checked&&outputIcc?crypto.randomUUID():undefined;
+    if(profileKey&&outputIcc)await saveExportProfile(profileKey,outputIcc);
+    try{writeRasterPreset(localStorage,{name,format:exportFormat.value as ImageFormat,quality:exportQuality.valueAsNumber,
       scale:scale.valueAsNumber,lossless:losslessWebp.checked,dpi:byId<HTMLInputElement>('exportDpi').checked,
       icc:exportIncludeIcc.checked?(outputIcc||needsOutputIcc?'custom':'srgb'):'none',
-      author:byId<HTMLInputElement>('exportIncludeAuthor').checked,copyright:byId<HTMLInputElement>('exportCopyright').value});
+      author:byId<HTMLInputElement>('exportIncludeAuthor').checked,copyright:byId<HTMLInputElement>('exportCopyright').value,
+      ...(profileKey?{profileKey}:{})});}
+    catch(error){if(profileKey)void deleteExportProfile(profileKey).catch(()=>{});throw error;}
+    if(old?.profileKey)void deleteExportProfile(old.profileKey).catch(()=>{});
     refreshRasterPresets(name.trim());
-    byId('exportStatus').textContent='設定を保存しました。出力用ICCのファイルは読み込み時に選び直せます。';
+    byId('exportStatus').textContent='書き出し設定を保存しました。';
   }catch(error){byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
 };
 byId<HTMLButtonElement>('rasterExportPresetRemove').onclick=()=>{
-  try{removeRasterPreset(localStorage,rasterPresetSelect.value);refreshRasterPresets();}
+  try{
+    const old=readRasterPresets(localStorage).find(item=>item.name===rasterPresetSelect.value);
+    removeRasterPreset(localStorage,rasterPresetSelect.value);refreshRasterPresets();
+    if(old?.profileKey)void deleteExportProfile(old.profileKey).catch(()=>{});
+  }
   catch(error){byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
 };
 updateExportOptions();
 byId<HTMLButtonElement>('exportImage').onclick=()=>{
   if(!documentReady)return;
   byId('exportStatus').textContent='';
-  clearRasterComparison();refreshRasterPresets();
+  clearRasterComparison();refreshRasterPresets();profileRequest++;
   exportIccFile.value='';outputIcc=null;needsOutputIcc=false;
   byId('exportProfileStatus').textContent='';
   byId<HTMLInputElement>('exportIncludeAuthor').checked=false;
