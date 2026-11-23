@@ -4,6 +4,7 @@ import type {ColorHint,LayerId,LineRegions,RevisionId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {combineSelection,type MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
+import {needsLeakingFillReview} from './pixels';
 import type {FillSettings,GapCandidate,RegionGraph,Walls} from './pixels';
 import {releaseLiveFillPreview,runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
@@ -558,7 +559,11 @@ export function installFillPanel(host:HTMLElement,api:{
     onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',async(points,source,current)=>{
       try{
         await fill(points,false,source,current);
-        if(direct&&current()&&candidate&&pending?.pixels)await applyCandidate();
+        if(direct&&current()&&candidate&&pending?.pixels){
+          if(pending.mask&&needsLeakingFillReview(pending.mask,points[0],settings().gap)){
+            output.textContent='外側へ色が広がる可能性があります。塗り候補を確認し「候補を適用」を押すか、取り消してください。';
+          }else await applyCandidate();
+        }
       }finally{
         if(direct&&current()&&panel.open){
           const lastMessage=output.textContent;
