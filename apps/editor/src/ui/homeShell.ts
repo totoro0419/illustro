@@ -1,14 +1,14 @@
 import {appConfirm,appPrompt} from './appDialogs';
 import type {WorkEntry} from '../persistence/workLibrary';
 import {icon} from './icons';
-import {resolveDocumentDimensions,pixelToMillimeters,listCreationTemplates,storeCreationTemplate,removeCreationTemplate,type DocumentUnit} from '../documentSetup';
+import {resolveDocumentDimensions,pixelToMillimeters,listCreationTemplates,storeCreationTemplate,removeCreationTemplate,type DocumentUnit,type TemplateContent} from '../documentSetup';
 
 /** Illustro first-party Home skeleton. Artwork and storage stay owned by the editor. */
 export type RecoverySummary = Readonly<{
   documentId: string; writerEpochId: string; title: string; protectedThrough: string; updatedAt: number;
 }>;
 export type HomeActions = Readonly<{
-  createDocument: (width:number,height:number,name:string,background:'transparent'|'white',dpi:number,author:string,description:string,emptyDrawingLayer?:boolean)=>Promise<boolean>;
+  createDocument: (width:number,height:number,name:string,background:'transparent'|'white',dpi:number,author:string,description:string,emptyDrawingLayer?:boolean,content?:TemplateContent)=>Promise<boolean>;
   onBlankDraftChange?: (width:number,height:number,name:string,background:'transparent'|'white',dpi:number,author:string,description:string)=>void;
   listWorks:()=>Promise<{works:WorkEntry[];lastWorkId:string|null}>;
   openWork:(id:string)=>Promise<boolean>;
@@ -180,7 +180,13 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const showNew=(mode:'blank'|'file'='blank')=>{
     if(mode==='file'){actions.openFile();return;}
     if(dialog.open)return;
-    refillTemplates(templatePicker.value);
+    if(templateContent){
+      el<HTMLInputElement>('ihNewName').value='新しい作品';
+      el<HTMLInputElement>('ihNewAuthor').value='';
+      el<HTMLTextAreaElement>('ihNewDescription').value='';
+    }
+    refillTemplates();
+    templateContent=undefined;
     el<HTMLDetailsElement>('ihCanvasSetup').open=false;
     el('ihNewError').textContent='';
     dialog.showModal();
@@ -458,6 +464,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   let currentUnit:DocumentUnit='px';
   const templateStore=(()=>{try{return localStorage;}catch{return null;}})();
   const templatePicker=el<HTMLSelectElement>('ihTemplateSelect');
+  let templateContent:TemplateContent|undefined;
   const refillTemplates=(selected='')=>{
     templatePicker.replaceChildren(new Option('選択してください',''),...listCreationTemplates(templateStore).map(x=>new Option(x.name,x.name)));
     templatePicker.value=selected;
@@ -549,12 +556,22 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   el<HTMLSelectElement>('ihNewBackground').addEventListener('change',()=>{refreshEmptyLayers();prefetchDraft();});
   templatePicker.addEventListener('change',()=>{
     const template=listCreationTemplates(templateStore).find(x=>x.name===templatePicker.value);
-    if(!template)return;
+    const previous=templateContent;
+    templateContent=template?.content;
+    if(!template&&!previous)return;
+    const title=el<HTMLInputElement>('ihNewName'),authorInput=el<HTMLInputElement>('ihNewAuthor');
+    const descriptionInput=el<HTMLTextAreaElement>('ihNewDescription');
+    title.value=templateContent?.title??'新しい作品';
+    authorInput.value=templateContent?.author??'';
+    descriptionInput.value=templateContent?.description??'';
+    if(!template){el('ihNewError').textContent='テンプレートの追加設定を解除しました。';return;}
     // Stored templates retain exact pixel dimensions even if the dialog was in mm mode.
     setUnit('px');dpiInput.value=String(lastValidDpi=template.dpi);
     el<HTMLSelectElement>('ihNewBackground').value=template.background;refreshEmptyLayers();
     setFromPixels(template.width,template.height);refreshPresetSelection();
-    el('ihNewError').textContent='サイズ設定を読み込みました。作者情報はテンプレートに含めません。';
+    const items=['サイズ・背景',...(templateContent?.guides?.length?['定規']:[]),
+      ...(templateContent?.palette?['作品パレット']:[]),...(templateContent?.title?['作品情報']:[])];
+    el('ihNewError').textContent=items.join('、')+'を読み込みました。';
   });
   el<HTMLButtonElement>('ihTemplateSave').onclick=()=>{
     try{
@@ -565,7 +582,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   };
   el<HTMLButtonElement>('ihTemplateDelete').onclick=()=>{
     if(!templatePicker.value)return;
-    try{removeCreationTemplate(templateStore,templatePicker.value);refillTemplates();el('ihNewError').textContent='設定を削除しました。';}
+    try{removeCreationTemplate(templateStore,templatePicker.value);templateContent=undefined;refillTemplates();el('ihNewError').textContent='設定を削除しました。';}
     catch(error){el('ihNewError').textContent=error instanceof Error?error.message:String(error);}
   };
   const lastSetupKey='illustro.last-canvas-setup.v1';
@@ -596,7 +613,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       const name=el<HTMLInputElement>('ihNewName').value;
       const setup={width:el<HTMLInputElement>('ihNewWidth').valueAsNumber,height:el<HTMLInputElement>('ihNewHeight').valueAsNumber,
         unit:currentUnit,background:background(),dpi:d.dpi};
-      if(await actions.createDocument(d.width,d.height,name,setup.background,d.dpi,author(),description(),setup.background==='transparent'&&el<HTMLInputElement>('ihNewEmptyLayers').checked)){
+      if(await actions.createDocument(d.width,d.height,name,setup.background,d.dpi,author(),description(),setup.background==='transparent'&&el<HTMLInputElement>('ihNewEmptyLayers').checked,templateContent)){
         try{templateStore?.setItem(lastSetupKey,JSON.stringify(setup));}catch{}
         navigate('editor');
       }

@@ -28,7 +28,7 @@ import {installHomeShell,type HomeShell} from './ui/homeShell';
 import {appChoose,appConfirm,appPrompt} from './ui/appDialogs';
 import './color/color.css';
 import './color/harmony.css';
-import {ForegroundColor,rgb,hex,fromHex,DOCUMENT_PALETTE_SECTION} from './color/model';
+import {ForegroundColor,rgb,hex,fromHex,DOCUMENT_PALETTE_SECTION,DOCUMENT_PALETTE_TYPE} from './color/model';
 import {installColorPanel} from './color/panel';
 import {installEyedropperSettings,sampleSourceLabel} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
@@ -129,7 +129,7 @@ import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type Persiste
 import type {PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
 import {fingerprintRenderedPixels,sameRenderedPixels,type VisualFingerprint} from './persistence/visualIntegrity';
-import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
+import {storeCreationTemplate,resolveDocumentDimensions,type TemplateContent} from './documentSetup';
 import {CoreDocument,validateLayerMask,LAYER_BLEND_MODES,LAYER_COLOR_TAGS,type LayerBlendMode,parseLayerColorTag,validateEditableArtwork,moveEditableArtwork,transformLayerMask,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerImageLink,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
@@ -234,11 +234,11 @@ let initialBlankWarmup:BlankWarmup|null=null;
 let documentActivationPending=false;
 // Keep the original editable raster background and the top drawing layer in the
 // Core document. Only the initial GPU upload differs from normal saved-work replay.
-function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white',dpi=72,author='',description='',emptyDrawingLayer=false){
+function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white',dpi=72,author='',description='',emptyDrawingLayer=false,content?:TemplateContent){
   // White is a logical base color, not 4*width*height initial raster bytes.
   // The upper transparent drawing layer is immediately usable. Native saves
   // carry the white-base metadata, and image export composites it on demand.
-  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',dpi,author,description,emptyDrawingLayer,...(background==='white'?{blankBackground:'white' as const}:{})});
+  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',dpi,author,description,emptyDrawingLayer,creationBackground:background,...(content?.guides?{artworkGuides:content.guides}:{}),...(background==='white'?{blankBackground:'white' as const}:{})});
   const first=document.root.rootLayerIds[0]!;
   if(background!=='white')return {document,selected:first,whiteSurfaceKey:null};
   const whiteSurfaceKey=document.root.getLayer(first).surface.descriptor.surfaceId;
@@ -2685,6 +2685,7 @@ byId('documentInfoOpen').onclick=()=>{
   byId('documentInfoSize').textContent=root.width+' × '+root.height+' px · '+(root.colorProfileId==='srgb'?'sRGB':root.colorProfileId);
   byId('documentInfoStatus').textContent='';
   byId<HTMLInputElement>('canvasTemplateName').value='';
+  for(const id of ['canvasTemplateGuides','canvasTemplatePalette','canvasTemplateInfo'])byId<HTMLInputElement>(id).checked=false;
   workTime.refresh();documentInfoDialog.showModal();
 };
 byId('documentInfoClose').onclick=()=>documentInfoDialog.close();
@@ -2720,8 +2721,16 @@ byId<HTMLFormElement>('canvasTemplateForm').onsubmit=event=>{
     return;
   }
   try{
+    const checked=(id:string)=>byId<HTMLInputElement>(id).checked;
+    const palette=checked('canvasTemplatePalette')?foreground.exportDocumentPaletteSection():null;
+    const content:TemplateContent={
+      ...(checked('canvasTemplateGuides')?{guides:root.artworkGuides}:{}),
+      ...(palette?{palette:new TextDecoder().decode(palette.bytes)}:{}),
+      ...(checked('canvasTemplateInfo')?{title:root.info.name,author:root.info.author,description:root.info.description}:{})
+    };
     storeCreationTemplate(localStorage,{name:input.value,width:root.width,height:root.height,dpi:root.metadata.dpi??72,
-      background:root.getLayer(root.rootLayerIds[0]!).baseColor==='white'?'white':'transparent'});
+      background:root.metadata.creationBackground??(root.getLayer(root.rootLayerIds[0]!).baseColor==='white'?'white':'transparent'),
+      content});
     input.value='';
     byId('documentInfoStatus').textContent='新規作成用のテンプレートを保存しました。';
   }catch(error){byId('documentInfoStatus').textContent=error instanceof Error?error.message:String(error);}
@@ -2943,7 +2952,7 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     throw error;
   }
 }
-async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description='',emptyDrawingLayer=false):Promise<boolean>{
+async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description='',emptyDrawingLayer=false,content?:TemplateContent):Promise<boolean>{
   const createStarted=performance.now();
   const trigger=byId<HTMLButtonElement>('new');
   if(trigger.disabled)return false;
@@ -2955,13 +2964,18 @@ async function createDocument(width:number,height:number,name='新しい作品',
   trigger.disabled=true;byId('status').textContent='キャンバスを準備しています。';
   try{
     const documentStarted=performance.now();
-    const warm=emptyDrawingLayer?null:matchedBlankWarmup(width,height,name,background,dpi,author,description);
+    const warm=emptyDrawingLayer||content?.guides?.length||content?.palette?null:matchedBlankWarmup(width,height,name,background,dpi,author,description);
     if(!warm)discardBlankWarmup();
-    const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background,dpi,author,description,emptyDrawingLayer);
+    const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background,dpi,author,description,emptyDrawingLayer,content);
     const {document,selected,whiteSurfaceKey}=blank;
     measureCanvasStage('new-document-model',documentStarted);
     if(warm)await activateFirstPrewarmedBlank(warm);
-    else await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head},false,null,whiteSurfaceKey);
+    else {
+      const optionalSections=content?.palette?[{id:DOCUMENT_PALETTE_SECTION,type:DOCUMENT_PALETTE_TYPE,
+        required:false,bytes:new TextEncoder().encode(content.palette)}]:[];
+      await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections},
+        generationId:'new',snapshotRevisionId:document.head},false,null,whiteSurfaceKey);
+    }
     if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,background);void refreshWorks();}
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
     byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';

@@ -1,4 +1,5 @@
 import {cryptoIdFactory,operationKeyText,type IdFactory,type LayerId,type RevisionId,type WriterEpochId} from './ids';
+import {validateArtworkGuides,type ArtworkGuide} from './artworkGuides';
 import {RevisionHistory,type Command} from './history';
 import {DocumentRoot,rasterLayer,validateDocumentInfo} from './model';
 import {PagedMap} from './pagedMap';
@@ -9,7 +10,7 @@ import {DocumentTransaction} from './transaction';
 import type {PersistenceHandoff} from './recovery';
 import {CORE_INTERNAL,type CoreInternalToken} from './internal';
 
-export type CoreOptions=Readonly<{width:number;height:number;name?:string;colorProfileId?:string;sampleEncoding?:RasterSampleEncoding;blankBackground?:'white';emptyDrawingLayer?:boolean;dpi?:number;author?:string;description?:string;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
+export type CoreOptions=Readonly<{width:number;height:number;name?:string;colorProfileId?:string;sampleEncoding?:RasterSampleEncoding;blankBackground?:'white';creationBackground?:'white'|'transparent';artworkGuides?:readonly ArtworkGuide[];emptyDrawingLayer?:boolean;dpi?:number;author?:string;description?:string;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
 export type CoreRestoreOptions=Readonly<{snapshot:unknown;blockPayloads:ReadonlyMap<string,Uint8Array>;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
 export class CoreDocument{
   readonly tileSize=CANONICAL_TILE_SIZE;readonly tileBytes:number;private readonly idsValue:IdFactory;private readonly clockValue:()=>number;
@@ -27,7 +28,8 @@ export class CoreDocument{
     const info=o.dpi!==undefined||o.author!==undefined||o.description!==undefined
       ?validateDocumentInfo({name,author:o.author??'',description:o.description??'',dpi:o.dpi??null}):null;
     const root=new DocumentRoot(this.idsValue.document(),o.width,o.height,info?.name??name,o.colorProfileId??'srgb',e.commit(),[id],
-      {createdAt:now,modifiedAt:now,...(info?.author?{author:info.author}:{}),
+      {createdAt:now,modifiedAt:now,...(o.creationBackground?{creationBackground:o.creationBackground}:{}),
+       ...(o.artworkGuides?.length?{artworkGuides:validateArtworkGuides(o.artworkGuides)}:{}),...(info?.author?{author:info.author}:{}),
        ...(info?.description?{description:info.description}:{}),...(info?.dpi?{dpi:info.dpi}:{})});
     this.defaultRasterLayerId=id;this.historyValue=new RevisionHistory(root,this.idsValue,now);
   }

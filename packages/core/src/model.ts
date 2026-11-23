@@ -38,7 +38,7 @@ export type LayerNode=Readonly<{
   imageLink?:LayerImageLink|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
-export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];artworkGuides?:readonly ArtworkGuide[];author?:string;description?:string;dpi?:number}>;
+export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;creationBackground?:'white'|'transparent';layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];artworkGuides?:readonly ArtworkGuide[];author?:string;description?:string;dpi?:number}>;
 export function validateDocumentInfo(info:DocumentInfo):DocumentInfo{
   const name=info.name.trim(),author=info.author.trim(),description=info.description.trim();
   if(!name||name.length>4096||author.length>160||description.length>2000||

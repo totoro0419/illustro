@@ -23,7 +23,7 @@ const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES
 
 export type PersistedRoot=Readonly<{
   documentId:string;width:number;height:number;name:string;colorProfileId:string;createdAt:number;modifiedAt:number;
-  rootLayerIds:readonly string[];layers:readonly PersistedLayer[];layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];artworkGuides?:readonly ArtworkGuide[];author?:string;description?:string;dpi?:number;
+  rootLayerIds:readonly string[];layers:readonly PersistedLayer[];creationBackground?:'white'|'transparent';layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];artworkGuides?:readonly ArtworkGuide[];author?:string;description?:string;dpi?:number;
 }>;
 export type PersistedLayer=Readonly<{
   id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;baseColor?:'white';implicitRaster?:boolean;colorTag?:LayerNode['colorTag'];positionLocked?:boolean;contentLocked?:boolean;alphaLocked?:boolean;clipSourceId?:LayerId|null;vectorMask?:LayerMask|null;blend?:LayerBlend|null;editable?:EditableArtwork|null;deformation?:LayerDeformation|null;lineRegions?:LineRegions|null;imageLink?:LayerImageLink|null;
@@ -146,7 +146,11 @@ function parseRoot(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescripto
   if(!Array.isArray(r.layers)||r.layers.length===0||r.layers.length>MAX_LAYERS)throw new Error('invalid layers');const edit=PagedMap.empty<LayerId,LayerNode>().edit(),layerIds=new Set<LayerId>(),surfaceIds=new Set<RasterSurfaceId>();
   for(const item of r.layers){const layer=parseLayer(item,blocks);if(layerIds.has(layer.id))throw new Error('duplicate layer id');if(surfaceIds.has(layer.surface.descriptor.surfaceId))throw new Error('duplicate surface id');layerIds.add(layer.id);surfaceIds.add(layer.surface.descriptor.surfaceId);edit.set(layer.id,layer);}
   const rootLayerIds=uuidArray(r.rootLayerIds,'root layer') as LayerId[];if(rootLayerIds.length!==layerIds.size||new Set(rootLayerIds).size!==rootLayerIds.length)throw new Error('root layer order mismatch');for(const id of rootLayerIds)if(!layerIds.has(id))throw new Error('root layer missing');
-  const base=new DocumentRoot(documentId,width,height,name,colorProfileId,edit.commit(),rootLayerIds,{createdAt,modifiedAt});
+  const creationBackground=r.creationBackground;
+  if(creationBackground!==undefined&&creationBackground!=='white'&&creationBackground!=='transparent')
+    throw Error('invalid creation background');
+  const base=new DocumentRoot(documentId,width,height,name,colorProfileId,edit.commit(),rootLayerIds,
+    {createdAt,modifiedAt,...(creationBackground?{creationBackground}:{})});
   const grouped=r.layerGroups===undefined?base:base.withLayerGroups(parseLayerGroups(r.layerGroups));
   const composed=r.layerComps===undefined?grouped:grouped.withLayerComps(parseLayerComps(r.layerComps));
   const root=r.artworkGuides===undefined?composed:composed.withArtworkGuides(validateArtworkGuides(r.artworkGuides));

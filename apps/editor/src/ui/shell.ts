@@ -75,7 +75,10 @@ const documentInfoDialog=`<dialog id="documentInfoDialog" class="geometry-dialog
   </form>
   <form id="canvasTemplateForm">
     <h3>テンプレートとして保存</h3>
-    <p>幅・高さ・解像度・背景・色プロファイルを保存します。</p>
+    <p>幅・高さ・解像度・作成時の背景・sRGBを保存します。</p>
+    <label><input id="canvasTemplateGuides" type="checkbox"> 作品の定規も含める</label>
+    <label><input id="canvasTemplatePalette" type="checkbox"> 作品のパレットも含める</label>
+    <label><input id="canvasTemplateInfo" type="checkbox"> 作品名・作者・説明も含める</label>
     <label>テンプレート名<input id="canvasTemplateName" maxlength="80" required></label>
     <button type="submit">テンプレートを保存</button>
   </form>
