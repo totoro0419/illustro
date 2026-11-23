@@ -40,9 +40,17 @@ try{
   const run=dialog.getByRole('button',{name:'候補を計算',exact:true});
   await page.waitForFunction(()=>{const d=document.querySelector('dialog.export-dialog[aria-label="画像から候補を出す"]');return !!d&&![...d.querySelectorAll('button')].find(b=>b.textContent==='候補を計算')?.disabled;},undefined,{timeout:20000});
   await run.click();
-  await page.waitForFunction(()=>[...document.querySelectorAll('dialog.export-dialog label')].filter(x=>x.textContent?.includes('ごみ候補 ')).length===2,undefined,{timeout:20000});
+  await page.waitForTimeout(2500);
+  const snapshot=await dialog.evaluate(d=>({
+    selects:[...d.querySelectorAll('select')].map(el=>({value:el.value,options:[...el.options].map(o=>o.value)})),
+    status:[...d.querySelectorAll('[role=status]')].map(el=>el.textContent?.slice(0,600)),
+    candidates:[...d.querySelectorAll('label')].map(el=>el.textContent?.trim()).filter(text=>text?.includes('ごみ候補')),
+    buttons:[...d.querySelectorAll('button')].filter(el=>el.textContent==='候補を計算').map(el=>({disabled:el.disabled})),
+    canvases:[...d.querySelectorAll('figure canvas')].map(el=>({width:el.width,height:el.height,hidden:el.hidden})),
+  }));
+  console.log('SPECK_DIAGNOSTICS',JSON.stringify(snapshot));
   const candidates=dialog.locator('label').filter({hasText:'ごみ候補 '});
-  assert.equal(await candidates.count(),2,'two isolated specks should be candidates');
+  assert.equal(await candidates.count(),2,'two isolated specks should be candidates: '+JSON.stringify(snapshot));
   const labels=await candidates.allTextContents();
   console.log('SPECK_CANDIDATES',JSON.stringify(labels));
   assert.ok(labels.every(label=>label.includes('1画素')),'large intended square was incorrectly proposed');
