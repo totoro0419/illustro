@@ -56,6 +56,7 @@ replaceExactlyOnce(
 // Prefix preview keys before any application module is imported, and fail closed.
 const bootstrap = `
 const app = document.getElementById('app');
+let storageReady = false;
 try {
   const local = window.localStorage;
   const session = window.sessionStorage;
@@ -105,10 +106,18 @@ try {
   local.setItem(key,'ok');
   if(local.getItem(key)!=='ok')throw new Error('Preview storage key isolation failed');
   local.removeItem(key);
-  await import('./main.ts');
+  storageReady = true;
 } catch (error) {
   console.error('R2 preview safe storage setup failed', error);
   if(app) app.textContent='R2プレビューを安全に開始できませんでした。ブラウザーの保存設定をご確認ください。';
+}
+if (storageReady) {
+  try {
+    await import('./main.ts');
+  } catch (error) {
+    console.error('R2 preview application startup failed', error);
+    if(app) app.textContent='R2プレビューの読み込み中にエラーが発生しました。ページを再読み込みしてください。';
+  }
 }
 `;
 writeFileSync('apps/editor/src/r2-preview-bootstrap.js', bootstrap);

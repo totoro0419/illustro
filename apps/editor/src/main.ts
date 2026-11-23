@@ -250,6 +250,8 @@ let activeMacroService:SimpleMacroService|null=null;
 let fillPanel:ReturnType<typeof installFillPanel>|undefined;
 let transformPanel:ReturnType<typeof installTransformPanel>|undefined;
 let activeCanvasTool='',canvasToolRequest=0;
+const contextToolLabels:Record<string,string>={selection:'選択',transform:'変形',move:'移動',shapes:'図形',rulers:'定規',pixels:'1pxドットペン'};
+let geometryBusy=false;
 let wetTools:ReturnType<typeof installWetTools>|undefined;
 let imageLinkPanel:ReturnType<typeof installImageLinkPanel>|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
@@ -2014,7 +2016,6 @@ for(const listId of ['layerList','layerPageList']){
     event.preventDefault();event.stopPropagation();rows[next]?.focus();
   });
 }
-const contextToolLabels:Record<string,string>={selection:'選択',transform:'変形',move:'移動',shapes:'図形',rulers:'定規',pixels:'1pxドットペン'};
 function updateContextBar(){
   refreshPhoneConfirmation();
   const active=documentReady&&!!surface;
@@ -2177,7 +2178,7 @@ function syncPreset(){
  updateQa();
 }
 type GeometryMode='document.crop'|'document.canvas-resize'|'document.image-resize';
-let geometryMode:GeometryMode|null=null,geometryBusy=false;
+let geometryMode:GeometryMode|null=null;
 const geometryDialog=byId<HTMLDialogElement>('geometryDialog'),cropOverlay=document.getElementById('cropOverlay') as unknown as SVGSVGElement;
 const dimensionInput=(id:string)=>byId<HTMLInputElement>(id);
 let geometryPreviewEpoch=0;
