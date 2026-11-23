@@ -5,8 +5,8 @@ export type ClipboardUI=Readonly<{refresh:()=>void;clipboard:ArtworkClipboard}>;
 type Actions=Readonly<{
   canEdit:()=>boolean;
   hasSelection:()=>boolean;
-  copy:(merged:boolean,selection:boolean)=>Promise<void>;
-  copyGroup:()=>Promise<void>;
+  copy:(merged:boolean,selection:boolean,embedFonts?:boolean)=>Promise<void>;
+  copyGroup:(embedFonts?:boolean)=>Promise<void>;
   cut:()=>Promise<void>;
   paste:(placement:'center'|'original'|Readonly<{x:number;y:number}>)=>Promise<void>;
   getView:()=>Readonly<{drawing:BrushSurface;width:number;height:number}>|null;
@@ -22,6 +22,10 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
   const summary=document.createElement('summary');summary.textContent='コピー・切り取り・貼り付け';
   const intro=document.createElement('p');intro.textContent='コピーは作品を変えません。貼り付けは新しいレイヤーを作ります。';
   const commands=document.createElement('div');commands.className='c06-clipboard-grid';
+  const embedLabel=document.createElement('label'),embedFonts=document.createElement('input');
+  embedFonts.type='checkbox';
+  embedLabel.append(embedFonts,' 文字レイヤーのコピーにフォントも含める（作品に同梱できるフォントのみ）');
+  commands.append(embedLabel);
   const imageFile=document.createElement('input');imageFile.type='file';imageFile.hidden=true;
   imageFile.accept='image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
   const message=document.createElement('output');message.setAttribute('role','status');
@@ -39,8 +43,8 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
     buttons.set(id,control);commands.append(control);
   };
   make('c06CopySelection','選択範囲をコピー',()=>actions.copy(false,true));
-  make('c06CopyLayer','レイヤー全体をコピー',()=>actions.copy(false,false));
-  make('c06CopyGroup','現在のグループをコピー',actions.copyGroup);
+  make('c06CopyLayer','レイヤー全体をコピー',()=>actions.copy(false,false,embedFonts.checked));
+  make('c06CopyGroup','現在のグループをコピー',()=>actions.copyGroup(embedFonts.checked));
   make('c06CopyMerged','見えている絵をコピー',()=>actions.copy(true,false));
   make('c06CopyMergedSelection','選択範囲の見た目をコピー',()=>actions.copy(true,true));
   make('c06CutSelection','選択範囲を切り取る',actions.cut);

@@ -5473,11 +5473,11 @@ c06ClipboardUI=installClipboardPanel({
     drawing:surface,width:controller.document.root.width,height:controller.document.root.height
   }:null,
   hasSelection:()=>!!surface?.selectedRectangle,
-  copy:(merged,selection)=>withClipboardAccess(async drawing=>{
-    await c06Clipboard.copy(controller,drawing,{merged,selectionOnly:selection});return 'read';
+  copy:(merged,selection,embedFonts=false)=>withClipboardAccess(async drawing=>{
+    await c06Clipboard.copy(controller,drawing,{merged,selectionOnly:selection,embedFonts});return 'read';
   }),
-  copyGroup:()=>withClipboardAccess(async drawing=>{
-    await c06Clipboard.copy(controller,drawing,{merged:false,selectionOnly:false,group:true});return 'read';
+  copyGroup:(embedFonts=false)=>withClipboardAccess(async drawing=>{
+    await c06Clipboard.copy(controller,drawing,{merged:false,selectionOnly:false,group:true,embedFonts});return 'read';
   }),
   cut:()=>withClipboardAccess(async drawing=>{
     await c06Clipboard.cut(controller,drawing);return 'edit';

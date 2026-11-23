@@ -1,13 +1,14 @@
 import {appConfirm} from '../ui/appDialogs';
 /** C06 copy/cut/paste operating on real document pixels and history. */
-import {transformLayerMask,moveEditableArtwork,type RasterPixelTiles,type LayerNode,type LayerGroup,type LayerDeformation,type LayerMask,type LayerId,type LineRegions} from '@illustro/core';
+import {transformLayerMask,moveEditableArtwork,type EditableText,type RasterPixelTiles,type LayerNode,type LayerGroup,type LayerDeformation,type LayerMask,type LayerId,type LineRegions} from '@illustro/core';
 import {validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {translateStroke} from '../seamlessStroke';
 import {describeStroke,strokeTilesForCanvas} from '../strokeCommit';
 import {digestLayerMask} from '../transform/mask';
 import type {EditorController} from '../controller';
 import type {BrushSurface} from '../brushSurface';
-import {getAsset} from '../assets/library';
+import {addAssetsAtomically,getAsset,type AssetEntry} from '../assets/library';
+import {textFontAssetIds} from '../artwork/textStyles';
 import {readFillReference} from '../fill/reference';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 import type {SelectionRect} from '../strokeSelection';
@@ -23,7 +24,8 @@ export type ClipboardItem=Readonly<{
   sourceDocumentId:string;sourceColorProfile:string;sourceName:string;
   originX:number;originY:number;width:number;height:number;
   selected:boolean;merged:boolean;pixels:Uint8ClampedArray;
-  editable?:Readonly<{layers:readonly EditableLayerCopy[];groups:readonly LayerGroup[]}>;
+  editable?:Readonly<{layers:readonly EditableLayerCopy[];groups:readonly LayerGroup[];
+    fonts?:readonly AssetEntry[];embedFonts?:boolean}>;
 }>;
 const safeRect=(selection:SelectionRect|null,width:number,height:number)=>{
   if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||
@@ -104,7 +106,7 @@ export class ArtworkClipboard {
     sourceDocumentId:this.item.sourceDocumentId,selected:this.item.selected,merged:this.item.merged,editable:this.item.editable?.layers.length??0,group:this.item.editable?.groups.length!==0&&!!this.item.editable
   }:null;}
   clear(){this.item=null;this.serial++;}
-  async copy(controller:EditorController,drawing:BrushSurface,opts:Readonly<{merged:boolean;selectionOnly:boolean;group?:boolean}>){
+  async copy(controller:EditorController,drawing:BrushSurface,opts:Readonly<{merged:boolean;selectionOnly:boolean;group?:boolean;embedFonts?:boolean}>){
     const document=controller.document,root=document.root,head=document.head;
     const selection=opts.selectionOnly?drawing.selectedRectangle:null;
     if(opts.selectionOnly&&!selection)throw Error('先に選択範囲を作成してください。');
@@ -199,6 +201,21 @@ export class ArtworkClipboard {
       regionPixels??crop(source,root.width,area);
     const pixels=selectedMask&&!group
       ?await runMaskedPixelJob(clipped,cropSelectionMask(selectedMask,area),'copy'):clipped;
+    if(editable){
+      const ids=new Set(editable.layers.flatMap(({layer})=>layer.editable?.kind==='text'&&
+        (layer.editable.embedFont||opts.embedFonts)?textFontAssetIds(layer.editable):[]));
+      const fonts:AssetEntry[]=[];
+      let size=0;
+      for(const id of ids){
+        const font=await getAsset(id);
+        if(!font||font.deleted||font.kind!=='font')continue;
+        size+=font.data.size;
+        if(font.data.size>24*1024*1024||size>48*1024*1024)
+          throw Error('一緒にコピーするフォントは1件24MB、合計48MBまでです。');
+        fonts.push(font);
+      }
+      editable={...editable,...(fonts.length?{fonts}:{}),...(opts.embedFonts?{embedFonts:true}:{})};
+    }
     if(document.head!==head)throw Error('コピー中に作品が変更されました。');
     const record:ClipboardItem={
       sourceDocumentId:root.documentId,sourceColorProfile:root.colorProfileId,
@@ -277,14 +294,30 @@ export class ArtworkClipboard {
       const ids=new Set(record.editable.layers.map(entry=>entry.layer.id));
       const clipLoss=record.editable.layers.some(({layer})=>layer.clipSourceId&&!ids.has(layer.clipSourceId));
       const fontIds=new Set(record.editable.layers.flatMap(({layer})=>
-        layer.editable?.kind==='text'&&layer.editable.fontAsset?[layer.editable.fontAsset]:[]));
-      const missingFonts=[];
+        layer.editable?.kind==='text'?textFontAssetIds(layer.editable):[]));
+      const copiedFonts=new Map((record.editable.fonts??[]).map(font=>[font.id,font]));
+      const missingFonts:string[]=[],newFonts:AssetEntry[]=[],fontRemap=new Map<string,string>();
       for(const id of fontIds){
-        const font=await getAsset(id);
-        if(!font||font.deleted||font.kind!=='font')missingFonts.push(id);
+        const local=await getAsset(id),copy=copiedFonts.get(id);
+        const active=local&&!local.deleted&&local.kind==='font'?local:null;
+        if(!copy){if(!active)missingFonts.push(id);continue;}
+        if(active&&active.version===copy.version&&active.bytes===copy.bytes)continue;
+        const nextId=local?crypto.randomUUID():copy.id;
+        fontRemap.set(id,nextId);
+        newFonts.push({...copy,id:nextId});
       }
-      const fontNotice=fontIds.size?'フォント参照を保持します。'+(missingFonts.length
-        ?'素材庫にないフォントが'+missingFonts.length+'件あります。文字編集でフォントを指定し直せます。':''):'';
+      const fontNotice=fontIds.size?' フォント参照を保持します。'+(copiedFonts.size?
+        ' コピーに含まれるフォントは'+copiedFonts.size+'件です。':'')+(missingFonts.length
+        ?' 見つからないフォントが'+missingFonts.length+'件あります。文字編集で指定し直せます。':''):'';
+      const embedFonts=record.editable.embedFonts===true;
+      function placeText(text:EditableText):EditableText{
+        const ids=textFontAssetIds(text);
+        const contained=ids.length>0&&ids.every(id=>copiedFonts.has(id));
+        return {...text,...(embedFonts&&contained?{embedFont:true}:{}),
+          ...(text.fontAsset?{fontAsset:fontRemap.get(text.fontAsset)??text.fontAsset}:{}),
+          ...(text.styleRanges?{styleRanges:text.styleRanges.map(range=>range.fontAsset?
+            {...range,fontAsset:fontRemap.get(range.fontAsset)??range.fontAsset}:range)}:{})};
+      }
       const hasRegions=record.editable.layers.some(entry=>entry.regionSource);
       if(hasRegions&&(root.width!==record.width||root.height!==record.height))
         throw Error('元と同じ大きさの作品に貼り付けると、線画領域の判定と参照元を保持できます。');
@@ -307,7 +340,8 @@ export class ArtworkClipboard {
           ...(effect&&layer.blend?{blend:{...layer.blend,effect:{...effect,mask:moveMask(effect.mask,x,y)}}}:{}),
           ...(layer.imageLink?{imageLink:{...layer.imageLink,x:layer.imageLink.x+x,y:layer.imageLink.y+y}}:{})
         };
-        const entry={layer:placedLayer,pixels:place(pixels),mask,editable:layer.editable?moveEditableArtwork(layer.editable,x,y):null};
+        const editable=layer.editable?.kind==='text'?placeText(layer.editable):layer.editable;
+        const entry={layer:placedLayer,pixels:place(pixels),mask,editable:editable?moveEditableArtwork(editable,x,y):null};
         if(!transform)return {...entry,...(regionSource?{regionSource}:{})};
         let deformation=moveDeformation(transform.deformation,x,y);
         const oldDigest=transform.deformation.maskDigest;
@@ -325,7 +359,12 @@ export class ArtworkClipboard {
         throw Error('貼り付け先が変わったため、操作を取り消しました。');
       const tx=document.begin('編集できるレイヤーを貼り付ける');
       const id=tx.pasteRasterLayers(reference,entries,record.editable.groups);
-      controller.lastPersistenceHandoff=tx.commit().persistence;
+      try{
+        if(newFonts.length)await addAssetsAtomically(newFonts);
+        if(controller.document!==document||document.head!==head||controller.selectedLayer.id!==reference)
+          throw Error('貼り付け先が変わったため、操作を取り消しました。');
+        controller.lastPersistenceHandoff=tx.commit().persistence;
+      }catch(error){tx.cancel();throw error;}
       controller.selectLayer(id);
       return {revision:document.head,layerId:id,x,y};
     }
