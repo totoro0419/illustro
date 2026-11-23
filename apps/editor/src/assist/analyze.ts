@@ -109,7 +109,7 @@ export function analyzeImage(request:AssistRequest):AssistResult{
         for(let cx=Math.max(0,x-1);cx<=Math.min(width-1,x+1);cx++)enqueue(cy*width+cx);
     }
     if(end>maxArea||!contained)continue;
-    if(spots.length===32){capped=true;break;}
+    if(spots.length===128){capped=true;break;}
     spots.push({pixels:queue.slice(0,end),x:Math.round(sx/end),y:Math.round(sy/end)});
   }
   return {kind:'specks',spots,capped};
