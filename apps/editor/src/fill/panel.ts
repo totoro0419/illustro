@@ -29,7 +29,7 @@ type Entry={id:LayerId;name:string;data:LineRegions};
 
 export function installFillPanel(host:HTMLElement,api:{
   onContextChanged?:()=>void;
-  drawing:()=>BrushSurface|null;color:()=>string;documentId:()=>string;targetName:()=>string;
+  drawing:()=>BrushSurface|null;color:()=>string;documentId:()=>string;targetId:()=>string;targetName:()=>string;
   references:()=>readonly {id:string;name:string;vector:boolean;visible:boolean}[];
   regionLayers:()=>readonly Entry[];
   saveRegion:(regions:LineRegions,id?:LayerId)=>Promise<LayerId>;
@@ -403,7 +403,7 @@ export function installFillPanel(host:HTMLElement,api:{
     gestureEpoch++;endLiveGesture?.();endLiveGesture=null;
     gesture?.setCanvasEditGesture(null);gesture=null;
   }
-  function onCanvas(label:string,complete:(points:readonly Point[],prepared:FillCapture|undefined,current:()=>boolean)=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false,asSelection=false){
+  function onCanvas(label:string,complete:(points:readonly Point[],prepared:FillCapture|undefined,current:()=>boolean)=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false,asSelection=false,repeatDirect=false){
     stopGesture();
     const epoch=gestureEpoch;
     const drawing=api.drawing();
@@ -473,7 +473,11 @@ export function installFillPanel(host:HTMLElement,api:{
         const reusable=sourceValid()?prepared:undefined;
         stopGesture();
         const completedEpoch=gestureEpoch;
-        if(points.length)void work(()=>complete(points,reusable,()=>completedEpoch===gestureEpoch&&drawing===api.drawing()));
+        if(repeatDirect){
+          // Re-arm before expensive capture/flood work to accept rapid taps.
+          if(points.length)void complete(points,undefined,()=>true);
+          if(panel.open)armFill();
+        }else if(points.length)void work(()=>complete(points,reusable,()=>completedEpoch===gestureEpoch&&drawing===api.drawing()));
       }});
     if(previewColor){
       void read(!asSelection,undefined,true).then(source=>{
@@ -554,24 +558,70 @@ export function installFillPanel(host:HTMLElement,api:{
     rememberRefs();forgetAnalysis();sync();
     output.textContent='表示中のレイヤーから選んだ1枚を外しました。参照元を確認してから塗ってください。';
   });
+  const directQueue:Point[][]=[];
+  let directRunning=false,directSession:string|null=null,directGeneration=0;
+  // A queued fill belongs to one work, one selected layer and one exact set of options.
+  const directIdentity=()=>JSON.stringify([api.documentId(),api.targetId(),settings(),
+    reference.value,destination.value,activeIds()]);
+  function dropQueuedFills(reason:string){
+    directQueue.length=0;directSession=null;directGeneration++;
+    output.textContent=reason;
+  }
+  async function processDirectQueue(){
+    if(directRunning)return;
+    directRunning=true;const generation=directGeneration;
+    try{
+      while(directQueue.length){
+        if(generation!==directGeneration||!directSession||directIdentity()!==directSession){
+          dropQueuedFills('塗り先または設定が変わったため、待機中の塗りを取り消しました。');break;
+        }
+        const points=directQueue.shift()!,expected=directSession;
+        output.textContent='塗り処理中・残り'+(directQueue.length+1)+'件';
+        await fill(points,false,undefined,()=>directGeneration===generation&&directIdentity()===expected);
+        if(directGeneration!==generation||directIdentity()!==expected){
+          candidate=null;pending=null;paint();
+          dropQueuedFills('塗り先または設定が変わったため、古い塗り候補を破棄しました。');break;
+        }
+        if(!candidate||!pending?.pixels)throw Error('塗りつぶせる画素がありませんでした。');
+        if(pending.mask&&needsLeakingFillReview(pending.mask,points[0],settings().gap)){
+          directQueue.length=0;
+          output.textContent='塗りが外側へ漏れる可能性があります。候補を確認してから適用してください。';
+          break;
+        }
+        await applyCandidate();
+        // Destination='new' intentionally changes the selected layer on commit.
+        // This is the only accepted automatic change of a queued target.
+        if(destination.value!=='active')directSession=directIdentity();
+        output.textContent='塗り処理中・残り'+directQueue.length+'件';
+      }
+      if(!directQueue.length&&directSession)output.textContent='連続塗りを反映しました。';
+    }catch(error){
+      directQueue.length=0;
+      output.textContent=error instanceof Error?error.message:String(error);
+    }finally{
+      directRunning=false;directSession=null;directQueue.length=0;sync();
+    }
+  }
+  function enqueueDirect(points:readonly Point[]){
+    const identity=directIdentity();
+    if(directSession&&directSession!==identity){
+      dropQueuedFills('設定・対象が変わったため、前の待機入力を破棄しました。');
+    }
+    if(directQueue.length>=32){
+      output.textContent='塗りの待機は32件までです。先に進行中の塗りを反映してください。';
+      return;
+    }
+    directSession??=identity;
+    directQueue.push([...points]);
+    output.textContent='塗り処理中・残り'+directQueue.length+'件';
+    if(!directRunning)void processDirectQueue();
+  }
   function armFill(){
     const direct=method.value==='color'&&!confirmBeforeFill.checked;
     onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',async(points,source,current)=>{
-      try{
-        await fill(points,false,source,current);
-        if(direct&&current()&&candidate&&pending?.pixels){
-          if(pending.mask&&needsLeakingFillReview(pending.mask,points[0],settings().gap)){
-            output.textContent='外側へ色が広がる可能性があります。塗り候補を確認し「候補を適用」を押すか、取り消してください。';
-          }else await applyCandidate();
-        }
-      }finally{
-        if(direct&&current()&&panel.open){
-          const lastMessage=output.textContent;
-          armFill();
-          if(lastMessage)output.textContent=lastMessage;
-        }
-      }
-    },method.value.startsWith('lasso'),'#ffb742',true);
+      if(direct){enqueueDirect(points);return;}
+      await fill(points,false,source,current);
+    },method.value.startsWith('lasso'),'#ffb742',true,false,direct);
   }
   const startFill=button('キャンバスで塗る',armFill);
   button('囲まれた領域だけ連続塗り',()=>{
@@ -636,6 +686,7 @@ export function installFillPanel(host:HTMLElement,api:{
   stopCalculation.textContent='計算を中止';
   stopCalculation.onclick=()=>{
     stopGesture();previewAbort?.abort();analysisAbort?.abort();
+    dropQueuedFills('塗りつぶしと待機入力を取り消しました。');
     previewAbort=null;analysisAbort=null;
     candidateGeneration++;candidate=null;pending=null;
     output.textContent='塗りつぶしの計算を中止しました。';
