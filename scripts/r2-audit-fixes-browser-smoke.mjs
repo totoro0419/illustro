@@ -125,8 +125,19 @@ try{
   await page.waitForFunction(()=>!document.querySelector('.c06-placement-preview'),undefined,{timeout:5000});
   mark('D-012-TAP-TO-POSITION-PASTE-PREVIEW');
   // R2 D-010: a UI merge is a single history operation, not a compound edit.
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.historyBusy==='false',undefined,{timeout:12000});
   await page.locator('#addLayer').evaluate(el=>el.click());
-  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='2',undefined,{timeout:10000});
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='2',undefined,{timeout:10000}).catch(async error=>{
+    const details=await page.evaluate(()=>({
+      count:document.querySelector('#canvas')?.dataset.layerCount,
+      historyBusy:document.querySelector('#canvas')?.dataset.historyBusy,
+      status:document.querySelector('#status')?.textContent,
+      addLayerDisabled:document.querySelector('#addLayer')?.disabled,
+      tool:document.querySelector('#canvas')?.dataset.selectedTool,
+      chosenLayer:document.querySelector('#canvas')?.dataset.selectedLayerId
+    }));
+    throw new Error('D-010 setup failed: '+JSON.stringify(details),{cause:error});
+  });
   await page.locator('#mergeLayerDown').evaluate(el=>el.click());
   await page.locator('.illustro-app-dialog-primary').waitFor({timeout:8000});
   await page.locator('.illustro-app-dialog-primary').click();
