@@ -311,3 +311,18 @@ describe('R2 D-007 gap repair and exterior leak protection',()=>{
     expect(needsLeakingFillReview(mask,{x:15,y:15},0)).toBe(false);
   });
 });
+
+describe('R2 D-008 drag only enclosed regions',()=>{
+  it('fills two disjoint closed regions without touching the intervening outside',()=>{
+    const width=23,height=13,source=image(width,height);
+    rectangle(source,width,2,2,8,10,[0,0,0,255]);
+    rectangle(source,width,14,2,20,10,[0,0,0,255]);
+    const graph=buildRegions(source,width,height,15,0,[]);
+    const result=fillMask(source,width,height,{...settings,method:'line',closedOnly:true},
+      [{x:5,y:6},{x:11,y:6},{x:17,y:6}],graph,null);
+    expect(result.alpha[6*width+5]).toBe(255);
+    expect(result.alpha[6*width+17]).toBe(255);
+    expect(result.alpha[6*width+11]).toBe(0);
+    expect(result.alpha[0]).toBe(0);
+  });
+});
