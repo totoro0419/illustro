@@ -118,7 +118,8 @@ vec4 takePixel(ivec2 p){
 }
 void main(){
  vec2 doc=documentPosition;
- if(viewOptions.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=viewDocument.x||doc.y>=viewDocument.y)){
+ vec2 margin=max(0.,viewOptions.x-1.)*viewDocument.xy;
+ if(viewOptions.x!=1.&&(any(lessThan(doc,-margin))||any(greaterThanEqual(doc,viewDocument.xy+margin)))){
   // The space around the paper never changes color as the document moves.
   outColor=vec4(.945,.955,.977,1.);return;
  }
@@ -132,7 +133,9 @@ void main(){
  color=accum/float(taps*taps);
  }else color=viewOptions.y>.5?takePixel(ivec2(floor(pixel+.5))):mix(mix(takePixel(at),takePixel(at+ivec2(1,0)),w.x),mix(takePixel(at+ivec2(0,1)),takePixel(at+ivec2(1,1)),w.x),w.y);
  vec3 paperColor=color.rgb+vec3(1.-color.a);
- float distanceToEdge=min(min(doc.x,doc.y),min(viewDocument.x-doc.x,viewDocument.y-doc.y))*viewDocument.z;
+ vec2 clamped=clamp(doc,vec2(0.),viewDocument.xy);
+ float edge=all(equal(doc,clamped))?min(min(doc.x,doc.y),min(viewDocument.x-doc.x,viewDocument.y-doc.y)):distance(doc,clamped);
+ float distanceToEdge=edge*viewDocument.z;
  float outline=(1.-smoothstep(0.,1.25,distanceToEdge))*.6;
  outColor=vec4(mix(paperColor,vec3(.60,.68,.81),outline),1.);
 }`;
@@ -156,7 +159,8 @@ fn takePixel(p:vec2i)->vec4f{
 }
 @fragment fn fragment(in:VertexOut)->@location(0) vec4f{
  let doc=in.doc;
- if(view.options.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=view.document.x||doc.y>=view.document.y)){
+ let margin=max(0.,view.options.x-1.)*view.document.xy;
+ if(view.options.x!=1.&&(any(doc < -margin)||any(doc >= view.document.xy+margin))){
   // Same fixed surround as CSS and the WebGL2 shader.
   return vec4f(.945,.955,.977,1.);
  }
@@ -172,7 +176,10 @@ fn takePixel(p:vec2i)->vec4f{
  }else if(view.options.y>.5){color=takePixel(vec2i(floor(pixel+.5)));}
  else{color=mix(mix(takePixel(at),takePixel(at+vec2i(1,0)),w.x),mix(takePixel(at+vec2i(0,1)),takePixel(at+vec2i(1,1)),w.x),w.y);}
  let paperColor=color.rgb+vec3f(1.-color.a);
- let distanceToEdge=min(min(doc.x,doc.y),min(view.document.x-doc.x,view.document.y-doc.y))*view.document.z;
+ let clamped=clamp(doc,vec2f(0.),view.document.xy);
+ let innerEdge=min(min(doc.x,doc.y),min(view.document.x-doc.x,view.document.y-doc.y));
+ let edge=select(distance(doc,clamped),innerEdge,all(doc==clamped));
+ let distanceToEdge=edge*view.document.z;
  let outline=(1.-smoothstep(0.,1.25,distanceToEdge))*.6;
  return vec4f(mix(paperColor,vec3f(.60,.68,.81),outline),1.);
 }`;

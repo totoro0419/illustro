@@ -111,7 +111,7 @@ import {layerListSignature} from './ui/layerListSignature';
 import {drawMaskPreview,paintPixelMask,type MaskStrokePoint} from './layerMaskEditing';
 import {restoreHistoryPixels} from './historyBrush';
 import {penEraserInput} from './stylusButtons';
-import {parseSavedCanvasView,type Point} from './canvasView';
+import {parseSavedCanvasView,seamlessBounds,type Point} from './canvasView';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,type GuideSettings} from './strokeGuide';
 import {BrushPresetLibrary} from './brushPresets';
 import {readWorkBrushSettings,saveWorkBrushSettings} from './workBrushSettings';
@@ -1750,6 +1750,7 @@ function updateViewControls(){const state=surface?.viewState;if(!state)return;
   const angle=byId<HTMLInputElement>('angleDegree'),angleValue=String(Math.round(state.rotation*180/Math.PI*10)/10);if(angle.value!==angleValue)angle.value=angleValue;
   for(const [id,on] of [['flipH',state.flipX],['flipV',state.flipY]] as const){const button=byId<HTMLButtonElement>(id),value=String(on);if(button.getAttribute('aria-pressed')!==value)button.setAttribute('aria-pressed',value);}
   const tile=byId<HTMLInputElement>('seamless');if(tile)tile.checked=state.seamless;
+  const count=byId<HTMLSelectElement>('seamlessCount');count.disabled=!state.seamless;count.value=String(state.repeatRadius);
   updatePixelGrid();
   c06Selection?.updateView();
 }
@@ -1805,6 +1806,12 @@ function updatePixelGrid(){
   y=Math.floor(Math.min(...corners.map(point=>point.y)));
   width=Math.ceil(Math.max(...corners.map(point=>point.x)))-x;
   height=Math.ceil(Math.max(...corners.map(point=>point.y)))-y;
+  const bounds=seamlessBounds(state.documentWidth,state.documentHeight,state.repeatRadius);
+  if(bounds){
+   const right=Math.min(x+width,bounds.x+bounds.width),bottom=Math.min(y+height,bounds.y+bounds.height);
+   x=Math.max(x,bounds.x);y=Math.max(y,bounds.y);
+   width=Math.max(0,right-x);height=Math.max(0,bottom-y);
+  }
  }
  for(const [name,value] of Object.entries({x,y,width,height}))gridPage.setAttribute(name,String(value));
 }
@@ -1820,7 +1827,11 @@ canvasViewport.addEventListener('pointermove',event=>{
  if(gridOverlay.hasAttribute('hidden')||!surface||!(event instanceof PointerEvent))return;
  const rect=surface.viewportRect,point=surface.screenToDocument({x:event.clientX-rect.left,y:event.clientY-rect.top}),root=controller.document.root;
  const wrap=(value:number,span:number)=>((value%span)+span)%span;
- const seamless=surface.viewState?.seamless;
+ const state=surface.viewState,seamless=state?.seamless;
+ const bounds=seamless?seamlessBounds(root.width,root.height,state.repeatRadius):null;
+ if(bounds&&(point.x<bounds.x||point.y<bounds.y||point.x>=bounds.x+bounds.width||point.y>=bounds.y+bounds.height)){
+  pixelCoordinates.hidden=true;return;
+ }
  const x=seamless?wrap(Math.floor(point.x),root.width):Math.floor(point.x);
  const y=seamless?wrap(Math.floor(point.y),root.height):Math.floor(point.y);
  pixelCoordinates.hidden=x<0||y<0||x>=root.width||y>=root.height;
@@ -3284,7 +3295,11 @@ document.addEventListener('keyup',event=>{
  if(event.key.toLowerCase()==='e')releaseTemporaryEraser();
 });
 window.addEventListener('blur',releaseTemporaryEraser);
-byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as HTMLInputElement).checked);
+function updateSeamlessSettings(){
+ surface?.setSeamless(byId<HTMLInputElement>('seamless').checked,Number(byId<HTMLSelectElement>('seamlessCount').value));
+}
+byId<HTMLInputElement>('seamless').onchange=updateSeamlessSettings;
+byId<HTMLSelectElement>('seamlessCount').onchange=updateSeamlessSettings;
 // C02 BRU-010: ruler changes affect the next stroke, not strokes already in progress.
 function refreshGuideSettings(){
  guidePreferences=normalizeGuideSettings({

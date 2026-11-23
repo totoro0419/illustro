@@ -26,7 +26,7 @@ import presentationWorkerUrl from '../../../packages/brush-rt/dist/rt/presentati
 import {DrawingHost} from '../../../packages/brush-rt/dist/rt/drawing-host.mjs';
 import type {EditorController,EditorHistoryChange} from './controller';
 import type {DrawingTarget} from './ports';
-import {CanvasView,type SavedCanvasView,type Point} from './canvasView';
+import {CanvasView,seamlessBounds,type SavedCanvasView,type Point} from './canvasView';
 import {CanvasNavigation} from './canvasNavigation';
 import {wrappedCopies} from './seamlessStroke';
 import {DEFAULT_SYMMETRY,symmetryCopies,symmetryPoint,type SymmetrySettings} from './strokeSymmetry';
@@ -543,7 +543,11 @@ export class BrushSurface{
     line.setAttribute('x1',String(start.x));line.setAttribute('y1',String(start.y));
     line.setAttribute('x2',String(end.x));line.setAttribute('y2',String(end.y));
   }
-  setSeamless(enabled:boolean){if(this.view){this.view.seamless=enabled;this.updateView(true);}}
+  setSeamless(enabled:boolean,repeatRadius=this.view?.repeatRadius??0){
+    if(!this.view)return;
+    if(this.pointer===null){this.view.seamless=enabled;this.view.repeatRadius=repeatRadius;}
+    this.updateView(true);
+  }
   setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView(true);}}
   private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e),p=snapToStraightGuide({x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0)},this.activeGuide);const sensors=nativeBrushSensors(e),range=this.pressureRange;
     const pressure=sensors.pressure;
@@ -952,8 +956,13 @@ export class BrushSurface{
     }
     if(this.controller.selectedLayer.baseColor==='white'){this.status('背景レイヤーをもう一度選ぶと、背景にも直接描けます。');return;}
     const inputReason=e.button!==0&&!eraser?'button':this.pointer!==null?'pointer-active':this.finishing?'cancelling':this.historySyncing?'history':this.inputBarrier?'document-barrier':this.operationMode!=='idle'?this.operationMode:null;const attempt=this.traceHandoff?{at:performance.now(),eventAt:e.timeStamp,reason:inputReason,state:{finishing:this.finishing,historySyncing:this.historySyncing,inputBarrier:this.inputBarrier,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,formalCommands:(this.renderer as any)?.document.count??0,pendingRaw:this.session.pendingRawCount,protectionQueue:this.protectionQueueLength}} as (typeof this.inputAttempts)[number]:null;if(attempt){this.inputAttempts.push(attempt);if(this.inputAttempts.length>1200)this.inputAttempts.shift();}if(inputReason)return;if(this.handoffFault){if(attempt)attempt.reason='fault';this.handoffRejected++;this.status('描画処理が停止しています。'+this.handoffFault);return;}const r=this.renderer as any;if((this.handoff?.pending??0)+this.gpuFinishes.size>=64||r?.document.count>100000||this.session.pendingRawCount>50000||this.protectionQueueLength>=128){if(attempt)attempt.reason='resource-limit';this.handoffRejected++;this.status('処理量の上限に達しました。作品の処理が終わるまで次の一筆をお待ちください。');return;}e.preventDefault();
+    const origin=this.view.document(this.pointerLocation(e));
+    if(this.view.seamless){
+      const bounds=seamlessBounds(root.width,root.height,this.view.repeatRadius);
+      if(bounds&&(origin.x<bounds.x||origin.y<bounds.y||origin.x>=bounds.x+bounds.width||origin.y>=bounds.y+bounds.height))return;
+    }
     try{this.target=this.controller.target();this.pendingBranch=this.controller.canRedo;this.strokeMask=mask;this.reservation=mask?null:this.handoff!.reserve(this.target);
-      const origin=this.view.document(this.pointerLocation(e)),w=this.target.width,h=this.target.height;
+      const {width:w,height:h}=this.target;
       this.wrapOrigin=this.view.seamless?{x:Math.floor(origin.x/w)*w,y:Math.floor(origin.y/h)*h}:null;
       const guideOrigin={x:origin.x-(this.wrapOrigin?.x??0),y:origin.y-(this.wrapOrigin?.y??0)};
       const bypass=e.shiftKey||this.skipNextArtworkGuide;

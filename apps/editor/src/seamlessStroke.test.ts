@@ -21,3 +21,12 @@ describe('M08 seamless canonical seam copies',()=>{
   expect(copies.some(v=>v.dx===-512&&v.dy===-384)).toBe(true);
  });
 });
+
+it.each([
+ [{x:12,y:192},{x:-12,y:192},512,0],
+ [{x:256,y:12},{x:256,y:-12},0,384],
+ [{x:256,y:372},{x:256,y:396},0,-384],
+] as const)('wraps an edge crossing once at %j', (from,to,dx,dy)=>{
+ const copies=wrappedCopies(makeStroke([from,to]),512,384);
+ expect(copies.map(copy=>[copy.dx,copy.dy])).toEqual([[dx,dy]]);
+});

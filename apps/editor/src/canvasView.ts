@@ -1,7 +1,12 @@
 /** M08: view-only geometry. Coordinates remain in document pixels. */
 export type Point=Readonly<{x:number;y:number}>;
-export type ViewState=Readonly<{documentWidth:number;documentHeight:number;cssWidth:number;cssHeight:number;zoom:number;rotation:number;panX:number;panY:number;flipX:boolean;flipY:boolean;seamless:boolean;reference:boolean}>;
-export type SavedCanvasView=Pick<ViewState,'zoom'|'rotation'|'panX'|'panY'|'flipX'|'flipY'|'seamless'>;
+export type ViewState=Readonly<{documentWidth:number;documentHeight:number;cssWidth:number;cssHeight:number;zoom:number;rotation:number;panX:number;panY:number;flipX:boolean;flipY:boolean;seamless:boolean;repeatRadius:number;reference:boolean}>;
+export type SavedCanvasView=Pick<ViewState,'zoom'|'rotation'|'panX'|'panY'|'flipX'|'flipY'|'seamless'>&{repeatRadius?:number};
+
+/** 0 preserves the unbounded view used by older documents. */
+export function seamlessBounds(width:number,height:number,radius:number){
+ return radius===0?null:{x:-radius*width,y:-radius*height,width:(2*radius+1)*width,height:(2*radius+1)*height};
+}
 export function parseSavedCanvasView(value:unknown):SavedCanvasView|null{
  if(!value||typeof value!=='object')return null;
  const v=value as Partial<SavedCanvasView>;
@@ -10,17 +15,19 @@ export function parseSavedCanvasView(value:unknown):SavedCanvasView|null{
     typeof rotation!=='number'||!Number.isFinite(rotation)||
     typeof panX!=='number'||!Number.isFinite(panX)||typeof panY!=='number'||!Number.isFinite(panY)||
     typeof flipX!=='boolean'||typeof flipY!=='boolean'||typeof seamless!=='boolean')return null;
- return {zoom,rotation,panX,panY,flipX,flipY,seamless};
+ const radius=v.repeatRadius;
+ if(radius!==undefined&&(!Number.isInteger(radius)||radius<0||radius>4))return null;
+ return {zoom,rotation,panX,panY,flipX,flipY,seamless,...(radius===undefined?{}:{repeatRadius:radius})};
 }
 export class CanvasView {
  readonly documentWidth:number;readonly documentHeight:number;
- cssWidth=1;cssHeight=1;zoom=1;rotation=0;panX=0;panY=0;flipX=false;flipY=false;seamless=false;reference=false;
+ cssWidth=1;cssHeight=1;zoom=1;rotation=0;panX=0;panY=0;flipX=false;flipY=false;seamless=false;repeatRadius=0;reference=false;
  private fitted=false;
  constructor(width:number,height:number,private readonly fitRatio=1){if(!(width>0&&height>0)||!(fitRatio>0&&fitRatio<=1))throw new Error('Invalid canvas size');this.documentWidth=width;this.documentHeight=height;}
- get state():ViewState{return {documentWidth:this.documentWidth,documentHeight:this.documentHeight,cssWidth:this.cssWidth,cssHeight:this.cssHeight,zoom:this.zoom,rotation:this.rotation,panX:this.panX,panY:this.panY,flipX:this.flipX,flipY:this.flipY,seamless:this.seamless,reference:this.reference};}
+ get state():ViewState{return {documentWidth:this.documentWidth,documentHeight:this.documentHeight,cssWidth:this.cssWidth,cssHeight:this.cssHeight,zoom:this.zoom,rotation:this.rotation,panX:this.panX,panY:this.panY,flipX:this.flipX,flipY:this.flipY,seamless:this.seamless,repeatRadius:this.repeatRadius,reference:this.reference};}
  restore(state:SavedCanvasView){
   this.zoom=state.zoom;this.rotation=state.rotation;this.panX=state.panX;this.panY=state.panY;
-  this.flipX=state.flipX;this.flipY=state.flipY;this.seamless=state.seamless;this.fitted=true;
+  this.flipX=state.flipX;this.flipY=state.flipY;this.seamless=state.seamless;this.repeatRadius=state.repeatRadius??0;this.fitted=true;
  }
  resize(width:number,height:number){if(!(width>0&&height>0))return;this.cssWidth=width;this.cssHeight=height;if(!this.fitted){this.fit();this.fitted=true;}}
  fit(){const c=Math.abs(Math.cos(this.rotation)),s=Math.abs(Math.sin(this.rotation));const w=this.documentWidth*c+this.documentHeight*s,h=this.documentWidth*s+this.documentHeight*c;this.zoom=Math.max(0.001,Math.min(this.cssWidth/w,this.cssHeight/h)*this.fitRatio);this.panX=0;this.panY=0;}
@@ -34,5 +41,5 @@ export class CanvasView {
  setRotation(angle:number){if(!Number.isFinite(angle))return;const center={x:this.cssWidth/2,y:this.cssHeight/2},d=this.document(center);this.rotation=angle;this.anchor(d,center);}
  toggleFlip(axis:'x'|'y'){if(axis==='x')this.flipX=!this.flipX;else this.flipY=!this.flipY;}
  /** Packing shared by WebGPU and WebGL2: three aligned vec4 values. */
- uniform(backingWidth:number,backingHeight:number):Float32Array{const pxPerDoc=this.zoom*Math.min(backingWidth/this.cssWidth,backingHeight/this.cssHeight),nearest=this.zoom>=4||(pxPerDoc>=1&&Math.abs(pxPerDoc-Math.round(pxPerDoc))<1e-6&&Math.abs(Math.sin(this.rotation*2))<1e-6);return new Float32Array([backingWidth,backingHeight,this.cssWidth,this.cssHeight,this.documentWidth,this.documentHeight,this.zoom,this.rotation,this.panX,this.panY,this.flipX?-1:1,this.flipY?-1:1,this.seamless?1:0,nearest?1:0,this.reference?1:0,0]);}
+ uniform(backingWidth:number,backingHeight:number):Float32Array{const pxPerDoc=this.zoom*Math.min(backingWidth/this.cssWidth,backingHeight/this.cssHeight),nearest=this.zoom>=4||(pxPerDoc>=1&&Math.abs(pxPerDoc-Math.round(pxPerDoc))<1e-6&&Math.abs(Math.sin(this.rotation*2))<1e-6);return new Float32Array([backingWidth,backingHeight,this.cssWidth,this.cssHeight,this.documentWidth,this.documentHeight,this.zoom,this.rotation,this.panX,this.panY,this.flipX?-1:1,this.flipY?-1:1,this.seamless?1+this.repeatRadius:0,nearest?1:0,this.reference?1:0,0]);}
 }
