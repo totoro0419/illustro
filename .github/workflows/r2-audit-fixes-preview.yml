@@ -10,6 +10,7 @@ on:
       - 'scripts/prepare-r2-audit-fix-preview.mjs'
       - 'scripts/r2-audit-fixes-browser-smoke.mjs'
       - 'scripts/r2-audit-fixes-fill-browser-smoke.mjs'
+      - 'scripts/r2-audit-fixes-specks-browser-smoke.mjs'
       - 'scripts/prepare-r2-preview.mjs'
       - '.github/workflows/r2-audit-fixes-preview.yml'
   workflow_dispatch:
@@ -129,3 +130,10 @@ jobs:
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
           R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
         run: node scripts/r2-audit-fixes-fill-browser-smoke.mjs
+      - name: Test isolated specks and one-step Undo on the public app
+        env:
+          R2_CHROME_CHANNEL: chrome
+          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
+        run: node scripts/r2-audit-fixes-specks-browser-smoke.mjs
