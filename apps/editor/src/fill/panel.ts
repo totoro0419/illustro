@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import type {ColorHint,LayerId,LineRegions,RevisionId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {combineSelection,type MaskData} from '../selection/mask';
@@ -224,6 +225,8 @@ export function installFillPanel(host:HTMLElement,api:{
     excludeIssue.disabled=running||!usable||!issue.value.startsWith('area:')||manualDraft;
     useOrdinary.disabled=running;
     applyPaint.disabled=running||!pending||!candidate;
+    dropPaint.disabled=!candidate&&!pending;
+    stopCalculation.disabled=!running&&!analysisAbort&&!previewAbort;
     applyPaint.textContent=candidate?.asSelection||outputLayer==='active'?'候補を適用':'レイヤーを作成して塗る';
     dropPaint.disabled=!candidate;
     adjustPaint.disabled=running||!lastFill?.source.canAdjust();
@@ -608,6 +611,9 @@ export function installFillPanel(host:HTMLElement,api:{
     output.textContent='塗りつぶしの計算を中止しました。';
     paint();sync();
   };
+  toolConfirmation(applyPaint,'apply',2);
+  toolConfirmation(dropPaint,'cancel',2);
+  toolConfirmation(stopCalculation,'cancel',1);
   actions.append(stopCalculation);
   button('線画を解析・更新',async()=>{await analyze();confirmed=false;});
   const vectorCompare=button('ベクターのパスと見た目を比較',async()=>{

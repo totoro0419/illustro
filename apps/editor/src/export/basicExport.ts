@@ -2,7 +2,7 @@ import {addRasterMetadata} from './rasterMetadata';
 import {runIcc} from './iccRun';
 import {srgbIccBytes} from './iccMetadata';
 import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId,type DocumentRoot} from '@illustro/core';
-import {blendArtworkPixel,gradientMapTable,mapGradientPixel,adjustmentCube,mapAdjustmentPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
+import {blendArtworkPixel,gradientMapTable,mapGradientPixel,adjustmentCube,mapAdjustmentPixel,cpuReference,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {canUseTiledHistoryPreview,createTiledPreviewAccumulator,yieldHistoryRender} from './tiledPreview';
 import {rasterReplayKeys} from '../rasterReplayKeys';
 import {resizeImagePixels} from '../canvasGeometry';
@@ -116,7 +116,10 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
     // Use the same deterministic replay engine for exports regardless of live presentation backend.
     // WebGL2 is preferred here because it avoids acquiring a second WebGPU device.
     try{renderer=await GpuRenderer.create(canvas,width,height,'webgl2',{webglDesynchronized:false});}
-    catch{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
+    catch{
+      try{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
+      catch{return renderFrozenArtworkOnCpu(frozen);}
+    }
     renderer.setSurfaceStack(layers.map(l=>l.surfaceId));
     if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels,width,height);
     let id=0;
@@ -134,6 +137,42 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
     if(!composite)throw Error('作品の合成に必要な画素を読み取れません。');
     return composite;
   }finally{renderer?.destroy();canvas.width=1;canvas.height=1;}
+}
+
+/** Bounded CPU tiles use the same canonical brush records when no GPU starts. */
+export async function renderFrozenArtworkOnCpu(frozen:FrozenExport,signal?:AbortSignal):Promise<Uint8ClampedArray<ArrayBuffer>>{
+  const {width,height,layers,strokes}=frozen;
+  const output=new Uint8ClampedArray(width*height*4);
+  const seeds=new Map(frozen.basePixels?.map(({surfaceId,pixels})=>[surfaceId,pixels]));
+  const bySurface=new Map<string,{record:StrokeRecord;keys:ReadonlySet<string>|null}[]>();
+  for(const {surfaceId,record,keys} of strokes){
+    const list=bySurface.get(surfaceId)??[];
+    list.push({record,keys:keys?new Set(keys):null});bySurface.set(surfaceId,list);
+  }
+  const tables=new Map<object,Uint8Array>();
+  for(let y=0;y<height;y+=TILE){
+    for(let x=0;x<width;x+=TILE){
+      signal?.throwIfAborted();
+      const w=Math.min(TILE,width-x),h=Math.min(TILE,height-y),key=(x/TILE)+','+(y/TILE);
+      const composited=await compositeArtworkRegion(layers,{x,y,width:w,height:h},async id=>{
+        let tile=new Uint8ClampedArray(w*h*4);
+        const seed=seeds.get(id);
+        if(seed)for(let row=0;row<h;row++){
+          const offset=((y+row)*width+x)*4;
+          tile.set(seed.subarray(offset,offset+w*4),row*w*4);
+        }
+        for(const {record,keys} of bySurface.get(id)??[]){
+          if(keys&&!keys.has(key))continue;
+          tile=new Uint8ClampedArray(cpuReference(record,w,h,tile,undefined,x,y));
+        }
+        return tile;
+      },signal,tables);
+      if(!composited)throw Error('作品の合成に必要な画素を読み取れません。');
+      for(let row=0;row<h;row++)output.set(composited.subarray(row*w*4,(row+1)*w*4),((y+row)*width+x)*4);
+    }
+    if(y+TILE<height)await yieldHistoryRender();
+  }
+  return output;
 }
 
 /** Thumbnail-only fast path: identical source-over compositing per source pixel,
@@ -222,7 +261,10 @@ export async function renderFrozenArtworkTiledPreview(
   let renderer:GpuRenderer|null=null;
   try{
     try{renderer=await GpuRenderer.create(canvas,width,height,'webgl2',{webglDesynchronized:false});}
-    catch{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
+    catch{
+      try{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
+      catch{return null;}
+    }
     renderer.setSurfaceStack(layers.map(layer=>layer.surfaceId));
     if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels.filter(layer=>layer.surfaceId!==replacement?.surfaceId),width,height);
     let id=0;

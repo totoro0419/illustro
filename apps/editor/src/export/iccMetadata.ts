@@ -1,5 +1,6 @@
 export const ICC_LIMIT=4*1024*1024;
 export const ICC_ORIGINAL_SECTION='round2.source-icc';
+export const ICC_ASSIGNED_SECTION='round2.assigned-icc';
 export const ICC_IMPORT_ACTION='round2.icc-import-action';
 export const ICC_ORIGINAL_TYPE='application/vnd.iccprofile';
 

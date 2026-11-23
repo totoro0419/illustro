@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {appConfirm,appPrompt} from '../ui/appDialogs';
 /** C06 selection workbench. Paint and geometry are intentionally different modes. */
 import type {BrushSurface} from '../brushSurface';
@@ -383,7 +384,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const finishPolygon=asButton('多角形を閉じる',()=>{
     if(tool==='polygon'&&points.length>=3)applyShape({type:'polygon',points});
   });
-  tools.append(undoPoint,finishPolygon);
+  tools.append(undoPoint,toolConfirmation(finishPolygon,'apply'));
   // Pixel-derived selection works with the artwork's actual pixel data.
   // All expensive scanning and connected-region search occurs in the worker.
   const autoSource=document.createElement('select');autoSource.setAttribute('aria-label','自動選択に使う画像');
@@ -473,6 +474,26 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);})
       .finally(()=>{if(pendingSelectionJob===current)pendingSelectionJob=0;});
   }
+  const byCoordinates=asButton('座標と大きさで四角く選ぶ',async()=>{
+    const doc=source();
+    if(!doc)return;
+    const start=boundsOfSelection(active??fullSelection(doc.width,doc.height));
+    const answer=await appPrompt('左、上、幅、高さをピクセルで指定（例 0, 0, 200, 100）',
+      [start?.x??0,start?.y??0,start?.width??doc.width,start?.height??doc.height].join(', '),{
+        validate:text=>{
+          const parts=text.trim().split(/[\s,、]+/).map(Number);
+          const [x,y,width,height]=parts;
+          if(parts.length!==4||!parts.every(Number.isInteger)||x!<0||y!<0||width!<1||height!<1||
+             x!+width!>doc.width||y!+height!>doc.height)return '作品に収まる整数の左・上・幅・高さを指定してください。';
+          return null;
+        }
+      });
+    if(answer===null||source()?.id!==doc.id)return;
+    const [x,y,w,h]=answer.trim().split(/[\s,、]+/).map(Number);
+    const candidate=rasterizeSelection({type:'rectangle',x:x!,y:y!,width:w!,height:h!},doc.width,doc.height);
+    publish(candidate);
+  });
+  tools.append(byCoordinates);
   const all=asButton('すべて選ぶ',()=>{const d=source();if(d)publish(fullSelection(d.width,d.height));});
   const clear=asButton('選択を解除',()=>publish(null));
   const reselect=asButton('直前を選び直す',()=>{if(lastSelection)publish(lastSelection);});

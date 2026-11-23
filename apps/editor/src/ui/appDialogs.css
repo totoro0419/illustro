@@ -23,3 +23,7 @@
 .illustro-app-dialog button:focus-visible,.illustro-app-dialog input:focus-visible{
   outline:3px solid var(--a-focus,#5865cc);outline-offset:2px}
 @media(max-width:480px){.illustro-app-dialog-content{padding:20px}}
+@media(max-width:570px){
+ .illustro-app-dialog{max-block-size:calc(100dvh - 24px);overflow:auto}
+ .illustro-app-dialog-actions{position:sticky;bottom:0;background:var(--a-surface,#fff);padding-block:6px}
+}

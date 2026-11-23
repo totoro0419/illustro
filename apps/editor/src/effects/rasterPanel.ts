@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {parseCube,readDisplacementImage} from './imageEffectResources';
 import type {PixelLayerMask} from '@illustro/core';
 import {samplePixelMask} from '@illustro/brush-rt';
@@ -63,7 +64,7 @@ function showPreview(canvas:HTMLCanvasElement,source:Uint8Array|Uint8ClampedArra
 }
 
 export function installRasterEffects(host:HTMLElement,api:{
-  capture:(edit:boolean,explicitMasks?:boolean)=>Promise<EffectCapture>;selectionMask:()=>PixelLayerMask|null;bake:(copy:boolean)=>Promise<boolean>;
+  capture:(edit:boolean,explicitMasks?:boolean)=>Promise<EffectCapture>;selectionMask:()=>PixelLayerMask|null;bake:(copy:boolean,composite?:boolean)=>Promise<boolean>;
 }){
   const panel=document.createElement('details');
   panel.className='c06-clipboard-panel raster-effects';
@@ -301,9 +302,13 @@ export function installRasterEffects(host:HTMLElement,api:{
     if(applying||running||!await api.bake(true))return;
     session=null;invalidate();status.textContent='元の効果を保ち、同じ画素の非表示コピーを作りました。';
   },status);
+  const bakeComposite=button('マスク・合成を含めて外観を固定',async()=>{
+    if(applying||running||!await api.bake(true,true))return;
+    session=null;invalidate();status.textContent='作品全体の外観を固定したコピーを作りました。';
+  },status);
   controls.append(add,fresh,edit);
   const actions=document.createElement('div');actions.className='box-actions';
-  actions.append(compare,apply,cancel,bakeCopy,bake);
+  actions.append(compare,toolConfirmation(apply,'apply'),toolConfirmation(cancel,'cancel'),bakeCopy,bake,bakeComposite);
   panel.append(title,controls,recipe,parameters,actions,status,comparison);
   panel.addEventListener('toggle',()=>{if(!panel.open){session=null;invalidate();}});
   host.append(panel);refresh();

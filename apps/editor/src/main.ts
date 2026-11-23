@@ -1,3 +1,5 @@
+import {artworkComparison} from './ui/artworkComparison';
+import {installToolConfirmation} from './ui/toolConfirmation';
 import {readPointerButtons} from './pointerPanBinding';
 import {cropRestorePlan,mergeRetainedCrop} from './cropRetention';
 import {installStrokeComparison,type StrokeComparison} from './ui/strokeComparison';
@@ -5,7 +7,7 @@ import {nativeBrushSensors} from './brushInput';
 import {deleteExportProfile,readSavedExportProfile,saveExportProfile,readRasterPresets,removeRasterPreset,writeRasterPreset} from './export/rasterPresets';
 import {installDeviceCapabilities} from './ui/deviceCapabilities';
 import {recordInputInterruption} from './persistence/inputInterruption';
-import {ICC_IMPORT_ACTION,ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE,validIccBytes} from './export/iccMetadata';
+import {ICC_IMPORT_ACTION,ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ASSIGNED_SECTION,ICC_ORIGINAL_TYPE,validIccBytes} from './export/iccMetadata';
 import {installImageAssist} from './assist/panel';
 import {installAdjustmentPanel} from './effects/adjustmentPanel';
 import {openLayerBatch} from './export/layerBatch';
@@ -166,7 +168,14 @@ function placeContextBar(){
   contextBar.classList.toggle('phone-tool-context',mobile);
   (mobile?app:contextStrip)?.append(contextBar);
 }
-phoneContext.addEventListener('change',placeContextBar);
+const refreshPhoneConfirmation=installToolConfirmation(contextBar,app,()=>{
+  if(!phoneContext.matches)return null;
+  const content=byId('documentBoxBody');
+  const panel=content.dataset.activeToolPanel;
+  return panel?content.querySelector('details[open][data-tool-panel="'+panel+'"]'):
+    [...byId('effectsBoxBody').querySelectorAll('details[open]')].findLast(item=>item.getClientRects().length&&item.querySelector('[data-tool-confirm]'))??null;
+});
+phoneContext.addEventListener('change',()=>{placeContextBar();refreshPhoneConfirmation();});
 placeContextBar();
 // Read-only TouchEvent/PointerEvent logger in opt-in QA builds. No gesture changes.
 installPassiveTouchProbe();
@@ -1941,8 +1950,32 @@ byId('panView').onclick=()=>{
  byId('status').textContent=surface.panTool?'キャンバスをドラッグして移動できます。':'描画に戻りました。';
 };
 const shellUi=installShellUi(scheduleLayerDrawingThumbnail),workspace=shellUi.workspace;
+const keyboardCanvas=byId('canvas').parentElement!;
+const keyboardCanvasHelp=document.createElement('span');keyboardCanvasHelp.id='keyboardCanvasHelp';
+keyboardCanvasHelp.className='visually-hidden';
+keyboardCanvasHelp.textContent='矢印キーで表示を移動、プラスとマイナスで拡大縮小、Homeで全体表示。';
+keyboardCanvas.prepend(keyboardCanvasHelp);
+keyboardCanvas.tabIndex=0;keyboardCanvas.setAttribute('role','region');
+keyboardCanvas.setAttribute('aria-label','作品キャンバス');keyboardCanvas.setAttribute('aria-describedby',keyboardCanvasHelp.id);
+keyboardCanvas.addEventListener('keydown',event=>{
+  if(event.target!==keyboardCanvas||!surface||!documentReady||surface.inputActive||
+     event.altKey||event.ctrlKey||event.metaKey)return;
+  const step=event.shiftKey?100:24;
+  switch(event.key){
+    case 'ArrowLeft':surface.panViewBy(step,0);break;
+    case 'ArrowRight':surface.panViewBy(-step,0);break;
+    case 'ArrowUp':surface.panViewBy(0,step);break;
+    case 'ArrowDown':surface.panViewBy(0,-step);break;
+    case '+':case '=':surface.zoomView(1.2);break;
+    case '-':surface.zoomView(1/1.2);break;
+    case 'Home':surface.fitView();break;
+    default:return;
+  }
+  event.preventDefault();event.stopPropagation();
+});
 const contextToolLabels:Record<string,string>={selection:'選択',transform:'変形',move:'移動',shapes:'図形',rulers:'定規',pixels:'1pxドットペン'};
 function updateContextBar(){
+  refreshPhoneConfirmation();
   const active=documentReady&&!!surface;
   const tool=byId<HTMLButtonElement>('c04ContextTool'),layer=byId<HTMLButtonElement>('c04ContextLayer');
   const selection=byId<HTMLButtonElement>('c04ContextSelection'),source=byId<HTMLButtonElement>('c04ContextReference');
@@ -2785,7 +2818,7 @@ byId('documentInfoOpen').onclick=()=>{
   const originalIcc=persistence.preservedData?.optionalSections.find(part=>part.id===ICC_IMPORT_ACTION);
   const action=originalIcc&&originalIcc.bytes.length<=32?new TextDecoder().decode(originalIcc.bytes):'';
   const profileNote=action==='converted-to-srgb'?'（元のICCから変換）':action==='assigned-srgb'?'（画素値を保って割当）':
-    action==='decoder-to-srgb'?'（読込時に変換。元のICCを保持）':'';
+    action==='decoder-to-srgb'?'（読込時に変換。元のICCを保持）':action==='assigned-icc'?'（指定したICCから変換）':'';
   byId('documentInfoSize').textContent=root.width+' × '+root.height+' px · '+(root.colorProfileId==='srgb'?'sRGB':root.colorProfileId)+profileNote;
   byId('documentInfoStatus').textContent='';
   byId<HTMLInputElement>('canvasTemplateName').value='';
@@ -3506,6 +3539,33 @@ workFileInput.onchange=async ()=>{
     if(failed.length)homeUi?.notify(summary);
   }finally{openingWorkFiles=false;}
 };
+async function chooseImportProfile(source:Awaited<ReturnType<typeof importExchange>>){
+  const body=document.createElement('div'),label=document.createElement('label'),file=document.createElement('input');
+  const status=document.createElement('output'),preview=document.createElement('div');
+  status.setAttribute('role','status');file.type='file';file.accept='.icc,.icm';
+  let assigned:Uint8Array<ArrayBuffer>|undefined,version=0;
+  file.onchange=async()=>{
+    const ticket=++version;
+    assigned=undefined;preview.replaceChildren();
+    try{
+      const selected=file.files?.[0];
+      if(!selected||selected.size>ICC_LIMIT)throw Error('4MB以内のRGB ICCを選んでください。');
+      status.textContent='色を計算しています。';
+      const bytes=new Uint8Array(await selected.arrayBuffer()),comparison=await exchangeProfileComparison(source,bytes);
+      if(ticket!==version)return;
+      assigned=bytes;
+      if(comparison)preview.replaceChildren(comparison);
+      status.textContent='色を確認し、使う場合は「この色で開く」を押してください。';
+    }catch(error){if(ticket===version)status.textContent=error instanceof Error?error.message:String(error);}
+  };
+  label.append('割り当てるRGB ICC',file);body.append(label,status,preview);
+  const choice=await appChoose('読み込んだ画素をどのRGBの色として解釈するか指定できます。作品ではsRGBとして編集します。',
+    [{value:'profile',label:'この色で開く'}],body);
+  version++;
+  if(!choice)return null;
+  if(!assigned)throw Error(status.textContent||'有効なRGB ICCを選んでください。');
+  return convertExchangeColors(source,true,assigned);
+}
 async function openWorkFile(file:File,batch=false){
   const exchange=exchangeFormat(file.name);
   if(exchange){
@@ -3518,27 +3578,39 @@ async function openWorkFile(file:File,batch=false){
         const choice=await appChoose(profileError?'埋め込みICCは保持します。色変換を開始できません。'+profileError:
           '埋め込みICCが見つかりました。見た目を保つためにsRGBへ変換するか、画素値を変えずsRGBとして扱うか選んでください。',[
           ...(profileError?[]:[{value:'convert' as const,label:'プロファイルに従って色を変換'}]),
-          {value:'assign' as const,label:'画素値を変えずsRGBを割り当てる'}],comparison??undefined);
+          {value:'assign' as const,label:'画素値を変えずsRGBを割り当てる'},
+          {value:'profile' as const,label:'別のRGB ICCを割り当てる'}],comparison??undefined);
         if(choice===null)return false;
-        imported=await convertExchangeColors(imported,choice==='convert');
+        if(choice==='profile'){
+          const result=await chooseImportProfile(imported);
+          if(!result)return false;
+          imported=result;
+        }else imported=await convertExchangeColors(imported,choice==='convert');
       }
       let flatten=false;
       if(imported.warnings.length){
         const message='読み込み時の変更\n'+imported.warnings.slice(0,20).join('\n')+
           (imported.warnings.length>20?'\nほか '+(imported.warnings.length-20)+' 件':'');
         const choice=await appChoose(message,[{value:'layers',label:'編集用に開く'},
-          ...(imported.layers.length&&imported.merged?[{value:'flat',label:'統合画像で開く'}]:[])]);
+          ...(imported.layers.length&&imported.merged?[{value:'flat',label:'統合画像で開く'}]:[]),
+          ...(!imported.sourceIcc&&!imported.assignedIcc?[{value:'profile',label:'RGB ICCを割り当てる'}]:[])]);
         if(choice===null)return false;
+        if(choice==='profile'){
+          const result=await chooseImportProfile(imported);
+          if(!result)return false;
+          imported=result;
+        }
         flatten=choice==='flat';
       }
       if(!qaMode&&!(await prepareWorkSwitch()))return false;
       const {artwork,selected}=createExchangeDocument(imported,flatten);
       const profile=imported.sourceIcc;
-      const optionalSections=profile&&profile.length<=ICC_LIMIT?[
-        {id:ICC_ORIGINAL_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:profile},
-        {id:ICC_IMPORT_ACTION,type:'text/plain',required:false,
-          bytes:new TextEncoder().encode(imported.sourceProfileAction??'decoder-to-srgb')}
-      ]:[];
+      const optionalSections=[
+        ...(profile&&profile.length<=ICC_LIMIT?[{id:ICC_ORIGINAL_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:profile}]:[]),
+        ...(imported.assignedIcc?[{id:ICC_ASSIGNED_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:imported.assignedIcc}]:[]),
+        ...(profile||imported.assignedIcc?[{id:ICC_IMPORT_ACTION,type:'text/plain',required:false,
+          bytes:new TextEncoder().encode(imported.sourceProfileAction??'decoder-to-srgb')}]:[]),
+      ];
       await activateOpened({document:artwork,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections},
         generationId:'exchange',snapshotRevisionId:artwork.head});
       homeUi?.showEditor();byId('status').textContent='交換用ファイルを新しい作品として開きました。';
@@ -4285,6 +4357,18 @@ const c04Commands=installCommandPalette(shellUi,foreground,{
     if(!qaMode)await persistence.selectWorkLayer(selectedId);
   },
 },{resolve:macroExecutor,contextKey:()=>documentReady&&!documentActivationPending?controller.document:null});
+async function artworkPreviewPixels(scene:FrozenExport,width:number,height:number,
+  options?:Readonly<{replacement:{surfaceId:string;pixels:Uint8ClampedArray};signal:AbortSignal}>){
+  const small=await renderFrozenArtworkTiledPreview(scene,width,height,options);
+  if(small)return small;
+  const replacement=options?.replacement,surfaceId=replacement?.surfaceId;
+  const full=await renderFrozenArtwork(replacement?{
+    ...scene,basePixels:[...(scene.basePixels??[]).filter(item=>item.surfaceId!==surfaceId),{surfaceId:replacement.surfaceId,pixels:new Uint8Array(replacement.pixels)}],
+    strokes:scene.strokes.filter(item=>item.surfaceId!==surfaceId),
+  }:scene);
+  options?.signal.throwIfAborted();
+  return new Uint8ClampedArray(resizeImagePixels(full,scene.width,scene.height,width,height,'auto'));
+}
 const c04MacroService=installSimpleMacros(c04Commands,{
   layers:()=>{
     if(!documentReady)return [];
@@ -4337,6 +4421,24 @@ const c04MacroService=installSimpleMacros(c04Commands,{
       signal.throwIfAborted();
       if(controller.document!==artwork||artwork.head!==revision||surface!==drawing)throw Error('操作セットの実行先が変わりました。');
       if(!pixels&&alpha===!!layer.alphaLocked&&clip===!!layer.clipSourceId&&opacity===layer.opacity&&layerName===layer.name)return 'read';
+      const frozen=captureExport(artwork),surfaceId=layer.surface.descriptor.surfaceId;
+      const clipSurfaceId=clip?root.availableClippingSource(id)?.surface.descriptor.surfaceId:undefined;
+      const next={...frozen,layers:frozen.layers.map(item=>{
+        if(item.surfaceId!==surfaceId)return item;
+        const {clipSurfaceId:previousClip,mask:previousMask,...other}=item;
+        return {...other,opacity,...(clipSurfaceId?{clipSurfaceId}:{}),...(mask?.enabled?{mask}:{})};
+      })};
+      const ratio=Math.min(1,300/Math.max(width,height)),w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio));
+      const before=await artworkPreviewPixels(frozen,w,h);
+      signal.throwIfAborted();
+      const after=await artworkPreviewPixels(next,w,h,pixels?{replacement:{surfaceId,pixels:new Uint8ClampedArray(pixels)},signal}:undefined);
+      signal.throwIfAborted();
+      const details=artworkComparison(w,h,[{label:'変更前',pixels:before},{label:'操作セットの候補',pixels:after}]);
+      const beforeName=layerName!==layer.name?' レイヤー名を「'+layerName+'」に変更します。':'';
+      if(await appChoose('操作セット「'+name+'」を適用しますか？'+beforeName,
+        [{value:'apply',label:'適用'}],details)!=='apply')throw new DOMException('実行を取り消しました。','AbortError');
+      signal.throwIfAborted();
+      if(controller.document!==artwork||artwork.head!==revision||surface!==drawing)throw Error('操作セットの実行先が変わりました。');
       const tx=artwork.begin(name);
       if(pixels){
         tx.replaceLayerRaster(id,pixels);
@@ -5418,12 +5520,38 @@ const rasterEffectPanel=installRasterEffects(byId('effectsBoxBody'),{
         return 'edit';
       })};
   },
-  bake:async copy=>{
-    const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
+  bake:async (copy,composite=false)=>{
+    const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer,root=artwork.root;
+    if(composite){
+      const frozen=captureExport(artwork),{width,height}=frozen;
+      const ratio=Math.min(1,420/Math.max(width,height)),w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio));
+      const preview=await artworkPreviewPixels(frozen,w,h);
+      const action=await appChoose('合成を作品サイズ（'+width+' × '+height+' px、8ビット）で固定します。マスク・クリップ・グループの見た目を含みます。元のレイヤーは保持します。',
+        [{value:'copy',label:'非表示コピーを追加'},{value:'visible',label:'元を隠して統合版を表示'}],
+        artworkComparison(w,h,[{label:'固定する外観',pixels:preview}]));
+      if(!action)return false;
+      await withClipboardAccess(async()=>{
+        if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==layer.id)
+          throw Error('対象が変わりました。');
+        const result=await renderFrozenArtwork(frozen);
+        if(artwork!==controller.document||artwork.head!==head)throw Error('作品が変わりました。');
+        const tx=artwork.begin('マスク・合成を含めた外観を固定');
+        const id=tx.addRasterSnapshotAbove(root.rootLayerIds.at(-1)!,result,'外観を統合したコピー',false,false);
+        if(action==='copy')tx.setLayerVisibility(id,false);
+        else for(const source of root.rootLayerIds)if(root.getLayer(source).visible)tx.setLayerVisibility(source,false);
+        controller.lastPersistenceHandoff=tx.commit().persistence;controller.selectLayer(id);
+        return 'edit';
+      });
+      return true;
+    }
     if(!lastRasterFilter(artwork,layer.id))throw Error('設定を保持しているフィルターのレイヤーを選んでください。');
     const message=copy?'効果を固定した非表示のコピーを作ります。元のレイヤーで効果を編集できます。':
       '現在の効果を画素に固定します。効果の設定を開き直すには、この操作を取り消してください。';
-    if(!await appConfirm(message+' 実行しますか？'))return false;
+    const frozen=captureExport(artwork),{width,height}=frozen;
+    const ratio=Math.min(1,340/Math.max(width,height)),w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio));
+    const preview=await artworkPreviewPixels(frozen,w,h);
+    if(await appChoose(message+' 解像度 '+width+' × '+height+' px、8ビット。',[{value:'bake',label:'固定する'}],
+      artworkComparison(w,h,[{label:'固定後の外観',pixels:preview}]))!=='bake')return false;
     await withClipboardAccess(async()=>{
       if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==layer.id)
         throw Error('対象が変わりました。');

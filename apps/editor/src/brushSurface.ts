@@ -1,3 +1,4 @@
+import {CpuDrawingHost} from './cpuDrawingHost';
 import {matchPointerButton,type PointerButtonAction,type PointerButtonBinding} from './pointerPanBinding';
 import type {StrokeComparison} from './ui/strokeComparison';
 import {pixelStroke} from './pixelStroke';
@@ -320,7 +321,14 @@ export class BrushSurface{
     const backend:'auto'|'webgl2'|'webgpu'=this.backendOverride??(requested==='webgpu'||requested==='webgl2'?requested:'auto');
     try{
       const rendererOptions={webglDesynchronized:false,strokeHandoff:true,strokeOverlay:{mode:new URLSearchParams(location.search).get('overlay')==='gpu'?'gpu':new URLSearchParams(location.search).get('overlay')==='cpu'?'cpu':'auto',ratio:new URLSearchParams(location.search).get('overlayRatio')||'auto'},tileHistory:new URLSearchParams(location.search).get('tileHistory')!=='legacy',historyMemoryBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?16*1024*1024:8*1024*1024,historyGpuBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?64*1024*1024:32*1024*1024} as const;
-      const created=await DrawingHost.create(this.canvas,target.width,target.height,backend,rendererOptions,drawingWorkerUrl,workerUrl,this.traceHandoff,presentationWorkerUrl,this.abort.signal) as GpuRenderer;
+      let created:GpuRenderer;
+      try{
+        if(requested==='canvas2d')throw Error('Canvas2D selected');
+        created=await DrawingHost.create(this.canvas,target.width,target.height,backend,rendererOptions,drawingWorkerUrl,workerUrl,this.traceHandoff,presentationWorkerUrl,this.abort.signal) as GpuRenderer;
+      }catch(error){
+        if(this.disposed||this.abort.signal.aborted||backend!=='auto')throw error;
+        created=new CpuDrawingHost(this.canvas,target.width,target.height) as unknown as GpuRenderer;
+      }
       if(this.disposed){created.destroy();throw Error('Discarded Home warmup completed after cancellation');}
       this.renderer=created;
     }catch(error){
@@ -398,6 +406,7 @@ export class BrushSurface{
   fitView(){if(this.view){this.view.fit();this.updateView(true);}}
   viewAt100(){if(this.view){this.view.setZoom(1);this.updateView(true);}}
   actualPixels(){if(this.view){this.view.setZoom(1/(window.devicePixelRatio||1));this.updateView(true);}}
+  panViewBy(dx:number,dy:number){if(this.view){this.view.pan(dx,dy);this.updateView(true);}}
   zoomView(factor:number){if(this.view){this.view.zoomAt(factor,{x:this.view.cssWidth/2,y:this.view.cssHeight/2});this.updateView(true);}}
   resetRotation(){if(this.view){this.view.setRotation(0);this.updateView(true);}}
   flipView(axis:'x'|'y'){if(this.view){this.view.toggleFlip(axis);this.updateView(true);}}

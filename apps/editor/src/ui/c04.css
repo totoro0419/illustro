@@ -170,3 +170,17 @@ body.illustro-focus-mode .topbar #saveState{display:inline;max-width:65vw;overfl
  #c04ContextBar.phone-tool-context output{flex:none;}
  body.illustro-focus-mode #c04ContextBar.phone-tool-context{display:none;}
 }
+
+.phone-tool-confirmation{display:none}
+#keyboardCanvasHelp{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media (max-width:570px){
+ #c04ContextBar.phone-tool-context .phone-tool-confirmation:not([hidden]){
+   order:-1;display:flex;gap:3px;flex:none;
+ }
+ #c04ContextBar.phone-tool-context .phone-tool-confirmation button{
+   min-inline-size:42px;padding-inline:5px;
+ }
+ #c04ContextBar.phone-tool-context .phone-tool-confirmation button:first-child:not(:disabled){
+   color:var(--a-accent,#245e8d);border-color:currentColor;font-weight:700;
+ }
+}

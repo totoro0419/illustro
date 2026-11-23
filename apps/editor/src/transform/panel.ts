@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {CanonicalBuilder,type FoundationPreset,type Sample} from '@illustro/brush-rt';
 import {replayBrushPasses} from '../selection/brush';
 import type {DeformationBrushPass,LayerId,LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
@@ -750,6 +751,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     }catch(error){if(id===previewId&&!controller.signal.aborted){current.drawing.showArtworkPreview(null);preview.hidden=true;status.textContent=error instanceof Error?error.message:String(error);}}
   }
   compare.onchange=()=>void refreshPreview();
+  toolConfirmation(apply,'apply');toolConfirmation(cancel,'cancel');
   tools.append(start,direct,vanishing,flipX,flipY,back,forward,openOriginal,undoOriginal,redoOriginal,apply,cancel,newAbove,toggleEffect,removeEffect,bakeButton);
   panel.append(summary,target,status,tools,controls,snapFields,cornerFields,meshFields,liquifyFields,comparison,preview,originalCanvas);host.append(panel);
   panel.addEventListener('illustro:open-layer-settings',()=>{

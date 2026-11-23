@@ -65,8 +65,9 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
   throw Error('対応する交換形式ではありません。');
 }
 
-export async function exchangeProfileComparison(source:ExchangeArtwork){
-  if(!source.sourceIcc||source.sourceIccBrowserConverted)return null;
+export async function exchangeProfileComparison(source:ExchangeArtwork,assigned?:Uint8Array<ArrayBuffer>){
+  const profile=assigned??(!source.sourceIccBrowserConverted?source.sourceIcc:undefined);
+  if(!profile)return null;
   const layer=source.layers.findLast(item=>item.visible);
   const pixels=source.merged??layer?.pixels;
   if(!pixels)return null;
@@ -74,9 +75,9 @@ export async function exchangeProfileComparison(source:ExchangeArtwork){
   const scale=Math.min(1,240/Math.max(w,h));
   const width=Math.max(1,Math.round(w*scale)),height=Math.max(1,Math.round(h*scale));
   const before=new Uint8ClampedArray(resizeImagePixels(pixels,w,h,width,height,'nearest'));
-  const {converted}=await runIcc({profile:source.sourceIcc,layers:[before],proof:false,intent:1,blackPoint:true,gamut:false});
+  const {converted}=await runIcc({profile,layers:[before],proof:false,intent:1,blackPoint:true,gamut:false});
   const grid=document.createElement('div');grid.className='geometry-inputs';
-  for(const [data,title] of [[before,'画素値のまま'],[converted[0]!.pixels,'変換後']] as const){
+  for(const [data,title] of [[before,'画素値のまま'],[converted[0]!.pixels,assigned?'割り当てた色':'変換後']] as const){
     const figure=document.createElement('figure'),label=document.createElement('figcaption');
     const image=document.createElement('canvas');image.width=width;image.height=height;
     image.style.cssText='display:block;max-width:100%;height:auto';
@@ -86,15 +87,17 @@ export async function exchangeProfileComparison(source:ExchangeArtwork){
   return grid;
 }
 
-export async function convertExchangeColors(source:ExchangeArtwork,applyProfile:boolean):Promise<ExchangeArtwork>{
-  if(!source.sourceIcc||source.sourceIccBrowserConverted)return source;
+export async function convertExchangeColors(source:ExchangeArtwork,applyProfile:boolean,assigned?:Uint8Array<ArrayBuffer>):Promise<ExchangeArtwork>{
+  const profile=assigned??source.sourceIcc;
+  if(!profile||source.sourceIccBrowserConverted&&!assigned)return source;
   if(!applyProfile)return {...source,sourceProfileAction:'assigned-srgb',warnings:[...source.warnings,'画素値を変更せずsRGBとして割り当てました。']};
-  const {layers,merged,sourceIcc}=source;
+  const {layers,merged}=source;
   const input=layers.map(layer=>layer.pixels);
   if(merged)input.push(merged);
-  const {name,converted}=await runIcc({profile:sourceIcc,layers:input,proof:false,intent:1,blackPoint:true,gamut:false},true);
-  return {...source,sourceProfileAction:'converted-to-srgb',layers:layers.map((layer,index)=>({...layer,pixels:converted[index]!.pixels})),
-    ...(merged?{merged:converted[layers.length]!.pixels}:{}),warnings:[...source.warnings,'埋め込みICC「'+name+'」からsRGBへ画素を変換しました。']};
+  const {name,converted}=await runIcc({profile,layers:input,proof:false,intent:1,blackPoint:true,gamut:false},true);
+  return {...source,sourceProfileAction:assigned?'assigned-icc':'converted-to-srgb',...(assigned?{assignedIcc:assigned}:{}),layers:layers.map((layer,index)=>({...layer,pixels:converted[index]!.pixels})),
+    ...(merged?{merged:converted[layers.length]!.pixels}:{}),warnings:[...(assigned?source.warnings.filter(warning=>!warning.includes('sRGBとして扱います')):source.warnings),
+      assigned?'RGB値に「'+name+'」を割り当て、その見え方を編集用sRGBで再現しました。':'埋め込みICC「'+name+'」からsRGBへ画素を変換しました。']};
 }
 
 export function exchangeWarnings(doc:CoreDocument,format:ExchangeFormat,layered:boolean){
