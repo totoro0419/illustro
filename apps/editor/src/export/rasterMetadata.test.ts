@@ -11,7 +11,7 @@ it.each(['jpeg','webp'] as const)('writes %s metadata without corrupting the ima
   const profile=srgbIccBytes();
   const result=await addRasterMetadata(input,format,8,5,{profile,dpi:300,author:'作者 & 友人',copyright:'© Illustro'});
   const bytes=new Uint8Array(await result.arrayBuffer());
-  const image=await loadImage(Buffer.from(bytes));
+  const image=await loadImage(bytes);
   expect([image.width,image.height]).toEqual([8,5]);
   expect(await extractRasterIcc(bytes)).toEqual(profile);
   expect(new TextDecoder().decode(bytes)).toContain('作者 &amp; 友人');

@@ -282,3 +282,12 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
 .layer-pick-dialog label { justify-content: flex-start; }
 
 #layerDrawingThumbnail { width: 36px; height: 36px; vertical-align: middle; background: #dedfe2; border: 1px solid #9998; }
+.brush-cursor[data-tip-mask] { border: 0; box-shadow: none; }
+.brush-cursor[data-tip-mask]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #10122077;
+  mask: var(--brush-cursor-mask) 50% / 100% 100% no-repeat;
+  outline: 1px solid white;
+}

@@ -1,3 +1,4 @@
+import {nativeBrushSensors} from './brushInput';
 import {readRasterPresets,removeRasterPreset,writeRasterPreset} from './export/rasterPresets';
 import {installDeviceCapabilities} from './ui/deviceCapabilities';
 import {recordInputInterruption} from './persistence/inputInterruption';
@@ -125,7 +126,7 @@ import {BrushUsage} from './brushUsage';
 import {installBrushAdvancedEditor} from './brushAdvancedEditor';
 import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
-import {compilePreset,layerMaskTile,TILE,type FoundationPreset,type StrokeRecord} from '@illustro/brush-rt';
+import {cursorState,compilePreset,layerMaskTile,TILE,type FoundationPreset,type StrokeRecord} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,resizeImageRegion,type ImageResample} from './canvasGeometry';
 import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportOptions,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
@@ -1865,18 +1866,52 @@ function displayBrushCursor(x:number,y:number,size:number,zoom:number){
  const diameter=Math.max(8,Math.min(4096,size*zoom));
  brushCursor.style.width=brushCursor.style.height=diameter+'px';
  brushCursor.style.transform='translate('+x+'px,'+y+'px) translate(-50%,-50%)';
+ brushCursor.style.borderRadius='';
+ brushCursor.removeAttribute('data-tip-mask');
  brushCursor.hidden=false;
 }
-canvasViewport.addEventListener('pointermove',event=>{
- if(!inputPreferences.brushCursorEnabled||!surface||!(event instanceof PointerEvent)||event.pointerType==='touch')return;
- const drawing=surface,view=drawing.viewState;
- if(!view||drawing.panTool||event.buttons&1||selectedTool==='eyedropper'){hideBrushCursor();return;}
+const brushCursorMasks=new WeakMap<FoundationPreset['resources'][string],string>();
+let hoverCursorFrame=0,lastHoverEvent:PointerEvent|null=null;
+function updateHoverBrushCursor(){
+ hoverCursorFrame=0;
+ const event=lastHoverEvent,drawing=surface,view=drawing?.viewState;
+ if(!event||!drawing||!view||!inputPreferences.brushCursorEnabled)return;
+ if(drawing.panTool||event.buttons&1||selectedTool==='eyedropper'){hideBrushCursor();return;}
+ const preset=(penEraserInput(event,drawing.barrelErases)?drawing.eraserPreset():null)??drawing.preset;
+ if(!preset)return;
  const bounds=drawing.viewportRect;
- const eraser=penEraserInput(event,drawing.barrelErases)?drawing.eraserPreset():null;
- displayBrushCursor(event.clientX-bounds.left,event.clientY-bounds.top,eraser?.size??drawing.brushSize,view.zoom);
+ const state=cursorState(preset,{x:0,y:0,t:event.timeStamp,...nativeBrushSensors(event),
+   ...(event.pointerType==='pen'&&event.pressure<=0?{pressure:preset.pressure.fallback}:{})});
+ displayBrushCursor(event.clientX-bounds.left,event.clientY-bounds.top,state.size,view.zoom);
+ brushCursor.style.height=Math.max(4,Math.min(4096,state.size*state.aspect*view.zoom))+'px';
+ brushCursor.style.transform+=' rotate('+view.rotation+'rad) scale('+(view.flipX?-1:1)+','+(view.flipY?-1:1)+') rotate('+state.rotation+'rad)';
+ if(state.shape==='rect')brushCursor.style.borderRadius='2px';
+ const resource=state.resource?preset.resources[state.resource]:null;
+ if(state.shape==='mask'&&resource?.kind==='mask'){
+   let image=brushCursorMasks.get(resource);
+   if(!image){
+     const canvas=document.createElement('canvas');canvas.width=resource.width;canvas.height=resource.height;
+     const context=canvas.getContext('2d');
+     if(context){
+       const mask=new ImageData(resource.width,resource.height);
+       for(let i=0;i<resource.alpha.length;i++)mask.data[i*4+3]=resource.alpha[i]!;
+       context.putImageData(mask,0,0);
+       image=canvas.toDataURL();brushCursorMasks.set(resource,image);
+     }
+   }
+   if(image){
+     brushCursor.dataset.tipMask='';
+     brushCursor.style.setProperty('--brush-cursor-mask','url('+image+')');
+   }
+ }
+}
+canvasViewport.addEventListener('pointermove',event=>{
+ if(!inputPreferences.brushCursorEnabled||!(event instanceof PointerEvent)||event.pointerType==='touch')return;
+ lastHoverEvent=event;
+ if(!hoverCursorFrame)hoverCursorFrame=requestAnimationFrame(updateHoverBrushCursor);
 },{passive:true});
-canvasViewport.addEventListener('pointerdown',hideBrushCursor,{passive:true});
-canvasViewport.addEventListener('pointerleave',()=>{pixelCoordinates.hidden=true;hideBrushCursor();});
+canvasViewport.addEventListener('pointerleave',()=>{lastHoverEvent=null;pixelCoordinates.hidden=true;hideBrushCursor();});
+canvasViewport.addEventListener('pointerdown',()=>{lastHoverEvent=null;hideBrushCursor();},{passive:true});
 byId('showBrushSize').onclick=()=>{
  const view=surface?.viewState;
  if(!view||!surface||!documentReady)return;
