@@ -30,6 +30,7 @@ type Entry={id:LayerId;name:string;data:LineRegions};
 export function installFillPanel(host:HTMLElement,api:{
   onContextChanged?:()=>void;
   drawing:()=>BrushSurface|null;color:()=>string;documentId:()=>string;targetId:()=>string;targetName:()=>string;
+  selectTargetForQueuedFill:(id:string)=>void;
   references:()=>readonly {id:string;name:string;vector:boolean;visible:boolean}[];
   regionLayers:()=>readonly Entry[];
   saveRegion:(regions:LineRegions,id?:LayerId)=>Promise<LayerId>;
@@ -559,12 +560,12 @@ export function installFillPanel(host:HTMLElement,api:{
     output.textContent='表示中のレイヤーから選んだ1枚を外しました。参照元を確認してから塗ってください。';
   });
   const directQueue:Point[][]=[];
-  let directRunning=false,directSession:string|null=null,directGeneration=0;
+  let directRunning=false,directSession:string|null=null,directGeneration=0,directTargetId:string|null=null;
   // A queued fill belongs to one work, one selected layer and one exact set of options.
   const directIdentity=()=>JSON.stringify([api.documentId(),api.targetId(),settings(),
     reference.value,destination.value,activeIds()]);
   function dropQueuedFills(reason:string){
-    directQueue.length=0;directSession=null;directGeneration++;
+    directQueue.length=0;directSession=null;directTargetId=null;directGeneration++;
     output.textContent=reason;
   }
   async function processDirectQueue(){
@@ -589,9 +590,11 @@ export function installFillPanel(host:HTMLElement,api:{
           break;
         }
         await applyCandidate();
-        // Destination='new' intentionally changes the selected layer on commit.
-        // This is the only accepted automatic change of a queued target.
-        if(destination.value!=='active')directSession=directIdentity();
+        // A new paint layer becomes selected after each commit. For queued taps,
+        // restore the ORIGINAL reference layer before resolving the next source.
+        if(destination.value!=='active'&&directQueue.length&&directTargetId){
+          api.selectTargetForQueuedFill(directTargetId);
+        }
         output.textContent='塗り処理中・残り'+directQueue.length+'件';
       }
       if(!directQueue.length&&directSession)output.textContent='連続塗りを反映しました。';
@@ -599,19 +602,21 @@ export function installFillPanel(host:HTMLElement,api:{
       directQueue.length=0;
       output.textContent=error instanceof Error?error.message:String(error);
     }finally{
-      directRunning=false;directSession=null;directQueue.length=0;sync();
+      directRunning=false;directSession=null;directTargetId=null;directQueue.length=0;sync();
     }
   }
   function enqueueDirect(points:readonly Point[]){
     const identity=directIdentity();
     if(directSession&&directSession!==identity){
-      dropQueuedFills('設定・対象が変わったため、前の待機入力を破棄しました。');
+      dropQueuedFills('設定・対象が変わったため、前の待機入力を破棄しました。新しい入力は処理終了後に受け付けます。');
+      return;
     }
     if(directQueue.length>=32){
       output.textContent='塗りの待機は32件までです。先に進行中の塗りを反映してください。';
       return;
     }
     directSession??=identity;
+    directTargetId??=api.targetId();
     directQueue.push([...points]);
     output.textContent='塗り処理中・残り'+directQueue.length+'件';
     if(!directRunning)void processDirectQueue();
