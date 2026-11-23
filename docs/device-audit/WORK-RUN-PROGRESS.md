@@ -1,17 +1,13 @@
 # Illustro R2｜Work本番検査・再開位置
 
-**状態：本番未開始。** 準備資料の作成は実機検査の実施ではない。
+**状態：検査中。**
 
-- 対象URL： https://illustro-r2-njutprchn-ibukioike2009-7645s-projects.vercel.app/#home
-- Windows PCローカルWork接続：未確認（開始時に実操作で確認）
-- 実操作の端末/OS/ブラウザー/入力機器：未記録（開始時に記入）
-- 検査用ZIPの配置場所：未確認（使用する場合のみ記入）
-- 公開版コミット：未記録（VercelのDeployment DetailsのSourceで可能なら確認。GitHub Pagesのrelease.jsonを使用しない）
-- 完了段階：なし
-- 最後に実際に操作したID：なし
-- 次の操作：P00-01（`work-steps/00-BOOT.md`）
-- 結果件数：使える0、使いづらい0、使えない0、未検査234
-- 最後のGitHub結果保存：本番未開始
-- 支障：なし（実行環境未確認）
-
-毎段階の保存後、**完了したP/最後の操作ID/次の操作/判定件数/実際の環境**だけ上書きする。過去の全経緯は繰り返し書かない。
+- 対象URL https://illustro-r2-njutprchn-ibukioike2009-7645s-projects.vercel.app/#home
+- Windows PCローカルWork接続確認済み。ホーム、新規作成、Gペン描画が成功。
+- 実操作環境 Windows PC・Microsoft Edge・マウス／キーボード
+- 公開版コミット 未確認
+- 完了した台本段階 P00
+- 最後に実際に操作したID P00-05
+- 次の操作 P01-01（work-steps/01-BRUSH.md）
+- 結果件数 使える6、使いづらい1、使えない1、未検査226
+- 保存日時 2026-11-23T21:41:23+09:00
