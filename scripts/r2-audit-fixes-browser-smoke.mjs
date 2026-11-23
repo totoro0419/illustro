@@ -93,9 +93,15 @@ try{
   mark('D-011-RENAME-SELECTED-LAYER');
   await page.locator('#closeLayerPage').click();
 
-  // Use an actual browser-encoded PNG from the rendered canvas, not a
-  // synthetic 1px base64 whose decoder support may vary between browsers.
-  const pngForPaste=await canvas.screenshot();
+  // Browser-encode a small, valid source so its paste preview leaves empty
+  // canvas space for a genuine tap-to-position interaction.
+  const pngForPaste=Buffer.from(await page.evaluate(()=>{
+    const source=document.createElement('canvas');
+    source.width=source.height=24;
+    const ctx=source.getContext('2d');
+    ctx.fillStyle='#c34ed2';ctx.fillRect(0,0,24,24);
+    return source.toDataURL('image/png').split(',')[1];
+  }),'base64');
   await page.locator('#c06ClipboardFile').setInputFiles({name:'audit-source.png',mimeType:'image/png',buffer:pngForPaste});
   await page.waitForFunction(()=>!document.querySelector('#c06PastePreview')?.disabled,undefined,{timeout:12000}).catch(async error=>{
     const diagnostics=await page.evaluate(()=>({
