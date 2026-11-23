@@ -2,14 +2,8 @@ import {TYPE_RGBA_8,cmsFLAGS_BLACKPOINTCOMPENSATION,cmsFLAGS_COPY_ALPHA,cmsFLAGS
   cmsFLAGS_SOFTPROOFING,cmsInfoDescription,instantiate} from 'lcms-wasm';
 import wasm from 'lcms-wasm/dist/lcms.wasm?url';
 
-import {ICC_LIMIT} from './iccMetadata';
-export function validIccBytes(bytes:Uint8Array){
-  if(bytes.length<132||bytes.length>ICC_LIMIT)return false;
-  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
-  const length=view.getUint32(0),tags=view.getUint32(128);
-  return length>=132&&length<=bytes.length&&view.getUint32(36)===0x61637370&&
-    tags<=4096&&132+tags*12<=length;
-}
+import {validIccBytes} from './iccMetadata';
+export {validIccBytes} from './iccMetadata';
 
 let loading:ReturnType<typeof instantiate>|null=null;
 const deviceCms=()=>loading??=instantiate({locateFile:()=>wasm}).catch(error=>{loading=null;throw error;});

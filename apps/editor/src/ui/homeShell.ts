@@ -1,3 +1,4 @@
+import {readInputInterruptions} from '../persistence/inputInterruption';
 import {appConfirm,appPrompt} from './appDialogs';
 import type {WorkEntry} from '../persistence/workLibrary';
 import {icon} from './icons';
@@ -388,6 +389,18 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     const newer=last?recovery.filter(x=>x.documentId===last.documentId&&x.writerEpochId!==last.writerEpochId&&x.updatedAt>last.updatedAt):recovery;
     if(continueLast&&last&&!newer.length){if(await actions.openWork(last.documentId))navigate('editor');return;}
     const list=el('ihRecoveryList');list.replaceChildren();
+    const interruptions=readInputInterruptions();
+    if(interruptions.length){
+      const details=document.createElement('details'),title=document.createElement('summary'),events=document.createElement('ul');
+      title.textContent='入力が途切れたときの記録';
+      for(const entry of interruptions){
+        const item=document.createElement('li'),date=new Date(entry.at).toLocaleString('ja-JP');
+        item.textContent=date+' · '+entry.work+' · '+(entry.keep?'途中まで残す操作を選択':'途中の線を取り消し');
+        events.append(item);
+      }
+      details.append(title,events);list.append(details);
+    }
+
     for(const url of recoveryPreviewUrls)URL.revokeObjectURL(url);
     recoveryPreviewUrls.clear();
     if(last){

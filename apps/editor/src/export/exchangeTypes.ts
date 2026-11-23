@@ -7,7 +7,8 @@ export type ExchangeLayer=Readonly<{
 export type ExchangeArtwork=Readonly<{
   width:number;height:number;name:string;dpi?:number|undefined;
   /** In the same order as the editor: bottom to top. */
-  layers:readonly ExchangeLayer[];merged?:Uint8ClampedArray|undefined;sourceIcc?:Uint8Array<ArrayBuffer>;warnings:readonly string[];
+  layers:readonly ExchangeLayer[];merged?:Uint8ClampedArray|undefined;sourceIcc?:Uint8Array<ArrayBuffer>;sourceIccBrowserConverted?:boolean;
+  sourceProfileAction?:'assigned-srgb'|'converted-to-srgb';warnings:readonly string[];
 }>;
 export const MAX_IMAGE_PIXELS=33_554_432;
 export const MAX_EXCHANGE_BYTES=256*1024*1024;

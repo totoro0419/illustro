@@ -1,9 +1,10 @@
-import {ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE} from './export/iccMetadata';
+import {recordInputInterruption} from './persistence/inputInterruption';
+import {ICC_IMPORT_ACTION,ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE} from './export/iccMetadata';
 import {installImageAssist} from './assist/panel';
 import {installAdjustmentPanel} from './effects/adjustmentPanel';
 import {openLayerBatch} from './export/layerBatch';
 import {ANALYSIS_MAX_PIXELS,type RGB as AssistRGB} from './assist/analyze';
-import {convertExchangeColors,exchangeFormat,importExchange} from './export/exchange';
+import {convertExchangeColors,exchangeProfileComparison,exchangeFormat,importExchange} from './export/exchange';
 import {createExchangeDocument} from './export/exchangeDocument';
 import {openExchangePanel} from './export/exchangePanel';
 import {installWetTools,wetModes} from './wet/panel';
@@ -1715,6 +1716,15 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
  }
  else{byId('colorSampleLoupe').hidden=true;foreground.begin();foreground.commit(color);byId('status').textContent='キャンバスから '+hex(foreground.current)+' を取得しました。';if(!holdingColorKey&&selectedTool==='eyedropper')restoreDrawingTool();}
  });
+ drawing.onInputInterrupted=async()=>{
+   if(surface!==drawing||!documentReady)return false;
+   const root=documentController.document.root;
+   const choice=await appChoose('ペン・マウスなどの入力が途切れました。届いたところまでの線を残しますか？',[
+     {value:'keep',label:'途中まで残す'}]);
+   const keep=choice==='keep'&&surface===drawing&&documentController.document.root.documentId===root.documentId;
+   recordInputInterruption(root.name,keep);
+   return keep;
+ };
  drawing.correctionHold=()=>strokeCorrection?.hold()??null;
  drawing.eraserPreset=()=>{
   const active=drawing.preset;if(active?.blend==='erase')return active;
@@ -2682,7 +2692,11 @@ byId('documentInfoOpen').onclick=()=>{
   byId<HTMLInputElement>('documentInfoAuthor').value=info.author;
   byId<HTMLInputElement>('documentInfoDpi').value=info.dpi===null?'':String(info.dpi);
   byId<HTMLTextAreaElement>('documentInfoDescription').value=info.description;
-  byId('documentInfoSize').textContent=root.width+' × '+root.height+' px · '+(root.colorProfileId==='srgb'?'sRGB':root.colorProfileId);
+  const originalIcc=persistence.preservedData?.optionalSections.find(part=>part.id===ICC_IMPORT_ACTION);
+  const action=originalIcc&&originalIcc.bytes.length<=32?new TextDecoder().decode(originalIcc.bytes):'';
+  const profileNote=action==='converted-to-srgb'?'（元のICCから変換）':action==='assigned-srgb'?'（画素値を保って割当）':
+    action==='decoder-to-srgb'?'（読込時に変換。元のICCを保持）':'';
+  byId('documentInfoSize').textContent=root.width+' × '+root.height+' px · '+(root.colorProfileId==='srgb'?'sRGB':root.colorProfileId)+profileNote;
   byId('documentInfoStatus').textContent='';
   byId<HTMLInputElement>('canvasTemplateName').value='';
   for(const id of ['canvasTemplateGuides','canvasTemplatePalette','canvasTemplateInfo'])byId<HTMLInputElement>(id).checked=false;
@@ -3384,7 +3398,7 @@ refreshSelectionControls();
 byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
 const workFileInput=byId<HTMLInputElement>('openFile');
 workFileInput.multiple=true;
-workFileInput.accept+=',.psd,.psb,.ora,.tif,.tiff,.avif,.exr,.heif,.heic';
+workFileInput.accept+=',.png,.jpg,.jpeg,.webp,.psd,.psb,.ora,.tif,.tiff,.avif,.exr,.heif,.heic';
 let openingWorkFiles=false;
 workFileInput.onchange=async ()=>{
   const files=Array.from(workFileInput.files??[]);
@@ -3407,9 +3421,14 @@ async function openWorkFile(file:File,batch=false){
   if(exchange){
     try{
       let imported=await importExchange(file);
-      if(imported.sourceIcc){
-        const choice=await appChoose('埋め込みICCが見つかりました。見た目を保つためにsRGBへ変換するか、画素値を変更せずsRGBとして扱うか選んでください。',[
-          {value:'convert',label:'プロファイルに従って色を変換'},{value:'assign',label:'画素値を変えずsRGBを割り当てる'}]);
+      if(imported.sourceIcc&&!imported.sourceIccBrowserConverted){
+        let comparison:HTMLElement|null=null,profileError='';
+        try{comparison=await exchangeProfileComparison(imported);}
+        catch(error){profileError=error instanceof Error?error.message:String(error);}
+        const choice=await appChoose(profileError?'埋め込みICCは保持します。色変換を開始できません。'+profileError:
+          '埋め込みICCが見つかりました。見た目を保つためにsRGBへ変換するか、画素値を変えずsRGBとして扱うか選んでください。',[
+          ...(profileError?[]:[{value:'convert' as const,label:'プロファイルに従って色を変換'}]),
+          {value:'assign' as const,label:'画素値を変えずsRGBを割り当てる'}],comparison??undefined);
         if(choice===null)return false;
         imported=await convertExchangeColors(imported,choice==='convert');
       }
@@ -3425,8 +3444,11 @@ async function openWorkFile(file:File,batch=false){
       if(!qaMode&&!(await prepareWorkSwitch()))return false;
       const {artwork,selected}=createExchangeDocument(imported,flatten);
       const profile=imported.sourceIcc;
-      const optionalSections=profile&&profile.length<=ICC_LIMIT?
-        [{id:ICC_ORIGINAL_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:profile}]:[];
+      const optionalSections=profile&&profile.length<=ICC_LIMIT?[
+        {id:ICC_ORIGINAL_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:profile},
+        {id:ICC_IMPORT_ACTION,type:'text/plain',required:false,
+          bytes:new TextEncoder().encode(imported.sourceProfileAction??'decoder-to-srgb')}
+      ]:[];
       await activateOpened({document:artwork,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections},
         generationId:'exchange',snapshotRevisionId:artwork.head});
       homeUi?.showEditor();byId('status').textContent='交換用ファイルを新しい作品として開きました。';

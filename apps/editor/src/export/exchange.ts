@@ -2,17 +2,20 @@ import {type CoreDocument,type EditableArtwork,type EditablePath,type EditableTe
 import {captureExport,compositeLayer,encodePng,renderFrozenArtwork,type FrozenExport} from './basicExport';
 import {assertImageSize,cleanFileName,imageLayer,MAX_EXCHANGE_BYTES,supportsOraBlend,xmlText,type ExchangeArtwork,type ExchangeFormat,type ExchangeLayer} from './exchangeTypes';
 import {runIcc} from './iccRun';
+import {resizeImagePixels} from '../canvasGeometry';
+import {extractRasterIcc} from './rasterIcc';
+import type {ImageFormat} from './basicExport';
 import {decodeTiff,encodeTiff} from './tiff';
 
-const formats:Record<string,ExchangeFormat|'heif'>={psd:'psd',psb:'psb',ora:'ora',tif:'tiff',tiff:'tiff',avif:'avif',svg:'svg',exr:'exr',heic:'heif',heif:'heif'};
+const formats:Record<string,ExchangeFormat|ImageFormat|'heif'>={png:'png',jpg:'jpeg',jpeg:'jpeg',webp:'webp',psd:'psd',psb:'psb',ora:'ora',tif:'tiff',tiff:'tiff',avif:'avif',svg:'svg',exr:'exr',heic:'heif',heif:'heif'};
 const types:Record<ExchangeFormat,string>={psd:'image/vnd.adobe.photoshop',psb:'application/octet-stream',ora:'image/openraster',
   tiff:'image/tiff',svg:'image/svg+xml',avif:'image/avif',exr:'image/x-exr'};
 export function exchangeFormat(name:string){
   return formats[name.split('.').pop()?.toLowerCase()??'']??null;
 }
 export const exchangeFileName=(name:string,format:ExchangeFormat)=>cleanFileName(name)+'.'+(format==='tiff'?'tiff':format);
-export function readExchangeDimensions(blob:Blob){
-  return createImageBitmap(blob).then(image=>{
+export function readExchangeDimensions(blob:Blob,colorSpaceConversion:ColorSpaceConversion='default'){
+  return createImageBitmap(blob,{colorSpaceConversion}).then(image=>{
     try{
       const {width,height}=image;assertImageSize(width,height);
       const canvas=Object.assign(document.createElement('canvas'),{width,height}),context=canvas.getContext('2d');
@@ -33,6 +36,18 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
     });
     return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings:['編集用のsRGB・8ビット画像として取り込みます。']};
   }
+  if(format==='png'||format==='jpeg'||format==='webp'){
+    const warnings:string[]=[];
+    let sourceIcc:Uint8Array<ArrayBuffer>|null=null;
+    try{sourceIcc=await extractRasterIcc(new Uint8Array(await file.arrayBuffer()));}
+    catch(error){warnings.push(error instanceof Error?error.message:String(error));}
+    const canConvert=!!sourceIcc&&String.fromCharCode(...sourceIcc.subarray(16,20))==='RGB ';
+    if(!canConvert)warnings.push(sourceIcc?'元のICCを作品に保持し、ブラウザーがsRGBに展開した画素で開きます。':
+      '利用できる埋め込みICCがないため、開いた画素をsRGBとして扱います。');
+    const {width,height,pixels}=await readExchangeDimensions(file,canConvert?'none':'default');
+    return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings,
+      ...(sourceIcc?{sourceIcc,sourceIccBrowserConverted:!canConvert}:{})};
+  }
   if(format==='svg')throw Error('SVGはこの画面では出力専用です。PNGに変換してから読み込んでください。');
   const bytes=new Uint8Array(await file.arrayBuffer());
   if(format==='psd'||format==='psb')return (await import('./psdExchange')).decodePhotoshop(bytes,name);
@@ -48,14 +63,35 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
   throw Error('対応する交換形式ではありません。');
 }
 
+export async function exchangeProfileComparison(source:ExchangeArtwork){
+  if(!source.sourceIcc||source.sourceIccBrowserConverted)return null;
+  const layer=source.layers.findLast(item=>item.visible);
+  const pixels=source.merged??layer?.pixels;
+  if(!pixels)return null;
+  const w=source.merged?source.width:layer!.width,h=source.merged?source.height:layer!.height;
+  const scale=Math.min(1,240/Math.max(w,h));
+  const width=Math.max(1,Math.round(w*scale)),height=Math.max(1,Math.round(h*scale));
+  const before=new Uint8ClampedArray(resizeImagePixels(pixels,w,h,width,height,'nearest'));
+  const {converted}=await runIcc({profile:source.sourceIcc,layers:[before],proof:false,intent:1,blackPoint:true,gamut:false});
+  const grid=document.createElement('div');grid.className='geometry-inputs';
+  for(const [data,title] of [[before,'画素値のまま'],[converted[0]!.pixels,'変換後']] as const){
+    const figure=document.createElement('figure'),label=document.createElement('figcaption');
+    const image=document.createElement('canvas');image.width=width;image.height=height;
+    image.style.cssText='display:block;max-width:100%;height:auto';
+    image.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(data),width,height),0,0);
+    label.textContent=title;image.setAttribute('aria-label',title);figure.style.margin='0';figure.append(label,image);grid.append(figure);
+  }
+  return grid;
+}
+
 export async function convertExchangeColors(source:ExchangeArtwork,applyProfile:boolean):Promise<ExchangeArtwork>{
-  if(!source.sourceIcc)return source;
-  if(!applyProfile)return {...source,warnings:[...source.warnings,'画素値を変更せずsRGBとして割り当てました。']};
+  if(!source.sourceIcc||source.sourceIccBrowserConverted)return source;
+  if(!applyProfile)return {...source,sourceProfileAction:'assigned-srgb',warnings:[...source.warnings,'画素値を変更せずsRGBとして割り当てました。']};
   const {layers,merged,sourceIcc}=source;
   const input=layers.map(layer=>layer.pixels);
   if(merged)input.push(merged);
   const {name,converted}=await runIcc({profile:sourceIcc,layers:input,proof:false,intent:1,blackPoint:true,gamut:false},true);
-  return {...source,layers:layers.map((layer,index)=>({...layer,pixels:converted[index]!.pixels})),
+  return {...source,sourceProfileAction:'converted-to-srgb',layers:layers.map((layer,index)=>({...layer,pixels:converted[index]!.pixels})),
     ...(merged?{merged:converted[layers.length]!.pixels}:{}),warnings:[...source.warnings,'埋め込みICC「'+name+'」からsRGBへ画素を変換しました。']};
 }
 

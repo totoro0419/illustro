@@ -58,6 +58,9 @@ type CanvasEditGesture=Readonly<{
 
 export class BrushSurface{
   private editGesture:CanvasEditGesture|null=null;
+  private interruptedStroke:number|null=null;
+  onInputInterrupted:()=>Promise<boolean>=async()=>false;
+
   private editTraceVisible=true;
   get hasCanvasEditPreview(){return this.artworkPreview!==null||this.fillGesturePreview!==null;}
   private editPointer:number|null=null;
@@ -319,6 +322,9 @@ export class BrushSurface{
     return this.navigation?.active?'navigation':this.pointer!==null||this.editPointer!==null?'drawing':'idle';
   }
   private keyNavigation=(e:KeyboardEvent)=>{
+    if(e.type==='keydown'&&e.key==='Escape'&&this.pointer!==null&&this.interruptedStroke===null){
+      void this.cancelStroke();e.preventDefault();return;
+    }
     if(e.type==='keydown'&&e.key==='Escape'&&this.editGesture?.continuous){
       this.setCanvasEditGesture(null);e.preventDefault();return;
     }
@@ -840,7 +846,7 @@ export class BrushSurface{
     else gesture?.complete(points);
     if(this.editGesture?.referencePoint)this.updateEditStrokeOutline();
   }
-  private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset)return;
+  private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset||this.interruptedStroke!==null)return;
     // Undo can restore a virtual background while it remains selected. Do not
     // admit a stroke against nonexistent white raster; reselect to materialize.
 
@@ -1016,7 +1022,7 @@ export class BrushSurface{
     if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
     if(e.pointerType==='touch'&&this.navigation?.touchMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
      if(this.navigation?.mouseMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
-     if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();if(this.holdStroke)this.trackCorrectionHold(this.pointerLocation(e));const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];
+     if(e.pointerId!==this.pointer||!this.session||this.interruptedStroke!==null)return;e.preventDefault();if(this.holdStroke)this.trackCorrectionHold(this.pointerLocation(e));const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];
      if(this.pendingPerspectiveHeading&&this.view){
        const pending=this.pendingPerspectiveHeading;
        const documentPoint=this.view.document(this.pointerLocation(events[0]!));
@@ -1066,7 +1072,7 @@ export class BrushSurface{
       if(!this.selectionRect||this.selectionRect.width<2||this.selectionRect.height<2)this.selectionRect=null;
       this.selectionMode=false;this.updateSelectionOverlay();this.onSelectionChanged();return;
     }
-    if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.eyedropperPointer=null;this.queueSample(this.screenToDocument(this.pointerLocation(e)),'commit');return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId!==this.pointer||!this.session||!this.target)return;
+    if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.eyedropperPointer=null;this.queueSample(this.screenToDocument(this.pointerLocation(e)),'commit');return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId!==this.pointer||!this.session||!this.target||this.interruptedStroke!==null)return;
     this.finishStroke(this.sample(e));};
   private finishStroke(release:Sample|null=null){if(!this.session||!this.target||this.pointer===null)return;const session=this.session,target=this.target,seamless=this.view?.seamless??false,strokeId=this.activeStrokeId,reservation=this.reservation,mask=this.strokeMask,symmetry=this.strokeSymmetry;session.predictions([]);const upAt=performance.now();this.pointer=null;this.strokeSymmetry=null;this.clearSymmetryStrokePreview();if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.pendingPerspectiveHeading=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.reservation=null;
     const hold=this.endCorrectionHold();
@@ -1221,7 +1227,7 @@ export class BrushSurface{
     if(e.pointerId===this.selectionPointer){
       this.selectionPointer=null;this.selectionAnchor=null;this.selectionMode=false;this.updateSelectionOverlay();this.onSelectionChanged();return;
     }
-    if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId===this.pointer){void this.cancelStroke();this.status('入力が中断されたため、この線を取り消しました。');}};
+    if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId===this.pointer)void this.recoverInterruptedStroke();};
   private interruptInput=()=>{
     this.spacePressed=false;
     this.cancelLayerPickHold();
@@ -1232,9 +1238,25 @@ export class BrushSurface{
     if(this.eyedropperPointer!==null){
       this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);
     }
-    if(this.pointer!==null){void this.cancelStroke();this.status('入力が中断されたため、この線を取り消しました。');}
+    if(this.pointer!==null)void this.recoverInterruptedStroke();
   };
-  private async cancelStroke(){this.endCorrectionHold();const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.strokeSymmetry=null;this.clearSymmetryStrokePreview();if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.pendingPerspectiveHeading=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
+  private async recoverInterruptedStroke(){
+    const id=this.activeStrokeId;
+    if(id===null||this.interruptedStroke!==null)return;
+    this.interruptedStroke=id;
+    this.session?.predictions([]);
+    this.status('描画が中断されました。途中までの線を残すか選んでください。');
+    let keep=false;
+    try{keep=await this.onInputInterrupted();}catch{}
+    if(this.disposed||this.interruptedStroke!==id||this.activeStrokeId!==id)return;
+    this.interruptedStroke=null;
+    if(keep)this.finishStroke(null);
+    else{
+      await this.cancelStroke();
+      if(!this.disposed)this.status('中断した線を取り消しました。');
+    }
+  }
+  private async cancelStroke(){this.interruptedStroke=null;this.endCorrectionHold();const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.strokeSymmetry=null;this.clearSymmetryStrokePreview();if(this.symmetryOverlay||this.symmetry.mode!=='off'){this.clearSymmetryCursor();this.updateSymmetryOverlay();}this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.pendingPerspectiveHeading=null;this.updateGuideOverlay();this.strokeMask=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
   private frame=(now:number)=>{if(this.disposed)return;this.lastFrameAt=now;this.session?.frame(now);if(this.viewNotificationPending){this.viewNotificationPending=false;this.onStateChanged('view');}const pressure=!!(this.renderer as any)?.backend.previewPressure;if(pressure!==this.previewPressureShown){this.previewPressureShown=pressure;if(pressure)this.status('表示処理が混み合っています。入力を保持して線の確定を優先しています。');else if(!this.handoffFault&&!this.historySyncing)this.status('描画を続けられます。');this.onStateChanged();}
     const rendererErrors=this.renderer?.errors.length??0,sessionErrors=this.session?.errors.length??0;
     if(rendererErrors!==this.reportedFrameErrors.renderer||sessionErrors!==this.reportedFrameErrors.session){
