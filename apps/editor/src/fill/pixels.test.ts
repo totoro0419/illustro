@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {buildRegions,fillBoundaries,fillMask,paintColorHints,suggestLocalGaps,type FillSettings} from './pixels';
+import {buildRegions,fillBoundaries,fillMask,needsLeakingFillReview,paintColorHints,suggestLocalGaps,type FillSettings} from './pixels';
 
 const settings:FillSettings={
   method:'color',tolerance:15,gap:0,opacity:1,color:'#ff0000',erase:false,
@@ -289,5 +289,25 @@ describe('C08 fill boundaries and destination gating',()=>{
     const permissive=fillMask(source,w,h,{...settings,tolerance:0,alphaTolerance:100},[{x:0,y:0}],null,null);
     expect(narrow.alpha[1]).toBe(0);
     expect(permissive.alpha[1]).toBe(255);
+  });
+});
+
+describe('R2 D-007 gap repair and exterior leak protection',()=>{
+  it('honors an 18 source-pixel gap instead of silently clamping it to 12',()=>{
+    const width=36,height=9,data=image(width,height);
+    for(const x of [1,2,3,21,22,23])setPixel(data,width,x,4,[0,0,0,255]);
+    expect(fillBoundaries(data,width,height,15,12).bridges[4*width+10]).toBe(0);
+    const result=fillBoundaries(data,width,height,15,18);
+    expect(result.bridges[4*width+10]).toBe(1);
+    expect(result.candidates).toHaveLength(1);
+  });
+  it('requires review for a center-seeded gap-assisted fill touching two outside edges',()=>{
+    const width=30,height=30,alpha=new Uint8Array(width*height);
+    alpha.fill(255,0,width);
+    for(let y=0;y<height;y++)alpha[y*width]=255;
+    const mask={width,height,alpha};
+    expect(needsLeakingFillReview(mask,{x:15,y:15},2)).toBe(true);
+    expect(needsLeakingFillReview(mask,{x:1,y:1},2)).toBe(false);
+    expect(needsLeakingFillReview(mask,{x:15,y:15},0)).toBe(false);
   });
 });
