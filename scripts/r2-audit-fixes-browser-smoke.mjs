@@ -97,6 +97,20 @@ try{
   await page.locator('.c06-placement-toolbar button').last().click();
   await page.waitForFunction(()=>!document.querySelector('.c06-placement-preview'),{timeout:5000});
   mark('D-012-TAP-TO-POSITION-PASTE-PREVIEW');
+  // R2 D-010: a UI merge is a single history operation, not a compound edit.
+  await page.locator('#addLayer').evaluate(el=>el.click());
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='2',{timeout:10000});
+  await page.locator('#mergeLayerDown').evaluate(el=>el.click());
+  await page.locator('.illustro-app-dialog-primary').waitFor({timeout:8000});
+  await page.locator('.illustro-app-dialog-primary').click();
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='1'&&
+    !document.querySelector('#undo')?.disabled,{timeout:20000});
+  await page.locator('#undo').evaluate(el=>el.click());
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='2'&&
+    !document.querySelector('#redo')?.disabled,{timeout:20000});
+  await page.locator('#redo').evaluate(el=>el.click());
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.layerCount==='1',{timeout:20000});
+  mark('D-010-MERGE-UNDO-REDO-ON-PUBLIC-PREVIEW');
   report.status='PASS';
   await context.close();
 }catch(error){
