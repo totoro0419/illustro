@@ -6,7 +6,7 @@ const base=(process.env.R2_AUDIT_FIX_URL??'https://totoro0419.github.io/illustro
 const expected=(process.env.EXPECTED_COMMIT_SHA??'').trim();
 const report={url:base,expectedCommit:expected,checks:[],errors:[],status:'RUNNING'};
 const mark=(id)=>{report.checks.push(id);console.log('PASS '+id);};
-const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const browser=await chromium.launch({headless:true,...(process.env.R2_CHROME_CHANNEL?{channel:process.env.R2_CHROME_CHANNEL}:{}),args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 try{
   const context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1});
   const page=await context.newPage();
