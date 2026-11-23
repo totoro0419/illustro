@@ -70,6 +70,29 @@ try{
   assert.ok(hint>=1,'text outline conversion requirement missing');
   mark('D-014-TEXT-OUTLINE-REQUIREMENT');
 
+  const nameField=page.locator('#selectedLayerName');
+  await nameField.evaluate(input=>{
+    input.value='監査用レイヤー';
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.selectedLayerName==='監査用レイヤー',{timeout:8000});
+  mark('D-011-RENAME-SELECTED-LAYER');
+
+  const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Z9sAAAAASUVORK5CYII=','base64');
+  await page.locator('#c06ClipboardFile').setInputFiles({name:'one.png',mimeType:'image/png',buffer:tinyPng});
+  await page.waitForFunction(()=>!document.querySelector('#c06PastePreview')?.disabled,{timeout:8000});
+  await page.locator('#c06PastePreview').evaluate(button=>button.click());
+  await page.locator('.c06-placement-preview').waitFor({timeout:8000});
+  const label=page.locator('.c06-placement-toolbar output');
+  const beforePlacement=await label.textContent();
+  const revisionBeforePaste=await canvas.getAttribute('data-revision-id');
+  const canvasBox=await canvas.boundingBox();
+  await page.mouse.click(canvasBox.x+canvasBox.width*.77,canvasBox.y+canvasBox.height*.72);
+  await page.waitForFunction(before=>document.querySelector('.c06-placement-toolbar output')?.textContent!==before,beforePlacement,{timeout:8000});
+  assert.equal(await canvas.getAttribute('data-revision-id'),revisionBeforePaste,'moving paste preview edited the artwork');
+  await page.locator('.c06-placement-toolbar button').last().click();
+  await page.waitForFunction(()=>!document.querySelector('.c06-placement-preview'),{timeout:5000});
+  mark('D-012-TAP-TO-POSITION-PASTE-PREVIEW');
   report.status='PASS';
   await context.close();
 }catch(error){
