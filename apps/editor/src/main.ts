@@ -1,6 +1,7 @@
+import {readRasterPresets,removeRasterPreset,writeRasterPreset} from './export/rasterPresets';
 import {installDeviceCapabilities} from './ui/deviceCapabilities';
 import {recordInputInterruption} from './persistence/inputInterruption';
-import {ICC_IMPORT_ACTION,ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE} from './export/iccMetadata';
+import {ICC_IMPORT_ACTION,ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE,validIccBytes} from './export/iccMetadata';
 import {installImageAssist} from './assist/panel';
 import {installAdjustmentPanel} from './effects/adjustmentPanel';
 import {openLayerBatch} from './export/layerBatch';
@@ -3653,20 +3654,85 @@ byId<HTMLButtonElement>('exchangeExport').onclick=()=>{
   openExchangePanel(artwork,()=>documentReady&&controller.document===artwork,c06Download);
 };
 const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTMLSelectElement>('exportFormat'),exportQuality=byId<HTMLInputElement>('exportQuality');
+const losslessWebp=byId<HTMLInputElement>('exportLosslessWebp');
+const exportIccFile=byId<HTMLInputElement>('exportColorProfile'),exportIncludeIcc=byId<HTMLInputElement>('exportIncludeIcc');
+const rasterPresetSelect=byId<HTMLSelectElement>('rasterExportPreset'),comparisonHost=byId('exportRasterComparison');
+let outputIcc:Uint8Array|null=null,needsOutputIcc=false,compareGeneration=0;
+function refreshRasterPresets(selected=''){
+  rasterPresetSelect.replaceChildren(new Option('設定を選ぶ',''),...readRasterPresets(localStorage).map(item=>new Option(item.name,item.name)));
+  rasterPresetSelect.value=selected;
+  byId<HTMLButtonElement>('rasterExportPresetRemove').disabled=!rasterPresetSelect.value;
+}
+function clearRasterComparison(){compareGeneration++;comparisonHost.hidden=true;comparisonHost.replaceChildren();}
 function updateExportOptions(){
-  const f=exportFormat.value as ImageFormat,lossy=f!=='png';
-  byId<HTMLElement>('exportQualityRow').hidden=!lossy;
-  byId('exportPngMetadata').hidden=f!=='png';
-  byId('exportDpiRow').hidden=f!=='png'||controller.document.root.info.dpi===null;
+  const f=exportFormat.value as ImageFormat,lossy=f!=='png'&&(f!=='webp'||!losslessWebp.checked);
+  byId('exportWebpMode').hidden=f!=='webp';
+  byId('exportQualityRow').hidden=!lossy;
+  byId('exportDpiRow').hidden=controller.document.root.info.dpi===null;
   byId<HTMLOutputElement>('exportQualityValue').textContent=exportQuality.value+'%';
   byId('exportTransparencyInfo').textContent=f==='jpeg'
-    ?'JPEGは透明部分を保存できません。背景を白にして書き出します（黒にはしません）。'
-    :f==='png'?'PNGは透明度を保ち、画像の色を劣化させずに保存します。':'WebPは透明度を保ち、画質を調整できます。';
+    ?'JPEGは透明部分を白にして書き出します。'
+    :f==='png'?'PNGは透明度を保ちます。':losslessWebp.checked?'WebPは透明度を保ち、画素を変えずに圧縮します。':'WebPは透明度を保ち、画質を調整できます。';
 }
-exportFormat.onchange=updateExportOptions;exportQuality.oninput=updateExportOptions;updateExportOptions();
+for(const control of [exportFormat,losslessWebp])control.onchange=updateExportOptions;
+exportQuality.oninput=()=>{updateExportOptions();clearRasterComparison();};
+exportDialog.addEventListener('change',clearRasterComparison);
+exportIccFile.onchange=async()=>{
+  const file=exportIccFile.files?.[0];
+  outputIcc=null;needsOutputIcc=!!file;
+  byId('exportProfileStatus').textContent='';
+  if(!file)return;
+  try{
+    if(file.size>ICC_LIMIT)throw Error('出力用のICCは4MBまでです。');
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    if(exportIccFile.files?.[0]!==file)return;
+    if(!validIccBytes(bytes)||String.fromCharCode(...bytes.subarray(16,20))!=='RGB ')throw Error('RGBのICCファイルを選んでください。');
+    outputIcc=bytes;needsOutputIcc=false;exportIncludeIcc.checked=true;
+    byId('exportProfileStatus').textContent=file.name+' に合わせて色を変換してから、そのICCを埋め込みます。';
+  }catch(error){
+    if(exportIccFile.files?.[0]!==file)return;
+    byId('exportProfileStatus').textContent=error instanceof Error?error.message:String(error);
+  }
+};
+rasterPresetSelect.onchange=()=>{
+  const preset=readRasterPresets(localStorage).find(item=>item.name===rasterPresetSelect.value);
+  byId<HTMLButtonElement>('rasterExportPresetRemove').disabled=!preset;
+  if(!preset)return;
+  exportFormat.value=preset.format;exportQuality.value=String(preset.quality);losslessWebp.checked=preset.lossless;
+  byId<HTMLInputElement>('exportPixelScale').value=String(preset.scale);
+  byId<HTMLInputElement>('exportDpi').checked=preset.dpi;
+  byId<HTMLInputElement>('exportIncludeAuthor').checked=preset.author;
+  byId<HTMLInputElement>('exportCopyright').value=preset.copyright;
+  exportIccFile.value='';outputIcc=null;needsOutputIcc=preset.icc==='custom';
+  exportIncludeIcc.checked=preset.icc!=='none';
+  byId('exportProfileStatus').textContent=needsOutputIcc?'出力用RGB ICCを選んでください。':'';
+  updateExportOptions();
+};
+byId<HTMLButtonElement>('rasterExportPresetSave').onclick=async()=>{
+  const name=await appPrompt('書き出し設定の名前',rasterPresetSelect.value,{required:true,maxLength:80});
+  if(!name||!exportDialog.open)return;
+  try{
+    const scale=byId<HTMLInputElement>('exportPixelScale');
+    if(!scale.value||!scale.validity.valid)throw Error('整数倍の拡大率を1〜8で指定してください。');
+    writeRasterPreset(localStorage,{name,format:exportFormat.value as ImageFormat,quality:exportQuality.valueAsNumber,
+      scale:scale.valueAsNumber,lossless:losslessWebp.checked,dpi:byId<HTMLInputElement>('exportDpi').checked,
+      icc:exportIncludeIcc.checked?(outputIcc||needsOutputIcc?'custom':'srgb'):'none',
+      author:byId<HTMLInputElement>('exportIncludeAuthor').checked,copyright:byId<HTMLInputElement>('exportCopyright').value});
+    refreshRasterPresets(name.trim());
+    byId('exportStatus').textContent='設定を保存しました。出力用ICCのファイルは読み込み時に選び直せます。';
+  }catch(error){byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
+};
+byId<HTMLButtonElement>('rasterExportPresetRemove').onclick=()=>{
+  try{removeRasterPreset(localStorage,rasterPresetSelect.value);refreshRasterPresets();}
+  catch(error){byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
+};
+updateExportOptions();
 byId<HTMLButtonElement>('exportImage').onclick=()=>{
   if(!documentReady)return;
   byId('exportStatus').textContent='';
+  clearRasterComparison();refreshRasterPresets();
+  exportIccFile.value='';outputIcc=null;needsOutputIcc=false;
+  byId('exportProfileStatus').textContent='';
   byId<HTMLInputElement>('exportIncludeAuthor').checked=false;
   byId<HTMLInputElement>('exportCopyright').value='';
   const inspected=surface?.inspectedLayer;
@@ -3695,31 +3761,59 @@ exportSeparateLayers.onclick=async()=>{
   }catch(error){byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
 };
 byId<HTMLButtonElement>('exportCancel').onclick=()=>{if(!exportBusy)exportDialog.close();};
-byId<HTMLButtonElement>('exportRun').onclick=async()=>{
-  if(exportBusy||!documentReady)return;
-  const format=exportFormat.value as ImageFormat,quality=Number(exportQuality.value)/100;
-  // The snapshot is captured synchronously: later brush transactions cannot enter it.
-  let fixed:ReturnType<typeof captureExport>;
+async function captureRasterExport(){
+  const artwork=controller.document,format=exportFormat.value as ImageFormat,quality=exportQuality.valueAsNumber/100;
   const scope=byId<HTMLSelectElement>('exportLayerScope').value;
   const scale=byId<HTMLInputElement>('exportPixelScale');
-  if(!scale.validity.valid){byId('exportStatus').textContent='整数倍の拡大率は1〜8で指定してください。';return;}
-  let options:ImageExportOptions;
+  if(!scale.value||!scale.validity.valid)throw Error('整数倍の拡大率は1〜8で指定してください。');
+  if(exportIncludeIcc.checked&&needsOutputIcc&&!outputIcc)throw Error('出力用のRGB ICCを選んでください。');
+  await historyNavigation?.barrier();
+  if(controller.document!==artwork||!exportDialog.open)throw Error('書き出し対象が変わりました。');
+  const solo=surface?.inspectedLayer;
+  if(scope==='solo'&&!solo)throw Error('単独表示を切り替えたため、書き出し範囲を選び直してください。');
+  const selection=scope==='selection'?c06Selection?.active():null;
+  if(scope==='selection'&&!selection)throw Error('書き出す範囲を選んでください。');
+  const layer=scope==='active'?controller.selectedLayer.id:scope==='solo'?solo?.id:undefined;
+  const dpi=artwork.root.info.dpi;
+  const options:ImageExportOptions={pixelScale:scale.valueAsNumber,losslessWebp:losslessWebp.checked,
+    ...(selection?{selection}:{}),...(dpi!==null&&byId<HTMLInputElement>('exportDpi').checked?{dpi}:{}),
+    pngMetadata:{includeIcc:exportIncludeIcc.checked,...(exportIncludeIcc.checked&&outputIcc?{iccProfile:outputIcc}:{}),
+      ...(byId<HTMLInputElement>('exportIncludeAuthor').checked?{author:artwork.root.info.author}:{}),
+      copyright:byId<HTMLInputElement>('exportCopyright').value}};
+  return {fixed:captureExport(artwork,layer),format,quality,options};
+}
+const compareRaster=byId<HTMLButtonElement>('exportCompareRaster'),runRaster=byId<HTMLButtonElement>('exportRun');
+compareRaster.onclick=async()=>{
+  if(!exportDialog.open||compareRaster.disabled||runRaster.disabled)return;
+  clearRasterComparison();
+  const generation=compareGeneration;
+  compareRaster.disabled=runRaster.disabled=true;
+  byId('exportStatus').textContent='比較用に画像を作っています。';
   try{
-    await historyNavigation?.barrier();
-    const solo=surface?.inspectedLayer;
-    if(scope==='solo'&&!solo)throw new Error('単独表示を切り替えたため、書き出し範囲を選び直してください。');
-    const selection=scope==='selection'?c06Selection?.active():null;
-    if(scope==='selection'&&!selection)throw Error('書き出す範囲を選んでください。');
-    const layer=scope==='active'?controller.selectedLayer.id:scope==='solo'?solo?.id:undefined;
-    fixed=captureExport(controller.document,layer);
-    const dpi=controller.document.root.info.dpi;
-    options={pixelScale:scale.valueAsNumber,...(selection?{selection}:{}),
-      ...(format==='png'&&dpi!==null&&byId<HTMLInputElement>('exportDpi').checked?{dpi}:{}),
-      ...(format==='png'?{pngMetadata:{includeIcc:byId<HTMLInputElement>('exportIncludeIcc').checked,
-        ...(byId<HTMLInputElement>('exportIncludeAuthor').checked?{author:controller.document.root.info.author}:{}),
-        copyright:byId<HTMLInputElement>('exportCopyright').value}}:{})};
-  }
-  catch(error){byId('exportStatus').textContent=String(error instanceof Error?error.message:error);return;}
+    const {fixed,format,quality,options}=await captureRasterExport();
+    const result=await exportImage(fixed,format,quality,{...options,comparison:(original,compressed)=>{
+      if(generation!==compareGeneration||!exportDialog.open)return;
+      for(const [label,pixels] of [['元の絵',original],['書き出した画像',compressed]] as const){
+        const item=document.createElement('figure'),caption=document.createElement('figcaption'),canvas=document.createElement('canvas');
+        item.style.cssText='margin:0;overflow:auto';caption.textContent=label;
+        canvas.width=pixels.width;canvas.height=pixels.height;canvas.setAttribute('aria-label',label);
+        canvas.getContext('2d')?.putImageData(pixels,0,0);item.append(caption,canvas);comparisonHost.append(item);
+      }
+      comparisonHost.hidden=false;
+    }});
+    if(generation===compareGeneration&&exportDialog.open)
+      byId('exportStatus').textContent='中央を原寸で比較しています。画像全体は '+result.width+' × '+result.height+
+        ' px、'+formatFileSize(result.blob.size)+' です。';
+  }catch(error){if(generation===compareGeneration)byId('exportStatus').textContent=error instanceof Error?error.message:String(error);}
+  finally{compareRaster.disabled=runRaster.disabled=false;}
+};
+runRaster.onclick=async()=>{
+  if(exportBusy||!documentReady||runRaster.disabled)return;
+  runRaster.disabled=true;
+  let job:Awaited<ReturnType<typeof captureRasterExport>>;
+  try{job=await captureRasterExport();}
+  catch(error){runRaster.disabled=false;byId('exportStatus').textContent=error instanceof Error?error.message:String(error);return;}
+  const {fixed,format,quality,options}=job;
   const filename=exportFileName(fixed.name,format);
   exportBusy=true;exportError=null;byId<HTMLButtonElement>('exportRun').disabled=true;byId<HTMLButtonElement>('exportCancel').disabled=true;
   // A modal dialog would block canvas input during encoding; close it before heavy work.

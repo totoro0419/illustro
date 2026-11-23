@@ -11,7 +11,7 @@ type CMS=Awaited<ReturnType<typeof instantiate>>;
 type Pixels=Uint8Array|Uint8ClampedArray;
 type Options=Readonly<{intent:number;blackPoint:boolean;gamut:boolean}>;
 
-export function iccProcessor(cms:CMS,bytes:Uint8Array,options:Options,proof:boolean){
+export function iccProcessor(cms:CMS,bytes:Uint8Array,options:Options,proof:boolean,forExport=false){
   if(!validIccBytes(bytes))throw Error('ICCプロファイルが正しくないか、4MBを超えています。');
   if(!Number.isInteger(options.intent)||options.intent<0||options.intent>3)throw Error('色変換方法を選んでください。');
   const profile=cms.cmsOpenProfileFromMem(bytes,bytes.length),srgb=cms.cmsCreate_sRGBProfile();
@@ -31,7 +31,7 @@ export function iccProcessor(cms:CMS,bytes:Uint8Array,options:Options,proof:bool
       throw Error(proof?'RGB・CMYK・グレーの出力プロファイルを選んでください。':'元の画像のRGB配列に適用できないICCプロファイルです。');
     const flags=cmsFLAGS_COPY_ALPHA|(options.blackPoint?cmsFLAGS_BLACKPOINTCOMPENSATION:0);
     transform=proof?cms.cmsCreateProofingTransform(srgb,TYPE_RGBA_8,srgb,TYPE_RGBA_8,profile,options.intent,options.intent,flags|cmsFLAGS_SOFTPROOFING):
-      cms.cmsCreateTransform(profile,TYPE_RGBA_8,srgb,TYPE_RGBA_8,options.intent,flags);
+      cms.cmsCreateTransform(forExport?srgb:profile,TYPE_RGBA_8,forExport?profile:srgb,TYPE_RGBA_8,options.intent,flags);
     if(!transform)throw Error('このICCプロファイルで色変換を作成できません。');
     if(proof&&options.gamut){
       alarms=cms.cmsCreateProofingTransform(srgb,TYPE_RGBA_8,srgb,TYPE_RGBA_8,profile,options.intent,options.intent,
@@ -63,6 +63,6 @@ export function iccProcessor(cms:CMS,bytes:Uint8Array,options:Options,proof:bool
   }catch(error){close();throw error;}
 }
 
-export async function openIccProcessor(bytes:Uint8Array,options:Options,proof:boolean){
-  return iccProcessor(await deviceCms(),bytes,options,proof);
+export async function openIccProcessor(bytes:Uint8Array,options:Options,proof:boolean,forExport=false){
+  return iccProcessor(await deviceCms(),bytes,options,proof,forExport);
 }

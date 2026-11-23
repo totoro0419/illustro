@@ -1,3 +1,5 @@
+import {addRasterMetadata} from './rasterMetadata';
+import {runIcc} from './iccRun';
 import {srgbIccBytes} from './iccMetadata';
 import {CoreDocument,type LayerBlend,type LayerMask,type LayerId,type RevisionId,type DocumentRoot} from '@illustro/core';
 import {blendArtworkPixel,gradientMapTable,mapGradientPixel,adjustmentCube,mapAdjustmentPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
@@ -314,7 +316,7 @@ function deflateStored(source:Uint8Array):Uint8Array{
   for(let i=0;i<source.length;i++){a=(a+source[i]!)%65521;b=(b+a)%65521;}
   write32(out,at,((b<<16)|a)>>>0);return out;
 }
-type PngMetadata=Readonly<{includeIcc?:boolean;author?:string;copyright?:string}>;
+type PngMetadata=Readonly<{includeIcc?:boolean;iccProfile?:Uint8Array;author?:string;copyright?:string}>;
 export async function encodePng(pixels:Uint8ClampedArray,width:number,height:number,dpi?:number,metadata:PngMetadata={}):Promise<Blob>{
   if(pixels.length!==width*height*4)throw new Error('PNGの画素数が正しくありません。');
   const stride=width*4,raw=new Uint8Array((stride+1)*height);
@@ -336,8 +338,13 @@ export async function encodePng(pixels:Uint8ClampedArray,width:number,height:num
   }else zipped=deflateStored(raw);
   const head=new Uint8Array(13);write32(head,0,width);write32(head,4,height);head[8]=8;head[9]=6;
   const sig=Uint8Array.of(137,80,78,71,13,10,26,10),ihdr=pngChunk('IHDR',head),idat=pngChunk('IDAT',zipped),end=pngChunk('IEND',new Uint8Array());
-  const color=metadata.includeIcc?pngChunk('iCCP',new Uint8Array([...new TextEncoder().encode('sRGB\0\0'),...deflateStored(srgbIccBytes())])):
-    pngChunk('sRGB',Uint8Array.of(0));
+  const profile=metadata.iccProfile??(metadata.includeIcc?srgbIccBytes():null);
+  let color=pngChunk('sRGB',Uint8Array.of(0));
+  if(profile){
+    const label=new TextEncoder().encode((metadata.iccProfile?'Output ICC':'sRGB')+'\0\0');
+    const zipped=deflateStored(profile),payload=new Uint8Array(label.length+zipped.length);
+    payload.set(label);payload.set(zipped,label.length);color=pngChunk('iCCP',payload);
+  }
   const textChunks:Uint8Array[]=[];
   for(const [label,value] of [['Author',metadata.author],['Copyright',metadata.copyright]] as const){
     if(value?.trim())textChunks.push(pngChunk('iTXt',new TextEncoder().encode(label+'\0\0\0\0\0'+value.trim().slice(0,4096).replaceAll('\0',''))));
@@ -364,7 +371,34 @@ export async function verifyImage(blob:Blob,format:ImageFormat,width:number,heig
   finally{bitmap.close();}
 }
 
-export type ImageExportOptions=Readonly<{selection?:MaskData;pixelScale?:number;dpi?:number;pngMetadata?:PngMetadata}>;
+export type ImageExportOptions=Readonly<{selection?:MaskData;pixelScale?:number;dpi?:number;pngMetadata?:PngMetadata;
+  losslessWebp?:boolean;comparison?:(original:ImageData,compressed:ImageData)=>void}>;
+
+async function encodeLosslessWebp(pixels:Uint8ClampedArray,width:number,height:number){
+  const worker=new Worker(new URL('./webp.worker.ts',import.meta.url),{type:'module'});
+  try{
+    return await new Promise<Blob>((resolve,reject)=>{
+      worker.onmessage=(event:MessageEvent<{error:string}|{buffer:ArrayBuffer}>)=>{
+        if('error' in event.data)reject(Error(event.data.error));
+        else resolve(new Blob([event.data.buffer],{type:'image/webp'}));
+      };
+      worker.onerror=()=>reject(Error('WebPの可逆圧縮を開始できません。'));
+      const input=new Uint8ClampedArray(pixels);
+      worker.postMessage({pixels:input,width,height},[input.buffer]);
+    });
+  }finally{worker.terminate();}
+}
+
+function originalCrop(pixels:Uint8ClampedArray,width:number,height:number){
+  const w=Math.min(240,width),h=Math.min(180,height);
+  const x=Math.floor((width-w)/2),y=Math.floor((height-h)/2),image=new ImageData(w,h);
+  for(let row=0;row<h;row++){
+    const start=((y+row)*width+x)*4;
+    image.data.set(pixels.subarray(start,start+w*4),row*w*4);
+  }
+  return {x,y,w,h,image};
+}
+
 export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality=0.9,options:ImageExportOptions={}):Promise<ImageExportResult>{
   const started=performance.now();
   if(!['png','jpeg','webp'].includes(format)||!Number.isFinite(quality)||quality<0||quality>1)throw new Error('書き出し設定が正しくありません。');
@@ -389,10 +423,34 @@ export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality
     pixels=new Uint8ClampedArray(resizeImagePixels(pixels,width,height,width*pixelScale,height*pixelScale,'nearest'));
     width*=pixelScale;height*=pixelScale;
   }
-  const encodedStart=performance.now(),flattened=format==='jpeg'?flattenOnWhite(pixels):pixels;
-  const blob=format==='png'?await encodePng(pixels,width,height,dpi,pngMetadata):await encodeBrowser(flattened,width,height,format,quality);
+  const encodedStart=performance.now();
+  const original=options.comparison?originalCrop(pixels,width,height):null;
+  let output=format==='jpeg'?flattenOnWhite(pixels):pixels;
+  const profile=pngMetadata?.iccProfile??(pngMetadata?.includeIcc?srgbIccBytes():undefined);
+  if(pngMetadata?.iccProfile){
+    if(String.fromCharCode(...pngMetadata.iccProfile.subarray(16,20))!=='RGB ')
+      throw Error('RGBの出力用ICCを選んでください。');
+    const {converted}=await runIcc({profile:pngMetadata.iccProfile,layers:[output],proof:false,forExport:true,
+      intent:1,blackPoint:true,gamut:false},true);
+    output=converted[0]!.pixels;
+  }
+  let blob=format==='png'?await encodePng(output,width,height,dpi,pngMetadata):
+    format==='webp'&&options.losslessWebp?await encodeLosslessWebp(output,width,height):await encodeBrowser(output,width,height,format,quality);
+  if(format!=='png')blob=await addRasterMetadata(blob,format,width,height,{
+    ...(profile?{profile}:{}),...(dpi===undefined?{}:{dpi}),
+    ...(pngMetadata?.author?{author:pngMetadata.author}:{}),...(pngMetadata?.copyright?{copyright:pngMetadata.copyright}:{})
+  });
   await verifyImage(blob,format,width,height);
-  return Object.freeze({blob,revision:frozen.revision,format,mime:blob.type,width,height,quality:format==='png'?null:quality,alpha:format!=='jpeg',background:format==='jpeg'?'white':'transparent',encodeMs:performance.now()-encodedStart,totalMs:performance.now()-started,estimatedPeakBytes:frozen.width*frozen.height*4*(frozen.layers.length+4)+(pixelScale!==1?width*height*8:0)});
+  if(original&&options.comparison){
+    const {x,y,w,h,image}=original,decoded=await createImageBitmap(blob);
+    try{
+      const canvas=createRenderCanvas(w,h),context=canvas.getContext('2d');
+      if(!context)throw Error('比較画像を表示できません。');
+      context.drawImage(decoded,x,y,w,h,0,0,w,h);
+      options.comparison(image,context.getImageData(0,0,w,h));
+    }finally{decoded.close();}
+  }
+  return Object.freeze({blob,revision:frozen.revision,format,mime:blob.type,width,height,quality:format==='png'||format==='webp'&&options.losslessWebp?null:quality,alpha:format!=='jpeg',background:format==='jpeg'?'white':'transparent',encodeMs:performance.now()-encodedStart,totalMs:performance.now()-started,estimatedPeakBytes:frozen.width*frozen.height*4*(frozen.layers.length+4)+(pixelScale!==1?width*height*8:0)});
 }
 
 async function seedBasePixels(renderer:GpuRenderer,layers:readonly {surfaceId:string;pixels:Uint8Array}[],width:number,height:number){

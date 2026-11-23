@@ -1,13 +1,13 @@
 import {openIccProcessor} from './icc';
 
 export type IccRequest=Readonly<{
-  profile:Uint8Array;layers:readonly Uint8ClampedArray[];proof:boolean;
+  profile:Uint8Array;layers:readonly Uint8ClampedArray[];proof:boolean;forExport?:boolean;
   intent:number;blackPoint:boolean;gamut:boolean;
 }>;
 self.onmessage=async(event:MessageEvent<IccRequest>)=>{
-  const {profile,layers,proof,intent,blackPoint,gamut}=event.data;
+  const {profile,layers,proof,forExport,intent,blackPoint,gamut}=event.data;
   try{
-    const processor=await openIccProcessor(profile,{intent,blackPoint,gamut},proof);
+    const processor=await openIccProcessor(profile,{intent,blackPoint,gamut},proof,forExport);
     try{
       const converted=layers.map(layer=>processor.apply(layer));
       const transfer=converted.flatMap(layer=>[layer.pixels.buffer,...(layer.outOfGamut?[layer.outOfGamut.buffer]:[])]);
