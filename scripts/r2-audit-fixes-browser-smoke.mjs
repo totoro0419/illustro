@@ -74,11 +74,11 @@ try{
   assert.ok(hint>=1,'text outline conversion requirement missing');
   mark('D-014-TEXT-OUTLINE-REQUIREMENT');
 
+  await page.locator('#layer').click();
+  await page.locator('#layerSettingsTrigger').click();
   const nameField=page.locator('#selectedLayerName');
-  await nameField.evaluate(input=>{
-    input.value='監査用レイヤー';
-    input.dispatchEvent(new Event('change',{bubbles:true}));
-  });
+  await nameField.fill('監査用レイヤー');
+  await nameField.press('Enter');
   await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.selectedLayerName==='監査用レイヤー',undefined,{timeout:11000}).catch(()=>{});
   const renamed=await page.evaluate(()=>{
     const canvas=document.getElementById('canvas'),name=document.getElementById('selectedLayerName');
@@ -91,6 +91,7 @@ try{
   console.log('D011_RenameDiagnostics',JSON.stringify(renamed));
   assert.equal(renamed.displayedLayer,'監査用レイヤー','D-011 rename did not persist: '+JSON.stringify(renamed));
   mark('D-011-RENAME-SELECTED-LAYER');
+  await page.locator('#closeLayerPage').click();
 
   const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Z9sAAAAASUVORK5CYII=','base64');
   await page.locator('#c06ClipboardFile').setInputFiles({name:'one.png',mimeType:'image/png',buffer:tinyPng});
