@@ -1,3 +1,5 @@
+> **Work 5時間枠の234機能実用検査は [WORK-EXECUTION-ROADMAP.md](WORK-EXECUTION-ROADMAP.md) を正式な操作順とし、[work-steps/](work-steps/) と [WORK-COVERAGE.csv](WORK-COVERAGE.csv) を使って実行する。** 本書と従来の `steps/` は検査準備の参照資料であり、Work本番では機能ごとの独立した詳細試験や古い合格条件を再実施しない。
+
 # Illustro R2｜実機検査計画（2026-11-23）
 
 ## 今回の目的
