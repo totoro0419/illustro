@@ -49,6 +49,16 @@ export function installAccessibility(host:HTMLElement){
     }
   }catch{}
   addVisionFilters();
+  function fitToVisualViewport(){
+    const viewport=window.visualViewport;
+    const reduced=!!viewport&&viewport.scale===1&&viewport.height+60<window.innerHeight;
+    root.toggleAttribute('data-illustro-keyboard',reduced);
+    if(reduced)root.style.setProperty('--illustro-visible-height',viewport.height+'px');
+    else root.style.removeProperty('--illustro-visible-height');
+  }
+  window.visualViewport?.addEventListener('resize',fitToVisualViewport,{passive:true});
+  fitToVisualViewport();
+
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const summary=document.createElement('summary');summary.textContent='画面の見やすさ・通知';
   const controls=document.createElement('div');controls.className='c06-clipboard-grid';

@@ -1,3 +1,4 @@
+import {readPointerPanBinding} from './pointerPanBinding';
 import {cropRestorePlan,mergeRetainedCrop} from './cropRetention';
 import {installStrokeComparison,type StrokeComparison} from './ui/strokeComparison';
 import {nativeBrushSensors} from './brushInput';
@@ -1769,6 +1770,7 @@ function applyInputPreferences(drawing:BrushSurface){
  drawing.setRotationSnap(inputPreferences.rotationSnap);
  drawing.setPressureRange(pressureRange);
  drawing.setPointerRoles(readPointerRoles());
+ drawing.setPointerPanBinding(readPointerPanBinding());
 }
 surface=makeSurface();
 function updateViewControls(){const state=surface?.viewState;if(!state)return;

@@ -75,3 +75,13 @@
   dialog :is(input,select,textarea,button) {
   max-inline-size: 100%;
 }
+
+:root:is([data-illustro-text="large"],[data-illustro-text="extra"]) dialog.geometry-dialog[open] {
+  max-block-size: calc(100dvh - var(--top, 48px) - 90px);
+}
+:root[data-illustro-keyboard] dialog[open] {
+  max-block-size: max(120px, calc(var(--illustro-visible-height) - 24px));
+}
+:root[data-illustro-keyboard] dialog.geometry-dialog[open] {
+  max-block-size: max(100px, calc(var(--illustro-visible-height) - var(--top, 48px) - 90px));
+}

@@ -1,3 +1,4 @@
+import {capturePointerPanBinding,readPointerPanBinding,storePointerPanBinding,type PointerPanBinding} from '../pointerPanBinding';
 /** GST-003: device roles are applied at pointer dispatch, never to document pixels. */
 import {installInputDiagnostics,type PressureRange} from './inputDiagnostics';
 import type {BrushSurface,PointerRoleSettings,InputPointerRole} from '../brushSurface';
@@ -87,12 +88,47 @@ export function installInputDeviceProfiles(getSurface:()=>BrushSurface|null,pres
     capturing=false;capture.textContent='接続した機器を確認';status.textContent='確認を中止しました。';
   };
   document.addEventListener('keydown',cancelCapture);
+  const panSetup=document.createElement('button'),panRemove=document.createElement('button'),panStatus=document.createElement('output');
+  panSetup.type=panRemove.type='button';panStatus.setAttribute('role','status');
+  panSetup.textContent='長押しで表示を動かすボタンを登録';panRemove.textContent='移動ボタンの割当を解除';
+  let panListening=false,suppressPanMenuUntil=0;
+  const setPan=(binding:PointerPanBinding|null,save=true)=>{
+    panListening=false;
+    if(save)getSurface()?.setPointerPanBinding(binding);
+    panRemove.disabled=!binding;
+    panStatus.textContent=binding?(binding.device==='pen'?'ペンの横ボタン':'マウスのボタン '+binding.button)+
+      ' を押している間だけ絵を動かせます。':'移動用の追加ボタンは未登録です。';
+    if(save)try{storePointerPanBinding(binding);}catch{panStatus.textContent+=' 端末へ設定を保存できませんでした。';}
+  };
+  panSetup.onclick=()=>{
+    panListening=true;
+    panStatus.textContent='この設定欄の上で、登録したいペンやマウスのボタンを押してください。Escで中止できます。';
+  };
+  panRemove.onclick=()=>setPan(null);
+  outer.addEventListener('pointerdown',event=>{
+    if(!panListening)return;
+    const binding=capturePointerPanBinding(event);
+    if(!binding)return;
+    event.preventDefault();event.stopPropagation();
+    if(binding.button===2)suppressPanMenuUntil=performance.now()+1200;
+    setPan(binding);
+  },true);
+  outer.addEventListener('contextmenu',event=>{
+    if(panListening||performance.now()<suppressPanMenuUntil||event.target===panSetup){
+      suppressPanMenuUntil=0;event.preventDefault();
+    }
+  });
+  document.addEventListener('keydown',event=>{
+    if(panListening&&event.key==='Escape')setPan(readPointerPanBinding(),false);
+  });
+  body.append(panSetup,panRemove,panStatus);
+  setPan(readPointerPanBinding(),false);
   installInputDiagnostics(body,pressure);
   reset.onclick=()=>{
     roles={...DEFAULT};pen.value=roles.pen;mouse.value=roles.mouse;sync();
     finger.value='navigate';finger.onchange?.(new Event('change'));
     palm.checked=true;palm.onchange?.(new Event('change'));
-    barrelEnabled.checked=false;barrelEnabled.onchange?.(new Event('change'));
+    barrelEnabled.checked=false;barrelEnabled.onchange?.(new Event('change'));setPan(null);
     status.textContent='各機器の標準操作に戻しました。';
   };
 }
