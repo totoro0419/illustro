@@ -4913,6 +4913,21 @@ installWetPad(byId('referenceBoxBody'),{
     ...(devicePressureSensitivity===.5?{}:{deviceCurve:[[0,0],[.5,devicePressureSensitivity],[1,1]]}),
   }),
 });
+// Reuse the isolated drawing pad for both brush and wet settings; it does not touch the document.
+function openSharedBrushTestPad(){
+  shellUi.openBox('referenceBox');
+  const panel=byId<HTMLDetailsElement>('sharedBrushTestPad');
+  panel.open=true;
+  panel.scrollIntoView({block:'nearest'});
+}
+const openBrushPad=document.createElement('button');
+openBrushPad.type='button';openBrushPad.textContent='このブラシを試し描き';
+openBrushPad.onclick=openSharedBrushTestPad;
+byId('brushBoxBody').prepend(openBrushPad);
+const openWetPad=document.createElement('button');
+openWetPad.type='button';openWetPad.textContent='混色・水彩を試し描き';
+openWetPad.onclick=openSharedBrushTestPad;
+byId('documentBoxBody').querySelector('[data-tool-panel="smudge"]')?.append(openWetPad);
 const pixelPanel=document.createElement('details');pixelPanel.className='c06-clipboard-panel';pixelPanel.dataset.toolPanel='pixels';
 const pixelTitle=document.createElement('summary');pixelTitle.textContent='1pxのドット絵';
 const pixelPen=document.createElement('button'),pixelErase=document.createElement('button'),pixelStatus=document.createElement('output');
