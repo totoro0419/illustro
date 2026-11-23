@@ -1,5 +1,7 @@
+import {englishToolLabels} from './englishToolLabels';
 const key='illustro.ui-language.v1';
 const english:Readonly<Record<string,string>>={
+  ...englishToolLabels,
   'ホーム':'Home','マイ作品':'My artwork','マイ作品へ':'My artwork','設定':'Settings','新しい作品':'New artwork',
   'ファイルから開く':'Open file','描画画面へ':'Open editor','作品一覧':'Artworks','作品名':'Artwork name',
   '作品を作成':'Create artwork','白':'White','透明':'Transparent','白背景':'White background',
@@ -43,19 +45,21 @@ const readLanguage=():UiLanguage=>{
   try{return localStorage.getItem(key)==='en'?'en':'ja';}catch{return 'ja';}
 };
 let language=readLanguage();
+const userContent='[data-user-content],.layer-name,.ih-work-title,[contenteditable],textarea';
 export const uiLocale=()=>language==='en'?'en-US':'ja-JP';
-export const translateUi=(text:string)=>language==='en'?english[text]??text:text;
+export const translatedLabel=(text:string,locale:UiLanguage)=>locale==='en'?english[text]??text:text;
+export const translateUi=(text:string)=>translatedLabel(text,language);
 
 export function installLanguageSettings(host:HTMLElement,onChange:()=>void){
   const label=document.createElement('label'),name=document.createElement('span'),select=document.createElement('select');
   name.textContent='表示言語';select.append(new Option('日本語','ja'),new Option('English','en'));
   select.value=language;label.append(name,select);host.append(label);
   const originalText=new Map<Text,string>(),originalAttributes=new Map<Element,Map<string,string>>();
-  const translatable='button,label,summary,option,h1,h2,h3,h4,p,dt,[aria-label],[aria-description]';
+  const translatable='button,label,summary,option,h1,h2,h3,h4,p,dt,output,[role=status],[aria-label],[aria-description]';
   const attrs=['aria-label','aria-description','title','placeholder'] as const;
   function translateText(node:Text){
     const item=node.parentElement;
-    if(!item?.closest(translatable)||item.closest('[contenteditable],textarea,[data-user-content]'))return;
+    if(!item?.closest(translatable)||item.closest(userContent))return;
     const current=node.data,last=originalText.get(node);
     const clean=current.trim();
     const source=last&&english[last.trim()]===clean?last:current;
@@ -65,7 +69,7 @@ export function installLanguageSettings(host:HTMLElement,onChange:()=>void){
     node.data=language==='en'?source.replace(source.trim(),value):source;
   }
   function translateAttributes(element:Element){
-    if(element.closest('[data-user-content]'))return;
+    if(element.closest(userContent))return;
     const previous=originalAttributes.get(element),next=new Map<string,string>();
     for(const attribute of attrs){
       const value=element.getAttribute(attribute),last=previous?.get(attribute);
@@ -90,13 +94,17 @@ export function installLanguageSettings(host:HTMLElement,onChange:()=>void){
   }
   const observer=new MutationObserver(records=>{
     observer.disconnect();
+    let removed=false;
     for(const record of records){
+      removed||=record.removedNodes.length>0;
       if(record.type==='attributes'&&record.target instanceof Element)translateAttributes(record.target);
       else if(record.type==='characterData')refresh(record.target);
       else for(const node of record.addedNodes)refresh(node);
     }
-    originalText.forEach((_,node)=>{if(!node.isConnected)originalText.delete(node);});
-    originalAttributes.forEach((_,node)=>{if(!node.isConnected)originalAttributes.delete(node);});
+    if(removed){
+      originalText.forEach((_,node)=>{if(!node.isConnected)originalText.delete(node);});
+      originalAttributes.forEach((_,node)=>{if(!node.isConnected)originalAttributes.delete(node);});
+    }
     observe();
   });
   const observe=()=>observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:[...attrs]});
@@ -114,7 +122,7 @@ export function installLanguageSettings(host:HTMLElement,onChange:()=>void){
   select.onchange=()=>{
     language=select.value==='en'?'en':'ja';
     try{localStorage.setItem(key,language);}catch{}
-    onChange();apply();
+    onChange();apply();window.dispatchEvent(new Event('illustro:language-change'));
   };
   apply();
 }

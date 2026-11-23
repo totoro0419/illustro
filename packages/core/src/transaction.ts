@@ -17,7 +17,8 @@ import type {SemanticOperationDraft} from './history';
 import {CANONICAL_TILE_SIZE,parseTileKey,pixelToTile,tileKey,RasterSurfaceManifest,type DirtyTileHint} from './raster/surface';
 
 export type DocumentGeometryKind='document.crop'|'document.canvas-resize'|'document.image-resize';
-type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'artwork-guides';guides:readonly ArtworkGuide[]}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;partial?:true;source?:RevisionId;recipe?:Readonly<Record<string,unknown>>}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
+export type HistoryLayerFlags=Readonly<{id:LayerId;alphaLocked:boolean;clipSourceId:LayerId|null}>;
+type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'artwork-guides';guides:readonly ArtworkGuide[]}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true;replace?:true;partial?:true;source?:RevisionId;recipe?:Readonly<Record<string,unknown>>}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'restore-revision';revisionId:RevisionId;flags:readonly HistoryLayerFlags[]}>|Readonly<{type:'pin-revision';name:string;note:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
 /** A small image in document coordinates; avoid creating a transparent full-canvas buffer. */
 export type RasterPixelRegion=Readonly<{
@@ -593,12 +594,21 @@ export class DocumentTransaction{
     this.slotsValue.push(Object.freeze({type:'pin-revision',name,note}));
     return true;
   }
-  restoreRevision(revisionId:RevisionId){
+  restoreRevision(revisionId:RevisionId,flags:readonly HistoryLayerFlags[]=[]){
     this.open();
     if(this.slotsValue.length)throw new Error('History restore must be its own transaction');
-    if(revisionId===this.baseValue)return false;
-    this.doc.revision(revisionId);
-    this.slotsValue.push(Object.freeze({type:'restore-revision',revisionId}));
+    const root=this.doc.revision(revisionId).root,seen=new Set<LayerId>();
+    const changes=flags.filter(({id,alphaLocked,clipSourceId})=>{
+      if(seen.has(id)||!root.hasLayer(id)||typeof alphaLocked!=='boolean')throw Error('履歴のレイヤー設定が正しくありません。');
+      const layer=root.getLayer(id);seen.add(id);
+      if(clipSourceId&&clipSourceId!==layer.clipSourceId&&(!root.hasLayer(clipSourceId)||layer.baseColor||
+        root.rootLayerIds.indexOf(clipSourceId)>=root.rootLayerIds.indexOf(id)||
+        root.groupsForLayer(id).at(-1)?.id!==root.groupsForLayer(clipSourceId).at(-1)?.id))
+        throw Error('履歴のクリップ元が正しくありません。');
+      return alphaLocked!==!!layer.alphaLocked||clipSourceId!==(layer.clipSourceId??null);
+    }).map(flag=>Object.freeze({...flag}));
+    if(revisionId===this.baseValue&&!changes.length)return false;
+    this.slotsValue.push(Object.freeze({type:'restore-revision',revisionId,flags:Object.freeze(changes)}));
     return true;
   }
   saveLayerComp(name:string,saveVisibility:boolean,saveOpacity:boolean,existingId?:LayerId,saveBlend=false){

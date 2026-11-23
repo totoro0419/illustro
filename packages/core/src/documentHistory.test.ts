@@ -40,3 +40,16 @@ it('previews a sequence of undo and redo without moving or publishing the docume
   expect(doc.previewHistoryNavigation(['redo'])).toBe(painted);
   expect(doc.head).toBe(initial);
 });
+
+it('discards a failed unpublished restore and restores the original redo path and sequence',()=>{
+  const doc=new CoreDocument({width:3,height:3}),initial=doc.head,layer=doc.defaultRasterLayerId;
+  const first=doc.begin('first');first.setPixel(layer,0,0,[30,40,50,255]);first.commit();
+  const second=doc.begin('second');second.setPixel(layer,0,0,[55,40,50,255]);const future=second.commit().revision.id;
+  doc.undo();const before=doc.historyNavigationState(),sequence=doc.commitSequence;
+  const restore=doc.begin('unpublished restore');restore.restoreRevision(initial);
+  const staged=restore.commit().revision.id;
+  expect(doc.discardUnpublishedHistoryRestore(staged,before)).toBe(true);
+  expect(doc.hasRevision(staged)).toBe(false);
+  expect(doc.head).toBe(before.head);expect(doc.commitSequence).toBe(sequence);
+  expect(doc.redo().id).toBe(future);
+});

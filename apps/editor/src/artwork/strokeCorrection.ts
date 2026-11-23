@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId,type RevisionId} from '@illustro/core';
 import type {StrokeRecord} from '@illustro/brush-rt';
 import type {MaskData} from '../selection/mask';
@@ -101,10 +102,10 @@ export function installStrokeCorrection(host:HTMLElement,api:{
   const restore=button('選んだ補正を元の手描き線に戻す',async()=>{await api.restore();close();status.textContent='元の手描き線に戻しました。';},status);
   enabled.onchange=()=>{if(!enabled.checked){close();status.textContent='形状補正をオフにしました。';}newCandidate.disabled=!enabled.checked;};
   editor.addEventListener('change',refresh);
-  editor.append(button('この形を適用',async()=>{
+  editor.append(toolConfirmation(button('この形を適用',async()=>{
     if(!source)throw Error('補正する線を選び直してください。');
     await api.apply(source,data());close();status.textContent='形状補正を反映しました。';
-  },status),button('取り消す',()=>{close();status.textContent='手描き線を残しました。';},status));
+  },status),'apply'),toolConfirmation(button('取り消す',()=>{close();status.textContent='手描き線を残しました。';},status),'cancel'));
   panel.append(heading,fields,newCandidate,restore,editor,preview,status);host.append(panel);
   return {
     panel,show,

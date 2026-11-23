@@ -1,7 +1,7 @@
 import {FEATURE_CATEGORIES,RIGHT_BOXES} from './shell';
 import './paintingWorkspace.css';
 
-export type ShellControl={workspace:HTMLElement;drawer:HTMLButtonElement;openBox:(id:string)=>void;close:(focus?:boolean)=>void;setLayerPage:(value:boolean)=>void;layerPageOpen:()=>boolean;refreshWidth:()=>void};
+export type ShellControl={workspace:HTMLElement;drawer:HTMLButtonElement;openBox:(id:string)=>void;close:(focus?:boolean)=>void;setLayerPage:(value:boolean)=>void;layerPageOpen:()=>boolean;refreshWidth:()=>void;checkpoint:()=>()=>void};
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const safeRead=(key:string)=>{try{return localStorage.getItem(key)}catch{return null}};
 const safeWrite=(key:string,value:string)=>{try{localStorage.setItem(key,value)}catch{/* private browsing may disallow storage */}};
@@ -462,5 +462,12 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(event.target instanceof Element&&event.target.closest('#panView,#c04FocusToggle,#c04FullscreenToggle'))view.hidePopover();
   });
   applyWidth(width);syncPresentation();
-  return {workspace,drawer,openBox,close,setLayerPage,layerPageOpen:()=>dockOpen&&layerOpen,refreshWidth:()=>applyWidth(width)};
+  return {workspace,drawer,openBox,close,setLayerPage,layerPageOpen:()=>dockOpen&&layerOpen,refreshWidth:()=>applyWidth(width),
+    checkpoint:()=>{
+      const saved={dockOpen,panel,layerOpen,dockTrigger};
+      return ()=>{
+        ({dockOpen,panel,layerOpen,dockTrigger}=saved);syncPresentation();onLayerPageChange?.(layerOpen);
+      };
+    },
+  };
 }

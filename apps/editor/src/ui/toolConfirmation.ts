@@ -16,12 +16,18 @@ export function installToolConfirmation(context:HTMLElement,app:HTMLElement,acti
     return {action,button,target:null as HTMLButtonElement|null};
   });
   context.append(footer);
+  function canUse(button:HTMLButtonElement,panel:Element){
+    if(button.disabled)return false;
+    for(let element:Element|null=button;element&&element!==panel;element=element.parentElement)
+      if(element.hasAttribute('hidden')||element instanceof HTMLDetailsElement&&!element.open)return false;
+    return true;
+  }
   function sync(){
     const panel=activePanel();
     let hasAction=false;
     for(const entry of actions){
       const candidates=panel?[...panel.querySelectorAll<HTMLButtonElement>('[data-tool-confirm="'+entry.action+'"]')]
-        .filter(button=>!button.hidden&&!button.disabled):[];
+        .filter(button=>canUse(button,panel)):[];
       entry.target=candidates.sort((a,b)=>Number(b.dataset.toolConfirmPriority)-Number(a.dataset.toolConfirmPriority))[0]??null;
       entry.button.disabled=!entry.target;
       hasAction||=!!entry.target;
@@ -38,6 +44,7 @@ export function installToolConfirmation(context:HTMLElement,app:HTMLElement,acti
       (target instanceof HTMLDetailsElement||target.hasAttribute('data-tool-confirm')||target===app||target===context)))
       schedule();
   });
-  observer.observe(app,{attributes:true,subtree:true,attributeFilter:['open','disabled','hidden','data-active-tool-panel','class']});
+  observer.observe(app,{attributes:true,subtree:true,attributeFilter:['open','disabled','hidden','data-active-tool-panel','class','inert']});
+  app.addEventListener('focusin',schedule);
   return schedule;
 }

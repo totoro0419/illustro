@@ -245,8 +245,12 @@ export async function exportExchange(doc:CoreDocument,format:ExchangeFormat,laye
   }else if(format==='svg')svg.push(await embeddedPng(merged,width,height,metadata));
   else layers.push(imageLayer(name,width,height,merged));
   const description=xmp(metadata);
-  if(format==='svg')return new Blob(['<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="'+width+
-    '" height="'+height+'" viewBox="0 0 '+width+' '+height+'">'+ (description?'<metadata>'+new TextDecoder().decode(description)+'</metadata>':'')+svg.join('')+'</svg>'],{type:mime});
+  if(format==='svg'){
+    const length=(pixels:number)=>metadata.dpi?(pixels/metadata.dpi).toFixed(6)+'in':String(pixels);
+    return new Blob(['<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="'+length(width)+
+      '" height="'+length(height)+'" viewBox="0 0 '+width+' '+height+'">'+
+      (description?'<metadata>'+new TextDecoder().decode(description)+'</metadata>':'')+svg.join('')+'</svg>'],{type:mime});
+  }
   const art={width,height,name,layers,merged,warnings:[],dpi:metadata.dpi??root.info.dpi??undefined};
   const bytes=format==='ora'?await (await import('./oraExchange')).encodeOra(art,metadata):
     (await import('./psdExchange')).encodePhotoshop(art,format==='psb',metadata);

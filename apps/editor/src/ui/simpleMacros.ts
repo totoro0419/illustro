@@ -111,6 +111,8 @@ export type MacroLayerStep=Readonly<{id:string;value:string|number|null;artwork?
 export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   layers:()=>readonly MacroLayer[];
   applyLayer:(id:string,steps:readonly MacroLayerStep[],name:string,signal:AbortSignal)=>Promise<boolean>;
+  undoPresentation?:()=>boolean;
+  applyLegacy?:(steps:readonly string[],name:string,signal:AbortSignal)=>Promise<boolean>;
   applyHistory?:(steps:readonly ('undo'|'redo')[],name:string,signal:AbortSignal)=>Promise<boolean>;
   share:(json:string,name:string,asset:boolean)=>Promise<void>;
 }>):SimpleMacroService|null{
@@ -140,7 +142,12 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   const share=document.createElement('button'),asset=document.createElement('button');
   share.type=asset.type='button';share.textContent='操作セットを書き出す';asset.textContent='素材に登録';
   share.hidden=asset.hidden=!api;
-  actions.append(record,add,save,run,cancel,reset,remove,share,asset);
+  const undoView=document.createElement('button');undoView.type='button';undoView.textContent='前回の表示操作を取り消す';
+  undoView.hidden=!api?.undoPresentation;
+  undoView.onclick=()=>{
+    status.textContent=api?.undoPresentation?.()?'操作セットの前の表示に戻しました。':'取り消せる表示操作がありません。';
+  };
+  actions.append(record,add,save,run,cancel,undoView,reset,remove,share,asset);
   root.append(summary,help,select,name,commandSelect,stepsList,actions,status);
   workspace.append(root);
 
@@ -301,7 +308,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
         target.onchange=resetFields;resetFields();
       }else{
         const note=document.createElement('p');
-        note.textContent='表示や履歴を含む手順は順番に実行します。途中で停止すると、実行済みの操作は残ります。';
+        note.textContent='設定と履歴の変更内容を確認してから、まとめて実行します。';
         section.append(note);
       }
       section.append(list);
@@ -356,6 +363,11 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
         status.textContent=changed?'指定したレイヤーに適用しました。一度の取り消しで戻せます。':'指定した操作で変わる設定はありません。';
         return;
       }
+      if(api?.applyLegacy){
+        const changed=await api.applyLegacy(enabled,macro.name,playback.signal);
+        status.textContent=changed?'「'+macro.name+'」の操作をまとめて適用しました。':'作品は変わりませんでした。';
+        return;
+      }
       const result=await invokeMacroSequence(enabled,commands.invokeAsync,{contextKey:commands.contextKey,signal:playback.signal});
       if(!result.ok){
         status.textContent=result.failedStep+'番目の操作で停止しました。'+result.reason;
@@ -365,6 +377,9 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
         ?'「'+macro.name+'」の操作を送りました。履歴や描画の完了はまだ確認できていません。'
         :'「'+macro.name+'」の操作を実行しました。';
     }catch(error){
+      if(playback?.signal.aborted||error instanceof DOMException&&error.name==='AbortError'){
+        status.textContent='操作セットを取り消しました。';return;
+      }
       status.textContent=error instanceof Error?error.message:'操作セットの実行に失敗しました。';
       throw error;
     }finally{playing=false;playback=null;cancel.disabled=true;refreshSteps();}

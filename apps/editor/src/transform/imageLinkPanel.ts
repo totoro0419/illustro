@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import type {LayerId,LayerImageLink} from '@illustro/core';
 import {button,labelledField,numberField,selectField} from '../artwork/tools';
 
@@ -60,7 +61,7 @@ export function installImageLinkPanel(host:HTMLElement,api:ImageActions){
     target('同じ画像を参照する複製を作る','instance'),act('選んだ画像の位置を変更','move'),target('複製の元を選び直す','rebind'),
     button('選択レイヤーの現在の画像を埋め込む',async()=>{await api.finish('embed');refresh();},status),
     button('参照を解除して独立した描画レイヤーにする',async()=>{await api.finish('independent');refresh();},status),
-    apply,button('候補を取り消す',clear,status));
+    toolConfirmation(apply,'apply'),toolConfirmation(button('候補を取り消す',clear,status),'cancel'));
   panel.append(heading,meta,options,images,status);host.append(panel);panel.ontoggle=()=>{if(panel.open)refresh();else clear();};
   return {refresh};
 }

@@ -36,6 +36,16 @@ export class RevisionHistory<T>{
   get nextRedo(){const id=this.redoIds.at(-1);return id===undefined?null:this.get(id);}
   has(id:RevisionId){return this.revisions.has(id);}get(id:RevisionId){const r=this.revisions.get(id);if(!r)throw new Error('missing revision');return r;}
   snapshot():RevisionHistoryState<T>{return Object.freeze({revisions:Object.freeze([...this.revisions.values()]),head:this.headValue,redoIds:Object.freeze([...this.redoIds])});}
+  navigationState(){return {head:this.headValue,redo:[...this.redoIds],limit:this.undoLimitValue};}
+  discardUnpublishedRestore(id:RevisionId,prior:Readonly<{head:RevisionId;redo:readonly RevisionId[]}>){
+    const current=this.current;
+    if(current.id!==id||current.parentIds[0]!==prior.head||current.command?.operations.length!==1||
+      current.command.operations[0]?.kind!=='document.history-restore'||prior.redo.some(item=>item===id||!this.has(item)))
+      return false;
+    this.revisions.delete(id);this.headValue=prior.head;
+    this.redoIds.splice(0,this.redoIds.length,...prior.redo);
+    return true;
+  }
   previewNavigation(steps:readonly ('undo'|'redo')[]){
     let head=this.headValue;
     const redo=[...this.redoIds];

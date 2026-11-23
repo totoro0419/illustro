@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {appPrompt} from '../ui/appDialogs';
 import {inverseArtworkAffine,mapArtworkPoint,validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
@@ -414,7 +415,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
         status.textContent='新しい図形を保存するとき、元の2レイヤーを同時に隠せます。Undoは1回です。';
       }else status.textContent='演算結果を新しいレイヤーに作ります。元の形はそのまま残ります。';
     },status),
-    button('作品に反映',async()=>{
+    toolConfirmation(button('作品に反映',async()=>{
       const context=api.context(),candidate=draft();
       const request=sourceEdit?await booleanOperandSave(sourceEdit.operands,sourceEdit.side,candidate,editing,
         context?.paths.flatMap(entry=>entry.content.kind==='path'?[{id:entry.id,content:entry.content}]:[])??[]):{content:candidate,id:editing,sourceOf:undefined};
@@ -427,11 +428,11 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       }
       combinedSourceIds=null;hideOperands.parentElement!.hidden=true;
       status.textContent='ベクター線を保存しました。';
-    },status),
-    button('候補を取り消す',()=>{
+    },status),'apply'),
+    toolConfirmation(button('候補を取り消す',()=>{
       stopPoints();sourceEdit=null;path=null;editing=undefined;combinedSourceIds=null;
       hideOperands.parentElement!.hidden=true;previewId++;preview.hidden=true;status.textContent='候補を取り消しました。';
-    },status)
+    },status),'cancel')
   );
   pointIndex.onchange=()=>{clearErasePreview();syncPoint();};
   appearance.onchange=()=>{clearErasePreview();if(path)path=draft();void refresh();};

@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {ADJUSTMENT_KINDS,type LayerAdjustment,type LayerBlend} from '@illustro/core';
 import {button,labelledField,numberField,paintPreview,selectField} from '../artwork/tools';
 import {applyRasterEffects} from './rasterFilters';
@@ -75,10 +76,10 @@ export function installAdjustmentPanel(host:HTMLElement,open:(edit:boolean)=>Pro
     if(ticket!==version)return;
     paintPreview(before,a.data,a.width,a.height);paintPreview(after,b.data,b.width,b.height);comparison.hidden=false;
     status.textContent='選んだ範囲と強さを反映した比較です。';
-  },status),button('確定',async()=>{
+  },status),toolConfirmation(button('確定',async()=>{
     await session!.apply(...options(),toneEffects[step.kind as LayerAdjustment['kind']].label);
     session=null;fields.hidden=true;invalidate();status.textContent='調整を作品に保存しました。いつでも調整を開き直せます。';
-  },status),button('取り消す',()=>{session=null;fields.hidden=true;invalidate();},status));
+  },status),'apply'),toolConfirmation(button('取り消す',()=>{session=null;fields.hidden=true;invalidate();},status),'cancel'));
   fields.append(actions);
   panel.append(title,button('調整レイヤーを追加',()=>start(false),status),
     button('選んだ調整レイヤーを編集',()=>start(true),status),fields,status);host.append(panel);

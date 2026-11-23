@@ -81,6 +81,14 @@ export class CoreDocument{
     const revisions=snapshot.revisions.map(revision=>Object.freeze({...revision,root:Object.freeze({...revision.root,documentId,...(revision.id===this.head?{name:title}:{})})}));
     return CoreDocument.restore({snapshot:{...snapshot,revisions},blockPayloads:this.persistenceBlockPayloads(snapshot)});
   }
+  historyNavigationState(){return this.historyValue.navigationState();}
+  /** Roll back a local restore before its persistence handoff is sent. */
+  discardUnpublishedHistoryRestore(id:RevisionId,prior:Readonly<{head:RevisionId;redo:readonly RevisionId[]}>){
+    const stamp=this.currentRevision.commitStamp;
+    if(!stamp||stamp.writerEpochId!==this.writerEpochId||stamp.commitSequence!==this.commitSequenceValue||
+      !this.historyValue.discardUnpublishedRestore(id,prior))return false;
+    this.commitSequenceValue--;return true;
+  }
   previewHistoryNavigation(steps:readonly ('undo'|'redo')[]){return this.historyValue.previewNavigation(steps);}
   get nextRedoLabel(){return this.historyValue.nextRedo?.command?.label??null;}
   undo(){return this.historyValue.undo();}redo(){return this.historyValue.redo();}hasRevision(id:RevisionId){return this.historyValue.has(id);}revision(id:RevisionId){return this.historyValue.get(id);}

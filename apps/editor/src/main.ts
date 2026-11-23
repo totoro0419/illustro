@@ -1,3 +1,5 @@
+import {translateUi,uiLocale} from './ui/language';
+import {previewLegacyMacro} from './ui/legacyMacroPreview';
 import {decodeSavedPosition,describePosition,IMAGE_POSITION_SECTION} from './export/imagePosition';
 import {artworkComparison} from './ui/artworkComparison';
 import {installToolConfirmation,toolConfirmation} from './ui/toolConfirmation';
@@ -134,7 +136,7 @@ import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
 import {cursorState,compilePreset,layerMaskTile,TILE,type FoundationPreset,type StrokeRecord} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,resizeImageRegion,type ImageResample} from './canvasGeometry';
-import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportOptions,type ImageExportResult} from './export/basicExport';
+import {captureExport,captureExportLayers,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportOptions,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import {createPortableDocument,openPortableDocument,type PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
@@ -170,15 +172,28 @@ function placeContextBar(){
   (mobile?app:contextStrip)?.append(contextBar);
 }
 const refreshPhoneConfirmation=installToolConfirmation(contextBar,app,()=>{
-  if(!phoneContext.matches)return null;
+  if(!phoneContext.matches||app.inert)return null;
   const geometry=document.getElementById('geometryDialog');
   if(geometry instanceof HTMLDialogElement&&geometry.open)return geometry;
   const content=byId('documentBoxBody');
   const panel=content.dataset.activeToolPanel;
-  return panel?content.querySelector('details[open][data-tool-panel="'+panel+'"]'):
-    [...byId('effectsBoxBody').querySelectorAll('details[open]')].findLast(item=>item.getClientRects().length&&item.querySelector('[data-tool-confirm]'))??null;
+  const selected=panel?content.querySelector('details[open][data-tool-panel="'+panel+'"]'):null;
+  if(selected)return selected;
+  const candidates=[...app.querySelectorAll('details[open]')].filter(item=>
+    item.getClientRects().length&&item.querySelector('[data-tool-confirm]')&&
+    !item.querySelector('details[open] [data-tool-confirm]'));
+  const focused=document.activeElement;
+  return candidates.find(item=>focused&&item.contains(focused))??candidates.at(-1)??null;
 });
-phoneContext.addEventListener('change',()=>{placeContextBar();refreshPhoneConfirmation();});
+function updatePhoneKeyboardInset(){
+  const viewport=window.visualViewport;
+  const inset=phoneContext.matches&&viewport&&viewport.scale===1?
+    Math.max(0,document.documentElement.clientHeight-viewport.height-Math.max(0,viewport.offsetTop)):0;
+  document.documentElement.style.setProperty('--phone-keyboard-inset',Math.round(inset)+'px');
+}
+window.visualViewport?.addEventListener('resize',updatePhoneKeyboardInset);
+window.visualViewport?.addEventListener('scroll',updatePhoneKeyboardInset);
+phoneContext.addEventListener('change',()=>{placeContextBar();refreshPhoneConfirmation();updatePhoneKeyboardInset();});
 placeContextBar();
 // Read-only TouchEvent/PointerEvent logger in opt-in QA builds. No gesture changes.
 installPassiveTouchProbe();
@@ -1234,6 +1249,8 @@ const renderLayers=()=>{
     previousLayerListDocument=controller.document;previousLayerListKey=nextLayerListKey;
   for(const id of ['layerList','layerPageList']){
     const list=byId<HTMLDivElement>(id);
+    const focused=document.activeElement;
+    const focusedRow=focused instanceof HTMLButtonElement&&list.contains(focused)?focused.dataset.layerId:null;
     const matching=id==='layerPageList'?rows.filter(layer=>{
       const tagMatches=!tagFilter||(layer.colorTag??'none')===tagFilter;
       const kind=layer.baseColor==='white'?'background':layer.kind;
@@ -1417,6 +1434,7 @@ const renderLayers=()=>{
     }
     const scrollTop=list.scrollTop;
     list.replaceChildren(...entries);
+    if(focusedRow)list.querySelector<HTMLElement>('[data-layer-id="'+CSS.escape(focusedRow)+'"]')?.focus({preventScroll:true});
     list.scrollTop=scrollTop;
     if(!entries.length)list.textContent=selectedLayer.implicitRaster?'ひと筆描くとレイヤーができます。':'一致するレイヤーがありません。';
   }
@@ -1976,6 +1994,26 @@ keyboardCanvas.addEventListener('keydown',event=>{
   }
   event.preventDefault();event.stopPropagation();
 });
+for(const listId of ['layerList','layerPageList']){
+  const list=byId(listId);
+  list.setAttribute('role','group');list.setAttribute('aria-label','レイヤー一覧');
+  list.addEventListener('keydown',event=>{
+    if(event.ctrlKey||event.altKey||event.metaKey||event.shiftKey||
+      !(event.target instanceof HTMLButtonElement)||!event.target.dataset.layerId)return;
+    const rows=[...list.querySelectorAll<HTMLButtonElement>('.layer-row[data-layer-id]')];
+    if(!rows.length)return;
+    const index=rows.indexOf(event.target);
+    let next:number;
+    switch(event.key){
+      case 'ArrowUp':next=Math.max(0,index-1);break;
+      case 'ArrowDown':next=Math.min(rows.length-1,index+1);break;
+      case 'Home':next=0;break;
+      case 'End':next=rows.length-1;break;
+      default:return;
+    }
+    event.preventDefault();event.stopPropagation();rows[next]?.focus();
+  });
+}
 const contextToolLabels:Record<string,string>={selection:'選択',transform:'変形',move:'移動',shapes:'図形',rulers:'定規',pixels:'1pxドットペン'};
 function updateContextBar(){
   refreshPhoneConfirmation();
@@ -1993,14 +2031,15 @@ function updateContextBar(){
     source:sampleSource==='layer'?'layer':sampleSource==='specific'?'specific':'composite',
     layerId:sampleLayerId?sampleLayerId as LayerId:null,
   },controller.layers.map(item=>({id:item.id,name:item.name})));
-  tool.textContent='道具: '+(fill?'塗りつぶし':wet?wet.tool:contextToolLabels[activeCanvasTool]??(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':(surface?.brushName??'ブラシ')+(inputPreferences.paintBehind?'（背面）':'')));
-  layer.textContent=fill?'塗り先: '+fill.destination:wet?.separate?'描画先: 新規レイヤー':'描画先: '+(active?controller.selectedLayer.name:'作品なし');
+  tool.textContent=translateUi('道具')+': '+(fill?'塗りつぶし':wet?wet.tool:contextToolLabels[activeCanvasTool]??(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':(surface?.brushName??'ブラシ')+(inputPreferences.paintBehind?'（背面）':'')));
+  layer.textContent=fill?'塗り先: '+fill.destination:wet?.separate?'描画先: 新規レイヤー':translateUi('描画先')+': '+(active?controller.selectedLayer.name:'作品なし');
   const selected=surface?.selectedRectangle;
   selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):c06Selection?.active()?'選択範囲あり':'選択なし';
   byId('c04ContextPending').textContent=historyPending?'履歴を反映中':
     wet?.pending?'混色を確定中':surface?.inputActive?'描画中':surface?.busy?'線の反映中':
     geometryBusy?'変更を処理中':surface?.hasCanvasEditPreview?'操作候補・未確定':fill?.pending?'塗り候補・未確定':surface?.selectingRectangle?'範囲を指定中':'';
 }
+window.addEventListener('illustro:language-change',updateContextBar);
 byId<HTMLButtonElement>('c04ContextTool').onclick=()=>{
   if(activeCanvasTool){shellUi.openBox('documentBox');return;}
   if(selectedTool==='eyedropper'){byId('openEyedropperSettings').click();return;}
@@ -2274,7 +2313,7 @@ function saveNamedArtworkSnapshot(reopen:()=>void){
   const title=document.createElement('h2'),nameLabel=document.createElement('label'),memoLabel=document.createElement('label');
   const input=document.createElement('input'),memo=document.createElement('textarea');
   const save=document.createElement('button'),cancel=document.createElement('button');
-  const date=new Date(artwork.root.metadata.modifiedAt).toLocaleString('ja-JP');
+  const date=new Date(artwork.root.metadata.modifiedAt).toLocaleString(uiLocale());
   title.textContent='現在の状態を名前付きで残す';
   nameLabel.textContent='名前 ';
   input.required=true;input.maxLength=160;input.value=date;
@@ -2462,7 +2501,7 @@ function createHistorySettings(artwork:CoreDocument,entries:ReturnType<CoreDocum
   for(const entry of candidates){
     const item=document.createElement('li');
     const label=entry.label==='Brush stroke'?'描画':entry.label==='Add raster layer'?'レイヤーを追加':entry.label;
-    item.textContent=label+' · '+new Date(entry.committedAt).toLocaleString('ja-JP');
+    item.textContent=label+' · '+new Date(entry.committedAt).toLocaleString(uiLocale());
     removed.append(item);
   }
   removed.className='history-cleanup-list';
@@ -2558,7 +2597,7 @@ function openArtworkHistory(){
     const page=entries.slice(shown,shown+200);
     for(const entry of page){
       const label=entry.label==='Add raster layer'?'レイヤーを追加':entry.label==='Brush stroke'?'描画':entry.label;
-      const time=new Date(entry.committedAt).toLocaleString('ja-JP');
+      const time=new Date(entry.committedAt).toLocaleString(uiLocale());
       const description=entry.snapshot?'保存した状態「'+entry.snapshot.name+'」':label;
       list.add(new Option((entry.id===head?'現在 · ':'')+description+' · '+time,entry.id));
     }
@@ -3153,8 +3192,18 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
   try{
     for(const direction of directions){const change=admittedHistoryChanges.shift();if(!change||change.direction!==direction)throw new Error('履歴操作の順序が一致しません。');if(change.changed)changes.push(change);}
     if(!changes.length){byId('status').textContent='これ以上その方向へ履歴を移動できません。';return;}
+    const macroViews=macroPresentations.get(controller.document);
+    const viewBefore=macroViews?.size?macroPresentationSignature():null;
     updateQa();
     if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'||op.kind==='layer.delete'||op.kind==='layer.snapshot'||op.kind==='document.history-restore')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
+    for(const change of changes){
+      const backwards=change.direction==='undo',id=backwards?change.fromRevision:change.toRevision;
+      const view=macroViews?.get(id);
+      if(view){
+        const expected=backwards?view.after:view.before,prepared=backwards?view.before:view.after;
+        if(expected.signature===viewBefore||expected.signature===macroPresentationSignature())prepared.restore();
+      }
+    }
     undoCount+=changes.filter(c=>c.direction==='undo').length;redoCount+=changes.filter(c=>c.direction==='redo').length;
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(changes.flatMap(c=>c.operations));
     const last=changes.at(-1)!;byId('status').textContent=last.direction==='undo'?'前の状態に戻しました。':'取り消した操作をやり直しました。';
@@ -3746,7 +3795,7 @@ function showExternalSaveConflict(error:ExternalFileConflict,local:CoreDocument)
   const dialog=document.createElement('dialog'),section=document.createElement('section'),title=document.createElement('h2');
   const details=document.createElement('p'),status=document.createElement('output'),previews=document.createElement('div');
   title.textContent='保存先に別の版があります';
-  details.textContent=error.changedFile.name+' · '+new Date(error.changedFile.lastModified).toLocaleString('ja-JP');
+  details.textContent=error.changedFile.name+' · '+new Date(error.changedFile.lastModified).toLocaleString(uiLocale());
   status.setAttribute('aria-live','polite');
   previews.className='artwork-history-previews';
   dialog.className='export-dialog artwork-history-dialog';dialog.setAttribute('aria-label',title.textContent);
@@ -4392,12 +4441,156 @@ async function artworkPreviewPixels(scene:FrozenExport,width:number,height:numbe
   options?.signal.throwIfAborted();
   return new Uint8ClampedArray(resizeImagePixels(full,scene.width,scene.height,width,height,'auto'));
 }
+type MacroPresentation=Readonly<{signature:string;restore:()=>void}>;
+const macroPresentations=new WeakMap<CoreDocument,Map<RevisionId,Readonly<{before:MacroPresentation;after:MacroPresentation}>>>();
+let lastViewMacro:Readonly<{artwork:CoreDocument;before:MacroPresentation;after:MacroPresentation}>|null=null;
+function macroPresentationSignature(){
+  return JSON.stringify([surface?.viewState,surface?.brushId,selectedTool,surface?.panTool,activeCanvasTool,
+    surface?.inspectedLayer?.id,surface?.selectedRectangle,foreground.current,foreground.opacity,
+    byId<HTMLInputElement>('guideEnabled').checked,shellUi.layerPageOpen(),byId('workspaceToggle').getAttribute('aria-expanded'),
+    byId('c04FocusToggle').getAttribute('aria-pressed'),
+    Array.from(app.querySelectorAll<HTMLElement>('.workspace-box .box-toggle')).map(item=>item.getAttribute('aria-expanded'))]);
+}
+function captureMacroPresentation(artwork:CoreDocument):MacroPresentation{
+  const view=surface?.viewState,brush=surface?.brushId,wasEyedropper=selectedTool==='eyedropper',wasPan=surface?.panTool;
+  const solo=surface?.inspectedLayer?.id??null,selection=c06Selection?.active()??null,rect=surface?.selectedRectangle??null;
+  const guide=byId<HTMLInputElement>('guideEnabled'),guideEnabled=guide.checked,tool=activeCanvasTool;
+  const focus=byId('c04FocusToggle').getAttribute('aria-pressed'),resetShell=shellUi.checkpoint();
+  const resetLayout=c04WorkspaceService?.checkpoint(),resetColor=foreground.checkpoint();
+  return {signature:macroPresentationSignature(),restore:()=>{
+    const current=surface;
+    if(!current||controller.document!==artwork)return;
+    resetColor();resetLayout?.();
+    if(brush)selectPreset(brush);
+    if(wasEyedropper)activateEyedropper();
+    else if(tool==='selection')byId('selection').click();
+    else if(tool)openCanvasTool(tool);
+    current.panTool=!!wasPan;byId('panView').setAttribute('aria-pressed',String(!!wasPan));
+    current.setSoloLayer(solo&&artwork.root.hasLayer(solo)?solo:null);
+    if(selection&&selection.width===artwork.root.width&&selection.height===artwork.root.height)
+      c06Selection?.replaceActive(selection);
+    else c06Selection?.clear();
+    current.restoreRectangleSelection(rect);
+    if(view)current.restoreView(view);
+    guide.checked=guideEnabled;refreshGuideSettings();
+    resetShell();
+    if(byId('c04FocusToggle').getAttribute('aria-pressed')!==focus)byId('c04FocusToggle').click();
+    renderLayers();reflectRailTool();
+  }};
+}
+async function commitMacroRestore(artwork:CoreDocument,tx:ReturnType<CoreDocument['begin']>){
+  const layer=controller.selectedLayerId,order=artwork.root.rootLayerIds,prior=artwork.historyNavigationState();
+  const priorHandoff=controller.lastPersistenceHandoff,committed=tx.commit();
+  controller.lastPersistenceHandoff=committed.persistence;
+  controller.restoreEditHistory(order);checkpointNeedsFullSeed=true;
+  try{
+    await reloadGeometryProjection();
+  }catch(error){
+    if(controller.document===artwork&&artwork.discardUnpublishedHistoryRestore(committed.revision.id,prior)){
+      controller.lastPersistenceHandoff=priorHandoff;controller.restoreEditHistory(order);
+      if(artwork.root.hasLayer(layer))controller.selectLayer(layer);
+      try{await reloadGeometryProjection();}catch{/* The original Core revision remains available for reopening. */}
+    }
+    throw error;
+  }
+  queueLatestCommit();persistence.noteNavigation(artwork);
+  return committed;
+}
 const c04MacroService=installSimpleMacros(c04Commands,{
   layers:()=>{
     if(!documentReady)return [];
     const root=controller.document.root;
     return root.rootLayerIds.filter(id=>!root.getLayer(id).baseColor&&!root.isLayerLocked(id))
       .map(id=>({id,name:root.getLayer(id).name,opacity:root.getLayer(id).opacity,active:id===controller.selectedLayerId}));
+  },
+  applyLegacy:async(steps,name,signal)=>{
+    const drawing=surface,artwork=controller.document,head=artwork.head,layer=controller.selectedLayerId;
+    const valid=()=>controller.document===artwork&&artwork.head===head&&surface===drawing&&
+      documentReady&&!documentActivationPending&&!geometryBusy&&!historyPending&&!drawing?.busy;
+    if(!drawing||!valid()||drawing.hasCanvasEditPreview||c06Selection?.isPending())
+      throw Error('今の操作が終わってから操作セットを実行してください。');
+    const plan=previewLegacyMacro(artwork,layer,steps),original=artwork.revision(plan.revision).root;
+    const changed=plan.revision!==head||plan.flags.some(flag=>{
+      const item=original.getLayer(flag.id);
+      return !!item.alphaLocked!==flag.alphaLocked||(item.clipSourceId??null)!==flag.clipSourceId;
+    });
+    if(!changed&&!plan.views.length){
+      if(plan.failed)throw Error(plan.failed.index+'番目の操作で停止しました。'+plan.failed.reason);
+      return false;
+    }
+    const before=captureExport(artwork),after={...captureExport(artwork,undefined,plan.revision),layers:captureExportLayers(plan.root)};
+    const ratio=Math.min(1,290/Math.max(before.width,before.height,after.width,after.height));
+    const w=Math.max(1,Math.round(Math.max(before.width,after.width)*ratio));
+    const h=Math.max(1,Math.round(Math.max(before.height,after.height)*ratio));
+    const compare=async(scene:FrozenExport)=>{
+      const width=Math.max(1,Math.round(scene.width*ratio)),height=Math.max(1,Math.round(scene.height*ratio));
+      const pixels=await artworkPreviewPixels(scene,width,height);signal.throwIfAborted();
+      const result=new Uint8ClampedArray(w*h*4);
+      for(let y=0;y<height;y++)result.set(pixels.subarray(y*width*4,(y+1)*width*4),y*w*4);
+      return result;
+    };
+    const beforePixels=await compare(before);
+    const detail=artworkComparison(w,h,[{label:'変更前',pixels:beforePixels},
+      {label:'操作セットの候補',pixels:changed?await compare(after):beforePixels}]);
+    const issue=plan.failed?plan.failed.index+'番目で停止しました。'+plan.failed.reason+'。ここまでを適用する場合は選んでください。':'操作セット「'+name+'」を適用しますか？';
+    if(await appChoose(issue,[{value:'apply',label:plan.failed?'ここまでを適用':'適用'}],detail)!=='apply')
+      throw new DOMException('実行を取り消しました。','AbortError');
+    if(!valid()||controller.selectedLayerId!==layer)throw Error('作品や履歴が変更されました。');
+    signal.throwIfAborted();
+    const previous=captureMacroPresentation(artwork);
+    const progress=document.createElement('dialog'),message=document.createElement('p'),cancel=document.createElement('button');
+    progress.className='illustro-app-dialog';progress.setAttribute('aria-label','操作セットを実行中');
+    message.setAttribute('role','status');cancel.textContent='操作を取り消す';
+    const cancelPlayback=new AbortController();
+    const stop=()=>cancelPlayback.abort();
+    cancel.onclick=stop;progress.oncancel=event=>{event.preventDefault();stop();};
+    const previousFocus=document.activeElement;
+    progress.append(message,cancel);document.body.append(progress);progress.showModal();
+    try{
+      for(const [index,step] of plan.views.entries()){
+        signal.throwIfAborted();cancelPlayback.signal.throwIfAborted();
+        if(!valid())throw Error('作品が変更されたため中止しました。');
+        message.textContent=(index+1)+' / '+plan.views.length+' 表示・道具設定を反映中';
+        const result=await c04Commands.invokeAsync(step);
+        if(!result.ok||!result.settled)throw Error('「'+(c04Commands.list().find(command=>command.id===step)?.label??step)+'」を実行できません。 '+(result.reason??''));
+      }
+      signal.throwIfAborted();cancelPlayback.signal.throwIfAborted();
+      if(!valid())throw Error('作品が変更されたため中止しました。');
+      if(changed){
+        cancel.disabled=true;message.textContent='作品に反映しています。';
+        const tx=artwork.begin(name);
+        if(tx.restoreRevision(plan.revision,plan.flags)){
+          const viewResult=plan.views.length?captureMacroPresentation(artwork):null;
+          geometryBusy=true;drawing.setInputBarrier(true);
+          try{
+            const committed=await commitMacroRestore(artwork,tx);
+            if(viewResult){
+              viewResult.restore();
+              const effects=macroPresentations.get(artwork)??new Map();
+              effects.set(committed.revision.id,{before:previous,after:captureMacroPresentation(artwork)});
+              if(effects.size>24)effects.delete(effects.keys().next().value!);
+              macroPresentations.set(artwork,effects);
+            }
+          }finally{
+            geometryBusy=false;surface?.setInputBarrier(historyPending);updateHistoryButtons();updateQa();
+          }
+        }else tx.cancel();
+      }
+      if(!changed&&plan.views.length)lastViewMacro={artwork,before:previous,after:captureMacroPresentation(artwork)};
+      return changed||plan.views.length>0;
+    }catch(error){
+      if(controller.document===artwork&&artwork.head===head)previous.restore();
+      throw error;
+    }finally{
+      progress.close();progress.remove();
+      if(previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});
+    }
+  },
+  undoPresentation:()=>{
+    const saved=lastViewMacro;
+    if(!saved||saved.artwork!==controller.document||!surface||surface.busy||geometryBusy||historyPending||
+      saved.after.signature!==macroPresentationSignature())return false;
+    lastViewMacro=null;saved.before.restore();return true;
   },
   applyHistory:async(steps,name,signal)=>{
     const drawing=surface,artwork=controller.document,head=artwork.head;
@@ -4424,14 +4617,11 @@ const c04MacroService=installSimpleMacros(c04Commands,{
     signal.throwIfAborted();
     if(artwork.head!==head||controller.document!==artwork||surface!==drawing||historyPending||geometryBusy||drawing.busy)
       throw Error('作品や履歴が変更されたため、実行を取り消しました。');
-    const order=artwork.root.rootLayerIds;
     geometryBusy=true;drawing.setInputBarrier(true);
     try{
       const tx=artwork.begin(name);
       if(!tx.restoreRevision(next)){tx.cancel();return false;}
-      controller.lastPersistenceHandoff=tx.commit().persistence;
-      controller.restoreEditHistory(order);queueLatestCommit();persistence.noteNavigation(artwork);
-      checkpointNeedsFullSeed=true;await reloadGeometryProjection();
+      await commitMacroRestore(artwork,tx);
       return true;
     }finally{
       geometryBusy=false;surface?.setInputBarrier(historyPending);updateHistoryButtons();updateQa();
