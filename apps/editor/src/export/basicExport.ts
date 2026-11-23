@@ -1,3 +1,4 @@
+import {writeExif,type ImagePosition} from './imagePosition';
 import {addRasterMetadata} from './rasterMetadata';
 import {runIcc} from './iccRun';
 import {srgbIccBytes} from './iccMetadata';
@@ -358,7 +359,7 @@ function deflateStored(source:Uint8Array):Uint8Array{
   for(let i=0;i<source.length;i++){a=(a+source[i]!)%65521;b=(b+a)%65521;}
   write32(out,at,((b<<16)|a)>>>0);return out;
 }
-type PngMetadata=Readonly<{includeIcc?:boolean;iccProfile?:Uint8Array;author?:string;copyright?:string}>;
+type PngMetadata=Readonly<{includeIcc?:boolean;iccProfile?:Uint8Array;author?:string;copyright?:string;position?:ImagePosition}>;
 export async function encodePng(pixels:Uint8ClampedArray,width:number,height:number,dpi?:number,metadata:PngMetadata={}):Promise<Blob>{
   if(pixels.length!==width*height*4)throw new Error('PNGの画素数が正しくありません。');
   const stride=width*4,raw=new Uint8Array((stride+1)*height);
@@ -391,6 +392,7 @@ export async function encodePng(pixels:Uint8ClampedArray,width:number,height:num
   for(const [label,value] of [['Author',metadata.author],['Copyright',metadata.copyright]] as const){
     if(value?.trim())textChunks.push(pngChunk('iTXt',new TextEncoder().encode(label+'\0\0\0\0\0'+value.trim().slice(0,4096).replaceAll('\0',''))));
   }
+  if(metadata.position)textChunks.push(pngChunk('eXIf',writeExif(dpi,metadata.position)));
   const density:Uint8Array[]=[];
   if(dpi!==undefined){
     if(!Number.isFinite(dpi)||dpi<1||dpi>2400)throw Error('PNGのDPIは1〜2400で指定してください。');
@@ -480,7 +482,7 @@ export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality
     format==='webp'&&options.losslessWebp?await encodeLosslessWebp(output,width,height):await encodeBrowser(output,width,height,format,quality);
   if(format!=='png')blob=await addRasterMetadata(blob,format,width,height,{
     ...(profile?{profile}:{}),...(dpi===undefined?{}:{dpi}),
-    ...(pngMetadata?.author?{author:pngMetadata.author}:{}),...(pngMetadata?.copyright?{copyright:pngMetadata.copyright}:{})
+    ...(pngMetadata?.author?{author:pngMetadata.author}:{}),...(pngMetadata?.copyright?{copyright:pngMetadata.copyright}:{}),...(pngMetadata?.position?{position:pngMetadata.position}:{})
   });
   await verifyImage(blob,format,width,height);
   if(original&&options.comparison){

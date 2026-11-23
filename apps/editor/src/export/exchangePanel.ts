@@ -1,3 +1,4 @@
+import {describePosition,type ImagePosition} from './imagePosition';
 import {runIcc} from './iccRun';
 import {srgbIccBytes,ICC_LIMIT,validIccBytes} from './iccMetadata';
 import type {CoreDocument} from '@illustro/core';
@@ -7,7 +8,7 @@ import {button,labelledField,numberField,selectField} from '../artwork/tools';
 import {exchangeFileName,exchangeWarnings,exportExchange,importExchange} from './exchange';
 import type {ExchangeFormat} from './exchangeTypes';
 
-export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(blob:Blob,name:string)=>void){
+export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(blob:Blob,name:string)=>void,position?:ImagePosition){
   const dialog=document.createElement('dialog');
   dialog.className='export-dialog';dialog.setAttribute('aria-label','他の形式で書き出す');
   const section=document.createElement('section');section.className='c06-clipboard-grid';
@@ -29,15 +30,17 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   const outputDensity=numberField(metadata,'DPI',doc.root.info.dpi??96,1,2400);
   const author=document.createElement('input');author.maxLength=500;labelledField(metadata,'作者',author);
   const rights=document.createElement('input');rights.maxLength=500;labelledField(metadata,'権利',rights);
+  const includePosition=document.createElement('input');includePosition.type='checkbox';
+  if(position)labelledField(metadata,'読み込み元の位置情報を含める（'+describePosition(position)+'）',includePosition);
   const privacy=document.createElement('p');
-  privacy.textContent='位置情報と元の画像に含まれていたその他の情報は除外します。';
+  privacy.textContent='位置情報は初期状態で除外します。元のファイルに含まれていたその他の情報も除外されます。';
   metadata.append(privacy);
   const refreshMetadata=()=>{
     const colorAllowed=['psd','psb','ora','tiff'].includes(format.value)||format.value==='svg'&&style.value==='flat';
     outputColor.disabled=!colorAllowed;
     outputProfile.parentElement!.hidden=!colorAllowed||outputColor.value!=='custom';
     outputDensity.disabled=!['psd','psb','ora','tiff','svg'].includes(format.value);
-    author.disabled=rights.disabled=format.value==='avif';
+    includePosition.disabled=author.disabled=rights.disabled=format.value==='avif';
   };
   for(const control of [format,style,outputColor])control.addEventListener('change',refreshMetadata);
   refreshMetadata();
@@ -209,7 +212,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     }
     if(!outputDensity.disabled&&(!outputDensity.value||!outputDensity.validity.valid))throw Error('DPIを1〜2400で指定してください。');
     const blob=await exportExchange(doc,selected,layered,quality.valueAsNumber,lossless.checked,{
-      ...(profile?{profile}:{}),...(!outputDensity.disabled?{dpi:outputDensity.valueAsNumber}:{}),
+      ...(profile?{profile}:{}),...(position&&!includePosition.disabled&&includePosition.checked?{position}:{}),...(!outputDensity.disabled?{dpi:outputDensity.valueAsNumber}:{}),
       ...(!author.disabled?{author:author.value,copyright:rights.value}:{}),
     });
     if(dialog.open){download(blob,outputName);status.textContent=outputName+' を作成しました。';}

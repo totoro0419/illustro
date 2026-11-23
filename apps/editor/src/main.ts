@@ -1,5 +1,6 @@
+import {decodeSavedPosition,describePosition,IMAGE_POSITION_SECTION} from './export/imagePosition';
 import {artworkComparison} from './ui/artworkComparison';
-import {installToolConfirmation} from './ui/toolConfirmation';
+import {installToolConfirmation,toolConfirmation} from './ui/toolConfirmation';
 import {readPointerButtons} from './pointerPanBinding';
 import {cropRestorePlan,mergeRetainedCrop} from './cropRetention';
 import {installStrokeComparison,type StrokeComparison} from './ui/strokeComparison';
@@ -135,7 +136,7 @@ import {cursorState,compilePreset,layerMaskTile,TILE,type FoundationPreset,type 
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,resizeImageRegion,type ImageResample} from './canvasGeometry';
 import {captureExport,compositeLayer,encodePng,exportImage,exportFileName,renderFrozenArtwork,renderFrozenArtworkTiledPreview,type FrozenExport,type ImageFormat,type ImageExportOptions,type ImageExportResult} from './export/basicExport';
 import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
-import type {PortableOpenResult} from './persistence/portable';
+import {createPortableDocument,openPortableDocument,type PortableOpenResult} from './persistence/portable';
 import {convertLegacyStrokeFile,isLegacyStrokeFile,legacySourcePreview} from './persistence/openLegacy';
 import {fingerprintRenderedPixels,sameRenderedPixels,type VisualFingerprint} from './persistence/visualIntegrity';
 import {storeCreationTemplate,resolveDocumentDimensions,type TemplateContent} from './documentSetup';
@@ -170,6 +171,8 @@ function placeContextBar(){
 }
 const refreshPhoneConfirmation=installToolConfirmation(contextBar,app,()=>{
   if(!phoneContext.matches)return null;
+  const geometry=document.getElementById('geometryDialog');
+  if(geometry instanceof HTMLDialogElement&&geometry.open)return geometry;
   const content=byId('documentBoxBody');
   const panel=content.dataset.activeToolPanel;
   return panel?content.querySelector('details[open][data-tool-panel="'+panel+'"]'):
@@ -2217,6 +2220,8 @@ byId('cropStart').onclick=()=>openGeometry('document.crop');
 byId('canvasResizeStart').onclick=()=>openGeometry('document.canvas-resize');
 byId('imageResizeStart').onclick=()=>openGeometry('document.image-resize');
 byId('geometryCancel').onclick=closeGeometry;
+toolConfirmation(byId<HTMLButtonElement>('geometryApply'),'apply');
+toolConfirmation(byId<HTMLButtonElement>('geometryCancel'),'cancel');
 geometryDialog.addEventListener('cancel',e=>{e.preventDefault();closeGeometry();});
 for(const id of ['geometryWidth','geometryHeight','geometryX','geometryY'])dimensionInput(id).addEventListener('input',()=>{refreshResizeSize(id);redrawCrop();});
 let draggingCrop:{corner:string;startX:number;startY:number;endX:number;endY:number}|null=null;
@@ -3606,6 +3611,8 @@ async function openWorkFile(file:File,batch=false){
       const {artwork,selected}=createExchangeDocument(imported,flatten);
       const profile=imported.sourceIcc;
       const optionalSections=[
+        ...(imported.position?[{id:IMAGE_POSITION_SECTION,type:'application/json',required:false,
+          bytes:new TextEncoder().encode(JSON.stringify(imported.position))}]:[]),
         ...(profile&&profile.length<=ICC_LIMIT?[{id:ICC_ORIGINAL_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:profile}]:[]),
         ...(imported.assignedIcc?[{id:ICC_ASSIGNED_SECTION,type:ICC_ORIGINAL_TYPE,required:false,bytes:imported.assignedIcc}]:[]),
         ...(profile||imported.assignedIcc?[{id:ICC_IMPORT_ACTION,type:'text/plain',required:false,
@@ -3802,12 +3809,25 @@ byId<HTMLButtonElement>('exchangeExport').onclick=()=>{
   if(!documentReady)return;
   const artwork=controller.document;
   byId<HTMLDialogElement>('exportDialog').close();
-  openExchangePanel(artwork,()=>documentReady&&controller.document===artwork,c06Download);
+  openExchangePanel(artwork,()=>documentReady&&controller.document===artwork,c06Download,savedImagePosition());
 };
 const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTMLSelectElement>('exportFormat'),exportQuality=byId<HTMLInputElement>('exportQuality');
 const losslessWebp=byId<HTMLInputElement>('exportLosslessWebp');
 const exportIccFile=byId<HTMLInputElement>('exportColorProfile'),exportIncludeIcc=byId<HTMLInputElement>('exportIncludeIcc');
 const rasterPresetSelect=byId<HTMLSelectElement>('rasterExportPreset'),comparisonHost=byId('exportRasterComparison');
+function savedImagePosition(){
+  return decodeSavedPosition(persistence.preservedData?.optionalSections.find(section=>section.id===IMAGE_POSITION_SECTION)?.bytes);
+}
+const includePosition=document.createElement('input');includePosition.type='checkbox';
+const positionLabel=document.createElement('label'),positionText=document.createElement('span');
+positionLabel.append(includePosition,positionText);
+byId('exportPngMetadata').append(positionLabel);
+function syncPositionLabel(reset=false){
+  const position=savedImagePosition();
+  positionLabel.hidden=!position;
+  if(reset||!position)includePosition.checked=false;
+  positionText.textContent=position?' 読み込み元の位置情報を含める（'+describePosition(position)+'）':'';
+}
 let outputIcc:Uint8Array|null=null,needsOutputIcc=false,compareGeneration=0,profileRequest=0;
 function refreshRasterPresets(selected=''){
   rasterPresetSelect.replaceChildren(new Option('設定を選ぶ',''),...readRasterPresets(localStorage).map(item=>new Option(item.name,item.name)));
@@ -3855,6 +3875,7 @@ rasterPresetSelect.onchange=async()=>{
   byId<HTMLInputElement>('exportPixelScale').value=String(preset.scale);
   byId<HTMLInputElement>('exportDpi').checked=preset.dpi;
   byId<HTMLInputElement>('exportIncludeAuthor').checked=preset.author;
+  includePosition.checked=!positionLabel.hidden&&preset.position===true;
   byId<HTMLInputElement>('exportCopyright').value=preset.copyright;
   exportIccFile.value='';outputIcc=null;needsOutputIcc=preset.icc==='custom';
   exportIncludeIcc.checked=preset.icc!=='none';
@@ -3884,7 +3905,8 @@ byId<HTMLButtonElement>('rasterExportPresetSave').onclick=async()=>{
     try{writeRasterPreset(localStorage,{name,format:exportFormat.value as ImageFormat,quality:exportQuality.valueAsNumber,
       scale:scale.valueAsNumber,lossless:losslessWebp.checked,dpi:byId<HTMLInputElement>('exportDpi').checked,
       icc:exportIncludeIcc.checked?(outputIcc||needsOutputIcc?'custom':'srgb'):'none',
-      author:byId<HTMLInputElement>('exportIncludeAuthor').checked,copyright:byId<HTMLInputElement>('exportCopyright').value,
+      author:byId<HTMLInputElement>('exportIncludeAuthor').checked,position:includePosition.checked,
+      copyright:byId<HTMLInputElement>('exportCopyright').value,
       ...(profileKey?{profileKey}:{})});}
     catch(error){if(profileKey)void deleteExportProfile(profileKey).catch(()=>{});throw error;}
     if(old?.profileKey)void deleteExportProfile(old.profileKey).catch(()=>{});
@@ -3918,6 +3940,7 @@ byId<HTMLButtonElement>('exportImage').onclick=()=>{
   byId<HTMLOptionElement>('exportSelectionOption').disabled=!c06Selection?.active();
   byId<HTMLOptionElement>('exportActiveLayer').textContent=controller.selectedLayer.name+'だけ';
   updateExportOptions();
+  syncPositionLabel(true);
   exportDialog.showModal();
 };
 const exportSeparateLayers=document.createElement('button');exportSeparateLayers.type='button';
@@ -3948,10 +3971,10 @@ async function captureRasterExport(){
   const selection=scope==='selection'?c06Selection?.active():null;
   if(scope==='selection'&&!selection)throw Error('書き出す範囲を選んでください。');
   const layer=scope==='active'?controller.selectedLayer.id:scope==='solo'?solo?.id:undefined;
-  const dpi=artwork.root.info.dpi;
+  const dpi=artwork.root.info.dpi,position=includePosition.checked?savedImagePosition():undefined;
   const options:ImageExportOptions={pixelScale:scale.valueAsNumber,losslessWebp:losslessWebp.checked,
     ...(selection?{selection}:{}),...(dpi!==null&&byId<HTMLInputElement>('exportDpi').checked?{dpi}:{}),
-    pngMetadata:{includeIcc:exportIncludeIcc.checked,...(exportIncludeIcc.checked&&outputIcc?{iccProfile:outputIcc}:{}),
+    pngMetadata:{includeIcc:exportIncludeIcc.checked,...(position?{position}:{}),...(exportIncludeIcc.checked&&outputIcc?{iccProfile:outputIcc}:{}),
       ...(byId<HTMLInputElement>('exportIncludeAuthor').checked?{author:artwork.root.info.author}:{}),
       copyright:byId<HTMLInputElement>('exportCopyright').value}};
   return {fixed:captureExport(artwork,layer),format,quality,options};
@@ -4375,6 +4398,44 @@ const c04MacroService=installSimpleMacros(c04Commands,{
     const root=controller.document.root;
     return root.rootLayerIds.filter(id=>!root.getLayer(id).baseColor&&!root.isLayerLocked(id))
       .map(id=>({id,name:root.getLayer(id).name,opacity:root.getLayer(id).opacity,active:id===controller.selectedLayerId}));
+  },
+  applyHistory:async(steps,name,signal)=>{
+    const drawing=surface,artwork=controller.document,head=artwork.head;
+    if(!documentReady||!drawing||drawing.busy||historyPending||geometryBusy||documentActivationPending)
+      throw Error('今の操作が終わってから操作セットを実行してください。');
+    const next=artwork.previewHistoryNavigation(steps);
+    if(next===head)return false;
+    const before=captureExport(artwork),after=captureExport(artwork,undefined,next);
+    const ratio=Math.min(1,290/Math.max(before.width,before.height,after.width,after.height));
+    const w=Math.max(1,Math.round(Math.max(before.width,after.width)*ratio));
+    const h=Math.max(1,Math.round(Math.max(before.height,after.height)*ratio));
+    const compare=async(scene:FrozenExport)=>{
+      const width=Math.max(1,Math.round(scene.width*ratio)),height=Math.max(1,Math.round(scene.height*ratio));
+      const pixels=await artworkPreviewPixels(scene,width,height);signal.throwIfAborted();
+      const result=new Uint8ClampedArray(w*h*4);
+      for(let y=0;y<height;y++)result.set(pixels.subarray(y*width*4,(y+1)*width*4),y*w*4);
+      return result;
+    };
+    const details=artworkComparison(w,h,[
+      {label:'変更前',pixels:await compare(before)},{label:'履歴の操作後',pixels:await compare(after)}
+    ]);
+    const path=steps.map(step=>step==='undo'?'元に戻す':'やり直す').join(' → ');
+    if(await appChoose('「'+name+'」を実行しますか？\n'+path,[{value:'apply',label:'適用'}],details)!=='apply')return false;
+    signal.throwIfAborted();
+    if(artwork.head!==head||controller.document!==artwork||surface!==drawing||historyPending||geometryBusy||drawing.busy)
+      throw Error('作品や履歴が変更されたため、実行を取り消しました。');
+    const order=artwork.root.rootLayerIds;
+    geometryBusy=true;drawing.setInputBarrier(true);
+    try{
+      const tx=artwork.begin(name);
+      if(!tx.restoreRevision(next)){tx.cancel();return false;}
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      controller.restoreEditHistory(order);queueLatestCommit();persistence.noteNavigation(artwork);
+      checkpointNeedsFullSeed=true;await reloadGeometryProjection();
+      return true;
+    }finally{
+      geometryBusy=false;surface?.setInputBarrier(historyPending);updateHistoryButtons();updateQa();
+    }
   },
   applyLayer:async(target,steps,name,signal)=>{
     let changed=false;
@@ -5527,9 +5588,32 @@ const rasterEffectPanel=installRasterEffects(byId('effectsBoxBody'),{
       const ratio=Math.min(1,420/Math.max(width,height)),w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio));
       const preview=await artworkPreviewPixels(frozen,w,h);
       const action=await appChoose('合成を作品サイズ（'+width+' × '+height+' px、8ビット）で固定します。マスク・クリップ・グループの見た目を含みます。元のレイヤーは保持します。',
-        [{value:'copy',label:'非表示コピーを追加'},{value:'visible',label:'元を隠して統合版を表示'}],
+        [{value:'copy',label:'非表示コピーを追加'},{value:'visible',label:'元を隠して統合版を表示'},
+          {value:'sized',label:'寸法を指定して別作品に保存'}],
         artworkComparison(w,h,[{label:'固定する外観',pixels:preview}]));
       if(!action)return false;
+      if(action==='sized'){
+        const dimensions=await appPrompt('別作品の幅と高さ（px）を指定します。色深度は8ビットです。',width+', '+height,{
+          validate:value=>{
+            const parts=value.trim().split(/[\s,、]+/).map(Number),[x,y]=parts;
+            return parts.length===2&&parts.every(Number.isInteger)&&x!>=1&&y!>=1&&x!<=8192&&y!<=8192&&x!*y!<=16_777_216
+              ?null:'1〜8192px、合計1677万画素以内で幅と高さを指定してください。';
+          }
+        });
+        if(dimensions===null)return false;
+        const [targetWidth,targetHeight]=dimensions.trim().split(/[\s,、]+/).map(Number) as [number,number];
+        const sourcePixels=await renderFrozenArtwork(frozen);
+        const resized=new Uint8Array(resizeImagePixels(sourcePixels,width,height,targetWidth,targetHeight,'auto'));
+        const title=root.name.slice(0,100)+'（統合コピー）';
+        const newWork=new CoreDocument({name:title,width:targetWidth,height:targetHeight,
+          ...(root.info.dpi?{dpi:root.info.dpi}:{}),...(root.info.author?{author:root.info.author}:{})});
+        const id=newWork.defaultRasterLayerId,tx=newWork.begin('選んだ寸法で外観を固定');
+        tx.replaceLayerRaster(id,resized);tx.commit();
+        const encoded=await createPortableDocument({document:newWork,selectedLayerId:id});
+        await openPortableDocument(encoded.bytes);
+        c06Download(new Blob([new Uint8Array(encoded.bytes)],{type:'application/octet-stream'}),title.replace(/[\/:*?"<>|]/g,'_')+'.illustro');
+        return true;
+      }
       await withClipboardAccess(async()=>{
         if(artwork!==controller.document||artwork.head!==head||controller.selectedLayer.id!==layer.id)
           throw Error('対象が変わりました。');

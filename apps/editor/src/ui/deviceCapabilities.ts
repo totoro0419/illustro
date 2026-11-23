@@ -1,3 +1,4 @@
+import {lowLoadDisplay,setLowLoadDisplay} from './displayPerformance';
 type Measurements=Readonly<{
   renderer?:string|null;
   drawMs?:number|null;
@@ -10,6 +11,10 @@ export function installDeviceCapabilities(host:HTMLElement,measurements:()=>Meas
   const panel=document.createElement('details');panel.className='c06-clipboard-panel';
   const summary=document.createElement('summary');summary.textContent='端末で使える操作と処理時間';
   const measured=document.createElement('dl');
+  const mode=document.createElement('label'),lowLoad=document.createElement('input');
+  lowLoad.type='checkbox';lowLoad.checked=lowLoadDisplay();
+  mode.append(lowLoad,' 画面の描画を軽くする（作品の画素数は保持）');
+  lowLoad.onchange=()=>{setLowLoadDisplay(lowLoad.checked);void update();};
   const refresh=document.createElement('button');refresh.type='button';refresh.textContent='現在の状態を確認';
   const note=document.createElement('p');
   note.textContent='機器が届かせる筆圧や傾きは「ペン入力の確認」で試せます。作品ファイルを保存すれば、別の端末でも続きから編集できます。';
@@ -25,7 +30,7 @@ export function installDeviceCapabilities(host:HTMLElement,measurements:()=>Meas
     const storage=await navigator.storage?.estimate().catch(()=>null);
     if(version!==request)return;
     const rows=[
-      ['使用中の描画方式',results.renderer??'作品を開くと表示'],
+      ['使用中の描画方式',results.renderer==='canvas2d'?'Canvas2D（基本描画。仮線の見え方は簡易版）':results.renderer??'作品を開くと表示'],
       ['WebGPUの提供',api(!!navigatorApis.gpu)],
       ['まとめて届くペン入力',api(typeof pointer?.getCoalescedEvents==='function')],
       ['傾き・軸回転の情報欄',api(!!pointer&&'tiltX' in pointer&&'twist' in pointer)],
@@ -47,6 +52,6 @@ export function installDeviceCapabilities(host:HTMLElement,measurements:()=>Meas
   }
   refresh.onclick=()=>{void update();};
   panel.addEventListener('toggle',()=>{if(panel.open)void update();});
-  panel.append(summary,note,refresh,measured);host.append(panel);
+  panel.append(summary,note,mode,refresh,measured);host.append(panel);
   return ()=>{panel.open=true;panel.scrollIntoView({block:'nearest'});void update();};
 }

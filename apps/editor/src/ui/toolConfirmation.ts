@@ -21,7 +21,7 @@ export function installToolConfirmation(context:HTMLElement,app:HTMLElement,acti
     let hasAction=false;
     for(const entry of actions){
       const candidates=panel?[...panel.querySelectorAll<HTMLButtonElement>('[data-tool-confirm="'+entry.action+'"]')]
-        .filter(button=>!button.hidden&&!button.disabled&&button.getClientRects().length):[];
+        .filter(button=>!button.hidden&&!button.disabled):[];
       entry.target=candidates.sort((a,b)=>Number(b.dataset.toolConfirmPriority)-Number(a.dataset.toolConfirmPriority))[0]??null;
       entry.button.disabled=!entry.target;
       hasAction||=!!entry.target;

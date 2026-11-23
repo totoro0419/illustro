@@ -1,3 +1,4 @@
+import {toolConfirmation} from '../ui/toolConfirmation';
 import {button,labelledField,numberField,selectField} from '../artwork/tools';
 import type {BrushSurface} from '../brushSurface';
 import type {PortableSectionInput} from '../persistence/format';
@@ -183,7 +184,7 @@ export function installWetTools(host:HTMLElement,api:{
   const sourceButton=button('元を指定',()=>api.activate(()=>arm(true)),status);
   const start=button('キャンバスで使う',()=>api.activate(()=>arm()),status);
   const stop=button('筆を終了',()=>{leave();api.left();},status);
-  const actions=document.createElement('div');actions.className='box-actions';actions.append(sourceButton,start,stop);
+  const actions=document.createElement('div');actions.className='box-actions';actions.append(sourceButton,start,toolConfirmation(stop,'cancel'));
   for(const field of [mode,reference,...fields,separate,aligned,selectedPatch])field.onchange=()=>{
     if(field===mode||field===reference)offset=null;
     try{localStorage.setItem(key,snapshot());}catch{/* the current tool still works */}

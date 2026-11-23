@@ -27,3 +27,16 @@ describe('CoreDocument history',()=>{
     expect(d.canRedo).toBe(false);expect(d.head).toBe(cId);expect(d.redo().id).toBe(cId);expect(d.hasRevision(bId)).toBe(true);
   });
 });
+
+it('previews a sequence of undo and redo without moving or publishing the document head',()=>{
+  const doc=new CoreDocument({width:3,height:3}),initial=doc.head,layer=doc.defaultRasterLayerId;
+  const tx=doc.begin('paint');tx.setPixel(layer,0,0,[30,40,50,255]);
+  const painted=tx.commit().revision.id;
+  expect(doc.previewHistoryNavigation(['undo'])).toBe(initial);
+  expect(doc.previewHistoryNavigation(['undo','redo'])).toBe(painted);
+  expect(()=>doc.previewHistoryNavigation(['undo','undo'])).toThrow();
+  expect(doc.head).toBe(painted);expect(doc.canRedo).toBe(false);
+  doc.undo();
+  expect(doc.previewHistoryNavigation(['redo'])).toBe(painted);
+  expect(doc.head).toBe(initial);
+});

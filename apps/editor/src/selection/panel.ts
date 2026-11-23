@@ -384,7 +384,11 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const finishPolygon=asButton('多角形を閉じる',()=>{
     if(tool==='polygon'&&points.length>=3)applyShape({type:'polygon',points});
   });
-  tools.append(undoPoint,toolConfirmation(finishPolygon,'apply'));
+  const cancelPolygon=asButton('選んでいる点を取り消す',()=>{
+    points=[];drawing=null;overlayPath();refresh();
+  });
+  tools.append(undoPoint,toolConfirmation(finishPolygon,'apply'),toolConfirmation(cancelPolygon,'cancel'));
+  cancelPolygon.hidden=true;
   // Pixel-derived selection works with the artwork's actual pixel data.
   // All expensive scanning and connected-region search occurs in the worker.
   const autoSource=document.createElement('select');autoSource.setAttribute('aria-label','自動選択に使う画像');
@@ -729,6 +733,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     eraseByBrush.setAttribute('aria-pressed',String(tool==='brushSubtract'));
     undoPoint.disabled=tool!=='polygon'||points.length===0;
     finishPolygon.disabled=tool!=='polygon'||points.length<3;
+    cancelPolygon.hidden=tool!=='polygon'||!points.length;
     const enabled=!!active;
     for(const button of [clear,invert,shift,movePixels,grow,shrink,feather,border])button.disabled=!enabled;
     reselect.disabled=!lastSelection;undo.disabled=!history.length;redo.disabled=!future.length;

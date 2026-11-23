@@ -1,3 +1,4 @@
+import {extractExifPosition} from './imagePosition';
 import {xmp,type RasterMetadata} from './rasterMetadata';
 import {extractIsoImageIcc} from './isoImageIcc';
 import {type CoreDocument,type EditableArtwork,type EditablePath,type EditableText,type LayerId} from '@illustro/core';
@@ -34,9 +35,11 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
   const isIsoImage=format==='avif'||format==='heif';
   if(isIsoImage||format==='png'||format==='jpeg'||format==='webp'){
     const warnings:string[]=[];
+    let position:ReturnType<typeof extractExifPosition>;
     let sourceIcc:Uint8Array<ArrayBuffer>|null=null;
     try{
       const bytes=new Uint8Array(await file.arrayBuffer());
+      position=extractExifPosition(bytes);
       sourceIcc=isIsoImage?extractIsoImageIcc(bytes):await extractRasterIcc(bytes);
     }catch(error){warnings.push(error instanceof Error?error.message:String(error));}
     const canConvert=!!sourceIcc&&String.fromCharCode(...sourceIcc.subarray(16,20))==='RGB ';
@@ -47,7 +50,7 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
       if(isIsoImage)throw Error('このブラウザーでは'+format.toUpperCase()+'画像を開けません。');
       throw error;
     });
-    return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings,
+    return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings,...(position?{position}:{}),
       ...(sourceIcc?{sourceIcc,sourceIccBrowserConverted:!canConvert}:{})};
   }
   if(format==='svg')throw Error('SVGはこの画面では出力専用です。PNGに変換してから読み込んでください。');
@@ -60,7 +63,8 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
   }
   if(format==='tiff'){
     const {width,height,pixels,dpi,warnings,sourceIcc}=decodeTiff(bytes);
-    return {width,height,name,dpi,layers:[imageLayer(name,width,height,pixels)],warnings,...(sourceIcc?{sourceIcc}:{})};
+    const position=extractExifPosition(bytes);
+    return {width,height,name,dpi,layers:[imageLayer(name,width,height,pixels)],warnings,...(position?{position}:{}),...(sourceIcc?{sourceIcc}:{})};
   }
   throw Error('対応する交換形式ではありません。');
 }

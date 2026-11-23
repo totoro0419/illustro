@@ -81,6 +81,7 @@ export class CoreDocument{
     const revisions=snapshot.revisions.map(revision=>Object.freeze({...revision,root:Object.freeze({...revision.root,documentId,...(revision.id===this.head?{name:title}:{})})}));
     return CoreDocument.restore({snapshot:{...snapshot,revisions},blockPayloads:this.persistenceBlockPayloads(snapshot)});
   }
+  previewHistoryNavigation(steps:readonly ('undo'|'redo')[]){return this.historyValue.previewNavigation(steps);}
   get nextRedoLabel(){return this.historyValue.nextRedo?.command?.label??null;}
   undo(){return this.historyValue.undo();}redo(){return this.historyValue.redo();}hasRevision(id:RevisionId){return this.historyValue.has(id);}revision(id:RevisionId){return this.historyValue.get(id);}
   historyEntries(){

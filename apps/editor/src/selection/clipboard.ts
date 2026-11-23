@@ -1,7 +1,8 @@
+import {legacyProfileTransform} from '../color/legacyProfiles';
 import {appConfirm} from '../ui/appDialogs';
 /** C06 copy/cut/paste operating on real document pixels and history. */
 import {transformLayerMask,moveEditableArtwork,type EditableText,type RasterPixelTiles,type LayerNode,type LayerGroup,type LayerDeformation,type LayerMask,type LayerId,type LineRegions} from '@illustro/core';
-import {validateRecord,type StrokeRecord} from '@illustro/brush-rt';
+import {CanonicalBuilder,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 import {translateStroke} from '../seamlessStroke';
 import {describeStroke,strokeTilesForCanvas} from '../strokeCommit';
 import {digestLayerMask} from '../transform/mask';
@@ -274,11 +275,43 @@ export class ArtworkClipboard {
     controller:EditorController,
     placement:'center'|'original'|Readonly<{x:number;y:number}>='center'
   ){
-    const record=this.item;
+    let record=this.item;
     if(!record)throw Error('先にコピーしてください。');
     const document=controller.document,root=document.root,head=document.head,reference=controller.selectedLayer.id;
-    if(record.sourceColorProfile!==root.colorProfileId)
-      throw Error('元作品と色空間が異なります。色変換はC15の機能を使ってください。');
+    const convert=legacyProfileTransform(record.sourceColorProfile,root.colorProfileId);
+    if(convert){
+      if(!await appConfirm('「'+record.sourceColorProfile+'」から「'+root.colorProfileId+
+        '」へ色を変換します。範囲外の色は近い色になり、重ね方や色効果の見え方が変わる場合があります。続けますか？'))
+        throw Error('貼り付けを取り消しました。');
+      const convertStroke=(stroke:StrokeRecord)=>{
+        const preset=stroke.version===3?stroke.foundation:stroke.preset;
+        const builder=new CanonicalBuilder({...preset,color:convert.color([...preset.color] as [number,number,number])},
+          [...stroke.seed],stroke.fast,stroke.version===3?stroke.context:{});
+        for(const input of stroke.raw)builder.accept(input);
+        if(stroke.version===3&&stroke.releaseInput)builder.release(stroke.releaseInput);
+        builder.finish();return builder.record();
+      };
+      const editable=record.editable;
+      const layers:EditableLayerCopy[]=[];
+      for(const item of editable?.layers??[]){
+        const {layer,transform,regionSource}=item;
+        const pixels=item.pixels instanceof Uint8Array?await convert.pixels(item.pixels):{
+          ...item.pixels,tiles:await Promise.all(item.pixels.tiles.map(async tile=>({...tile,pixels:await convert.pixels(tile.pixels)}))),
+        };
+        const map=layer.blend?.gradientMap;
+        const nextBlend=map&&layer.blend?{...layer.blend,gradientMap:{...map,stops:map.stops.map(stop=>({...stop,color:convert.hex(stop.color)}))}}:undefined;
+        layers.push({...item,pixels,layer:{...layer,...(nextBlend?{blend:nextBlend}:{}),
+          ...(layer.editable?{editable:convert.editable(layer.editable)}:{})},
+          ...(transform?{transform:{...transform,original:await convert.pixels(transform.original),
+            deformation:{...transform.deformation,...(transform.deformation.postPaint?{
+              postPaint:transform.deformation.postPaint.map(pass=>({...pass,records:pass.records.map(raw=>convertStroke(validateRecord(raw)))}))
+            }:{})},strokes:transform.strokes.map(stroke=>({...stroke,record:convertStroke(stroke.record)}))}}:{}),
+          ...(regionSource?{regionSource:{...regionSource,pixels:await convert.pixels(regionSource.pixels)}}:{})});
+      }
+      record={...record,pixels:await convert.pixels(record.pixels),...(editable?{editable:{...editable,layers}}:{})};
+    }
+    if(controller.document!==document||document.head!==head||controller.selectedLayer.id!==reference)
+      throw Error('貼り付け先が変わったため、操作を取り消しました。');
     if(!record.editable&&record.sourceDocumentId!=='external-image'&&record.sourceDocumentId!==root.documentId&&
       !await appConfirm('別の作品から貼り付けます。現段階では画素だけを新しいレイヤーへ移し、元のブラシ履歴・特殊なレイヤー設定は移せません。続けますか？'))
       throw Error('別作品への貼り付けを取り消しました。');
@@ -375,6 +408,8 @@ export class ArtworkClipboard {
       throw Error('貼り付けを取り消しました。');
     // Core stores raster pixels by tile. Write exactly the touched tiles,
     // never create an unnecessary canvas-wide RGBA allocation for a 4px image.
+    if(controller.document!==document||document.head!==head||controller.selectedLayer.id!==reference)
+      throw Error('貼り付け先が変わったため、操作を取り消しました。');
     const tx=document.begin('画像を貼り付ける');
     const id=tx.addRasterLayerAbove(controller.selectedLayer.id,false);
     tx.renameLayer(id,(record.sourceName||'貼り付け').slice(0,100)+'（貼り付け）');

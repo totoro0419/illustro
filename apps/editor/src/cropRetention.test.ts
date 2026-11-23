@@ -35,3 +35,18 @@ it('does not recover content removed by a later explicit destructive crop',()=>{
   }
   expect(cropRestorePlan(doc.operationsTo(),doc.root)).toBeNull();
 });
+
+it('keeps the original crop source when detached history is cleaned',()=>{
+  const doc=new CoreDocument({width:4,height:2}),layer=doc.defaultRasterLayerId;
+  const ink=doc.begin('ink');ink.setPixel(layer,0,0,[22,33,44,255]);
+  const original=ink.commit().revision.id;
+  const crop=doc.begin('crop');crop.resizeDocument(2,2,'document.crop',
+    new Map([[layer,new Uint8Array(16)]]),{x:1,y:0,keepOutside:true});crop.commit();
+  const oldDraft=doc.begin('abandoned');oldDraft.setPixel(layer,0,0,[255,0,0,255]);
+  const abandoned=oldDraft.commit().revision.id;doc.undo();
+  const current=doc.begin('current');current.renameLayer(layer,'current');current.commit();
+  const cleaned=doc.forkCopy('cleaned',true);
+  expect(cleaned.hasRevision(abandoned)).toBe(false);
+  expect(cropRestorePlan(cleaned.operationsTo(),cleaned.root)?.source).toBe(original);
+  expect(Array.from(cleaned.readBaseRasterPixels(layer,original).subarray(0,4))).toEqual([22,33,44,255]);
+});

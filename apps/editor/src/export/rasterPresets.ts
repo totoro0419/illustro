@@ -2,7 +2,7 @@ import type {ImageFormat} from './basicExport';
 
 export type RasterPreset=Readonly<{
   name:string;format:ImageFormat;quality:number;scale:number;lossless:boolean;dpi:boolean;
-  icc:'none'|'srgb'|'custom';profileKey?:string;author:boolean;copyright:string;
+  icc:'none'|'srgb'|'custom';profileKey?:string;position?:boolean;author:boolean;copyright:string;
 }>;
 const key='illustro.raster-export-presets.v1';
 type Store=Pick<Storage,'getItem'|'setItem'>;
@@ -15,7 +15,7 @@ export function readRasterPresets(storage:Pick<Storage,'getItem'>):RasterPreset[
       Number.isInteger(preset.scale)&&preset.scale>=1&&preset.scale<=8&&typeof preset.lossless==='boolean'&&
       typeof preset.dpi==='boolean'&&['none','srgb','custom'].includes(preset.icc)&&
       (preset.profileKey===undefined||typeof preset.profileKey==='string'&&/^[a-f0-9-]{36}$/.test(preset.profileKey))&&
-      typeof preset.author==='boolean'&&typeof preset.copyright==='string'&&preset.copyright.length<=500).slice(0,24);
+      (preset.position===undefined||typeof preset.position==='boolean')&&typeof preset.author==='boolean'&&typeof preset.copyright==='string'&&preset.copyright.length<=500).slice(0,24);
   }catch{return [];}
 }
 export function writeRasterPreset(storage:Store,settings:RasterPreset){

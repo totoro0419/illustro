@@ -111,6 +111,7 @@ export type MacroLayerStep=Readonly<{id:string;value:string|number|null;artwork?
 export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   layers:()=>readonly MacroLayer[];
   applyLayer:(id:string,steps:readonly MacroLayerStep[],name:string,signal:AbortSignal)=>Promise<boolean>;
+  applyHistory?:(steps:readonly ('undo'|'redo')[],name:string,signal:AbortSignal)=>Promise<boolean>;
   share:(json:string,name:string,asset:boolean)=>Promise<void>;
 }>):SimpleMacroService|null{
   const workspace=document.getElementById('automationBoxBody');
@@ -338,6 +339,11 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
       const missing=enabled.filter(id=>!layerMacroStep(id)&&!dependencies.has(id));
       if(missing.length)throw Error('この端末で使えない手順があります。'+missing.join('、'));
       const context=commands.contextKey?.();
+      if(api?.applyHistory&&enabled.every(step=>step==='undo'||step==='redo')){
+        const changed=await api.applyHistory(enabled as ('undo'|'redo')[],macro.name,playback.signal);
+        status.textContent=changed?'履歴の候補をまとめて適用しました。一度の取り消しで戻せます。':'作品は変わりませんでした。';
+        return;
+      }
       const atomic=!!api&&enabled.every(layerMacroStep);
       if(!atomic&&enabled.some(step=>parameterStep(step)||isMacroArtwork(step)))throw Error('実行時の指定・描画・変形を使うときは、表示・履歴の手順をこのセットから外してください。');
       const layers=atomic?api.layers():[];

@@ -36,6 +36,23 @@ export class RevisionHistory<T>{
   get nextRedo(){const id=this.redoIds.at(-1);return id===undefined?null:this.get(id);}
   has(id:RevisionId){return this.revisions.has(id);}get(id:RevisionId){const r=this.revisions.get(id);if(!r)throw new Error('missing revision');return r;}
   snapshot():RevisionHistoryState<T>{return Object.freeze({revisions:Object.freeze([...this.revisions.values()]),head:this.headValue,redoIds:Object.freeze([...this.redoIds])});}
+  previewNavigation(steps:readonly ('undo'|'redo')[]){
+    let head=this.headValue;
+    const redo=[...this.redoIds];
+    for(const [index,step] of steps.entries()){
+      if(step==='undo'){
+        const parent=this.get(head).parentIds[0];
+        if(!parent||this.undoLimitValue!==null&&redo.length>=this.undoLimitValue)
+          throw Error((index+1)+'番目の手順で、これ以上元に戻せません。');
+        redo.push(head);head=parent;
+      }else{
+        const next=redo.pop();
+        if(!next)throw Error((index+1)+'番目の手順で、これ以上やり直せません。');
+        head=next;
+      }
+    }
+    return head;
+  }
   assertHead(id:RevisionId){if(id!==this.headValue)throw new Error('stale transaction');}
   publish(base:RevisionId,tx:TransactionId,root:T,command:Command,at:number,commitStamp:CommitStamp,id=this.ids.revision(),expected=base){
     this.assertHead(expected);if(this.revisions.has(id))throw Error('duplicate revision id');

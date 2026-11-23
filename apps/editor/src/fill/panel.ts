@@ -1,3 +1,4 @@
+import {appPrompt} from '../ui/appDialogs';
 import {toolConfirmation} from '../ui/toolConfirmation';
 import type {ColorHint,LayerId,LineRegions,RevisionId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
@@ -214,7 +215,6 @@ export function installFillPanel(host:HTMLElement,api:{
     targets.textContent='参照元 '+context.reference+'　塗り先 '+context.destination;
     api.onContextChanged?.();
     const available=sourceAvailable(),usable=graphUsable();
-    stopCalculation.disabled=!previewAbort&&!analysisAbort;
     analysisState.textContent=analyzing?'解析中…':analysisError?'⚠ 解析エラー '+analysisError:
       !currentGraph?'○ 未解析':!usable?'⚠ 無効。境界と領域の両方がある線画を指定してください。':
       !available?'⚠ 保存済みの領域が変更されました。使う版を選び直してください。':
@@ -570,6 +570,22 @@ export function installFillPanel(host:HTMLElement,api:{
   }
   const startFill=button('キャンバスで塗る',armFill);
   button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',(points,source,current)=>fill(points,true,source,current),method.value.startsWith('lasso'),'#ffb742',true,true));
+  const coordinateFill=button('座標で塗る場所を指定',async()=>{
+    const drawing=api.drawing(),documentId=api.documentId();
+    if(!drawing)throw Error('作品を開いてください。');
+    const {width,height}=drawing.displayDiagnostics.document;
+    const coordinates=await appPrompt('左上からの横と縦の座標（px）を入力してください。', '0, 0',{
+      validate:value=>{
+        const parts=value.trim().split(/[\s,、]+/).map(Number),[x,y]=parts;
+        return parts.length===2&&parts.every(Number.isInteger)&&x!>=0&&y!>=0&&x!<width&&y!<height
+          ?null:'作品に収まる整数の座標を指定してください。';
+      }
+    });
+    if(coordinates===null||drawing!==api.drawing()||api.documentId()!==documentId)return;
+    const [x,y]=coordinates.trim().split(/[\s,、]+/).map(Number);
+    stopGesture();
+    await fill([{x:x!+.5,y:y!+.5}],false);
+  });
   async function applyCandidate(){
     if(!candidate||!candidateValid(candidate))throw Error('塗る対象が変わりました。');
     const {source,asSelection}=candidate;
@@ -892,7 +908,7 @@ export function installFillPanel(host:HTMLElement,api:{
     if(parent)advancedOptions.append(parent);
   }
   const advancedActions=document.createElement('div');advancedActions.className='c06-clipboard-grid';
-  const basic=new Set(['キャンバスで塗る','領域を選択範囲にする','候補を適用','塗り候補を取り消す',
+  const basic=new Set([coordinateFill.textContent,'キャンバスで塗る','領域を選択範囲にする','候補を適用','塗り候補を取り消す',
     '表示中の絵から1枚を除外して参照',
     '直前の塗りを調整','キャンバス操作をやめる','計算を中止']);
   for(const control of Array.from(actions.querySelectorAll('button'))){

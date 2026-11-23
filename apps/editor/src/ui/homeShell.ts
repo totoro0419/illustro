@@ -1,3 +1,4 @@
+import {installLanguageSettings,uiLocale} from './language';
 import {readInputInterruptions} from '../persistence/inputInterruption';
 import {appConfirm,appPrompt} from './appDialogs';
 import type {WorkEntry} from '../persistence/workLibrary';
@@ -107,7 +108,7 @@ const html = [
     '</section>',
     '<section class="ih-screen ih-inner-screen" data-ih-screen="settings" hidden aria-labelledby="ihSettingsTitle">',
       '<div class="ih-page-top"><span class="ih-overline">PREFERENCES</span><h1 id="ihSettingsTitle">設定<span class="ih-period">.</span></h1><p>Illustroの操作や表示を調整するためのページ。</p></div>',
-      '<div class="ih-settings-controls"><div id="ihColorSettings"></div><button type="button" class="ih-quiet-button" id="ihSettingsEditor">描画画面へ</button></div>',
+      '<div class="ih-settings-controls"><div id="ihColorSettings"></div><div id="ihLanguageSettings"></div><button type="button" class="ih-quiet-button" id="ihSettingsEditor">描画画面へ</button></div>',
     '</section>',
   '</main>',
   '<div class="ih-floating-notice" id="ihNotice" role="status" aria-live="polite" hidden></div>',
@@ -238,11 +239,11 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       else{open.textContent='プレビューを準備中';}
       open.onclick=()=>void run(async()=>{if(await actions.openWork(work.documentId))navigate('editor');},open);
       const info=document.createElement('div');info.className='ih-work-info';
-      const title=document.createElement('button');title.type='button';title.className='ih-work-title';title.textContent=work.name;title.setAttribute('aria-label',work.name+'の名前を変更');
+      const title=document.createElement('button');title.type='button';title.className='ih-work-title';title.dataset.userContent='';title.textContent=work.name;title.setAttribute('aria-label',work.name+'の名前を変更');
       title.onclick=()=>showRename(work);
       const meta=document.createElement('p');
       meta.textContent=[work.favorite?'★ お気に入り':'',work.catalogFolder??'',(work.catalogTags??[]).join(' / '),
-        work.width+' × '+work.height+' px',new Date(work.updatedAt).toLocaleString('ja-JP')].filter(Boolean).join(' · ');
+        work.width+' × '+work.height+' px',new Date(work.updatedAt).toLocaleString(uiLocale())].filter(Boolean).join(' · ');
       const details=document.createElement('div');details.className='ih-work-menu';details.popover='auto';
       const menuToggle=document.createElement('button');menuToggle.type='button';menuToggle.className='ih-work-menu-toggle';
       menuToggle.innerHTML=icon('more');menuToggle.setAttribute('aria-label',work.name+'の作品操作');
@@ -347,9 +348,9 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       if(!trashed.length){grid.textContent='ゴミ箱は空です。';return;}
       for(const work of trashed){
         const row=document.createElement('div');row.className='ih-work-trash-entry';
-        const title=document.createElement('strong');title.textContent=work.name;
+        const title=document.createElement('strong');title.dataset.userContent='';title.textContent=work.name;
         const meta=document.createElement('small');
-        meta.textContent=work.trashedAt?new Date(work.trashedAt).toLocaleString('ja-JP'):'';
+        meta.textContent=work.trashedAt?new Date(work.trashedAt).toLocaleString(uiLocale()):'';
         const restore=document.createElement('button');restore.type='button';restore.textContent='復元する';
         restore.onclick=()=>void run(async()=>{
           await actions.restoreWork(work.documentId);await loadTrash();await loadWorks();notify('作品を元に戻しました。');
@@ -394,7 +395,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       const details=document.createElement('details'),title=document.createElement('summary'),events=document.createElement('ul');
       title.textContent='入力が途切れたときの記録';
       for(const entry of interruptions){
-        const item=document.createElement('li'),date=new Date(entry.at).toLocaleString('ja-JP');
+        const item=document.createElement('li'),date=new Date(entry.at).toLocaleString(uiLocale());
         item.textContent=date+' · '+entry.work+' · '+(entry.keep?'途中まで残す操作を選択':'途中の線を取り消し');
         events.append(item);
       }
@@ -419,7 +420,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       const button=document.createElement('button');button.type='button';button.className='ih-quiet-button';
       card.className='ih-recovery-item';
       title.textContent=item.title||'名前のない作品';
-      const date=item.updatedAt?new Date(item.updatedAt).toLocaleString('ja-JP'):'時刻不明';
+      const date=item.updatedAt?new Date(item.updatedAt).toLocaleString(uiLocale()):'時刻不明';
       status.textContent=date+' · 記録 '+item.protectedThrough+'件。プレビューで復元内容を確認できます。';
       status.setAttribute('aria-live','polite');
       button.textContent='復元コピーを開く';
@@ -652,5 +653,6 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   // The old milestone QA pages do not install this shell; normal startup is Home.
   const initial=location.hash.replace(/^#/,'');
   navigate(initial==='works'||initial==='settings'||initial==='recovery'?initial:'home',location.hash!==('#'+(initial==='works'||initial==='settings'||initial==='recovery'?initial:'home')));
+  installLanguageSettings(el('ihLanguageSettings'),renderWorks);
   return {showHome,showEditor:()=>navigate('editor'),showNew,showRecovery,setRecoveryCandidates,setWorks,notify};
 }

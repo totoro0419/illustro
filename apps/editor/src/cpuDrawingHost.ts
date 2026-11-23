@@ -1,5 +1,5 @@
 import {CanonicalBuilder,cpuReference,TILE,type FoundationPreset,type Sample,type StrokeContext,type StrokeRecord} from '@illustro/brush-rt';
-import type {LayerBlend,LayerMask} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,type LayerBlend,type LayerMask} from '@illustro/core';
 import {compositeArtworkRegion,type FrozenExport} from './export/basicExport';
 import type {MaskData} from './selection/mask';
 import type {ProjectionCache} from './persistence/projectionCache';
@@ -22,8 +22,11 @@ export class CpuDrawingHost{
   readonly session=new CpuStrokeSession(this);
   readonly backend={
     tiles:new Map<string,Tile>(),viewTransform:null as Float32Array|null,
-    readTiles:async (requests:readonly Request[])=>requests.map(request=>({...request,
-      pixels:this.backend.tiles.get(keyOf(request.surfaceId,request.key))?.pixels.slice()??new Uint8Array(TILE*TILE*4)})),
+    readTiles:async (requests:readonly Request[])=>{
+      await this.work;
+      return requests.map(request=>({...request,
+        pixels:this.backend.tiles.get(keyOf(request.surfaceId,request.key))?.pixels.slice()??new Uint8Array(TILE*TILE*4)}));
+    },
   };
   onPresentation:(()=>void)|null=null;
 
@@ -103,7 +106,7 @@ export class CpuDrawingHost{
       }
       ctx.restore();
     }
-    this.session.preview(ctx,view);
+    this.session.preview(ctx);
     if(this.bitmap){
       const image=await createImageBitmap(this.target);
       if(serial!==this.presentSerial||this.disposed){image.close();return;}
@@ -129,14 +132,19 @@ export class CpuDrawingHost{
   }
   async paint(record:StrokeRecord,surfaceKey:string,keys?:readonly string[]){
     const allowed=keys?new Set(keys):null,hints=await strokeTilesForCanvas(record,this.width,this.height);
-    for(const {tileX,tileY,commandIndices} of hints){
-      const key=tileX+','+tileY;
-      if(allowed&&!allowed.has(key))continue;
-      const tile=this.backend.tiles.get(keyOf(surfaceKey,key))?.pixels;
-      const base=tile?new Uint8ClampedArray(tile):new Uint8ClampedArray(TILE*TILE*4);
+    for(const {tileX,tileY,bounds,commandIndices} of hints){
+      const x=tileX*CANONICAL_TILE_SIZE,y=tileY*CANONICAL_TILE_SIZE;
+      const left=Math.floor((x+bounds.x0)/TILE),right=Math.min(Math.ceil(this.width/TILE)-1,Math.floor((x+bounds.x1-1)/TILE));
+      const top=Math.floor((y+bounds.y0)/TILE),bottom=Math.min(Math.ceil(this.height/TILE)-1,Math.floor((y+bounds.y1-1)/TILE));
       const commands=commandIndices!.map(index=>record.commands[index]!);
-      const pixels=cpuReference({...record,commands},TILE,TILE,base,undefined,tileX*TILE,tileY*TILE);
-      this.write(surfaceKey,key,new Uint8Array(pixels));
+      for(let ty=top;ty<=bottom;ty++)for(let tx=left;tx<=right;tx++){
+        const key=tx+','+ty;
+        if(allowed&&!allowed.has(key))continue;
+        const tile=this.backend.tiles.get(keyOf(surfaceKey,key))?.pixels;
+        const base=tile?new Uint8ClampedArray(tile):new Uint8ClampedArray(TILE*TILE*4);
+        const pixels=cpuReference({...record,commands},TILE,TILE,base,undefined,tx*TILE,ty*TILE);
+        this.write(surfaceKey,key,new Uint8Array(pixels));
+      }
     }
   }
   enqueue(id:number,action:()=>Promise<void>){
@@ -223,6 +231,7 @@ class CpuStrokeSession{
   readonly errors:string[]=[];
   readonly recordIds=new WeakMap<StrokeRecord,number>();
   readonly browserPredictions=0;
+  readonly pendingRawCount=0;
   rawAccepted=0;
   id=0;
   private active:{id:number;builder:CanonicalBuilder;preset:FoundationPreset;surfaceKey:string;points:Sample[]}|null=null;
@@ -261,7 +270,7 @@ class CpuStrokeSession{
   setSurfaceStack(_keys:readonly string[]){}
   async navigateDerived(steps:readonly unknown[]){if(steps.length)throw Error('Raster baseline restore required');}
   async restore(entries:readonly Entry[],cache?:ProjectionCache){return this.renderer.restore(entries,cache);}
-  preview(ctx:CanvasRenderingContext2D,view:Float32Array){
+  preview(ctx:CanvasRenderingContext2D){
     const active=this.active;
     if(!active?.points.length||active.preset.blend==='erase')return;
     ctx.save();
@@ -274,7 +283,7 @@ class CpuStrokeSession{
     for(const point of active.points.slice(1))ctx.lineTo(point.x,point.y);
     if(active.points.length===1){ctx.arc(first.x,first.y,active.preset.size/2,0,Math.PI*2);ctx.fill();}
     else ctx.stroke();
-    ctx.restore();void view;
+    ctx.restore();
   }
   destroy(){this.renderer.destroy();}
 }

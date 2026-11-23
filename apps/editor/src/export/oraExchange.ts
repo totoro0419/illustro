@@ -8,7 +8,7 @@ import {assertImageSize,MAX_EXCHANGE_BYTES,xmlText,toComposite,fromComposite,typ
 const pngBytes=async(pixels:Uint8ClampedArray,width:number,height:number,metadata:RasterMetadata)=>
   new Uint8Array(await (await encodePng(pixels,width,height,metadata.dpi,{
     ...(metadata.profile?{iccProfile:metadata.profile}:{}),
-    ...(metadata.author?{author:metadata.author}:{}),...(metadata.copyright?{copyright:metadata.copyright}:{}),
+    ...(metadata.position?{position:metadata.position}:{}),...(metadata.author?{author:metadata.author}:{}),...(metadata.copyright?{copyright:metadata.copyright}:{}),
   })).arrayBuffer());
 
 export async function encodeOra(art:ExchangeArtwork,metadata:RasterMetadata={}){

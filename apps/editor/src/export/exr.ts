@@ -48,6 +48,7 @@ export function encodeExr(rgba:Uint8ClampedArray,width:number,height:number,meta
     })),
     ...(metadata.author?.trim()?attribute('owner','string',new TextEncoder().encode(metadata.author.trim().slice(0,500))):[]),
     ...(metadata.copyright?.trim()?attribute('copyright','string',new TextEncoder().encode(metadata.copyright.trim().slice(0,500))):[]),
+    ...(metadata.position?attribute('gps','string',new TextEncoder().encode(metadata.position.join(','))):[]),
     Uint8Array.of(0)];
   const table=header.reduce((length,entry)=>length+entry.length,0),rowBytes=width*16,chunk=rowBytes+8;
   const prefixBytes=table+height*8,out=new Uint8Array(prefixBytes+height*chunk),view=new DataView(out.buffer);
