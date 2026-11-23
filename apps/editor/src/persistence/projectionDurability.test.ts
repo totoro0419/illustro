@@ -35,7 +35,8 @@ describe('sparse checkpoint publication durability',()=>{
   const store=new MemoryStore();await save(store,oldRevision,[tile('0,0',10),tile('1,0',20)]);
   const writes=store.writes;await save(store,newRevision,[tile('0,0',10)]);expect(store.writes-writes).toBe(1);
   for(let i=30;i<40;i++)await save(store,newRevision,[tile('0,0',i)]);
-  expect(store.files.size).toBe(3);expect(firstPixel(await load(store),'0,0')).toBe(39);
+  // Only the latest tile blob and the frame remain; obsolete tiles are purged.
+  expect(store.files.size).toBe(2);expect(firstPixel(await load(store),'0,0')).toBe(39);
   const file=[...store.files.keys()].find(path=>path.includes('/0:0.'))!,bytes=store.files.get(file)!;bytes[0]=bytes[0]!^1;expect(await load(store)).toBeNull();
  });
  it('M09 indexes without a content digest still restore',async()=>{
