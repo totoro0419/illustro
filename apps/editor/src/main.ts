@@ -21,6 +21,7 @@ import {openExchangePanel} from './export/exchangePanel';
 import {installWetTools,wetModes} from './wet/panel';
 import {createWetPatch,wetPatchTiles} from './wet/edit';
 import {installWetPad} from './wet/pad';
+import {shouldShowPixelGrid} from './pixelGridVisibility';
 import {accessibilityFeedback,installAccessibility} from './ui/accessibility';
 import {applyPixelCell,pixelStroke} from './pixelStroke';
 import {openBatchExport} from './export/batchExport';
@@ -1892,7 +1893,7 @@ try{
 }catch{}
 function updatePixelGrid(){
  const state=surface?.viewState;
- const visible=!!state&&gridToggle.checked&&state.zoom*100>=gridThreshold.valueAsNumber;
+ const visible=shouldShowPixelGrid(gridToggle.checked,state?.zoom??0,gridThreshold.valueAsNumber,!!state);
  gridOverlay.toggleAttribute('hidden',!visible);
  if(!visible||!state||!surface){pixelCoordinates.hidden=true;return;}
  const origin=surface.documentToScreen({x:0,y:0}),c=Math.cos(state.rotation),s=Math.sin(state.rotation);
