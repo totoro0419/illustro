@@ -5564,6 +5564,7 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
   drawing:()=>documentReady?surface:null,
   color:()=>hex(foreground.current),
   documentId:()=>controller.document.root.documentId,
+  targetId:()=>controller.selectedLayerId,
   targetName:()=>controller.selectedLayer.name,
   references:()=>controller.layers.filter(layer=>!layer.lineRegions).map(layer=>({id:layer.id,name:layer.name,
     vector:layer.editable?.kind==='path',visible:controller.document.root.isLayerVisible(layer.id)&&layer.opacity>0})),
