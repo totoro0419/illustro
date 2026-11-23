@@ -273,6 +273,29 @@ export function unpaintedFillEdges(mask:MaskData,pixels:Uint8ClampedArray|null,s
   return remaining;
 }
 
+/** A gap-assisted flood from inside an artwork must not silently paint the outside.
+ * Intended outside fills near an edge remain available without interruption.
+ * Checking border flags is O(width + height), independent of canvas area. */
+export function needsLeakingFillReview(mask:MaskData,point:Point|undefined,gap:number):boolean{
+  if(gap<=0||!point||!mask.alpha.length)return false;
+  const {width,height,alpha}=mask;
+  if(width<3||height<3)return false;
+  const margin=Math.max(2,Math.ceil(gap));
+  if(point.x<=margin||point.y<=margin||point.x>=width-margin||point.y>=height-margin)return false;
+  let edges=0;
+  let top=false,bottom=false,left=false,right=false;
+  for(let x=0;x<width;x++){
+    if(alpha[x])top=true;
+    if(alpha[(height-1)*width+x])bottom=true;
+  }
+  for(let y=0;y<height;y++){
+    if(alpha[y*width])left=true;
+    if(alpha[y*width+width-1])right=true;
+  }
+  edges=Number(top)+Number(bottom)+Number(left)+Number(right);
+  return edges>=2;
+}
+
 function* sampledPath(points:readonly Point[]){
   for(let i=0;i<points.length;i++){
     const a=points[Math.max(0,i-1)]!,b=points[i]!;
