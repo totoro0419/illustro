@@ -10,7 +10,9 @@ class MemoryStore{
  async remove(path:string){this.files.delete(path);}
 }
 const tile=(key:string,value:number)=>({surfaceId,key,pixels:new Uint8Array(128*128*4).fill(value)});
-const save=(store:MemoryStore,revision:string,tiles:ReturnType<typeof tile>[])=>worker.storeProjectionDelta(store as any,session,revision,256,128,128,[surfaceId],tiles);
+// Each test supplies a complete new tile-set. Explicitly mark full-seed mode;
+// the production worker sends its own replace flag for incremental checkpoints.
+const save=(store:MemoryStore,revision:string,tiles:ReturnType<typeof tile>[])=>worker.storeProjectionDelta(store as any,session,revision,256,128,128,[surfaceId],tiles,true);
 const load=(store:MemoryStore)=>worker.loadProjectionDeltaRaw(store as any,session,new Set([oldRevision,newRevision]));
 // A missing tile is exactly zero; V2 does not allocate a full RGBA buffer.
 const firstPixel=(image:Awaited<ReturnType<typeof load>>,key:string)=>{
