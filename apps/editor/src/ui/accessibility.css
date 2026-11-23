@@ -35,3 +35,43 @@
 :root[data-illustro-vision="protan"] #canvasArea .surface canvas { filter: url(#illustro-vision-protan); }
 :root[data-illustro-vision="deutan"] #canvasArea .surface canvas { filter: url(#illustro-vision-deutan); }
 :root[data-illustro-vision="tritan"] #canvasArea .surface canvas { filter: url(#illustro-vision-tritan); }
+
+@media (pointer: fine) {
+  :root[data-illustro-density="compact"][data-illustro-text="standard"]
+    :is(.box-body,#viewActions,#fileActions) button {
+    min-block-size: 32px;
+    padding-block: 4px;
+  }
+  :root[data-illustro-density="compact"][data-illustro-text="standard"]
+    :is(.box-body,#viewActions,#fileActions) .box-actions {
+    gap: 4px;
+  }
+}
+:root[data-illustro-density="roomy"]
+  :is(.box-body,#viewActions,#fileActions,dialog) :is(button,summary,select) {
+  min-block-size: 48px;
+}
+:root:is([data-illustro-text="large"],[data-illustro-text="extra"]) dialog[open] {
+  max-inline-size: calc(100vw - 20px);
+  max-block-size: calc(100dvh - 20px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+:root:is([data-illustro-text="large"],[data-illustro-text="extra"])
+  dialog :is(p,legend,h2,h3) {
+  font-size: var(--illustro-readable-size);
+  overflow-wrap: anywhere;
+}
+:root:is([data-illustro-text="large"],[data-illustro-text="extra"])
+  dialog :is(.export-actions,.illustro-app-dialog-actions,.ih-dialog-actions) {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 1;
+  padding-block: 6px;
+  flex-wrap: wrap;
+  background: var(--a-surface,#fff);
+}
+:root:is([data-illustro-text="large"],[data-illustro-text="extra"])
+  dialog :is(input,select,textarea,button) {
+  max-inline-size: 100%;
+}

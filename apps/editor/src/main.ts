@@ -1,3 +1,4 @@
+import {installDeviceCapabilities} from './ui/deviceCapabilities';
 import {recordInputInterruption} from './persistence/inputInterruption';
 import {ICC_IMPORT_ACTION,ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ORIGINAL_TYPE} from './export/iccMetadata';
 import {installImageAssist} from './assist/panel';
@@ -152,7 +153,16 @@ for(const [id,label] of [['c04ContextTool','ブラシ'],['c04ContextLayer','描�
   const button=document.createElement('button');button.id=id;button.type='button';button.textContent=label;button.disabled=true;contextBar.append(button);
 }
 const contextPending=document.createElement('output');contextPending.id='c04ContextPending';contextPending.setAttribute('role','status');
-contextBar.append(contextPending);document.querySelector('.canvas-view-strip')?.append(contextBar);
+contextBar.append(contextPending);
+const contextStrip=document.querySelector('.canvas-view-strip');
+const phoneContext=matchMedia('(max-width: 570px)');
+function placeContextBar(){
+  const mobile=!qaMode&&phoneContext.matches;
+  contextBar.classList.toggle('phone-tool-context',mobile);
+  (mobile?app:contextStrip)?.append(contextBar);
+}
+phoneContext.addEventListener('change',placeContextBar);
+placeContextBar();
 // Read-only TouchEvent/PointerEvent logger in opt-in QA builds. No gesture changes.
 installPassiveTouchProbe();
 // Opt-in physical-device trace; registers capture before editor input handlers.
@@ -4160,6 +4170,18 @@ const c04WorkspaceService=installWorkspaceProfiles(c04FloatingPanels,c04Toolbar)
 installInputDeviceProfiles(()=>surface,range=>{pressureRange=range;surface?.setPressureRange(range);});
 installGestureShortcuts();
 const openAccessibility=installAccessibility(byId('workspaceBoxBody'));
+const openDeviceCapabilities=installDeviceCapabilities(byId('workspaceBoxBody'),()=>({
+  renderer:documentReady?surface?.backend??null:null,
+  drawMs:surface?.lastCommitMs??null,
+  saveMs:persistence.state.saveDurationMs,
+  exportMs:lastExport?.totalMs??null,
+  protectedLocally:persistence.state.storagePersisted,
+}));
+c04Commands.registerProvider(()=>[{
+  id:'deviceCapabilities',label:'端末で使える操作と処理時間',category:'設定',aliases:'GPU ペン キーボード 保存 容量 性能',
+  availability:()=>null,execute:()=>{shellUi.openBox('workspaceBox');openDeviceCapabilities();},
+}]);
+
 c04Commands.registerProvider(()=>[{
   id:'editorAccessibility',label:'画面の見やすさを調整',category:'設定',aliases:'文字 コントラスト グレー 動き アクセシビリティ',
   availability:()=>null,execute:()=>{shellUi.openBox('workspaceBox');openAccessibility();},
@@ -5497,7 +5519,7 @@ if(perfMode){
  (window as unknown as {__illustroPerformance:unknown}).__illustroPerformance={
   read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,historyNavigation:historyNavigation?.diagnostics,historyInputs,...surface?.performanceDiagnostics,checkpointErrors}),
   saveExport:()=>({saveMs:persistence.state.saveDurationMs,snapshotMs:persistence.state.snapshotCaptureMs,
-                    exportMs:lastExport?.totalMs,encodeMs:lastExport?.encodeMs}),
+                    exportMs:lastExport?.totalMs??null,encodeMs:lastExport?.encodeMs}),
   probe:()=>surface?.handoffProbe(),
   isDrawingBusy:()=>surface?.busy??false,
   checkpoint:(fullSeed=false)=>{if(fullSeed)checkpointNeedsFullSeed=true;return createProjectionCheckpoint();},

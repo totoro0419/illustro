@@ -59,6 +59,7 @@ type CanvasEditGesture=Readonly<{
 export class BrushSurface{
   private editGesture:CanvasEditGesture|null=null;
   private interruptedStroke:number|null=null;
+  lastCommitMs:number|null=null;
   onInputInterrupted:()=>Promise<boolean>=async()=>false;
 
   private editTraceVisible=true;
@@ -1084,12 +1085,13 @@ export class BrushSurface{
       const copies=seamless?variants.flatMap((variant,index)=>[
         ...(index?[variant]:[]),...wrappedCopies(variant,target.width,target.height).map(copy=>copy.record)
       ]):variants.slice(1);
-      try{const result=await this.handoff!.release(reservation,record,copies);if(result)trace.logicalMs=performance.now()-upAt;else trace.parkedMs=performance.now()-upAt;}
+      try{const result=await this.handoff!.release(reservation,record,copies);if(result)this.lastCommitMs=trace.logicalMs=performance.now()-upAt;else trace.parkedMs=performance.now()-upAt;}
       catch(error){if(error instanceof EmptyStrokeError){if(!this.handoff?.pending)this.pendingBranch=false;await session.discardUncommitted(record);this.status('作品の範囲外のため、線は追加されませんでした。');return;}throw error;}
     }).catch(error=>{if(this.disposed)return;this.handoffFault=error instanceof Error?error.message:String(error);this.handoff?.fail(error);this.status('線を確定できませんでした。'+this.handoffFault);}).finally(()=>{if(!this.handoff?.owns(reservation))this.pendingStrokeIds.delete(reservation);if(!this.disposed)this.onStateChanged();});}
 
   private async finishMaskedStroke(session:RealtimeSession,target:DrawingTarget,mask:MaskData,seamless:boolean,release:Sample|null,symmetry:SymmetrySettings|null,hold?:CorrectionHold){
     this.finishing=true;
+    const started=performance.now();
     this.onStateChanged();
     try{
       const record=await session.end(release?{...release,origin:'release'}:null);
@@ -1172,6 +1174,7 @@ export class BrushSurface{
       else transaction.replaceLayerRaster(target.layerId,fullPixels!);
       transaction.activateDrawingLayer(target.layerId);
       this.controller.lastPersistenceHandoff=transaction.commit().persistence;
+      this.lastCommitMs=performance.now()-started;
       this.discardRedoProjection();
       this.onCommitted();
       this.finishing=false;

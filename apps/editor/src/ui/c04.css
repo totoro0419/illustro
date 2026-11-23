@@ -154,3 +154,19 @@ body.illustro-focus-mode .topbar #saveState{display:inline;max-width:65vw;overfl
   z-index: 1;
 }
 .quick-ring .c04-quick-heading button { pointer-events: auto; min-height: 34px; background: var(--a-surface,#fff) }
+
+@media (max-width: 570px) {
+ :root:has(#c04ContextBar.phone-tool-context){
+   --bottom:calc(156px + env(safe-area-inset-bottom, 0px));
+ }
+ #c04ContextBar.phone-tool-context{
+   box-sizing:border-box;
+   position:fixed;z-index:8;inset-inline:0;
+   bottom:calc(116px + env(safe-area-inset-bottom, 0px));
+   height:40px;margin:0;padding:2px 7px;
+   border-top:1px solid var(--a-border);background:var(--a-surface);
+ }
+ #c04ContextBar.phone-tool-context button{min-block-size:34px;}
+ #c04ContextBar.phone-tool-context output{flex:none;}
+ body.illustro-focus-mode #c04ContextBar.phone-tool-context{display:none;}
+}

@@ -5,8 +5,8 @@ const viewingModes=[
   ['deutan','2型（緑の感度が低い場合）'],['tritan','3型（青の感度が低い場合）']
 ] as const;
 type ViewingMode=typeof viewingModes[number][0];
-type Preferences={text:'standard'|'large'|'extra';contrast:boolean;motion:boolean;view:ViewingMode;sound:boolean;vibration:boolean};
-const defaults:Preferences={text:'standard',contrast:false,motion:false,view:'original',sound:false,vibration:false};
+type Preferences={density:'standard'|'compact'|'roomy';text:'standard'|'large'|'extra';contrast:boolean;motion:boolean;view:ViewingMode;sound:boolean;vibration:boolean};
+const defaults:Preferences={density:'standard',text:'standard',contrast:false,motion:false,view:'original',sound:false,vibration:false};
 const key='illustro.accessibility.v1';
 
 // Full-severity sample matrices from Machado, Oliveira and Fernandes (2009).
@@ -44,7 +44,7 @@ export function installAccessibility(host:HTMLElement){
     const saved=JSON.parse(localStorage.getItem(key)??'null');
     if(saved){
       const view=viewingModes.find(([value])=>value===saved.view)?.[0]??(saved.gray===true?'gray':'original');
-      settings={text:saved.text==='extra'||saved.text==='large'?saved.text:'standard',view,
+      settings={density:saved.density==='compact'||saved.density==='roomy'?saved.density:'standard',text:saved.text==='extra'||saved.text==='large'?saved.text:'standard',view,
         contrast:saved.contrast===true,motion:saved.motion===true,sound:saved.sound===true,vibration:saved.vibration===true};
     }
   }catch{}
@@ -59,6 +59,9 @@ export function installAccessibility(host:HTMLElement){
     const field=document.createElement('input');field.type='checkbox';
     const wrapper=document.createElement('label');wrapper.append(field,' '+label);controls.append(wrapper);return field;
   };
+  const density=document.createElement('select');
+  density.append(new Option('標準','standard'),new Option('詰める（PC）','compact'),new Option('ボタンを大きく','roomy'));
+  const densityLabel=document.createElement('label');densityLabel.append('操作ボタンの間隔と大きさ',density);controls.append(densityLabel);
   const contrast=check('操作と文字のコントラストを上げる');
   const motion=check('画面の動きを減らす');
   const vision=document.createElement('select');
@@ -104,6 +107,7 @@ export function installAccessibility(host:HTMLElement){
   };
   function apply(){
     root.dataset.illustroText=settings.text;
+    root.dataset.illustroDensity=settings.density;density.value=settings.density;
     root.toggleAttribute('data-illustro-contrast',settings.contrast);
     root.toggleAttribute('data-illustro-reduced-motion',settings.motion);
     root.dataset.illustroVision=settings.view;
@@ -115,8 +119,8 @@ export function installAccessibility(host:HTMLElement){
     try{localStorage.setItem(key,JSON.stringify(settings));saveStatus.textContent='';}
     catch{saveStatus.textContent='この端末に表示設定を保存できませんでした。';}
   }
-  for(const field of [text,contrast,motion,vision,sound,vibration])field.onchange=()=>{
-    settings={text:text.value as Preferences['text'],contrast:contrast.checked,motion:motion.checked,
+  for(const field of [text,density,contrast,motion,vision,sound,vibration])field.onchange=()=>{
+    settings={density:density.value as Preferences['density'],text:text.value as Preferences['text'],contrast:contrast.checked,motion:motion.checked,
       view:vision.value as ViewingMode,sound:sound.checked,vibration:vibration.checked};
     save();
   };
