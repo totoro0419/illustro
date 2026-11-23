@@ -101,7 +101,7 @@ export function installFillPanel(host:HTMLElement,api:{
   const view=select('解析の表示',[['regions','色分け'],['walls','境界と補完候補'],['outside','外側と閉領域'],['holes','囲まれた穴'],['original','元の線画']]);
   const tolerance=number('色の近さ・線の濃さ（%）',15,0,100);
   const alphaTolerance=number('透明度の違いの許容範囲（%）',15,0,100);
-  const gap=number('埋める隙間（px）',0,0,12);
+  const gap=number('埋める隙間（px）',0,0,32);
   const edge=number('塗りの拡張・縮小（px）',0,-24,24);
   const inspectId=number('調べる領域の番号',1,1,1);
   const mergeTarget=select('つなぐ隣の領域',[]);
