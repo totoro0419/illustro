@@ -476,6 +476,7 @@ export function installFillPanel(host:HTMLElement,api:{
     // Admit pointer input immediately. Capturing a 4K reference image must
     // never hold the gesture setup hostage; a late preview is simply skipped.
     drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,
+      queueInputWhileBusy:repeatDirect,
       ...(graph||previewColor?{update}:{}),
       complete:points=>{
         if(repeatDirect){
