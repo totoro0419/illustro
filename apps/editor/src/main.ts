@@ -5575,6 +5575,11 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
   documentId:()=>controller.document.root.documentId,
   targetId:()=>controller.selectedLayerId,
   targetName:()=>controller.selectedLayer.name,
+  selectTargetForQueuedFill:id=>{
+    if(!documentReady||!surface||!controller.document.root.hasLayer(id as LayerId))throw Error('元の塗り対象が見つかりません。');
+    controller.selectLayer(id as LayerId);
+    renderLayers();updateHistoryButtons();updateQa();
+  },
   references:()=>controller.layers.filter(layer=>!layer.lineRegions).map(layer=>({id:layer.id,name:layer.name,
     vector:layer.editable?.kind==='path',visible:controller.document.root.isLayerVisible(layer.id)&&layer.opacity>0})),
   regionLayers:()=>controller.layers.flatMap(layer=>layer.lineRegions?[{id:layer.id,name:layer.name,data:layer.lineRegions}]:[]),
