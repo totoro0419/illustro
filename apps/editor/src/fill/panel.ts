@@ -574,6 +574,15 @@ export function installFillPanel(host:HTMLElement,api:{
     },method.value.startsWith('lasso'),'#ffb742',true);
   }
   const startFill=button('キャンバスで塗る',armFill);
+  button('囲まれた領域だけ連続塗り',()=>{
+    // Uses the existing region-label traversal. Paths through the exterior
+    // never add the exterior label; users can still switch back to free fill.
+    method.value='line';
+    closedOnly.checked=true;
+    sync();
+    armFill();
+    output.textContent='閉じた領域だけを通過順に選びます。外側は塗りません。自由に塗る場合は方式を「同じ色」に戻してください。';
+  });
   button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',(points,source,current)=>fill(points,true,source,current),method.value.startsWith('lasso'),'#ffb742',true,true));
   const coordinateFill=button('座標で塗る場所を指定',async()=>{
     const drawing=api.drawing(),documentId=api.documentId();
