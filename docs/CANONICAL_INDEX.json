@@ -15,7 +15,7 @@
     "brushAdoption": "docs/product-planning/features/BRU.md",
     "regionAdoption": "docs/product-planning/features/LIN.md",
     "performance": "docs/performance-research/UNIFIED_SYSTEM_DESIGN.md",
-    "roadmap": "docs/roadmap/C01_C17_ROADMAP.md"
+    "roadmap": "docs/roadmap/ROUND2-IMPLEMENTATION-STATUS.md"
   },
   "entries": [
     {
@@ -1333,7 +1333,7 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/roadmap/C01_C17_ROADMAP.md",
+      "path": "docs/roadmap/ROUND2-IMPLEMENTATION-STATUS.md",
       "status": "CANONICAL"
     },
     {

@@ -13,7 +13,8 @@
 | 詳細システム | [SYSTEM_CONTRACTS.md](detailed-design/SYSTEM_CONTRACTS.md) |
 | 数値と設定 | [NUMERIC_CONTRACTS_V1.json](detailed-design/NUMERIC_CONTRACTS_V1.json) |
 | 受入条件と未確認 | [FINAL_DESIGN_AUDIT.md](detailed-design/FINAL_DESIGN_AUDIT.md) |
-| 17区分の現在地 | [C01_C17_ROADMAP.md](roadmap/C01_C17_ROADMAP.md) |
+| 現在の実装状況（製品の完了認定ではない） | [ROUND2-IMPLEMENTATION-STATUS.md](roadmap/ROUND2-IMPLEMENTATION-STATUS.md) |
+| 234機能の実機検査 | [00-TEST-PLAN.md](device-audit/00-TEST-PLAN.md) |
 | M01〜M10受入履歴 | [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md) |
 
 移行前の本書は [保存版](migration/before-archive-2026-11-12/CANONICAL_INDEX.md)。旧docs/architecture/、docs/ui/、FEATURE_SPEC.md等は、受入済みコードの動作と既往の決定を追うため保存するが、今後の製品仕様を決める設計正本ではない。

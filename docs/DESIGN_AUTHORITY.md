@@ -12,7 +12,7 @@
 6. 画面・操作の全体設計: [PRODUCT_ARCHITECTURE.md](product-architecture/PRODUCT_ARCHITECTURE.md)
 7. システム詳細・機能間の連携: [SYSTEM_CONTRACTS.md](detailed-design/SYSTEM_CONTRACTS.md)、[NUMERIC_CONTRACTS_V1.json](detailed-design/NUMERIC_CONTRACTS_V1.json)
 8. 設計の最終審査と未実施項目: [FINAL_DESIGN_AUDIT.md](detailed-design/FINAL_DESIGN_AUDIT.md)、[STAGE4_HANDOFF.md](detailed-design/STAGE4_HANDOFF.md)
-9. 今後の区切り: [C01_C17_ROADMAP.md](roadmap/C01_C17_ROADMAP.md)
+9. 現在の実装と検査状態（製品仕様の優先権を持たない）: [ROUND2-IMPLEMENTATION-STATUS.md](roadmap/ROUND2-IMPLEMENTATION-STATUS.md)、[実機検査計画](device-audit/00-TEST-PLAN.md)
 
 ## 設計の出所
 
@@ -31,7 +31,7 @@
 - 未解決の「描画直後の指入力停止」は、M10の合格対象外。修正済みと扱わない。
 - 旧 docs/PRODUCT_SPEC.md や docs/FEATURE_SPEC.md、旧 architecture/UI正本は、履歴・既存コードの検証資料として保管するが、将来機能の設計上の優先権はない。
 - すでに合格したコードや保存形式を新設計だけを理由に壊さない。変更時は旧作品の互換性と回帰を調べ、ユーザーの承認を得る。
-- アーカイブ版の歴史的な「現在は第1段階」等の記述より、この移行記録とM10進捗を優先する。現在は第4段階の製品実装。
+- アーカイブ版の歴史的な「現在は第1段階」等の記述より、この移行記録とM10進捗を優先する。現在はR2の実装後、実機検査の準備段階（2026-11-23）。
 - 仕様の衝突時は、アーカイブ版の設計を目標にしつつ、現行の合格済み機能を保護する移行計画を作る。矛盾を隠して黙って旧実装へ戻さない。
 
 ## 開発方針

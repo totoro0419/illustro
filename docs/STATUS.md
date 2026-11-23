@@ -1,13 +1,11 @@
-# Illustro 開発状況（2026-11-12）
+# Illustro｜現在の開発状況（2026-11-23）
 
-- **正式な開発リポジトリ**：`totoro0419/illustro`（旧 `illustro_old`）。
-- **現在の区切り**：M10 は製品オーナー承認により終了。M11 は未着手。
-- **合格済みの作業を含む基準点**：[M10 終了記録](revival/M10_CLOSURE_2026-11-12.md)、`milestone/M10-accepted-2026-11-12`。
-- **PR #65**：2026-11-12に統合済み。統合先は `investigate/M10-static-input-loss-2026-10-26`。歴史的な `main` はこの統合で変更していない。
-- **ブラシ・描画・保存の確認**：最終HEAD `4722710c623d8ed31722bc9d50cd645110f5716e` の [GitHub Actions](https://github.com/totoro0419/illustro/actions/runs/43037659447) が成功。実機での全条件を網羅した技術保証とは区別。
-- **公開版の扱い**：`gh-pages` にM10テスト用アプリのファイルがある。URL変更後のすべての端末からのアクセス成功は未確認。
-- **新版の保管**：`illustro-illustro_next_archive` は存在するが、意図された名前と一致せず、アーカイブ済みではない。引き続き整理対象。
+**現在の対象はR2の実機検査準備です。** 過去のM10・C03などを「次の実装対象」とする記述は2026-11-12時点の旧進捗であり、現在の判断に使用しません。
 
-設計と実装の優先順位：直感的な操作 → 軽さ・体感速度 → 多機能。
+- 実装PR：[Draft #110](https://github.com/totoro0419/illustro/pull/110)、`implementation/round2-seven-groups` → `quality/C03-C10-integration`。未統合。
+- [実装の進捗記録](roadmap/ROUND2-IMPLEMENTATION-STATUS.md)：R2の143件はコード上で実装済みという記録。既存保護91件と合わせ234件の実機受入はまだ確定していません。
+- [検査計画](device-audit/00-TEST-PLAN.md)と[234機能の結果表](device-audit/01-RESULTS.csv)：すべての機能を具体的な操作で検証する準備資料。検査表の初期状態は全件未検査。
+- [旧検査から引き継いだ問題](device-audit/02-DEFECTS.md)：現在の端末で再現するかは別途確認。
+- [R2公開URL](https://totoro0419.github.io/illustro/r2-preview/)：`gh-pages/r2-preview/release.json`の公開元は`c0afe578ddf385e970f2c192049aad41ce1e756d`（2026-11-23のGitHub上で確認）。実際の端末での起動と操作は未確認。
 
-以前の設計・実装基準や過去の検査文書は履歴として維持し、この日付以降のM10ステータスには上記の終了記録を優先する。
+設計と実装の優先順位：**直感的操作 → 使いやすさ・軽さ・応答性 → 多機能**。過去の受入記録や旧進捗はGit履歴と[旧チェックリスト](IMPLEMENTATION_CHECKLIST.md)から参照できます。

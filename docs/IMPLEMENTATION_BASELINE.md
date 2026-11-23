@@ -1,13 +1,13 @@
-# Illustro — 実装の開始基準（アーカイブ設計採用後）
+# Illustro｜現行の実装と検査の基準（2026-11-23）
 
-**必ず先に [DESIGN_AUTHORITY.md](DESIGN_AUTHORITY.md) を読む。** 以後の仕様正本はアーカイブ版から取り込んだ製品・性能・UI・詳細設計です。
+最初に[正式設計の優先関係](DESIGN_AUTHORITY.md)と[実機検査計画](device-audit/00-TEST-PLAN.md)を参照してください。
 
-- 本番コード: totoro0419/illustro。M01〜M10の受入済みコードと保存互換性を保持する。
-- 現在地: C03の高度なレイヤー機能が次の実装対象。M11 PR #67は保護し、設計変更後の作業範囲を再点検する。
-- 段階: 4「実装」。アーカイブ内の過去の「第1段階」という記述は当時の記録であり現在地ではない。
-- 現行コードと新正本に差があれば、差の範囲・ユーザー影響・互換性・必要な修正を記録してから実装する。
-- 描画直後の指入力停止は未解決として扱い、既に修正されたと断定しない。
-- 旧M01〜M10のコード・QAページ・PR・Git履歴を削除しない。
-- 本文の設計移行と、各Cチャンクの完成判定は別。自動テストと実機ユーザー確認を区別する。
+- アプリ本体の現行実装対象は[Draft PR #110](https://github.com/totoro0419/illustro/pull/110)（`implementation/round2-seven-groups`）。`main`と基準ブランチ`quality/C03-C10-integration`を無断更新しない。
+- 機能計画と実装の照合は[ROUND2-IMPLEMENTATION-STATUS.md](roadmap/ROUND2-IMPLEMENTATION-STATUS.md)。**R2実装143＋既存保護91＝234機能**を今回の実機検査対象とする。
+- R2実装ブランチ`f4e8e796`の実際のコードは公開元`c0afe578`と同じ。差分は当時の検査結果文書2件のみ（2026-11-23確認）。公開URLが起動するか、実際の端末での確認は別。
+- 検査時はコード・データ・公開設定を変更しない。使いづらさ・不具合を記録し、後の修正工程で影響範囲だけ再検査する。
+- 保存データ・既存作品・M01〜M10の受入済み成果・QAページ・履歴を保護する。Gitの旧ロードマップ削除は過去の承認を撤回することを意味しない。
+- 旧C01〜C17の開発順序や「次はC03」等の古い進捗記述を、現在の実機合否・次の実装指示に使用しない。
+- アプリが動くこと、操作しやすいこと、応答が軽いこと、保存・再読込が正しいことを区別して確認する。
 
-旧版の実装基準は [移行前の保存版](migration/before-archive-2026-11-12/IMPLEMENTATION_BASELINE.md)。以後の設計の優先関係はこの旧版ではなくDESIGN_AUTHORITY.mdによる。
+過去の実装基準は[移行前の保存版](migration/before-archive-2026-11-12/IMPLEMENTATION_BASELINE.md)、従来の受入結果は[IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md)を参照。
