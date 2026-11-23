@@ -1,11 +1,11 @@
-import {appConfirm,appPrompt} from '../ui/appDialogs';
-import {mapArtworkPoint,validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} from '@illustro/core';
+import {appPrompt} from '../ui/appDialogs';
+import {inverseArtworkAffine,mapArtworkPoint,validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {continuousVectorSession} from './continuousVector';
 import {runArtwork} from './run';
 import {vectorPointDrag,type VectorDragHandle} from './vectorPointDrag';
 import {booleanOperandSave} from './linkedBooleans';
-import {appendPathStroke,combineShapes,eraseBetweenIntersections,eraseSegment,eraseWholeStroke,joinPaths,simplifyPath,smoothPath,splitPath} from './pathOperations';
+import {appendPathStroke,combineShapes,eraseBetweenIntersections,eraseSegment,eraseWholeStroke,insertPathWidthPoint,joinPaths,simplifyPath,smoothPath,splitPath} from './pathOperations';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
 export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
@@ -64,6 +64,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     status.textContent=`${path?.points.length} 点・編集中の点 ${index+1}`;
   }
   function readPath(next:EditablePath,id?:LayerId){
+    clearErasePreview();
     path=next;editing=id;combinedSourceIds=null;hideOperands.parentElement!.hidden=true;
     color.value=next.stroke;filled.checked=!!next.fill;if(next.fill)fill.value=next.fill;
     closed.checked=next.closed;thickness.value=String(next.width);lineStyle.value=next.lineStyle??'solid';
@@ -72,6 +73,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     syncPoint();void refresh();
   }
   function changePoint(index:number,point:ArtPoint){
+    clearErasePreview();
     const current=draft(),points=[...current.points];points[index]=point;
     const {booleanOperands:_oldOperands,...editable}=current;
     path={...editable,points};
@@ -142,13 +144,16 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
   let stopDrawing:(()=>void)|null=null;
   const stopPoints=()=>{
     stopDrawing?.();stopDrawing=null;
-    clearPointPreview();
+    clearPointPreview();clearErasePreview();
     pointDrawing?.setCanvasEditGesture(null);pointDrawing=null;
   };
   // Escape cancels a drag inside BrushSurface without ending point-edit mode.
   // Clear its asynchronous artwork overlay too, or a stale curve can remain.
   window.addEventListener('keydown',event=>{
-    if(event.key==='Escape'&&pointDrawing)clearPointPreview();
+    if(event.key==='Escape'){
+      if(pointDrawing)clearPointPreview();
+      clearErasePreview();
+    }
   });
   const closePath=(current:EditablePath)=>current.points.some(p=>p.move||p.close);
   const otherPath=()=>{
@@ -156,6 +161,63 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
     if(other?.kind!=='path')throw Error('組み合わせるベクターレイヤーを選んでください。');
     return other;
   };
+  type ErasePreview={drawing:BrushSurface;id:LayerId|undefined;remaining:EditablePath|null};
+  let erasePreview:ErasePreview|null=null,eraseVersion=0;
+  const eraseControls=document.createElement('div');eraseControls.className='box-actions';eraseControls.hidden=true;
+  const clearErasePreview=()=>{
+    eraseVersion++;
+    erasePreview?.drawing.showArtworkPreview(null);
+    erasePreview=null;eraseControls.hidden=true;
+  };
+  function startErasePreview(mode:'segment'|'whole'|'intersection'){
+    const context=api.context(),current=draft(),id=editing;
+    if(!context)throw Error('作品を開いてください。');
+    const other=mode==='intersection'?otherPath():null;
+    stopPoints();
+    status.textContent='消したい位置をタップしてください。赤で消える範囲を表示します。';
+    stopDrawing=locate(context.drawing,async points=>{
+      const version=++eraseVersion;
+      try{
+        const position=points[0]!;
+        const remaining=mode==='whole'?eraseWholeStroke(current,position):
+          other?eraseBetweenIntersections(current,other,position):eraseSegment(current,position);
+        const scale=Math.min(1,1024/Math.max(context.width,context.height));
+        const width=Math.max(1,Math.round(context.width*scale)),height=Math.max(1,Math.round(context.height*scale));
+        const render=(content:EditablePath)=>runArtwork({content,width:context.width,height:context.height,
+          outputWidth:width,outputHeight:height});
+        const [before,after]=await Promise.all([render(current),remaining?render(remaining):null]);
+        if(version!==eraseVersion||!panel.open||api.context()?.drawing!==context.drawing)return;
+        const highlighted=new ImageData(width,height);
+        for(let i=0;i<before.length;i+=4){
+          const removed=before[i+3]!-(after?.[i+3]??0);
+          if(removed>0){
+            highlighted.data[i]=255;highlighted.data[i+1]=40;highlighted.data[i+2]=65;
+            highlighted.data[i+3]=Math.min(255,80+removed*2);
+          }
+        }
+        context.drawing.showArtworkPreview(highlighted);
+        erasePreview={drawing:context.drawing,id,remaining};eraseControls.hidden=false;
+        status.textContent=remaining?'赤い範囲を消去します。':'赤い線が最後の線です。消去を確定するとレイヤーも削除します。';
+      }catch(error){if(version===eraseVersion)status.textContent=error instanceof Error?error.message:String(error);}
+    });
+  }
+  eraseControls.append(
+    button('赤い範囲を消す',async()=>{
+      const candidate=erasePreview;
+      if(!candidate||candidate.drawing!==api.context()?.drawing||candidate.id!==editing)throw Error('対象の作品や線が変わりました。');
+      clearErasePreview();
+      if(candidate.remaining){
+        readPath(candidate.remaining,editing);
+        status.textContent='消去候補を反映しました。「作品に反映」で保存できます。';
+      }else{
+        if(candidate.id){if(!api.remove)throw Error('レイヤーを削除できません。');await api.remove(candidate.id);}
+        path=null;editing=undefined;sourceEdit=null;combinedSourceIds=null;
+        previewId++;preview.hidden=true;hideOperands.parentElement!.hidden=true;
+        status.textContent='線を消しました。';
+      }
+    },status),
+    button('消去を取り消す',()=>{clearErasePreview();status.textContent='消去を取り消しました。';},status)
+  );
   function startDrawing(newLayer:boolean){
     const context=api.context();if(!context)throw Error('作品を開いてください。');
     stopPoints();sourceEdit=null;
@@ -238,6 +300,38 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       lineStyle.value='pressure';
       changePoint(index,{...point,pressure:pointWidth.valueAsNumber/100});
     },status),
+    button('選んだ点の幅を絵の上で調整',()=>{
+      const current=draft(),index=pointNumber(),anchor=current.points[index],context=api.context();
+      if(!anchor||!context||!current.width||current.shape==='rectangle'||current.shape==='ellipse')
+        throw Error('幅のある線の点を選んでください。');
+      stopPoints();
+      const {drawing,width,height}=context;
+      const span=Math.max(current.width/2,48/(drawing.viewState?.zoom??1));
+      const offset=16/(drawing.viewState?.zoom??1);
+      const inverse=current.transform?inverseArtworkAffine(current.transform):undefined;
+      const update=(position:ArtPoint)=>{
+        const local=mapArtworkPoint(position,inverse);
+        const pressure=Math.max(0,Math.min(1,(Math.hypot(local.x-anchor.x,local.y-anchor.y)-offset)/span));
+        const points=[...current.points];points[index]={...anchor,pressure};
+        const {booleanOperands:_operands,...editable}=current;
+        return {...editable,points,lineStyle:'pressure' as const};
+      };
+      pointDrawing=drawing;
+      drawing.setSelectionMode(false);drawing.setEyedropper(false);drawing.panTool=false;
+      const handle={x:anchor.x,y:anchor.y-offset-span*(anchor.pressure??1)};
+      stopDrawing=drawing.setCanvasEditGesture({path:false,width:2,color:'#ffb742',complete:()=>{},
+        pointEdit:{points:[anchor,handle].map(point=>mapArtworkPoint(point,current.transform)),
+          edges:[[0,1]],fixed:[true,false],
+          preview:(_index,position)=>{
+            pointPreviewRequest={content:update(position),drawing,width,height,replacement:editing??null,version:++pointPreviewVersion};
+            void pumpPointPreview();
+          },
+          commit:(_index,position)=>{
+            clearPointPreview();readPath(update(position),editing);
+            status.textContent='幅を変更しました。「作品に反映」で保存できます。';
+          }}});
+      status.textContent='線の点から離れた丸を動かすと幅が変わります。';
+    },status),
     button('点と曲線ハンドルを更新',()=>{
       const current=draft(),index=pointNumber(),previous=current.points[index];
       if(!previous)throw Error('編集する点の番号を確認してください。');
@@ -262,46 +356,22 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       if(current.points.length<=2||closePath(current))throw Error('この線の点はこれ以上外せません。');
       readPath({...current,points:current.points.filter((_,i)=>i!==pointNumber())},editing);
     },status),
-    button('線の区間を消す',()=>{
+    button('線の途中に幅の点を追加',()=>{
       const current=draft(),context=api.context();
-      if(!context)throw Error('作品を開いてください。');
-      status.textContent='消したい区間を絵の上でタップしてください。';
-      locate(context.drawing,points=>{
-        try{readPath(eraseSegment(current,points[0]!),editing);}
-        catch(error){status.textContent=error instanceof Error?error.message:String(error);}
-      });
-    },status),
-    button('線をまるごと消す',()=>{
-      const current=draft(),context=api.context();
-      if(!context)throw Error('作品を開いてください。');
-      stopPoints();status.textContent='消す線をキャンバスでタップしてください。';
-      locate(context.drawing,async points=>{
+      if(!context||!pointWidth.validity.valid)throw Error('作品を開き、線幅を0〜100%で指定してください。');
+      const pressure=pointWidth.valueAsNumber/100;
+      stopPoints();
+      status.textContent='幅を変えたい線の途中をタップしてください。';
+      stopDrawing=locate(context.drawing,points=>{
         try{
-          const remaining=eraseWholeStroke(current,points[0]!);
-          if(remaining){
-            readPath(remaining,editing);
-            status.textContent='指定した線を取り除きました。「作品に反映」で保存できます。';
-            return;
-          }
-          // Unsaved strokes have no layer to delete. Never erase the currently selected
-          // document layer on behalf of a new, uncommitted draft.
-          if(!editing){
-            path=null;previewId++;preview.hidden=true;
-            status.textContent='最後の未保存の線を取り消しました。';
-            return;
-          }
-          if(!api.remove)throw Error('レイヤーの削除処理を利用できません。');
-          if(!await appConfirm('このレイヤーの最後の線を消します。レイヤーも削除しますか？（Undoで戻せます）')){
-            status.textContent='線の削除を取り消しました。';
-            return;
-          }
-          await api.remove(editing);
-          path=null;editing=undefined;sourceEdit=null;combinedSourceIds=null;
-          previewId++;preview.hidden=true;hideOperands.parentElement!.hidden=true;
-          status.textContent='最後の線とレイヤーを削除しました。Undoで戻せます。';
+          const result=insertPathWidthPoint(current,points[0]!,pressure);
+          pointIndex.value=String(result.index+1);readPath(result.path,editing);
+          status.textContent='幅の点を設定しました。「作品に反映」で保存できます。';
         }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
       });
     },status),
+    button('線の区間を消す',()=>startErasePreview('segment'),status),
+    button('線をまるごと消す',()=>startErasePreview('whole'),status),
     button('点を減らす',()=>{
       const current=draft();
       if(closePath(current)||current.shape==='bezier')throw Error('複雑な輪郭や曲線は点番号で編集してください。');
@@ -319,15 +389,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       readPath(joinPaths(draft(),otherPath()));
       status.textContent='つないだ線を新しいベクターレイヤーに作ります。';
     },status),
-    button('交点まで消す',()=>{
-      const current=draft(),other=otherPath(),context=api.context();
-      if(!context)throw Error('作品を開いてください。');
-      status.textContent='消したい区間をタップしてください。曲線は折れ線に変換して計算します。';
-      locate(context.drawing,points=>{
-        try{readPath(eraseBetweenIntersections(current,other,points[0]!),editing);}
-        catch(error){status.textContent=error instanceof Error?error.message:String(error);}
-      });
-    },status),
+    button('交点まで消す',()=>startErasePreview('intersection'),status),
     button('演算前の形を直す',()=>{
       const current=draft(),operands=current.booleanOperands;
       if(!operands)throw Error('図形を組み合わせて作ったレイヤーを編集してください。');
@@ -371,8 +433,8 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       hideOperands.parentElement!.hidden=true;previewId++;preview.hidden=true;status.textContent='候補を取り消しました。';
     },status)
   );
-  pointIndex.onchange=syncPoint;
-  appearance.onchange=()=>{if(path)path=draft();void refresh();};
+  pointIndex.onchange=()=>{clearErasePreview();syncPoint();};
+  appearance.onchange=()=>{clearErasePreview();if(path)path=draft();void refresh();};
   panel.ontoggle=()=>{if(!panel.open)stopPoints();};
-  panel.append(title,appearance,coordinates,tools,preview,status);host.append(panel);
+  panel.append(title,appearance,coordinates,tools,eraseControls,preview,status);host.append(panel);
 }

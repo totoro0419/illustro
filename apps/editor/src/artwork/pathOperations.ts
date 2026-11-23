@@ -31,6 +31,83 @@ export function smoothPath(points:readonly ArtPoint[],closed:boolean,amount:numb
     return {...point,inX:point.x-dx,inY:point.y-dy,outX:point.x+dx,outY:point.y+dy};
   });
 }
+/** Add a width control on the nearest segment without changing its geometry. */
+export function insertPathWidthPoint(path:EditablePath,position:ArtPoint,pressure:number){
+  if(path.shape==='rectangle'||path.shape==='ellipse'||path.empty||path.points.length<2)
+    throw Error('幅の点を追加するにはベクター線を選んでください。');
+  if(!Number.isFinite(pressure)||pressure<0||pressure>1)throw Error('線幅を0〜100%で指定してください。');
+  if(path.transform)position=mapArtworkPoint(position,inverseArtworkAffine(path.transform));
+  const lerp=(a:ArtPoint,b:ArtPoint,t:number)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
+  const controls=(a:ArtPoint,b:ArtPoint)=>[{x:a.outX??a.x,y:a.outY??a.y},{x:b.inX??b.x,y:b.inY??b.y}] as const;
+  let best=Math.max(10,path.width*2),hit:{from:number;to:number;t:number}|null=null;
+  const search=(from:number,to:number)=>{
+    const a=path.points[from]!,b=path.points[to]!;
+    const [c,d]=controls(a,b);
+    const returnPoint=(t:number)=>{
+      const l=lerp(a,c,t),m=lerp(c,d,t),r=lerp(d,b,t);
+      return lerp(lerp(l,m,t),lerp(m,r,t),t);
+    };
+    let t:number;
+    if(a.outX===undefined&&b.inX===undefined){
+      const dx=b.x-a.x,dy=b.y-a.y;
+      if(!dx&&!dy)return;
+      t=Math.max(0,Math.min(1,((position.x-a.x)*dx+(position.y-a.y)*dy)/(dx*dx+dy*dy)));
+    }else{
+      if(position.x<Math.min(a.x,b.x,c.x,d.x)-best||position.x>Math.max(a.x,b.x,c.x,d.x)+best||
+         position.y<Math.min(a.y,b.y,c.y,d.y)-best||position.y>Math.max(a.y,b.y,c.y,d.y)+best)return;
+      let closest=Infinity,index=0;
+      for(let i=0;i<=32;i++){
+        const dist=distance(returnPoint(i/32),position);
+        if(dist<closest){closest=dist;index=i;}
+      }
+      let lo=Math.max(0,(index-1)/32),hi=Math.min(1,(index+1)/32);
+      for(let i=0;i<12;i++){
+        const a=(2*lo+hi)/3,b=(lo+2*hi)/3;
+        if(distance(returnPoint(a),position)<distance(returnPoint(b),position))hi=b;
+        else lo=a;
+      }
+      t=(lo+hi)/2;
+    }
+    const error=distance(a.outX===undefined&&b.inX===undefined?lerp(a,b,t):returnPoint(t),position);
+    if(error<best){best=error;hit={from,to,t};}
+  };
+  let start=0;
+  path.points.forEach((point,index)=>{
+    if(point.move)start=index;
+    else if(index>0&&!path.points[index-1]?.close)search(index-1,index);
+    if(point.close&&index>start)search(index,start);
+  });
+  if(path.closed&&!path.points.at(-1)?.close&&path.points.length-1>start)search(path.points.length-1,start);
+  const target=hit as {from:number;to:number;t:number}|null;
+  if(!target)throw Error('幅を変更したい線の近くを指定してください。');
+  const {from,to,t}=target,points=[...path.points],a=points[from]!,b=points[to]!;
+  const {booleanOperands:_operands,...editable}=path;
+  if(t<=.003||t>=.997){
+    const index=t<=.003?from:to;
+    points[index]={...points[index]!,pressure};
+    return {path:{...editable,points,lineStyle:'pressure' as const},index};
+  }
+  if(points.length>=4096)throw Error('幅の点を追加するには、先に線の点を減らしてください。');
+  const index=from+1,closing=to<=from;
+  let inserted:ArtPoint={...lerp(a,b,t),pressure};
+  if(a.outX!==undefined||b.inX!==undefined){
+    const [c,d]=controls(a,b);
+    const l=lerp(a,c,t),m=lerp(c,d,t),r=lerp(d,b,t);
+    const inner=lerp(l,m,t),outer=lerp(m,r,t);
+    points[from]={...a,outX:l.x,outY:l.y};
+    points[to]={...b,inX:r.x,inY:r.y};
+    inserted={...lerp(inner,outer,t),pressure,inX:inner.x,inY:inner.y,outX:outer.x,outY:outer.y};
+  }
+  if(closing&&a.close){
+    points[from]={...points[from]!,close:false};
+    inserted={...inserted,close:true};
+  }
+  points.splice(index,0,inserted);
+  const fillRuns=path.fillRuns?.map(run=>({...run,start:run.start>=index?run.start+1:run.start,
+    end:run.end>index||(closing&&run.end===index)?run.end+1:run.end}));
+  return {path:{...editable,points,lineStyle:'pressure' as const,...(fillRuns?{fillRuns}:{})},index};
+}
+
 export function eraseSegment(path:EditablePath,point:ArtPoint){
   if(path.transform)point=mapArtworkPoint(point,inverseArtworkAffine(path.transform));
   requireUniformFill(path);
