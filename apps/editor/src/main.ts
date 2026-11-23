@@ -1667,16 +1667,32 @@ byId<HTMLButtonElement>('moveLayerUp').onclick=()=>changeLayer('レイヤーを�
 byId<HTMLButtonElement>('moveLayerDown').onclick=()=>changeLayer('レイヤーを一つ下に移動しました。',tx=>tx.moveRasterLayer(controller.selectedLayerId,-1));
 const layerNameField=byId<HTMLInputElement>('selectedLayerName');
 layerNameField.onchange=()=>{
+  // The edited layer is captured at focus time, even if the selected row changes.
+  const editedId=layerNameField.dataset.layerId as LayerId|undefined;
+  if(!editedId||!controller.document.root.hasLayer(editedId)){
+    byId('status').textContent='名前を変更するレイヤーが見つかりません。';
+    return;
+  }
   const nextName=layerNameField.value.trim();
   if(!nextName){
-    layerNameField.value=controller.selectedLayer.name;
+    layerNameField.value=controller.document.root.getLayer(editedId).name;
     byId('status').textContent='レイヤー名を入力してください。';
     return;
   }
-  changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(controller.selectedLayerId,nextName));
-  layerNameField.value=controller.selectedLayer.name;
+  changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(editedId,nextName));
+  const updated=controller.document.root.getLayer(editedId).name;
+  layerNameField.value=updated;
+  if(updated!==nextName)byId('status').textContent='レイヤー名を保存できませんでした。現在の操作を終えてから再試行してください。';
 };
-layerNameField.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();layerNameField.blur();}};
+layerNameField.onkeydown=event=>{
+  if(event.key==='Enter'){event.preventDefault();layerNameField.blur();}
+  if(event.key==='Escape'){
+    event.preventDefault();
+    const editedId=layerNameField.dataset.layerId as LayerId|undefined;
+    if(editedId&&controller.document.root.hasLayer(editedId))layerNameField.value=controller.document.root.getLayer(editedId).name;
+    layerNameField.blur();
+  }
+};
 const layerOpacityInput=byId<HTMLInputElement>('layerOpacity');
 layerOpacityInput.oninput=()=>{
   byId('layerOpacityValue').textContent=layerOpacityInput.value+'%';
@@ -5597,7 +5613,8 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
         artwork.root.width===width&&artwork.root.height===height,
       width,height,source,target,selection,targetMask,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,canAdjust,
       select:mask=>c06Selection?.replaceActive(mask),
-      apply:async(pixels,color,hints)=>withClipboardAccess(async()=>{
+      apply:async(pixels,color,hints)=>{
+        await withClipboardAccess(async()=>{
         if(applied?!canAdjust():!valid())throw Error('作品が変わったため塗りを取り消しました。');
         const tx=applied?artwork.beginAdjustment(applied.revision,'調整した塗りつぶし'):artwork.begin('塗りつぶす');
         const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,hints?'色指示の彩色':fillLayerName(destination,color),false,true,destination==='under');
@@ -5607,7 +5624,10 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
         controller.lastPersistenceHandoff=receipt.persistence;
         controller.selectLayer(id);applied={revision:receipt.revision.id,id};
         return 'edit';
-      })
+        });
+        // Fill commits are asynchronous: synchronize every Undo/Redo control only after commit.
+        queueLatestCommit();updateHistoryButtons();updateQa();
+      }
     };
   }
 });
