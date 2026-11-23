@@ -13,7 +13,9 @@ type Entry={name:string;kind:'file'|'directory'};
 type StoreMode='opfs-sync'|'opfs-async'|'indexeddb';
 type ProjectionEncoding='raw-rgba8'|'gzip-rgba8';
 type ProjectionIndex=Readonly<{version:1;generationId:string;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
-type ProjectionDeltaIndex=Readonly<{version:2|3;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number;digest?:string}>[]}>;
+// Earlier tile indexes could be incomplete after a canvas size change and Undo.
+const PROJECTION_DELTA_VERSION=4;
+type ProjectionDeltaIndex=Readonly<{version:2|3|typeof PROJECTION_DELTA_VERSION;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number;digest?:string}>[]}>;
 type ProjectionCache=Readonly<{version:1;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[]}>|Readonly<{version:2;revisionId:string;width:number;height:number;tileSize:128;layers:readonly Readonly<{surfaceId:string;tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[]}>[]}>;
 
 const out=self as unknown as {postMessage:(value:unknown,transfer?:Transferable[])=>void};
@@ -301,7 +303,7 @@ async function initPreviewTask(store:WorkingStore,entry:WorkEntry):Promise<Previ
   const frame=await store.get(session.path+'/projection-v2.frame');
   let index:ProjectionDeltaIndex|null=null,legacyIndex:ProjectionIndex|null=null;
   if(frame){try{const parsed=parseProjectionDeltaIndex(await unframeJson(frame));
-    if(parsed.revisionId===entry.revisionId&&parsed.tileSize===128&&parsed.width===entry.width&&parsed.height===entry.height)index=parsed;
+    if(parsed.version===PROJECTION_DELTA_VERSION&&parsed.revisionId===entry.revisionId&&parsed.tileSize===128&&parsed.width===entry.width&&parsed.height===entry.height)index=parsed;
   }catch{}}
   if(!index){
     // Older works may only have the original full-layer checkpoint. Decode ONE
@@ -465,7 +467,9 @@ export async function storeProjectionDelta(store:WorkingStore,session:Session,re
   const map=new Map<string,ProjectionDeltaIndex['tiles'][number]>(),file=(tile:ProjectionDeltaIndex['tiles'][number])=>session.path+'/projection-v2/'+tile.surfaceId+'/'+tileFileName(tile.key,tile.digest)+'.bin';
   const previousFiles=new Set(previous?.tiles.map(file)??[]),staged=new Set<string>();let cleanupErrors=0;
   const cleanup=async(target:string)=>{try{await store.remove(target);}catch(error){if(++cleanupErrors<=4)console.warn('Projection checkpoint file cleanup deferred',error);}};
-  if(!replace&&previous&&previous.width===width&&previous.height===height&&previous.tileSize===tileSize)for(const item of previous.tiles)if(surfaceIds.includes(item.surfaceId))map.set(item.surfaceId+'\u0000'+item.key,{...item});
+  if(!replace&&(!previous||previous.version!==PROJECTION_DELTA_VERSION||previous.width!==width||previous.height!==height||previous.tileSize!==tileSize))
+    throw new Error('Projection checkpoint needs a full seed');
+  if(!replace&&previous)for(const item of previous.tiles)if(surfaceIds.includes(item.surfaceId))map.set(item.surfaceId+'\u0000'+item.key,{...item});
   try{
   for(const tile of tiles){
     if(!surfaceIds.includes(tile.surfaceId))continue;const id=tile.surfaceId+'\u0000'+tile.key;
@@ -477,7 +481,7 @@ export async function storeProjectionDelta(store:WorkingStore,session:Session,re
     if(!existing||await digestHex(existing)!==hash)await putVerified(store,target,encoded.bytes);
     map.set(id,descriptor);
   }
-  const index:ProjectionDeltaIndex=Object.freeze({version:3 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze([...surfaceIds]),tiles:Object.freeze([...map.values()].map(x=>Object.freeze(x)))});
+  const index:ProjectionDeltaIndex=Object.freeze({version:PROJECTION_DELTA_VERSION,revisionId,width,height,tileSize,surfaceIds:Object.freeze([...surfaceIds]),tiles:Object.freeze([...map.values()].map(x=>Object.freeze(x)))});
   await putVerified(store,path,await frameJson(index));
   }catch(error){
     const saved=await store.get(path).catch(()=>null);
@@ -494,7 +498,7 @@ async function loadProjectionDeltaTiles<T>(store:WorkingStore,session:Session,al
   try{
     const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
     const index=parseProjectionDeltaIndex(await unframeJson(frame));
-    if(!allowedRevisions.has(index.revisionId)||index.tileSize!==128)return null;
+    if(index.version!==PROJECTION_DELTA_VERSION||!allowedRevisions.has(index.revisionId)||index.tileSize!==128)return null;
     const layers=new Map(index.surfaceIds.map(id=>[id,[] as T[]]));
     for(let offset=0;offset<index.tiles.length;offset+=8){
       const batch=index.tiles.slice(offset,offset+8);
@@ -521,10 +525,10 @@ export async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,
     layers:Object.freeze(index.surfaceIds.map(surfaceId=>Object.freeze({surfaceId,tiles:Object.freeze(layers.get(surfaceId)!.map(tile=>Object.freeze(tile)))})))});
 }
 function parseProjectionDeltaIndex(value:unknown):ProjectionDeltaIndex{
-  if(!value||typeof value!=='object')throw new Error('invalid projection delta index');const x=value as Record<string,unknown>;if(x.version!==2&&x.version!==3)throw new Error('unsupported projection delta index');
+  if(!value||typeof value!=='object')throw new Error('invalid projection delta index');const x=value as Record<string,unknown>;if(x.version!==2&&x.version!==3&&x.version!==PROJECTION_DELTA_VERSION)throw new Error('unsupported projection delta index');
   const revisionId=uuid(x.revisionId,'projection revision'),width=dimension(x.width,'projection width'),height=dimension(x.height,'projection height'),tileSize=integer(x.tileSize,'projection tile size',1),surfaceIds=stringArray(x.surfaceIds,'projection surfaces').map(v=>uuid(v,'projection surface'));
   if(tileSize>1024||!Array.isArray(x.tiles)||x.tiles.length>1000000)throw new Error('invalid projection delta tiles');const seen=new Set<string>(),tiles=x.tiles.map(value=>{if(!value||typeof value!=='object')throw new Error('invalid projection delta tile');const item=value as Record<string,unknown>,surfaceId=uuid(item.surfaceId,'projection surface'),key=tileKey(item.key),id=surfaceId+'\u0000'+key;if(seen.has(id))throw new Error('duplicate projection delta tile');seen.add(id);const encoding=projectionEncoding(item.encoding),rawLength=integer(item.rawLength,'projection tile length',0);if(rawLength!==tileSize*tileSize*4)throw new Error('projection tile size mismatch');const digest=item.digest;if(digest!==undefined&&(typeof digest!=='string'||!(/^[0-9a-f]{64}$/).test(digest)))throw new Error('invalid projection tile digest');return Object.freeze({surfaceId,key,encoding,rawLength,...(typeof digest==='string'?{digest}:{})});});
-  return Object.freeze({version:x.version as 2|3,revisionId,width,height,tileSize,surfaceIds:Object.freeze(surfaceIds),tiles:Object.freeze(tiles)});
+  return Object.freeze({version:x.version,revisionId,width,height,tileSize,surfaceIds:Object.freeze(surfaceIds),tiles:Object.freeze(tiles)});
 }
 function projectionTileInputs(value:unknown,tileSize:number){
   if(!Array.isArray(value)||value.length>1000000)throw new Error('invalid projection tile list');const expected=tileSize*tileSize*4,seen=new Set<string>();

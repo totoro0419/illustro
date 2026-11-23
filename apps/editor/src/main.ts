@@ -1728,7 +1728,10 @@ async function createProjectionCheckpoint(){
       thumbnailRepairSkipped.delete(controller.document.root.documentId+':'+revisionId);
       if(app.inert)scheduleThumbnailRepair(100);
     }
-  }catch(error){const message=error instanceof Error?error.message:String(error);if(message.includes('stale'))checkpointCancelled++;else{checkpointErrors.push({at:new Date().toISOString(),message});if(checkpointErrors.length>12)checkpointErrors.shift();}}finally{
+  }catch(error){const message=error instanceof Error?error.message:String(error);if(message.includes('stale'))checkpointCancelled++;else{
+    if(message==='Projection checkpoint needs a full seed')checkpointNeedsFullSeed=true;
+    checkpointErrors.push({at:new Date().toISOString(),message});if(checkpointErrors.length>12)checkpointErrors.shift();
+  }}finally{
     projectionCheckpointBusy=false;
     if(surface===activeSurface&&(controller.document.head!==revisionId||checkpointOperations.length||checkpointNeedsFullSeed))scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
     updateQa();
@@ -2709,6 +2712,8 @@ byId<HTMLButtonElement>('openArtworkHistory').onclick=openArtworkHistory;
 async function reloadGeometryProjection(){
  const oldPreset=surface?.brushId,previousView=surface?.viewState;surface?.destroy();surface=makeSurface();
  await initializeCurrentSurface(true);surface?.setInputBarrier(historyPending);
+ // The prior checkpoint may describe a different raster size or surface layout.
+ checkpointNeedsFullSeed=true;
  if(previousView&&previousView.documentWidth===controller.document.root.width&&previousView.documentHeight===controller.document.root.height)surface?.restoreView(previousView);
  if(oldPreset){try{selectPreset(oldPreset);}catch{}}
  updateViewControls();renderLayers();updateQa();redrawCrop();
