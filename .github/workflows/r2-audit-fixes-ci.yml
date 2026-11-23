@@ -31,4 +31,5 @@ jobs:
       - name: Editor unit tests
         run: npm --workspace @illustro/editor exec -- vitest run
       - name: Editor typecheck and production build (no deploy)
+        if: success() || failure()
         run: npm run editor:build
