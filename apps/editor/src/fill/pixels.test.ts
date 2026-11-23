@@ -312,6 +312,23 @@ describe('R2 D-007 gap repair and exterior leak protection',()=>{
   });
 });
 
+describe('R2 D-007 a corner break must not flood the exterior',()=>{
+  it('closes a short right-angle gap without painting the canvas background',()=>{
+    const width=12,height=12,source=image(width,height);
+    for(let x=2;x<=6;x++)setPixel(source,width,x,2,[0,0,0,255]);
+    for(let y=2;y<=9;y++)setPixel(source,width,2,y,[0,0,0,255]);
+    for(let y=4;y<=9;y++)setPixel(source,width,8,y,[0,0,0,255]);
+    for(let x=2;x<=8;x++)setPixel(source,width,x,9,[0,0,0,255]);
+    const open=buildRegions(source,width,height,15,0,[]);
+    const closed=buildRegions(source,width,height,15,3,[]);
+    expect(open.external[open.labels[5*width+5]!]).toBe(1);
+    expect(closed.bridges[3*width+7]).toBe(1);
+    expect(closed.external[closed.labels[5*width+5]!]).toBe(0);
+    const mask=fillMask(source,width,height,{...settings,method:'line',closedOnly:true},[{x:5,y:5}],closed,null);
+    expect(mask.alpha[5*width+5]).toBe(255);
+    expect(mask.alpha[0]).toBe(0);
+  });
+});
 describe('R2 D-008 drag only enclosed regions',()=>{
   it('fills two disjoint closed regions without touching the intervening outside',()=>{
     const width=23,height=13,source=image(width,height);
