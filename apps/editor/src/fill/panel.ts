@@ -617,7 +617,7 @@ export function installFillPanel(host:HTMLElement,api:{
     if(!directRunning)void processDirectQueue();
   }
   function armFill(){
-    const direct=method.value==='color'&&!confirmBeforeFill.checked;
+    const direct=(method.value==='color'||method.value==='line')&&!confirmBeforeFill.checked;
     onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',async(points,source,current)=>{
       if(direct){enqueueDirect(points);return;}
       await fill(points,false,source,current);
