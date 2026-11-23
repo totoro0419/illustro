@@ -194,6 +194,69 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
       if(y&&diagonals){connect(0,y,1,1);connect(width-1,y,-1,1);}
     }
   }
+  // A missing corner has two perpendicular line tips. The ordinary straight
+  // bridge deliberately rejects these; pair only nearby unambiguous tips and
+  // require a clear corridor so this cannot glue together unrelated strokes.
+  if(radius>0&&candidates.length<4096){
+    type CornerTip={x:number;y:number;dx:number;dy:number;at:number};
+    const tips:CornerTip[]=[],bins=new Map<string,CornerTip[]>();
+    const tile=5,edgeReach=Math.min(radius+1,4);
+    for(let y=1;y<height-1&&tips.length<=8192;y++)for(let x=1;x<width-1;x++){
+      const at=y*width+x;
+      if(!original[at])continue;
+      let count=0,dx=0,dy=0;
+      for(const [nx,ny] of directions){
+        if(original[(y+ny)*width+x+nx]){
+          count++;dx=nx;dy=ny;
+          if(count>1)break;
+        }
+      }
+      if(count!==1)continue;
+      const tip={x,y,dx,dy,at};
+      tips.push(tip);
+      const key=Math.floor(x/tile)+','+Math.floor(y/tile);
+      const group=bins.get(key)??[];
+      group.push(tip);bins.set(key,group);
+    }
+    // Dense hatching is not a safe place for automatic corner closure.
+    if(tips.length<=8192)for(const a of tips){
+      if(candidates.length>=4096)break;
+      if(bridges[a.at])continue;
+      const cellX=Math.floor(a.x/tile),cellY=Math.floor(a.y/tile);
+      const possible:CornerTip[]=[];
+      for(let cy=cellY-1;cy<=cellY+1;cy++)
+        for(let cx=cellX-1;cx<=cellX+1;cx++)
+          for(const b of bins.get(cx+','+cy)??[]){
+            if(b.at<=a.at||bridges[b.at])continue;
+            if(Math.abs(a.dx*b.dx+a.dy*b.dy)>0.01)continue;
+            const vx=b.x-a.x,vy=b.y-a.y,distance=Math.hypot(vx,vy);
+            if(distance<=1.5||distance>edgeReach)continue;
+            if((-a.dx*vx-a.dy*vy)/distance<.35||
+               (b.dx*vx+b.dy*vy)/distance<.35)continue;
+            possible.push(b);
+          }
+      if(possible.length!==1)continue;
+      const b=possible[0]!,steps=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y));
+      const cells:number[]=[];
+      let clear=true;
+      for(let step=1;step<steps&&clear;step++){
+        const x=Math.round(a.x+(b.x-a.x)*step/steps);
+        const y=Math.round(a.y+(b.y-a.y)*step/steps);
+        if(x<1||y<1||x>=width-1||y>=height-1||original[y*width+x]||bridges[y*width+x]){
+          clear=false;break;
+        }
+        for(let yy=y-1;yy<=y+1&&clear;yy++)
+          for(let xx=x-1;xx<=x+1;xx++){
+            const at=yy*width+xx;
+            if(at!==a.at&&at!==b.at&&(original[at]||bridges[at])){clear=false;break;}
+          }
+        cells.push(y*width+x);
+      }
+      if(!clear||!cells.length)continue;
+      candidates.push({from:{x:a.x,y:a.y},to:{x:b.x,y:b.y},length:Math.hypot(b.x-a.x,b.y-a.y)-1,kind:'tips'});
+      for(const at of cells)walls[at]=bridges[at]=1;
+    }
+  }
   for(const {remove,preserveInk,points} of manual){
     for(let i=0;i<points.length;i++){
       const a=points[Math.max(0,i-1)]!,b=points[i]!,steps=Math.max(1,Math.ceil(Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))*2));
