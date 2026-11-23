@@ -1862,7 +1862,7 @@ try{
 }catch{}
 function updatePixelGrid(){
  const state=surface?.viewState;
- const visible=!!state&&(gridToggle.checked||activeCanvasTool==='pixels')&&state.zoom*100>=gridThreshold.valueAsNumber;
+ const visible=!!state&&gridToggle.checked&&state.zoom*100>=gridThreshold.valueAsNumber;
  gridOverlay.toggleAttribute('hidden',!visible);
  if(!visible||!state||!surface){pixelCoordinates.hidden=true;return;}
  const origin=surface.documentToScreen({x:0,y:0}),c=Math.cos(state.rotation),s=Math.sin(state.rotation);
@@ -2874,6 +2874,10 @@ byId('documentInfoOpen').onclick=()=>{
   byId<HTMLInputElement>('canvasTemplateName').value='';
   for(const id of ['canvasTemplateGuides','canvasTemplatePalette','canvasTemplateInfo'])byId<HTMLInputElement>(id).checked=false;
   workTime.refresh();documentInfoDialog.showModal();
+};
+byId('fileDocumentInfo').onclick=()=>{
+  byId<HTMLElement>('fileActions').hidePopover();
+  byId('documentInfoOpen').click();
 };
 byId('documentInfoClose').onclick=()=>documentInfoDialog.close();
 byId<HTMLFormElement>('documentInfoForm').onsubmit=event=>{
@@ -5372,7 +5376,9 @@ transformPanel=installTransformPanel(byId('documentBoxBody'),async target=>{
   const linkedMask=Boolean((saved?saved.linkedMask:target==='layer')&&layer.vectorMask&&layer.vectorMask.linked!==false);
   const replacementOpacity=transformPreviewReplacementOpacity(artwork.root,layer.id,target);
   let previewScene:FrozenExport|undefined;
-  const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
+  // Keep the captured transformation tied to the actual raster layer, not a transient document head.
+  const valid=()=>surface===drawing&&controller.document===artwork&&
+    artwork.root.hasLayer(layer.id)&&artwork.root.getLayer(layer.id)===layer&&
     controller.selectedLayer.id===layer.id&&(target==='layer'||c06Selection?.active()===activeSelection);
   return {
     width,height,bounds,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
