@@ -226,7 +226,7 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
           paintResult();refreshApply();
         });
         status.textContent=next.spots.length+'箇所を検出しました。ピンクは削除予定、黄は対象外です。元の画像と候補の両方に位置を表示します。目印を確認して、取り除く項目を選んでください。'+
-          (next.capped?' 先頭の32件を表示しています。':'');
+          (next.capped?' 先頭の128件を表示しています。':'');
       }else status.textContent=next.count?(next.kind==='area'?'青い部分が選択の候補です。':'明暗とパレットの色から作った案です。'):'該当する画素がありません。';
       paintResult();refreshApply();
       if(next.kind==='color'&&next.count){
