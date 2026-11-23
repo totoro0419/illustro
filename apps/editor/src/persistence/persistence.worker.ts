@@ -498,7 +498,9 @@ async function loadProjectionDeltaTiles<T>(store:WorkingStore,session:Session,al
   try{
     const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
     const index=parseProjectionDeltaIndex(await unframeJson(frame));
-    if(index.version!==PROJECTION_DELTA_VERSION||!allowedRevisions.has(index.revisionId)||index.tileSize!==128)return null;
+    // V2/V3 were written without some newer integrity metadata; preserve their
+    // historical readable tile filenames while validating any digest present.
+    if(![2,3,PROJECTION_DELTA_VERSION].includes(index.version)||!allowedRevisions.has(index.revisionId)||index.tileSize!==128)return null;
     const layers=new Map(index.surfaceIds.map(id=>[id,[] as T[]]));
     for(let offset=0;offset<index.tiles.length;offset+=8){
       const batch=index.tiles.slice(offset,offset+8);
