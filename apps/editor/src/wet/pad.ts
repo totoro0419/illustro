@@ -5,7 +5,7 @@ import {defaultWet,needsSource,paintWet,type Point,type WetMode,type WetSettings
 import {wetModes} from './panel';
 const key='illustro.round2.wet-pad.v1';
 export function installWetPad(host:HTMLElement,api:{settings:()=>WetSettings|undefined;sample:(rgb:readonly number[])=>void;brushes:()=>readonly FoundationPreset[];activeBrush:()=>string;context:()=>StrokeContext}){
-  const panel=document.createElement('details');panel.className='c06-clipboard-panel';
+  const panel=document.createElement('details');panel.id='sharedBrushTestPad';panel.className='c06-clipboard-panel';
   const summary=document.createElement('summary');summary.textContent='ブラシ共通の試し描き';
   const settings=document.createElement('div');settings.className='c06-clipboard-grid';
   const size=selectField(settings,'大きさ',[['192','192 × 120'],['320','320 × 200'],['480','480 × 300']]);
