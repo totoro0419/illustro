@@ -1,5 +1,7 @@
 # Illustro R2 Windows実機検査｜実行インデックス
 
+> **推奨：トークン節約版へ移行しました。** 最初に [00-FAST-START.md](00-FAST-START.md) を開き、各FAST章だけを順に実行してください。本書と元の詳細版は問題の確認が必要なときに参照します。
+
 **Workは最初にこのファイルだけを読み、検査する章のMDだけを開いて実行すること。** 巨大な全件台本を毎回読み直さない。
 
 - R2 URL：https://totoro0419.github.io/illustro/r2-preview/
