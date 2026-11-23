@@ -1204,8 +1204,12 @@ const renderLayers=()=>{
   opacity.disabled=!hasLayer;
   byId('layerOpacityValue').textContent=opacity.value+'%';
   const nameField=byId<HTMLInputElement>('selectedLayerName');
-  if(document.activeElement!==nameField||nameField.dataset.layerId!==selectedLayer.id)nameField.value=selectedName;
-  nameField.dataset.layerId=selectedLayer.id;
+  // Keep the original edit target while focus remains in the input.
+  // Switching selected layers must not silently redirect a pending rename.
+  if(document.activeElement!==nameField){
+    nameField.value=selectedName;
+    nameField.dataset.layerId=selectedLayer.id;
+  }
   nameField.disabled=!hasLayer;
   const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
   const sameParent=(a:LayerId,b:LayerId)=>root.groupsForLayer(a).at(-1)?.id===root.groupsForLayer(b).at(-1)?.id;
@@ -1687,7 +1691,11 @@ layerNameField.onchange=()=>{
   }
   changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(editedId,nextName));
   const updated=controller.document.root.getLayer(editedId).name;
-  layerNameField.value=updated;
+  if(controller.selectedLayerId===editedId)layerNameField.value=updated;
+  else{
+    layerNameField.value=controller.selectedLayer.name;
+    layerNameField.dataset.layerId=controller.selectedLayerId;
+  }
   if(updated!==nextName)byId('status').textContent='レイヤー名を保存できませんでした。現在の操作を終えてから再試行してください。';
 };
 layerNameField.onkeydown=event=>{
