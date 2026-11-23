@@ -26,7 +26,7 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
   embedFonts.type='checkbox';
   embedLabel.append(embedFonts,' 文字レイヤーのコピーにフォントも含める（作品に同梱できるフォントのみ）');
   commands.append(embedLabel);
-  const imageFile=document.createElement('input');imageFile.type='file';imageFile.hidden=true;
+  const imageFile=document.createElement('input');imageFile.type='file';imageFile.id='c06ClipboardFile';imageFile.hidden=true;
   imageFile.accept='image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
   const message=document.createElement('output');message.setAttribute('role','status');
   const description=document.createElement('small');
