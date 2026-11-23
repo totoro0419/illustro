@@ -109,12 +109,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Install independent Chromium verifier
+      - name: Use Ubuntu runner's preinstalled Google Chrome
         run: |
           npm install --prefix /tmp/r2-audit-browser playwright@1.62.1 --no-audit --no-fund
-          /tmp/r2-audit-browser/node_modules/.bin/playwright install --with-deps chromium
+          command -v google-chrome
       - name: Actually operate public fixes preview in Chromium
         env:
+          R2_CHROME_CHANNEL: chrome
           RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
           R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
