@@ -45,7 +45,7 @@ export function findBackgroundSpecks(source:Uint8Array,width:number,height:numbe
     }
     const w=maxX-minX+1,h=maxY-minY+1;
     if(!isolated||end>maxArea||Math.max(w,h)>Math.max(2,2*Math.min(w,h)))continue;
-    if(spots.length===32)return {spots,capped:true};
+    if(spots.length===128)return {spots,capped:true};
     spots.push({pixels:queue.slice(0,end),x:Math.round(sx/end),y:Math.round(sy/end),fill:[...paper,255]});
   }
   return {spots,capped:false};
