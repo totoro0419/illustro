@@ -47,7 +47,7 @@ try{
     const toggle=document.getElementById('pixelGridToggle');
     toggle.checked=false;toggle.dispatchEvent(new Event('change',{bubbles:true}));
   });
-  await page.waitForFunction(()=>{const grid=document.querySelector('#pixelGrid');return grid?.hidden&&getComputedStyle(grid).display==='none';},{timeout:6000});
+  await page.waitForFunction(()=>{const grid=document.querySelector('#pixelGrid');return !!grid?.hasAttribute('hidden')&&getComputedStyle(grid).display==='none';},{timeout:6000});
   mark('D-001-HIGH-ZOOM-GRID-OFF');
 
   await page.locator('#fileActionsOpen').click();
