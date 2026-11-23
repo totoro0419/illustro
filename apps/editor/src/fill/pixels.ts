@@ -293,7 +293,7 @@ export function needsLeakingFillReview(mask:MaskData,point:Point|undefined,gap:n
     if(alpha[y*width+width-1])right=true;
   }
   edges=Number(top)+Number(bottom)+Number(left)+Number(right);
-  return edges>=2;
+  return edges>=1;
 }
 
 function* sampledPath(points:readonly Point[]){
