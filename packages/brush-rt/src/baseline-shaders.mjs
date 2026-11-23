@@ -24,6 +24,12 @@ float cov(vec4 a,vec4 b,vec4 color,vec4 extra,vec4 seg,vec2 xy){
  return sat(v);
 }
 vec4 compose(vec4 d,vec4 s,int mode){if(s.a<=0.)return d;
+ if(mode==8){
+  float a=d.a+s.a*(1.-d.a);
+  vec3 c=(d.rgb*d.a+s.rgb*(1.-d.a))/max(a,.000001);
+  vec4 q=floor(clamp(vec4(c,a),0.,1.)*255.+.5)/255.;
+  return q.a==0.?vec4(0):q;
+ }
  if(mode>=4){
   if(d.a<=0.||mode==7)return d;
   vec3 source=s.rgb/s.a;
@@ -91,6 +97,12 @@ fn cov(a:vec4f,b:vec4f,color:vec4f,extra:vec4f,seg:vec4f,xy:vec2f)->f32{
  if(b.w>0.&&v>0.){let g=vec2f(dot(xy,p.v[2].xy),dot(xy,vec2f(-p.v[2].y,p.v[2].x)))/p.v[1].w;var t=0.;let k=i32(p.v[3].x);if(k==3){t=img(grainImage,g,true);}else if(k==1){t=.15+.85*pow(abs(sin((g.x+g.y)*3.141592653589793)),.7);}else{let hash=((bitcast<u32>(i32(floor(g.x)))*73856093u) ^ (bitcast<u32>(i32(floor(g.y)))*19349663u))*83492791u;t=f32(hash)/4294967295.;if(k==0){t=.25+.75*t;}}v*=1.-b.w+b.w*t;}return sat(v);
 }
 fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}
+ if(mode==8){
+  let a=d.a+s.a*(1.-d.a);
+  let c=(d.rgb*d.a+s.rgb*(1.-d.a))/max(a,.000001);
+  let q=floor(clamp(vec4f(c,a),vec4f(0.),vec4f(1.))*255.+.5)/255.;
+  return select(q,vec4f(0.),q.a==0.);
+ }
  if(mode>=4){
   if(d.a<=0.||mode==7){return d;}
   var source=s.rgb/s.a;
@@ -143,6 +155,12 @@ struct Params{v:array<vec4f,16>};
 
 // The shared math references mask/grain even when display only uses composition.
 fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}
+ if(mode==8){
+  let a=d.a+s.a*(1.-d.a);
+  let c=(d.rgb*d.a+s.rgb*(1.-d.a))/max(a,.000001);
+  let q=floor(clamp(vec4f(c,a),vec4f(0.),vec4f(1.))*255.+.5)/255.;
+  return select(q,vec4f(0.),q.a==0.);
+ }
  if(mode>=4){
   if(d.a<=0.||mode==7){return d;}
   var source=s.rgb/s.a;

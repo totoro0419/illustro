@@ -166,7 +166,7 @@ export class CanonicalBuilder {
 
  emit(q,a,speed,dir){if(this.commands.length>=2000000)throw Error('command limit');const generated=this.foundation?foundationDabs(q,this.p,this.index,this.seed,this.distance,speed,dir,q.t-this.start):{dabs:[makeDab(q,this.p,this.index,this.seed,this.distance,speed,dir,q.t-this.start)]};for(const dab of generated.dabs){if(this.foundation&&this.solid&&a)dab[2]=limitFoundationDiameter(this.p,dab[2],this.lastRadius,Math.hypot(q.x-a.x,q.y-a.y));this.index++;const c=new Float64Array(STRIDE);c.set(dab);c[16]=a?.x??q.x;c[17]=a?.y??q.y;c[18]=a?(q.x===a.x&&q.y===a.y&&!this.compatLegacyRadius?Math.max(this.lastRadius,dab[2]/2):this.lastRadius):dab[2]/2;c[19]=this.solid?1:this.sweep?2:0;c[20]=q.t;c[21]=this.distance;c[22]=a?this.lastDistance:this.distance;c[23]=dab[2]/2;this.lastRadius=dab[2]/2;this.lastDistance=this.distance;this.spacing=generated.spacing??dab[2]*dab[14];if(this.foundation&&!this.solid)c[22]=dir;if(this.sweep)this.appendSweep(c,q);else this.commands.push(c);}}
  appendSweep(c,q){const old=this.commands.at(-1),t=this.p.__foundation.texture,window=this.sweepWindow??[],same=old&&(this.filter.adaptive||this.commands.length-1>=this.published)&&window.length<64&&t.space==='paper'&&t.sizeMode==='absolute'&&!t.followDirection&&[2,3,5,6,7,8,9,10,18].every(i=>c[i]===old[i])&&old[18]===old[2]/2;let merge=!!same;if(merge){const dx=q.x-old[16],dy=q.y-old[17],den=dx*dx+dy*dy;for(const v of window){const f=clamp(((v.x-old[16])*dx+(v.y-old[17])*dy)/Math.max(1e-9,den));if(Math.hypot(v.x-old[16]-dx*f,v.y-old[17]-dy*f)>.05){merge=false;break;}}}if(merge){c[16]=old[16];c[17]=old[17];c[18]=old[18];this.commands[this.commands.length-1]=c;this.sweepWindow.push({...q});}else{this.commands.push(c);this.sweepWindow=[{x:c[16],y:c[17]},{...q}];}}
- ready(finish=false){let n=this.published,limit=this.commands.length-(this.sweep&&!finish?1:0),endTime=this.commands.at(-1)?.[20]??0,e=this.foundation?releaseEnvelope(this.p):null;while(n<limit&&(finish||(e?releaseReady(e,this.commands[n],this.distance,endTime):this.commands[n][21]<=this.distance-this.p.taperEnd)))n++;if(this.foundation&&finish&&e){const out=finalizeFoundationCommands(this.commands,this.published,this.p,this.distance,endTime);this.published=n;return out;}const out=[];for(;this.published<n;this.published++){const c=this.commands[this.published].slice();c[2]*=taper(this.p,c[21],this.distance,finish);c[18]*=taper(this.p,c[22],this.distance,finish);out.push(c);}return out;}
+ ready(finish=false){let n=this.published,limit=this.commands.length-(this.sweep&&!finish?1:0),endTime=this.commands.at(-1)?.[20]??0,e=this.foundation?releaseEnvelope(this.p):null;while(n<limit&&(finish||(e?releaseReady(e,this.commands[n],this.distance,endTime):this.commands[n][21]<=this.distance-this.p.taperEnd)))n++;if(this.foundation&&finish&&e){const out=finalizeFoundationCommands(this.commands,this.published,this.p,this.distance,endTime);this.published=n;return wrapCommands(out,this.context.wrapDimensions);}const out=[];for(;this.published<n;this.published++){const c=this.commands[this.published].slice();c[2]*=taper(this.p,c[21],this.distance,finish);c[18]*=taper(this.p,c[22],this.distance,finish);out.push(c);}return wrapCommands(out,this.context.wrapDimensions);}
  release(s){normalize(s);if(s.predicted||s.origin==='predicted')throw Error('prediction cannot be canonical');if(s.t<(this.raw.at(-1)?.t??0))throw Error('out-of-order release');this.releaseInput={...s,phase:'release'};}
  finish(){
   if(this.finished)throw Error('closed');
@@ -182,9 +182,28 @@ export class CanonicalBuilder {
   }
   this.finished=true;return this.ready(true);
  }
- record(){if(!this.finished)throw Error('not finalized');const endTime=this.commands.at(-1)?.[20]??0,finalCommands=this.foundation?finalizeFoundationRecord(this.commands,this.p,this.distance,endTime,this.context).map(c=>Array.from(c)):this.commands.map(c=>{const a=Array.from(c);a[2]*=taper(this.p,a[21],this.distance,true);a[18]*=taper(this.p,a[22],this.distance,true);return a;});return {...(this.foundation?{foundation:this.foundation,context:this.context,...(this.releaseInput?{releaseInput:this.releaseInput}:{})}:{}),version:this.foundation?3:2,engine:this.replayEngine??(this.foundation?FOUNDATION:VERSION),smoothing:this.path?FREEHAND_SMOOTHING:LEGACY_SMOOTHING,fast:this.fast,random:'philox4x32-10',seed:this.seed,preset:this.p,raw:this.raw,geometry:this.geometry,commands:finalCommands};}
+ record(){if(!this.finished)throw Error('not finalized');const endTime=this.commands.at(-1)?.[20]??0,finalCommands=this.foundation?finalizeFoundationRecord(this.commands,this.p,this.distance,endTime,this.context).map(c=>Array.from(c)):this.commands.map(c=>{const a=Array.from(c);a[2]*=taper(this.p,a[21],this.distance,true);a[18]*=taper(this.p,a[22],this.distance,true);return a;});return {...(this.foundation?{foundation:this.foundation,context:this.context,...(this.releaseInput?{releaseInput:this.releaseInput}:{})}:{}),version:this.foundation?3:2,engine:this.replayEngine??(this.foundation?FOUNDATION:VERSION),smoothing:this.path?FREEHAND_SMOOTHING:LEGACY_SMOOTHING,fast:this.fast,random:'philox4x32-10',seed:this.seed,preset:this.p,raw:this.raw,geometry:this.geometry,commands:wrapCommands(finalCommands,this.context.wrapDimensions)};}
 }
 export function commandBounds(c){const solid=c[19]>0,r=Math.max(c[2]/2,c[18])*(solid?1:Math.SQRT2)+2,ax=solid?c[16]:c[0],ay=solid?c[17]:c[1];return {x0:Math.min(c[0],ax)-r,y0:Math.min(c[1],ay)-r,x1:Math.max(c[0],ax)+r,y1:Math.max(c[1],ay)+r};}
+// Fold each finalized command into the base tile. The copies remain part of
+// the same stroke, so saturated paint and erasing share one coverage buffer.
+export function wrapCommands(commands,dimensions){
+ if(!dimensions)return commands;
+ const [width,height]=dimensions,result=[];
+ for(const command of commands){
+  const {x0,y0,x1,y1}=commandBounds(command);
+  const left=Math.floor(-x1/width)+1,right=Math.ceil((width-x0)/width)-1;
+  const top=Math.floor(-y1/height)+1,bottom=Math.ceil((height-y0)/height)-1;
+  if((right-left+1)*(bottom-top+1)>65536)throw Error('繰り返し範囲が広すぎます。筆を小さくするか、短い線に分けてください。');
+  for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++){
+   if(!x&&!y){result.push(command);continue;}
+   const cell=command.slice(),dx=x*width,dy=y*height;
+   cell[0]+=dx;cell[1]+=dy;cell[16]+=dx;cell[17]+=dy;
+   result.push(cell);
+  }
+ }
+ return result;
+}
 export function keysFor(c,width,height){const b=commandBounds(c),out=[];for(let y=Math.max(0,Math.floor(b.y0/TILE));y<=Math.min(Math.ceil(height/TILE)-1,Math.floor(b.y1/TILE));y++)for(let x=Math.max(0,Math.floor(b.x0/TILE));x<=Math.min(Math.ceil(width/TILE)-1,Math.floor(b.x1/TILE));x++)out.push(x+','+y);return out;}
 export function capsuleCoverage(c,x,y){const ax=c[16],ay=c[17],dx=c[0]-ax,dy=c[1]-ay;const t=clamp(((x-ax)*dx+(y-ay)*dy)/Math.max(.000001,dx*dx+dy*dy));const r=c[18]+(c[2]/2-c[18])*t;return clamp(r+.5-Math.hypot(x-ax-dx*t,y-ay-dy*t));}
 export function referenceCoverage(c,x,y,p,engine=VERSION){if(p.__foundation?.material){const q=Array.from(c);q[7]=0;return referenceCoverage(q,x,y,{...p,__foundation:undefined},engine)*textureFactor(c,x,y,p);}const ellipse=p.tip==='ellipse'&&p.hardness===1&&!p.dual,star=p.tip==='star'&&p.hardness===1&&!p.dual&&engine!=='illustro-rt-2.4';if(!ellipse&&!star)return coverage(c,0,x,y,p);const cs=Math.cos(c[4]),sn=Math.sin(c[4]),dx=x-c[0],dy=y-c[1],rx=c[2]/2,ry=rx*c[3],lx=dx*cs+dy*sn,ly=-dx*sn+dy*cs;let v;if(star){if(rx*ry<.08)v=Math.max(0,1-Math.abs(dx))*Math.max(0,1-Math.abs(dy))*Math.min(1,Math.PI*rx*ry*.48375);else{const u=lx/rx,w=ly/ry,r=Math.hypot(u,w),theta=Math.atan2(w,u),a=1.75*Math.sin(theta*5)/Math.max(r,1e-12),gradient=Math.hypot((Math.cos(theta)-a*Math.sin(theta))/rx,(Math.sin(theta)+a*Math.cos(theta))/ry);v=r>1e-12?clamp(.5-(r-.65-.35*Math.cos(theta*5))/Math.max(gradient,1e-12)):clamp(.5+.3*Math.min(rx,ry));}}else{const k0=Math.hypot(lx/rx,ly/ry),k1=Math.hypot(lx/(rx*rx),ly/(ry*ry));v=k1>1e-12?clamp(.5-k0*(k0-1)/k1):clamp(.5+Math.min(rx,ry));}if(c[7]&&v){const q=Array.from(c);q[0]=x;q[1]=y;q[2]=2;q[3]=1;q[4]=0;v*=coverage(q,0,x,y,{...p,tip:'round',hardness:1});}return v;}
@@ -193,7 +212,14 @@ export function cpuReference(record,width,height,base=new Uint8ClampedArray(widt
  const accum=new Float64Array(width*height*4),p=record.preset,material=p.__foundation?.material,coveragePreset=material?{...p,__foundation:undefined}:p;
  for(const c of record.commands){const plain=material?Array.from(c):c;if(material)plain[7]=0;const b=commandBounds(c);for(let y=Math.max(0,Math.floor(b.y0)-originY);y<Math.min(height,Math.ceil(b.y1)-originY);y++)for(let x=Math.max(0,Math.floor(b.x0)-originX);x<Math.min(width,Math.ceil(b.x1)-originX);x++){const index=y*width+x;if(selection&&!selection[index])continue;const i=index*4,px=x+originX+.5,py=y+originY+.5,k=(c[19]===1?capsuleCoverage(c,px,py):c[19]===2?sweptCoverage(c,px,py,p):referenceCoverage(plain,px,py,coveragePreset,record.engine)*(material?textureFactor(c,px,py,p):1))*c[6];if(p.__foundation?.coverageUnion){const delta=Math.max(0,k*c[5]-accum[i+3]);for(let j=0;j<3;j++)accum[i+j]+=c[8+j]*delta;accum[i+3]+=delta;continue;}if(p.__foundation?.material){const a=k*c[5];for(let j=0;j<3;j++)accum[i+j]=accum[i+j]*(1-a)+c[8+j]*a;accum[i+3]+=a*(1-accum[i+3]);continue;}const d=c[19]===1?Math.max(0,c[5]*k-accum[i+3]):Math.max(0,c[5]-accum[i+3])*k;for(let j=0;j<3;j++)accum[i+j]+=d*c[8+j];accum[i+3]+=d;}}
  if(p.__foundation?.material)for(let i=0;i<accum.length;i++)accum[i]*=p.__foundation.opacity;
- const out=base.slice();for(let i=0;i<out.length;i+=4){const density=selection?selection[i/4]/255:1,sa=accum[i+3]*density,da=base[i+3]/255;if(!sa)continue;if(p.__alphaLocked){
+ const out=base.slice();for(let i=0;i<out.length;i+=4){const density=selection?selection[i/4]/255:1,sa=accum[i+3]*density,da=base[i+3]/255;if(!sa)continue;
+ if(p.__foundation?.context?.paintBehind&&p.blend!=='erase'){
+  if(p.__alphaLocked||da>=1)continue;
+  const a=da+sa*(1-da),quantized=Math.round(a*255);
+  for(let j=0;j<3;j++)out[i+j]=quantized?Math.round(clamp((base[i+j]/255*da+accum[i+j]*density*(1-da))/a)*255):0;
+  out[i+3]=quantized;continue;
+ }
+ if(p.__alphaLocked){
   if(!da||p.blend==='erase')continue;
   for(let j=0;j<3;j++){
     const source=accum[i+j]*density/sa,destination=base[i+j]/255;

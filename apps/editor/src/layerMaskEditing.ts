@@ -3,7 +3,7 @@ import {MASK_TILE_SIZE,type LayerMask,type MaskPoint,type PixelLayerMask} from '
 import type {MaskData} from './selection/mask';
 import type {SelectionRect} from './strokeSelection';
 
-export type MaskStrokePoint=MaskPoint&{pressure:number};
+export type MaskStrokePoint=MaskPoint&{pressure:number;t?:number};
 type MaskPaintOptions={
   reveal:boolean;size:number;opacity:number;width:number;height:number;selection:SelectionRect|null;selectionMask?:MaskData|null;
 };

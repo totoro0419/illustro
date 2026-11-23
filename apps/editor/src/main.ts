@@ -196,7 +196,7 @@ function traceHistoryInput(button:HTMLButtonElement,direction:HistoryDirection,p
 
 let pressureRange=readPressureRange();
 let strokeComparisonListener:StrokeComparison|null=null;
-const inputPreferences={finger:false,palmGuard:true,penBarrelErase:false,rotationSnap:true,brushCursorEnabled:false,eraserSizeLink:false};
+const inputPreferences={finger:false,palmGuard:true,penBarrelErase:false,rotationSnap:true,brushCursorEnabled:false,eraserSizeLink:false,paintBehind:false};
 try{
   const saved=JSON.parse(localStorage.getItem('illustro.input-preferences.v1')??'null');
   for(const key of Object.keys(inputPreferences) as (keyof typeof inputPreferences)[])
@@ -1766,7 +1766,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
  return drawing;
 }
 function applyInputPreferences(drawing:BrushSurface){
- drawing.fingerDrawing=inputPreferences.finger;drawing.palmGuard=inputPreferences.palmGuard;drawing.barrelErases=inputPreferences.penBarrelErase;
+ drawing.paintBehind=inputPreferences.paintBehind;drawing.fingerDrawing=inputPreferences.finger;drawing.palmGuard=inputPreferences.palmGuard;drawing.barrelErases=inputPreferences.penBarrelErase;
  drawing.setRotationSnap(inputPreferences.rotationSnap);
  drawing.setPressureRange(pressureRange);
  drawing.setPointerRoles(readPointerRoles());
@@ -1950,7 +1950,7 @@ function updateContextBar(){
     source:sampleSource==='layer'?'layer':sampleSource==='specific'?'specific':'composite',
     layerId:sampleLayerId?sampleLayerId as LayerId:null,
   },controller.layers.map(item=>({id:item.id,name:item.name})));
-  tool.textContent='道具: '+(fill?'塗りつぶし':wet?wet.tool:contextToolLabels[activeCanvasTool]??(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ'));
+  tool.textContent='道具: '+(fill?'塗りつぶし':wet?wet.tool:contextToolLabels[activeCanvasTool]??(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':(surface?.brushName??'ブラシ')+(inputPreferences.paintBehind?'（背面）':'')));
   layer.textContent=fill?'塗り先: '+fill.destination:wet?.separate?'描画先: 新規レイヤー':'描画先: '+(active?controller.selectedLayer.name:'作品なし');
   const selected=surface?.selectedRectangle;
   selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):c06Selection?.active()?'選択範囲あり':'選択なし';
@@ -2703,8 +2703,32 @@ async function restoreCropOutside(){
   catch(error){byId('status').textContent=error instanceof Error?error.message:String(error);return;}
   if(!plan){byId('status').textContent='外側を残した切り抜きが見つかりません。';return;}
   const {source,output,placement,outside,currentX,currentY,filter}=plan;
-  if(!await appConfirm('切り抜きの外側を戻します。復元後は '+output.width+' × '+output.height+
-    ' px です。現在の範囲の絵は優先して残します。'))return;
+  const preview=document.createElement('canvas');
+  const caption=document.createElement('p');
+  caption.textContent='元の絵のうち、切り抜きの外側にあった部分を表示しています。';
+  const content=document.createElement('div');content.append(caption,preview);
+  try{
+    const frozen=captureExport(artwork,undefined,source);
+    const scale=Math.min(1,320/Math.max(frozen.width,frozen.height));
+    const width=Math.max(1,Math.round(frozen.width*scale)),height=Math.max(1,Math.round(frozen.height*scale));
+    const pixels=await renderFrozenArtworkTiledPreview(frozen,width,height)??new Uint8ClampedArray(
+      resizeImagePixels(await renderFrozenArtwork(frozen),frozen.width,frozen.height,width,height,'auto'));
+    preview.width=width;preview.height=height;
+    preview.style.cssText='display:block;max-width:100%;height:auto;background:repeating-conic-gradient(#fff 0% 25%,#e0e4e9 0% 50%) 0 0/16px 16px';
+    preview.setAttribute('aria-label','切り抜きの外側だけの見本');
+    const ctx=preview.getContext('2d')!;
+    ctx.putImageData(new ImageData(new Uint8ClampedArray(pixels),width,height),0,0);
+    const x=outside.x*width/frozen.width,y=outside.y*height/frozen.height;
+    const innerWidth=outside.width*width/frozen.width,innerHeight=outside.height*height/frozen.height;
+    ctx.clearRect(x,y,innerWidth,innerHeight);
+    ctx.strokeStyle='#315f91';ctx.setLineDash([4,3]);ctx.strokeRect(x,y,innerWidth,innerHeight);
+  }catch{
+    caption.textContent='この作品では外側の見本を表示できません。';
+    preview.hidden=true;
+  }
+  if(controller.document!==artwork||head!==artwork.head||surface!==drawing)return;
+  if(await appChoose('復元後は '+output.width+' × '+output.height+' px です。現在の範囲の絵は優先して残します。',
+    [{value:'restore',label:'外側を復元'}],content)!=='restore')return;
   if(controller.document!==artwork||head!==artwork.head||surface!==drawing||geometryBusy||!drawing.canChangeGeometry)return;
   geometryBusy=true;drawing.setInputBarrier(true);
   byId('status').textContent='切り抜きの外側を復元しています。';
@@ -3412,6 +3436,7 @@ byId<HTMLInputElement>('force').onchange=e=>{if(!applyBrushChange(p=>{if(p.force
  input.onchange=()=>{
   inputPreferences[id]=input.checked;if(surface)applyInputPreferences(surface);
   if(id==='brushCursorEnabled'&&!input.checked)hideBrushCursor();
+  if(id==='paintBehind')updateContextBar();
   try{localStorage.setItem('illustro.input-preferences.v1',JSON.stringify(inputPreferences));}catch{}
   updateQa();
  };
@@ -4470,7 +4495,15 @@ wetTools=installWetTools(byId('documentBoxBody'),{
     return changed;
   },
 });
-installWetPad(byId('referenceBoxBody'),{settings:()=>wetTools?.settings(),sample:color=>foreground.choose(rgb(color[0]!/255,color[1]!/255,color[2]!/255))});
+installWetPad(byId('referenceBoxBody'),{
+  settings:()=>wetTools?.settings(),sample:color=>foreground.choose(rgb(color[0]!/255,color[1]!/255,color[2]!/255)),
+  brushes:()=>surface?.brushes.map(preset=>brushDrafts.get(preset.id)??(surface?.preset?.id===preset.id?surface.preset:preset))??[],
+  activeBrush:()=>surface?.brushId??'',context:()=>({
+    commonStabilization:{constant:commonStabilization,fast:surface?.preset?.stabilization.fast??0,
+      speedMode:surface?.preset?.stabilization.speedMode??'reduce',post:surface?.preset?.stabilization.post??0},
+    ...(devicePressureSensitivity===.5?{}:{deviceCurve:[[0,0],[.5,devicePressureSensitivity],[1,1]]}),
+  }),
+});
 const pixelPanel=document.createElement('details');pixelPanel.className='c06-clipboard-panel';pixelPanel.dataset.toolPanel='pixels';
 const pixelTitle=document.createElement('summary');pixelTitle.textContent='1pxのドット絵';
 const pixelPen=document.createElement('button'),pixelErase=document.createElement('button'),pixelStatus=document.createElement('output');

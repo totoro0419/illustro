@@ -202,6 +202,7 @@ export class BrushSurface{
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;barrelErases=false;palmGuard=true;private panningTool=false;rotationSnap=false;
   get panTool(){return this.panningTool;}
   set panTool(value:boolean){if(value&&this.editGesture?.continuous)this.setCanvasEditGesture(null);this.panningTool=value;}
+  paintBehind=false;
   eraserPreset:()=>FoundationPreset|null=()=>null;
   private suppressedTouches=new Set<number>();
   private commonStabilization=0.25;
@@ -769,7 +770,7 @@ export class BrushSurface{
     const pressure=event.pointerType==='pen'?(event.pressure||this.editPoints.at(-1)?.pressure||.5):1;
     const last=this.editPoints.at(-1);
     if(!last||Math.hypot(x-last.x,y-last.y)>=.5){
-      this.editPoints.push({x,y,pressure});
+      this.editPoints.push({x,y,pressure,t:event.timeStamp});
       if(this.editGesture?.completeSamples||this.editGesture?.updateSamples)this.editSamples.push(this.sample(event));
     }
     if(this.editPoints.length>4096){
@@ -1024,8 +1025,10 @@ export class BrushSurface{
       this.activeGuide=picked?.guide??lockStraightGuide(guideOrigin,this.guideSettings,preset.blend==='erase',bypass);
       if(this.artworkGuides.length||bypass)this.onArtworkGuideTarget(picked?picked.name+'へ吸着（'+picked.distance.toFixed(1)+' px）':bypass?'この一筆は吸着を解除':'作品の定規への吸着なし');
       this.updateGuideOverlay();
-      this.renderer?.setSeamlessPreview(this.view.seamless);
+      this.renderer?.setSeamlessPreview(false);
       const context={
+        ...(this.paintBehind&&preset.blend!=='erase'?{paintBehind:true}:{}),
+        ...(this.view.seamless?{wrapDimensions:[w,h] as const}:{}),
         // Ruler strokes already have a prescribed path. Preserve their existing evaluation.
         ...(!this.activeGuide&&!this.pendingPerspectiveHeading?{freehandStabilizationScale:this.view.zoom}:{stabilizationGeometry:'adaptive-v2' as const}),
         ...(layer.alphaLocked?{alphaLocked:true}:{}),
@@ -1142,7 +1145,7 @@ export class BrushSurface{
     if(hold)this.heldReservations.set(reservation,hold);
     const promise=session.end(release?{...release,origin:'release'}:null),trace={id:strokeId!,upAt,readyMs:performance.now()-upAt} as (typeof this.handoffTraces)[number];if(this.traceHandoff){this.handoffTraces.push(trace);if(this.handoffTraces.length>1200)this.handoffTraces.shift();}const uiAt=performance.now();this.onStateChanged();trace.uiStateMs=performance.now()-uiAt;trace.readyMs=performance.now()-upAt;
     void promise.then(async record=>{if(!record||this.disposed)return;trace.recordMs=performance.now()-upAt;const variants=symmetry?[record,...await this.copySymmetricStroke(record,symmetry)]:[record];
-      const copies=seamless?variants.flatMap((variant,index)=>[
+      const copies=seamless&&!(record.version===3&&record.context.wrapDimensions)?variants.flatMap((variant,index)=>[
         ...(index?[variant]:[]),...wrappedCopies(variant,target.width,target.height).map(copy=>copy.record)
       ]):variants.slice(1);
       try{const result=await this.handoff!.release(reservation,record,copies);if(result){this.lastCommitMs=trace.logicalMs=performance.now()-upAt;report?.(record);}else trace.parkedMs=performance.now()-upAt;}
@@ -1162,7 +1165,7 @@ export class BrushSurface{
       if(mask.alpha.length!==target.width*target.height)
         throw Error('選択マスクの大きさが作品に一致しません。');
       const variants=symmetry?[record,...await this.copySymmetricStroke(record,symmetry)]:[record];
-      const copies=seamless?variants.flatMap((variant,index)=>[
+      const copies=seamless&&!(record.version===3&&record.context.wrapDimensions)?variants.flatMap((variant,index)=>[
         ...(index?[variant]:[]),...wrappedCopies(variant,target.width,target.height).map(copy=>copy.record)
       ]):variants.slice(1);
       const records=[record,...copies];

@@ -1,6 +1,10 @@
 export const kinds={round:0,ellipse:1,rect:2,bristle:3,star:4,leaf:5,mask:6};
 export const grainKinds={paper:0,hatch:1,noise:2,image:3};
 export const blends={normal:0,multiply:1,screen:2,erase:3};
+export function brushBlendIndex(preset){
+ if(preset?.__foundation?.context?.paintBehind&&preset.blend!=='erase')return preset.__alphaLocked?7:8;
+ return (blends[preset?.blend??'normal']??0)+(preset?.__alphaLocked?4:0);
+}
 // Hard-star harmonics use algebraic cos(5θ)/sin(5θ). Transcendental GPU
 // approximations otherwise magnify angular error by the brush radius.
 export const glMath=`
@@ -25,6 +29,12 @@ float cov(vec4 a,vec4 b,vec4 color,vec4 extra,vec4 seg,vec2 xy){
  return sat(v);
 }
 vec4 compose(vec4 d,vec4 s,int mode){if(s.a<=0.)return d;
+ if(mode==8){
+  float a=d.a+s.a*(1.-d.a);
+  vec3 c=(d.rgb*d.a+s.rgb*(1.-d.a))/max(a,.000001);
+  vec4 q=floor(clamp(vec4(c,a),0.,1.)*255.+.5)/255.;
+  return q.a==0.?vec4(0):q;
+ }
  if(mode>=4){
   if(d.a<=0.||mode==7)return d;
   vec3 source=s.rgb/s.a;
@@ -124,6 +134,12 @@ fn cov(a:vec4f,b:vec4f,color:vec4f,extra:vec4f,seg:vec4f,xy:vec2f)->f32{
  return textureCoverage(v,a,b,extra,xy);
 }
 fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}
+ if(mode==8){
+  let a=d.a+s.a*(1.-d.a);
+  let c=(d.rgb*d.a+s.rgb*(1.-d.a))/max(a,.000001);
+  let q=floor(clamp(vec4f(c,a),vec4f(0.),vec4f(1.))*255.+.5)/255.;
+  return select(q,vec4f(0.),q.a==0.);
+ }
  if(mode>=4){
   if(d.a<=0.||mode==7){return d;}
   var source=s.rgb/s.a;
@@ -180,6 +196,12 @@ struct Params{v:array<vec4f,16>};
 
 // The shared math references mask/grain even when display only uses composition.
 fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}
+ if(mode==8){
+  let a=d.a+s.a*(1.-d.a);
+  let c=(d.rgb*d.a+s.rgb*(1.-d.a))/max(a,.000001);
+  let q=floor(clamp(vec4f(c,a),vec4f(0.),vec4f(1.))*255.+.5)/255.;
+  return select(q,vec4f(0.),q.a==0.);
+ }
  if(mode>=4){
   if(d.a<=0.||mode==7){return d;}
   var source=s.rgb/s.a;

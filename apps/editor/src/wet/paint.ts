@@ -1,10 +1,10 @@
 export type WetMode='blur'|'smudge'|'mix'|'water'|'oil'|'pastel'|'clone'|'heal'|'patch';
-export type Point=Readonly<{x:number;y:number;pressure?:number}>;
+export type Point=Readonly<{x:number;y:number;pressure?:number;t?:number}>;
 export type Area=Readonly<{x:number;y:number;width:number;height:number}>;
 export type Patch=Readonly<{area:Area;pixels:Uint8ClampedArray}>;
 export type WetSettings=Readonly<{
   mode:WetMode;size:number;strength:number;pigment:number;diffusion:number;edge:number;grain:number;
-  paperScale:number;absorb:number;thickness:number;water?:number;color:readonly number[];
+  paperScale:number;absorb:number;thickness:number;water?:number;waterInput?:number;pigmentInput?:number;waterSpeed?:number;pigmentSpeed?:number;color:readonly number[];
 }>;
 export type WetJob=Readonly<{
   destination:Patch;reference:Patch|null;selection:Uint8Array|null;shapePatch?:boolean;points:readonly Point[];
@@ -81,7 +81,7 @@ function* dabs(points:readonly Point[],spacing:number){
     let distance=remaining;
     while(distance<=len){
       const f=distance/len,p=from.pressure??1;
-      yield {x:from.x+f*dx,y:from.y+f*dy,pressure:p+f*((to.pressure??1)-p)};
+      yield {x:from.x+f*dx,y:from.y+f*dy,pressure:p+f*((to.pressure??1)-p),t:(from.t??0)+f*((to.t??0)-(from.t??0))};
       distance+=spacing;
     }
     remaining=distance-len;from=to;
@@ -96,7 +96,8 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
   if(needsSource(settings.mode)&&!reference)throw Error('採取元の画素を読み込めません。');
   const {mode,size,strength,pigment,diffusion,edge,grain,paperScale,absorb,thickness,color}=settings;
   const out=new Uint8ClampedArray(pixels),dest={area,pixels:out},source=reference??destination;
-  const water=clamp(settings.water??.5);
+  const baseWater=clamp(settings.water??.5);
+  let water=baseWater,pigmentAmount=pigment;
   const radius=size/2,sampleStep=Math.max(1,Math.round(radius*.45));
   const pigmentColor:Sample=[(color[0]??0)/255,(color[1]??0)/255,(color[2]??0)/255,1];
   let changed=false,work=0;
@@ -129,11 +130,11 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
       if(mode==='water'){
         const diffusionRadius=Math.max(1,Math.round(diffusion*sampleStep*(.5+water)));
         const retrieved=mix(average(source,x,y,diffusionRadius),carried,water*.24);
-        const dye=clamp(pigment*spread*rim*texture*(1-water*.45));
+        const dye=clamp(pigmentAmount*spread*rim*texture*(1-water*.45));
         const paint=sourceOver(retrieved,ink,dye);
         value=mix(old,paint,weight*(.62-.25*absorb));
       }else {
-        const paint=sourceOver(carried,ink,clamp(pigment*spread*rim*texture));
+        const paint=sourceOver(carried,ink,clamp(pigmentAmount*spread*rim*texture));
         value=sourceOver(old,paint,weight*.65);
       }
     }
@@ -155,6 +156,12 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
 
   let previous=points[0]??{x:0,y:0},carried=sample(source,previous.x,previous.y);
   for(const dab of dabs(points,Math.max(.9,radius*.5))){
+    const pressure=clamp(dab.pressure??1),elapsed=(dab.t??0)-(previous.t??0);
+    const speed=elapsed>0?clamp(Math.hypot(dab.x-previous.x,dab.y-previous.y)/elapsed):.5;
+    const mod=(base:number,byPressure=0,bySpeed=0)=>clamp(base+byPressure*(pressure-.5)*2+bySpeed*(speed-.5)*2);
+    if(mode==='water')water=mod(baseWater,settings.waterInput,settings.waterSpeed);
+    if(mode==='water'||mode==='mix'||mode==='oil'||mode==='pastel')
+      pigmentAmount=mod(pigment,settings.pigmentInput,settings.pigmentSpeed);
     const r=Math.max(.65,radius*(.4+.6*clamp(dab.pressure??1))*(mode==='water'?1+water*diffusion*.28:1));
     const drag={x:dab.x-previous.x,y:dab.y-previous.y};
     const bounds={x:int(dab.x-r,area.x,area.x+area.width),y:int(dab.y-r,area.y,area.y+area.height),

@@ -38,6 +38,13 @@ export function installWetTools(host:HTMLElement,api:{
   const paperScale=numberField(fine,'紙目の大きさ（px）',3,1,32);
   const absorb=numberField(fine,'紙の吸収・かすれ（%）',45,0,100);
   const thickness=numberField(fine,'厚塗りの明るい盛り上がり（%）',50,0,100);
+  const waterInput=numberField(fine,'筆圧による水量の変化（%）',0,-100,100);
+  const pigmentInput=numberField(fine,'筆圧による顔料量の変化（%）',0,-100,100);
+  const waterSpeed=numberField(fine,'速さによる水量の変化（%）',0,-100,100);
+  const pigmentSpeed=numberField(fine,'速さによる顔料量の変化（%）',0,-100,100);
+  const dynamicsHint=document.createElement('small');
+  dynamicsHint.textContent='0で固定。正の値は強く・速く描くほど増え、負の値は減ります。';
+  fine.append(dynamicsHint);
   advanced.append(advancedTitle,fine);
   const separate=document.createElement('input');separate.type='checkbox';
   labelledField(options,'新しいレイヤーに結果を置く',separate);
@@ -50,7 +57,7 @@ export function installWetTools(host:HTMLElement,api:{
   const target=document.createElement('p');target.setAttribute('role','status');
   let anchor:{point:Point;documentId:string;layerId:string;layerName:string}|null=null,offset:Point|null=null;
   let cancelDrawing:(()=>void)|null=null,pending:AbortController|null=null,revision=0;
-  const fields=[size,strength,pigment,diffusion,edge,grain,paperScale,absorb,thickness,water];
+  const fields=[size,strength,pigment,diffusion,edge,grain,paperScale,absorb,thickness,water,waterInput,pigmentInput,waterSpeed,pigmentSpeed];
   const key='illustro.round2.wet.v1';
   function restorePreferences(raw:string|null){
     const saved=JSON.parse(raw??'null');
@@ -71,7 +78,8 @@ export function installWetTools(host:HTMLElement,api:{
     if(fields.some(field=>!field.validity.valid||!field.value))throw Error('筆の設定を範囲内で指定してください。');
     return {mode:selected(),size:size.valueAsNumber,strength:strength.valueAsNumber/100,pigment:pigment.valueAsNumber/100,
       diffusion:diffusion.valueAsNumber/100,edge:edge.valueAsNumber/100,grain:grain.valueAsNumber/100,
-      paperScale:paperScale.valueAsNumber,absorb:absorb.valueAsNumber/100,thickness:thickness.valueAsNumber/100,water:water.valueAsNumber/100,color:api.color()};
+      paperScale:paperScale.valueAsNumber,absorb:absorb.valueAsNumber/100,thickness:thickness.valueAsNumber/100,water:water.valueAsNumber/100,waterInput:waterInput.valueAsNumber/100,waterSpeed:waterSpeed.valueAsNumber/100,
+      pigmentInput:pigmentInput.valueAsNumber/100,pigmentSpeed:pigmentSpeed.valueAsNumber/100,color:api.color()};
   }
   function describe(){
     const context=api.current();
@@ -82,7 +90,8 @@ export function installWetTools(host:HTMLElement,api:{
       (anchor&&needsSource(paintMode)?' ／ 採取点 '+Math.floor(anchor.point.x)+', '+Math.floor(anchor.point.y):'')+
       (paintMode==='smudge'||paintMode==='blur'?' ／ 既存の色だけ':paintMode==='mix'?' ／ 描画色を足す':'');
     aligned.parentElement!.hidden=!needsSource(selected());
-    water.parentElement!.hidden=selected()!=='water';
+    for(const control of [water,waterInput,waterSpeed])control.parentElement!.hidden=selected()!=='water';
+    for(const control of [pigmentInput,pigmentSpeed])control.parentElement!.hidden=!['water','mix','oil','pastel'].includes(selected());
     pigment.parentElement!.hidden=!['water','mix','oil','pastel'].includes(selected());
     sourceButton.hidden=!needsSource(selected())||transfer();
     selectedPatch.parentElement!.hidden=selected()!=='patch';

@@ -45,7 +45,7 @@ export function previewPlan(view,preset={},ratio='auto'){
 }
 export function directOverlaySupported(p,surfaceKey,backend){
  const style=backend.surfaceStyles?.get(surfaceKey);
- return ![...backend.surfaceStyles?.values()??[]].some(style=>style.clipKey!==undefined||style.isolation?.length||style.blend?.tone||style.blend?.effect?.enabled)&&!!p?.__foundation&&!p.__alphaLocked&&p.blend==='normal'&&surfaceKey===backend.surfaceStack.filter(key=>{const s=backend.surfaceStyles?.get(key);return s?.visible!==false&&(s?.opacity??1)>0;}).at(-1)&&(!style||(style.visible!==false&&(style.opacity??1)===1&&(!style.blend||(style.blend.mode==='normal'&&style.blend.space==='encoded'))&&!style.mask&&!style.clipping))&&!p.__foundation.readsCanvas;
+ return ![...backend.surfaceStyles?.values()??[]].some(style=>style.clipKey!==undefined||style.isolation?.length||style.blend?.tone||style.blend?.effect?.enabled)&&!!p?.__foundation&&!p.__alphaLocked&&!p.__foundation.context?.paintBehind&&p.blend==='normal'&&surfaceKey===backend.surfaceStack.filter(key=>{const s=backend.surfaceStyles?.get(key);return s?.visible!==false&&(s?.opacity??1)>0;}).at(-1)&&(!style||(style.visible!==false&&(style.opacity??1)===1&&(!style.blend||(style.blend.mode==='normal'&&style.blend.space==='encoded'))&&!style.mask&&!style.clipping))&&!p.__foundation.readsCanvas;
 }
 // Broad round stamps have no rotated tip or grain to evaluate per pixel.
 function broadSoftRound(p){

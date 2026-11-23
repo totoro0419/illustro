@@ -1,5 +1,5 @@
 import {foundationDabs,predictFoundation,cursorState,geometryContext} from '@rt/foundation';
-import {CanonicalBuilder,Stabilizer,predict,taper,continuous,limitFoundationDiameter,forceFadePreviewCommands,LatestMailbox,validateRecord,keysFor,STRIDE} from '@rt/model';
+import {wrapCommands,CanonicalBuilder,Stabilizer,predict,taper,continuous,limitFoundationDiameter,forceFadePreviewCommands,LatestMailbox,validateRecord,keysFor,STRIDE} from '@rt/model';
 import {makeDab} from '@legacy/dynamics';
 // A predicted stamp is emitted only when the next spatial/time deposit is due.
 // The builder, random index and all canonical input remain unchanged.
@@ -37,7 +37,7 @@ export class RealtimeSession {
   const inputTip=a.points.at(-1),actual=b.commands.at(-1),drawn=predicted??actual;
   const tip=actual?{...inputTip,x:actual[0],y:actual[1],t:predicted?inputTip.t:actual[20]}:inputTip;
   const previewTip=drawn?{...tip,x:drawn[0],y:drawn[1]}:tip;
-  this.renderer.setLive({id:a.id,surfaceKey:a.surfaceKey,preset:p,selectionMask:a.selectionMask,stableSource:a.stableSource,stableEnd:a.stableSource.length,commands:tail,tip,inputTip,previewTip,predicted:!!predicted,rawTip:a.raw.at(-1),finished,resetPreview});
+  this.renderer.setLive({id:a.id,surfaceKey:a.surfaceKey,preset:p,selectionMask:a.selectionMask,stableSource:a.stableSource,stableEnd:a.stableSource.length,commands:wrapCommands(tail,b.context.wrapDimensions),tip,inputTip,previewTip,predicted:!!predicted,rawTip:a.raw.at(-1),finished,resetPreview});
  }
 
  // The canonical worker owns the complete final record. Do not regenerate and
