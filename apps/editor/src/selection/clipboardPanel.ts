@@ -89,7 +89,7 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
       if(context){context.fillStyle='#75baf255';context.fillRect(0,0,image.width,image.height);}
     }
     const bar=document.createElement('div');bar.className='c06-placement-toolbar';
-    const caption=document.createElement('output');caption.setAttribute('role','status');
+    const caption=document.createElement('output');caption.setAttribute('role','status');caption.textContent='画像をドラッグ、またはキャンバスの空白をタップして貼り付け位置を指定してください。';
     const commit=document.createElement('button'),cancel=document.createElement('button');
     commit.type=cancel.type='button';commit.textContent='この位置に確定';cancel.textContent='取り消す';
     bar.append(caption,commit,cancel);overlay.append(image,bar);surface.append(overlay);
@@ -126,9 +126,25 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
       }
     };
     document.addEventListener('keydown',keyGuard,true);
+    // Tap anywhere outside the preview to center it there without editing the artwork.
+    // Capture input before BrushSurface so the placement cannot paint a stroke.
+    const relocate=(event:PointerEvent)=>{
+      if(placementOverlay!==overlay||working||event.button!==0)return;
+      const target=event.target;
+      if(target instanceof Element&&target.closest('.c06-placement-toolbar,.c06-placement-image'))return;
+      const live=actions.getView();if(!live)return;
+      const rect=surface.getBoundingClientRect();
+      const at=live.drawing.screenToDocument({x:event.clientX-rect.left,y:event.clientY-rect.top});
+      x=Math.round(at.x-item.width/2);
+      y=Math.round(at.y-item.height/2);
+      event.preventDefault();event.stopImmediatePropagation();
+      position();
+    };
+    surface.addEventListener('pointerdown',relocate,{capture:true});
     placementCleanup=()=>{
       cancelAnimationFrame(frame);
       document.removeEventListener('keydown',keyGuard,true);
+      surface.removeEventListener('pointerdown',relocate,true);
     };
     let drag:{id:number;screen:{x:number;y:number};x:number;y:number}|null=null;
     image.addEventListener('pointerdown',event=>{
