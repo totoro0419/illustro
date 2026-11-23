@@ -448,6 +448,13 @@ export function installFillPanel(host:HTMLElement,api:{
     const update=(points:readonly Point[])=>{
       latestPoints=points;
       if(prepared&&!sourceValid()){
+        if(repeatDirect){
+          // An asynchronously captured live preview can become stale after a
+          // completed fill. Ignore that preview without cancelling live input.
+          prepared=undefined;context=undefined;sentContext=false;
+          drawing.showFillGesturePreview(null);
+          return;
+        }
         stopGesture();output.textContent='作品が変わったため塗りの入力を終了しました。';
         return;
       }
@@ -471,14 +478,17 @@ export function installFillPanel(host:HTMLElement,api:{
     drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,
       ...(graph||previewColor?{update}:{}),
       complete:points=>{
+        if(repeatDirect){
+          // BrushSurface remains armed across pointer-up; recreating the
+          // gesture introduces a gap during which rapid taps can disappear.
+          drawing.showFillGesturePreview(null);
+          if(points.length)void complete(points,undefined,()=>true);
+          return;
+        }
         const reusable=sourceValid()?prepared:undefined;
         stopGesture();
         const completedEpoch=gestureEpoch;
-        if(repeatDirect){
-          // Re-arm before expensive capture/flood work to accept rapid taps.
-          if(points.length)void complete(points,undefined,()=>true);
-          if(panel.open)armFill();
-        }else if(points.length)void work(()=>complete(points,reusable,()=>completedEpoch===gestureEpoch&&drawing===api.drawing()));
+        if(points.length)void work(()=>complete(points,reusable,()=>completedEpoch===gestureEpoch&&drawing===api.drawing()));
       }});
     if(previewColor){
       void read(!asSelection,undefined,true).then(source=>{
