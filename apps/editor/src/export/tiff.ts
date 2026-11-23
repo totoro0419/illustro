@@ -1,3 +1,4 @@
+import {writeExif} from './imagePosition';
 import {xmp,type RasterMetadata} from './rasterMetadata';
 import {ICC_LIMIT} from './iccMetadata';
 import {assertImageSize} from './exchangeTypes';
@@ -7,9 +8,12 @@ export function encodeTiff(pixels:Uint8ClampedArray,width:number,height:number,d
   assertImageSize(width,height);
   if(pixels.length!==width*height*4)throw Error('TIFFの画素データが正しくありません。');
   const description=xmp(metadata),profile=metadata.profile;
-  const entries=14+Number(!!description)+Number(!!profile),offset=8,extra=offset+2+entries*12+4;
+  const gps=metadata.position?writeExif(undefined,metadata.position):undefined;
+  const gpsStart=gps?new DataView(gps.buffer).getUint32(18,true):0;
+  const entries=14+Number(!!description)+Number(!!profile)+Number(!!gps),offset=8,extra=offset+2+entries*12+4;
   const textOffset=extra+24,profileOffset=textOffset+((description?.length??0)+1&~1);
-  const strip=profileOffset+((profile?.length??0)+1&~1);
+  const gpsOffset=profileOffset+((profile?.length??0)+1&~1);
+  const strip=gpsOffset+(gps?gps.length-gpsStart:0);
   const out=new Uint8Array(strip+pixels.length),view=new DataView(out.buffer);
   const u16=(at:number,n:number)=>view.setUint16(at,n,true),u32=(at:number,n:number)=>view.setUint32(at,n,true);
   out[0]=73;out[1]=73;u16(2,42);u32(4,offset);u16(offset,entries);
@@ -24,6 +28,13 @@ export function encodeTiff(pixels:Uint8ClampedArray,width:number,height:number,d
   field(284,3,1,1);field(296,3,1,2);field(338,3,1,2);
   if(description){field(700,1,description.length,textOffset);out.set(description,textOffset);}
   if(profile){field(34675,7,profile.length,profileOffset);out.set(profile,profileOffset);}
+  if(gps){
+    field(34853,4,1,gpsOffset);out.set(gps.subarray(gpsStart),gpsOffset);
+    for(const offset of [22,46]){
+      const previous=view.getUint32(gpsOffset+offset,true);
+      u32(gpsOffset+offset,gpsOffset+previous-gpsStart);
+    }
+  }
   for(let i=0;i<4;i++)u16(extra+i*2,8);
   const density=Number.isFinite(dpi)&&dpi>=1&&dpi<=2400?dpi:96;
   u32(extra+8,Math.round(density*1000));u32(extra+12,1000);

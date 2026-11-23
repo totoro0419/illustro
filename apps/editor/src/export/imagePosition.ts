@@ -96,8 +96,9 @@ export function writeExif(dpi:number|undefined,position:ImagePosition|undefined)
       const tag=1+index*2,at=gpsStart+2+index*24,data=rational+index*24;
       field(at,tag,2,2,(index?(value<0?'W':'E'):(value<0?'S':'N')).charCodeAt(0));
       field(at+12,tag+1,5,3,data);
-      const absolute=Math.abs(value),degrees=Math.floor(absolute),minutes=Math.floor((absolute-degrees)*60);
-      const seconds=Math.min(59_999_999,Math.round((absolute-degrees-minutes/60)*3_600_000_000));
+      const microseconds=Math.round(Math.abs(value)*3_600_000_000);
+      const degrees=Math.floor(microseconds/3_600_000_000),minutes=Math.floor(microseconds/60_000_000)%60;
+      const seconds=microseconds%60_000_000;
       u32(data,degrees);u32(data+4,1);u32(data+8,minutes);u32(data+12,1);u32(data+16,seconds);u32(data+20,1000000);
     }
   }

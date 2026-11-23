@@ -1,3 +1,7 @@
+import {appPrompt} from '../ui/appDialogs';
+import {readExchangePresets,updateExchangePresets,type ExchangePreset} from './exchangePresets';
+import {deleteExportProfile,readSavedExportProfile,saveExportProfile} from './rasterPresets';
+import {type RasterMetadata} from './rasterMetadata';
 import {describePosition,type ImagePosition} from './imagePosition';
 import {runIcc} from './iccRun';
 import {srgbIccBytes,ICC_LIMIT,validIccBytes} from './iccMetadata';
@@ -5,7 +9,7 @@ import type {CoreDocument} from '@illustro/core';
 import {resizeImagePixels} from '../canvasGeometry';
 import {captureExport,renderFrozenArtworkTiledPreview,renderFrozenArtwork} from './basicExport';
 import {button,labelledField,numberField,selectField} from '../artwork/tools';
-import {exchangeFileName,exchangeWarnings,exportExchange,importExchange} from './exchange';
+import {exchangeFileName,exchangeWarnings,exportExchange,importExchange,convertExchangeColors} from './exchange';
 import type {ExchangeFormat} from './exchangeTypes';
 
 export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(blob:Blob,name:string)=>void,position?:ImagePosition){
@@ -36,15 +40,84 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
   privacy.textContent='位置情報は初期状態で除外します。元のファイルに含まれていたその他の情報も除外されます。';
   metadata.append(privacy);
   const refreshMetadata=()=>{
-    const colorAllowed=['psd','psb','ora','tiff'].includes(format.value)||format.value==='svg'&&style.value==='flat';
+    const colorAllowed=['psd','psb','ora','tiff','avif'].includes(format.value)||format.value==='svg'&&style.value==='flat';
     outputColor.disabled=!colorAllowed;
     outputProfile.parentElement!.hidden=!colorAllowed||outputColor.value!=='custom';
-    outputDensity.disabled=!['psd','psb','ora','tiff','svg'].includes(format.value);
-    includePosition.disabled=author.disabled=rights.disabled=format.value==='avif';
+    outputDensity.disabled=!['psd','psb','ora','tiff','svg','avif'].includes(format.value);
   };
   for(const control of [format,style,outputColor])control.addEventListener('change',refreshMetadata);
   refreshMetadata();
   const notes=document.createElement('ul'),status=document.createElement('output');status.setAttribute('role','status');
+  const preferences=document.createElement('details'),preferenceTitle=document.createElement('summary');
+  preferenceTitle.textContent='書き出し設定を保存・読み込み';preferences.append(preferenceTitle);
+  const presets=selectField(preferences,'保存済みの設定',[]),profileStatus=document.createElement('output');
+  profileStatus.setAttribute('role','status');metadata.append(profileStatus);
+  let loadedProfile:Uint8Array|undefined,profileChange=0;
+  outputProfile.addEventListener('change',()=>{profileChange++;loadedProfile=undefined;profileStatus.textContent='';});
+  function updatePresets(selected=''){
+    presets.replaceChildren(new Option('設定を選ぶ',''),...readExchangePresets(localStorage).map(item=>new Option(item.name,item.name)));
+    presets.value=selected;removePreset.disabled=!presets.value;
+  }
+  async function readMetadataOptions():Promise<RasterMetadata>{
+    let profile:Uint8Array|undefined;
+    if(!outputColor.disabled&&outputColor.value==='srgb')profile=srgbIccBytes();
+    if(!outputColor.disabled&&outputColor.value==='custom'){
+      const file=outputProfile.files?.[0];
+      if(loadedProfile&&!file)profile=loadedProfile;
+      else{
+        if(!file||file.size>ICC_LIMIT)throw Error('4MB以内のICCプロファイルを選んでください。');
+        profile=new Uint8Array(await file.arrayBuffer());
+      }
+      if(!validIccBytes(profile)||String.fromCharCode(...profile.subarray(16,20))!=='RGB ')
+        throw Error('RGBのICCファイルを選んでください。');
+    }
+    if(!outputDensity.disabled&&(!outputDensity.value||!outputDensity.validity.valid))throw Error('DPIを1〜2400で指定してください。');
+    return {...(profile?{profile}:{}),...(position&&includePosition.checked?{position}:{}),
+      ...(!outputDensity.disabled?{dpi:outputDensity.valueAsNumber}:{}),author:author.value,copyright:rights.value};
+  }
+  const savePreset=button('名前を付けて保存',async()=>{
+    const name=await appPrompt('書き出し設定の名前',presets.value,{required:true,maxLength:80});
+    if(!name?.trim()||!dialog.open)return;
+    if(!quality.value||!quality.validity.valid)throw Error('画質を1〜100で指定してください。');
+    const selected=await readMetadataOptions(),mode=outputColor.disabled?'default':outputColor.value as ExchangePreset['color'];
+    const profileKey=mode==='custom'?crypto.randomUUID():undefined;
+    if(profileKey&&selected.profile)await saveExportProfile(profileKey,selected.profile);
+    const preset={name:name.trim(),format:format.value as ExchangeFormat,style:style.value as ExchangePreset['style'],
+      quality:quality.valueAsNumber,lossless:lossless.checked,dpi:selected.dpi??96,
+      author:author.value,rights:rights.value,position:includePosition.checked,color:mode,...(profileKey?{profileKey}:{})};
+    try{
+      const discarded=updateExchangePresets(localStorage,preset.name,preset);
+      for(const entry of discarded)if(entry.profileKey)void deleteExportProfile(entry.profileKey).catch(()=>{});
+    }catch(error){
+      if(profileKey)void deleteExportProfile(profileKey).catch(()=>{});
+      throw error;
+    }
+    updatePresets(preset.name);status.textContent='書き出し設定を保存しました。';
+  },status);
+  const removePreset=button('設定を削除',()=>{
+    for(const item of updateExchangePresets(localStorage,presets.value))
+      if(item.profileKey)void deleteExportProfile(item.profileKey).catch(()=>{});
+    updatePresets();status.textContent='書き出し設定を削除しました。';
+  },status);
+  presets.addEventListener('change',async()=>{
+    const ticket=++profileChange,selected=readExchangePresets(localStorage).find(item=>item.name===presets.value);
+    removePreset.disabled=!selected;
+    if(!selected)return;
+    loadedProfile=undefined;outputProfile.value='';profileStatus.textContent='';
+    format.value=selected.format;style.value=selected.style;quality.value=String(selected.quality);lossless.checked=selected.lossless;
+    outputDensity.value=String(selected.dpi);author.value=selected.author;rights.value=selected.rights;
+    outputColor.value=selected.color;includePosition.checked=!!position&&selected.position;
+    format.dispatchEvent(new Event('change'));style.dispatchEvent(new Event('change'));
+    if(selected.profileKey){
+      try{
+        const profile=await readSavedExportProfile(selected.profileKey);
+        if(ticket!==profileChange||!dialog.open)return;
+        if(!profile||!validIccBytes(profile))throw Error('保存したICCを読み込めません。もう一度選んでください。');
+        loadedProfile=profile;profileStatus.textContent='保存したRGB ICCを使用します。';
+      }catch(error){if(ticket===profileChange)profileStatus.textContent=error instanceof Error?error.message:String(error);}
+    }
+  });
+  preferences.append(savePreset,removePreset);updatePresets();
   const print=document.createElement('details'),printTitle=document.createElement('summary');printTitle.textContent='印刷時の大きさ';
   const dpi=numberField(print,'印刷の解像度（DPI）',doc.root.info.dpi??300,1,2400);
   const bleed=numberField(print,'片側の塗り足し（mm）',3,0,50,.1);
@@ -137,7 +210,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     if(selected!=='svg'&&selected!=='ora'&&selected!=='tiff')return;
     const ticket=++comparisonVersion,layered=style.value==='layered',revision=doc.head;
     const original=await captureComparison();
-    const blob=await exportExchange(doc,selected,layered);
+    const blob=await exportExchange(doc,selected,layered,quality.valueAsNumber,lossless.checked,await readMetadataOptions());
     const url=selected==='svg'?URL.createObjectURL(blob):null;
     try{
       let image:HTMLImageElement|null=null;
@@ -146,7 +219,7 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
         image=new Image();image.src=url;await image.decode();
       }else{
         const file=new File([blob],exchangeFileName('preview',selected),{type:blob.type});
-        const artwork=await importExchange(file);
+        const artwork=await convertExchangeColors(await importExchange(file),true);
         const pixels=artwork.merged??(artwork.layers.length===1?artwork.layers[0]?.pixels:null);
         if(!pixels)throw Error('出力に比較できる統合画像がありません。');
         decoded=new ImageData(new Uint8ClampedArray(resizeImagePixels(pixels,artwork.width,artwork.height,original.width,original.height,'auto')),
@@ -202,23 +275,11 @@ export function openExchangePanel(doc:CoreDocument,active:()=>boolean,download:(
     if(selected==='avif'&&!lossless.checked&&(!quality.validity.valid||!quality.value))throw Error('画質を1〜100で指定してください。');
     const outputName=exchangeFileName(base.value,selected);
     status.textContent='交換用ファイルを作成しています。';
-    let profile:Uint8Array|undefined;
-    if(!outputColor.disabled&&outputColor.value==='srgb')profile=srgbIccBytes();
-    if(!outputColor.disabled&&outputColor.value==='custom'){
-      const file=outputProfile.files?.[0];
-      if(!file||file.size>ICC_LIMIT)throw Error('4MB以内のICCプロファイルを選んでください。');
-      profile=new Uint8Array(await file.arrayBuffer());
-      if(!validIccBytes(profile))throw Error('ICCプロファイルが正しくありません。');
-    }
-    if(!outputDensity.disabled&&(!outputDensity.value||!outputDensity.validity.valid))throw Error('DPIを1〜2400で指定してください。');
-    const blob=await exportExchange(doc,selected,layered,quality.valueAsNumber,lossless.checked,{
-      ...(profile?{profile}:{}),...(position&&!includePosition.disabled&&includePosition.checked?{position}:{}),...(!outputDensity.disabled?{dpi:outputDensity.valueAsNumber}:{}),
-      ...(!author.disabled?{author:author.value,copyright:rights.value}:{}),
-    });
+    const blob=await exportExchange(doc,selected,layered,quality.valueAsNumber,lossless.checked,await readMetadataOptions());
     if(dialog.open){download(blob,outputName);status.textContent=outputName+' を作成しました。';}
   },status);
   const close=button('閉じる',()=>dialog.close(),status);
   dialog.onclose=()=>{proofTicket++;comparison=proof=null;dialog.remove();};
-  actions.append(see,compareExchange,run,close);section.append(notes,preview,svgComparison,metadata,print,actions,status);dialog.append(section);
+  actions.append(see,compareExchange,run,close);section.append(notes,preview,svgComparison,metadata,preferences,print,actions,status);dialog.append(section);
   document.body.append(dialog);refresh();dialog.showModal();
 }

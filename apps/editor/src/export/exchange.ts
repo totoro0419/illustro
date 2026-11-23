@@ -1,3 +1,4 @@
+import {encodeAvifMetadata,isoExif} from './avifMetadata';
 import {extractExifPosition} from './imagePosition';
 import {xmp,type RasterMetadata} from './rasterMetadata';
 import {extractIsoImageIcc} from './isoImageIcc';
@@ -39,7 +40,8 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
     let sourceIcc:Uint8Array<ArrayBuffer>|null=null;
     try{
       const bytes=new Uint8Array(await file.arrayBuffer());
-      position=extractExifPosition(bytes);
+      const exif=isIsoImage?isoExif(bytes):bytes;
+      position=exif?extractExifPosition(exif):undefined;
       sourceIcc=isIsoImage?extractIsoImageIcc(bytes):await extractRasterIcc(bytes);
     }catch(error){warnings.push(error instanceof Error?error.message:String(error));}
     const canConvert=!!sourceIcc&&String.fromCharCode(...sourceIcc.subarray(16,20))==='RGB ';
@@ -197,7 +199,7 @@ function encodeAvif(pixels:Uint8ClampedArray,width:number,height:number,quality:
 export async function exportExchange(doc:CoreDocument,format:ExchangeFormat,layered:boolean,quality=90,lossless=false,metadata:RasterMetadata={}){
   const fixed=captureExport(doc),root=doc.revision(fixed.revision).root;
   const {width,height,name}=fixed;assertImageSize(width,height);
-  if(metadata.profile&&(!['psd','psb','ora','tiff'].includes(format)&&!(format==='svg'&&!layered)||
+  if(metadata.profile&&(!['psd','psb','ora','tiff','avif'].includes(format)&&!(format==='svg'&&!layered)||
     String.fromCharCode(...metadata.profile.subarray(16,20))!=='RGB '))
     throw Error('この出力にはRGBのICCを設定できません。');
   const convert=async(pixels:Uint8ClampedArray)=>{
@@ -217,7 +219,7 @@ export async function exportExchange(doc:CoreDocument,format:ExchangeFormat,laye
     const head=new Uint8Array(buffer.slice(0,16));
     if(String.fromCharCode(...head.slice(4,8))!=='ftyp'||!['avif','avis'].includes(String.fromCharCode(...head.slice(8,12))))
       throw Error('AVIFとして書き出せませんでした。');
-    return new Blob([buffer],{type:mime});
+    return new Blob([encodeAvifMetadata(new Uint8Array(buffer),metadata)],{type:mime});
   }
   if(layered&&root.rootLayerIds.length*width*height*4>MAX_EXCHANGE_BYTES)
     throw Error('レイヤー付き出力の画素数が上限を超えています。「見た目を1枚にまとめる」を使用してください。');

@@ -1,32 +1,18 @@
 import {validIccBytes} from './iccMetadata';
 
-type Box=Readonly<{type:string;body:number;end:number}>;
+import {isoBoxes} from './avifMetadata';
 export function extractIsoImageIcc(bytes:Uint8Array):Uint8Array<ArrayBuffer>|null{
   const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
-  function* boxes(start:number,end:number):Generator<Box>{
-    for(let i=start;i+8<=end;){
-      let size=view.getUint32(i),header=8;
-      if(size===1){
-        if(i+16>end)break;
-        const large=view.getBigUint64(i+8);
-        if(large>BigInt(end-i))break;
-        size=Number(large);header=16;
-      }else if(size===0)size=end-i;
-      if(size<header||i+size>end)break;
-      yield {type:String.fromCharCode(...bytes.subarray(i+4,i+8)),body:i+header,end:i+size};
-      i+=size;
-    }
-  }
-  const meta=[...boxes(0,bytes.length)].find(box=>box.type==='meta');
+  const meta=isoBoxes(bytes).find(box=>box.type==='meta');
   if(!meta||meta.body+4>meta.end)return null;
-  const entries=[...boxes(meta.body+4,meta.end)];
+  const entries=isoBoxes(bytes,meta.body+4,meta.end);
   const primary=entries.find(box=>box.type==='pitm'),properties=entries.find(box=>box.type==='iprp');
   if(!properties)return null;
-  const sub=[...boxes(properties.body,properties.end)],container=sub.find(box=>box.type==='ipco');
+  const sub=isoBoxes(bytes,properties.body,properties.end),container=sub.find(box=>box.type==='ipco');
   if(!container)return null;
   const profiles=new Map<number,Uint8Array<ArrayBuffer>>();
   let index=0;
-  for(const property of boxes(container.body,container.end)){
+  for(const property of isoBoxes(bytes,container.body,container.end)){
     index++;
     if(property.type!=='colr'||property.body+4>property.end)continue;
     const type=String.fromCharCode(...bytes.subarray(property.body,property.body+4));

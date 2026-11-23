@@ -1,5 +1,6 @@
 import {expect,it} from 'vitest';
 import {extractExifPosition,writeExif} from './imagePosition';
+import {encodeTiff} from './tiff';
 import {encodePng} from './basicExport';
 
 it('writes and reads signed position without copying source EXIF fields',async()=>{
@@ -11,4 +12,5 @@ it('writes and reads signed position without copying source EXIF fields',async()
   expect(extractExifPosition(new Uint8Array(await (await encodePng(pixels,1,1)).arrayBuffer()))).toBeUndefined();
   const png=await encodePng(pixels,1,1,300,{position});
   expect(extractExifPosition(new Uint8Array(await png.arrayBuffer()))).toEqual(position);
+  expect(extractExifPosition(encodeTiff(pixels,1,1,300,{position}))).toEqual(position);
 });
