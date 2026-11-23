@@ -79,7 +79,17 @@ try{
     input.value='監査用レイヤー';
     input.dispatchEvent(new Event('change',{bubbles:true}));
   });
-  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.selectedLayerName==='監査用レイヤー',{timeout:8000});
+  await page.waitForTimeout(350);
+  const renamed=await page.evaluate(()=>{
+    const canvas=document.getElementById('canvas'),name=document.getElementById('selectedLayerName');
+    return {displayedLayer:canvas?.dataset.selectedLayerName,selectedLayerId:canvas?.dataset.selectedLayerId,
+      inputName:name?.value,inputTargetId:name?.dataset.layerId,inputDisabled:name?.disabled,
+      status:document.getElementById('status')?.textContent,
+      layerTitle:document.getElementById('layerPageSelected')?.textContent,
+      ready:!document.getElementById('brush')?.disabled};
+  });
+  console.log('D011_RenameDiagnostics',JSON.stringify(renamed));
+  assert.equal(renamed.displayedLayer,'監査用レイヤー','D-011 rename did not persist: '+JSON.stringify(renamed));
   mark('D-011-RENAME-SELECTED-LAYER');
 
   const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Z9sAAAAASUVORK5CYII=','base64');
