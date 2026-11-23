@@ -28,6 +28,8 @@ jobs:
         run: npm run brush:build
       - name: Core typecheck and unit tests
         run: npm run core:check
+      - name: Round 1 defect regression tests
+        run: npm --workspace @illustro/editor exec -- vitest run src/pixelGridVisibility.audit.test.ts src/fill/pixels.test.ts src/assist/speckCandidates.audit.test.ts
       - name: Editor unit tests
         run: npm --workspace @illustro/editor exec -- vitest run
       - name: Editor typecheck and production build (no deploy)
