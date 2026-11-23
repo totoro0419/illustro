@@ -28,5 +28,20 @@ describe('R2 D-015 speck candidate parity',()=>{
       expect(modified[(7*width+7)*4+3]).toBe(background==='transparent'?0:255);
       expect(modified[(23*width+23)*4+3]).toBe(255);
     });
+  }  for(const background of ['transparent','opaque'] as const){
+    it('offers 64 manually selectable isolated points, not just the first 32, on '+background,()=>{
+      const width=80,height=80;
+      const pixels=canvas(width,height,background==='transparent'?[0,0,0,0]:[255,255,255,255]);
+      for(let y=0;y<8;y++)for(let x=0;x<8;x++)
+        dot(pixels,width,4+x*9,4+y*9,[0,0,0,255]);
+      const result=analyzeImage({kind:'specks',maxArea:2,background:background==='opaque',
+        width,height,source:pixels});
+      expect(result.kind).toBe('specks');
+      if(result.kind==='specks'){
+        expect(result.spots).toHaveLength(64);
+        expect(result.capped).toBe(false);
+      }
+    });
   }
+
 });
