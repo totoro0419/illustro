@@ -128,7 +128,7 @@ try{
     const p=await coords(x,y);
     return rgb(png,(p.x-p.box.x)/p.box.width,(p.y-p.box.y)/p.box.height);
   };
-  const pen=await page.locator('#brush option').evaluateAll(opts=>opts.find(o=>o.textContent.trim()==='ミリペン')?.value);
+  const pen=await page.locator('#brush option').evaluateAll(opts=>opts.find(o=>o.value==='foundation-technical')?.value);
   assert.ok(pen,'Millipen preset is missing');
   await page.locator('#brush').selectOption(pen,{force:true});
   await page.locator('#sizeNumber').fill('10');

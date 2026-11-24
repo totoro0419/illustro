@@ -14,10 +14,10 @@ const revision=()=>canvas.getAttribute('data-revision-id');
 const waitRev=async(old,equal=false)=>{await page.waitForFunction(({old,equal})=> (document.querySelector('#canvas')?.dataset.revisionId===old)===equal,{old,equal},{timeout:60000});await idle();};
 async function coords(x,y){const b=await canvas.boundingBox(),v=JSON.parse(await canvas.getAttribute('data-view'));assert.ok(b&&v.zoom>0);assert.equal(v.rotation,0);return [b.x+v.cssWidth/2+v.panX+(x-v.documentWidth/2)*v.zoom,b.y+v.cssHeight/2+v.panY+(y-v.documentHeight/2)*v.zoom];}
 async function stroke(points){await page.mouse.move(...await coords(...points[0]));await page.mouse.down();for(const p of points.slice(1))await page.mouse.move(...await coords(...p),{steps:18});await page.mouse.up();}
-async function pen(size){const value=await page.locator('#brush option').evaluateAll(opts=>opts.find(o=>o.textContent.trim()==='ミリペン')?.value);assert.ok(value,'Millipen missing');await page.locator('#brush').selectOption(value,{force:true});await page.locator('#sizeNumber').fill(String(size));await page.locator('#sizeNumber').press('Enter');assert.equal(Number(await page.locator('#sizeNumber').inputValue()),size);}
+async function pen(size){const value=await page.locator('#brush option').evaluateAll(opts=>opts.find(o=>o.value==='foundation-technical')?.value);assert.ok(value,'Millipen missing');await page.locator('#brush').selectOption(value,{force:true});await page.locator('#sizeNumber').fill(String(size));await page.locator('#sizeNumber').press('Enter');assert.equal(Number(await page.locator('#sizeNumber').inputValue()),size);}
 const strokes=n=>page.waitForFunction(n=>Number(document.querySelector('#canvas')?.dataset.committedStrokes)===n&&document.querySelector('#canvas')?.dataset.historyBusy==='false',n,{timeout:60000});
-async function image(){await page.mouse.move(3,3);await page.waitForTimeout(300);return PNG.sync.read(await canvas.screenshot());}
-async function pixel(im,x,y){const b=await canvas.boundingBox(),p=await coords(x,y);const i=(Math.round((p[1]-b.y)*im.height/b.height)*im.width+Math.round((p[0]-b.x)*im.width/b.width))*4;return Array.from(im.data.subarray(i,i+4));}
+async function image(){await page.mouse.move(3,3);await page.waitForTimeout(300);const box=await canvas.boundingBox(),view=JSON.parse(await canvas.getAttribute('data-view'));return {png:PNG.sync.read(await canvas.screenshot()),box,view};}
+async function pixel(im,x,y){const {png,box:b,view:v}=im;const px=Math.round((v.cssWidth/2+v.panX+(x-v.documentWidth/2)*v.zoom)*png.width/b.width),py=Math.round((v.cssHeight/2+v.panY+(y-v.documentHeight/2)*v.zoom)*png.height/b.height);assert.ok(px>=0&&px<png.width&&py>=0&&py<png.height,'sample outside canvas');const i=(py*png.width+px)*4;return Array.from(png.data.subarray(i,i+4));}
 const brightness=p=>p[0]+p[1]+p[2];
 async function samples(im,pts){return Promise.all(pts.map(p=>pixel(im,...p)));}
 async function history(before,after,points,oldColors,newColors){
@@ -59,15 +59,14 @@ try{
    await page.mouse.click(...await coords(240,160));await waitRev(after);
    assert.ok(brightness(await pixel(await image(),240,160))<brightness(now[2])-80,'ordinary fill not restored');log('ORDINARY-FILL-RESTORED');
  }else if(id==='D-013'){
-   await pen(10);await stroke([[100,192],[410,192]]);await strokes(1);
+   await pen(10);await page.locator('#colorPage').click();await page.locator('#colorHex').fill('#e02020');await page.locator('#colorHex').press('Enter');await stroke([[100,192],[410,192]]);await strokes(1);
    const original=await image();
    await page.locator('#selection').click();const sel=page.locator('[data-tool-panel="selection"]');
    await sel.getByRole('button',{name:'四角形',exact:true}).click();await stroke([[65,90],[445,290]]);
    await sel.getByText('選択範囲を更新しました。',{exact:true}).waitFor({timeout:30000});
    await page.locator('#transform').click();const p=page.locator('[data-tool-panel="transform"]');
-   const mode=p.getByLabel('変形の方法',{exact:true});await mode.selectOption('liquify',{force:true});
+   const mode=p.getByLabel('変形の方法',{exact:true});await page.waitForFunction(()=>{const p=document.querySelector('[data-tool-panel="transform"]');const mode=[...p?.querySelectorAll('select')??[]].find(s=>[...s.options].some(o=>o.value==='liquify'));return mode&&!mode.disabled;},undefined,{timeout:30000});await mode.selectOption('liquify',{force:true});
    const direct=p.getByRole('button',{name:'キャンバスでゆがみブラシを使う',exact:true});
-   if(await direct.isDisabled())await p.getByRole('button',{name:'変形を始める',exact:true}).click();
    await p.getByLabel('ゆがみの半径（px）',{exact:true}).fill('60');
    await p.getByLabel('ゆがみの強さ',{exact:true}).fill('0.7');
    await direct.click();await stroke([[235,192],[235,245]]);await stroke([[275,192],[275,235]]);
