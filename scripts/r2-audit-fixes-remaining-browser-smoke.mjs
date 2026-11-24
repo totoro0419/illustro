@@ -59,7 +59,13 @@ try{
    const guide=page.locator('canvas[aria-hidden="true"][data-doc-x="0"][data-doc-y="0"]').filter({visible:true});
    await guide.waitFor({state:'visible',timeout:30000});assert.equal(await guide.count(),1);
    const guideColors=await guide.evaluate((c,pts)=>pts.map(([x,y])=>Array.from(c.getContext('2d').getImageData(Math.floor(x*c.width/512),Math.floor(y*c.height/384),1,1).data)),previewPoints);
-   assert.deepEqual(guideColors.slice(0,2),[[54,166,238,115],[54,166,238,115]],'both interiors must be highlighted before release');
+   // Canvas readback premultiplies translucent RGB and rounds it again.
+   // Chrome returns [53,166,237,115] for the intended [54,166,238,115].
+   // Preserve exact alpha/exterior and permit only this one-byte RGB error.
+   for(const rgba of guideColors.slice(0,2)){
+     assert.equal(rgba[3],115,'interior guide opacity');
+     for(let k=0;k<3;k++)assert.ok(Math.abs(rgba[k]-[54,166,238][k])<=1,'both interiors must be highlighted before release: '+rgba);
+   }
    assert.deepEqual(guideColors.slice(2),[[0,0,0,0],[0,0,0,0]],'exterior must not be highlighted');
    assert.equal(await revision(),before,'preview changed the document before release');
    await page.mouse.up();log('LIVE-PREVIEW-ONLY-CLOSED-REGIONS');await waitRev(before);
@@ -98,9 +104,27 @@ try{
    for(const [kind,points] of [['expand',[[325,192],[325,205]]],['pinch',[[150,192],[150,205]]]]){
      await modeControl.selectOption(kind,{force:true});assert.equal(await modeControl.inputValue(),kind);hash=await previewHash();await stroke(points);await changedPreview(hash);log(kind.toUpperCase()+'-CHANGES-PREVIEW');
    }
+   const pts=[];for(let y=165;y<=255;y+=5)for(let x=180;x<=330;x+=5)pts.push([x,y]);
+   // Match stable interior pixels of the actual low-resolution preview to
+   // the applied full-resolution image, excluding only resampled boundaries.
+   const predicted=await preview.evaluate((c,pts)=>{
+     const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+     return pts.map(([x,y])=>{
+       const px=Math.floor(x*c.width/512),py=Math.floor(y*c.height/384),states=[];
+       for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+         const i=((py+dy)*c.width+px+dx)*4;
+         states.push(d[i+3]>128&&d[i]>d[i+1]+50&&d[i]>d[i+2]+50?1:d[i+3]<16?0:-1);
+       }
+       return states.every(v=>v===states[0])?states[0]:-1;
+     });
+   },pts);
    const before=await revision();await p.getByRole('button',{name:'変形を適用',exact:true}).click();await waitRev(before);
-   const after=await revision(),now=await image(),pts=[];for(let y=165;y<=255;y+=5)for(let x=180;x<=330;x+=5)pts.push([x,y]);
+   const after=await revision(),now=await image();
    const oldColors=await samples(original,pts),newColors=await samples(now,pts);
+   const stable=predicted.map((v,i)=>({v,i})).filter(p=>p.v>=0);
+   assert.ok(stable.some(p=>p.v===1)&&stable.some(p=>p.v===0),'preview comparison must include transformed ink and empty area');
+   for(const {v,i} of stable){const q=newColors[i];assert.equal(q[0]>q[1]+50&&q[0]>q[2]+50,v===1,'preview and applied stable pixel differ at '+pts[i]);}
+   log('PREVIEW-MATCHES-APPLIED-STABLE-PIXELS');
    assert.ok(newColors.some((v,i)=>Math.abs(brightness(v)-brightness(oldColors[i]))>100),'applied image did not deform');
    log('TWO-LIQUIFY-STROKES-CHANGED-PIXELS');await history(before,after,pts,oldColors,newColors);
    // Undo the first applied deformation so the same selected raster can be
