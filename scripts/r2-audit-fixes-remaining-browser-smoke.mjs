@@ -53,16 +53,16 @@ try{
    await p.getByText('閉じた領域だけを通過順に選びます。',{exact:false}).waitFor({timeout:60000});
    await page.mouse.move(...await coords(130,160));await page.mouse.down();
    await page.mouse.move(...await coords(350,160),{steps:25});
-   const view=JSON.parse(await canvas.getAttribute('data-view')),box=await canvas.boundingBox();
-   const previewPoints=[[130,160],[350,160],[240,120],[30,30]];
-   const previewOld=await samples(await imageBeforeDrag,previewPoints);
-   let observed=false;
-   for(let attempt=0;attempt<20&&!observed;attempt++){
-     const live={png:PNG.sync.read(await canvas.screenshot()),box,view};const colors=await samples(live,previewPoints);
-     observed=colors[0][2]>colors[0][0]+20&&colors[1][2]>colors[1][0]+20&&
-       colors[2].every((v,i)=>v===previewOld[2][i])&&colors[3].every((v,i)=>v===previewOld[3][i]);
-   }
-   await page.mouse.up();assert.ok(observed,'closed-region live preview did not match both interiors');log('LIVE-PREVIEW-ONLY-CLOSED-REGIONS');await waitRev(before);
+   // The region guide is a separate visible canvas, not the artwork canvas.
+   // Sample away from the orange pointer trace and check its exact alpha too.
+   const previewPoints=[[130,190],[350,190],[240,120],[30,30]];
+   const guide=page.locator('canvas[aria-hidden="true"][data-doc-x="0"][data-doc-y="0"]').filter({visible:true});
+   await guide.waitFor({state:'visible',timeout:30000});assert.equal(await guide.count(),1);
+   const guideColors=await guide.evaluate((c,pts)=>pts.map(([x,y])=>Array.from(c.getContext('2d').getImageData(Math.floor(x*c.width/512),Math.floor(y*c.height/384),1,1).data)),previewPoints);
+   assert.deepEqual(guideColors.slice(0,2),[[54,166,238,115],[54,166,238,115]],'both interiors must be highlighted before release');
+   assert.deepEqual(guideColors.slice(2),[[0,0,0,0],[0,0,0,0]],'exterior must not be highlighted');
+   assert.equal(await revision(),before,'preview changed the document before release');
+   await page.mouse.up();log('LIVE-PREVIEW-ONLY-CLOSED-REGIONS');await waitRev(before);
    const after=await revision(),now=await samples(await image(),pts);
    for(let i=0;i<2;i++)assert.ok(brightness(now[i])<brightness(old[i])-80,'closed interior not filled');
    for(let i=2;i<pts.length;i++)assert.deepEqual(now[i],old[i],'outside painted');
@@ -81,7 +81,7 @@ try{
    if(await rectangle.getAttribute('aria-pressed')!=='true')await rectangle.click();
    assert.equal(await rectangle.getAttribute('aria-pressed'),'true');await stroke([[65,90],[445,290]]);
    await sel.getByText('選択範囲を更新しました。',{exact:true}).waitFor({timeout:30000});
-   await sel.locator('label.c06-visibility input').uncheck();
+   await sel.getByRole('checkbox',{name:'選択の境界を表示する（隠しても選択は有効）',exact:true}).uncheck();
    const original=await image();
    await page.locator('#transform').click();const p=page.locator('[data-tool-panel="transform"]');
    const mode=p.locator('select:has(option[value="liquify"])');await page.waitForFunction(()=>{const p=document.querySelector('[data-tool-panel="transform"]');const mode=[...p?.querySelectorAll('select')??[]].find(s=>[...s.options].some(o=>o.value==='liquify'));return mode&&!mode.disabled;},undefined,{timeout:30000});await mode.selectOption('liquify',{force:true});
@@ -103,6 +103,29 @@ try{
    const oldColors=await samples(original,pts),newColors=await samples(now,pts);
    assert.ok(newColors.some((v,i)=>Math.abs(brightness(v)-brightness(oldColors[i]))>100),'applied image did not deform');
    log('TWO-LIQUIFY-STROKES-CHANGED-PIXELS');await history(before,after,pts,oldColors,newColors);
+   // Undo the first applied deformation so the same selected raster can be
+   // transformed again, independently of the first session.
+   await page.locator('#undo').evaluate(e=>e.click());await waitRev(before,true);
+   await page.locator('#transform').click();await page.waitForFunction(()=>{const p=document.querySelector('[data-tool-panel="transform"]');const mode=[...p?.querySelectorAll('select')??[]].find(s=>[...s.options].some(o=>o.value==='liquify'));return mode&&!mode.disabled;});
+   await mode.selectOption('liquify',{force:true});await modeControl.selectOption('push',{force:true});
+   await p.getByLabel('ゆがみの半径（px）',{exact:true}).fill('60');await p.getByLabel('ゆがみの強さ',{exact:true}).fill('0.7');
+   await direct.click();await preview.waitFor({state:'visible',timeout:30000});
+   hash=await previewHash();await stroke([[235,192],[235,230]]);await changedPreview(hash);
+   await p.getByRole('button',{name:'変形を適用',exact:true}).click();await waitRev(before);
+   const repeated=await revision(),repeatColors=await samples(await image(),pts);
+   assert.ok(repeatColors.some((v,i)=>Math.abs(brightness(v)-brightness(oldColors[i]))>100),'second session did not deform the original');
+   log('REPEAT-TRANSFORM-APPLIED');
+   await page.locator('#undo').evaluate(e=>e.click());await waitRev(before,true);
+   await page.locator('#transform').click();await page.waitForFunction(()=>{const p=document.querySelector('[data-tool-panel="transform"]');const mode=[...p?.querySelectorAll('select')??[]].find(s=>[...s.options].some(o=>o.value==='liquify'));return mode&&!mode.disabled;});
+   await mode.selectOption('liquify',{force:true});await direct.click();
+   const layer=await canvas.getAttribute('data-selected-layer-id');
+   await page.locator('#addLayer').evaluate(e=>e.click());await waitRev(before);
+   assert.notEqual(await canvas.getAttribute('data-selected-layer-id'),layer,'real target change did not occur');
+   const changed=await revision(),apply=p.getByRole('button',{name:'変形を適用',exact:true});
+   if(!await apply.isDisabled())await apply.evaluate(e=>e.click());
+   await page.waitForFunction(()=>{const p=document.querySelector('[data-tool-panel="transform"]');const b=[...p?.querySelectorAll('button')??[]].find(b=>b.textContent==='変形を適用');return b?.disabled||/作品が変更されました|対象が変わった|レイヤーが変わった|以前の変形候補を取り消しました|候補を取り消しました/.test(p?.querySelector('output')?.textContent??'');},undefined,{timeout:30000});
+   await idle();assert.equal(await revision(),changed,'stale transform was applied to changed target');assert.notEqual(changed,repeated);
+   log('CHANGED-TARGET-REJECTS-STALE-TRANSFORM');
  }else if(id==='D-015'||id==='D-015-white'){
    if(id==='D-015-white'){
      await page.locator('#colorPage').click();await page.locator('#colorHex').fill('#ffffff');await page.locator('#colorHex').press('Enter');
