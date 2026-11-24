@@ -10,7 +10,9 @@ class MemoryStore{
  async remove(path:string){this.files.delete(path);}
 }
 const tile=(key:string,value:number)=>({surfaceId,key,pixels:new Uint8Array(128*128*4).fill(value)});
-const save=(store:MemoryStore,revision:string,tiles:ReturnType<typeof tile>[])=>worker.storeProjectionDelta(store as any,session,revision,256,128,128,[surfaceId],tiles);
+// Each test supplies a complete new tile-set. Explicitly mark full-seed mode;
+// the production worker sends its own replace flag for incremental checkpoints.
+const save=(store:MemoryStore,revision:string,tiles:ReturnType<typeof tile>[])=>worker.storeProjectionDelta(store as any,session,revision,256,128,128,[surfaceId],tiles,true);
 const load=(store:MemoryStore)=>worker.loadProjectionDeltaRaw(store as any,session,new Set([oldRevision,newRevision]));
 // A missing tile is exactly zero; V2 does not allocate a full RGBA buffer.
 const firstPixel=(image:Awaited<ReturnType<typeof load>>,key:string)=>{
@@ -33,7 +35,8 @@ describe('sparse checkpoint publication durability',()=>{
   const store=new MemoryStore();await save(store,oldRevision,[tile('0,0',10),tile('1,0',20)]);
   const writes=store.writes;await save(store,newRevision,[tile('0,0',10)]);expect(store.writes-writes).toBe(1);
   for(let i=30;i<40;i++)await save(store,newRevision,[tile('0,0',i)]);
-  expect(store.files.size).toBe(3);expect(firstPixel(await load(store),'0,0')).toBe(39);
+  // Only the latest tile blob and the frame remain; obsolete tiles are purged.
+  expect(store.files.size).toBe(2);expect(firstPixel(await load(store),'0,0')).toBe(39);
   const file=[...store.files.keys()].find(path=>path.includes('/0:0.'))!,bytes=store.files.get(file)!;bytes[0]=bytes[0]!^1;expect(await load(store)).toBeNull();
  });
  it('M09 indexes without a content digest still restore',async()=>{

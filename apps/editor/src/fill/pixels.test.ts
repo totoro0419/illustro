@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {buildRegions,fillBoundaries,fillMask,paintColorHints,suggestLocalGaps,type FillSettings} from './pixels';
+import {buildRegions,fillBoundaries,fillMask,needsLeakingFillReview,paintColorHints,suggestLocalGaps,type FillSettings} from './pixels';
 
 const settings:FillSettings={
   method:'color',tolerance:15,gap:0,opacity:1,color:'#ff0000',erase:false,
@@ -290,4 +290,119 @@ describe('C08 fill boundaries and destination gating',()=>{
     expect(narrow.alpha[1]).toBe(0);
     expect(permissive.alpha[1]).toBe(255);
   });
+});
+
+describe('R2 D-007 gap repair and exterior leak protection',()=>{
+  it('honors an 18 source-pixel gap instead of silently clamping it to 12',()=>{
+    const width=36,height=9,data=image(width,height);
+    for(const x of [1,2,3,21,22,23])setPixel(data,width,x,4,[0,0,0,255]);
+    expect(fillBoundaries(data,width,height,15,12).bridges[4*width+10]).toBe(0);
+    const result=fillBoundaries(data,width,height,15,18);
+    expect(result.bridges[4*width+10]).toBe(1);
+    expect(result.candidates).toHaveLength(1);
+  });
+  it('requires review for a center-seeded gap-assisted fill touching two outside edges',()=>{
+    const width=30,height=30,alpha=new Uint8Array(width*height);
+    alpha.fill(255,0,width);
+    for(let y=0;y<height;y++)alpha[y*width]=255;
+    const mask={width,height,alpha};
+    expect(needsLeakingFillReview(mask,{x:15,y:15},2)).toBe(true);
+    expect(needsLeakingFillReview(mask,{x:1,y:1},2)).toBe(false);
+    expect(needsLeakingFillReview(mask,{x:15,y:15},0)).toBe(false);
+  });
+});
+
+describe('R2 D-007 a corner break must not flood the exterior',()=>{
+  it('closes a short right-angle gap without painting the canvas background',()=>{
+    const width=12,height=12,source=image(width,height);
+    for(let x=2;x<=6;x++)setPixel(source,width,x,2,[0,0,0,255]);
+    for(let y=2;y<=9;y++)setPixel(source,width,2,y,[0,0,0,255]);
+    for(let y=4;y<=9;y++)setPixel(source,width,8,y,[0,0,0,255]);
+    for(let x=2;x<=8;x++)setPixel(source,width,x,9,[0,0,0,255]);
+    const open=buildRegions(source,width,height,15,0,[]);
+    const closed=buildRegions(source,width,height,15,3,[]);
+    expect(open.external[open.labels[5*width+5]!]).toBe(1);
+    expect(closed.bridges[3*width+7]).toBe(1);
+    expect(closed.external[closed.labels[5*width+5]!]).toBe(0);
+    const mask=fillMask(source,width,height,{...settings,method:'line',closedOnly:true},[{x:5,y:5}],closed,null);
+    expect(mask.alpha[5*width+5]).toBe(255);
+    expect(mask.alpha[0]).toBe(0);
+  });
+});
+describe('R2 D-008 drag only enclosed regions',()=>{
+  it('fills two disjoint closed regions without touching the intervening outside',()=>{
+    const width=23,height=13,source=image(width,height);
+    rectangle(source,width,2,2,8,10,[0,0,0,255]);
+    rectangle(source,width,14,2,20,10,[0,0,0,255]);
+    const graph=buildRegions(source,width,height,15,0,[]);
+    const result=fillMask(source,width,height,{...settings,method:'line',closedOnly:true},
+      [{x:5,y:6},{x:11,y:6},{x:17,y:6}],graph,null);
+    expect(result.alpha[6*width+5]).toBe(255);
+    expect(result.alpha[6*width+17]).toBe(255);
+    expect(result.alpha[6*width+11]).toBe(0);
+    expect(result.alpha[0]).toBe(0);
+  });
+});
+
+describe('R2 D-007 real-size thick rounded corner caps',()=>{
+  function openSquare(end:number,start:number,detached=false,capRadius=5){
+    const width=1200,height=900,source=image(width,height);
+    const stroke=(x0:number,y0:number,x1:number,y1:number)=>{
+      for(let y=Math.min(y0,y1)-capRadius;y<=Math.max(y0,y1)+capRadius;y++)
+        for(let x=Math.min(x0,x1)-capRadius;x<=Math.max(x0,x1)+capRadius;x++){
+          const dx=x-Math.max(Math.min(x0,x1),Math.min(Math.max(x0,x1),x));
+          const dy=y-Math.max(Math.min(y0,y1),Math.min(Math.max(y0,y1),y));
+          if(dx*dx+dy*dy<=capRadius*capRadius)setPixel(source,width,x,y,[0,0,0,255]);
+        }
+    };
+    stroke(200,200,end,200);stroke(500,start,500,500);
+    if(!detached){stroke(200,200,200,500);stroke(200,500,500,500);}
+    return {source,width,height};
+  }
+  it('uses the full 18px gap for a thick corner and fills only the enclosed area',()=>{
+    const {source,width,height}=openSquare(482,218);
+    const graph=buildRegions(source,width,height,15,18,[]);
+    const inside=350*width+350;
+    expect(graph.external[graph.labels[inside]!]).toBe(0);
+    expect(graph.candidates.length).toBeGreaterThan(0);
+    const result=fillMask(source,width,height,{...settings,gap:18},[{x:350,y:350}],null,null,graph.bridges);
+    expect(result.alpha[inside]).toBe(255);
+    for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+      if(x<195||x>505||y<195||y>505){
+        if(result.alpha[y*width+x])throw Error('Exterior painted at '+x+','+y);
+      }
+    }
+    expect(needsLeakingFillReview(result,{x:350,y:350},18)).toBe(false);
+  });
+  it('measures the shortest clear gap on rounded cap edges rather than axial center tips',()=>{
+    const {source,width,height}=openSquare(482,218,false,4);
+    const graph=buildRegions(source,width,height,15,18,[]);
+    expect(graph.external[graph.labels[350*width+350]!]).toBe(0);
+    expect(graph.candidates.some(candidate=>candidate.length<=18)).toBe(true);
+    const result=fillMask(source,width,height,{...settings,gap:18},[{x:350,y:350}],null,null,graph.bridges);
+    expect(result.alpha[350*width+350]).toBe(255);expect(result.alpha[0]).toBe(0);
+    const strict=buildRegions(source,width,height,15,10,[]);
+    expect(strict.external[strict.labels[350*width+350]!]).toBe(1);
+  });
+  it('leaves an over-limit opening and unrelated thick strokes open',()=>{
+    for(const sample of [openSquare(465,235),openSquare(482,218,true)]){
+      const {source,width,height}=sample,graph=buildRegions(source,width,height,15,18,[]);
+      expect(graph.external[graph.labels[350*width+350]!]).toBe(1);
+      expect(graph.bridges.some(Boolean)).toBe(false);
+      const result=fillMask(source,width,height,{...settings,gap:18},[{x:350,y:350}],null,null,graph.bridges);
+      expect(needsLeakingFillReview(result,{x:350,y:350},18)).toBe(true);
+    }
+  });
+});
+
+it('D-008 keeps the exterior untouched even when closed-region tracing expands the edge',()=>{
+  const width=23,height=13,source=image(width,height);
+  rectangle(source,width,2,2,8,10,[0,0,0,255]);
+  rectangle(source,width,14,2,20,10,[0,0,0,255]);
+  const graph=buildRegions(source,width,height,15,0,[]);
+  const result=fillMask(source,width,height,{...settings,method:'line',closedOnly:true,edge:4,antialias:true},
+    [{x:5,y:6},{x:11,y:6},{x:17,y:6}],graph,null);
+  expect(result.alpha[6*width+5]).toBe(255);
+  expect(result.alpha[6*width+17]).toBe(255);
+  for(let i=0;i<result.alpha.length;i++)if(graph.external[graph.labels[i]!])expect(result.alpha[i]).toBe(0);
 });

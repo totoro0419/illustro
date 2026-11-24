@@ -4,6 +4,7 @@ import type {ColorHint,LayerId,LineRegions,RevisionId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {combineSelection,type MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
+import {needsLeakingFillReview} from './pixels';
 import type {FillSettings,GapCandidate,RegionGraph,Walls} from './pixels';
 import {releaseLiveFillPreview,runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
@@ -28,7 +29,8 @@ type Entry={id:LayerId;name:string;data:LineRegions};
 
 export function installFillPanel(host:HTMLElement,api:{
   onContextChanged?:()=>void;
-  drawing:()=>BrushSurface|null;color:()=>string;documentId:()=>string;targetName:()=>string;
+  drawing:()=>BrushSurface|null;color:()=>string;documentId:()=>string;targetId:()=>string;targetName:()=>string;
+  selectTargetForQueuedFill:(id:string)=>void;
   references:()=>readonly {id:string;name:string;vector:boolean;visible:boolean}[];
   regionLayers:()=>readonly Entry[];
   saveRegion:(regions:LineRegions,id?:LayerId)=>Promise<LayerId>;
@@ -101,7 +103,7 @@ export function installFillPanel(host:HTMLElement,api:{
   const view=select('解析の表示',[['regions','色分け'],['walls','境界と補完候補'],['outside','外側と閉領域'],['holes','囲まれた穴'],['original','元の線画']]);
   const tolerance=number('色の近さ・線の濃さ（%）',15,0,100);
   const alphaTolerance=number('透明度の違いの許容範囲（%）',15,0,100);
-  const gap=number('埋める隙間（px）',0,0,12);
+  const gap=number('埋める隙間（px）',0,0,32);
   const edge=number('塗りの拡張・縮小（px）',0,-24,24);
   const inspectId=number('調べる領域の番号',1,1,1);
   const mergeTarget=select('つなぐ隣の領域',[]);
@@ -402,7 +404,7 @@ export function installFillPanel(host:HTMLElement,api:{
     gestureEpoch++;endLiveGesture?.();endLiveGesture=null;
     gesture?.setCanvasEditGesture(null);gesture=null;
   }
-  function onCanvas(label:string,complete:(points:readonly Point[],prepared:FillCapture|undefined,current:()=>boolean)=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false,asSelection=false){
+  function onCanvas(label:string,complete:(points:readonly Point[],prepared:FillCapture|undefined,current:()=>boolean)=>Promise<void>,closed=false,traceColor='#ffb742',liveFill=false,asSelection=false,repeatDirect=false){
     stopGesture();
     const epoch=gestureEpoch;
     const drawing=api.drawing();
@@ -446,6 +448,13 @@ export function installFillPanel(host:HTMLElement,api:{
     const update=(points:readonly Point[])=>{
       latestPoints=points;
       if(prepared&&!sourceValid()){
+        if(repeatDirect){
+          // An asynchronously captured live preview can become stale after a
+          // completed fill. Ignore that preview without cancelling live input.
+          prepared=undefined;context=undefined;sentContext=false;
+          drawing.showFillGesturePreview(null);
+          return;
+        }
         stopGesture();output.textContent='作品が変わったため塗りの入力を終了しました。';
         return;
       }
@@ -467,8 +476,16 @@ export function installFillPanel(host:HTMLElement,api:{
     // Admit pointer input immediately. Capturing a 4K reference image must
     // never hold the gesture setup hostage; a late preview is simply skipped.
     drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,
+      queueInputWhileBusy:()=>repeatDirect&&directRunning&&!!directSession&&directIdentity()===directSession,
       ...(graph||previewColor?{update}:{}),
       complete:points=>{
+        if(repeatDirect){
+          // BrushSurface remains armed across pointer-up; recreating the
+          // gesture introduces a gap during which rapid taps can disappear.
+          drawing.showFillGesturePreview(null);
+          if(points.length)void complete(points,undefined,()=>true);
+          return;
+        }
         const reusable=sourceValid()?prepared:undefined;
         stopGesture();
         const completedEpoch=gestureEpoch;
@@ -553,22 +570,112 @@ export function installFillPanel(host:HTMLElement,api:{
     rememberRefs();forgetAnalysis();sync();
     output.textContent='表示中のレイヤーから選んだ1枚を外しました。参照元を確認してから塗ってください。';
   });
-  function armFill(){
-    const direct=method.value==='color'&&!confirmBeforeFill.checked;
-    onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',async(points,source,current)=>{
-      try{
-        await fill(points,false,source,current);
-        if(direct&&current()&&candidate&&pending?.pixels)await applyCandidate();
-      }finally{
-        if(direct&&current()&&panel.open){
-          const lastMessage=output.textContent;
-          armFill();
-          if(lastMessage)output.textContent=lastMessage;
+  const directQueue:Point[][]=[];
+  let directRunning=false,directSession:string|null=null,directGeneration=0,directTargetId:string|null=null;
+  // A queued fill belongs to one work, one selected layer and one exact set of options.
+  const directIdentity=()=>JSON.stringify([api.documentId(),api.targetId(),settings(),
+    reference.value,destination.value,activeIds()]);
+  function dropQueuedFills(reason:string){
+    directQueue.length=0;directSession=null;directTargetId=null;directGeneration++;
+    output.textContent=reason;
+  }
+  async function processDirectQueue(){
+    if(directRunning)return;
+    directRunning=true;const generation=directGeneration;
+    try{
+      while(directQueue.length){
+        if(generation!==directGeneration||!directSession||directIdentity()!==directSession){
+          dropQueuedFills('塗り先または設定が変わったため、待機中の塗りを取り消しました。');break;
         }
+        const points=directQueue.shift()!,expected=directSession;
+        output.textContent='塗り処理中・残り'+(directQueue.length+1)+'件';
+        await fill(points,false,undefined,()=>directGeneration===generation&&directIdentity()===expected);
+        if(directGeneration!==generation||directIdentity()!==expected){
+          candidate=null;pending=null;paint();
+          dropQueuedFills('塗り先または設定が変わったため、古い塗り候補を破棄しました。');break;
+        }
+        if(!candidate||!pending?.pixels)throw Error('塗りつぶせる画素がありませんでした。');
+        if(pending.mask&&needsLeakingFillReview(pending.mask,points[0],settings().gap)){
+          directQueue.length=0;
+          output.textContent='塗りが外側へ漏れる可能性があります。候補を確認してから適用してください。';
+          return;
+        }
+        await applyCandidate();
+        // A new paint layer becomes selected after each commit. For queued taps,
+        // restore the ORIGINAL reference layer before resolving the next source.
+        if(destination.value!=='active'&&directQueue.length&&directTargetId){
+          api.selectTargetForQueuedFill(directTargetId);
+        }
+        output.textContent='塗り処理中・残り'+directQueue.length+'件';
       }
-    },method.value.startsWith('lasso'),'#ffb742',true);
+      if(!directQueue.length&&directSession)output.textContent='連続塗りを反映しました。';
+    }catch(error){
+      directQueue.length=0;
+      output.textContent=error instanceof Error?error.message:String(error);
+    }finally{
+      directRunning=false;directSession=null;directTargetId=null;directQueue.length=0;sync();
+    }
+  }
+  function enqueueDirect(points:readonly Point[]){
+    const identity=directIdentity();
+    if(directSession&&directSession!==identity){
+      dropQueuedFills('設定・対象が変わったため、前の待機入力を破棄しました。新しい入力は処理終了後に受け付けます。');
+      return;
+    }
+    if(directQueue.length>=32){
+      output.textContent='塗りの待機は32件までです。先に進行中の塗りを反映してください。';
+      return;
+    }
+    directSession??=identity;
+    directTargetId??=api.targetId();
+    directQueue.push([...points]);
+    output.textContent='塗り処理中・残り'+directQueue.length+'件';
+    if(!directRunning)void processDirectQueue();
+  }
+  function armFill(){
+    const direct=(method.value==='color'||method.value==='line')&&!confirmBeforeFill.checked;
+    onCanvas('塗る場所をタップするか、範囲をなぞって指定してください。',async(points,source,current)=>{
+      if(direct){enqueueDirect(points);return;}
+      await fill(points,false,source,current);
+    },method.value.startsWith('lasso'),'#ffb742',true,false,direct);
   }
   const startFill=button('キャンバスで塗る',armFill);
+  button('囲まれた領域だけ連続塗り',async()=>{
+    // First-time use must prepare the region graph, without writing a
+    // separate analysis layer into the work or accepting uncertain repairs.
+    stopGesture();
+    method.value='line';
+    closedOnly.checked=true;
+    const current=settings();
+    if(manualDraft){
+      advanced.open=true;
+      output.textContent='境界の手直しを確定するか取り消してから、連続塗りを開始してください。';
+      return;
+    }
+    const reusable=!!currentGraph&&!!capture&&confirmed&&sourceAvailable()&&
+      (capture.referenceValid()||!!saved)&&current.tolerance===graphTolerance&&current.gap===graphGap;
+    if(!reusable){
+      if(saved)forgetAnalysis();
+      await analyze();
+      if(!currentGraph||!capture||!capture.referenceValid()||!graphUsable()||
+         !currentGraph.external.some((outside,id)=>id>0&&!outside)){
+        advanced.open=true;
+        throw Error('閉じた領域が見つかりません。線画を確認してください。');
+      }
+      if(currentGraph.candidates.length){
+        advanced.open=true;
+        output.textContent='隙間補完の候補を確認し、線画領域を確定してから連続塗りを開始してください。';
+        return;
+      }
+      // No inferred bridges: the graph contains only actual enclosed ink.
+      confirmed=true;
+    }
+    if(!currentGraph||!currentGraph.external.some((outside,id)=>id>0&&!outside))
+      throw Error('閉じた領域が見つかりません。');
+    sync();
+    armFill();
+    output.textContent='閉じた領域だけを通過順に選びます。外側は塗りません。自由に塗る場合は方式を「同じ色」に戻してください。';
+  });
   button('領域を選択範囲にする',()=>onCanvas('選びたい領域をタップしてください。',(points,source,current)=>fill(points,true,source,current),method.value.startsWith('lasso'),'#ffb742',true,true));
   const coordinateFill=button('座標で塗る場所を指定',async()=>{
     const drawing=api.drawing(),documentId=api.documentId();
@@ -622,6 +729,7 @@ export function installFillPanel(host:HTMLElement,api:{
   stopCalculation.textContent='計算を中止';
   stopCalculation.onclick=()=>{
     stopGesture();previewAbort?.abort();analysisAbort?.abort();
+    dropQueuedFills('塗りつぶしと待機入力を取り消しました。');
     previewAbort=null;analysisAbort=null;
     candidateGeneration++;candidate=null;pending=null;
     output.textContent='塗りつぶしの計算を中止しました。';
@@ -838,7 +946,7 @@ export function installFillPanel(host:HTMLElement,api:{
   button('キャンバス操作をやめる',()=>{stopGesture();output.textContent='操作を取り消しました。';});
   reference.onchange=()=>{forgetAnalysis();refreshReferences();rememberRefs();sync();};
   referenceLayer.onchange=()=>{forgetAnalysis();rememberRefs();sync();};
-  method.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
+  method.onchange=()=>{stopGesture();candidate=null;lastFill=null;pending=null;paint();sync();};
   destination.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
   compare.onchange=()=>{inspectedRegion=0;mergeTarget.replaceChildren();inspectId.max=String(Math.max(1,(compare.checked?previous:currentGraph)?.count??1));paint();sync();};
   showBefore.onchange=paint;showHints.onchange=paint;view.onchange=paint;compare.disabled=true;
@@ -908,7 +1016,7 @@ export function installFillPanel(host:HTMLElement,api:{
     if(parent)advancedOptions.append(parent);
   }
   const advancedActions=document.createElement('div');advancedActions.className='c06-clipboard-grid';
-  const basic=new Set([coordinateFill.textContent,'キャンバスで塗る','領域を選択範囲にする','候補を適用','塗り候補を取り消す',
+  const basic=new Set([coordinateFill.textContent,'キャンバスで塗る','囲まれた領域だけ連続塗り','領域を選択範囲にする','候補を適用','塗り候補を取り消す',
     '表示中の絵から1枚を除外して参照',
     '直前の塗りを調整','キャンバス操作をやめる','計算を中止']);
   for(const control of Array.from(actions.querySelectorAll('button'))){

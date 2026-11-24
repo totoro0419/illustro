@@ -145,7 +145,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   ];
   const known:CommandDefinition[]=actions.map(([id,label,category,aliases])=>({
     id,label,category,aliases,
-    availability:()=>disabledReason(id),
+    availability:()=>id==='documentInfoOpen'?(el<HTMLButtonElement>(id)?.disabled?'作品を開いてください。':null):disabledReason(id),
     completion:!!execution?.resolve(id),
     execute:()=>{const run=execution?.resolve(id);if(run)return run();el<HTMLButtonElement>(id)?.click();},
   }));

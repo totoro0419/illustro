@@ -36,14 +36,16 @@ function runEffect(request:RasterEffectRequest,signal:AbortSignal):Promise<Uint8
 }
 
 function showPreview(canvas:HTMLCanvasElement,source:Uint8Array|Uint8ClampedArray,width:number,height:number,
-  options?:{base:Uint8Array;difference:boolean;outerMask:Uint8Array|null;stepMask:PixelLayerMask|undefined;strength:number}){
+  options?:{base:Uint8Array;difference:boolean;highlight?:boolean;outerMask:Uint8Array|null;stepMask:PixelLayerMask|undefined;strength:number}){
   const ratio=Math.min(1,300/Math.max(width,height));
   canvas.width=Math.max(1,Math.round(width*ratio));canvas.height=Math.max(1,Math.round(height*ratio));
   const preview=new ImageData(canvas.width,canvas.height);
   for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++){
     const sx=Math.floor((x+.5)*width/canvas.width),sy=Math.floor((y+.5)*height/canvas.height);
     const index=(sy*width+sx)*4,out=(y*canvas.width+x)*4;
-    if(options){
+    if(options?.highlight){
+      for(let channel=0;channel<4;channel++)preview.data[out+channel]=options.base[index+channel]!;
+    }else if(options){
       let value:number;
       if(options.difference){
         const {base}=options,oldAlpha=base[index+3]!,newAlpha=source[index+3]!;
@@ -57,6 +59,16 @@ function showPreview(canvas:HTMLCanvasElement,source:Uint8Array|Uint8ClampedArra
       }
       preview.data.set([value,value,value,255],out);
     }else for(let channel=0;channel<4;channel++)preview.data[out+channel]=source[index+channel]!;
+  }
+  // Aggregate all changed source pixels into the reduced preview. Nearest
+  // neighbor sampling alone can miss a 4px speck on a large artwork.
+  if(options?.highlight)for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const i=(y*width+x)*4,a=options.base[i+3]!,b=source[i+3]!;
+    if(a===b&&options.base[i]!*a===source[i]!*b&&
+      options.base[i+1]!*a===source[i+1]!*b&&options.base[i+2]!*a===source[i+2]!*b)continue;
+    const px=Math.min(canvas.width-1,Math.floor((x+.5)*canvas.width/width));
+    const py=Math.min(canvas.height-1,Math.floor((y+.5)*canvas.height/height));
+    preview.data.set([255,45,140,255],(py*canvas.width+px)*4);
   }
   const context=canvas.getContext('2d');
   if(!context)throw Error('比較画像を表示できません。');
@@ -79,7 +91,7 @@ export function installRasterEffects(host:HTMLElement,api:{
     const figure=document.createElement('figure'),caption=document.createElement('figcaption');
     caption.textContent=label;canvas.setAttribute('aria-label',label);figure.append(caption,canvas);comparison.append(figure);
   }
-  const display=selectField(comparison,'比較に表示',[['result','適用後'],['difference','変更された画素'],['scope','選択中の効果の作用範囲']]);
+  const display=selectField(comparison,'比較に表示',[['result','適用後'],['highlight','変更予定（ピンク）'],['difference','変更された画素'],['scope','選択中の効果の作用範囲']]);
   const afterCaption=after.parentElement!.querySelector('figcaption')!;
   const choose=document.createElement('select');
   for(const [label,effects] of [['ぼかし・画質',neighborhoodEffects],['色・特殊効果',toneEffects]] as const){
@@ -101,7 +113,7 @@ export function installRasterEffects(host:HTMLElement,api:{
     afterCaption.textContent=label+(mode==='difference'?'（明るいほど変化が大きい）':mode==='scope'?'（白いほど強く適用）':'');
     after.setAttribute('aria-label',label);
     showPreview(after,pixels,width,height,mode==='result'?undefined:{
-      base:source,difference:mode==='difference',outerMask:capture.mask,stepMask:step?.mask,strength:step?.enabled?step.strength:0
+      base:source,difference:mode==='difference',highlight:mode==='highlight',outerMask:capture.mask,stepMask:step?.mask,strength:step?.enabled?step.strength:0
     });
   }
   display.onchange=drawComparison;
@@ -258,6 +270,8 @@ export function installRasterEffects(host:HTMLElement,api:{
     const ready=await calculate();if(!ready)return;
     const {capture}=ready;
     showPreview(before,capture.source,capture.width,capture.height);
+    const enabled=steps.filter(step=>step.enabled);
+    if(enabled.length===1&&enabled[0]?.kind==='median'&&enabled[0].values[2])display.value='highlight';
     drawComparison();
     lastCompared=capture;after.hidden=false;comparison.hidden=false;
     status.textContent=capture.name+'の比較。選択範囲がある場合はその内側を編集します。';

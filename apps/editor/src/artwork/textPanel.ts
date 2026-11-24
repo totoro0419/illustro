@@ -262,6 +262,11 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       await api.rasterize(context.selected.id);editing=undefined;status.textContent='描画用レイヤーへ変換しました。';
     },status)
   );
+  // Explain the outline prerequisite before an unavailable conversion is attempted.
+  const outlineHint=document.createElement('p');
+  outlineHint.textContent='文字のパス化は、輪郭を読み取れるフォントを読み込み、文字レイヤーに適用した場合に使えます。端末のフォントでは使えません。「フォントを読み込む」から設定してください。';
+  const outlineButton=Array.from(actions.querySelectorAll('button')).find(item=>item.textContent==='文字の輪郭をパスへ変換');
+  if(outlineButton)outlineButton.before(outlineHint);
   panel.ontoggle=()=>{
     if(!panel.open)return;
     if(!initialized&&api.context())reset();

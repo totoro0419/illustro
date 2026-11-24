@@ -115,7 +115,7 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
   // The unmodified wall snapshot is only needed for automatic bridges or
   // preserve-ink erasure. Most fills have gap=0 and no such edits: avoid
   // allocating a second 4000x4000 wall buffer in that common case.
-  const radius=Math.round(limit(gap,0,12));
+  const radius=Math.round(limit(gap,0,32));
   const needsOriginal=radius>0||manual.some(edit=>edit.remove&&edit.preserveInk);
   const original=needsOriginal?walls.slice():walls;
   const bridges=new Uint8Array(count),candidates:GapCandidate[]=[];
@@ -194,6 +194,177 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
       if(y&&diagonals){connect(0,y,1,1);connect(width-1,y,-1,1);}
     }
   }
+  // A missing corner has two perpendicular line tips. The ordinary straight
+  // bridge deliberately rejects these; pair only nearby unambiguous tips and
+  // require a clear corridor so this cannot glue together unrelated strokes.
+  if(radius>0&&candidates.length<4096){
+    type CornerTip={x:number;y:number;dx:number;dy:number;at:number};
+    const tips:CornerTip[]=[],bins=new Map<string,CornerTip[]>();
+    const tile=5,edgeReach=Math.min(radius+1,4);
+    for(let y=1;y<height-1&&tips.length<=8192;y++)for(let x=1;x<width-1;x++){
+      const at=y*width+x;
+      if(!original[at])continue;
+      let count=0,dx=0,dy=0;
+      for(const [nx,ny] of directions){
+        if(original[(y+ny)*width+x+nx]){
+          count++;dx=nx;dy=ny;
+          if(count>1)break;
+        }
+      }
+      if(count!==1)continue;
+      const tip={x,y,dx,dy,at};
+      tips.push(tip);
+      const key=Math.floor(x/tile)+','+Math.floor(y/tile);
+      const group=bins.get(key)??[];
+      group.push(tip);bins.set(key,group);
+    }
+    // Dense hatching is not a safe place for automatic corner closure.
+    if(tips.length<=8192)for(const a of tips){
+      if(candidates.length>=4096)break;
+      if(bridges[a.at])continue;
+      const cellX=Math.floor(a.x/tile),cellY=Math.floor(a.y/tile);
+      const possible:CornerTip[]=[];
+      for(let cy=cellY-1;cy<=cellY+1;cy++)
+        for(let cx=cellX-1;cx<=cellX+1;cx++)
+          for(const b of bins.get(cx+','+cy)??[]){
+            if(b.at<=a.at||bridges[b.at])continue;
+            if(Math.abs(a.dx*b.dx+a.dy*b.dy)>0.01)continue;
+            const vx=b.x-a.x,vy=b.y-a.y,distance=Math.hypot(vx,vy);
+            if(distance<=1.5||distance>edgeReach)continue;
+            if((-a.dx*vx-a.dy*vy)/distance<.35||
+               (b.dx*vx+b.dy*vy)/distance<.35)continue;
+            possible.push(b);
+          }
+      if(possible.length!==1)continue;
+      const b=possible[0]!,steps=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y));
+      const cells:number[]=[];
+      let clear=true;
+      for(let step=1;step<steps&&clear;step++){
+        const x=Math.round(a.x+(b.x-a.x)*step/steps);
+        const y=Math.round(a.y+(b.y-a.y)*step/steps);
+        if(x<1||y<1||x>=width-1||y>=height-1||original[y*width+x]||bridges[y*width+x]){
+          clear=false;break;
+        }
+        for(let yy=y-1;yy<=y+1&&clear;yy++)
+          for(let xx=x-1;xx<=x+1;xx++){
+            const at=yy*width+xx;
+            if(at!==a.at&&at!==b.at&&(original[at]||bridges[at])){clear=false;break;}
+          }
+        cells.push(y*width+x);
+      }
+      if(!clear||!cells.length)continue;
+      candidates.push({from:{x:a.x,y:a.y},to:{x:b.x,y:b.y},length:Math.hypot(b.x-a.x,b.y-a.y)-1,kind:'tips'});
+      for(const at of cells)walls[at]=bridges[at]=1;
+    }
+  }
+  // Thick stroke caps have multiple adjacent ink pixels, so the one-neighbor
+  // tip detector cannot see them. Find the center of a cardinal cap from its
+  // cross section behind the tip, and require a sustained inward stroke.
+  // Only close a mutually unique, perpendicular pair on the SAME contour.
+  // Separate strokes and ambiguous caps remain available for manual repair.
+  if(radius>=5&&candidates.length<4096){
+    type Cap={x:number;y:number;dx:number;dy:number;at:number;thickness:number};
+    const caps:Cap[]=[],tile=radius+33,bins=new Map<string,Cap[]>();
+    const ink=(x:number,y:number)=>x>=0&&y>=0&&x<width&&y<height&&!!original[y*width+x];
+    for(let y=1;y<height-1&&caps.length<=8192;y++)for(let x=1;x<width-1&&caps.length<=8192;x++){
+      if(!ink(x,y))continue;
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]] as const){
+        if(ink(x+dx,y+dy)||ink(x+2*dx,y+2*dy)||!ink(x-dx,y-dy)||!ink(x-3*dx,y-3*dy))continue;
+        const cx=x-3*dx,cy=y-3*dy,px=-dy,py=dx;
+        let lo=0,hi=0;
+        while(lo<32&&ink(cx-(lo+1)*px,cy-(lo+1)*py))lo++;
+        while(hi<32&&ink(cx+(hi+1)*px,cy+(hi+1)*py))hi++;
+        const thickness=lo+hi+1;
+        if(lo===32||hi===32||thickness<3||!(hi===lo||hi===lo+1))continue;
+        let sustained=true;
+        for(let step=1;step<=thickness+2;step++)if(!ink(x-step*dx,y-step*dy)){sustained=false;break;}
+        if(!sustained)continue;
+        const cap={x,y,dx,dy,at:y*width+x,thickness};
+        caps.push(cap);
+        const key=Math.floor(x/tile)+','+Math.floor(y/tile);
+        const bin=bins.get(key)??[];bin.push(cap);bins.set(key,bin);
+      }
+    }
+    if(caps.length<=8192){
+      // Label original ink lazily only when a plausible thick-cap pair exists.
+      let components:Uint32Array|undefined,queue:Uint32Array|undefined,component=0;
+      const componentAt=(at:number)=>{
+        components??=new Uint32Array(count);queue??=new Uint32Array(count);
+        const labels=components;
+        if(!labels[at]){
+          component++;
+          flood(width,height,at,i=>!!original[i]&&!labels[i],i=>{labels[i]=component;},queue);
+        }
+        return labels[at];
+      };
+      // A brush's visible rounded cap is not a single center pixel.
+      // Search its actual terminal edge: the nearest two ink pixels can be
+      // within the gap setting even when the axial tips are farther apart.
+      const edgeCache=new Map<Cap,Point[]>();
+      const edge=(cap:Cap)=>{
+        const cached=edgeCache.get(cap);if(cached)return cached;
+        const out:Point[]=[],half=Math.min(16,Math.ceil(cap.thickness/2));
+        for(let offset=-half;offset<=half;offset++){
+          for(let back=0;back<=half+1;back++){
+            const x=cap.x-back*cap.dx-offset*cap.dy,y=cap.y-back*cap.dy+offset*cap.dx;
+            if(ink(x,y)&&!ink(x+cap.dx,y+cap.dy)){out.push({x,y});break;}
+          }
+        }
+        edgeCache.set(cap,out);return out;
+      };
+      const route=(a:Cap,b:Cap)=>{
+        const vx=b.x-a.x,vy=b.y-a.y,distance=Math.hypot(vx,vy);
+        if(distance<=1.5||distance>radius+1+Math.min(16,Math.ceil(a.thickness/2))+Math.min(16,Math.ceil(b.thickness/2))||
+          a.dx*b.dx+a.dy*b.dy!==0||
+          (a.dx*vx+a.dy*vy)/distance<.35||(-b.dx*vx-b.dy*vy)/distance<.35||
+          componentAt(a.at)!==componentAt(b.at))return null;
+        let best:{from:Point;to:Point;cells:number[];distance:number}|null=null;
+        for(const from of edge(a))for(const to of edge(b)){
+          const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy);
+          if(length<=1||length>radius+1||(best&&length>=best.distance)||
+            (a.dx*dx+a.dy*dy)/length<.2||(-b.dx*dx-b.dy*dy)/length<.2)continue;
+          const steps=Math.max(Math.abs(dx),Math.abs(dy)),cells:number[]=[];
+          let clear=true;
+          for(let step=1;step<steps&&clear;step++){
+            const x=Math.round(from.x+dx*step/steps),y=Math.round(from.y+dy*step/steps),at=y*width+x;
+            if(original[at]||bridges[at]){clear=false;break;}
+            for(let yy=Math.max(0,y-1);yy<=Math.min(height-1,y+1)&&clear;yy++)
+              for(let xx=Math.max(0,x-1);xx<=Math.min(width-1,x+1);xx++){
+                const i=yy*width+xx;
+                if(bridges[i]){clear=false;break;}
+                if(!original[i])continue;
+                // Only ink immediately adjacent to the chosen terminal edge
+                // pixels may be touched by the bridge corridor.
+                if(Math.hypot(xx-from.x,yy-from.y)>2.5&&Math.hypot(xx-to.x,yy-to.y)>2.5){clear=false;break;}
+              }
+            cells.push(at);
+          }
+          if(clear&&cells.length)best={from,to,cells,distance:length};
+        }
+        return best;
+      };
+      const matches=new Map<Cap,Cap[]>();
+      for(const a of caps){
+        const cx=Math.floor(a.x/tile),cy=Math.floor(a.y/tile);
+        for(let y=cy-1;y<=cy+1;y++)for(let x=cx-1;x<=cx+1;x++)
+          for(const b of bins.get(x+','+y)??[]){
+            if(b.at<=a.at||!route(a,b))continue;
+            const first=matches.get(a)??[],second=matches.get(b)??[];
+            first.push(b);second.push(a);matches.set(a,first);matches.set(b,second);
+          }
+      }
+      for(const [a,others] of matches){
+        if(candidates.length>=4096)break;
+        if(others.length!==1)continue;
+        const b=others[0]!;
+        if(b.at<=a.at||matches.get(b)?.length!==1)continue;
+        const bridge=route(a,b);
+        if(!bridge)continue;
+        candidates.push({from:bridge.from,to:bridge.to,length:bridge.distance-1,kind:'tips'});
+        for(const at of bridge.cells)walls[at]=bridges[at]=1;
+      }
+    }
+  }
   for(const {remove,preserveInk,points} of manual){
     for(let i=0;i<points.length;i++){
       const a=points[Math.max(0,i-1)]!,b=points[i]!,steps=Math.max(1,Math.ceil(Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))*2));
@@ -208,8 +379,11 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
     }
   }
   const remaining=candidates.filter(({from,to})=>{
-    const dx=Math.sign(to.x-from.x),dy=Math.sign(to.y-from.y),steps=Math.max(Math.abs(to.x-from.x),Math.abs(to.y-from.y));
-    for(let i=1;i<steps;i++)if(bridges[(from.y+dy*i)*width+from.x+dx*i])return true;
+    const dx=to.x-from.x,dy=to.y-from.y,steps=Math.max(Math.abs(dx),Math.abs(dy));
+    for(let i=1;i<steps;i++){
+      const x=Math.round(from.x+dx*i/steps),y=Math.round(from.y+dy*i/steps);
+      if(bridges[y*width+x])return true;
+    }
     return false;
   });
   return {walls,bridges,candidates:remaining};
@@ -271,6 +445,29 @@ export function unpaintedFillEdges(mask:MaskData,pixels:Uint8ClampedArray|null,s
       remaining[i]=255;
   }
   return remaining;
+}
+
+/** A gap-assisted flood from inside an artwork must not silently paint the outside.
+ * Intended outside fills near an edge remain available without interruption.
+ * Checking border flags is O(width + height), independent of canvas area. */
+export function needsLeakingFillReview(mask:MaskData,point:Point|undefined,gap:number):boolean{
+  if(gap<=0||!point||!mask.alpha.length)return false;
+  const {width,height,alpha}=mask;
+  if(width<3||height<3)return false;
+  const margin=Math.max(2,Math.ceil(gap));
+  if(point.x<=margin||point.y<=margin||point.x>=width-margin||point.y>=height-margin)return false;
+  let edges=0;
+  let top=false,bottom=false,left=false,right=false;
+  for(let x=0;x<width;x++){
+    if(alpha[x])top=true;
+    if(alpha[(height-1)*width+x])bottom=true;
+  }
+  for(let y=0;y<height;y++){
+    if(alpha[y*width])left=true;
+    if(alpha[y*width+width-1])right=true;
+  }
+  edges=Number(top)+Number(bottom)+Number(left)+Number(right);
+  return edges>=1;
 }
 
 function* sampledPath(points:readonly Point[]){
@@ -352,6 +549,11 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
   const matchRgb=settings.condition==='color'?colorChannels(settings.matchColor??settings.color):undefined;
   for(let i=0;i<length;i++){
     if(!alpha[i])continue;
+    // Expansion / smoothing may cover ink, but a closed-region trace must
+    // never spill into the exterior label even at its boundary.
+    if(settings.method==='line'&&settings.closedOnly&&graph&&graph.external[graph.labels[i]!]){
+      alpha[i]=0;continue;
+    }
     if(selection)alpha[i]=Math.round(alpha[i]!*selection.alpha[i]!/255);
     // The reference controls geometry; the destination controls pixel conditions.
     if(!destinationEligible(destination,i,settings,matchRgb))alpha[i]=0;

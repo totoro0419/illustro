@@ -52,6 +52,8 @@ type CanvasEditGesture=Readonly<{
   updateSamples?:(samples:readonly Sample[])=>void;
   cancel?:()=>void;
   continuous?:boolean;end?:()=>void;pixelFill?:()=>string;referencePoint?:()=>MaskPoint|null;
+  /** Queue-only tools can collect points during an asynchronous raster commit. */
+  queueInputWhileBusy?:()=>boolean;
   /** At most once per animation frame while tracing a canvas interaction. */
   update?:(points:readonly MaskStrokePoint[])=>void;
   pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;
@@ -992,7 +994,8 @@ export class BrushSurface{
     }
     if(this.editGesture){
       if(this.editGesture.pointEdit)return;
-      if(e.button!==0||this.busy||this.inputBarrier||this.inspectedLayer||this.layerCompPreview||this.layerBlendPreview?.layerId===this.controller.selectedLayer.id)return;
+      const queuedFillInput=this.editGesture.queueInputWhileBusy?.()??false;
+      if(e.button!==0||this.editPointer!==null||(this.busy&&!queuedFillInput)||(this.inputBarrier&&!queuedFillInput)||this.inspectedLayer||this.layerCompPreview||this.layerBlendPreview?.layerId===this.controller.selectedLayer.id)return;
       e.preventDefault();
       this.editPointer=e.pointerId;
       this.editPointerType=e.pointerType;

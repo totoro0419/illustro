@@ -21,7 +21,7 @@ export const neighborhoodEffects={
   unsharp:{id:'FX-122',label:'アンシャープマスク',parameters:[number('強さ（%）',0,300,60),radius,number('しきい値',0,255,5),flag('明るさだけ',1)]},
   highPass:{id:'FX-123',label:'細部を抽出（High Pass）',parameters:[radius,number('中間の明るさ',0,255,128),flag('元の画像に重ねる')]},
   noise:{id:'FX-124',label:'ノイズ',parameters:[number('量',0,100,12),flag('色付き'),flag('中央に集中する分布'),number('粒の大きさ（px）',1,24,1),number('模様の番号',0,1000000,1)]},
-  median:{id:'FX-125',label:'メディアン・ごみ取り',parameters:[number('ごみの半径（px）',1,5,1),number('色・不透明度の差のしきい値',0,255,18),flag('孤立した点だけを除く',1)]},
+  median:{id:'FX-125',label:'メディアン・ごみ取り',parameters:[number('ごみの半径（px）',1,5,2),number('色・不透明度の差のしきい値',0,255,18),flag('孤立した点だけを除く',1)]},
 } as const satisfies Record<string,EffectDefinition>;
 export const toneEffects={
   brightness:{id:'FX-101',label:'明るさ・コントラスト',parameters:[number('明るさ',-100,100,0),number('コントラスト',-100,100,0),flag('明るさだけを調整')]},

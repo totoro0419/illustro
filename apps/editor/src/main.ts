@@ -1,3 +1,4 @@
+import {transformTargetIsCurrent} from './transform/sessionValidity';
 import {translateUi,uiLocale} from './ui/language';
 import {previewLegacyMacro} from './ui/legacyMacroPreview';
 import {decodeSavedPosition,describePosition,IMAGE_POSITION_SECTION} from './export/imagePosition';
@@ -21,6 +22,7 @@ import {openExchangePanel} from './export/exchangePanel';
 import {installWetTools,wetModes} from './wet/panel';
 import {createWetPatch,wetPatchTiles} from './wet/edit';
 import {installWetPad} from './wet/pad';
+import {shouldShowPixelGrid} from './pixelGridVisibility';
 import {accessibilityFeedback,installAccessibility} from './ui/accessibility';
 import {applyPixelCell,pixelStroke} from './pixelStroke';
 import {openBatchExport} from './export/batchExport';
@@ -393,6 +395,30 @@ function changeLayer(label:string, change:(tx:ReturnType<CoreDocument['begin']>)
   updateQa();
 }
 
+// Both the inline list editor and the detailed field use one safe commit path.
+let layerRenameGeneration=0;
+async function renameLayerSafely(id:LayerId,name:string):Promise<boolean>{
+  const artwork=controller.document,request=++layerRenameGeneration;
+  if(!name.trim()||!artwork.root.hasLayer(id)){
+    byId('status').textContent='名前を変更するレイヤーが見つからないか、名前が空です。';
+    return false;
+  }
+  const startAt=performance.now();
+  while(artwork===controller.document&&artwork.root.hasLayer(id)&&
+    (surface?.busy||historyPending||geometryBusy)){
+    if(request!==layerRenameGeneration)return false;
+    if(performance.now()-startAt>8000){
+      byId('status').textContent='レイヤー名をまだ保存できません。描画処理が終わってから再度確定してください。';
+      return false;
+    }
+    byId('status').textContent='描画処理が終わるとレイヤー名を変更します。';
+    await new Promise<void>(resolve=>setTimeout(resolve,50));
+  }
+  if(request!==layerRenameGeneration||artwork!==controller.document||!artwork.root.hasLayer(id))return false;
+  changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(id,name));
+  return artwork.root.getLayer(id).name===name;
+}
+
 let layerBatchDocument:CoreDocument|null=null;
 let layerBatchMode=false;
 let layerBatchAnchor:LayerId|null=null;
@@ -465,6 +491,11 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
   const label=mode==='duplicate'?'レイヤーを複製':mode==='copy'?'統合コピーを作成':'レイヤーを結合';
   byId('status').textContent=label+'しています。';
   try{
+    // Drain pending strokes before taking a merge snapshot so one Undo
+    // reverses this atomic merge rather than consuming an older reservation.
+    await drawing.settleStrokes();
+    await historyNavigation?.barrier();
+    if(surface!==drawing||controller.document!==document)throw Error('結合する作品が変わりました。');
     const head=document.head;
     const captureIds=new Set(ids);
     if(mode!=='duplicate')for(const id of ids){
@@ -493,6 +524,7 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
       :tx.addRasterSnapshotAbove(reference,pixels,mode==='copy'?'統合コピー':root.getLayer(reference).name.slice(0,4070)+' のコピー',mode==='duplicate',mode==='duplicate');
     controller.lastPersistenceHandoff=tx.commit().persistence;
     controller.selectLayer(id);
+    drawing.discardRedoProjection();
     queueLatestCommit();
     checkpointNeedsFullSeed=true;
     await drawing.restoreDocumentProjection();
@@ -1198,8 +1230,12 @@ const renderLayers=()=>{
   opacity.disabled=!hasLayer;
   byId('layerOpacityValue').textContent=opacity.value+'%';
   const nameField=byId<HTMLInputElement>('selectedLayerName');
-  if(document.activeElement!==nameField||nameField.dataset.layerId!==selectedLayer.id)nameField.value=selectedName;
-  nameField.dataset.layerId=selectedLayer.id;
+  // Keep the original edit target while focus remains in the input.
+  // Switching selected layers must not silently redirect a pending rename.
+  if(document.activeElement!==nameField){
+    nameField.value=selectedName;
+    nameField.dataset.layerId=selectedLayer.id;
+  }
   nameField.disabled=!hasLayer;
   const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
   const sameParent=(a:LayerId,b:LayerId)=>root.groupsForLayer(a).at(-1)?.id===root.groupsForLayer(b).at(-1)?.id;
@@ -1325,7 +1361,7 @@ const renderLayers=()=>{
           const value=field.value.trim();
           field.replaceWith(liveButton);
           if(save&&value&&value!==layer.name)
-            changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(layer.id,value));
+            void renameLayerSafely(layer.id,value);
         };
         field.onkeydown=event=>{
           if(event.key!=='Enter'&&event.key!=='Escape')return;
@@ -1667,16 +1703,34 @@ byId<HTMLButtonElement>('moveLayerUp').onclick=()=>changeLayer('レイヤーを�
 byId<HTMLButtonElement>('moveLayerDown').onclick=()=>changeLayer('レイヤーを一つ下に移動しました。',tx=>tx.moveRasterLayer(controller.selectedLayerId,-1));
 const layerNameField=byId<HTMLInputElement>('selectedLayerName');
 layerNameField.onchange=()=>{
-  const nextName=layerNameField.value.trim();
-  if(!nextName){
-    layerNameField.value=controller.selectedLayer.name;
-    byId('status').textContent='レイヤー名を入力してください。';
-    return;
+  // Preserve the original ID across list redraws and slow stroke commits.
+  const id=layerNameField.dataset.layerId as LayerId|undefined;
+  if(!id||!controller.document.root.hasLayer(id)){
+    byId('status').textContent='名前を変更するレイヤーが見つかりません。';return;
   }
-  changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(controller.selectedLayerId,nextName));
-  layerNameField.value=controller.selectedLayer.name;
+  const name=layerNameField.value.trim(),artwork=controller.document;
+  if(!name){
+    layerNameField.value=artwork.root.getLayer(id).name;
+    byId('status').textContent='レイヤー名を入力してください。';return;
+  }
+  void renameLayerSafely(id,name).then(saved=>{
+    if(artwork!==controller.document||!artwork.root.hasLayer(id))return;
+    layerNameField.value=controller.selectedLayerId===id?artwork.root.getLayer(id).name:controller.selectedLayer.name;
+    if(controller.selectedLayerId!==id)layerNameField.dataset.layerId=controller.selectedLayerId;
+    if(!saved&&artwork.root.getLayer(id).name!==name&&!(byId('status').textContent??'').includes('できません'))
+      byId('status').textContent='変更を反映できませんでした。前の操作が終わってからもう一度確定してください。';
+  }).catch(error=>{byId('status').textContent='レイヤー名を変更できませんでした。'+String(error);});
 };
-layerNameField.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();layerNameField.blur();}};
+layerNameField.onkeydown=event=>{
+  if(event.key==='Enter'){event.preventDefault();layerNameField.blur();}
+  if(event.key==='Escape'){
+    event.preventDefault();layerRenameGeneration++;
+    const id=layerNameField.dataset.layerId as LayerId|undefined;
+    if(id&&controller.document.root.hasLayer(id))
+      layerNameField.value=controller.document.root.getLayer(id).name;
+    layerNameField.blur();
+  }
+};
 const layerOpacityInput=byId<HTMLInputElement>('layerOpacity');
 layerOpacityInput.oninput=()=>{
   byId('layerOpacityValue').textContent=layerOpacityInput.value+'%';
@@ -1862,7 +1916,7 @@ try{
 }catch{}
 function updatePixelGrid(){
  const state=surface?.viewState;
- const visible=!!state&&(gridToggle.checked||activeCanvasTool==='pixels')&&state.zoom*100>=gridThreshold.valueAsNumber;
+ const visible=shouldShowPixelGrid(gridToggle.checked,state?.zoom??0,gridThreshold.valueAsNumber,!!state);
  gridOverlay.toggleAttribute('hidden',!visible);
  if(!visible||!state||!surface){pixelCoordinates.hidden=true;return;}
  const origin=surface.documentToScreen({x:0,y:0}),c=Math.cos(state.rotation),s=Math.sin(state.rotation);
@@ -2874,6 +2928,10 @@ byId('documentInfoOpen').onclick=()=>{
   byId<HTMLInputElement>('canvasTemplateName').value='';
   for(const id of ['canvasTemplateGuides','canvasTemplatePalette','canvasTemplateInfo'])byId<HTMLInputElement>(id).checked=false;
   workTime.refresh();documentInfoDialog.showModal();
+};
+byId('fileDocumentInfo').onclick=()=>{
+  byId<HTMLElement>('fileActions').hidePopover();
+  byId('documentInfoOpen').click();
 };
 byId('documentInfoClose').onclick=()=>documentInfoDialog.close();
 byId<HTMLFormElement>('documentInfoForm').onsubmit=event=>{
@@ -4832,6 +4890,9 @@ async function withClipboardAccess(action:(drawing:BrushSurface)=>Promise<'edit'
   }finally{
     geometryBusy=false;
     if(surface===drawing)drawing.setInputBarrier(false);
+    // The edit path refreshed history while geometryBusy was still true.
+    // Re-enable Undo/Redo only after releasing the mutation barrier.
+    updateHistoryButtons();updatePersistenceDisplay();updateContextBar();updateQa();
     c06ClipboardUI?.refresh();
   }
 }
@@ -4893,6 +4954,21 @@ installWetPad(byId('referenceBoxBody'),{
     ...(devicePressureSensitivity===.5?{}:{deviceCurve:[[0,0],[.5,devicePressureSensitivity],[1,1]]}),
   }),
 });
+// Reuse the isolated drawing pad for both brush and wet settings; it does not touch the document.
+function openSharedBrushTestPad(){
+  shellUi.openBox('referenceBox');
+  const panel=byId<HTMLDetailsElement>('sharedBrushTestPad');
+  panel.open=true;
+  panel.scrollIntoView({block:'nearest'});
+}
+const openBrushPad=document.createElement('button');
+openBrushPad.type='button';openBrushPad.textContent='このブラシを試し描き';
+openBrushPad.onclick=openSharedBrushTestPad;
+byId('brushBoxBody').prepend(openBrushPad);
+const openWetPad=document.createElement('button');
+openWetPad.type='button';openWetPad.textContent='混色・水彩を試し描き';
+openWetPad.onclick=openSharedBrushTestPad;
+byId('documentBoxBody').querySelector('[data-tool-panel="smudge"]')?.append(openWetPad);
 const pixelPanel=document.createElement('details');pixelPanel.className='c06-clipboard-panel';pixelPanel.dataset.toolPanel='pixels';
 const pixelTitle=document.createElement('summary');pixelTitle.textContent='1pxのドット絵';
 const pixelPen=document.createElement('button'),pixelErase=document.createElement('button'),pixelStatus=document.createElement('output');
@@ -5372,8 +5448,14 @@ transformPanel=installTransformPanel(byId('documentBoxBody'),async target=>{
   const linkedMask=Boolean((saved?saved.linkedMask:target==='layer')&&layer.vectorMask&&layer.vectorMask.linked!==false);
   const replacementOpacity=transformPreviewReplacementOpacity(artwork.root,layer.id,target);
   let previewScene:FrozenExport|undefined;
-  const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
-    controller.selectedLayer.id===layer.id&&(target==='layer'||c06Selection?.active()===activeSelection);
+  // A preview is not an edit. Immutable layer snapshots identify real
+  // target mutations while allowing unrelated document revisions.
+  const stamp={drawing,artwork,layer,width,height,selection:activeSelection,target};
+  const valid=()=>transformTargetIsCurrent(stamp,{
+    drawing:surface,artwork:controller.document,selectedLayerId:controller.selectedLayerId,
+    selection:c06Selection?.active()??null
+  });
+  if(!valid())throw Error('読み込み中に変形する対象が変わりました。変形を開始し直してください。');
   return {
     width,height,bounds,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
     pixels,selection:target==='boundary'?null:selection,drawing,valid,objectSnap:marks,originalAlphaLocked:!!original.alphaLocked,...(layer.vectorMask?{maskLink:linkedMask}:{}),
@@ -5521,7 +5603,13 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
   drawing:()=>documentReady?surface:null,
   color:()=>hex(foreground.current),
   documentId:()=>controller.document.root.documentId,
+  targetId:()=>controller.selectedLayerId,
   targetName:()=>controller.selectedLayer.name,
+  selectTargetForQueuedFill:id=>{
+    if(!documentReady||!surface||!controller.document.root.hasLayer(id as LayerId))throw Error('元の塗り対象が見つかりません。');
+    controller.selectLayer(id as LayerId);
+    renderLayers();updateHistoryButtons();updateQa();
+  },
   references:()=>controller.layers.filter(layer=>!layer.lineRegions).map(layer=>({id:layer.id,name:layer.name,
     vector:layer.editable?.kind==='path',visible:controller.document.root.isLayerVisible(layer.id)&&layer.opacity>0})),
   regionLayers:()=>controller.layers.flatMap(layer=>layer.lineRegions?[{id:layer.id,name:layer.name,data:layer.lineRegions}]:[]),
@@ -5591,7 +5679,8 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
         artwork.root.width===width&&artwork.root.height===height,
       width,height,source,target,selection,targetMask,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,canAdjust,
       select:mask=>c06Selection?.replaceActive(mask),
-      apply:async(pixels,color,hints)=>withClipboardAccess(async()=>{
+      apply:async(pixels,color,hints)=>{
+        await withClipboardAccess(async()=>{
         if(applied?!canAdjust():!valid())throw Error('作品が変わったため塗りを取り消しました。');
         const tx=applied?artwork.beginAdjustment(applied.revision,'調整した塗りつぶし'):artwork.begin('塗りつぶす');
         const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,hints?'色指示の彩色':fillLayerName(destination,color),false,true,destination==='under');
@@ -5601,7 +5690,10 @@ fillPanel=installFillPanel(byId('documentBoxBody'),{
         controller.lastPersistenceHandoff=receipt.persistence;
         controller.selectLayer(id);applied={revision:receipt.revision.id,id};
         return 'edit';
-      })
+        });
+        // Fill commits are asynchronous: synchronize every Undo/Redo control only after commit.
+        queueLatestCommit();updateHistoryButtons();updateQa();
+      }
     };
   }
 });

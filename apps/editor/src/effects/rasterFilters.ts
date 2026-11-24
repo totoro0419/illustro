@@ -164,25 +164,62 @@ function noiseFilter(source:Bytes,width:number,step:EffectStep){
   }
   return out;
 }
-function medianFilter(source:Bytes,width:number,height:number,step:EffectStep){
-  const [radius=1,threshold=18,isolated=1]=step.values;
-  const out=new Uint8ClampedArray(source);
-  const values:Array<{tone:number;index:number}>=Array.from({length:(radius*2+1)**2},()=>({tone:0,index:0}));
+// A speck is a compact connected component surrounded by one uniform
+// background, not a pixel without a like-colored neighbor. Keep this
+// conservative on nonuniform artwork; never treat a line segment as dust.
+function isolatedMedian(source:Bytes,width:number,height:number,radius:number,threshold:number){
+  const out=new Uint8ClampedArray(source),size=width*height;
+  if(width<3||height<3)return out;
   const difference=(i:number,j:number)=>{
     const ai=byte(source,i+3)/255,aj=byte(source,j+3)/255;
     return Math.max(Math.abs(ai-aj)*255,Math.abs(byte(source,i)*ai-byte(source,j)*aj),
       Math.abs(byte(source,i+1)*ai-byte(source,j+1)*aj),Math.abs(byte(source,i+2)*ai-byte(source,j+2)*aj));
   };
+  // Only a consistent border permits a global background assumption.
+  // Exact premultiplied equality includes alpha=0 with hidden RGB.
+  const corners=[0,(width-1)*4,(height-1)*width*4,(size-1)*4];
+  const background=corners.find(at=>corners.filter(other=>difference(at,other)===0).length>=3);
+  if(background===undefined)return out;
+  const foreground=new Uint8Array(size),queue=new Uint32Array(size);
+  for(let i=0;i<size;i++)if(difference(i*4,background)>0)foreground[i]=1;
+  const diameter=2*radius+1;
+  for(let start=0;start<size;start++){
+    if(foreground[start]!==1)continue;
+    let tail=0,left=width,right=0,top=height,bottom=0,touchesEdge=false,contrast=0;
+    const enqueue=(at:number)=>{foreground[at]=2;queue[tail++]=at;};
+    enqueue(start);
+    for(let front=0;front<tail;front++){
+      const at=queue[front]!,x=at%width,y=Math.floor(at/width);
+      left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);
+      if(x===0||y===0||x===width-1||y===height-1)touchesEdge=true;
+      contrast=Math.max(contrast,difference(at*4,background));
+      for(let ny=Math.max(0,y-1);ny<=Math.min(height-1,y+1);ny++)
+        for(let nx=Math.max(0,x-1);nx<=Math.min(width-1,x+1);nx++){
+          const next=ny*width+nx;
+          if(foreground[next]===1)enqueue(next);
+        }
+    }
+    const w=right-left+1,h=bottom-top+1;
+    if(touchesEdge||contrast<=threshold||Math.max(w,h)>diameter||
+      Math.max(w,h)>Math.max(2,2*Math.min(w,h)))continue;
+    // Preserve connected linework, including thin diagonals and hollow
+    // intentional marks. A dot must occupy a substantial part of its box.
+    if(tail<w*h*.5)continue;
+    for(let i=0;i<tail;i++){
+      const at=queue[i]!*4;
+      if(!source[background+3])out.fill(0,at,at+4);
+      else out.set(source.subarray(background,background+4),at);
+    }
+  }
+  return out;
+}
+function medianFilter(source:Bytes,width:number,height:number,step:EffectStep){
+  const [radius=1,threshold=18,isolated=1]=step.values;
+  if(isolated)return isolatedMedian(source,width,height,radius,threshold);
+  const out=new Uint8ClampedArray(source);
+  const values:Array<{tone:number;index:number}>=Array.from({length:(radius*2+1)**2},()=>({tone:0,index:0}));
   for(let y=0;y<height;y++)for(let x=0;x<width;x++){
     const i=(y*width+x)*4;
-    if(isolated){
-      let connected=0;
-      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
-        const nx=x+dx,ny=y+dy;
-        if((dx||dy)&&nx>=0&&nx<width&&ny>=0&&ny<height&&difference(i,(ny*width+nx)*4)<=threshold)connected++;
-      }
-      if(connected>0)continue;
-    }
     let k=0;
     for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){
       const at=(clip(y+dy,0,height-1)*width+clip(x+dx,0,width-1))*4,value=values[k++]!;
@@ -191,7 +228,7 @@ function medianFilter(source:Bytes,width:number,height:number,step:EffectStep){
     }
     values.sort((a,b)=>a.tone-b.tone||byte(source,a.index+3)-byte(source,b.index+3));
     const mid=values[Math.floor(values.length/2)]!.index;
-    if(!isolated||difference(i,mid)>threshold)out.set(source.subarray(mid,mid+4),i);
+    out.set(source.subarray(mid,mid+4),i);
   }
   return out;
 }
