@@ -598,7 +598,7 @@ export function installFillPanel(host:HTMLElement,api:{
         if(pending.mask&&needsLeakingFillReview(pending.mask,points[0],settings().gap)){
           directQueue.length=0;
           output.textContent='塗りが外側へ漏れる可能性があります。候補を確認してから適用してください。';
-          break;
+          return;
         }
         await applyCandidate();
         // A new paint layer becomes selected after each commit. For queued taps,

@@ -101,6 +101,79 @@ try{
   for(let i=0;i<3;i++)
     assert.ok(Math.abs(brightness(rgb(redone,sampleX[i],centerY))-brightness(filledColors[i]))<25,'Redo did not recover region '+(i+1));
   record('D-009-CTRL-Z-AND-BUTTON-REDO-MATCH-PIXELS');
+
+  // D-007 uses an actual 1200x900 work, a 10px millipen stroke and a separate
+  // paint layer. Convert document coordinates using the public canvas view.
+  await page.close();
+  page=await context.newPage();
+  page.on('pageerror',error=>report.errors.push(error.message));
+  await page.goto(base+'?backend=webgl2&r2-gap-smoke=1',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.locator('#ihStart').click();
+  await page.locator('#ihCanvasSetup summary').click();
+  await page.locator('#ihNewWidth').fill('1200');
+  await page.locator('#ihNewHeight').fill('900');
+  await page.locator('#ihNewBackground').selectOption('transparent');
+  await page.locator('#ihNewCreate').click();
+  await page.waitForFunction(()=>!document.querySelector('#brush')?.disabled&&document.querySelector('#canvas')?.dataset.documentWidth==='1200'&&document.querySelector('#canvas')?.dataset.documentHeight==='900',undefined,{timeout:60000});
+  const canvas=page.locator('#canvas');
+  const coords=async(x,y)=>{
+    const b=await canvas.boundingBox(),v=JSON.parse(await canvas.getAttribute('data-view'));
+    assert.ok(b&&v&&v.zoom>0,'Missing canvas view');
+    assert.equal(v.rotation,0);assert.equal(v.flipX,false);assert.equal(v.flipY,false);
+    return {x:b.x+v.cssWidth/2+v.panX+(x-v.documentWidth/2)*v.zoom,
+      y:b.y+v.cssHeight/2+v.panY+(y-v.documentHeight/2)*v.zoom,box:b};
+  };
+  const screen=async(x,y)=>{const p=await coords(x,y);return [p.x,p.y];};
+  const documentPixel=async(png,x,y)=>{
+    const p=await coords(x,y);
+    return rgb(png,(p.x-p.box.x)/p.box.width,(p.y-p.box.y)/p.box.height);
+  };
+  const pen=await page.locator('#brush option').evaluateAll(opts=>opts.find(o=>o.textContent.trim()==='ミリペン')?.value);
+  assert.ok(pen,'Millipen preset is missing');
+  await page.locator('#brush').selectOption(pen,{force:true});
+  await page.locator('#sizeNumber').fill('10');
+  await page.locator('#sizeNumber').press('Enter');
+  assert.equal(Number(await page.locator('#sizeNumber').inputValue()),10);
+  // The open corner is at (500,200). Round caps leave approximately
+  // 18 source pixels between the two ends, depending on raster coverage.
+  await page.mouse.move(...await screen(482,200));await page.mouse.down();
+  for(const [x,y] of [[200,200],[200,500],[500,500],[500,218]])
+    await page.mouse.move(...await screen(x,y),{steps:24});
+  await page.mouse.up();
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.committedStrokes==='1'&&document.querySelector('#canvas')?.dataset.historyBusy==='false',undefined,{timeout:60000});
+  const lineLayer=await canvas.getAttribute('data-selected-layer-id');
+  await page.locator('#addLayer').evaluate(el=>el.click());
+  await page.waitForFunction(id=>document.querySelector('#canvas')?.dataset.selectedLayerId!==id&&document.querySelector('#canvas')?.dataset.layerCount==='2'&&document.querySelector('#canvas')?.dataset.historyBusy==='false',lineLayer,{timeout:30000});
+  await page.locator('#smartFill').click();
+  const gapPanel=page.locator('[data-tool-panel="smartFill"]');
+  await gapPanel.getByLabel('参照する絵',{exact:true}).selectOption('layer');
+  await gapPanel.getByLabel('参照するレイヤー',{exact:true}).selectOption(lineLayer);
+  await gapPanel.getByLabel('埋める隙間（px）',{exact:true}).fill('18');
+  await gapPanel.getByLabel('埋める隙間（px）',{exact:true}).press('Tab');
+  await page.mouse.move(4,4);
+  const gapBefore=await readPixels(),gapRevision=await canvas.getAttribute('data-revision-id');
+  const samples=[[350,350],[100,100],[600,300],[350,600],[1000,700]];
+  const gapBeforeColors=await Promise.all(samples.map(([x,y])=>documentPixel(gapBefore,x,y)));
+  await gapPanel.getByRole('button',{name:'キャンバスで塗る',exact:true}).click();
+  await page.mouse.click(...await screen(350,350));
+  await page.mouse.move(4,4);
+  await page.waitForFunction(()=>{
+    const text=document.querySelector('[data-tool-panel="smartFill"]')?.lastElementChild?.textContent??'';
+    return text.includes('連続塗りを反映しました。')||text.includes('漏れる可能性')||text.includes('できません');
+  },undefined,{timeout:90000});
+  await verify((await state()).fillStatus?.includes('連続塗りを反映しました。'),'D-007 thick corner did not fill safely');
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.historyBusy==='false',undefined,{timeout:30000});
+  const gapAfter=await readPixels();
+  const gapColors=await Promise.all(samples.map(([x,y])=>documentPixel(gapAfter,x,y)));
+  assert.ok(brightness(gapColors[0])<brightness(gapBeforeColors[0])-80,'D-007 inside remained unfilled');
+  for(let i=1;i<samples.length;i++)assert.deepEqual(gapColors[i],gapBeforeColors[i],'D-007 changed exterior sample '+i);
+  record('D-007-1200x900-MILLIPEN-10PX-GAP-18PX-SEPARATE-LAYER');
+  await page.locator('#undo').evaluate(el=>el.click());
+  await page.waitForFunction(revision=>document.querySelector('#canvas')?.dataset.revisionId===revision&&document.querySelector('#canvas')?.dataset.historyBusy==='false',gapRevision,{timeout:30000});
+  const gapUndo=await readPixels();
+  for(let i=0;i<samples.length;i++)assert.deepEqual(await documentPixel(gapUndo,...samples[i]),gapBeforeColors[i],'D-007 Undo failed at sample '+i);
+  record('D-007-UNDO-RESTORES-PIXELS');
+
   report.status='PASS';
 }catch(error){
   report.status='FAIL';
