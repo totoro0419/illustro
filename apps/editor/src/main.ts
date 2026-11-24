@@ -1,3 +1,4 @@
+import {transformTargetIsCurrent} from './transform/sessionValidity';
 import {translateUi,uiLocale} from './ui/language';
 import {previewLegacyMacro} from './ui/legacyMacroPreview';
 import {decodeSavedPosition,describePosition,IMAGE_POSITION_SECTION} from './export/imagePosition';
@@ -5444,10 +5445,14 @@ transformPanel=installTransformPanel(byId('documentBoxBody'),async target=>{
   const linkedMask=Boolean((saved?saved.linkedMask:target==='layer')&&layer.vectorMask&&layer.vectorMask.linked!==false);
   const replacementOpacity=transformPreviewReplacementOpacity(artwork.root,layer.id,target);
   let previewScene:FrozenExport|undefined;
-  // Keep the captured transformation tied to the actual raster layer, not a transient document head.
-  const valid=()=>surface===drawing&&controller.document===artwork&&
-    artwork.root.hasLayer(layer.id)&&artwork.root.getLayer(layer.id)===layer&&
-    controller.selectedLayer.id===layer.id&&(target==='layer'||c06Selection?.active()===activeSelection);
+  // A preview is not an edit. Immutable layer snapshots identify real
+  // target mutations while allowing unrelated document revisions.
+  const stamp={drawing,artwork,layer,width,height,selection:activeSelection,target};
+  const valid=()=>transformTargetIsCurrent(stamp,{
+    drawing:surface,artwork:controller.document,selectedLayerId:controller.selectedLayerId,
+    selection:c06Selection?.active()??null
+  });
+  if(!valid())throw Error('読み込み中に変形する対象が変わりました。変形を開始し直してください。');
   return {
     width,height,bounds,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
     pixels,selection:target==='boundary'?null:selection,drawing,valid,objectSnap:marks,originalAlphaLocked:!!original.alphaLocked,...(layer.vectorMask?{maskLink:linkedMask}:{}),

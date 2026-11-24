@@ -536,12 +536,14 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   function armLiquify(){
     const current=source;
     if(!current)return;
+    if(!current.valid()){reset('変形する対象が変わったため、以前の候補を取り消しました。');return;}
     stopGesture();
     const mode=brushMode.value as LiquifyStroke['mode'];
     ownedGesture=current.drawing;
     status.textContent='キャンバスをなぞると一筆ずつ反映します。';
     ownedGesture.setCanvasEditGesture({path:false,width:settings.radius*2,color:mode==='protect'||mode==='unprotect'?'#3c99e8':'#ffb742',complete:points=>{
-      if(busy||!current.valid())return;
+      if(busy||source!==current)return;
+      if(!current.valid()){reset('変形する対象が変わったため、以前の候補を取り消しました。');return;}
       try{
         const stroke=makeLiquifyStroke(mode,settings.radius,mode==='protect'||mode==='unprotect'?1:settings.strength,points);
         if(!stroke)return;
