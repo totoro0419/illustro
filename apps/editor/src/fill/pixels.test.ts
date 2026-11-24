@@ -384,3 +384,15 @@ describe('R2 D-007 real-size thick rounded corner caps',()=>{
     }
   });
 });
+
+it('D-008 keeps the exterior untouched even when closed-region tracing expands the edge',()=>{
+  const width=23,height=13,source=image(width,height);
+  rectangle(source,width,2,2,8,10,[0,0,0,255]);
+  rectangle(source,width,14,2,20,10,[0,0,0,255]);
+  const graph=buildRegions(source,width,height,15,0,[]);
+  const result=fillMask(source,width,height,{...settings,method:'line',closedOnly:true,edge:4,antialias:true},
+    [{x:5,y:6},{x:11,y:6},{x:17,y:6}],graph,null);
+  expect(result.alpha[6*width+5]).toBe(255);
+  expect(result.alpha[6*width+17]).toBe(255);
+  for(let i=0;i<result.alpha.length;i++)if(graph.external[graph.labels[i]!])expect(result.alpha[i]).toBe(0);
+});

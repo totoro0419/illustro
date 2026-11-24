@@ -640,11 +640,38 @@ export function installFillPanel(host:HTMLElement,api:{
     },method.value.startsWith('lasso'),'#ffb742',true,false,direct);
   }
   const startFill=button('キャンバスで塗る',armFill);
-  button('囲まれた領域だけ連続塗り',()=>{
-    // Uses the existing region-label traversal. Paths through the exterior
-    // never add the exterior label; users can still switch back to free fill.
+  button('囲まれた領域だけ連続塗り',async()=>{
+    // First-time use must prepare the region graph, without writing a
+    // separate analysis layer into the work or accepting uncertain repairs.
+    stopGesture();
     method.value='line';
     closedOnly.checked=true;
+    const current=settings();
+    if(manualDraft){
+      advanced.open=true;
+      output.textContent='境界の手直しを確定するか取り消してから、連続塗りを開始してください。';
+      return;
+    }
+    const reusable=!!currentGraph&&!!capture&&confirmed&&sourceAvailable()&&
+      (capture.referenceValid()||!!saved)&&current.tolerance===graphTolerance&&current.gap===graphGap;
+    if(!reusable){
+      if(saved)forgetAnalysis();
+      await analyze();
+      if(!currentGraph||!capture||!capture.referenceValid()||!graphUsable()||
+         !currentGraph.external.some((outside,id)=>id>0&&!outside)){
+        advanced.open=true;
+        throw Error('閉じた領域が見つかりません。線画を確認してください。');
+      }
+      if(currentGraph.candidates.length){
+        advanced.open=true;
+        output.textContent='隙間補完の候補を確認し、線画領域を確定してから連続塗りを開始してください。';
+        return;
+      }
+      // No inferred bridges: the graph contains only actual enclosed ink.
+      confirmed=true;
+    }
+    if(!currentGraph||!currentGraph.external.some((outside,id)=>id>0&&!outside))
+      throw Error('閉じた領域が見つかりません。');
     sync();
     armFill();
     output.textContent='閉じた領域だけを通過順に選びます。外側は塗りません。自由に塗る場合は方式を「同じ色」に戻してください。';
@@ -919,7 +946,7 @@ export function installFillPanel(host:HTMLElement,api:{
   button('キャンバス操作をやめる',()=>{stopGesture();output.textContent='操作を取り消しました。';});
   reference.onchange=()=>{forgetAnalysis();refreshReferences();rememberRefs();sync();};
   referenceLayer.onchange=()=>{forgetAnalysis();rememberRefs();sync();};
-  method.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
+  method.onchange=()=>{stopGesture();candidate=null;lastFill=null;pending=null;paint();sync();};
   destination.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
   compare.onchange=()=>{inspectedRegion=0;mergeTarget.replaceChildren();inspectId.max=String(Math.max(1,(compare.checked?previous:currentGraph)?.count??1));paint();sync();};
   showBefore.onchange=paint;showHints.onchange=paint;view.onchange=paint;compare.disabled=true;
@@ -989,7 +1016,7 @@ export function installFillPanel(host:HTMLElement,api:{
     if(parent)advancedOptions.append(parent);
   }
   const advancedActions=document.createElement('div');advancedActions.className='c06-clipboard-grid';
-  const basic=new Set([coordinateFill.textContent,'キャンバスで塗る','領域を選択範囲にする','候補を適用','塗り候補を取り消す',
+  const basic=new Set([coordinateFill.textContent,'キャンバスで塗る','囲まれた領域だけ連続塗り','領域を選択範囲にする','候補を適用','塗り候補を取り消す',
     '表示中の絵から1枚を除外して参照',
     '直前の塗りを調整','キャンバス操作をやめる','計算を中止']);
   for(const control of Array.from(actions.querySelectorAll('button'))){

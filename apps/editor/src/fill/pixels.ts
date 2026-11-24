@@ -524,6 +524,11 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
   const matchRgb=settings.condition==='color'?colorChannels(settings.matchColor??settings.color):undefined;
   for(let i=0;i<length;i++){
     if(!alpha[i])continue;
+    // Expansion / smoothing may cover ink, but a closed-region trace must
+    // never spill into the exterior label even at its boundary.
+    if(settings.method==='line'&&settings.closedOnly&&graph&&graph.external[graph.labels[i]!]){
+      alpha[i]=0;continue;
+    }
     if(selection)alpha[i]=Math.round(alpha[i]!*selection.alpha[i]!/255);
     // The reference controls geometry; the destination controls pixel conditions.
     if(!destinationEligible(destination,i,settings,matchRgb))alpha[i]=0;
