@@ -263,8 +263,8 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
   // Only close a mutually unique, perpendicular pair on the SAME contour.
   // Separate strokes and ambiguous caps remain available for manual repair.
   if(radius>=5&&candidates.length<4096){
-    type Cap={x:number;y:number;dx:number;dy:number;at:number};
-    const caps:Cap[]=[],tile=radius+1,bins=new Map<string,Cap[]>();
+    type Cap={x:number;y:number;dx:number;dy:number;at:number;thickness:number};
+    const caps:Cap[]=[],tile=radius+33,bins=new Map<string,Cap[]>();
     const ink=(x:number,y:number)=>x>=0&&y>=0&&x<width&&y<height&&!!original[y*width+x];
     for(let y=1;y<height-1&&caps.length<=8192;y++)for(let x=1;x<width-1&&caps.length<=8192;x++){
       if(!ink(x,y))continue;
@@ -279,7 +279,7 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
         let sustained=true;
         for(let step=1;step<=thickness+2;step++)if(!ink(x-step*dx,y-step*dy)){sustained=false;break;}
         if(!sustained)continue;
-        const cap={x,y,dx,dy,at:y*width+x};
+        const cap={x,y,dx,dy,at:y*width+x,thickness};
         caps.push(cap);
         const key=Math.floor(x/tile)+','+Math.floor(y/tile);
         const bin=bins.get(key)??[];bin.push(cap);bins.set(key,bin);
@@ -297,26 +297,51 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
         }
         return labels[at];
       };
+      // A brush's visible rounded cap is not a single center pixel.
+      // Search its actual terminal edge: the nearest two ink pixels can be
+      // within the gap setting even when the axial tips are farther apart.
+      const edgeCache=new Map<Cap,Point[]>();
+      const edge=(cap:Cap)=>{
+        const cached=edgeCache.get(cap);if(cached)return cached;
+        const out:Point[]=[],half=Math.min(16,Math.ceil(cap.thickness/2));
+        for(let offset=-half;offset<=half;offset++){
+          for(let back=0;back<=half+1;back++){
+            const x=cap.x-back*cap.dx-offset*cap.dy,y=cap.y-back*cap.dy+offset*cap.dx;
+            if(ink(x,y)&&!ink(x+cap.dx,y+cap.dy)){out.push({x,y});break;}
+          }
+        }
+        edgeCache.set(cap,out);return out;
+      };
       const route=(a:Cap,b:Cap)=>{
         const vx=b.x-a.x,vy=b.y-a.y,distance=Math.hypot(vx,vy);
-        if(distance<=1.5||distance>radius+1||a.dx*b.dx+a.dy*b.dy!==0||
-          (a.dx*vx+a.dy*vy)/distance<.35||(-b.dx*vx-b.dy*vy)/distance<.35)return null;
-        const steps=Math.max(Math.abs(vx),Math.abs(vy)),cells:number[]=[];
-        for(let step=1;step<steps;step++){
-          const x=Math.round(a.x+vx*step/steps),y=Math.round(a.y+vy*step/steps),at=y*width+x;
-          if(original[at]||bridges[at])return null;
-          for(let yy=Math.max(0,y-1);yy<=Math.min(height-1,y+1);yy++)
-            for(let xx=Math.max(0,x-1);xx<=Math.min(width-1,x+1);xx++){
-              const i=yy*width+xx;
-              if(bridges[i])return null;
-              if(!original[i])continue;
-              const near=(cap:Cap)=>Math.hypot(xx-cap.x,yy-cap.y)<=2.5&&
-                (xx-cap.x)*cap.dx+(yy-cap.y)*cap.dy<=0;
-              if(!near(a)&&!near(b))return null;
-            }
-          cells.push(at);
+        if(distance<=1.5||distance>radius+1+Math.min(16,Math.ceil(a.thickness/2))+Math.min(16,Math.ceil(b.thickness/2))||
+          a.dx*b.dx+a.dy*b.dy!==0||
+          (a.dx*vx+a.dy*vy)/distance<.35||(-b.dx*vx-b.dy*vy)/distance<.35||
+          componentAt(a.at)!==componentAt(b.at))return null;
+        let best:{from:Point;to:Point;cells:number[];distance:number}|null=null;
+        for(const from of edge(a))for(const to of edge(b)){
+          const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy);
+          if(length<=1||length>radius+1||(best&&length>=best.distance)||
+            (a.dx*dx+a.dy*dy)/length<.2||(-b.dx*dx-b.dy*dy)/length<.2)continue;
+          const steps=Math.max(Math.abs(dx),Math.abs(dy)),cells:number[]=[];
+          let clear=true;
+          for(let step=1;step<steps&&clear;step++){
+            const x=Math.round(from.x+dx*step/steps),y=Math.round(from.y+dy*step/steps),at=y*width+x;
+            if(original[at]||bridges[at]){clear=false;break;}
+            for(let yy=Math.max(0,y-1);yy<=Math.min(height-1,y+1)&&clear;yy++)
+              for(let xx=Math.max(0,x-1);xx<=Math.min(width-1,x+1);xx++){
+                const i=yy*width+xx;
+                if(bridges[i]){clear=false;break;}
+                if(!original[i])continue;
+                // Only ink immediately adjacent to the chosen terminal edge
+                // pixels may be touched by the bridge corridor.
+                if(Math.hypot(xx-from.x,yy-from.y)>2.5&&Math.hypot(xx-to.x,yy-to.y)>2.5){clear=false;break;}
+              }
+            cells.push(at);
+          }
+          if(clear&&cells.length)best={from,to,cells,distance:length};
         }
-        return cells.length&&componentAt(a.at)===componentAt(b.at)?cells:null;
+        return best;
       };
       const matches=new Map<Cap,Cap[]>();
       for(const a of caps){
@@ -333,10 +358,10 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
         if(others.length!==1)continue;
         const b=others[0]!;
         if(b.at<=a.at||matches.get(b)?.length!==1)continue;
-        const cells=route(a,b);
-        if(!cells)continue;
-        candidates.push({from:{x:a.x,y:a.y},to:{x:b.x,y:b.y},length:Math.hypot(b.x-a.x,b.y-a.y)-1,kind:'tips'});
-        for(const at of cells)walls[at]=bridges[at]=1;
+        const bridge=route(a,b);
+        if(!bridge)continue;
+        candidates.push({from:bridge.from,to:bridge.to,length:bridge.distance-1,kind:'tips'});
+        for(const at of bridge.cells)walls[at]=bridges[at]=1;
       }
     }
   }

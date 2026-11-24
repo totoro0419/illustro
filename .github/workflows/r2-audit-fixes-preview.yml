@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [D-007, D-008, D-013, D-015, specks]
+        check: [D-007, D-008, D-013, D-015, D-015-white, specks]
     env:
       R2_CHROME_CHANNEL: chrome
       RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
@@ -92,9 +92,9 @@ jobs:
           set -o pipefail
           case "${{ matrix.check }}" in
             D-007) node scripts/r2-audit-fixes-fill-browser-smoke.mjs D-007 ;;
-            D-008|D-013|D-015) node scripts/r2-audit-fixes-remaining-browser-smoke.mjs "${{ matrix.check }}" ;;
+            D-008|D-013|D-015|D-015-white) node scripts/r2-audit-fixes-remaining-browser-smoke.mjs "${{ matrix.check }}" ;;
             specks) node scripts/r2-audit-fixes-specks-browser-smoke.mjs ;;
-            existing) node scripts/r2-audit-fixes-browser-smoke.mjs && node scripts/r2-audit-fixes-fill-browser-smoke.mjs ;;
+            existing) node scripts/r2-audit-fixes-browser-smoke.mjs && node scripts/r2-audit-fixes-fill-browser-smoke.mjs existing ;;
           esac 2>&1 | tee r2-browser-result.log
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
@@ -166,7 +166,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [D-007, D-008, D-013, D-015, specks, existing]
+        check: [D-007, D-008, D-013, D-015, D-015-white, specks, existing]
     env:
       R2_CHROME_CHANNEL: chrome
       RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
@@ -188,9 +188,9 @@ jobs:
           set -o pipefail
           case "${{ matrix.check }}" in
             D-007) node scripts/r2-audit-fixes-fill-browser-smoke.mjs D-007 ;;
-            D-008|D-013|D-015) node scripts/r2-audit-fixes-remaining-browser-smoke.mjs "${{ matrix.check }}" ;;
+            D-008|D-013|D-015|D-015-white) node scripts/r2-audit-fixes-remaining-browser-smoke.mjs "${{ matrix.check }}" ;;
             specks) node scripts/r2-audit-fixes-specks-browser-smoke.mjs ;;
-            existing) node scripts/r2-audit-fixes-browser-smoke.mjs && node scripts/r2-audit-fixes-fill-browser-smoke.mjs ;;
+            existing) node scripts/r2-audit-fixes-browser-smoke.mjs && node scripts/r2-audit-fixes-fill-browser-smoke.mjs existing ;;
           esac 2>&1 | tee r2-browser-result.log
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}

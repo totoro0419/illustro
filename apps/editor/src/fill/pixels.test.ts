@@ -345,14 +345,14 @@ describe('R2 D-008 drag only enclosed regions',()=>{
 });
 
 describe('R2 D-007 real-size thick rounded corner caps',()=>{
-  function openSquare(end:number,start:number,detached=false){
+  function openSquare(end:number,start:number,detached=false,capRadius=5){
     const width=1200,height=900,source=image(width,height);
     const stroke=(x0:number,y0:number,x1:number,y1:number)=>{
-      for(let y=Math.min(y0,y1)-5;y<=Math.max(y0,y1)+5;y++)
-        for(let x=Math.min(x0,x1)-5;x<=Math.max(x0,x1)+5;x++){
+      for(let y=Math.min(y0,y1)-capRadius;y<=Math.max(y0,y1)+capRadius;y++)
+        for(let x=Math.min(x0,x1)-capRadius;x<=Math.max(x0,x1)+capRadius;x++){
           const dx=x-Math.max(Math.min(x0,x1),Math.min(Math.max(x0,x1),x));
           const dy=y-Math.max(Math.min(y0,y1),Math.min(Math.max(y0,y1),y));
-          if(dx*dx+dy*dy<=25)setPixel(source,width,x,y,[0,0,0,255]);
+          if(dx*dx+dy*dy<=capRadius*capRadius)setPixel(source,width,x,y,[0,0,0,255]);
         }
     };
     stroke(200,200,end,200);stroke(500,start,500,500);
@@ -373,6 +373,16 @@ describe('R2 D-007 real-size thick rounded corner caps',()=>{
       }
     }
     expect(needsLeakingFillReview(result,{x:350,y:350},18)).toBe(false);
+  });
+  it('measures the shortest clear gap on rounded cap edges rather than axial center tips',()=>{
+    const {source,width,height}=openSquare(482,218,false,4);
+    const graph=buildRegions(source,width,height,15,18,[]);
+    expect(graph.external[graph.labels[350*width+350]!]).toBe(0);
+    expect(graph.candidates.some(candidate=>candidate.length<=18)).toBe(true);
+    const result=fillMask(source,width,height,{...settings,gap:18},[{x:350,y:350}],null,null,graph.bridges);
+    expect(result.alpha[350*width+350]).toBe(255);expect(result.alpha[0]).toBe(0);
+    const strict=buildRegions(source,width,height,15,10,[]);
+    expect(strict.external[strict.labels[350*width+350]!]).toBe(1);
   });
   it('leaves an over-limit opening and unrelated thick strokes open',()=>{
     for(const sample of [openSquare(465,235),openSquare(482,218,true)]){

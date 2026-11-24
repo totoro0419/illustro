@@ -104,6 +104,7 @@ try{
   record('D-009-CTRL-Z-AND-BUTTON-REDO-MATCH-PIXELS');
 
   }
+  if(process.argv[2]!=='existing'){
   // D-007 uses an actual 1200x900 work, a 10px millipen stroke and a separate
   // paint layer. Convert document coordinates using the public canvas view.
   await page.close();
@@ -161,6 +162,11 @@ try{
   const gapBefore=await readPixels(),gapRevision=await canvas.getAttribute('data-revision-id');
   const samples=[[350,350],[100,100],[600,300],[350,600],[1000,700]];
   const gapBeforeColors=await Promise.all(samples.map(([x,y])=>documentPixel(gapBefore,x,y)));
+  const gapView=JSON.parse(await canvas.getAttribute('data-view')),gapBox=await canvas.boundingBox();
+  const inkAt=(x,y)=>{const px=(gapView.cssWidth/2+gapView.panX+(x-gapView.documentWidth/2)*gapView.zoom)/gapBox.width,py=(gapView.cssHeight/2+gapView.panY+(y-gapView.documentHeight/2)*gapView.zoom)/gapBox.height;return brightness(rgb(gapBefore,px,py))<600;};
+  const ends=[[],[]];for(let y=188;y<=235;y++)for(let x=467;x<=513;x++)if(inkAt(x,y)){if(x<493&&y<210)ends[0].push([x,y]);if(x>490&&y>208)ends[1].push([x,y]);}
+  let minimum=Infinity;for(const a of ends[0])for(const b of ends[1])minimum=Math.min(minimum,Math.hypot(a[0]-b[0],a[1]-b[1]));
+  console.log('D-007 SCREEN_SAMPLE_GAP',JSON.stringify({zoom:gapView.zoom,minimum,inkCounts:ends.map(e=>e.length)}));
   await gapPanel.getByRole('button',{name:'キャンバスで塗る',exact:true}).click();
   await page.mouse.click(...await screen(350,350));
   await page.mouse.move(4,4);
@@ -180,6 +186,7 @@ try{
   const gapUndo=await readPixels();
   for(let i=0;i<samples.length;i++)assert.deepEqual(await documentPixel(gapUndo,...samples[i]),gapBeforeColors[i],'D-007 Undo failed at sample '+i);
   record('D-007-UNDO-RESTORES-PIXELS');
+  }
 
   report.status='PASS';
 }catch(error){
