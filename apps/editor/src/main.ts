@@ -4890,6 +4890,9 @@ async function withClipboardAccess(action:(drawing:BrushSurface)=>Promise<'edit'
   }finally{
     geometryBusy=false;
     if(surface===drawing)drawing.setInputBarrier(false);
+    // The edit path refreshed history while geometryBusy was still true.
+    // Re-enable Undo/Redo only after releasing the mutation barrier.
+    updateHistoryButtons();updatePersistenceDisplay();updateContextBar();updateQa();
     c06ClipboardUI?.refresh();
   }
 }

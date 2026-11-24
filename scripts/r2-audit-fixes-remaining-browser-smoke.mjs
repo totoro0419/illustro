@@ -21,8 +21,10 @@ async function pixel(im,x,y){const {png,box:b,view:v}=im;const px=Math.round((v.
 const brightness=p=>p[0]+p[1]+p[2];
 async function samples(im,pts){return Promise.all(pts.map(p=>pixel(im,...p)));}
 async function history(before,after,points,oldColors,newColors){
+ await page.waitForFunction(()=>!document.querySelector('#undo')?.disabled&&document.querySelector('#canvas')?.dataset.historyBusy==='false');
  await page.locator('#undo').evaluate(e=>e.click());await waitRev(before,true);
  assert.deepEqual(await samples(await image(),points),oldColors,'Undo did not restore pixels');
+ await page.waitForFunction(()=>!document.querySelector('#redo')?.disabled&&document.querySelector('#canvas')?.dataset.historyBusy==='false');
  await page.locator('#redo').evaluate(e=>e.click());await waitRev(after,true);
  assert.deepEqual(await samples(await image(),points),newColors,'Redo did not restore pixels');
  log('UNDO-REDO-PIXELS');
@@ -54,7 +56,7 @@ try{
    for(let i=0;i<2;i++)assert.ok(brightness(now[i])<brightness(old[i])-80,'closed interior not filled');
    for(let i=2;i<pts.length;i++)assert.deepEqual(now[i],old[i],'outside painted');
    log('ONE-DRAG-TWO-INTERIORS-OUTSIDE-UNCHANGED');await history(before,after,pts,old,now);
-   await p.getByLabel('塗る範囲',{exact:true}).selectOption('color',{force:true});
+   const method=p.locator('select:has(option[value="lasso-closed"])');assert.equal(await method.count(),1);await method.selectOption('color',{force:true});assert.equal(await method.inputValue(),'color');
    await p.getByRole('button',{name:'キャンバスで塗る',exact:true}).click();
    await page.mouse.click(...await coords(240,160));await waitRev(after);
    assert.ok(brightness(await pixel(await image(),240,160))<brightness(now[2])-80,'ordinary fill not restored');log('ORDINARY-FILL-RESTORED');
@@ -62,10 +64,12 @@ try{
    await pen(10);await page.locator('#colorPage').click();await page.locator('#colorHex').fill('#e02020');await page.locator('#colorHex').press('Enter');await stroke([[100,192],[410,192]]);await strokes(1);
    const original=await image();
    await page.locator('#selection').click();const sel=page.locator('[data-tool-panel="selection"]');
-   await sel.getByRole('button',{name:'四角形',exact:true}).click();await stroke([[65,90],[445,290]]);
+   const rectangle=sel.getByRole('button',{name:'四角形',exact:true});
+   if(await rectangle.getAttribute('aria-pressed')!=='true')await rectangle.click();
+   assert.equal(await rectangle.getAttribute('aria-pressed'),'true');await stroke([[65,90],[445,290]]);
    await sel.getByText('選択範囲を更新しました。',{exact:true}).waitFor({timeout:30000});
    await page.locator('#transform').click();const p=page.locator('[data-tool-panel="transform"]');
-   const mode=p.getByLabel('変形の方法',{exact:true});await page.waitForFunction(()=>{const p=document.querySelector('[data-tool-panel="transform"]');const mode=[...p?.querySelectorAll('select')??[]].find(s=>[...s.options].some(o=>o.value==='liquify'));return mode&&!mode.disabled;},undefined,{timeout:30000});await mode.selectOption('liquify',{force:true});
+   const mode=p.locator('select:has(option[value="liquify"])');await page.waitForFunction(()=>{const p=document.querySelector('[data-tool-panel="transform"]');const mode=[...p?.querySelectorAll('select')??[]].find(s=>[...s.options].some(o=>o.value==='liquify'));return mode&&!mode.disabled;},undefined,{timeout:30000});await mode.selectOption('liquify',{force:true});
    const direct=p.getByRole('button',{name:'キャンバスでゆがみブラシを使う',exact:true});
    await p.getByLabel('ゆがみの半径（px）',{exact:true}).fill('60');
    await p.getByLabel('ゆがみの強さ',{exact:true}).fill('0.7');
@@ -78,17 +82,18 @@ try{
  }else if(id==='D-015'){
    await pen(4);for(const point of [[120,120],[200,170]]){await page.mouse.click(...await coords(...point));await idle();}
    await pen(15);await page.mouse.click(...await coords(340,240));await strokes(3);
+   await pen(4);await stroke([[110,290],[260,290]]);await strokes(4);
    const p=await fxPanel(),radius=p.getByLabel(/ごみの半径/);
    await radius.fill('3');await p.getByRole('button',{name:'前後を比較',exact:true}).click();
    const highlight=p.locator('canvas[aria-label="変更予定（ピンク）"]');await highlight.waitFor({timeout:60000});
    const marks=await highlight.evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;const isPink=(x,y)=>{const i=(y*c.width+x)*4;return d[i]===255&&d[i+1]===45&&d[i+2]===140&&d[i+3]===255;};return [[120,120],[200,170],[340,240]].map(([x,y])=>{const a=Math.floor(x*c.width/512),b=Math.floor(y*c.height/384);for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++)if(isPink(a+dx,b+dy))return true;return false;});});
    assert.deepEqual(marks,[true,true,false],'FX-125 highlights wrong marks');log('FX125-TWO-SMALL-MARKS-HIGHLIGHTED');
-   const before=await revision(),pts=[[120,120],[200,170],[340,240],[30,30]],old=await samples(await image(),pts);
+   const before=await revision(),pts=[[120,120],[200,170],[340,240],[30,30],[180,290]],old=await samples(await image(),pts);
    await p.getByRole('button',{name:'レイヤーに適用',exact:true}).click();await waitRev(before);
    const after=await revision(),now=await samples(await image(),pts);
    for(let i=0;i<2;i++)assert.ok(brightness(now[i])>brightness(old[i])+80,'small dot remained');
-   for(let i=2;i<4;i++)assert.deepEqual(now[i],old[i],'large dot or background changed');
+   for(let i=2;i<pts.length;i++)assert.deepEqual(now[i],old[i],'large dot, line or background changed');
    log('FX125-APPLIED-PIXELS');await history(before,after,pts,old,now);
  }else throw Error('Unknown defect '+id);
-}catch(error){console.error('FAIL '+id,error);console.error(await page.evaluate(()=>({canvas:document.querySelector('#canvas')?.dataset,outputs:[...document.querySelectorAll('output,[role=status]')].map(e=>e.textContent).filter(Boolean).slice(-35)})).catch(()=>null));throw error;}
+}catch(error){console.error('FAIL '+id,error);console.error(await page.evaluate(()=>({canvas:document.querySelector('#canvas')?.dataset,outputs:[...document.querySelectorAll('output,[role=status]')].map(e=>e.textContent).filter(Boolean).slice(-35)})).catch(()=>null));await page.screenshot({path:'r2-'+id+'-failure.png',fullPage:true}).catch(()=>{});throw error;}
 finally{await browser.close();}

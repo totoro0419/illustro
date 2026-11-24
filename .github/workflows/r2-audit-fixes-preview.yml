@@ -51,8 +51,63 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-  publish:
+  prepublish-browser:
     needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [D-007, D-008, D-013, D-015, specks]
+    env:
+      R2_CHROME_CHANNEL: chrome
+      RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
+      PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      R2_AUDIT_FIX_URL: http://127.0.0.1:4173/illustro/r2-audit-fixes/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install browser test dependencies
+        run: |
+          npm install --prefix /tmp/r2-audit-browser playwright@1.62.1 pngjs@7.0.0 --no-audit --no-fund
+          command -v google-chrome
+      - uses: actions/download-artifact@v4
+        with:
+          name: illustro-r2-audit-fixes-preview
+          path: local-site/illustro/r2-audit-fixes
+      - name: Serve the exact built artifact under its production base
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory local-site >/tmp/r2-local-server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS "${R2_AUDIT_FIX_URL}release.json" | grep -q "$GITHUB_SHA"; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: Independently operate and check pixels
+        shell: bash
+        run: |
+          set -o pipefail
+          case "${{ matrix.check }}" in
+            D-007) node scripts/r2-audit-fixes-fill-browser-smoke.mjs D-007 ;;
+            D-008|D-013|D-015) node scripts/r2-audit-fixes-remaining-browser-smoke.mjs "${{ matrix.check }}" ;;
+            specks) node scripts/r2-audit-fixes-specks-browser-smoke.mjs ;;
+            existing) node scripts/r2-audit-fixes-browser-smoke.mjs && node scripts/r2-audit-fixes-fill-browser-smoke.mjs ;;
+          esac 2>&1 | tee r2-browser-result.log
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: prepublish-browser-${{ matrix.check }}
+          path: |
+            r2-browser-result.log
+            r2-*-failure.png
+          if-no-files-found: warn
+          retention-days: 7
+
+  publish:
+    needs: [build, prepublish-browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -103,67 +158,46 @@ jobs:
           done
           echo "Fix preview content did not match source commit"; exit 1
 
+
   browser-smoke:
     needs: publish
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [D-007, D-008, D-013, D-015, specks, existing]
+    env:
+      R2_CHROME_CHANNEL: chrome
+      RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
+      PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Use Ubuntu runner's preinstalled Google Chrome
+      - name: Install browser test dependencies
         run: |
           npm install --prefix /tmp/r2-audit-browser playwright@1.62.1 pngjs@7.0.0 --no-audit --no-fund
           command -v google-chrome
-      - name: Actually operate public fixes preview in Chromium
-        env:
-          R2_CHROME_CHANNEL: chrome
-          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
-        run: node scripts/r2-audit-fixes-browser-smoke.mjs
-      - name: Paint three closed regions and test Undo/Redo on public app
+      - name: Independently operate and check pixels
+        shell: bash
+        run: |
+          set -o pipefail
+          case "${{ matrix.check }}" in
+            D-007) node scripts/r2-audit-fixes-fill-browser-smoke.mjs D-007 ;;
+            D-008|D-013|D-015) node scripts/r2-audit-fixes-remaining-browser-smoke.mjs "${{ matrix.check }}" ;;
+            specks) node scripts/r2-audit-fixes-specks-browser-smoke.mjs ;;
+            existing) node scripts/r2-audit-fixes-browser-smoke.mjs && node scripts/r2-audit-fixes-fill-browser-smoke.mjs ;;
+          esac 2>&1 | tee r2-browser-result.log
+      - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
-        env:
-          R2_CHROME_CHANNEL: chrome
-          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
-          PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
-        run: node scripts/r2-audit-fixes-fill-browser-smoke.mjs
-      - name: D-008 public application interaction
-        if: ${{ !cancelled() }}
-        env:
-          R2_CHROME_CHANNEL: chrome
-          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
-          PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
-        run: node scripts/r2-audit-fixes-remaining-browser-smoke.mjs D-008
-      - name: D-013 public application interaction
-        if: ${{ !cancelled() }}
-        env:
-          R2_CHROME_CHANNEL: chrome
-          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
-          PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
-        run: node scripts/r2-audit-fixes-remaining-browser-smoke.mjs D-013
-      - name: D-015 public application interaction
-        if: ${{ !cancelled() }}
-        env:
-          R2_CHROME_CHANNEL: chrome
-          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
-          PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
-        run: node scripts/r2-audit-fixes-remaining-browser-smoke.mjs D-015
-      - name: Test separate image-assist specks and one-step Undo on the public app
-        if: ${{ !cancelled() }}
-        env:
-          R2_CHROME_CHANNEL: chrome
-          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
-        run: node scripts/r2-audit-fixes-specks-browser-smoke.mjs
+        with:
+          name: browser-smoke-${{ matrix.check }}
+          path: |
+            r2-browser-result.log
+            r2-*-failure.png
+          if-no-files-found: warn
+          retention-days: 7

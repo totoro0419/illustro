@@ -38,6 +38,7 @@ try{
   assert.equal(release.sourceCommit,sha);
   record('EXACT-PUBLIC-COMMIT');
 
+  if(process.argv[2]!=='D-007'){
   await page.goto(base+'?backend=webgl2&r2-fill-smoke=1',{waitUntil:'domcontentloaded',timeout:60000});
   await page.locator('#ihStart').click();
   await page.locator('#ihNewCreate').click();
@@ -102,6 +103,7 @@ try{
     assert.ok(Math.abs(brightness(rgb(redone,sampleX[i],centerY))-brightness(filledColors[i]))<25,'Redo did not recover region '+(i+1));
   record('D-009-CTRL-Z-AND-BUTTON-REDO-MATCH-PIXELS');
 
+  }
   // D-007 uses an actual 1200x900 work, a 10px millipen stroke and a separate
   // paint layer. Convert document coordinates using the public canvas view.
   await page.close();
@@ -146,8 +148,13 @@ try{
   await page.waitForFunction(id=>document.querySelector('#canvas')?.dataset.selectedLayerId!==id&&document.querySelector('#canvas')?.dataset.layerCount==='2'&&document.querySelector('#canvas')?.dataset.historyBusy==='false',lineLayer,{timeout:30000});
   await page.locator('#smartFill').click();
   const gapPanel=page.locator('[data-tool-panel="smartFill"]');
-  await gapPanel.getByLabel('参照する絵',{exact:true}).selectOption('layer',{force:true});
-  await gapPanel.getByLabel('参照するレイヤー',{exact:true}).selectOption(lineLayer,{force:true});
+  const reference=gapPanel.locator('select:has(option[value="vector-visible"])');
+  assert.equal(await reference.count(),1);
+  await reference.selectOption('layer',{force:true});
+  const source=gapPanel.locator('label').filter({hasText:/^参照するレイヤー/}).locator('select');
+  assert.equal(await source.count(),1);
+  await source.selectOption(lineLayer,{force:true});
+  assert.equal(await reference.inputValue(),'layer');assert.equal(await source.inputValue(),lineLayer);
   await gapPanel.getByLabel('埋める隙間（px）',{exact:true}).fill('18');
   await gapPanel.getByLabel('埋める隙間（px）',{exact:true}).press('Tab');
   await page.mouse.move(4,4);
@@ -178,6 +185,6 @@ try{
 }catch(error){
   report.status='FAIL';
   report.failure=String(error?.stack??error);
-  if(page)try{report.finalState=await state();}catch{}
+  if(page)try{report.finalState=await state();await page.screenshot({path:'r2-fill-failure.png',fullPage:true});}catch{}
   throw error;
 }finally{console.log(JSON.stringify(report,null,2));await browser.close();}
