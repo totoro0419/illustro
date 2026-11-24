@@ -112,7 +112,7 @@ try{
   if(!await page.locator('#ihCanvasSetup').evaluate(e=>e.open))await page.locator('#ihCanvasSetup > summary').click();
   await page.locator('#ihNewWidth').fill('1200');
   await page.locator('#ihNewHeight').fill('900');
-  await page.locator('#ihNewBackground').selectOption('transparent');
+  await page.locator('#ihNewBackground').selectOption('transparent',{force:true});
   await page.locator('#ihNewCreate').click();
   await page.waitForFunction(()=>!document.querySelector('#brush')?.disabled&&document.querySelector('#canvas')?.dataset.documentWidth==='1200'&&document.querySelector('#canvas')?.dataset.documentHeight==='900',undefined,{timeout:60000});
   const canvas=page.locator('#canvas');
@@ -146,8 +146,8 @@ try{
   await page.waitForFunction(id=>document.querySelector('#canvas')?.dataset.selectedLayerId!==id&&document.querySelector('#canvas')?.dataset.layerCount==='2'&&document.querySelector('#canvas')?.dataset.historyBusy==='false',lineLayer,{timeout:30000});
   await page.locator('#smartFill').click();
   const gapPanel=page.locator('[data-tool-panel="smartFill"]');
-  await gapPanel.getByLabel('参照する絵',{exact:true}).selectOption('layer');
-  await gapPanel.getByLabel('参照するレイヤー',{exact:true}).selectOption(lineLayer);
+  await gapPanel.getByLabel('参照する絵',{exact:true}).selectOption('layer',{force:true});
+  await gapPanel.getByLabel('参照するレイヤー',{exact:true}).selectOption(lineLayer,{force:true});
   await gapPanel.getByLabel('埋める隙間（px）',{exact:true}).fill('18');
   await gapPanel.getByLabel('埋める隙間（px）',{exact:true}).press('Tab');
   await page.mouse.move(4,4);

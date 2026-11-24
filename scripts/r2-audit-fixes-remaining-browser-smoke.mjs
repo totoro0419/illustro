@@ -32,7 +32,7 @@ async function fresh(){
  await page.locator('#ihStart').click();
  const setup=page.locator('#ihCanvasSetup');if(!await setup.evaluate(e=>e.open))await setup.locator(':scope > summary').click();
  await page.locator('#ihNewWidth').fill('512');await page.locator('#ihNewHeight').fill('384');
- await page.locator('#ihNewBackground').selectOption('transparent');
+ await page.locator('#ihNewBackground').selectOption('transparent',{force:true});
  await page.locator('#ihNewCreate').click();
  await page.waitForFunction(()=>!document.querySelector('#brush')?.disabled&&document.querySelector('#canvas')?.dataset.documentWidth==='512',undefined,{timeout:60000});
 }
