@@ -257,6 +257,89 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
       for(const at of cells)walls[at]=bridges[at]=1;
     }
   }
+  // Thick stroke caps have multiple adjacent ink pixels, so the one-neighbor
+  // tip detector cannot see them. Find the center of a cardinal cap from its
+  // cross section behind the tip, and require a sustained inward stroke.
+  // Only close a mutually unique, perpendicular pair on the SAME contour.
+  // Separate strokes and ambiguous caps remain available for manual repair.
+  if(radius>=5&&candidates.length<4096){
+    type Cap={x:number;y:number;dx:number;dy:number;at:number};
+    const caps:Cap[]=[],tile=radius+1,bins=new Map<string,Cap[]>();
+    const ink=(x:number,y:number)=>x>=0&&y>=0&&x<width&&y<height&&!!original[y*width+x];
+    for(let y=1;y<height-1&&caps.length<=8192;y++)for(let x=1;x<width-1&&caps.length<=8192;x++){
+      if(!ink(x,y))continue;
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]] as const){
+        if(ink(x+dx,y+dy)||ink(x+2*dx,y+2*dy)||!ink(x-dx,y-dy)||!ink(x-3*dx,y-3*dy))continue;
+        const cx=x-3*dx,cy=y-3*dy,px=-dy,py=dx;
+        let lo=0,hi=0;
+        while(lo<32&&ink(cx-(lo+1)*px,cy-(lo+1)*py))lo++;
+        while(hi<32&&ink(cx+(hi+1)*px,cy+(hi+1)*py))hi++;
+        const thickness=lo+hi+1;
+        if(lo===32||hi===32||thickness<3||!(hi===lo||hi===lo+1))continue;
+        let sustained=true;
+        for(let step=1;step<=thickness+2;step++)if(!ink(x-step*dx,y-step*dy)){sustained=false;break;}
+        if(!sustained)continue;
+        const cap={x,y,dx,dy,at:y*width+x};
+        caps.push(cap);
+        const key=Math.floor(x/tile)+','+Math.floor(y/tile);
+        const bin=bins.get(key)??[];bin.push(cap);bins.set(key,bin);
+      }
+    }
+    if(caps.length<=8192){
+      // Label original ink lazily only when a plausible thick-cap pair exists.
+      let components:Uint32Array|undefined,queue:Uint32Array|undefined,component=0;
+      const componentAt=(at:number)=>{
+        components??=new Uint32Array(count);queue??=new Uint32Array(count);
+        const labels=components;
+        if(!labels[at]){
+          component++;
+          flood(width,height,at,i=>!!original[i]&&!labels[i],i=>{labels[i]=component;},queue);
+        }
+        return labels[at];
+      };
+      const route=(a:Cap,b:Cap)=>{
+        const vx=b.x-a.x,vy=b.y-a.y,distance=Math.hypot(vx,vy);
+        if(distance<=1.5||distance>radius+1||a.dx*b.dx+a.dy*b.dy!==0||
+          (a.dx*vx+a.dy*vy)/distance<.35||(-b.dx*vx-b.dy*vy)/distance<.35)return null;
+        const steps=Math.max(Math.abs(vx),Math.abs(vy)),cells:number[]=[];
+        for(let step=1;step<steps;step++){
+          const x=Math.round(a.x+vx*step/steps),y=Math.round(a.y+vy*step/steps),at=y*width+x;
+          if(original[at]||bridges[at])return null;
+          for(let yy=Math.max(0,y-1);yy<=Math.min(height-1,y+1);yy++)
+            for(let xx=Math.max(0,x-1);xx<=Math.min(width-1,x+1);xx++){
+              const i=yy*width+xx;
+              if(bridges[i])return null;
+              if(!original[i])continue;
+              const near=(cap:Cap)=>Math.hypot(xx-cap.x,yy-cap.y)<=2.5&&
+                (xx-cap.x)*cap.dx+(yy-cap.y)*cap.dy<=0;
+              if(!near(a)&&!near(b))return null;
+            }
+          cells.push(at);
+        }
+        return cells.length&&componentAt(a.at)===componentAt(b.at)?cells:null;
+      };
+      const matches=new Map<Cap,Cap[]>();
+      for(const a of caps){
+        const cx=Math.floor(a.x/tile),cy=Math.floor(a.y/tile);
+        for(let y=cy-1;y<=cy+1;y++)for(let x=cx-1;x<=cx+1;x++)
+          for(const b of bins.get(x+','+y)??[]){
+            if(b.at<=a.at||!route(a,b))continue;
+            const first=matches.get(a)??[],second=matches.get(b)??[];
+            first.push(b);second.push(a);matches.set(a,first);matches.set(b,second);
+          }
+      }
+      for(const [a,others] of matches){
+        if(candidates.length>=4096)break;
+        if(others.length!==1)continue;
+        const b=others[0]!;
+        if(b.at<=a.at||matches.get(b)?.length!==1)continue;
+        const cells=route(a,b);
+        if(!cells)continue;
+        candidates.push({from:{x:a.x,y:a.y},to:{x:b.x,y:b.y},length:Math.hypot(b.x-a.x,b.y-a.y)-1,kind:'tips'});
+        for(const at of cells)walls[at]=bridges[at]=1;
+      }
+    }
+  }
   for(const {remove,preserveInk,points} of manual){
     for(let i=0;i<points.length;i++){
       const a=points[Math.max(0,i-1)]!,b=points[i]!,steps=Math.max(1,Math.ceil(Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))*2));
@@ -271,8 +354,11 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
     }
   }
   const remaining=candidates.filter(({from,to})=>{
-    const dx=Math.sign(to.x-from.x),dy=Math.sign(to.y-from.y),steps=Math.max(Math.abs(to.x-from.x),Math.abs(to.y-from.y));
-    for(let i=1;i<steps;i++)if(bridges[(from.y+dy*i)*width+from.x+dx*i])return true;
+    const dx=to.x-from.x,dy=to.y-from.y,steps=Math.max(Math.abs(dx),Math.abs(dy));
+    for(let i=1;i<steps;i++){
+      const x=Math.round(from.x+dx*i/steps),y=Math.round(from.y+dy*i/steps);
+      if(bridges[y*width+x])return true;
+    }
     return false;
   });
   return {walls,bridges,candidates:remaining};

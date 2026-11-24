@@ -343,3 +343,44 @@ describe('R2 D-008 drag only enclosed regions',()=>{
     expect(result.alpha[0]).toBe(0);
   });
 });
+
+describe('R2 D-007 real-size thick rounded corner caps',()=>{
+  function openSquare(end:number,start:number,detached=false){
+    const width=1200,height=900,source=image(width,height);
+    const stroke=(x0:number,y0:number,x1:number,y1:number)=>{
+      for(let y=Math.min(y0,y1)-5;y<=Math.max(y0,y1)+5;y++)
+        for(let x=Math.min(x0,x1)-5;x<=Math.max(x0,x1)+5;x++){
+          const dx=x-Math.max(Math.min(x0,x1),Math.min(Math.max(x0,x1),x));
+          const dy=y-Math.max(Math.min(y0,y1),Math.min(Math.max(y0,y1),y));
+          if(dx*dx+dy*dy<=25)setPixel(source,width,x,y,[0,0,0,255]);
+        }
+    };
+    stroke(200,200,end,200);stroke(500,start,500,500);
+    if(!detached){stroke(200,200,200,500);stroke(200,500,500,500);}
+    return {source,width,height};
+  }
+  it('uses the full 18px gap for a thick corner and fills only the enclosed area',()=>{
+    const {source,width,height}=openSquare(482,218);
+    const graph=buildRegions(source,width,height,15,18,[]);
+    const inside=350*width+350;
+    expect(graph.external[graph.labels[inside]!]).toBe(0);
+    expect(graph.candidates.length).toBeGreaterThan(0);
+    const result=fillMask(source,width,height,{...settings,gap:18},[{x:350,y:350}],null,null,graph.bridges);
+    expect(result.alpha[inside]).toBe(255);
+    for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+      if(x<195||x>505||y<195||y>505){
+        if(result.alpha[y*width+x])throw Error('Exterior painted at '+x+','+y);
+      }
+    }
+    expect(needsLeakingFillReview(result,{x:350,y:350},18)).toBe(false);
+  });
+  it('leaves an over-limit opening and unrelated thick strokes open',()=>{
+    for(const sample of [openSquare(465,235),openSquare(482,218,true)]){
+      const {source,width,height}=sample,graph=buildRegions(source,width,height,15,18,[]);
+      expect(graph.external[graph.labels[350*width+350]!]).toBe(1);
+      expect(graph.bridges.some(Boolean)).toBe(false);
+      const result=fillMask(source,width,height,{...settings,gap:18},[{x:350,y:350}],null,null,graph.bridges);
+      expect(needsLeakingFillReview(result,{x:350,y:350},18)).toBe(true);
+    }
+  });
+});
