@@ -52,3 +52,40 @@ it('restores an arbitrary tone curve and combines each effect with its own persi
   expect([...applyRasterEffects(pixels,2,1,restored!,null)]).toEqual([100,100,100,111,128,128,128,111]);
   expect(readEffectSteps([{...step,curve:[{x:0,y:0},{x:0,y:100},{x:255,y:255}]}])).toBeNull();
 });
+
+describe('FX-125 D-015 connected speck removal',()=>{
+  for(const opaque of [false,true]){
+    it('removes two compact 4px marks and preserves a 15px mark and connected line on '+(opaque?'white':'transparent')+' background',()=>{
+      const w=80,h=70,source=new Uint8Array(w*h*4);
+      if(opaque)source.fill(255);
+      const dot=(cx:number,cy:number,r:number)=>{
+        for(let y=0;y<h;y++)for(let x=0;x<w;x++)if((x+.5-cx)**2+(y+.5-cy)**2<=r*r)
+          source.set([20,40,80,255],(y*w+x)*4);
+      };
+      dot(12,12,2);dot(24,15,2);dot(45,40,7.5);
+      for(let x=10;x<25;x++)source.set([20,40,80,255],(55*w+x)*4);
+      const step={...newEffect('median'),values:[2,18,1]};
+      const out=applyRasterEffects(source,w,h,[step],null);
+      const background=opaque?[255,255,255,255]:[0,0,0,0];
+      for(const [cx,cy] of [[12,12],[24,15]]){
+        for(let y=cy!-3;y<=cy!+3;y++)for(let x=cx!-3;x<=cx!+3;x++)
+          expect([...out.slice((y*w+x)*4,(y*w+x)*4+4)]).toEqual(background);
+      }
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+        if(Math.hypot(x+.5-12,y+.5-12)<=2||Math.hypot(x+.5-24,y+.5-15)<=2)continue;
+        const at=(y*w+x)*4;
+        if(out[at]!==source[at]||out[at+1]!==source[at+1]||out[at+2]!==source[at+2]||out[at+3]!==source[at+3])
+          throw Error('Unexpected change at '+x+','+y);
+      }
+    });
+  }
+  it('respects radius and color difference, preserves antialiased fringes only when not eligible',()=>{
+    const w=12,h=12,source=new Uint8Array(w*h*4);
+    for(let y=4;y<=7;y++)for(let x=4;x<=7;x++)source.set([0,0,0,x===4?12:255],(y*w+x)*4);
+    const step=newEffect('median');
+    const small=applyRasterEffects(source,w,h,[{...step,values:[1,18,1]}],null);
+    expect([...small]).toEqual([...source]);
+    const large=applyRasterEffects(source,w,h,[{...step,values:[2,18,1]}],null);
+    expect(large.some(Boolean)).toBe(false);
+  });
+});
