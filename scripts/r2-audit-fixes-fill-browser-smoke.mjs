@@ -109,7 +109,7 @@ try{
   page.on('pageerror',error=>report.errors.push(error.message));
   await page.goto(base+'?backend=webgl2&r2-gap-smoke=1',{waitUntil:'domcontentloaded',timeout:60000});
   await page.locator('#ihStart').click();
-  await page.locator('#ihCanvasSetup summary').click();
+  if(!await page.locator('#ihCanvasSetup').evaluate(e=>e.open))await page.locator('#ihCanvasSetup > summary').click();
   await page.locator('#ihNewWidth').fill('1200');
   await page.locator('#ihNewHeight').fill('900');
   await page.locator('#ihNewBackground').selectOption('transparent');

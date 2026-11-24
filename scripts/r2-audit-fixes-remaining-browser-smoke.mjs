@@ -30,7 +30,7 @@ async function history(before,after,points,oldColors,newColors){
 async function fresh(){
  await page.goto(base+'?backend=webgl2&r2-defect='+id,{waitUntil:'domcontentloaded',timeout:60000});
  await page.locator('#ihStart').click();
- const setup=page.locator('#ihCanvasSetup');if(!await setup.evaluate(e=>e.open))await setup.locator('summary').click();
+ const setup=page.locator('#ihCanvasSetup');if(!await setup.evaluate(e=>e.open))await setup.locator(':scope > summary').click();
  await page.locator('#ihNewWidth').fill('512');await page.locator('#ihNewHeight').fill('384');
  await page.locator('#ihNewBackground').selectOption('transparent');
  await page.locator('#ihNewCreate').click();
