@@ -11,6 +11,7 @@ on:
       - 'scripts/r2-audit-fixes-browser-smoke.mjs'
       - 'scripts/r2-audit-fixes-fill-browser-smoke.mjs'
       - 'scripts/r2-audit-fixes-specks-browser-smoke.mjs'
+      - 'scripts/r2-audit-fixes-remaining-browser-smoke.mjs'
       - 'scripts/prepare-r2-preview.mjs'
       - '.github/workflows/r2-audit-fixes-preview.yml'
   workflow_dispatch:
@@ -123,6 +124,7 @@ jobs:
           R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
         run: node scripts/r2-audit-fixes-browser-smoke.mjs
       - name: Paint three closed regions and test Undo/Redo on public app
+        if: ${{ !cancelled() }}
         env:
           R2_CHROME_CHANNEL: chrome
           RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
@@ -130,7 +132,35 @@ jobs:
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
           R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
         run: node scripts/r2-audit-fixes-fill-browser-smoke.mjs
-      - name: Test isolated specks and one-step Undo on the public app
+      - name: D-008 public application interaction
+        if: ${{ !cancelled() }}
+        env:
+          R2_CHROME_CHANNEL: chrome
+          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
+          PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
+        run: node scripts/r2-audit-fixes-remaining-browser-smoke.mjs D-008
+      - name: D-013 public application interaction
+        if: ${{ !cancelled() }}
+        env:
+          R2_CHROME_CHANNEL: chrome
+          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
+          PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
+        run: node scripts/r2-audit-fixes-remaining-browser-smoke.mjs D-013
+      - name: D-015 public application interaction
+        if: ${{ !cancelled() }}
+        env:
+          R2_CHROME_CHANNEL: chrome
+          RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
+          PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes/
+        run: node scripts/r2-audit-fixes-remaining-browser-smoke.mjs D-015
+      - name: Test separate image-assist specks and one-step Undo on the public app
+        if: ${{ !cancelled() }}
         env:
           R2_CHROME_CHANNEL: chrome
           RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright

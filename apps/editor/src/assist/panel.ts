@@ -171,6 +171,8 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       invalidate();clearGallery();frame=null;before.hidden=true;examples=[];spotChecks=[];nameChecks=[];names.replaceChildren();groups.replaceChildren();
       const ticket=generation,kind=current();
       activeLayer.textContent='対象を読み込んでいます。';
+      analyze.disabled=true;apply.disabled=true;
+      for(const variant of Array.from(variants.querySelectorAll('button')))variant.disabled=true;
       const snapshot=await capture(kind);
       if(!dialog.open||generation!==ticket)return;
       frame=snapshot;activeLayer.textContent=kind==='area'?'対象は表示中の絵です。':'対象は「'+snapshot.name+'」です。';
@@ -200,8 +202,10 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
       return input.valueAsNumber;
     }
     async function run(style:ColorStyle='tone'){
-      invalidate();const f=frame;
-      if(!f||!f.valid())throw Error('作品が変わりました。対象を読み込み直してください。');
+      const f=frame;
+      if(!f)throw Error('対象の読み込みが終わってから計算してください。');
+      if(!f.valid())throw Error('作品が変わりました。対象を読み込み直してください。');
+      invalidate();
       let settings:RequestSettings;
       const kind=current();
       if(kind==='area')settings={kind,x:field(x),y:field(y),tolerance:learning()?32:field(tolerance),

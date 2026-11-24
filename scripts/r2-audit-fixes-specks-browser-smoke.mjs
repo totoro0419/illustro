@@ -40,7 +40,7 @@ try{
   const run=dialog.getByRole('button',{name:'候補を計算',exact:true});
   await page.waitForFunction(()=>{const d=document.querySelector('dialog.export-dialog[aria-label="画像から候補を出す"]');return !!d&&![...d.querySelectorAll('button')].find(b=>b.textContent==='候補を計算')?.disabled;},undefined,{timeout:20000});
   await run.click();
-  await page.waitForTimeout(2500);
+  await dialog.locator('label:has(input[type=checkbox])').filter({hasText:/ごみ候補\s+\d/}).first().waitFor({timeout:30000});
   const snapshot=await dialog.evaluate(d=>({
     selects:[...d.querySelectorAll('select')].map(el=>({value:el.value,options:[...el.options].map(o=>o.value)})),
     status:[...d.querySelectorAll('[role=status]')].map(el=>el.textContent?.slice(0,600)),
@@ -49,12 +49,12 @@ try{
     canvases:[...d.querySelectorAll('figure canvas')].map(el=>({width:el.width,height:el.height,hidden:el.hidden})),
   }));
   console.log('SPECK_DIAGNOSTICS',JSON.stringify(snapshot));
-  const candidates=dialog.locator('label').filter({hasText:'ごみ候補 '});
+  const candidates=dialog.locator('label:has(input[type=checkbox])').filter({hasText:/ごみ候補\s+\d/});
   assert.equal(await candidates.count(),2,'two isolated specks should be candidates: '+JSON.stringify(snapshot));
   const labels=await candidates.allTextContents();
   console.log('SPECK_CANDIDATES',JSON.stringify(labels));
   assert.ok(labels.every(label=>label.includes('1画素')),'large intended square was incorrectly proposed');
-  pass('D-015-TWO-TINY-CANDIDATES-WITHOUT-LARGE-ARTWORK');
+  pass('ASSIST-TWO-TINY-CANDIDATES-WITHOUT-LARGE-ARTWORK');
 
   const boxes=candidates.locator('input[type=checkbox]');
   await boxes.first().check();
@@ -74,7 +74,7 @@ try{
     assert.equal(image.hidden,false);
     assert.ok(image.pink>0&&image.yellow>0,'selected/excluded candidates not distinguished on both previews');
   }
-  pass('D-015-PINK-AND-YELLOW-OVERLAYS-ON-BOTH-CANVASES');
+  pass('ASSIST-PINK-AND-YELLOW-OVERLAYS-ON-BOTH-CANVASES');
 
   const before=await page.locator('#canvas').getAttribute('data-revision-id');
   await dialog.getByRole('button',{name:'選んだ内容を採用する',exact:true}).click();
@@ -85,7 +85,7 @@ try{
   assert.notEqual(before,after);
   await page.locator('#undo').evaluate(el=>el.click());
   await page.waitForFunction(original=>document.querySelector('#canvas')?.dataset.revisionId===original,before,{timeout:30000});
-  pass('D-015-SELECTIVE-REMOVAL-IS-ONE-UNDO-STEP');
+  pass('ASSIST-SELECTIVE-REMOVAL-IS-ONE-UNDO-STEP');
   results.status='PASS';
 }catch(error){results.status='FAIL';results.failure=String(error?.stack??error);throw error;}
 finally{console.log(JSON.stringify(results,null,2));await browser.close();}
