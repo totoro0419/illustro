@@ -48,7 +48,7 @@ export function installAssetPanel(opts:PanelOptions){
   for(const [value,label] of [['normal','保存した素材'],['favorites','お気に入り'],['hidden','非表示'],['trash','ゴミ箱'],['recent','最近使った']] as const)
     filter.add(new Option(label,value));
   const search=document.createElement('div');search.className='c05-asset-search';search.append(query,kind,filter);
-  const importFile=document.createElement('input');importFile.type='file';importFile.hidden=true;
+  const importFile=document.createElement('input');importFile.type='file';importFile.hidden=true;importFile.multiple=true;
   const packFile=document.createElement('input');packFile.type='file';packFile.accept='application/json,.json';packFile.hidden=true;
   const importKind=document.createElement('select');importKind.setAttribute('aria-label','取り込む素材の種類');
   for(const type of ASSET_KINDS)importKind.add(new Option(ASSET_LABELS[type],type));
@@ -73,7 +73,16 @@ export function installAssetPanel(opts:PanelOptions){
   failedTitle.textContent='読み込めなかった素材の詳細';
   failedBox.append(failedTitle,failedList);failedBox.hidden=true;
   const info=document.createElement('small');info.textContent='削除はゴミ箱へ移動します。資料やブラシの実際の適用先は種類ごとに確認します。';
-  root.append(title,lead,search,actions,count,results,info,status,failedBox,importFile,packFile);host.append(root);
+  let addedIds=new Set<string>(),showAdded=false;
+  const viewAdded=button('追加した素材を見る',()=>{showAdded=true;render();restoreFilters.hidden=false;results.querySelector<HTMLElement>('[data-round3-new]')?.scrollIntoView({block:'nearest'});});
+  const restoreFilters=button('元の絞り込みに戻す',()=>{showAdded=false;restoreFilters.hidden=true;render();});
+  viewAdded.hidden=restoreFilters.hidden=true;
+  const importNotice=document.createElement('div');importNotice.className='c05-asset-actions';importNotice.append(viewAdded,restoreFilters);
+  root.append(title,lead,search,actions,status,importNotice,count,results,info,failedBox,importFile,packFile);host.append(root);
+  function importedAssets(ids:readonly string[]){
+    if(!ids.length)return;
+    addedIds=new Set(ids);viewAdded.hidden=false;showAdded=false;restoreFilters.hidden=true;
+  }
   let all:AssetInfo[]=[],visible:AssetInfo[]=[],busy=false,displayLimit=200;
   let recovery:ImportRecovery|null=null;
   let recoveryBoot:Promise<ImportRecovery|null>|null=null;
@@ -92,6 +101,7 @@ export function installAssetPanel(opts:PanelOptions){
   function render(){
     const q=query.value.trim().toLocaleLowerCase('ja-JP');
     visible=all.filter(a=>{
+      if(showAdded)return addedIds.has(a.id)&&!a.deleted;
       if(kind.value!=='all'&&a.kind!==kind.value)return false;
       if(filter.value==='trash'){
         if(!a.deleted)return false;
@@ -111,10 +121,11 @@ export function installAssetPanel(opts:PanelOptions){
       empty.textContent=all.length?'この条件に合う素材はありません。絞り込みを変えてください。':'素材はまだありません。画像や素材ファイルを追加できます。';
       results.append(empty);return;
     }
-    for(const item of visible.slice(0,displayLimit)){
+    for(const item of visible.slice(0,showAdded?visible.length:displayLimit)){
       const card=document.createElement('article');card.className='c05-asset-entry';
       const head=document.createElement('div');head.className='c05-asset-entry-head';
       const h=document.createElement('strong');h.textContent=item.name;
+      if(addedIds.has(item.id)){card.dataset.round3New='true';h.textContent+='（新しく追加）';}
       const meta=document.createElement('small');
       meta.textContent=[ASSET_LABELS[item.kind],item.folder,item.tags.join(' / '),
         '第'+item.version+'版',item.parentId?'旧版 '+item.parentId.slice(0,8):'',
@@ -218,15 +229,46 @@ export function installAssetPanel(opts:PanelOptions){
     }
   }
   async function editMetadata(item:AssetInfo){
-    const name=await appPrompt('素材名',item.name);if(name===null)return;
-    if(!name.trim())throw Error('素材名は空にできません。');
-    const folder=await appPrompt('フォルダー名（空白なら未分類）',item.folder);if(folder===null)return;
-    const tags=await appPrompt('タグ（カンマ区切り）',item.tags.join(', '));if(tags===null)return;
-    const license=await appPrompt('利用条件や使用許諾（例：自作、許可済み等）',item.license);if(license===null)return;
-    const origin=await appPrompt('配布元・作成元（入力は任意）',item.origin);if(origin===null)return;
-    const notes=await appPrompt('素材についてのメモ',item.notes);if(notes===null)return;
-    await updateAsset(item.id,{name,folder,tags:tags.split(/[,、，]+/),license,origin,notes});
-    status.textContent='素材の情報を更新しました。';await refresh();
+    const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;
+    const dialog=document.createElement('dialog');dialog.className='illustro-app-dialog';
+    dialog.setAttribute('aria-label','素材の整理');
+    dialog.addEventListener('keydown',event=>event.stopPropagation());
+    const form=document.createElement('form');form.className='illustro-app-dialog-content';
+    form.style.cssText='max-height:80dvh;overflow:auto';
+    const heading=document.createElement('h2');heading.textContent='素材の整理';form.append(heading);
+    const field=(label:string,value:string,maxLength:number,multiline=false)=>{
+      const wrap=document.createElement('label');wrap.textContent=label;
+      wrap.style.cssText='display:grid;gap:4px;min-width:0';
+      const input=multiline?document.createElement('textarea'):document.createElement('input');
+      input.value=value;input.maxLength=maxLength;input.style.cssText='width:100%;box-sizing:border-box';
+      wrap.append(input);form.append(wrap);return input;
+    };
+    const name=field('素材名',item.name,100),folder=field('フォルダー',item.folder,100);
+    const tags=field('タグ（カンマ区切り）',item.tags.join(', '),560);
+    const license=field('利用条件',item.license,200),origin=field('出典・作成元',item.origin,600,true);
+    const notes=field('メモ',item.notes,1200,true);
+    name.required=true;
+    const message=document.createElement('output');message.setAttribute('role','alert');
+    const buttons=document.createElement('div');buttons.className='illustro-app-dialog-actions';
+    const save=document.createElement('button');save.type='submit';save.textContent='保存';save.className='illustro-app-dialog-primary';
+    const cancel=button('キャンセル',()=>dialog.close());buttons.append(cancel,save);form.append(message,buttons);dialog.append(form);
+    await new Promise<void>((resolve,reject)=>{
+      let saving=false;
+      dialog.addEventListener('cancel',event=>{if(saving)event.preventDefault();});
+      dialog.addEventListener('close',()=>{dialog.remove();if(previous?.isConnected)previous.focus({preventScroll:true});resolve();},{once:true});
+      form.onsubmit=async event=>{
+        event.preventDefault();if(saving)return;
+        if(!name.value.trim()){message.textContent='素材名は空にできません。';name.focus();return;}
+        saving=true;save.disabled=cancel.disabled=true;
+        try{
+          await updateAsset(item.id,{name:name.value,folder:folder.value,tags:tags.value.split(/[,、，]+/),license:license.value,origin:origin.value,notes:notes.value});
+          status.textContent='素材の情報を更新しました。';await refresh();dialog.close();
+        }catch(e){message.textContent=e instanceof Error?e.message:String(e);}
+        finally{saving=false;save.disabled=cancel.disabled=false;}
+      };
+      document.body.append(dialog);
+      try{dialog.showModal();name.focus();}catch(e){dialog.remove();reject(e);}
+    });
   }
   async function useAsset(item:AssetInfo){
     const targetId=item.kind==='brush'?'brushImportFile':'colorPaletteFile';
@@ -280,13 +322,15 @@ export function installAssetPanel(opts:PanelOptions){
   importFile.onchange=()=>{
     const files=[...(importFile.files??[])];importFile.value='';
     void run(async()=>{
+      const ids:string[]=[];
       for(const file of files){
         try{
           const added=await addAsset({kind:importKind.value as AssetKind,name:file.name,data:file});
-          status.textContent='「'+added.name+'」を保存しました。';
+          ids.push(added.id);status.textContent='「'+added.name+'」を保存しました。';
         }catch(e){error(e);}
       }
-      await refresh();
+      importedAssets(ids);await refresh();
+      if(ids.length)status.textContent=ids.length+'件の素材を保存しました。';
     });
   };
   async function doExport(){
@@ -336,7 +380,7 @@ export function installAssetPanel(opts:PanelOptions){
     status.textContent='今回'+result.imported.length+'件確認・追加。'+
       (recovery?'未完了'+recovery.remainingIds.length+'件。アプリを閉じても再開できます。':'すべて完了しました。')+
       (result.unresolvedParents.length?' 旧版不足'+result.unresolvedParents.length+'件。':'');
-    await refresh();
+    importedAssets(result.imported.map(item=>item.id));await refresh();
   }
   packFile.onchange=()=>{
     const file=packFile.files?.[0];packFile.value='';if(!file)return;

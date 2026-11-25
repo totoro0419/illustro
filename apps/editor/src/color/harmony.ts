@@ -51,7 +51,6 @@ export function harmonyColors(color:RGB,mode:HarmonyMode):readonly RGB[]{
 }
 
 export function installHarmonyTools(state:ForegroundColor){
-  const target=document.getElementById('colorEyedropperOptions');
   const screen=document.getElementById('colorScreen');
   if(!screen)return {destroy:()=>{}};
   const wrapper=document.createElement('details');wrapper.className='c04-color-harmony';
@@ -78,7 +77,7 @@ export function installHarmonyTools(state:ForegroundColor){
   limitation.textContent='色覚の違いを研究モデルで近似した表示です。実際の一人ひとりの見え方を完全に示すものではありません。';
   contents.append(mode,choices,contrast,grayLabel,visionCaption,limitation,notice);
   wrapper.append(heading,contents);
-  if(target)target.before(wrapper);else screen.append(wrapper);
+  screen.prepend(wrapper);
   const displayGray=()=>{
     document.body.classList.toggle('c04-gray-proof',gray.checked);
     grayLabel.title=gray.checked?'表示だけが白黒になっています。元の色は保持しています。':'白黒確認はオフです。';

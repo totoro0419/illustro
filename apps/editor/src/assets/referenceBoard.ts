@@ -202,7 +202,16 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     if(!asset||asset.deleted||asset.kind!=='reference'||!asset.mime.startsWith('image/'))
       throw Error('この素材は参考画像として開けません。');
     if(board.items.length>=80)throw Error('資料は1作品80枚までです。');
-    syncAfter({...board,items:[...board.items,newBoardItem(assetId,board.items.length)]});
+    const item=newBoardItem(assetId,board.items.length);
+    // Use the actual fixed tool column, including mirrored layouts.
+    const rail=document.querySelector<HTMLElement>('.rail')?.getBoundingClientRect();
+    const left=rail&&rail.width&&rail.left<innerWidth/2?Math.max(0,rail.right+8):8;
+    const right=rail&&rail.width&&rail.left>=innerWidth/2?Math.min(innerWidth,rail.left-8):innerWidth-8;
+    const top=rail&&rail.height?Math.max(8,rail.top+8):8;
+    const width=Math.min(item.width,Math.max(100,right-left));
+    const x=safePos(Math.max(item.x,left),left,Math.max(left,right-width));
+    const y=safePos(Math.max(item.y,top),top,Math.max(top,innerHeight-70));
+    syncAfter({...board,items:[...board.items,{...item,x,y,width}]});
     status.textContent='資料を追加しました。';
   }
   async function reselectReferenceImage(itemId:string){

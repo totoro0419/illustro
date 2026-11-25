@@ -414,12 +414,12 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!source())return;
     tool=tool===name?null:name;points=[];drawing=null;
     callbacks.getSurface()?.setSelectionMode(false);refresh();overlayPath();
-    if(tool)status.textContent=name==='autoInk'?'線画があるレイヤーを選び、線で囲まれた中をタップしてください。':'作品の中で選びたい色・明るさの場所をタップしてください。';
+    if(tool)status.textContent=name==='autoInk'?'参照元を選び、閉じた線の内側をタップしてください。':'作品の中で選びたい色・明るさの場所をタップしてください。';
   };
   async function pickAutomatic(action:AnalyzeOptions['action'],seed:{x:number;y:number}){
     const doc=source();if(!doc)return;
     const request=++job,previous=active,combine=mode.value as CombineMode;
-    const target=action==='lineRegion'?'layer' as const:autoSource.value==='merged'?'merged' as const:'layer' as const;
+    const target=autoSource.value==='merged'?'merged' as const:'layer' as const;
     const levelMin=Number(low.value),levelMax=Number(high.value);
     if(!Number.isInteger(levelMin)||!Number.isInteger(levelMax)||levelMin<0||levelMax>255||levelMin>levelMax){
       status.textContent='明るさの範囲は0〜255の正しい順序で入力してください。';return;

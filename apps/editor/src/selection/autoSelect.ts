@@ -1,5 +1,6 @@
 /** C06 pixel-derived selection. Transparent pixels are never treated as white. */
 import type {MaskData} from './mask';
+import {buildRegions} from '../fill/pixels';
 export type AnalyzeOptions=Readonly<{
   action:'color'|'brightness'|'alpha'|'lineRegion';
   width:number;height:number;seedX:number;seedY:number;
@@ -12,6 +13,13 @@ export function selectFromPixels(pixels:Uint8ClampedArray|Uint8Array,options:Ana
   const n=width*height,alpha=new Uint8Array(n);
   const x=Math.max(0,Math.min(width-1,Math.floor(options.seedX))),
     y=Math.max(0,Math.min(height-1,Math.floor(options.seedY))),seed=y*width+x;
+  if(action==='lineRegion'){
+    const graph=buildRegions(new Uint8Array(pixels.buffer,pixels.byteOffset,pixels.byteLength),width,height,tolerance,0,[]);
+    const id=graph.labels[seed]??0;
+    if(!id||graph.external[id])throw Error('閉じた領域がありません。線の上や隙間のある領域を避けてください。');
+    for(let i=0;i<n;i++)if(graph.labels[i]===id)alpha[i]=255;
+    return {width,height,alpha};
+  }
   const s=seed*4,target=[pixels[s]!,pixels[s+1]!,pixels[s+2]!,pixels[s+3]!];
   const toleranceValue=Math.max(0,Math.min(100,tolerance))*2.55;
   const brightnessMin=Math.max(0,Math.min(255,options.brightnessMin));
@@ -19,15 +27,6 @@ export function selectFromPixels(pixels:Uint8ClampedArray|Uint8Array,options:Ana
   function match(i:number){
     const offset=i*4,r=pixels[offset]!,g=pixels[offset+1]!,b=pixels[offset+2]!,a=pixels[offset+3]!;
     if(action==='alpha')return a;
-    if(action==='lineRegion'){
-      // A dark line on opaque white and a dark line on transparent pixels both
-      // form walls. The opacity alone is NOT the boundary criterion.
-      const brightness=.2126*r+.7152*g+.0722*b;
-      const lineStrength=(255-brightness)*a/255;
-      const wallThreshold=Math.max(1,toleranceValue);
-      if(lineStrength>=wallThreshold)return 0;
-      return Math.round(255*(wallThreshold-lineStrength)/wallThreshold);
-    }
     if(action==='brightness'){
       if(a===0)return 0;
       const v=.2126*r+.7152*g+.0722*b;
@@ -40,7 +39,7 @@ export function selectFromPixels(pixels:Uint8ClampedArray|Uint8Array,options:Ana
     const edge=toleranceValue?Math.min(1,(toleranceValue-channelDistance)/Math.max(1,toleranceValue*.2)):1;
     return Math.round(255*edge);
   }
-  if((!connected&&action!=='lineRegion')||action==='alpha'){
+  if(!connected||action==='alpha'){
     for(let i=0;i<n;i++)alpha[i]=match(i);
     return {width,height,alpha};
   }

@@ -3032,7 +3032,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
   if(documentActivationPending)throw new Error('別の作品を開いています。');
   const previous=controller,previousPreserved=persistence.preservedData,previousSymmetry=symmetrySettings,wasReady=documentReady;
-  persistCanvasView();documentActivationPending=true;documentReady=false;
+  persistCanvasView();documentActivationPending=true;documentReady=false;c06ClipboardUI?.refresh();
   // A NEW work has no dependency between the GPU worker and the storage
   // worker. Start storage during GPU initialization, but do not expose input
   // before BOTH have finished. Other open/recovery paths stay unchanged.
@@ -3154,7 +3154,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     surface?.destroy();const snapshot=previous.document.capturePersistenceSnapshot();controller=EditorController.restored(CoreDocument.restore({snapshot,blockPayloads:previous.document.persistenceBlockPayloads(snapshot)}),previous.selectedLayerId);surface=makeSurface();documentReady=false;
     if(wasReady){try{await initializeCurrentSurface(true);await persistence.initialize(controller,null,previousPreserved,false);const current=(await persistence.listWorks()).works.find(x=>x.documentId===controller.document.root.documentId);if(!qaMode)await persistence.bindWork(current?.writerEpochId??null);}catch{}}
     throw error;
-  }finally{documentActivationPending=false;}
+  }finally{documentActivationPending=false;c06ClipboardUI?.refresh();}
 }
 async function activateFirstPrewarmedBlank(entry:BlankWarmup){
   // All resources belong to the exact document that was initialized on Home.
