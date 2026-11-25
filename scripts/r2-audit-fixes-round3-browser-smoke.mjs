@@ -120,7 +120,7 @@ try{
         await page.mouse.move(heading.x+heading.width/2,heading.y+8);await page.mouse.down();await page.mouse.move(heading.x+heading.width/2+30,heading.y+28,{steps:8});await page.mouse.up();
         const moved=await frame.boundingBox();assert.ok(moved);assert.notEqual(moved.x,p.x);
         await page.waitForTimeout(700);await page.reload({waitUntil:'domcontentloaded'});await page.locator('#ihNavWorks').click();
-        await page.locator('#ihWorkGrid .ih-work-card').first().click();await idle();
+        await page.locator('#ihWorkGrid .ih-work-card .ih-work-preview').first().click();await idle();
         await frame.waitFor({timeout:30000});const restored=await frame.boundingBox();assert.ok(restored);assert.ok(Math.abs(restored.x-moved.x)<2&&Math.abs(restored.y-moved.y)<2,'saved position changed');
       }else{
         await b('画像上で直接採色',frame).click();
@@ -129,7 +129,7 @@ try{
         const source=page.getByRole('button',{name:/採色元を確認：round3-reference/});await source.click();
         const d=page.getByRole('dialog').filter({hasText:'Round3 test origin'});await d.waitFor();await b('閉じる',d).click();
         await page.reload({waitUntil:'domcontentloaded'});await page.locator('#ihNavWorks').click();
-        await page.locator('#ihWorkGrid .ih-work-card').first().click();await idle();await page.locator('#colorPage').click();await page.locator('#colorShowPalette').click();
+        await page.locator('#ihWorkGrid .ih-work-card .ih-work-preview').first().click();await idle();await page.locator('#colorPage').click();await page.locator('#colorShowPalette').click();
         await source.click();await d.waitFor();assert.match(await d.textContent(),/Round3 test origin/);await b('閉じる',d).click();
       }
     }

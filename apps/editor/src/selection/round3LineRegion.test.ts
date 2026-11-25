@@ -5,7 +5,8 @@ describe('D-028: line selection and line fill agree',()=>{
   for(const opaque of [false,true])it('selects only the closed region on '+(opaque?'white':'transparent')+' canvas',()=>{
     const width=48,height=32,pixels=new Uint8Array(width*height*4);
     if(opaque)pixels.fill(255);
-    for(const [left,right] of [[5,20],[27,42]] as const)for(let y=5;y<=25;y++)for(let x=left;x<=right;x++){
+    const boxes: [number,number][]=[[5,20],[27,42]];
+    for(const [left,right] of boxes)for(let y=5;y<=25;y++)for(let x=left;x<=right;x++){
       if(x===left||x===right||y===5||y===25)pixels.set([0,0,0,255],(y*width+x)*4);
     }
     const graph=buildRegions(pixels,width,height,18,0,[]);
