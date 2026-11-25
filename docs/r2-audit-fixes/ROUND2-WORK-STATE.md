@@ -6,17 +6,17 @@
 - 仕様: ROUND2-DECISIONS.md。Draft PR: https://github.com/totoro0419/illustro/pull/115 （統合禁止）。
 - 最新コードのCI: https://github.com/totoro0419/illustro/actions/runs/45598127705 全成功。
 - 公開前6件のブラウザー操作: https://github.com/totoro0419/illustro/actions/runs/45598127689 全6件成功。
-- 公開先: https://totoro0419.github.io/illustro/r2-audit-fixes-round2/ 。gh-pagesに専用フォルダとrelease.jsonを配置済み。release.jsonのsourceCommitは上記コードSHA。公開URLの応答・SHA確認はActions実行中で未確認。
+- 公開先: https://totoro0419.github.io/illustro/r2-audit-fixes-round2/ 。gh-pagesに専用フォルダとrelease.jsonを配置済み。release.jsonのsourceCommitは上記コードSHA。公開URLの応答・SHA確認成功。
 - gh-pagesの旧フォルダSHAは公開前後一致: r2-preview=7f7e489af68a970ad78c000c5bfbe523d2738085、r2-audit-fixes=e52fc9100106ac3ee56649864ac324d07d1f9366。Vercel検査版への操作なし。本番検査記録・既存ブランチ・PRには書込なし。
 
 | ID | 状態 | 証拠 |
 |---|---|---|
-| D-016 | コード修正・自動検査・公開前操作合格、公開版は未確認 | 履歴メニューと検索、実際の記録保存・取消・再生・画素とUndo/Redo |
-| D-017 | コード修正・自動検査・公開前操作合格、公開版は未確認 | 描画直後の2点を検出、上限48画素（既定6は4pxブラシ点には不足）、片方除去、Undo/Redo |
-| D-018 | コード修正・自動検査・公開前操作合格、公開版は未確認 | 文字・ボタン拡大、288/344/440pxの設定欄、標準2列復帰 |
-| D-019 | コード修正・自動検査・公開前操作合格、公開版は未確認 | 日英選択肢・色相環の読み上げ名往復 |
-| D-020 | コード修正・自動検査・公開前操作合格、公開版は未確認 | hold割当表示、実際の移動、解放・手動道具選択維持 |
-| D-021 | コード修正・自動検査・公開前操作合格、公開版は未確認 | 実ファイル保存→新規ブラウザー環境で読込→画素・Undo/Redo→再保存→再読込。95,188,688バイトの合成作品の区画/変形履歴検査も合格 |
+| D-016 | 公開版の実操作合格 | 履歴メニューと検索、実際の記録保存・取消・再生・画素とUndo/Redo |
+| D-017 | 公開版の実操作合格 | 描画直後の2点を検出、上限48画素（既定6は4pxブラシ点には不足）、片方除去、Undo/Redo |
+| D-018 | 公開版の実操作合格 | 文字・ボタン拡大、288/344/440pxの設定欄、標準2列復帰 |
+| D-019 | 公開版の実操作合格 | 日英選択肢・色相環の読み上げ名往復 |
+| D-020 | 公開版の実操作合格 | hold割当表示、実際の移動、解放・手動道具選択維持 |
+| D-021 | 公開版の実操作合格 | 実ファイル保存→新規ブラウザー環境で読込→画素・Undo/Redo→再保存→再読込。95,188,688バイトの合成作品の区画/変形履歴検査も合格 |
 
 ## 重要な変更・保護
 - worker保存と通常保存で必須区画生成を共有。通常の復元経路で保存前検査。元ファイルを上書き修復しない。旧形式の不足マーカーのみを補完した合成ファイルの復元を検証。
@@ -32,3 +32,15 @@
 4. 最新結果を本書・PR #115に保存しDraft維持。本番検査は別のQAブランチから再開。ユーザーが「続けて」と送ったらHEAD・仕様・本書から上記未完了だけ実行。
 
 公開版・必要な回帰操作・物理実機の未確認を明示し、全体完了とは判定しない。
+
+## 公開後の最新確認
+- browser-smoke (D-020): success
+- browser-smoke (D-016): success
+- browser-smoke (D-013): success
+- browser-smoke (D-019): success
+- browser-smoke (D-017): success
+- browser-smoke (specks): success
+- browser-smoke (D-007): success
+- browser-smoke (D-021): success
+- browser-smoke (D-018): success
+公開ジョブ成功。未確認の項目だけ次回取得する。
