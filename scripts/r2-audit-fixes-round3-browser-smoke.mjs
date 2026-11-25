@@ -19,6 +19,7 @@ const doc=()=>canvas.getAttribute('data-document-id');
 const rev=()=>canvas.getAttribute('data-revision-id');
 const change=async before=>{await page.waitForFunction(old=>document.querySelector('#canvas')?.dataset.revisionId!==old,before,{timeout:60000});await idle();};
 async function choose(select,value){
+  if(await select.inputValue()===value)return;
   const label=await select.locator('option[value="'+value+'"]').textContent();
   if(await select.isVisible()){await select.selectOption(value);return;}
   const trigger=select.locator('xpath=following-sibling::button[contains(@class,"workspace-choice")][1]');
@@ -35,6 +36,7 @@ async function create(name){
   await page.locator('#ihNewWidth').fill('512');await page.locator('#ihNewHeight').fill('384');
   await page.locator('#ihNewBackground').selectOption('transparent',{force:true});
   await page.locator('#ihNewCreate').click();await canvas.waitFor({state:'visible'});await page.waitForFunction(old=>{const id=document.querySelector('#canvas')?.dataset.documentId;return !!id&&id!==old;},old,{timeout:60000});await idle();
+  await wait(()=>!document.querySelector('#new')?.disabled&&document.querySelector('#status')?.textContent?.includes('描画できます'));
 }
 async function openBox(box){
   const body=page.locator('#'+box+'Body'),toggle=page.locator('[aria-controls="'+box+'Body"].box-toggle');
@@ -133,7 +135,7 @@ try{
         await frame.waitFor({timeout:30000});const restored=await frame.boundingBox();assert.ok(restored);assert.ok(Math.abs(restored.x-moved.x)<2&&Math.abs(restored.y-moved.y)<2,'saved position changed');
       }else{
         await b('画像上で直接採色',frame).click();
-        await frame.locator('.c05-reference-image-area img').click();await page.locator('#colorPage').click();
+        await frame.locator('.c05-reference-image-area').click();await page.locator('#colorPage').click();
         await page.locator('#colorShowPalette').click();
         const source=page.getByRole('button',{name:/採色元を確認：round3-reference/});await source.click();
         const d=page.getByRole('dialog').filter({hasText:'Round3 test origin'});await d.waitFor();await b('閉じる',d).click();

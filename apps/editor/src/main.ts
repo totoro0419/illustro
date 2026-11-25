@@ -3157,6 +3157,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
   }finally{documentActivationPending=false;c06ClipboardUI?.refresh();}
 }
 async function activateFirstPrewarmedBlank(entry:BlankWarmup){
+  documentActivationPending=true;documentReady=false;c06ClipboardUI?.refresh();
   // All resources belong to the exact document that was initialized on Home.
   // Never replace the CoreDocument after the host has bound its surface IDs.
   initialBlankWarmup=null;
@@ -3196,7 +3197,7 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     documentReady=false;
     controller=new EditorController();
     throw error;
-  }
+  }finally{documentActivationPending=false;c06ClipboardUI?.refresh();}
 }
 async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description='',emptyDrawingLayer=false,content?:TemplateContent):Promise<boolean>{
   const createStarted=performance.now();
@@ -3229,7 +3230,7 @@ async function createDocument(width:number,height:number,name='新しい作品',
   }catch(error){
     const message=surface?.initializationError||(error instanceof Error?error.message:String(error));
     updateQa();byId('status').textContent='描画を開始できませんでした。'+message;return false;
-  }finally{trigger.disabled=false;}
+  }finally{trigger.disabled=false;c06ClipboardUI?.refresh();}
 }
 byId<HTMLButtonElement>('new').onclick=()=>{
   if(homeUi&&!qaMode){homeUi.showNew();return;}
