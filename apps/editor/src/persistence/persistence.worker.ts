@@ -2,9 +2,9 @@ import {ContiguousProtection} from './contiguousProtection';
 import {hasPixelData} from './pixelPresence';
 import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,updateWork,deleteWork,restoreWork,purgeWork,resetWorkLibrary,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
 import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
-import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
+import {decodeIllustroFile,type PortableSectionInput} from './format';
 import {makeEditorState,readEditorState} from './editorState';
-import {openDecodedPortableDocument} from './portable';
+import {appendPortableCapabilitySections,encodeVerifiedPortableFile,KNOWN_REQUIRED_TYPES} from './portable';
 import {clampSelectionRect,type SelectionRect} from '../strokeSelection';
 
 type RequestMessage={id:number;type:string;[key:string]:unknown};
@@ -193,6 +193,7 @@ async function handle(message:RequestMessage){
       const snapshot=message.snapshot as CorePersistenceSnapshotV1;if(snapshot?.schema!=='illustro.core.snapshot'||snapshot.schemaVersion!==1)throw new Error('invalid save snapshot');
       const selectedLayerId=uuid(message.selectedLayerId,'selected layer'),blocks=blockInputs(message.blocks),generationId=uuid(message.generationId,'generation id'),createdAt=integer(message.createdAt,'createdAt',0);
       const sectionInputs:PortableSectionInput[]=[{id:'document',type:'document.core.v1',required:true,bytes:encoder.encode(JSON.stringify(snapshot))}];
+      appendPortableCapabilitySections(snapshot,sectionInputs);
       const byId=new Map(blocks.map(x=>[x.id,x.bytes]));for(const descriptor of snapshot.blocks){const bytes=byId.get(descriptor.id);if(!bytes)throw new Error('save block dependency missing');sectionInputs.push({id:'block:'+descriptor.id,type:'raster.block.v1',required:true,bytes});}
       const target=snapshot.revisions.find(r=>r.id===snapshot.snapshotRevisionId);if(!target)throw new Error('save target missing');
       sectionInputs.push({id:'editor-state',type:'editor.state.v2',required:false,bytes:encoder.encode(JSON.stringify(
@@ -250,28 +251,26 @@ async function handle(message:RequestMessage){
           for(const layer of encodedLayers)sectionInputs.push({id:'render-cache-layer:'+layer.surfaceId,type:'render.cache.layer.v1',required:false,bytes:layer.bytes});
         }
       }
-      const bytes=await encodeIllustroFile({generationId,documentId:target.root.documentId,snapshotRevisionId:snapshot.snapshotRevisionId,createdAt,sections:sectionInputs,manifestExtras:preserved.manifestExtras});
-      const verified=await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
-      if(preserved.manifestExtras.legacyMigration)openDecodedPortableDocument(verified);
+      const bytes=await encodeVerifiedPortableFile({generationId,documentId:target.root.documentId,snapshotRevisionId:snapshot.snapshotRevisionId,createdAt,sections:sectionInputs,manifestExtras:preserved.manifestExtras});
       const transfers=[bytes.buffer as ArrayBuffer];reply(message.id,true,{bytes,durationMs:0},undefined,transfers);break;
     }
     case 'activate-last-good':{
-      const session=requireSession(message),bytes=uint8(message.bytes,'save bytes');await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
+      const session=requireSession(message),bytes=uint8(message.bytes,'save bytes');await decodeIllustroFile(bytes,{knownRequiredTypes:KNOWN_REQUIRED_TYPES});
       const saveRoot=documentSavePath(session.documentId),lastPath=saveRoot+'/last.illustro',previousPath=saveRoot+'/previous.illustro',candidatePath=saveRoot+'/candidate.illustro';
       await putVerified(store,candidatePath,bytes);let previous=await store.get(lastPath);
       if(!previous)previous=await store.get(session.path+'/saves/last.illustro');
-      if(previous){await decodeIllustroFile(previous,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});await putVerified(store,previousPath,previous);}
-      await putVerified(store,lastPath,bytes);const verified=await store.get(lastPath);if(!verified)throw new Error('Last Good activation missing');await decodeIllustroFile(verified,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
+      if(previous){await decodeIllustroFile(previous,{knownRequiredTypes:KNOWN_REQUIRED_TYPES});await putVerified(store,previousPath,previous);}
+      await putVerified(store,lastPath,bytes);const verified=await store.get(lastPath);if(!verified)throw new Error('Last Good activation missing');await decodeIllustroFile(verified,{knownRequiredTypes:KNOWN_REQUIRED_TYPES});
       await store.remove(candidatePath);await touchMeta(store,session,String(message.savedRevisionId??''));reply(message.id,true,{lastGood:true,previousGood:Boolean(previous),backend:store.mode});break;
     }
     case 'load-last-good':{
       const session=readSession(message),saveRoot=documentSavePath(session.documentId),last=(await store.get(saveRoot+'/last.illustro'))??(await store.get(session.path+'/saves/last.illustro')),previous=(await store.get(saveRoot+'/previous.illustro'))??(await store.get(session.path+'/saves/previous.illustro'));let chosen:Uint8Array|null=null,source:'last'|'previous'|null=null;
-      if(last)try{await decodeIllustroFile(last,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});chosen=last;source='last';}catch{}
-      if(!chosen&&previous)try{await decodeIllustroFile(previous,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});chosen=previous;source='previous';}catch{}
+      if(last)try{await decodeIllustroFile(last,{knownRequiredTypes:KNOWN_REQUIRED_TYPES});chosen=last;source='last';}catch{}
+      if(!chosen&&previous)try{await decodeIllustroFile(previous,{knownRequiredTypes:KNOWN_REQUIRED_TYPES});chosen=previous;source='previous';}catch{}
       if(!chosen)throw new Error('正常に保存できた作品がありません。');reply(message.id,true,{bytes:chosen,source},undefined,[chosen.buffer as ArrayBuffer]);break;
     }
     case 'decode-portable':{
-      const bytes=uint8(message.bytes,'portable bytes'),decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])}),projectionCache=await decodeProjectionCache(decoded);
+      const bytes=uint8(message.bytes,'portable bytes'),decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:KNOWN_REQUIRED_TYPES}),projectionCache=await decodeProjectionCache(decoded);
       const sections=[...decoded.sections.values()].map(({descriptor,bytes})=>({descriptor,bytes})),transfers=sections.map(x=>x.bytes.buffer as ArrayBuffer);
       for(const layer of projectionCache?.layers??[]){if('pixels' in layer)transfers.push(layer.pixels.buffer as ArrayBuffer);else for(const tile of layer.tiles)transfers.push(tile.pixels.buffer as ArrayBuffer);}
       reply(message.id,true,{manifest:decoded.manifest,sections,projectionCache},undefined,transfers);break;

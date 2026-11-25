@@ -13,6 +13,7 @@ import {installDeviceCapabilities} from './ui/deviceCapabilities';
 import {recordInputInterruption} from './persistence/inputInterruption';
 import {ICC_IMPORT_ACTION,ICC_LIMIT,ICC_ORIGINAL_SECTION,ICC_ASSIGNED_SECTION,ICC_ORIGINAL_TYPE,validIccBytes} from './export/iccMetadata';
 import {installImageAssist} from './assist/panel';
+import {awaitAssistTarget} from './assist/awaitTarget';
 import {installAdjustmentPanel} from './effects/adjustmentPanel';
 import {openLayerBatch} from './export/layerBatch';
 import {ANALYSIS_MAX_PIXELS,type RGB as AssistRGB} from './assist/analyze';
@@ -5944,8 +5945,13 @@ c04Commands.registerProvider(()=>[{
   execute:()=>{shellUi.openBox('effectsBox');rasterEffectPanel.open();}
 }]);
 const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
-  const artwork=controller.document,drawing=surface,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
+  const artwork=controller.document,drawing=surface;
   if(!drawing||!documentReady)throw Error('作品を開いてください。');
+  const requestedLayer=controller.selectedLayer.id,requestedSelection=c06Selection?.active()??null;
+  const sameTarget=()=>surface===drawing&&controller.document===artwork&&controller.selectedLayer.id===requestedLayer&&(c06Selection?.active()??null)===requestedSelection;
+  await awaitAssistTarget(()=>drawing.settleStrokes(),sameTarget,()=>drawing.busy||geometryBusy||historyPending||documentActivationPending);
+  if(!sameTarget())throw Error('解析対象が変わりました。');
+  const head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
   const {width,height}=root;
   if(width*height>ANALYSIS_MAX_PIXELS)throw Error('画像の解析は約1677万画素までです。必要な部分を別の作品にコピーして試してください。');
   const selection=c06Selection?.active()??null;
@@ -5954,7 +5960,8 @@ const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
   const writable=!layer.baseColor&&!layer.editable&&!layer.imageLink&&!layer.deformation&&!layer.lineRegions&&
     !layer.blend?.gradientMap&&!layer.blend?.adjustment&&!root.isLayerContentLocked(layer.id)&&
     (kind==='specks'?!layer.alphaLocked:root.isLayerVisible(layer.id));
-  await withClipboardAccess(async()=>'read');
+  // Capture the immutable revision, not the mutable live drawing surface. The
+  // old empty clipboard barrier could conflict with another mode's capture.
   const source=kind==='area'?await readFillReference(artwork,head,'merged',[]):await originalTransformPixels(artwork,layer,head);
   if(!valid())throw Error('解析対象が変わりました。');
   const colors=(list:readonly {color:{r:number;g:number;b:number}}[])=>list.map(({color})=>

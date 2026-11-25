@@ -81,3 +81,5 @@ body.workspace-compact-density .box-stack{padding-top:5px}
 .c04-simple-macros .c04-workspace-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
 .c04-simple-macros .c04-workspace-actions button{min-height:40px;border:1px solid var(--a-border,#ddd);background:var(--a-accent-soft,#fff2d7);border-radius:8px;font-size:11px;color:inherit}
 .c04-simple-macros output{display:block;min-height:20px;margin:6px 0;font-size:11px;color:var(--a-subtle,#667)}
+
+#shortcutHoldIndicator:not([hidden]){position:fixed;inset-inline-start:50%;inset-block-end:18px;transform:translateX(-50%);z-index:40;pointer-events:none;max-inline-size:calc(100vw - 32px);padding:7px 12px;border-radius:8px;color:var(--a-text,#111);background:var(--a-surface,#fff);border:1px solid var(--a-border,#ddd);box-shadow:0 2px 8px #0002;font-size:13px}

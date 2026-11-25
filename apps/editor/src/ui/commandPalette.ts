@@ -161,6 +161,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     id,label,category:'設定',aliases:'パネル 作業欄 開く',
     availability:()=>null,execute:()=>shell.openBox(section)
   });
+  known.push({id:'workspace:automation',label:'操作セットを記録・再生',category:'履歴・自動化',aliases:'自動操作 操作セット 記録 再生 マクロ automation macro record replay',availability:()=>null,execute:()=>shell.openBox('automationBox')});
   const providers:Array<()=>readonly CommandDefinition[]>=[];
   function dynamicCommands(){
     const commands=[...known];

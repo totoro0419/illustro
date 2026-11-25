@@ -3,6 +3,7 @@ import {appConfirm,appPrompt} from './appDialogs';
 import type {CommandService} from './commandPalette';
 
 type Mode='press'|'toggle'|'hold';
+export const shortcutModeLabel=(mode:Mode)=>mode==='hold'?'押している間だけ':mode==='toggle'?'押すたび切替':'一度だけ';
 type Binding=Readonly<{
   commandId:string;key:string;code:string;ctrl:boolean;shift:boolean;alt:boolean;meta:boolean;
   physical:boolean;mode:Mode;
@@ -101,7 +102,12 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
   commandSelect.onfocus=updateCommands;
   commandSelect.onchange=()=>{if(!isHoldable(commandSelect.value)&&mode.value==='hold')mode.value='press';};
   mode.onchange=()=>{if(mode.value==='hold'&&!isHoldable(commandSelect.value)){mode.value='press';status.textContent='押している間だけ使えるのは、スポイト・消しゴム・表示移動です。';}};
-  const active=new Map<string,{restore:()=>void;epoch:number}>();
+  const active=new Map<string,{restore:()=>void;epoch:number;binding:Binding}>();
+  const indicator=document.createElement('output');indicator.id='shortcutHoldIndicator';indicator.setAttribute('role','status');indicator.hidden=true;document.body.append(indicator);
+  const updateHoldIndicator=()=>{
+    indicator.hidden=active.size===0;
+    indicator.textContent=[...active.keys()].map(id=>(commands.list().find(c=>c.id===id)?.label??id)+'（押している間だけ）').join(' / ');
+  };
   let holdEpoch=0;
   const latestHoldEpoch=new Map<string,number>();
   function render(){
@@ -111,8 +117,8 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
       const row=document.createElement('div');row.className='c04-shortcut-row';
       const label=document.createElement('span');
       const unsupported=!names.has(entry.commandId);
-      label.textContent=(names.get(entry.commandId)??entry.commandId)+(unsupported?'（今は未対応）':'')+' — '+human(entry);
-      label.title=(entry.mode==='hold'?'押している間だけ':entry.mode==='toggle'?'切替':'単発')+(entry.physical?'（物理キー）':'（文字キー）');
+      label.textContent=(names.get(entry.commandId)??entry.commandId)+(unsupported?'（今は未対応）':'')+' — '+human(entry)+' · '+shortcutModeLabel(entry.mode);
+      label.title=shortcutModeLabel(entry.mode)+(entry.physical?'（物理キー）':'（文字キー）');
       const remove=document.createElement('button');remove.type='button';remove.textContent='解除';
       remove.setAttribute('aria-label',human(entry)+' の割当を削除');
       remove.onclick=()=>{if(persist(bindings.filter((_,index)=>index!==i)))render();};
@@ -217,20 +223,21 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
       status.textContent='押している間の操作を終了してから切り替えてください。';return;
     }
     const id=binding.commandId;
+    if(active.has(id))return;
     const on=(el<HTMLButtonElement>(id)?.getAttribute(id==='quickControllerOpen'?'aria-expanded':'aria-pressed')==='true');
     const epoch=++holdEpoch;
     latestHoldEpoch.set(id,epoch);
-    if(on){active.set(id,{restore:()=>{},epoch});return;}
+    if(on){active.set(id,{restore:()=>{},epoch,binding});updateHoldIndicator();return;}
     const previous=['paint','erase','eyedropper','panView'].find(
       key=>el<HTMLButtonElement>(key)?.getAttribute('aria-pressed')==='true')??'paint';
     const result=commands.invoke(id);
-    if(result.ok)active.set(id,{epoch,restore:()=>{
+    if(result.ok){active.set(id,{epoch,binding,restore:()=>{
       // Respect later manual tool changes during the hold.
       const attribute=id==='quickControllerOpen'?'aria-expanded':'aria-pressed';
       if(el<HTMLButtonElement>(id)?.getAttribute(attribute)==='true'){
-        el<HTMLButtonElement>(id==='quickControllerOpen'?id:previous)?.click();
+        el<HTMLButtonElement>(id==='quickControllerOpen'||id==='panView'?id:previous)?.click();
       }
-    }});
+    }});updateHoldIndicator();}
     else status.textContent=result.reason??'ショートカットを使えませんでした。';
   }
   document.addEventListener('keydown',event=>{
@@ -257,15 +264,16 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     check();
   };
   const release=(event:KeyboardEvent)=>{
-    for(const b of bindings)if(b.mode==='hold'&&
-      (b.physical?b.code===event.code:b.key===normalizedKey(event))){
-      const state=active.get(b.commandId);if(!state)continue;
-      active.delete(b.commandId);restoreAfterStroke(b.commandId,state.restore,state.epoch);
+    for(const [id,state] of active){
+      const b=state.binding;
+      if(b.physical?b.code!==event.code:b.key!==normalizedKey(event))continue;
+      active.delete(id);restoreAfterStroke(id,state.restore,state.epoch);
     }
+    updateHoldIndicator();
   };
   document.addEventListener('keyup',release,{capture:true});
   const releaseAll=()=>{
-    const pending=[...active.entries()];active.clear();
+    const pending=[...active.entries()];active.clear();updateHoldIndicator();
     for(const [id,{restore,epoch}] of pending)restoreAfterStroke(id,restore,epoch);
     stopCapture();
   };
