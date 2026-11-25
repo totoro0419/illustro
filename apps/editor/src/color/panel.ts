@@ -3,7 +3,8 @@ import {installGamutPicker} from './gamutPicker';
 import {installOrbitPicker} from './orbit';
 import {installHarmonyTools} from './harmony';
 import {ORBIT_WHEEL,orbitHuePaths} from './orbitGeometry';
-import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
+import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB,type ColorSource} from './model';
+import {appChoose} from '../ui/appDialogs';
 
 const hueNames=['赤','オレンジ','黄','黄緑','緑','青緑','水色','青','紫','赤紫','赤'];
 const hueNamesEn=['red','orange','yellow','yellow-green','green','teal','cyan','blue','purple','magenta','red'];
@@ -83,7 +84,7 @@ export function colorMarkup():string {
  '</div>';
 }
 
-export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>void,onBrushColor:()=>void}){
+export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>void,onBrushColor:()=>void,onReferenceSource?:(source:ColorSource)=>Promise<boolean>}){
  const harmony=installHarmonyTools(state);
  let model='HSV' as 'HSV'|'HSL'|'RGB',hueMemory=rgbToHsv(state.current).h;
  // Black RGB cannot encode the selected saturation. Preserve the SV marker
@@ -320,7 +321,22 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   }
   if(!list.childElementCount)list.innerHTML='<span class="color-empty">「＋ 色を追加」で現在の色を登録</span>';
   if(!manager.childElementCount)manager.innerHTML='<span class="color-empty">保存した色はありません。</span>';
-  history.replaceChildren(...state.history.map((c,i)=>makeChip(c,'最近の色 '+(i+1),()=>state.choose(c))));
+  history.replaceChildren(...state.history.map((c,i)=>{
+   const source=state.sourceFor(c),chip=makeChip(c,'最近の色 '+(i+1)+(source?'・採色元 '+source.name:''),()=>state.choose(c,source));
+   if(!source)return chip;
+   const cell=document.createElement('span');cell.style.cssText='display:grid;justify-items:center;gap:2px';
+   const details=document.createElement('button');details.type='button';details.textContent='資料';details.setAttribute('aria-label','採色元を確認：'+source.name);
+   details.onclick=async()=>{
+    const choices=[{value:'close' as const,label:'閉じる'},...(source.assetId&&options.onReferenceSource?[{value:'open' as const,label:'元の参考画像を表示'}]:[])];
+    const selected=await appChoose('資料名：'+source.name+'\n出典：'+(source.origin||'記録なし'),choices);
+    const notice=id<HTMLElement>('colorActionNotice');
+    if(selected==='open'){
+     try{if(!await options.onReferenceSource?.(source))notice.textContent='元の資料は現在の作品で利用できません。色はそのまま使えます。';}
+     catch{notice.textContent='資料を表示できませんでした。';}
+    }
+   };
+   cell.append(chip,details);return cell;
+  }));
   clearHistory.disabled=state.history.length===0;
   if(!history.childElementCount)history.innerHTML='<span class="color-empty">色を選ぶと、ここからすぐ戻せます。</span>';
   selectedChipHex=hex(state.current);

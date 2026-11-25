@@ -2115,7 +2115,7 @@ const eyedropperDialog=byId<HTMLDialogElement>('colorEyedropperOptions');
 app.append(eyedropperDialog);
 byId('openEyedropperSettings').onclick=()=>{if(!eyedropperDialog.open)eyedropperDialog.showModal();};
 byId('referenceSampleOpen').addEventListener('click',()=>eyedropperDialog.close());
-const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity)});
+const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity),onReferenceSource:async source=>await c05ReferenceBoard?.revealSource(source)??false});
 const eyedropperSettings=installEyedropperSettings({foreground,getSurface:()=>surface,getLayers:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name})),onChange:updateContextBar});
 function refreshSelectionControls(){
  const selecting=surface?.selectingRectangle??false;
@@ -4816,10 +4816,10 @@ const c05References=installReferenceBoard({
     const {diameter,transparency}=eyedropperSettings.options();
     return {diameter,transparency};
   },
-  onPickColor:async assetId=>{
+  onPickColor:async(assetId,item)=>{
     const entry=await getAsset(assetId);
     if(!entry||entry.deleted||!entry.mime.startsWith('image/'))throw Error('参考画像が見つかりません。');
-    await eyedropperSettings.reference.openBlob(entry.data);
+    await eyedropperSettings.reference.openBlob(entry.data,{assetId:entry.id,boardItemId:item.id,documentId:controller.document.root.documentId,name:entry.name,origin:[entry.origin,item.notes].filter(Boolean).join('\n')});
   }
 });
 c05ReferenceBoard=c05References;

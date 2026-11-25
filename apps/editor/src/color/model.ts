@@ -6,6 +6,15 @@ export const DOCUMENT_PALETTE_SECTION='c04.artwork-palette';
 export const DOCUMENT_PALETTE_TYPE='color.palette.artwork.v1';
 const DOCUMENT_PALETTE_KEY='illustro.c04.artwork-palette.v1.';
 export type RGB=Readonly<{r:number;g:number;b:number}>;
+export type ColorSource=Readonly<{assetId?:string;boardItemId?:string;documentId?:string;name:string;origin:string}>;
+function validColorSource(value:unknown):ColorSource|null{
+ if(!value||typeof value!=='object')return null;
+ const v=value as Record<string,unknown>;
+ if(typeof v.name!=='string'||!v.name||typeof v.origin!=='string')return null;
+ const ids:Partial<Record<'assetId'|'boardItemId'|'documentId',string>>={};
+ for(const key of ['assetId','boardItemId','documentId'] as const){const id=v[key];if(typeof id==='string'&&id.length<=256)ids[key]=id;}
+ return {...ids,name:v.name.slice(0,512),origin:v.origin.slice(0,6000)};
+}
 export type Triple=Readonly<{h:number;s:number;v:number}>;
 export type PaletteSwatch={id:string;color:RGB;tags?:string[]};
 export type Palette={id:string;name:string;folder?:string;swatches:PaletteSwatch[]};
@@ -64,6 +73,8 @@ export function exportPalette(p:Palette):string{
 }
 export class ForegroundColor {
  current:RGB=rgb(.12,.15,.2);previous:RGB=rgb(.12,.15,.2);background:RGB=rgb(1,1,1);opacity=1;history:RGB[]=[];
+ private historySources:Record<string,ColorSource>={};
+ sourceFor(c:RGB){return this.historySources[hex(c)]??null;}
  palettes:Palette[]=[{id:ident(),name:'マイパレット',swatches:[]}];paletteId=this.palettes[0]!.id;
  private documentPalette:Palette|null=null;
  private boundDocumentId:string|null=null;
@@ -77,12 +88,16 @@ export class ForegroundColor {
   if(validRGB(d.background))this.background=rgb(d.background.r,d.background.g,d.background.b);
   if(typeof d.opacity==='number'&&Number.isFinite(d.opacity)&&d.opacity>=0&&d.opacity<=1)this.opacity=d.opacity;
   if(Array.isArray(d.history))this.history=d.history.filter(validRGB).slice(0,MAX_HISTORY);
+  if(d.historySources&&typeof d.historySources==='object'){
+   const sources=d.historySources as Record<string,unknown>;
+   for(const c of this.history){const source=validColorSource(sources[hex(c)]);if(source)this.historySources[hex(c)]=source;}
+  }
   if(Array.isArray(d.palettes)){const items=d.palettes.slice(0,MAX_PALETTES).map((p:unknown):Palette|null=>{const q=p as Palette;if(typeof q?.id!=='string'||typeof q.name!=='string'||!Array.isArray(q.swatches))return null;return {id:q.id,name:cleanName(q.name),folder:typeof q.folder==='string'?cleanName(q.folder):'',swatches:q.swatches.slice(0,MAX_SWATCHES).filter(s=>typeof s?.id==='string'&&validRGB(s.color)).map(s=>({...s,tags:Array.isArray(s.tags)?s.tags.filter((t):t is string=>typeof t==='string').slice(0,12):[]}))};}).filter((p):p is Palette=>p!==null&&!!p.name);if(items.length)this.palettes=items;}
   if(typeof d.paletteId==='string'&&this.palettes.some(p=>p.id===d.paletteId))this.paletteId=d.paletteId;
  }catch{/* Corrupt workspace preferences never prevent startup. */}}
  checkpoint(){
-   const {current,previous,background,opacity,origin}=this,history=[...this.history];
-   return ()=>{Object.assign(this,{current,previous,background,opacity,origin,history});this.save();this.notify();};
+   const {current,previous,background,opacity,origin}=this,history=[...this.history],historySources={...this.historySources};
+   return ()=>{Object.assign(this,{current,previous,background,opacity,origin,history,historySources});this.save();this.notify();};
  }
  get isEditing(){return this.origin!==null;}
  subscribe(f:()=>void){this.listeners.add(f);return ()=>this.listeners.delete(f);}
@@ -90,7 +105,7 @@ export class ForegroundColor {
  private save(){
   if(!this.storageEnabled)return;
   const globalPaletteId=this.palettes.some(p=>p.id===this.paletteId)?this.paletteId:this.palettes[0]!.id;
-  try{localStorage.setItem(key,JSON.stringify({version:1,current:this.current,previous:this.previous,background:this.background,opacity:this.opacity,history:this.history,palettes:this.palettes,paletteId:globalPaletteId}));}
+  try{localStorage.setItem(key,JSON.stringify({version:1,current:this.current,previous:this.previous,background:this.background,opacity:this.opacity,history:this.history,historySources:this.historySources,palettes:this.palettes,paletteId:globalPaletteId}));}
   catch{/* Workspace colors remain usable even when storage is unavailable. */}
   if(this.documentPalette&&this.boundDocumentId){
     try{localStorage.setItem(DOCUMENT_PALETTE_KEY+this.boundDocumentId,exportPalette(this.documentPalette));}
@@ -134,19 +149,27 @@ export class ForegroundColor {
 
  begin(){if(!this.origin)this.origin=this.current;}
  preview(c:RGB){if(!validRGB(c))return;this.current=rgb(c.r,c.g,c.b);this.notify();}
- commit(c?:RGB){if(c)this.preview(c);const prior=this.origin??this.current;this.origin=null;
-  if(!same(prior,this.current)){this.previous=prior;this.history=[this.current,...this.history.filter(x=>!same(x,this.current))].slice(0,MAX_HISTORY);this.collectionsVersion++;}
+ commit(c?:RGB,source?:ColorSource|null){if(c)this.preview(c);const prior=this.origin??this.current;this.origin=null;
+  const changed=!same(prior,this.current),stored=source?validColorSource(source):null;
+  if(changed||stored||source===null&&this.sourceFor(this.current)){
+   if(changed)this.previous=prior;
+   const old=this.historySources;this.history=[this.current,...this.history.filter(x=>!same(x,this.current))].slice(0,MAX_HISTORY);
+   const next:Record<string,ColorSource>={};
+   if(stored)next[hex(this.current)]=stored;
+   for(const color of this.history.slice(1)){const key=hex(color);if(old[key])next[key]=old[key]!;}
+   this.historySources=next;this.collectionsVersion++;
+  }
   this.save();this.notify();
  }
  cancel(){if(this.origin){this.current=this.origin;this.origin=null;this.notify();}}
- choose(c:RGB){this.begin();this.preview(c);this.commit();}
+ choose(c:RGB,source:ColorSource|null=null){this.begin();this.preview(c);this.commit(undefined,source);}
  setBackground(c:RGB){if(!validRGB(c))return;this.background=rgb(c.r,c.g,c.b);this.save();this.notify();}
  setOpacity(value:number){if(!Number.isFinite(value)||value<0||value>1)throw new Error('色の不透明度は0〜100%で指定してください。');this.opacity=value;this.save();this.notify();}
  swapBackground(){
    const old=this.current,newForeground=this.background;
    this.background=old;this.choose(newForeground);this.save();this.notify();
  }
- clearHistory(){this.history=[];this.collectionsVersion++;this.save();this.notify();}
+ clearHistory(){this.history=[];this.historySources={};this.collectionsVersion++;this.save();this.notify();}
  get palette(){return this.documentPalette?.id===this.paletteId?this.documentPalette:this.palettes.find(p=>p.id===this.paletteId)??this.palettes[0]!;}
  selectPalette(id:string){if(this.paletteId!==id&&this.availablePalettes.some(p=>p.id===id)){this.paletteId=id;this.collectionsVersion++;this.save();this.notify();}}
  createPalette(name:string){if(this.palettes.length>=MAX_PALETTES)throw new Error('パレットは32個までです。');const n=cleanName(name);if(!n)throw new Error('名前を入力してください。');const p={id:ident(),name:n,swatches:[]};this.palettes.push(p);this.paletteId=p.id;this.collectionsVersion++;this.save();this.notify();}

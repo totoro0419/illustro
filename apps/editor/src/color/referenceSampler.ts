@@ -3,7 +3,7 @@
  * may provide the source image; this independent picker supports files now.
  * The file stays in this dialog and is not injected into the artwork bitmap.
  */
-import {type RGB,type ForegroundColor,rgb,hex} from './model';
+import {type RGB,type ForegroundColor,type ColorSource,rgb,hex} from './model';
 
 type Transparency='skip'|'keep'|'white';
 type Diameter=1|3|5;
@@ -42,6 +42,7 @@ export function installReferenceColorPicker(
   const sampleCanvas=document.createElement('canvas');sampleCanvas.width=5;sampleCanvas.height=5;
   const sampleContext=sampleCanvas.getContext('2d',{willReadFrequently:true});
   let sourceBitmap:ImageBitmap|null=null;
+  let sourceInfo:ColorSource|null=null;
   let baseColor:RGB=originalColor();
   const swatch=(node:HTMLElement,name:string,color:RGB)=>{
     node.replaceChildren();
@@ -92,7 +93,7 @@ export function installReferenceColorPicker(
       swatch(current,'取得する色',sampled);
       feedback.textContent=hex(sampled)+' を確認しています。';
     }else{
-      foreground.commit(sampled);
+      foreground.commit(sampled,sourceInfo);
       swatch(current,'現在の色',sampled);
       feedback.textContent='参考画像から '+hex(sampled)+' を取得しました。';
     }
@@ -118,9 +119,9 @@ export function installReferenceColorPicker(
   });
   dialog.addEventListener('close',()=>{
     if(pointer!==null){pointer=null;foreground.cancel();}
-    sourceBitmap?.close();sourceBitmap=null;ready=false;
+    sourceBitmap?.close();sourceBitmap=null;ready=false;sourceInfo=null;
   });
-  async function openBlob(image:Blob){
+  async function openBlob(image:Blob,source:ColorSource|null=null){
     if(image.size>32*1024*1024){feedback.textContent='32MB以下の画像を選んでください。';return;}
     try{
       const bitmap=await createImageBitmap(image);
@@ -132,7 +133,7 @@ export function installReferenceColorPicker(
         canvas.height=Math.max(1,Math.round(bitmap.height*scale));
         context?.clearRect(0,0,canvas.width,canvas.height);
         context?.drawImage(bitmap,0,0,canvas.width,canvas.height);
-        sourceBitmap?.close();sourceBitmap=bitmap;retained=true;
+        sourceBitmap?.close();sourceBitmap=bitmap;retained=true;sourceInfo=source;
         sourceSize={width:bitmap.width,height:bitmap.height};
         ready=true;
         baseColor=foreground.current;
@@ -145,7 +146,7 @@ export function installReferenceColorPicker(
   }
   file.onchange=async()=>{
     const image=file.files?.[0];file.value='';if(!image)return;
-    await openBlob(image);
+    await openBlob(image,{name:image.name,origin:''});
   };
   open.onclick=()=>file.click();
   return {open:()=>file.click(),openBlob,isOpen:()=>dialog.open};
