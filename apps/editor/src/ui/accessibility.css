@@ -85,3 +85,26 @@
 :root[data-illustro-keyboard] dialog.geometry-dialog[open] {
   max-block-size: max(100px, calc(var(--illustro-visible-height) - var(--top, 48px) - 90px));
 }
+
+/* D-018: keep each control paired with its label at enlarged sizes. Normal layout stays unchanged. */
+:root:is([data-illustro-text="large"],[data-illustro-text="extra"],[data-illustro-density="roomy"]) #rightDock
+  :is(.c06-clipboard-grid,.c06-selection-tools,.c06-selection-save,.c06-auto-selection,.c06-selection-brush,.c04-workspace-actions,.m10-brush-settings,.m10-preset-actions) {
+  grid-template-columns: minmax(0,1fr);
+}
+:root:is([data-illustro-text="large"],[data-illustro-text="extra"],[data-illustro-density="roomy"]) #rightDock
+  :is(.c06-clipboard-grid,.c06-selection-brush,.m10-brush-settings) > label {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+:root:is([data-illustro-text="large"],[data-illustro-text="extra"],[data-illustro-density="roomy"]) #rightDock
+  :is(.c06-clipboard-grid,.c06-selection-brush,.c04-workspace-actions,.m10-brush-settings) :is(select,input,button) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+:root:is([data-illustro-text="large"],[data-illustro-text="extra"],[data-illustro-density="roomy"]) #rightDock
+  :is(.c06-clipboard-grid,.c04-workspace-actions,.m10-preset-actions) button {
+  white-space: normal;
+  overflow-wrap: break-word;
+  block-size: auto;
+}

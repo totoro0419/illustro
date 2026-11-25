@@ -33,6 +33,9 @@ const english:Readonly<Record<string,string>>={
   'ピクセル':'Pixels','ミリメートル':'Millimeters','センチメートル':'Centimeters','インチ':'Inches',
   '操作の確定と取消':'Confirm or cancel changes','今の操作対象':'Current target',
   '同じレイヤーの背面に描く':'Paint behind on this layer','更新':'Refresh','現在の状態を確認':'Refresh device information',
+  '色相環の表示形式':'Color wheel layout','クラシック':'Classic','オービット':'Orbit',
+  '色選択の表示モード':'Color picker mode','オービット色選択':'Orbit color picker','日本語':'Japanese',
+  '操作セットを記録・再生':'Record and replay macros','よく使う操作をまとめる':'Combine frequently used actions',
   '表示言語':'Interface language','現在の色':'Current color','塗りの強さ':'Flow','点の間隔':'Spacing',
   '紙の質感':'Paper texture','手ブレ補正':'Stabilization','この設定で作成':'Create with these settings',
   '変更前':'Before','変更後':'After','絵を比べる':'Compare artwork','動作設定':'Performance settings',
@@ -52,7 +55,7 @@ export const translateUi=(text:string)=>translatedLabel(text,language);
 
 export function installLanguageSettings(host:HTMLElement,onChange:()=>void){
   const label=document.createElement('label'),name=document.createElement('span'),select=document.createElement('select');
-  name.textContent='表示言語';select.append(new Option('日本語','ja'),new Option('English','en'));
+  name.textContent='表示言語';select.setAttribute('aria-label','表示言語');select.append(new Option('日本語','ja'),new Option('English','en'));
   select.value=language;label.append(name,select);host.append(label);
   const originalText=new Map<Text,string>(),originalAttributes=new Map<Element,Map<string,string>>();
   const translatable='button,label,summary,option,h1,h2,h3,h4,p,dt,output,[role=status],[aria-label],[aria-description]';

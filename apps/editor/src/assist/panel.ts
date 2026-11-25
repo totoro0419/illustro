@@ -170,7 +170,8 @@ export function installImageAssist(host:HTMLElement,capture:(kind:Kind)=>Promise
     async function load(){
       invalidate();clearGallery();frame=null;before.hidden=true;examples=[];spotChecks=[];nameChecks=[];names.replaceChildren();groups.replaceChildren();
       const ticket=generation,kind=current();
-      activeLayer.textContent='対象を読み込んでいます。';
+      activeLayer.textContent='描画を確定して対象を読み込んでいます。';
+      status.textContent='描画を確定しています。';
       analyze.disabled=true;apply.disabled=true;
       for(const variant of Array.from(variants.querySelectorAll('button')))variant.disabled=true;
       const snapshot=await capture(kind);

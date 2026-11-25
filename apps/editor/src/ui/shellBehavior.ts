@@ -15,7 +15,7 @@ const actionLabels:Readonly<Record<string,readonly [string,string][]>>={
   'selection-transform':[['選択範囲','selection'],['変形','transform'],['レイヤーを移動','move']],
   'layers-compositing':[['レイヤー画面','layer'],['レイヤー追加','addLayerPage']],
   'canvas-view':[['画面を移動する','panView'],['全体表示','fitView'],['回転を戻す','resetRotation']],
-  'history-automation':[['元に戻す','undo'],['やり直す','redo']],
+  'history-automation':[['元に戻す','undo'],['やり直す','redo'],['操作セットを記録・再生','automationBox']],
   'document-output':[['新規キャンバス','new'],['作品を開く','open'],['作品情報','documentInfoOpen'],['作品を保存','save'],['別名保存','saveCopy'],['自動保存から戻す','recover'],['PNG / JPEG / WebP','exportImage']],
   'workspace-settings':[['右側の表示を切り替え','workspaceToggle']],
 };
@@ -149,6 +149,9 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     if(section){
       const button=section.querySelector<HTMLButtonElement>('.box-toggle');
       if(button?.getAttribute('aria-expanded')==='false')button.click();
+      if(id==='automationBox'){
+        const macros=section.querySelector<HTMLDetailsElement>('.c04-simple-macros');if(macros)macros.open=true;
+      }
       section.scrollIntoView({block:'nearest'});
       if(keyboard)(id==='brushBox'?section.querySelector<HTMLElement>('.brush-catalog button')??section.querySelector<HTMLElement>('.box-toggle'):section.querySelector<HTMLElement>('.box-toggle'))?.focus({preventScroll:true});
     }
@@ -327,8 +330,8 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
       for(const [label,action] of actionLabels[id]||[]){
         const btn=document.createElement('button');btn.type='button';btn.textContent=label;
         const control=byId<HTMLButtonElement>(action);
-        btn.disabled=!control||control.disabled;
-        btn.onclick=event=>{showFeature(false,event.detail===0);control?.click();};items.append(btn);
+        btn.disabled=action==='automationBox'?!byId('automationBoxBody'):!control||control.disabled;
+        btn.onclick=event=>{showFeature(false,event.detail===0);if(action==='automationBox')openBox(action,byId('allFeatures'),event.detail===0);else control?.click();};items.append(btn);
       }
       categories.hidden=true;actions.hidden=false;positionFeature();
       if(event.detail===0){

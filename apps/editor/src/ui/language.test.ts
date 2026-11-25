@@ -10,3 +10,9 @@ it('translates work, layer, canvas, and export controls without changing work na
   expect(translatedLabel('2480 × 3508 px','en')).toBe('2480 × 3508 px');
   expect(translatedLabel('作品 — 海辺','en')).toBe('作品 — 海辺');
 });
+
+it('D-019 translates the color-wheel labels and accessible names reversibly',()=>{
+  const labels=['色相環の表示形式','クラシック','オービット','色選択の表示モード','オービット色選択','表示言語','日本語'];
+  expect(labels.map(x=>translatedLabel(x,'en'))).toEqual(['Color wheel layout','Classic','Orbit','Color picker mode','Orbit color picker','Interface language','Japanese']);
+  expect(labels.map(x=>translatedLabel(x,'ja'))).toEqual(labels);
+});
