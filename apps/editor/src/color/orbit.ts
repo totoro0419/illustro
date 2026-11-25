@@ -1,3 +1,4 @@
+import {uiLocale} from '../ui/language';
 import {clamp,hex,hsvToRgb} from './model';
 import {ORBIT_WHEEL,orbitHueRegion,orbitHueAtPoint} from './orbitGeometry';
 
@@ -122,7 +123,7 @@ export function installOrbitPicker(root:HTMLElement,options:{
   point.style.top=((1-clamp(v))*100)+'%';
   plane.style.setProperty('--pure',hex(hsvToRgb(hue,1,1)));
   wheel.setAttribute('aria-valuenow',String(Math.round(hue)%360));
-  wheel.setAttribute('aria-valuetext','色相 '+Math.round(hue)+'度');
+  wheel.setAttribute('aria-valuetext',uiLocale()==='en-US'?'Hue '+Math.round(hue)+' degrees':'色相 '+Math.round(hue)+'度');
   request();
  }
  function previewHue(next:number){

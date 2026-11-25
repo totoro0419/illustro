@@ -53,7 +53,10 @@ export function appendPortableCapabilitySections(snapshot:CorePersistenceSnapsho
 /** Verify the complete file through the normal semantic restore path before writing it. */
 export async function encodeVerifiedPortableFile(input:Parameters<typeof encodeIllustroFile>[0]){
   const bytes=await encodeIllustroFile(input);
-  await openPortableDocument(bytes);
+  // This verification is read-only and discards the restored document. Borrow
+  // the encoded section views rather than copying the entire output again.
+  const decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:KNOWN_REQUIRED_TYPES,borrowSectionBytes:true});
+  openDecodedPortableDocument(decoded);
   return bytes;
 }
 

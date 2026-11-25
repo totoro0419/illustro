@@ -54,7 +54,7 @@ export async function encodeIllustroFile(input:Readonly<{
   return out;
 }
 
-export async function decodeIllustroFile(bytes:Uint8Array,options:Readonly<{limits?:PortableLimits;knownRequiredTypes?:ReadonlySet<string>}>=Object.freeze({})):Promise<DecodedPortableFile>{
+export async function decodeIllustroFile(bytes:Uint8Array,options:Readonly<{limits?:PortableLimits;knownRequiredTypes?:ReadonlySet<string>;borrowSectionBytes?:boolean}>=Object.freeze({})):Promise<DecodedPortableFile>{
   const limits=options.limits??M05_PORTABLE_LIMITS;if(bytes.byteLength>limits.maxFileBytes)throw new Error('file too large');
   if(bytes.byteLength<HEADER_BYTES+FOOTER_BYTES)throw new Error('truncated container');
   exactMagic(bytes,0,HEADER_MAGIC,'invalid container magic');const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
@@ -81,7 +81,7 @@ export async function decodeIllustroFile(bytes:Uint8Array,options:Readonly<{limi
     const digest=readHash(s.sha256),required=s.required;if(required&&options.knownRequiredTypes&&!options.knownRequiredTypes.has(type))throw new Error('unknown required section');
     const descriptorExtras=extractExtras(s,new Set(['id','type','required','codec','offset','length','sha256']));
     const descriptor=Object.freeze({id,type,required,codec:'none' as const,offset,length,sha256:digest,extras:descriptorExtras});descriptors.push(descriptor);
-    const body=bytes.slice(payloadStart+offset,payloadStart+offset+length),valid=await sha256Hex(body)===digest;
+    const body=options.borrowSectionBytes?bytes.subarray(payloadStart+offset,payloadStart+offset+length):bytes.slice(payloadStart+offset,payloadStart+offset+length),valid=await sha256Hex(body)===digest;
     if(!valid){if(required)throw new Error('section integrity check failed');continue;}
     sections.set(id,Object.freeze({descriptor,bytes:body}));
   }

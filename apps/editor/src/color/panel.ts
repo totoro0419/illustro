@@ -1,3 +1,4 @@
+import {uiLocale} from '../ui/language';
 import {installGamutPicker} from './gamutPicker';
 import {installOrbitPicker} from './orbit';
 import {installHarmonyTools} from './harmony';
@@ -5,6 +6,7 @@ import {ORBIT_WHEEL,orbitHuePaths} from './orbitGeometry';
 import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
 
 const hueNames=['赤','オレンジ','黄','黄緑','緑','青緑','水色','青','紫','赤紫','赤'];
+const hueNamesEn=['red','orange','yellow','yellow-green','green','teal','cyan','blue','purple','magenta','red'];
 const hueLimits=[15,43,66,93,148,182,214,252,292,342,361];
 
 const id=<T extends HTMLElement>(name:string)=>document.getElementById(name) as T;
@@ -131,10 +133,13 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   document.getElementById('colorPage')?.style.setProperty('--current-paint-color',hex(c));
   current.style.backgroundColor=hex(c);code.textContent=hex(c);
   const hueIndex=hueLimits.findIndex(limit=>hsv.h<limit);
-  const roughName=hsv.v<.1?'黒':hsv.s<.12?(hsv.v>.93?'白':'グレー'):
-    (hsv.v<.37?'暗い':hsv.s<.37&&hsv.v>.7?'淡い':'')+(hueNames[hueIndex]??'赤');
-  name.textContent='目安：'+roughName;
-  current.setAttribute('aria-label','現在の色 '+roughName+'（目安） '+hex(c));
+  const en=uiLocale()==='en-US';
+  const roughName=en?(hsv.v<.1?'black':hsv.s<.12?(hsv.v>.93?'white':'gray'):
+    (hsv.v<.37?'dark ':hsv.s<.37&&hsv.v>.7?'pale ':'')+(hueNamesEn[hueIndex]??'red')):
+    (hsv.v<.1?'黒':hsv.s<.12?(hsv.v>.93?'白':'グレー'):
+    (hsv.v<.37?'暗い':hsv.s<.37&&hsv.v>.7?'淡い':'')+(hueNames[hueIndex]??'赤'));
+  name.textContent=(en?'Approx. ':'目安：')+roughName;
+  current.setAttribute('aria-label',en?'Current color '+roughName+' (approx.) '+hex(c):'現在の色 '+roughName+'（目安） '+hex(c));
   id<HTMLInputElement>('c04BackgroundColor').value=hex(state.background);
   const opacity=Math.round(state.opacity*100);
   id<HTMLInputElement>('c04ColorOpacity').value=String(opacity);
@@ -146,7 +151,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   hue.style.left=(50+45.5*Math.cos(angle))+'%';hue.style.top=(50+45.5*Math.sin(angle))+'%';
   const marker=id<HTMLElement>('colorSvMarker');marker.style.left=(displayS*100)+'%';marker.style.top=((1-hsv.v)*100)+'%';
   ring.setAttribute('aria-valuenow',String(Math.round(hueMemory)%360));
-  ring.setAttribute('aria-valuetext','色相 '+Math.round(hueMemory)+'度');
+  ring.setAttribute('aria-valuetext',en?'Hue '+Math.round(hueMemory)+' degrees':'色相 '+Math.round(hueMemory)+'度');
   if(pickerMode==='orbit')orbit.reflect(hueMemory,displayS,hsv.v);
   if(document.activeElement!==hexField)hexField.value=hex(c);
   if(!channelEditing)updateChannels();
@@ -352,7 +357,8 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   reflect();
   if(!state.isEditing&&state.collectionsVersion!==renderedCollectionsVersion)renderCollections();
  });
+ window.addEventListener('illustro:language-change',reflect);
  renderChannels();reflect();renderCollections();
  const abandonGamut=installGamutPicker(id('colorBoxBody'),state);
- return {destroy:()=>{unsubscribe();abandonGamut();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1)selectModel('RGB');}};
+ return {destroy:()=>{window.removeEventListener('illustro:language-change',reflect);unsubscribe();abandonGamut();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1)selectModel('RGB');}};
 }

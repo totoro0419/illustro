@@ -235,7 +235,7 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
       // Respect later manual tool changes during the hold.
       const attribute=id==='quickControllerOpen'?'aria-expanded':'aria-pressed';
       if(el<HTMLButtonElement>(id)?.getAttribute(attribute)==='true'){
-        el<HTMLButtonElement>(id==='quickControllerOpen'?id:previous)?.click();
+        el<HTMLButtonElement>(id==='quickControllerOpen'||id==='panView'?id:previous)?.click();
       }
     }});updateHoldIndicator();}
     else status.textContent=result.reason??'ショートカットを使えませんでした。';
