@@ -5949,8 +5949,7 @@ const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
   if(!drawing||!documentReady)throw Error('作品を開いてください。');
   const requestedLayer=controller.selectedLayer.id,requestedSelection=c06Selection?.active()??null;
   const sameTarget=()=>surface===drawing&&controller.document===artwork&&controller.selectedLayer.id===requestedLayer&&(c06Selection?.active()??null)===requestedSelection;
-  if(geometryBusy||historyPending||documentActivationPending)throw Error('描画や保存の処理が終わってから実行してください。');
-  await awaitAssistTarget(()=>drawing.settleStrokes(),sameTarget,()=>drawing.busy);
+  await awaitAssistTarget(()=>drawing.settleStrokes(),sameTarget,()=>drawing.busy||geometryBusy||historyPending||documentActivationPending);
   if(!sameTarget())throw Error('解析対象が変わりました。');
   const head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
   const {width,height}=root;
@@ -5961,7 +5960,8 @@ const imageAssist=installImageAssist(byId('effectsBoxBody'),async kind=>{
   const writable=!layer.baseColor&&!layer.editable&&!layer.imageLink&&!layer.deformation&&!layer.lineRegions&&
     !layer.blend?.gradientMap&&!layer.blend?.adjustment&&!root.isLayerContentLocked(layer.id)&&
     (kind==='specks'?!layer.alphaLocked:root.isLayerVisible(layer.id));
-  await withClipboardAccess(async()=>'read');
+  // Capture the immutable revision, not the mutable live drawing surface. The
+  // old empty clipboard barrier could conflict with another mode's capture.
   const source=kind==='area'?await readFillReference(artwork,head,'merged',[]):await originalTransformPixels(artwork,layer,head);
   if(!valid())throw Error('解析対象が変わりました。');
   const colors=(list:readonly {color:{r:number;g:number;b:number}}[])=>list.map(({color})=>

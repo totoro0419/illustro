@@ -88,6 +88,10 @@ async function openFile(path,width){
   await page.locator('#openFile').setInputFiles(path);
   await page.waitForFunction(w=>document.querySelector('#canvas')?.dataset.documentWidth===String(w)&&!document.querySelector('#brush')?.disabled&&document.querySelector('#status')?.textContent?.includes('作品ファイルを開きました'),width,{timeout:120000});
   await idle();
+  // The selection is restored on open; hide its blue presentation overlay
+  // before comparing actual artwork pixels, without clearing the selection.
+  const boundary=page.getByRole('checkbox',{name:'選択の境界を表示する（隠しても選択は有効）',exact:true,includeHidden:true});
+  if(await boundary.count())await boundary.evaluate(e=>{if(e.checked){e.checked=false;e.dispatchEvent(new Event('change',{bubbles:true}));}});
 }
 try{
  const release=await (await page.request.get(base+'release.json')).json();
@@ -126,7 +130,9 @@ try{
    assert.equal(await revision(),before);log('CANCEL-NO-EDIT');
    await button(root,'実行').click();confirm=page.locator('dialog[aria-label="操作セットを確認"]');
    await confirm.getByLabel('縦のずれ（px）').fill('90');
-   await button(confirm,'この内容で実行').click();await waitRev(before);
+   await button(confirm,'この内容で実行').click();
+   // The existing engine deliberately requires a second, visual confirmation.
+   await page.getByRole('button',{name:'適用',exact:true}).filter({visible:true}).click();await waitRev(before);
    const after=await revision(),now=await samples(await image(),points);
    assert.deepEqual(now[0],old[0]);assert.notDeepEqual(now[1],old[1]);
    await history(before,after,points,old,now);log('SAVED-MACRO-REPLAYED-REAL-STROKE');
@@ -179,11 +185,15 @@ try{
    await button(settings,'キーを押して登録').click();await page.keyboard.press('j');
    await settings.locator('.c04-shortcut-row').filter({hasText:'押している間だけ'}).waitFor();
    await page.locator('#paint').click();
+   // Fit-to-window clamps pan to zero. Zoom so a real pan is possible.
+   await page.locator('#zoomIn').evaluate(e=>e.click());await page.locator('#zoomIn').evaluate(e=>e.click());
+   await page.waitForFunction(()=>JSON.parse(document.querySelector('#canvas')?.dataset.view??'{}').zoom>2.5);
    assert.equal(await page.locator('#panView').getAttribute('aria-pressed'),'false');
    await page.keyboard.down('j');assert.equal(await page.locator('#panView').getAttribute('aria-pressed'),'true');
    await page.locator('#shortcutHoldIndicator').waitFor({state:'visible'});
    const oldView=JSON.parse(await canvas.getAttribute('data-view')),before=await revision();
    const b=await canvas.boundingBox();await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width/2+70,b.y+b.height/2+40,{steps:8});await page.mouse.up();
+   await page.waitForFunction(old=>{const v=JSON.parse(document.querySelector('#canvas')?.dataset.view??'{}');return v.panX!==old.panX||v.panY!==old.panY;},oldView,{timeout:5000});
    const newView=JSON.parse(await canvas.getAttribute('data-view'));assert.notDeepEqual([newView.panX,newView.panY],[oldView.panX,oldView.panY]);assert.equal(await revision(),before);
    await page.keyboard.up('j');await page.waitForFunction(()=>document.querySelector('#panView')?.getAttribute('aria-pressed')==='false');await page.locator('#shortcutHoldIndicator').waitFor({state:'hidden'});
    assert.equal(await page.locator('#paint').getAttribute('aria-pressed'),'true');
