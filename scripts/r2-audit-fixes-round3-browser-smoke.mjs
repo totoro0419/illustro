@@ -82,7 +82,7 @@ async function shape(){
   return panel;
 }
 async function coords(x,y){
-  const box=await canvas.boundingBox(),v=JSON.parse(await canvas.getAttribute('data-view'));assert.ok(box&&v.zoom>0);assert.equal(v.rotation,0);
+  const box=await page.locator('.surface').boundingBox(),v=JSON.parse(await canvas.getAttribute('data-view'));assert.ok(box&&v.zoom>0);assert.equal(v.rotation,0);
   return [box.x+v.cssWidth/2+v.panX+(x-v.documentWidth/2)*v.zoom,box.y+v.cssHeight/2+v.panY+(y-v.documentHeight/2)*v.zoom];
 }
 async function exportSvg(){
@@ -166,12 +166,14 @@ try{
     const a=await doc();await page.locator('#home').click();await page.locator('#ihStart').waitFor();await create('round3-B');assert.notEqual(await doc(),a);
     assert.equal(await page.locator('#c06Paste').isEnabled(),true,'paste must refresh without brush changes');
     await openBox('documentBox');if(!await clipboard.evaluate(e=>e.open))await clipboard.locator('summary').click();
-    const old=await rev();await page.locator('#c06Paste').click();await change(old);const pasted=await rev();
+    const old=await rev();await page.locator('#c06Paste').click();
+    const confirm=page.locator('dialog.illustro-app-dialog[open]');await confirm.waitFor({timeout:10000});
+    assert.match(await confirm.textContent(),/貼り付け/);await b('確定',confirm).click();await change(old);const pasted=await rev();
     await page.locator('#undo').click();await change(pasted);const undone=await rev();await page.locator('#redo').click();await change(undone);
   }else if(id==='D-028'){
     await shape();await page.locator('#selection').click();const panel=page.locator('[data-tool-panel=selection]');if(!await panel.evaluate(e=>e.open))await panel.locator('summary').click();
     await choose(panel.locator('select[aria-label="自動選択に使う画像"]'),'merged');await b('線画で囲まれた部分を選ぶ',panel).click();
-    await page.mouse.click(...await coords(200,170));const notice=panel.locator('.c06-selection-notice');await notice.waitFor();
+    await page.mouse.click(...await coords(200,170));const notice=page.locator('.surface .c06-selection-notice');await notice.waitFor();
     assert.match(await notice.textContent(),/選択中：1\d\d×1\d\dpx/);
     await b('線画で囲まれた部分を選ぶ',panel).click();await page.mouse.click(...await coords(30,30));await page.waitForFunction(()=>document.querySelector('.c06-selection-panel output')?.textContent?.includes('閉じた領域がありません'),undefined,{timeout:10000});
   }else if(id==='D-029'){
@@ -185,5 +187,5 @@ try{
   const names=await page.evaluate(async()=> (await indexedDB.databases()).map(db=>db.name));
   assert.ok(names.length>0&&names.every(n=>n?.startsWith('illustro-r2-audit-fixes-round3')),JSON.stringify(names));
   console.log('PASS '+id+' '+expected);
-}catch(error){await page.screenshot({path:'r2-'+id+'-failure.png',fullPage:true}).catch(()=>{});console.error('FAIL',id,await page.locator('#status').textContent().catch(()=>null),error);throw error;}
+}catch(error){await page.screenshot({path:'r2-'+id+'-failure.png',fullPage:true}).catch(()=>{});console.error('FAIL',id,await page.evaluate(()=>({status:document.querySelector('#status')?.textContent,selection:[...document.querySelectorAll('.c06-selection-panel output')].map(x=>x.textContent),clipboard:[...document.querySelectorAll('.c06-clipboard-panel:has(#c06Paste) output')].map(x=>x.textContent),dialogs:[...document.querySelectorAll('dialog[open]')].map(x=>x.textContent),canvas:document.querySelector('#canvas')?.dataset})).catch(()=>null),error);throw error;}
 finally{await browser.close();await rm(dir,{recursive:true,force:true});}
