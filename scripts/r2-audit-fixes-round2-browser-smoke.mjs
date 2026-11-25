@@ -147,6 +147,10 @@ try{
    await dialog.locator('select:has(option[value="specks"])').first().selectOption('specks',{force:true});
    const run=button(dialog,'候補を計算');
    await page.waitForFunction(()=>{const d=document.querySelector('dialog.export-dialog[aria-label="画像から候補を出す"]');return !!d&&![...d.querySelectorAll('button')].find(b=>b.textContent==='候補を計算')?.disabled;},undefined,{timeout:30000});
+   // A 4px brush dot covers more than the default 6 *area* pixels.
+   // Select the supported cleanup limit before calculating; keep both actual strokes.
+   const area=dialog.getByLabel('ごみ候補の最大の画素数',{exact:true});
+   await area.fill('48');assert.equal(await area.inputValue(),'48');
    await run.click();
    const candidates=dialog.locator('label:has(input[type=checkbox])').filter({hasText:/ごみ候補\s+\d/});
    await candidates.first().waitFor({timeout:45000});assert.equal(await candidates.count(),2);
