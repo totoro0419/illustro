@@ -313,7 +313,7 @@ export class BrushSurface{
   private activeGuide:LockedGuide|null=null;
   private pendingPerspectiveHeading:{origin:Point;eraser:boolean}|null=null;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:(reason?:'view'|'view-command'|'state')=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
-  async initialize(){const target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('canvas-viewport')?.94:1);
+  async initialize(){const target=this.controller.document.root;this.view=new CanvasView(target.width,target.height,document.body.classList.contains('canvas-viewport')?.94:1);
     this.canvas.style.aspectRatio=document.body.classList.contains('canvas-viewport')?'auto':target.width+' / '+target.height;
     const rect=this.layoutRect();this.view.resize(Math.max(1,rect.width),Math.max(1,rect.height));this.setBackingSize();
     const requested=new URLSearchParams(location.search).get('backend');

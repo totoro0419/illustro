@@ -214,6 +214,10 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
     description.textContent=current?
       'コピー済み：'+current.name+' · '+current.width+'×'+current.height+'px'+(current.selected?' · 選択範囲':current.editable?` · 編集できるレイヤー ${current.editable} 枚`:''):
       'まだコピーした画像はありません。';
+    const view=ready?actions.getView():null;
+    if(current&&view&&(current.width>view.width||current.height>view.height)){
+      description.textContent+=current.editable?' · 編集できる内容を保つにはコピー元以上の大きさの作品が必要です。':' · はみ出す部分は貼り付け時に確認します。';
+    }
   }
   panel.append(summary,intro,commands,imageFile,description,message);host.append(panel);
   const editing=(target:EventTarget|null)=>target instanceof HTMLElement&&!!target.closest(

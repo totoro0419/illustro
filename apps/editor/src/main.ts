@@ -2115,7 +2115,7 @@ const eyedropperDialog=byId<HTMLDialogElement>('colorEyedropperOptions');
 app.append(eyedropperDialog);
 byId('openEyedropperSettings').onclick=()=>{if(!eyedropperDialog.open)eyedropperDialog.showModal();};
 byId('referenceSampleOpen').addEventListener('click',()=>eyedropperDialog.close());
-const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity)});
+const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity),onReferenceSource:async source=>await c05ReferenceBoard?.revealSource(source)??false});
 const eyedropperSettings=installEyedropperSettings({foreground,getSurface:()=>surface,getLayers:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name})),onChange:updateContextBar});
 function refreshSelectionControls(){
  const selecting=surface?.selectingRectangle??false;
@@ -3032,7 +3032,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
   if(documentActivationPending)throw new Error('別の作品を開いています。');
   const previous=controller,previousPreserved=persistence.preservedData,previousSymmetry=symmetrySettings,wasReady=documentReady;
-  persistCanvasView();documentActivationPending=true;documentReady=false;
+  persistCanvasView();documentActivationPending=true;documentReady=false;c06ClipboardUI?.refresh();
   // A NEW work has no dependency between the GPU worker and the storage
   // worker. Start storage during GPU initialization, but do not expose input
   // before BOTH have finished. Other open/recovery paths stay unchanged.
@@ -3154,9 +3154,10 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     surface?.destroy();const snapshot=previous.document.capturePersistenceSnapshot();controller=EditorController.restored(CoreDocument.restore({snapshot,blockPayloads:previous.document.persistenceBlockPayloads(snapshot)}),previous.selectedLayerId);surface=makeSurface();documentReady=false;
     if(wasReady){try{await initializeCurrentSurface(true);await persistence.initialize(controller,null,previousPreserved,false);const current=(await persistence.listWorks()).works.find(x=>x.documentId===controller.document.root.documentId);if(!qaMode)await persistence.bindWork(current?.writerEpochId??null);}catch{}}
     throw error;
-  }finally{documentActivationPending=false;}
+  }finally{documentActivationPending=false;c06ClipboardUI?.refresh();}
 }
 async function activateFirstPrewarmedBlank(entry:BlankWarmup){
+  documentActivationPending=true;documentReady=false;c06ClipboardUI?.refresh();
   // All resources belong to the exact document that was initialized on Home.
   // Never replace the CoreDocument after the host has bound its surface IDs.
   initialBlankWarmup=null;
@@ -3196,7 +3197,7 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     documentReady=false;
     controller=new EditorController();
     throw error;
-  }
+  }finally{documentActivationPending=false;c06ClipboardUI?.refresh();}
 }
 async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description='',emptyDrawingLayer=false,content?:TemplateContent):Promise<boolean>{
   const createStarted=performance.now();
@@ -3229,7 +3230,7 @@ async function createDocument(width:number,height:number,name='新しい作品',
   }catch(error){
     const message=surface?.initializationError||(error instanceof Error?error.message:String(error));
     updateQa();byId('status').textContent='描画を開始できませんでした。'+message;return false;
-  }finally{trigger.disabled=false;}
+  }finally{trigger.disabled=false;c06ClipboardUI?.refresh();}
 }
 byId<HTMLButtonElement>('new').onclick=()=>{
   if(homeUi&&!qaMode){homeUi.showNew();return;}
@@ -3640,7 +3641,7 @@ refreshSelectionControls();
 byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
 const workFileInput=byId<HTMLInputElement>('openFile');
 workFileInput.multiple=true;
-workFileInput.accept+=',.png,.jpg,.jpeg,.webp,.psd,.psb,.ora,.tif,.tiff,.avif,.exr,.heif,.heic';
+workFileInput.accept+=',.png,.jpg,.jpeg,.webp,.psd,.psb,.ora,.tif,.tiff,.avif,.exr,.heif,.heic,.svg,image/svg+xml';
 let openingWorkFiles=false;
 workFileInput.onchange=async ()=>{
   const files=Array.from(workFileInput.files??[]);
@@ -4816,10 +4817,12 @@ const c05References=installReferenceBoard({
     const {diameter,transparency}=eyedropperSettings.options();
     return {diameter,transparency};
   },
-  onPickColor:async assetId=>{
+  onPickColor:async(assetId,item)=>{
+    const documentId=controller.document.root.documentId;
     const entry=await getAsset(assetId);
+    if(!documentReady||controller.document.root.documentId!==documentId)throw Error('作品が切り替わりました。');
     if(!entry||entry.deleted||!entry.mime.startsWith('image/'))throw Error('参考画像が見つかりません。');
-    await eyedropperSettings.reference.openBlob(entry.data);
+    await eyedropperSettings.reference.openBlob(entry.data,{assetId:entry.id,boardItemId:item.id,documentId,name:entry.name,origin:[entry.origin,item.notes].filter(Boolean).join('\n')});
   }
 });
 c05ReferenceBoard=c05References;

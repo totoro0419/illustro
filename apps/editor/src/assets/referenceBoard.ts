@@ -12,9 +12,10 @@ import {referencePixelAtScreen,sampleReferenceBitmap} from './referenceDirectSam
 import {exportAssetPack,importAssetPack,readAssetPack,type PackManifest} from './packs';
 import type {PortableSectionInput} from '../persistence/format';
 import type {PreservedPortableData} from '../persistence/portable';
-import type {ForegroundColor} from '../color/model';
+import type {ForegroundColor,ColorSource} from '../color/model';
 export type ReferenceBoardService=Readonly<{
   add:(assetId:string)=>Promise<void>;
+  revealSource:(source:ColorSource)=>Promise<boolean>;
   refresh:()=>Promise<void>;
   refreshIfChanged:()=>Promise<void>;
   flush:()=>Promise<void>;
@@ -26,7 +27,7 @@ export type ReferenceBoardService=Readonly<{
 }>;
 type Options=Readonly<{
   getDocumentId:()=>string|null;
-  onPickColor:(assetId:string)=>Promise<void>;
+  onPickColor:(assetId:string,item:BoardItem)=>Promise<void>;
   getSampling:()=>Readonly<{diameter:1|3|5;transparency:'skip'|'keep'|'white'}>;
   color:ForegroundColor;
 }>;
@@ -47,7 +48,7 @@ export function referenceUnavailableSection(documentId:string):PortableSectionIn
 export function installReferenceBoard(options:Options):ReferenceBoardService{
   const panel=document.getElementById('referenceBoxBody');
   if(!panel)return {
-    add:async()=>{},refresh:async()=>{},refreshIfChanged:async()=>{},flush:async()=>{},
+    add:async()=>{},revealSource:async()=>false,refresh:async()=>{},refreshIfChanged:async()=>{},flush:async()=>{},
     exportLayout:async()=>new Blob(),undo:async()=>{},redo:async()=>{},
     exportNative:async()=>null,importNative:async()=>{}
   };
@@ -202,7 +203,29 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     if(!asset||asset.deleted||asset.kind!=='reference'||!asset.mime.startsWith('image/'))
       throw Error('この素材は参考画像として開けません。');
     if(board.items.length>=80)throw Error('資料は1作品80枚までです。');
-    syncAfter({...board,items:[...board.items,newBoardItem(assetId,board.items.length)]});
+    const item=newBoardItem(assetId,board.items.length);
+    // Use the actual fixed tool column, including mirrored layouts.
+    const rail=document.querySelector<HTMLElement>('.rail')?.getBoundingClientRect();
+    const dock=document.querySelector<HTMLElement>('#rightDock')?.getBoundingClientRect();
+    const bar=document.querySelector<HTMLElement>('.topbar')?.getBoundingClientRect();
+    let left=8,right=innerWidth-8;
+    for(const rect of [rail,dock]){
+      if(!rect||!rect.width||!rect.height||rect.right<=0||rect.left>=innerWidth)continue;
+      if(rect.left<innerWidth/2&&rect.right<=innerWidth/2)left=Math.max(left,rect.right+8);
+      else if(rect.right>innerWidth/2&&rect.left>=innerWidth/2)right=Math.min(right,rect.left-8);
+    }
+    // Very narrow layouts may overlay the canvas with the workspace. Preserve
+    // the fixed tool rail in that case; the workspace can be closed separately.
+    if(right-left<160){
+      left=rail&&rail.width&&rail.left<innerWidth/2?Math.max(8,rail.right+8):8;
+      right=rail&&rail.width&&rail.left>=innerWidth/2?Math.min(innerWidth-8,rail.left-8):innerWidth-8;
+    }
+    const top=Math.max(8,(bar?.bottom??0)+8);
+    const width=Math.min(item.width,Math.max(100,right-left));
+    const height=Math.min(item.height,Math.max(100,innerHeight-top-8));
+    const x=safePos(item.x,left,Math.max(left,right-width));
+    const y=safePos(item.y,top,Math.max(top,innerHeight-height-8));
+    syncAfter({...board,items:[...board.items,{...item,x,y,width,height}]});
     status.textContent='資料を追加しました。';
   }
   async function reselectReferenceImage(itemId:string){
@@ -508,7 +531,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       });
       const pin=input(item.pinned?'固定解除':'位置を固定',()=>changeItem(item.id,{pinned:!item.pinned}));
       const visible=input(item.hidden?'再表示':'隠す',()=>changeItem(item.id,{hidden:!item.hidden}));
-      const sample=input('採色',()=>void options.onPickColor(item.assetId).catch(error));
+      const sample=input('採色',()=>void options.onPickColor(item.assetId,item).catch(error));
       const reselect=input(item.assetId.startsWith('missing:')?'元画像を選び直す':'画像を入れ替える',
         ()=>reselectReferenceImage(item.id));
       const remove=input('外す',()=>removeItem(item.id));
@@ -546,7 +569,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       const sampled=sampleReferenceBitmap(bitmap,source,diameter,transparency);
       if(!sampled){status.textContent='この場所には取得できる色がありません。';return;}
       if(currentDoc!==doc||directSampleId!==item.id)return;
-      options.color.choose(sampled);
+      options.color.choose(sampled,{assetId:asset.id,boardItemId:item.id,...(doc?{documentId:doc}:{}),name:asset.name,origin:[asset.origin,item.notes].filter(Boolean).join('\n')});
       status.textContent='参考画像の元の画素から色を取得しました。';
     }finally{readingSample=false;}
   }
@@ -613,7 +636,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       tool('左右反転',()=>changeItem(item.id,{flipX:!item.flipX}));
       tool('上下反転',()=>changeItem(item.id,{flipY:!item.flipY}));
       tool('グレー',()=>changeItem(item.id,{grayscale:!item.grayscale}));
-      tool('採色',()=>void options.onPickColor(item.assetId).catch(error));
+      tool('採色',()=>void options.onPickColor(item.assetId,item).catch(error));
       const directSample=input(directSampleId===item.id?'採色を終了':'画像上で直接採色',
         ()=>toggleSampleMode(item.id));
       directSample.dataset.referenceSampleToggle='true';
@@ -708,5 +731,19 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   });
   groupSelect.onchange=()=>drawList();
   void refreshIfChanged();
-  return {add,refresh,refreshIfChanged,flush,exportLayout,undo,redo,exportNative,importNative};
+  async function revealSource(source:ColorSource){
+    await refreshIfChanged();
+    if(!board||source.documentId&&source.documentId!==board.documentId)return false;
+    const doc=board.documentId,item=board.items.find(i=>i.assetId===source.assetId&&(!source.boardItemId||i.id===source.boardItemId));
+    if(!item)return false;
+    const asset=await getAsset(item.assetId);if(!asset||asset.deleted||board?.documentId!==doc||options.getDocumentId()!==doc)return false;
+    temporaryHidden=false;
+    if(item.hidden)changeItem(item.id,{hidden:false});
+    await render();drawList();
+    const frame=[...canvasLayer.querySelectorAll<HTMLElement>('.c05-reference-frame')].find(f=>f.dataset.referenceId===item.id);
+    if(!frame)return false;
+    frame.animate([{outline:'3px solid #67aaff'},{outline:'3px solid transparent'}],{duration:1600});
+    return true;
+  }
+  return {add,revealSource,refresh,refreshIfChanged,flush,exportLayout,undo,redo,exportNative,importNative};
 }
