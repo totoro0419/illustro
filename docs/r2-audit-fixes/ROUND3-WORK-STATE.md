@@ -1,6 +1,6 @@
 # Illustro R2｜Round 3実装再開記録
 
-2026-11-25（日本時間）**8件のコード変更を保存、自動検証・公開実操作未確認**。完成・テスト合格を意味しない。
+2026-11-25（日本時間）**8件のコード変更を保存、自動検証・公開前8件合格。公開先への配置済み、配信・公開後検証は下記最新記録参照**。完成・テスト合格を意味しない。
 
 実装コミット: `e5a16d5589572fe9ea1a248afb5eb5bc846d0a7d`、`08fbe805d802104d619544a20d5ab87984e37811`、`e91b6e0a0e7a694eaa17de85e9d89903178b6a5f`、`6c7094e0c48d1efe7ccf1095b67bee1d91df8662`。最新HEADはブランチから再取得すること。
 
@@ -11,7 +11,7 @@
 - 実機検査原典：`qa/r2-device-audit-prep-2026-11-23/docs/device-audit/02-DEFECTS.md`
 - 対象：D-022、D-023、D-024、D-025、D-026、D-027、D-028、D-029（新規8件、前回19件継承）
 - 前回成果：PR #115 Draft、公開版 `https://totoro0419.github.io/illustro/r2-audit-fixes-round2/`。公開用ソースコミット `bc88a9ca82efd0f349b5d1f8d0a97fe5634ddfa8`、ブランチの最新HEADはそれより進んでいる。前回の進捗ファイルは6件公開操作合格と報告。一部物理実機未検証を引き継ぐが今回無関係な検査は繰り返さない。
-- 第3回専用プレビュー（未公開）：`https://totoro0419.github.io/illustro/r2-audit-fixes-round3/` (**未公開**)
+- 第3回専用プレビュー（配置済み）：`https://totoro0419.github.io/illustro/r2-audit-fixes-round3/`（配信確認状況は最新記録参照）
 - 新Draft PR：#116 作成済み・未統合。Headは今回専用ブランチ、Baseは `fix/r2-audit-round2-2026-11-25`。
 - 基準検査進捗（2026-11-25 19:45 JST）：使える164、使いづらい23、使えない5、未検査42。並行検査の最新値はQAブランチから再取得する。
 - 検査用Vercel、R2/修正Round1/修正Round2のGitHub Pages、main、既存の修正ブランチとPRは書き換えない。
@@ -20,14 +20,14 @@
 
 | ID | 状態 | 初回に着手する部分 |
 |---|---|---|
-| D-022 | コード修正済み・テスト未確認 | assetPanel.tsの取込後refreshだけの処理に、新素材IDへの移動とフィルタ一時解除 |
-| D-023 | コード修正済み・テスト未確認 | assetPanel.tsの6連続appPromptを、単一ダイアログ＋1回のupdateAssetへ変更 |
-| D-024 | コード修正済み・テスト未確認 | referenceBoardStore.tsの初期x=24、referenceBoard.tsの固定バーと保存座標の取り扱い |
-| D-025 | コード修正済み・テスト未確認 | exchange.tsのsvg入力拒否を安全なSVG読込へ変更。自社書き出しSVGの形と画素の往復を先に保証 |
-| D-026 | コード修正済み・テスト未確認 | main.tsのactivateOpened完了後のclipboardUI.refresh不足。readyになるまでの表示を正す |
-| D-027 | コード修正済み・テスト未確認 | ForegroundColor.historyはRGBだけ。referenceBoard.tsのchoose()で元資料情報が消えている |
-| D-028 | コード修正済み・テスト未確認 | 選択のlineRegionはlayer固定＋単純探索、塗りのbuildRegionsと別経路。共有する |
-| D-029 | コード修正済み・テスト未確認 | harmony.tsの配色比較detailsが色パネルの下側にあり固定バーと重なる |
+| D-022 | コード修正済み・公開前実操作合格 | assetPanel.tsの取込後refreshだけの処理に、新素材IDへの移動とフィルタ一時解除 |
+| D-023 | コード修正済み・公開前実操作合格 | assetPanel.tsの6連続appPromptを、単一ダイアログ＋1回のupdateAssetへ変更 |
+| D-024 | コード修正済み・公開前実操作合格 | referenceBoardStore.tsの初期x=24、referenceBoard.tsの固定バーと保存座標の取り扱い |
+| D-025 | コード修正済み・公開前実操作合格 | exchange.tsのsvg入力拒否を安全なSVG読込へ変更。自社書き出しSVGの形と画素の往復を先に保証 |
+| D-026 | コード修正済み・公開前実操作合格 | main.tsのactivateOpened完了後のclipboardUI.refresh不足。readyになるまでの表示を正す |
+| D-027 | コード修正済み・公開前実操作合格 | ForegroundColor.historyはRGBだけ。referenceBoard.tsのchoose()で元資料情報が消えている |
+| D-028 | コード修正済み・公開前実操作合格 | 選択のlineRegionはlayer固定＋単純探索、塗りのbuildRegionsと別経路。共有する |
+| D-029 | コード修正済み・公開前実操作合格 | harmony.tsの配色比較detailsが色パネルの下側にあり固定バーと重なる |
 
 ## 続けて／実装再開の手順
 
@@ -70,3 +70,12 @@
 - D-026：貼り付け有効化までは合格。既存の貼り付け確認画面をテストが確定しなかったため、実操作を追加。
 - D-028：選択結果の表示はパネル内ではなくキャンバス内。テストの参照を修正し、クリック座標も実際の表示領域基準に統一。
 - 次回CIで8件の合否を再確認。公開は全公開前検査が合格した場合のみ。失敗時の画面状態をログへ追加。
+
+### 2026-11-26 最新検証結果
+- 検証したアプリのソースコミット: `193e87dc3243b5a5a73b764aadd53ecf91e102b0`。CI: https://github.com/totoro0419/illustro/actions/runs/45708515714
+- 60ファイル・301テスト合格、型検査・本番ビルド成功。公開前ブラウザー D-022〜029 全8件合格、D-012関連の回帰検査合格。
+- gh-pagesへの配置コミット: `f542c62bed04da91ed1c630bf1a2868a77d7be1f`。release.jsonのsourceCommitは上記ソースと一致。
+- 旧版r2-preview、r2-audit-fixes、r2-audit-fixes-round2の各ディレクトリと本番index.htmlのGitツリー/ファイルSHAは配置前後で一致。今回の配置で旧公開内容は変化していない。
+- 実配信確認ジョブ: in_progress/未確定。公開後ブラウザー合格: 0/8。新URLは https://totoro0419.github.io/illustro/r2-audit-fixes-round3/ 。GitHub上の配置成功と実際の配信・実操作確認は区別する。
+- 次の作業: 上記CIのpublish・browser-smokeの完了結果を取得。不合格があれば原因だけを修正し、8件全ての公開実操作を確認。なお各機能の詳細設計にある追加の端末条件・SVG複合形式などの網羅検証は別途必要で、物理実機の合格を意味しない。
+- この記録の追記は文書のみであり、配信ソースSHAは変更しない。
