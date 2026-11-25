@@ -18,14 +18,23 @@ const idle=()=>wait(()=>document.querySelector('#canvas')?.dataset.historyBusy==
 const doc=()=>canvas.getAttribute('data-document-id');
 const rev=()=>canvas.getAttribute('data-revision-id');
 const change=async before=>{await page.waitForFunction(old=>document.querySelector('#canvas')?.dataset.revisionId!==old,before,{timeout:60000});await idle();};
+async function choose(select,value){
+  const label=await select.locator('option[value="'+value+'"]').textContent();
+  if(await select.isVisible()){await select.selectOption(value);return;}
+  const trigger=select.locator('xpath=following-sibling::button[contains(@class,"workspace-choice")][1]');
+  await trigger.click();const list=page.locator('#'+await trigger.getAttribute('aria-controls'));
+  await list.getByRole('option',{name:label,exact:true}).click();
+  assert.equal(await select.inputValue(),value);
+}
 async function create(name){
+  const old=await doc();
   await page.locator('#ihStart').click();
   await page.locator('#ihNewName').evaluate((input,n)=>{input.value=n;input.dispatchEvent(new Event('input',{bubbles:true}));},name);
   const setup=page.locator('#ihCanvasSetup');
   if(!await setup.evaluate(e=>e.open))await setup.locator(':scope > summary').click();
   await page.locator('#ihNewWidth').fill('512');await page.locator('#ihNewHeight').fill('384');
   await page.locator('#ihNewBackground').selectOption('transparent',{force:true});
-  await page.locator('#ihNewCreate').click();await canvas.waitFor({state:'visible'});await idle();
+  await page.locator('#ihNewCreate').click();await canvas.waitFor({state:'visible'});await page.waitForFunction(old=>{const id=document.querySelector('#canvas')?.dataset.documentId;return !!id&&id!==old;},old,{timeout:60000});await idle();
 }
 async function openBox(box){
   const body=page.locator('#'+box+'Body'),toggle=page.locator('[aria-controls="'+box+'Body"].box-toggle');
@@ -40,8 +49,8 @@ async function openBox(box){
 }
 async function importReference(){
   const root=await openBox('assetsBox');
-  await root.getByLabel('素材の種類',{exact:true}).selectOption('brush');
-  await root.getByLabel('取り込む素材の種類',{exact:true}).selectOption('reference');
+  await choose(root.locator('select[aria-label="素材の種類"]'),'brush');
+  await choose(root.locator('select[aria-label="取り込む素材の種類"]'),'reference');
   const png=new PNG({width:96,height:96});for(let i=0;i<png.data.length;i+=4)png.data.set([180,47,115,255],i);
   await root.locator('input[type=file]').first().setInputFiles({name:'round3-reference.png',mimeType:'image/png',buffer:PNG.sync.write(png)});
   await b('追加した素材を見る',root).waitFor({timeout:30000});
@@ -62,8 +71,8 @@ async function shape(){
   const panel=page.locator('[data-tool-panel=shapes]');await panel.waitFor({state:'visible'});
   if(!await panel.evaluate(e=>e.open))await panel.locator('summary').click();
   await b('新しく作る',panel).click();
-  await panel.getByLabel('形',{exact:true}).selectOption('rectangle');
-  await panel.getByLabel('保存する形式',{exact:true}).selectOption('vector');
+  await choose(panel.locator('select:has(option[value="rectangle"])'),'rectangle');
+  await choose(panel.locator('select:has(option[value="vector"])'),'vector');
   await panel.getByLabel('内側を塗る',{exact:true}).uncheck();
   for(const [name,value] of [['始点 X','100'],['始点 Y','90'],['終点 X','300'],['終点 Y','250']])
     await panel.getByLabel(name,{exact:true}).fill(value);
@@ -77,7 +86,7 @@ async function coords(x,y){
 async function exportSvg(){
   await page.locator('#fileActionsOpen').click();await page.locator('#exportImage').click();await page.locator('#exchangeExport').click();
   const d=page.getByRole('dialog',{name:'他の形式で書き出す'});await d.waitFor();
-  await d.getByLabel('形式',{exact:true}).selectOption('svg');await d.getByLabel('出力内容',{exact:true}).selectOption('layered');
+  await choose(d.locator('select:has(option[value="svg"])'),'svg');await choose(d.locator('select:has(option[value="layered"])'),'layered');
   const download=page.waitForEvent('download',{timeout:60000});await b('書き出す',d).click();
   const file=join(dir,'round3.svg');await (await download).saveAs(file);await b('閉じる',d).click();return file;
 }
@@ -138,7 +147,7 @@ try{
     await openSvg(file);await page.locator('#shapes').click();const panel=page.locator('[data-tool-panel=shapes]');
     if(!await panel.evaluate(e=>e.open))await panel.locator('summary').click();
     await b('選んだレイヤーを編集',panel).click();
-    assert.equal(await panel.getByLabel('形',{exact:true}).inputValue(),'rectangle');
+    assert.equal(await panel.locator('select:has(option[value="rectangle"])').inputValue(),'rectangle');
     for(const [name,value] of [['始点 X',100],['始点 Y',90],['終点 X',300],['終点 Y',250]])assert.equal(Number(await panel.getByLabel(name,{exact:true}).inputValue()),value);
     const old=await rev();await panel.getByLabel('終点 X',{exact:true}).fill('320');await b('適用',panel).click();await change(old);
     const second=await exportSvg();assert.match(await readFile(second,'utf8'),/<rect [^>]*width="220"/);
@@ -159,16 +168,16 @@ try{
     await page.locator('#undo').click();await change(pasted);const undone=await rev();await page.locator('#redo').click();await change(undone);
   }else if(id==='D-028'){
     await shape();await page.locator('#selection').click();const panel=page.locator('[data-tool-panel=selection]');if(!await panel.evaluate(e=>e.open))await panel.locator('summary').click();
-    await panel.getByLabel('自動選択に使う画像',{exact:true}).selectOption('merged');await b('線画で囲まれた部分を選ぶ',panel).click();
+    await choose(panel.locator('select[aria-label="自動選択に使う画像"]'),'merged');await b('線画で囲まれた部分を選ぶ',panel).click();
     await page.mouse.click(...await coords(200,170));const notice=panel.locator('.c06-selection-notice');await notice.waitFor();
     assert.match(await notice.textContent(),/選択中：1\d\d×1\d\dpx/);
     await b('線画で囲まれた部分を選ぶ',panel).click();await page.mouse.click(...await coords(30,30));await page.waitForFunction(()=>document.querySelector('.c06-selection-panel output')?.textContent?.includes('閉じた領域がありません'),undefined,{timeout:10000});
   }else if(id==='D-029'){
     await page.locator('#colorPage').click();const panel=page.locator('.c04-color-harmony');await panel.locator('summary').click();
-    await panel.getByLabel('配色候補の種類',{exact:true}).selectOption('triad');await panel.locator('.c04-harmony-swatch').first().click();
+    await choose(panel.locator('select[aria-label="配色候補の種類"]'),'triad');await panel.locator('.c04-harmony-swatch').first().click();
     assert.match(await panel.locator('output').textContent(),/明暗比/);
-    await panel.getByLabel('色覚の見え方を比べる',{exact:true}).selectOption('deutan');assert.equal(await page.locator('body').getAttribute('data-c04-vision'),'deutan');
-    await panel.getByLabel('色覚の見え方を比べる',{exact:true}).selectOption('none');
+    await choose(panel.locator('select[aria-label="色覚の見え方を比べる"]'),'deutan');assert.equal(await page.locator('body').getAttribute('data-c04-vision'),'deutan');
+    await choose(panel.locator('select[aria-label="色覚の見え方を比べる"]'),'none');
   }else throw Error('unknown defect '+id);
   // Actual IndexedDB names must be confined to Round 3 in this fresh context.
   const names=await page.evaluate(async()=> (await indexedDB.databases()).map(db=>db.name));
