@@ -78,7 +78,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: illustro-r2-audit-fixes-round2-preview
-          path: local-site/illustro/r2-audit-fixes
+          path: local-site/illustro/r2-audit-fixes-round2
       - name: Serve the exact built artifact under its production base
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 --directory local-site >/tmp/r2-local-server.log 2>&1 &
