@@ -1,0 +1,39 @@
+# Illustro R2｜Round 3実装再開記録
+
+2026-11-25（日本時間）**設計・コード調査完了、実装未着手**。この時点の作業はGitHubの文書作成のみ。完成・テスト合格を意味しない。
+
+- Repo：`totoro0419/illustro`
+- ブランチ：`fix/r2-audit-round3-2026-11-25`
+- 分岐時のRound2 HEAD：`3988d627306c887766f062cbde36daaf6a53bf2b`
+- 設計：`docs/r2-audit-fixes/ROUND3-DECISIONS.md`
+- 実機検査原典：`qa/r2-device-audit-prep-2026-11-23/docs/device-audit/02-DEFECTS.md`
+- 対象：D-022、D-023、D-024、D-025、D-026、D-027、D-028、D-029（新規8件、前回19件継承）
+- 前回成果：PR #115 Draft、公開版 `https://totoro0419.github.io/illustro/r2-audit-fixes-round2/`。公開用ソースコミット `bc88a9ca82efd0f349b5d1f8d0a97fe5634ddfa8`、ブランチの最新HEADはそれより進んでいる。前回の進捗ファイルは6件公開操作合格と報告。一部物理実機未検証を引き継ぐが今回無関係な検査は繰り返さない。
+- 新プレビュー候補：`https://totoro0419.github.io/illustro/r2-audit-fixes-round3/` (**未公開**)
+- 新Draft PR：未作成。Headは今回専用ブランチ、Baseは `fix/r2-audit-round2-2026-11-25`。
+- 基準検査進捗（2026-11-25 19:45 JST）：使える164、使いづらい23、使えない5、未検査42。並行検査の最新値はQAブランチから再取得する。
+- 検査用Vercel、R2/修正Round1/修正Round2のGitHub Pages、main、既存の修正ブランチとPRは書き換えない。
+
+## 8件の状態
+
+| ID | 状態 | 初回に着手する部分 |
+|---|---|---|
+| D-022 | ソース照合済み・実装未着手 | assetPanel.tsの取込後refreshだけの処理に、新素材IDへの移動とフィルタ一時解除 |
+| D-023 | ソース照合済み・実装未着手 | assetPanel.tsの6連続appPromptを、単一ダイアログ＋1回のupdateAssetへ変更 |
+| D-024 | ソース照合済み・実装未着手 | referenceBoardStore.tsの初期x=24、referenceBoard.tsの固定バーと保存座標の取り扱い |
+| D-025 | ソース照合済み・実装未着手 | exchange.tsのsvg入力拒否を安全なSVG読込へ変更。自社書き出しSVGの形と画素の往復を先に保証 |
+| D-026 | ソース照合済み・実装未着手 | main.tsのactivateOpened完了後のclipboardUI.refresh不足。readyになるまでの表示を正す |
+| D-027 | ソース照合済み・実装未着手 | ForegroundColor.historyはRGBだけ。referenceBoard.tsのchoose()で元資料情報が消えている |
+| D-028 | ソース照合済み・実装未着手 | 選択のlineRegionはlayer固定＋単純探索、塗りのbuildRegionsと別経路。共有する |
+| D-029 | ソース照合済み・実装未着手 | harmony.tsの配色比較detailsが色パネルの下側にあり固定バーと重なる |
+
+## 続けて／実装再開の手順
+
+1. 最新HEAD・本進捗・正式設計・QA不具合原典の追加差分だけ確認。全件ゼロから再調査しない。
+2. D-025の安全なSVG読込、次にD-026/D-028、D-022/D-023/D-024、D-027/D-029の順に、仕様書の合格条件と再現テストで実装。独立して実装できる内容はまとめる。
+3. 途中で適切にコミットし、本記録を更新。エラーで詰まったら原因と次作業を保存し、独立可能な別件を進める。
+4. 関連テスト・TypeScriptチェック・本番ビルド・独立プレビューと実操作検証（8件）、前回影響機能の回帰検査。
+5. 独立公開の証拠（新release.jsonソースSHA、旧リリース内容の不変、独立保存領域）、Draft PRと結果をGitHubに保存。
+6. 次のチャットの「続けて」は、GitHubの最新状態に基づき未完了工程だけを再開する指示と解釈する。
+
+**全修正完了と呼べるのは8件すべての公開実操作合格後のみ。**
