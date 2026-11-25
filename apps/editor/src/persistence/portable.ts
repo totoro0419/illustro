@@ -10,7 +10,7 @@ const EDITOR_SECTION='editor-state';
 const CORE_TYPE='document.core.v1',BLOCK_TYPE='raster.block.v1',EDITOR_TYPE='editor.state.v2';
 const PARTIAL_RASTER_TYPE='document.partial-raster.v1',PARTIAL_RASTER_SECTION='partial-raster-support';
 const EDITABLE_AFFINE_TYPE='document.editable-affine.v1',EDITABLE_AFFINE_SECTION='editable-affine-support';
-const KNOWN_REQUIRED_TYPES=new Set([CORE_TYPE,BLOCK_TYPE,PARTIAL_RASTER_TYPE,EDITABLE_AFFINE_TYPE]);
+export const KNOWN_REQUIRED_TYPES:ReadonlySet<string>=new Set([CORE_TYPE,BLOCK_TYPE,PARTIAL_RASTER_TYPE,EDITABLE_AFFINE_TYPE]);
 const textEncoder=new TextEncoder(),textDecoder=new TextDecoder('utf-8',{fatal:true});
 
 export type PreservedPortableData=Readonly<{
@@ -29,11 +29,7 @@ export async function createPortableDocument(input:Readonly<{
   const revisionId=input.revisionId??input.document.head,snapshot=input.document.capturePersistenceSnapshot(revisionId),blocks=input.document.persistenceBlockPayloads(snapshot);
   if(!snapshot.revisions.some(r=>r.id===revisionId))throw new Error('save snapshot revision missing');
   const sections:PortableSectionInput[]=[Object.freeze({id:CORE_SECTION,type:CORE_TYPE,required:true,bytes:textEncoder.encode(JSON.stringify(snapshot))})];
-  // Older applications must reject this new replay capability rather than
-  // silently interpreting a partial snapshot as an entire-layer replacement.
-  if(hasPartialRasterSnapshots(snapshot))sections.push(Object.freeze({id:PARTIAL_RASTER_SECTION,
-    type:PARTIAL_RASTER_TYPE,required:true,bytes:Uint8Array.of(1)}));
-  if(hasEditableAffine(snapshot))sections.push(Object.freeze({id:EDITABLE_AFFINE_SECTION,type:EDITABLE_AFFINE_TYPE,required:true,bytes:Uint8Array.of(1)}));
+  appendPortableCapabilitySections(snapshot,sections);
   for(const block of snapshot.blocks){const bytes=blocks.get(block.id as never);if(!bytes)throw new Error('save block dependency missing');sections.push(Object.freeze({id:blockSectionId(block.id),type:BLOCK_TYPE,required:true,bytes}));}
   const selected=input.document.revision(revisionId).root.hasLayer(input.selectedLayerId)?input.selectedLayerId:input.document.revision(revisionId).root.rootLayerIds[0];
   if(!selected)throw new Error('save snapshot has no selectable layer');
@@ -43,6 +39,22 @@ export async function createPortableDocument(input:Readonly<{
   const generationId=input.generationId??crypto.randomUUID(),createdAt=input.createdAt??Date.now(),root=input.document.revision(revisionId).root;
   const manifestExtras=input.preserved?.manifestExtras;const bytes=await encodeIllustroFile({generationId,documentId:root.documentId,snapshotRevisionId:revisionId,createdAt,sections,...(manifestExtras?{manifestExtras}:{})});
   return Object.freeze({bytes,generationId,revisionId,snapshot,createdAt});
+}
+
+/** Shared by the portable and worker save paths. Keep mandatory capability markers in sync. */
+export function appendPortableCapabilitySections(snapshot:CorePersistenceSnapshotV1,sections:PortableSectionInput[]){
+  // Older applications must reject this new replay capability rather than
+  // silently interpreting a partial snapshot as an entire-layer replacement.
+  if(hasPartialRasterSnapshots(snapshot))sections.push(Object.freeze({id:PARTIAL_RASTER_SECTION,
+    type:PARTIAL_RASTER_TYPE,required:true,bytes:Uint8Array.of(1)}));
+  if(hasEditableAffine(snapshot))sections.push(Object.freeze({id:EDITABLE_AFFINE_SECTION,type:EDITABLE_AFFINE_TYPE,required:true,bytes:Uint8Array.of(1)}));
+}
+
+/** Verify the complete file through the normal semantic restore path before writing it. */
+export async function encodeVerifiedPortableFile(input:Parameters<typeof encodeIllustroFile>[0]){
+  const bytes=await encodeIllustroFile(input);
+  await openPortableDocument(bytes);
+  return bytes;
 }
 
 export async function openPortableDocument(bytes:Uint8Array):Promise<PortableOpenResult>{
