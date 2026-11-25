@@ -6,7 +6,7 @@
 
 - GitHub：`totoro0419/illustro`。
 - 専用ブランチ：`fix/r2-audit-round3-2026-11-25`。開始時の第2回HEAD `3988d627306c887766f062cbde36daaf6a53bf2b` から分岐。
-- ベースPR：#115（Draft、head `fix/r2-audit-round2-2026-11-25`）。新規Draft PRのbaseはこの第2回ブランチ。PR #110/#113/#114/#115や第1・2回ブランチを書き換えず、既存20件の成果を継承する。
+- ベースPR：#115（Draft、head `fix/r2-audit-round2-2026-11-25`）。新規Draft PRのbaseはこの第2回ブランチ。PR #110/#113/#114/#115や第1・2回ブランチを書き換えず、既存19件（第1回13件＋第2回6件）の成果を継承する。
 - 実機不具合の根拠：`qa/r2-device-audit-prep-2026-11-23:docs/device-audit/02-DEFECTS.md`。検査版の配信コミットは未確認。検査時の状況は検査版についての事実であり、修正版の再現は別途確認する。
 - QA進捗参考（19:45 JST）：使える164、使いづらい23、使えない5、未検査42、計234。検査は並行更新されるため、進捗ファイルを基準にする。本作業では残り42件の検査は実行しない。
 - **変更しない公開対象：** 検査Vercel `https://illustro-r2-njutprchn-ibukioike2009-7645s-projects.vercel.app/#home`、GitHub Pages `/illustro/r2-preview/`、`/illustro/r2-audit-fixes/`、`/illustro/r2-audit-fixes-round2/`、本番公開。mainとQAブランチも変更しない。
