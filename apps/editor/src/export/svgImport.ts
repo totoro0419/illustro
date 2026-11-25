@@ -34,11 +34,13 @@ export function validateSvgSource(source:string){
   if(source.length>64*1024*1024||/<!DOCTYPE|<!ENTITY/i.test(source))throw invalid();
   const doc=new DOMParser().parseFromString(source,'image/svg+xml'),root=doc.documentElement;
   if(root.localName!=='svg'||root.namespaceURI!==NS||doc.getElementsByTagName('parsererror').length)throw invalid();
+  if([...doc.childNodes].some(node=>node.nodeType===7))throw invalid();
   // XMP is not part of the drawing. Discard it before any browser image decode.
   for(const child of [...root.children])if(child.localName==='metadata'&&child.namespaceURI===NS)child.remove();
   let nodes=0,embeddedBytes=0,images=0;
   function walk(el:Element,depth:number){
     const tag=el.localName;
+    if([...el.childNodes].some(node=>node.nodeType===7))throw invalid();
     if(depth>12||++nodes>50000||el.namespaceURI!==NS||!Object.hasOwn(allowed,tag)||tag==='svg'&&depth!==0)throw invalid();
     if(tag==='tspan'&&el.parentElement?.localName!=='text')throw invalid();
     if(!['svg','g','text'].includes(tag)&&el.children.length)throw invalid();

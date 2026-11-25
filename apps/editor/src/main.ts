@@ -3640,7 +3640,7 @@ refreshSelectionControls();
 byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
 const workFileInput=byId<HTMLInputElement>('openFile');
 workFileInput.multiple=true;
-workFileInput.accept+=',.png,.jpg,.jpeg,.webp,.psd,.psb,.ora,.tif,.tiff,.avif,.exr,.heif,.heic';
+workFileInput.accept+=',.png,.jpg,.jpeg,.webp,.psd,.psb,.ora,.tif,.tiff,.avif,.exr,.heif,.heic,.svg,image/svg+xml';
 let openingWorkFiles=false;
 workFileInput.onchange=async ()=>{
   const files=Array.from(workFileInput.files??[]);
@@ -4817,9 +4817,11 @@ const c05References=installReferenceBoard({
     return {diameter,transparency};
   },
   onPickColor:async(assetId,item)=>{
+    const documentId=controller.document.root.documentId;
     const entry=await getAsset(assetId);
+    if(!documentReady||controller.document.root.documentId!==documentId)throw Error('作品が切り替わりました。');
     if(!entry||entry.deleted||!entry.mime.startsWith('image/'))throw Error('参考画像が見つかりません。');
-    await eyedropperSettings.reference.openBlob(entry.data,{assetId:entry.id,boardItemId:item.id,documentId:controller.document.root.documentId,name:entry.name,origin:[entry.origin,item.notes].filter(Boolean).join('\n')});
+    await eyedropperSettings.reference.openBlob(entry.data,{assetId:entry.id,boardItemId:item.id,documentId,name:entry.name,origin:[entry.origin,item.notes].filter(Boolean).join('\n')});
   }
 });
 c05ReferenceBoard=c05References;

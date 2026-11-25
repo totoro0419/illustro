@@ -206,13 +206,26 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     const item=newBoardItem(assetId,board.items.length);
     // Use the actual fixed tool column, including mirrored layouts.
     const rail=document.querySelector<HTMLElement>('.rail')?.getBoundingClientRect();
-    const left=rail&&rail.width&&rail.left<innerWidth/2?Math.max(0,rail.right+8):8;
-    const right=rail&&rail.width&&rail.left>=innerWidth/2?Math.min(innerWidth,rail.left-8):innerWidth-8;
-    const top=rail&&rail.height?Math.max(8,rail.top+8):8;
+    const dock=document.querySelector<HTMLElement>('#rightDock')?.getBoundingClientRect();
+    const bar=document.querySelector<HTMLElement>('.topbar')?.getBoundingClientRect();
+    let left=8,right=innerWidth-8;
+    for(const rect of [rail,dock]){
+      if(!rect||!rect.width||!rect.height||rect.right<=0||rect.left>=innerWidth)continue;
+      if(rect.left<innerWidth/2&&rect.right<=innerWidth/2)left=Math.max(left,rect.right+8);
+      else if(rect.right>innerWidth/2&&rect.left>=innerWidth/2)right=Math.min(right,rect.left-8);
+    }
+    // Very narrow layouts may overlay the canvas with the workspace. Preserve
+    // the fixed tool rail in that case; the workspace can be closed separately.
+    if(right-left<160){
+      left=rail&&rail.width&&rail.left<innerWidth/2?Math.max(8,rail.right+8):8;
+      right=rail&&rail.width&&rail.left>=innerWidth/2?Math.min(innerWidth-8,rail.left-8):innerWidth-8;
+    }
+    const top=Math.max(8,(bar?.bottom??0)+8);
     const width=Math.min(item.width,Math.max(100,right-left));
-    const x=safePos(Math.max(item.x,left),left,Math.max(left,right-width));
-    const y=safePos(Math.max(item.y,top),top,Math.max(top,innerHeight-70));
-    syncAfter({...board,items:[...board.items,{...item,x,y,width}]});
+    const height=Math.min(item.height,Math.max(100,innerHeight-top-8));
+    const x=safePos(item.x,left,Math.max(left,right-width));
+    const y=safePos(item.y,top,Math.max(top,innerHeight-height-8));
+    syncAfter({...board,items:[...board.items,{...item,x,y,width,height}]});
     status.textContent='資料を追加しました。';
   }
   async function reselectReferenceImage(itemId:string){

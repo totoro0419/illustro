@@ -101,8 +101,9 @@ export async function convertExchangeColors(source:ExchangeArtwork,applyProfile:
   const input=layers.map(layer=>layer.pixels);
   if(merged)input.push(merged);
   const {name,converted}=await runIcc({profile,layers:input,proof:false,intent:1,blackPoint:true,gamut:false},true);
-  return {...source,sourceProfileAction:assigned?'assigned-icc':'converted-to-srgb',...(assigned?{assignedIcc:assigned}:{}),layers:layers.map((layer,index)=>({...layer,pixels:converted[index]!.pixels})),
+  return {...source,sourceProfileAction:assigned?'assigned-icc':'converted-to-srgb',...(assigned?{assignedIcc:assigned}:{}),layers:layers.map(({editable:_,...layer},index)=>({...layer,pixels:converted[index]!.pixels})),
     ...(merged?{merged:converted[layers.length]!.pixels}:{}),warnings:[...(assigned?source.warnings.filter(warning=>!warning.includes('sRGBとして扱います')):source.warnings),
+      ...(layers.some(layer=>layer.editable)?['色の変換を正確に保つため図形を画素に変換しました。']:[]),
       assigned?'RGB値に「'+name+'」を割り当て、その見え方を編集用sRGBで再現しました。':'埋め込みICC「'+name+'」からsRGBへ画素を変換しました。']};
 }
 
