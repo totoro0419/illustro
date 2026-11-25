@@ -15,6 +15,7 @@ export function createExchangeDocument(source:ExchangeArtwork,flatten=false){
   if(!layers.length)throw Error('取り込めるレイヤーがありません。');
   const applyStyle=(layer:ExchangeLayer,id:LayerId,tx:ReturnType<CoreDocument['begin']>)=>{
     tx.renameLayer(id,layerName(layer.name));tx.setLayerVisibility(id,layer.visible);tx.setLayerOpacity(id,layer.opacity);
+    if(layer.editable)tx.setEditableArtwork(id,layer.editable);
     if(layer.blend!=='normal')tx.setLayerBlend(id,{mode:layer.blend,space:'encoded',seed:0});
   };
   const first=layers[0]!,tx=artwork.begin('交換用ファイルを取り込む');

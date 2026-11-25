@@ -55,7 +55,7 @@ export async function importExchange(file:File):Promise<ExchangeArtwork>{
     return {width,height,name,layers:[imageLayer(name,width,height,pixels)],warnings,...(position?{position}:{}),
       ...(sourceIcc?{sourceIcc,sourceIccBrowserConverted:!canConvert}:{})};
   }
-  if(format==='svg')throw Error('SVGはこの画面では出力専用です。PNGに変換してから読み込んでください。');
+  if(format==='svg')return (await import('./svgImport')).importSvg(file,name);
   const bytes=new Uint8Array(await file.arrayBuffer());
   if(format==='psd'||format==='psb')return (await import('./psdExchange')).decodePhotoshop(bytes,name);
   if(format==='ora')return (await import('./oraExchange')).decodeOra(bytes,name,data=>readExchangeDimensions(new Blob([new Uint8Array(data)],{type:'image/png'})));
@@ -110,7 +110,7 @@ export function exchangeWarnings(doc:CoreDocument,format:ExchangeFormat,layered:
   const root=doc.root,warnings=new Set<string>();
   if(format==='ora')warnings.add(layered?'レイヤー名・順序・不透明度・対応する合成方法を保持します。マスクは見た目に反映した画像になり、組み直せません。':'透明度付きの統合画像をOpenRasterに保存します。');
   if(format==='tiff')warnings.add('保存は非圧縮RGB・8ビット、透明度とDPI付き。読み込みは対応する非圧縮またはPackBitsの8/16ビットRGB。複数ページや編集用レイヤーは保持されません。');
-  if(format==='svg')warnings.add(layered?'通常のパスと対応する横書き文字は編集できます。可変幅、複雑な文字、その他の筆跡は画像にします。':'見た目を保つため、統合画像を埋め込みます。');
+  if(format==='svg')warnings.add(layered?'Illustroへ読み戻せます。通常の図形・パスと対応する横書き文字は再編集でき、可変幅や複雑な文字、その他の筆跡は画像にします。':'見た目を保つため、統合画像を埋め込みます。');
   if(format==='exr')warnings.add('表示中の絵をリニアsRGBの32ビット浮動小数点で出力します。元の8ビット作品と同じ色の範囲で、HDRには広がりません。');
   else if(format==='avif'||format==='tiff'||!layered)warnings.add('表示中の作品を1枚のsRGB・8ビット画像にします。レイヤーや編集履歴は含まれません。');
   else {
