@@ -5,7 +5,7 @@
     "operation": "P12-06",
     "goal": "容量不足・競合・外部変更で原本を保護",
     "fixtures": "two-layers.ora",
-    "browser": null,
+    "browser": "SAV-006",
     "unit": [
       "apps/editor/src/persistence/workLibrary.test.ts",
       "apps/editor/src/persistence/contiguousProtection.test.ts"
@@ -104,13 +104,13 @@
       "apps/editor/src/export/isoImageIcc.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "independent output color/alpha comparison",
-      "AVIF/EXR input and real HEIC input/unsupported notice"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
-    "spec": "docs/product-planning/features/IO.md#io-006"
+    "spec": "docs/product-planning/features/IO.md#io-006",
+    "manual": [
+      "HEIF-capable devices: actual decoding and color/alpha support remain device-specific; current browser correctly reports unsupported and retains work."
+    ]
   },
   {
     "id": "FIL-005",
@@ -399,9 +399,7 @@
       "apps/editor/src/ui/macroAssetImport.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "missing target and parameter types"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/AUT.md#aut-002"
