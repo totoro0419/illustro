@@ -409,6 +409,18 @@ const cases={
   const applied=await png(1,'artwork','applied');yes('macro changes expected area',alpha(applied,[120,190])>0);
   await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);
   const undone=await png(1,'artwork','undo');yes('one undo restores all pixels',initial.data.equals(undone.data));
+  let macros=await openMacros();await button(macros,'新しく作る').click();
+  const commands=macros.getByLabel('追加する操作',{exact:true});
+  await choose(commands,'layerNameAtRun');await button(macros,'操作を追加').click();
+  await choose(commands,'layerClipping');await button(macros,'操作を追加').click();
+  await macros.getByLabel('操作セットの名前',{exact:true}).fill('QA atomic failure');await button(macros,'保存').click();
+  const failedRevision=await revision(),originalName=await canvas.getAttribute('data-selected-layer-name');
+  await button(macros,'実行').click();await d.getByLabel('レイヤー名を設定',{exact:true}).fill('must-not-persist');await button(d,'この内容で実行').click();
+  await macros.getByText(/2番目の手順に必要な下のレイヤーがありません/).waitFor();
+  eq('failed sequence does not create revision',await revision(),failedRevision);eq('failed sequence retains name',await canvas.getAttribute('data-selected-layer-name'),originalName);
+  yes('failed sequence retains every pixel',initial.data.equals((await png(1,'artwork','atomic-failure')).data));
+  await drawLine([[270,270],[360,270]],10);const later=await png(1,'artwork','later-edit');yes('later drawing still possible',alpha(later,[310,270])>127);
+  await page.locator('#undo').click();await waitRev(failedRevision,true);yes('undo affects only the later drawing',initial.data.equals((await png(1,'artwork','later-undo')).data));
  },
  'AUT-005':async()=>{
   await fresh();await pen(8);const root=await recordMacro();
@@ -643,6 +655,18 @@ const cases={
   old=await revision();await page.locator('#vectorMaskRemove').click();await waitRev(old);await close();yes('removing mask preserves raster',before.data.equals((await png(1,'artwork','mask-removed')).data));
   await selectRect([100,100],[190,210]);await menu();await choose(page.locator('#vectorMaskShape'),'ellipse');old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);await close();
   const ellipse=await png(1,'artwork','ellipse');yes('ellipse center retained',alpha(ellipse,[145,160])>200);eq('ellipse far outside hidden',alpha(ellipse,[240,160]),0);
+  await menu();old=await revision();await page.locator('#vectorMaskRemove').click();await waitRev(old);await close();
+  await findCommand('選択を解除','選択を解除する');await page.locator('#paint').click();await pen(50);
+  await menu();old=await revision();await page.locator('#pixelMaskAdd').click();await waitRev(old);await page.locator('#maskEditingBar').waitFor({state:'visible'});
+  old=await revision();await stroke([[120,160],[160,160]]);await waitRev(old);await page.locator('#doneMaskEditing').click();
+  const hidden=await png(1,'artwork','pixel-mask-hide');eq('black mask hides pixel',alpha(hidden,[140,160]),0);yes('black mask preserves remote pixel',alpha(hidden,[240,160])>200);
+  await menu();await page.locator('#pixelMaskAdd').click();await page.locator('#maskPaintReveal').click();old=await revision();await stroke([[120,160],[160,160]]);await waitRev(old);await page.locator('#doneMaskEditing').click();
+  const revealed=await png(1,'artwork','pixel-mask-reveal');yes('white mask restores center',alpha(revealed,[140,160])>200);
+  await menu();old=await revision();await page.locator('#vectorMaskRemove').click();await waitRev(old);await close();yes('pixel mask removal preserves entire artwork',before.data.equals((await png(1,'artwork','pixel-mask-removed')).data));
+  await menu();await page.locator('#maskPathEdit').click();old=await revision();await stroke([[100,130],[190,130],[190,190],[100,190],[100,130]]);await waitRev(old);
+  const pathMask=await png(1,'artwork','path-mask');yes('path mask interior visible',alpha(pathMask,[140,160])>200);eq('path mask exterior hidden',alpha(pathMask,[240,160]),0);
+  await menu();await page.locator('#maskPointEdit').click();old=await revision();await stroke([[100,130],[60,130]]);await waitRev(old);await page.locator('#doneMaskEditing').click();
+  const edited=await png(1,'artwork','path-mask-edited');yes('point editing changes path mask coverage',!edited.data.equals(pathMask.data));
  },
  'HIS-005':async()=>{
   await fresh();await drawLine([[70,100],[180,100]]);const historical=await revision(),layer=await canvas.getAttribute('data-selected-layer-id');
@@ -700,6 +724,19 @@ const cases={
   await button(d,'この内容で実行').click();await page.getByRole('button',{name:'適用',exact:true}).filter({visible:true}).click();await waitRev(old);
   eq('selection not silently switched',await canvas.getAttribute('data-selected-layer-id'),second);
   const active=await png(1,'active','active'),all=await png(1,'artwork','all');eq('non-target layer remains empty',opaque(active).length,0);yes('requested target offset rendered',alpha(all,[120,190])>0);
+  await openMacros();await button(root,'新しく作る').click();const commands=root.getByLabel('追加する操作',{exact:true});
+  for(const value of ['layerOpacityAtRun','layerNameAtRun']){await choose(commands,value);await button(root,'操作を追加').click();}
+  await root.getByLabel('操作セットの名前',{exact:true}).fill('QA parameter types');await button(root,'保存').click();
+  await button(root,'実行').click();await choose(d.getByLabel('対象レイヤー',{exact:true}),first);
+  await d.getByLabel('不透明度を設定（%）',{exact:true}).fill('50');await d.getByLabel('レイヤー名を設定',{exact:true}).fill('QA renamed');
+  const paramRevision=await revision();await button(d,'この内容で実行').click();await page.getByRole('button',{name:'適用',exact:true}).filter({visible:true}).click();await waitRev(paramRevision);
+  await selectLayer(first);eq('text parameter set on intended layer',await canvas.getAttribute('data-selected-layer-name'),'QA renamed');
+  const changed=await png(1,'artwork','param-opacity');yes('numeric opacity affects exported pixels',Math.abs(alpha(changed,[120,190])-Math.round(alpha(all,[120,190])/2))<=1);
+  await selectLayer(second);await layerActions();await page.locator('#deleteLayer').click();const confirm=page.locator('dialog.illustro-app-dialog[open]');if(await confirm.isVisible())await button(confirm,'確定').click();await idle();
+  if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();
+  await openMacros();await button(root,'実行').click();
+  eq('deleted target unavailable in confirmation UI',await d.locator('option[value="'+second+'"]').count(),0);
+  await button(d,'取り消す').click();
  },
  'UI-007':async()=>{
   await fresh();await drawLine([[70,100],[180,100]]);const before=await png(1,'artwork','before'),old=await revision();
