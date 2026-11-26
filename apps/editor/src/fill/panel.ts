@@ -4,7 +4,7 @@ import type {ColorHint,LayerId,LineRegions,RevisionId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {combineSelection,type MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
-import {needsLeakingFillReview} from './pixels';
+import {cropGapNeighborhood,needsLeakingFillReview} from './pixels';
 import type {FillSettings,GapCandidate,RegionGraph,Walls} from './pixels';
 import {releaseLiveFillPreview,runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
@@ -350,7 +350,7 @@ export function installFillPanel(host:HTMLElement,api:{
       }
     }
   }
-  async function analyze(points?:readonly Point[],remove=false,stored?:LineRegions,restoring=false,preserveInk=false){
+  async function analyze(points?:readonly Point[],remove=false,stored?:LineRegions,restoring=false,preserveInk=false,recordDecision=false){
     analysisAbort?.abort();
     const abort=new AbortController();analysisAbort=abort;
     analyzing=true;analysisError=null;sync();
@@ -363,13 +363,13 @@ export function installFillPanel(host:HTMLElement,api:{
       const old=restoring?stored?.manual??[]:manuals.get(source.key)??stored?.manual??[];
       const manual=points?[...old,{points,remove,...(preserveInk?{preserveInk:true}:{})}]:old;
       const current=settings();
-      if(points&&reusable&&currentGraph&&source===capture&&
+      if(!recordDecision&&points&&reusable&&currentGraph&&source===capture&&
          current.tolerance===graphTolerance&&current.gap===graphGap&&
          isManualBoundaryNoop(currentGraph,points,remove,preserveInk)){
         output.textContent='ここはすでに同じ境界になっています。再解析は不要です。';
         return;
       }
-      const unchangedSource=!!points&&!!reusable&&!!currentGraph&&source===capture&&
+      const unchangedSource=!recordDecision&&!!points&&!!reusable&&!!currentGraph&&source===capture&&
         current.tolerance===graphTolerance&&current.gap===graphGap;
       const patched=unchangedSource&&!preserveInk
         ?(remove?tryIncrementalBoundaryRemoval(currentGraph!,points!):tryIncrementalBoundaryAddition(currentGraph!,points!)):null;
@@ -861,12 +861,12 @@ export function installFillPanel(host:HTMLElement,api:{
     output.textContent='色指示を保存しました。';
     paint();
   });
-  const makeManualCandidate=async(points:readonly Point[],remove:boolean,preserveInk=false)=>{
+  const makeManualCandidate=async(points:readonly Point[],remove:boolean,preserveInk=false,recordDecision=false)=>{
     if(!currentGraph||!capture||manualDraft)throw Error('線画を解析し、今の手直しを適用するか取り消してください。');
     if(saved&&!api.regionLayers().some(entry=>entry.id===saved?.id&&entry.data===saved.data))
       throw Error('保存した線画領域を開き直してください。');
     const frozen=saved&&capture.revision===saved.data.sourceRevision?saved.data:undefined;
-    await analyze(points,remove,frozen,false,preserveInk);
+    await analyze(points,remove,frozen,false,preserveInk,recordDecision);
     output.textContent='境界を手直ししました。前の状態と比較して、確定するか取り消してください。';
   };
   button('境界線を足す',()=>onCanvas('接続や分割したい場所をなぞってください。',points=>makeManualCandidate(points,false)));
@@ -918,21 +918,26 @@ export function installFillPanel(host:HTMLElement,api:{
     excludedGap=(excludedGap+direction+count)%count;view.value='walls';paint();
     const kind=candidates[excludedGap]?.kind;
     const label=kind==='tips'?'線の端どうし':kind==='edge'?'線の端と途中':kind==='junction'?'交差付近':kind==='near'?'近い境界':'短い隙間';
-    output.textContent='隙間候補 '+(excludedGap+1)+'/'+count+'、'+label+'。ピンクの線を確認してください。';
+    const review=candidates[excludedGap]?.review??'automatic';
+    const reviewLabel=review==='automatic'?'自動補完済み':review==='likely'?'未補完・接続候補':'未補完・要確認（自動ではつなぎません）';
+    output.textContent='隙間候補 '+(excludedGap+1)+'/'+count+'、'+reviewLabel+'、'+label+'。ピンクの線を確認してください。';
   }
   const nextGap=button('次の隙間候補',()=>focusGap(1));
   const previousGap=button('前の隙間候補',()=>focusGap(excludedGap<0?0:-1));
-  button('キャンバスで隙間を調べる',()=>onCanvas('隙間の近くをタップしてください。',async points=>{
+  button('キャンバスで隙間を調べる',()=>onCanvas('隙間の近くをタップしてください。',async (points,_prepared,current)=>{
     if(!currentGraph||!capture||manualDraft)throw Error('線画を解析し、手直し中の候補を確定するか取り消してください。');
-    const result=await runFill({type:'local-gaps',graph:currentGraph,point:points[0]!,reach:value(gap)||8,
-      manual:manuals.get(capture.key)??[]});
-    localGaps=result.gaps??[];excludedGap=-1;
+    const graph=currentGraph,source=capture,documentId=api.documentId(),gapValue=value(gap),toleranceValue=value(tolerance);
+    const patch=cropGapNeighborhood(graph,points[0]!,gapValue||8,manuals.get(source.key)??[]);
+    const result=await runFill({type:'local-gaps',graph:patch.graph,point:patch.point,reach:patch.reach,manual:patch.manual});
+    if(!current()||graph!==currentGraph||source!==capture||documentId!==api.documentId()||gapValue!==value(gap)||toleranceValue!==value(tolerance)||!source.referenceValid()&&!saved)return;
+    const restore=(p:Point)=>({x:p.x+patch.x,y:p.y+patch.y});
+    localGaps=(result.gaps??[]).map(g=>({...g,from:restore(g.from),to:restore(g.to)}));excludedGap=-1;
     if(localGaps.length)focusGap(1);
     else{paint();output.textContent='周囲に候補がありません。必要なら境界線を手で足せます。';}
   }));
   const acceptGap=button('この接続を採用',async()=>{
     const item=gapCandidates()[excludedGap];
-    if(item)await makeManualCandidate([item.from,item.to],false);
+    if(item)await makeManualCandidate([item.from,item.to],false,false,true);
   });
   const rejectGap=button('この接続を取り消す',async()=>{
     const item=gapCandidates()[excludedGap];
@@ -940,7 +945,7 @@ export function installFillPanel(host:HTMLElement,api:{
       const dx=item.to.x-item.from.x,dy=item.to.y-item.from.y,steps=Math.max(Math.abs(dx),Math.abs(dy));
       const from={x:Math.round(item.from.x+dx/steps),y:Math.round(item.from.y+dy/steps)};
       const to={x:Math.round(item.to.x-dx/steps),y:Math.round(item.to.y-dy/steps)};
-      await makeManualCandidate([from,to],true,true);
+      await makeManualCandidate([from,to],true,true,true);
     }
   });
   button('キャンバス操作をやめる',()=>{stopGesture();output.textContent='操作を取り消しました。';});
@@ -967,7 +972,7 @@ export function installFillPanel(host:HTMLElement,api:{
   for(const control of [gap,tolerance])control.addEventListener('change',()=>{
     if(candidate?.adjustment){updatePreview();return;}
     if(usesRegions()){
-      if(currentGraph){confirmed=false;candidate=null;pending=null;output.textContent='条件を変えたため、線画をもう一度解析して確定してください。';paint();sync();}
+      if(currentGraph){confirmed=false;candidate=null;pending=null;localGaps=null;excludedGap=-1;output.textContent='条件を変えたため、線画をもう一度解析して確定してください。';paint();sync();}
     }else if(candidate)updatePreview();
   });
   function inspect(graph:RegionGraph,id:number){
