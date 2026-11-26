@@ -1,0 +1,27 @@
+{
+  "id": "AUT-005",
+  "status": "ERROR",
+  "checks": [
+    {
+      "name": "exported macro JSON contains name",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "search reopens macro panel",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "imported-macro-replays",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "quick-macro-replays",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.c04-shortcut-settings').locator('select:has(option[value=\"macro:05596d4f-30b6-472a-a150-fb8e63138862\"])')\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:132:19)\n    at AUT-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:430:9)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:775:2"
+}
