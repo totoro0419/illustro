@@ -1,0 +1,12 @@
+{
+  "id": "AUT-004",
+  "status": "ERROR",
+  "checks": [
+    {
+      "name": "different work ids",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog', { name: '選んだ作品を一括で書き出す' }).locator('select:has(option[value=\"png\"])')\n    - locator resolved to <select tabindex=\"-1\" aria-hidden=\"true\" class=\"workspace-choice-source\">…</select>\n  - attempting select option action\n    2 × waiting for element to be visible and enabled\n      - element is not visible\n    - retrying select option action\n    - waiting 20ms\n    2 × waiting for element to be visible and enabled\n      - element is not visible\n    - retrying select option action\n      - waiting 100ms\n    60 × waiting for element to be visible and enabled\n       - element is not visible\n     - retrying select option action\n       - waiting 500ms\n\n    at AUT-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:372:54)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2"
+}

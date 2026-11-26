@@ -1,0 +1,1 @@
+{"id":"IO-006","status":"PASS","checks":[{"name":"real avif signature","actual":true,"expected":true},{"name":"avif decoded size","actual":[512,384],"expected":[512,384]},{"name":"real exr signature","actual":true,"expected":true},{"name":"exr decoded size","actual":[512,384],"expected":[512,384]}],"reason":"Implemented subchecks passed, see manifest for coverage gaps"}

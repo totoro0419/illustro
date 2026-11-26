@@ -1,0 +1,32 @@
+{
+  "id": "LIN-007",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "blank unanalysed",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "blank invalid",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "normal drawing after invalid graph",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "fixture awaiting confirmation",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "confirmed graph",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

@@ -1,0 +1,92 @@
+{
+  "id": "REF-006",
+  "group": "A",
+  "status": "ERROR",
+  "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+  "checks": [
+    {
+      "path": "apps/editor/src/assets/referenceBundleMode.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-013 local-only reference compatibility accepts only the same immutable reference asset, not another same-sized file",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-013 local-only reference compatibility requires exact image bytes even when ID, name, type and length match",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-013 local-only reference compatibility rejects ambiguous, duplicate, malformed and oversize reference manifests",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/assets/referenceUnavailable.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-001 reference export failure does not lose artwork writes an explicit missing-reference marker alongside valid artwork",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-001 reference export failure does not lose artwork refuses to attach an unnamed unavailable marker",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/assets/referenceBoardStore.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05 reference-board data safety treats only an absent record as an empty reference board",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05 reference-board data safety keeps every valid image reference and its position",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05 reference-board data safety preserves a reference resized wider than 1000px after reload",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05 reference-board data safety rejects damaged visibility flags instead of treating a string as true",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05 reference-board data safety refuses partial, duplicate, invalid and oversized records rather than silently erasing images",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "REF-006",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "reference frame present",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.c05-reference-editor').locator('.c05-reference-row').first().getByRole('button', { name: /出典・メモを(追加|編集)/ })\n\n    at REF-006 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:277:56)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2"
+    }
+  ],
+  "pending": [
+    "embedded/linked operation round trip attempted; metadata readback, positioning and relink still pending"
+  ],
+  "reason": "Coverage not complete: embedded/linked operation round trip attempted; metadata readback, positioning and relink still pending"
+}

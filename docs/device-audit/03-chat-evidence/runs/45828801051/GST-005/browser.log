@@ -1,0 +1,1 @@
+{"id":"GST-005","status":"PASS","checks":[{"name":"imported key after restart","actual":"true","expected":"true"},{"name":"release restores drawing tool","actual":"true","expected":"true"}],"reason":"Implemented subchecks passed, see manifest for coverage gaps"}
