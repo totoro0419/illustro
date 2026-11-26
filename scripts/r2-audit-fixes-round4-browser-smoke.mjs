@@ -70,7 +70,24 @@ async function sections(file){
   const data=await readFile(file),n=data.readUInt32LE(16),manifest=JSON.parse(data.subarray(24,24+n).toString());
   return new Map(manifest.sections.map(s=>[s.id,{...s,bytes:data.subarray(24+n+s.offset,24+n+s.offset+s.length)}]));
 }
-async function mask(name){
+async function mask(name,expectedMask){
+  // Read the persisted real per-pixel selection after the UI's debounced store,
+  // without repeatedly serializing the whole artwork for every combination.
+  const expected=expectedMask.toString('base64');
+  await page.waitForFunction(async expected=>{
+    const doc=document.querySelector('#canvas')?.dataset.documentId;
+    const db=await new Promise((resolve,reject)=>{const q=indexedDB.open('illustro-r2-audit-fixes-round4-c06-selections-v1',1);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);});
+    try{
+      const entry=await new Promise((resolve,reject)=>{const q=db.transaction('selections','readonly').objectStore('selections').get('current:'+doc);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);});
+      const bytes=entry?new Uint8Array(await entry.alpha.arrayBuffer()):new Uint8Array(512*384);
+      if(bytes.length!==512*384)return false;
+      let str='';for(let i=0;i<bytes.length;i+=8192)str+=String.fromCharCode(...bytes.subarray(i,i+8192));
+      return btoa(str)===expected;
+    }finally{db.close();}
+  },expected,{timeout:10000,polling:100});
+  console.log('PASS full persisted selection pixels '+name);
+}
+async function nativeMask(name){
   const s=await sections(await saveCopy(name)),a=s.get('c06.selection.active');
   if(!a)return Buffer.alloc(512*384);
   if(a.type!=='selection.alpha.rle.v2'){assert.equal(a.bytes.length,512*384);return a.bytes;}
@@ -108,12 +125,12 @@ try{
     const mode=p.getByLabel('選択範囲を組み合わせる方法',{exact:true}),A=[180,120,80,70],B=[220,150,90,60];
     for(const m of ['replace','add','subtract','intersect','xor']){
       await choose(mode,'replace');await numeric(p,A);await choose(mode,m);await numeric(p,B);
-      assert.deepEqual(await mask('numeric-'+m),expectedMask(A,B,m),'numeric full pixel mask '+m);console.log('PASS numeric mask '+m);
+      await mask('numeric-'+m,expectedMask(A,B,m));
     }
-    await b('選択だけ元に戻す',p).click();assert.deepEqual(await mask('undo'),expectedMask(null,A,'replace'));
-    await b('選択だけやり直す',p).click();assert.deepEqual(await mask('redo'),expectedMask(A,B,'xor'));
-    await b('座標と大きさで四角く選ぶ',p).click();const d=page.locator('dialog.illustro-app-dialog[open]');await d.locator('input').fill('-1,0,5,5');await b('確定',d).click();assert.ok(await d.isVisible());await b('キャンセル',d).click();assert.deepEqual(await mask('invalid'),expectedMask(A,B,'xor'));
-    console.log('PASS numeric 5 modes full mask, selection undo/redo, invalid/cancel');
+    await b('選択だけ元に戻す',p).click();await mask('undo',expectedMask(null,A,'replace'));
+    await b('選択だけやり直す',p).click();await mask('redo',expectedMask(A,B,'xor'));
+    await b('座標と大きさで四角く選ぶ',p).click();const d=page.locator('dialog.illustro-app-dialog[open]');await d.locator('input').fill('-1,0,5,5');await b('確定',d).click();assert.ok(await d.isVisible());await b('キャンセル',d).click();await mask('invalid',expectedMask(A,B,'xor'));assert.deepEqual(await nativeMask('selection-saved'),expectedMask(A,B,'xor'));
+    console.log('PASS numeric 5 modes full mask, selection undo/redo, invalid/cancel and portable native mask');
   }else if(id==='BRU-011'){
     await create('round4-brush');
     await choose(page.locator('#brush'),'foundation-technical');await page.locator('#sizeNumber').fill('9');await page.locator('#sizeNumber').press('Enter');
