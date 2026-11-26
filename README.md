@@ -1,30 +1,38 @@
 # Illustro
 
-一枚絵の制作体験を磨くペイントアプリです。最優先は直感的な操作、次に使いやすさ・体感応答性、次に多機能性。
+一枚絵の制作体験を磨くペイントアプリです。優先するのは **直感的な操作 → 使いやすさ・軽さ・体感応答性 → 多機能性** です。
 
-## 現在地（2026-11-12）
+## 現在地（2026-11-23）
 
-M01〜M10の正式製品機能はユーザー合格済み。現在は17チャンク方式へ移行しており、直近の開発対象は **C03の残り（レイヤー完成系、旧M11）** です。
+現在の開発対象は**第二ラウンド（R2）**です。実装は[Draft PR #110](https://github.com/totoro0419/illustro/pull/110)で管理中で、`main`へは未統合です。
 
-- [新しい設計書の優先関係](docs/DESIGN_AUTHORITY.md) — アーカイブ版の設計に切替
-- [現在地と全17チャンク](docs/roadmap/C01_C17_ROADMAP.md)
+- [R2公開プレビュー](https://totoro0419.github.io/illustro/r2-preview/)（ブラウザーでの起動は実機検査で確認）
+- [R2実装状況](docs/roadmap/ROUND2-IMPLEMENTATION-STATUS.md)：143機能がコード上で実装済みとの記録。端末での受入確認とは別。
+- [234機能の実機検査計画](docs/device-audit/00-TEST-PLAN.md)：R2の143機能＋既存保護91機能
+- [234機能の検査結果表](docs/device-audit/01-RESULTS.csv)：初期値はすべて未検査
+- [不具合と既知問題の台帳](docs/device-audit/02-DEFECTS.md)
+
+過去のM01〜M10・C01〜C17のロードマップや旧検査は履歴として扱い、現在のR2の合格・不合格に自動反映しません。旧C01〜C17ロードマップはGit履歴で参照できます。
+
+## 設計と仕様
+
+- [正式資料の優先関係](docs/DESIGN_AUTHORITY.md)
 - [製品仕様](docs/product-planning/FINAL_PRODUCT_SPEC.md)
-- [機能の採否（247件）](docs/product-planning/FINAL_PRODUCT_SCOPE.json)
-- [軽量化・処理方式の設計](docs/performance-research/UNIFIED_SYSTEM_DESIGN.md)
-- [UI・操作の設計](docs/product-architecture/PRODUCT_ARCHITECTURE.md)
-- [詳細システム設計](docs/detailed-design/SYSTEM_CONTRACTS.md)
-- [従来のM01〜M10の合格履歴](docs/IMPLEMENTATION_CHECKLIST.md)
-
-アーカイブ元: https://github.com/totoro0419/illustro-illustro_next_archive / ブランチ: implementation/stage4-c03-layers-history-persistence / HEAD: ab1b2bea55d117e833edccf88ebc816a775afbe1
-
-**重要:** 設計書の切替は実装済みコードの置換や完成を意味しません。旧版の合格済みコード、作品、QA公開、PR履歴は保持します。既存コードと新しい設計の食い違いは、機能ごとに調べて解消します。
+- [正式247機能の採否](docs/product-planning/FINAL_PRODUCT_SCOPE.json)
+- [機能の詳細](docs/product-planning/FEATURE_MASTER_CATALOG.md)
+- [操作・画面](docs/product-architecture/PRODUCT_ARCHITECTURE.md)
+- [軽量化・処理方式](docs/performance-research/UNIFIED_SYSTEM_DESIGN.md)
+- [詳細な仕組み](docs/detailed-design/SYSTEM_CONTRACTS.md)
+- [旧M01〜M10の受入記録](docs/IMPLEMENTATION_CHECKLIST.md)
 
 ## 開発
 
-Node 24。依存導入後、BrushとEditorを実行します。
+Node 24。依存導入後、描画エンジンとEditorを実行します。
 
-    npm ci
-    npm run brush:build
-    npm run editor:dev
+```sh
+npm ci
+npm run brush:build
+npm run editor:dev
+```
 
-M01〜M10の動作実績は旧実装基準を含む現行の試験・受入記録を参照します。
+製品仕様・コード実装・自動試験・実機受入はそれぞれ異なります。特に実機で確認していない機能は合格としません。
