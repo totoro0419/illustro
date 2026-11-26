@@ -1,6 +1,6 @@
 import type {BrushSurface} from '../brushSurface';
 import type {CoreDocument,LayerId} from '@illustro/core';
-import {TILE} from '@illustro/brush-rt';
+import {TILE,layerMaskCoverage} from '@illustro/brush-rt';
 import {captureExport,captureExportLayers,compositeArtworkRegion,renderFrozenArtwork} from '../export/basicExport';
 import {cropCanvas} from '../canvasGeometry';
 import {boundsOfSelection,cropSelectionMask,type MaskData} from '../selection/mask';
@@ -64,8 +64,14 @@ export async function createWetPatch(artwork:CoreDocument,drawing:BrushSurface,l
     if(!id||!artwork.root.hasLayer(id))throw Error('採取元のレイヤーがありません。元を選び直してください。');
     reference=await read(id,box);
   }else if(separate)reference=await read(layerId,area);
-  const clip=sourceShape&&mask?movePatchCoverage(mask,area,offset):mask?cropSelectionMask(mask,area).alpha:null;
-  const result=await runWet({destination,reference,selection:clip,
+  let clip=sourceShape&&mask?movePatchCoverage(mask,area,offset):mask?cropSelectionMask(mask,area).alpha:null;
+  const layerMask=artwork.root.getLayer(layerId).vectorMask;
+  if(repair&&layerMask?.enabled){
+    clip??=new Uint8Array(area.width*area.height).fill(255);
+    for(let i=0;i<clip.length;i++)clip[i]=Math.round(clip[i]!*layerMaskCoverage(layerMask,area.x+i%area.width,area.y+Math.floor(i/area.width)));
+  }
+  const toneReference=mode==='heal'&&separate?await read(layerId,area):undefined;
+  const result=await runWet({destination,reference,selection:clip,...(toneReference?{toneReference}:{}),
     points,offset,shapePatch:!!sourceShape,alphaLocked:!separate&&!!artwork.root.getLayer(layerId).alphaLocked,
     settings:stroke.settings},stroke.signal);
   if(!result.changed)return null;

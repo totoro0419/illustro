@@ -12,12 +12,13 @@ export const wetModes=[
   ['clone','クローン'],['heal','修復ブラシ'],['patch','範囲パッチ'],
 ] as const satisfies readonly (readonly [WetMode,string])[];
 export type WetStroke=Readonly<{
-  settings:WetSettings;source:Point|null;reference:'active'|'merged';separate:boolean;
-  offset:Point;points:readonly Point[];selectedPatch?:boolean;signal:AbortSignal;documentId:string;sourceLayerId:string|null;
+  settings:WetSettings;source:Point|null;reference:'active'|'merged'|'layer';separate:boolean;
+  offset:Point;points:readonly Point[];selectedPatch?:boolean;signal:AbortSignal;documentId:string;sourceLayerId:string|null;targetLayerId:string;targetRevision:string;selectionKey:unknown;
 }>;
 
 export function installWetTools(host:HTMLElement,api:{
-  current:()=>{drawing:BrushSurface;documentId:string;layerId:string;layerName:string}|null;
+  current:()=>{drawing:BrushSurface;documentId:string;layerId:string;layerName:string;revisionId:string;selectionKey:unknown}|null;
+  sources:()=>readonly {id:string;name:string}[];
   activate:(start:()=>void)=>void;hasSelection:()=>boolean;color:()=>readonly number[];draw:(stroke:WetStroke)=>Promise<boolean>;preview:(stroke:WetStroke)=>Promise<boolean>;left:()=>void;onContext?:()=>void;
 }){
   const panel=document.createElement('details');
@@ -25,7 +26,8 @@ export function installWetTools(host:HTMLElement,api:{
   const summary=document.createElement('summary');summary.textContent='混色・水彩・修復';
   const options=document.createElement('div');options.className='c06-clipboard-grid';
   const mode=selectField(options,'筆の作用',wetModes);
-  const reference=selectField(options,'参照元',[['active','描画先のレイヤー'],['merged','見えている絵の全体']]);
+  const reference=selectField(options,'参照元',[['active','描画先のレイヤー'],['merged','見えている絵の全体'],['layer','指定したレイヤー']]);
+  const sourceLayer=selectField(options,'採取するレイヤー',[]);
   const size=numberField(options,'直径（px）',defaultWet.size,1,256);
   const strength=numberField(options,'強さ（%）',65,1,100);
   const advanced=document.createElement('details'),advancedTitle=document.createElement('summary');
@@ -58,6 +60,7 @@ export function installWetTools(host:HTMLElement,api:{
   const target=document.createElement('p');target.setAttribute('role','status');
   let anchor:{point:Point;documentId:string;layerId:string;layerName:string}|null=null,offset:Point|null=null;
   let cancelDrawing:(()=>void)|null=null,pending:AbortController|null=null,revision=0;
+  let draft:{job:WetStroke;drawing:BrushSurface;token:number}|null=null;
   const fields=[size,strength,pigment,diffusion,edge,grain,paperScale,absorb,thickness,water,waterInput,pigmentInput,waterSpeed,pigmentSpeed];
   const key='illustro.round2.wet.v1';
   function restorePreferences(raw:string|null){
@@ -68,7 +71,7 @@ export function installWetTools(host:HTMLElement,api:{
       const value=saved.values[i];
       if(Number.isInteger(value)&&value>=Number(field.min)&&value<=Number(field.max))field.value=String(value);
     });
-    reference.value=saved.reference==='merged'?'merged':'active';
+    reference.value=saved.reference==='merged'?'merged':saved.reference==='layer'?'layer':'active';
     separate.checked=saved.separate===true;aligned.checked=saved.aligned!==false;selectedPatch.checked=saved.selectedPatch===true;
   }
   const snapshot=()=>JSON.stringify({mode:mode.value,reference:reference.value,values:fields.map(f=>f.valueAsNumber),
@@ -85,8 +88,16 @@ export function installWetTools(host:HTMLElement,api:{
   function describe(){
     const context=api.current();
     if(anchor&&anchor.documentId!==context?.documentId){anchor=null;offset=null;}
-    const ref=reference.value==='merged'?'表示中の全レイヤー':anchor&&needsSource(selected())?anchor.layerName:context?.layerName??'なし';
-    const paintMode=selected();
+    const sourceId=sourceLayer.value;
+    sourceLayer.replaceChildren(new Option('選択してください',''),...api.sources().map(item=>new Option(item.name,item.id)));
+    sourceLayer.value=sourceId&&[...sourceLayer.options].some(o=>o.value===sourceId)?sourceId:'';
+    sourceLayer.parentElement!.hidden=reference.value!=='layer'||!needsSource(selected());
+    const ref=reference.value==='merged'?'表示中の全レイヤー':reference.value==='layer'?sourceLayer.selectedOptions[0]?.textContent??'なし':context?.layerName??'なし';
+    const paintMode=selected(),repair=needsSource(paintMode);
+    advanced.hidden=repair;
+    if(repair&&edge.parentElement!.parentElement!==options)options.append(edge.parentElement!);
+    else if(!repair&&edge.parentElement!.parentElement!==fine)fine.prepend(edge.parentElement!);
+    edge.parentElement!.hidden=repair&&paintMode!=='patch';
     target.textContent='参照 '+ref+' ／ 描画先 '+(separate.checked||reference.value==='merged'?'新規レイヤー':context?.layerName??'なし')+
       (anchor&&needsSource(paintMode)?' ／ 採取点 '+Math.floor(anchor.point.x)+', '+Math.floor(anchor.point.y):'')+
       (paintMode==='smudge'||paintMode==='blur'?' ／ 既存の色だけ':paintMode==='mix'?' ／ 描画色を足す':'');
@@ -94,13 +105,14 @@ export function installWetTools(host:HTMLElement,api:{
     for(const control of [water,waterInput,waterSpeed])control.parentElement!.hidden=selected()!=='water';
     for(const control of [pigmentInput,pigmentSpeed])control.parentElement!.hidden=!['water','mix','oil','pastel'].includes(selected());
     pigment.parentElement!.hidden=!['water','mix','oil','pastel'].includes(selected());
+    patchApply.hidden=patchCancel.hidden=selected()!=='patch';
     sourceButton.hidden=!needsSource(selected())||transfer();
     selectedPatch.parentElement!.hidden=selected()!=='patch';
     if(transfer())target.textContent+=' ／ 選択範囲の形を採取';
     api.onContext?.();
   }
   function leave(){
-    revision++;pending?.abort();pending=null;
+    revision++;pending?.abort();pending=null;draft=null;patchApply.disabled=patchCancel.disabled=true;
     const cancel=cancelDrawing;cancelDrawing=null;cancel?.();
   }
   function arm(pick=false){
@@ -113,6 +125,7 @@ export function installWetTools(host:HTMLElement,api:{
       status.textContent='先に移したい形を選択してください。';
       return;
     }
+    if(repair&&reference.value==='layer'&&!sourceLayer.value){status.textContent='採取するレイヤーを選んでください。';return;}
     if(repair&&!anchor&&!pick&&!transfer()){
       status.textContent='「元を指定」を押して、キャンバス上で採取元を選んでください。';
       return;
@@ -129,16 +142,16 @@ export function installWetTools(host:HTMLElement,api:{
       const tail=points.at(-1)!;
       const origin=brush==='patch'?{x:Math.min(first.x,tail.x),y:Math.min(first.y,tail.y)}:first;
       const delta=anchor&&(offset&&aligned.checked?offset:{x:anchor.point.x-origin.x,y:anchor.point.y-origin.y});
-      return {settings:settings(),source:anchor?.point??null,reference:reference.value==='merged'?'merged':'active',
-        sourceLayerId:transfer()?next.layerId:anchor?.layerId??null,selectedPatch:transfer(),separate:separate.checked,
-        offset:delta??{x:0,y:0},points,signal,documentId:next.documentId};
+      return {settings:settings(),source:anchor?.point??null,reference:reference.value==='merged'?'merged':reference.value==='layer'?'layer':'active',
+        sourceLayerId:reference.value==='layer'?sourceLayer.value||null:next.layerId,selectedPatch:transfer(),separate:separate.checked,
+        offset:delta??{x:0,y:0},points,signal,documentId:next.documentId,targetLayerId:next.layerId,targetRevision:next.revisionId,selectionKey:next.selectionKey};
     };
     status.textContent=pick?'キャンバスで採取する位置を選んでください。':brush==='patch'?(transfer()?'貼り付ける場所までドラッグしてください。':'貼り付け先の対角線をドラッグしてください。'):'離すと一筆の結果を適用します。';
     cancelDrawing=context.drawing.setCanvasEditGesture({
       continuous:true,path:false,width:pick||brush==='patch'?2:Math.max(1,size.valueAsNumber),color:repair?'#2a8cc8':'#5c8c68',
       referencePoint:()=>repair&&!pick&&anchor?.documentId===context.documentId?anchor.point:null,
       cancel:clear,
-      end:()=>{clear();if(current()){pending?.abort();pending=null;cancelDrawing=null;api.left();}},
+      end:()=>{clear();if(current()){pending?.abort();pending=null;draft=null;patchApply.disabled=patchCancel.disabled=true;cancelDrawing=null;api.left();}},
       update:points=>{
         if(!points.length||pick||repair||pending||preview||performance.now()<previewAfter)return;
         const controller=new AbortController();
@@ -169,7 +182,21 @@ export function installWetTools(host:HTMLElement,api:{
         let job:WetStroke|null;
         try{job=request(points,controller.signal);}catch(error){status.textContent=(error as Error).message;return;}
         if(!job)return;
-        pending=controller;status.textContent='画素を処理しています…';api.onContext?.();
+        pending=controller;api.onContext?.();
+        if(brush==='patch'){
+          status.textContent='パッチのプレビューを作っています…';
+          void api.preview(job).then(shown=>{
+            if(!current()||controller.signal.aborted)return;
+            if(!shown){pending=null;status.textContent='プレビューを作れませんでした。範囲を小さくして試してください。';api.onContext?.();return;}
+            draft={job:job!,drawing:context.drawing,token};
+            patchApply.disabled=patchCancel.disabled=false;
+            status.textContent='貼り付ける位置を確認し、確定または取消を選んでください。';
+          }).catch(error=>{
+            if(current()&&!controller.signal.aborted){pending=null;status.textContent=error instanceof Error?error.message:String(error);api.onContext?.();}
+          });
+          return;
+        }
+        status.textContent='画素を処理しています…';
         void api.draw(job)
           .then(changed=>{
             if(!current())return;
@@ -184,9 +211,27 @@ export function installWetTools(host:HTMLElement,api:{
   const sourceButton=button('元を指定',()=>api.activate(()=>arm(true)),status);
   const start=button('キャンバスで使う',()=>api.activate(()=>arm()),status);
   const stop=button('筆を終了',()=>{leave();api.left();},status);
-  const actions=document.createElement('div');actions.className='box-actions';actions.append(sourceButton,start,toolConfirmation(stop,'cancel'));
-  for(const field of [mode,reference,...fields,separate,aligned,selectedPatch])field.onchange=()=>{
-    if(field===mode||field===reference)offset=null;
+  const patchApply=toolConfirmation(button('パッチを確定',async()=>{
+    const next=draft;if(!next)return;draft=null;patchApply.disabled=patchCancel.disabled=true;
+    next.drawing.showFillGesturePreview(null);
+    try{
+      const changed=await api.draw(next.job);
+      if(revision!==next.token)return;
+      if(changed&&aligned.checked)offset=next.job.offset;
+      status.textContent=changed?'パッチを反映しました。取り消しで戻せます。':'変わる画素がありません。';
+    }catch(error){if(revision===next.token)status.textContent=error instanceof Error?error.message:String(error);}
+    finally{if(revision===next.token){pending=null;api.onContext?.();}}
+  },status),'apply',1);
+  const patchCancel=toolConfirmation(button('パッチを取消',()=>{
+    const next=draft;if(!next)return;
+    draft=null;pending?.abort();pending=null;next.drawing.showFillGesturePreview(null);
+    patchApply.disabled=patchCancel.disabled=true;status.textContent='パッチを取り消しました。';api.onContext?.();
+  },status),'cancel',1);
+  patchApply.disabled=patchCancel.disabled=true;
+  const actions=document.createElement('div');actions.className='box-actions';actions.append(sourceButton,start,patchApply,patchCancel,toolConfirmation(stop,'cancel'));
+  for(const field of [mode,reference,sourceLayer,...fields,separate,aligned,selectedPatch])field.onchange=()=>{
+    if(draft)patchCancel.click();
+    if(field===mode||field===reference||field===sourceLayer){offset=null;anchor=null;}
     try{localStorage.setItem(key,snapshot());}catch{/* the current tool still works */}
     describe();
     if(cancelDrawing&&!pending)arm();

@@ -51,3 +51,11 @@ it('uses independent water and pigment settings to soften and mix a watercolor s
   expect(wet[at(6,4)+2]).toBeGreaterThan(0);
   expect(noPigment[at(6,4)+2]).toBeGreaterThan(200);
 });
+
+ it('copies straight RGBA exactly at full clone coverage, including transparency',()=>{
+   const run=job(),reference=patch();run.destination.pixels.set([200,20,80,255],at(5,4));
+   reference.pixels.set([30,80,190,128],at(2,2));
+   const result=paintWet({...run,reference,offset:{x:-3,y:-2},settings:{...run.settings,mode:'clone'}});
+   expect([...result.pixels.slice(at(5,4),at(5,4)+4)]).toEqual([30,80,190,128]);
+   expect([...run.destination.pixels.slice(at(5,4),at(5,4)+4)]).toEqual([200,20,80,255]);
+ });
