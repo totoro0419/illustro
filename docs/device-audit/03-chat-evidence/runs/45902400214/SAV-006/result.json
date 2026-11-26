@@ -1,0 +1,55 @@
+{
+  "id": "SAV-006",
+  "group": "A",
+  "status": "ERROR",
+  "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+  "checks": [
+    {
+      "path": "apps/editor/src/persistence/workLibrary.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "Work library document identity rename persists in portable roots without changing artwork or its identity",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "Work library document identity copy has its own identity and edits never change the source",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/persistence/contiguousProtection.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "advances only through a verified contiguous dependency prefix",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "does not regress the verified head on duplicate old writes",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "does not retain a growing map of already acknowledged writes",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "status": "ERROR",
+      "reason": "Legacy smoke failed; triage required"
+    }
+  ],
+  "pending": [
+    "actual storage quota exhaustion vs simulated IndexedDB transaction abort",
+    "two-tab concurrent save",
+    "external file changes/copy recovery"
+  ],
+  "reason": "Coverage not complete: actual storage quota exhaustion vs simulated IndexedDB transaction abort; two-tab concurrent save; external file changes/copy recovery"
+}

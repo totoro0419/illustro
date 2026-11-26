@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "BROWSER-PROCESS-RESTART",
+      "status": "PASS"
+    }
+  ],
+  "errors": [
+    "page.waitForFunction: Timeout 15000ms exceeded.\n    at /home/runner/work/illustro/illustro/scripts/editor-works-safety-smoke.mjs:52:50"
+  ],
+  "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+  "mode": "public"
+}

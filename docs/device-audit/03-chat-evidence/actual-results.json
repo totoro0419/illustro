@@ -10,15 +10,15 @@
     "improvement": "",
     "pending": "actual storage quota exhaustion vs simulated IndexedDB transaction abort / two-tab concurrent save / external file changes/copy recovery / ERROR / Coverage not complete: actual storage quota exhaustion vs simulated IndexedDB transaction abort; two-tab concurrent save; external file changes/copy recovery",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45850922336",
-    "evidence": "03-chat-evidence/runs/45850922336/SAV-006/",
-    "stamp": "2026-11-26T15:40:11.758Z",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/SAV-006/",
+    "stamp": "2026-11-26T22:07:46.111Z",
     "result": {
       "id": "SAV-006",
       "group": "A",
       "status": "ERROR",
-      "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
       "checks": [
         {
           "path": "apps/editor/src/persistence/workLibrary.test.ts",
@@ -167,22 +167,22 @@
     "id": "REF-006",
     "name": "参考資料の保存・欠損・復元",
     "verdict": "未判定",
-    "operation": "reference frame present / reference excluded from all exported pixels / embedded image loaded in clean context / embedded reference did not alter artwork / linked reference missing notice in clean context",
-    "expected": "reference frame present: true / reference excluded from all exported pixels: true / embedded image loaded in clean context: true / embedded reference did not alter artwork: true / linked reference missing notice in clean context: true",
-    "actual": "reference frame present: true / reference excluded from all exported pixels: true / embedded image loaded in clean context: true / embedded reference did not alter artwork: true / linked reference missing notice in clean context: true",
+    "operation": "reference frame present / reference excluded from all exported pixels / embedded image loaded in clean context / embedded reference geometry restored / source notes restored / embedded reference did not alter artwork / linked reference missing notice in clean context / reference image relinked / relink geometry retained / relink does not enter PNG",
+    "expected": "reference frame present: true / reference excluded from all exported pixels: true / embedded image loaded in clean context: true / embedded reference geometry restored: [\"76px\",\"84px\",\"280px\",\"230px\"] / source notes restored: \"QA source: https://example.com/fixture ; author: QA ; usage: testing\" / embedded reference did not alter artwork: true / linked reference missing notice in clean context: true / reference image relinked: true / relink geometry retained: [\"76px\",\"84px\",\"280px\",\"230px\"] / relink does not enter PNG: true",
+    "actual": "reference frame present: true / reference excluded from all exported pixels: true / embedded image loaded in clean context: true / embedded reference geometry restored: [\"76px\",\"84px\",\"280px\",\"230px\"] / source notes restored: \"QA source: https://example.com/fixture ; author: QA ; usage: testing\" / embedded reference did not alter artwork: true / linked reference missing notice in clean context: true / reference image relinked: true / relink geometry retained: [\"76px\",\"84px\",\"280px\",\"230px\"] / relink does not enter PNG: true",
     "problem": "",
     "improvement": "",
-    "pending": "embedded/linked operation round trip attempted; metadata readback, positioning and relink still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed. / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45849424354",
-    "evidence": "03-chat-evidence/runs/45849424354/REF-006/",
-    "stamp": "2026-11-26T15:32:39.198Z",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/REF-006/",
+    "stamp": "2026-11-26T22:07:46.111Z",
     "result": {
       "id": "REF-006",
       "group": "A",
       "status": "ERROR",
-      "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
       "checks": [
         {
           "path": "apps/editor/src/assets/referenceBundleMode.test.ts",
@@ -272,6 +272,26 @@
               "expected": true
             },
             {
+              "name": "embedded reference geometry restored",
+              "actual": [
+                "76px",
+                "84px",
+                "280px",
+                "230px"
+              ],
+              "expected": [
+                "76px",
+                "84px",
+                "280px",
+                "230px"
+              ]
+            },
+            {
+              "name": "source notes restored",
+              "actual": "QA source: https://example.com/fixture ; author: QA ; usage: testing",
+              "expected": "QA source: https://example.com/fixture ; author: QA ; usage: testing"
+            },
+            {
               "name": "embedded reference did not alter artwork",
               "actual": true,
               "expected": true
@@ -280,15 +300,40 @@
               "name": "linked reference missing notice in clean context",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "reference image relinked",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "relink geometry retained",
+              "actual": [
+                "76px",
+                "84px",
+                "280px",
+                "230px"
+              ],
+              "expected": [
+                "76px",
+                "84px",
+                "280px",
+                "230px"
+              ]
+            },
+            {
+              "name": "relink does not enter PNG",
+              "actual": true,
+              "expected": true
             }
           ],
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
       "pending": [
-        "embedded/linked operation round trip attempted; metadata readback, positioning and relink still pending"
+        "Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed."
       ],
-      "reason": "Coverage not complete: embedded/linked operation round trip attempted; metadata readback, positioning and relink still pending"
+      "reason": "Coverage not complete: Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed."
     },
     "browser": {
       "id": "REF-006",
@@ -310,12 +355,57 @@
           "expected": true
         },
         {
+          "name": "embedded reference geometry restored",
+          "actual": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ],
+          "expected": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ]
+        },
+        {
+          "name": "source notes restored",
+          "actual": "QA source: https://example.com/fixture ; author: QA ; usage: testing",
+          "expected": "QA source: https://example.com/fixture ; author: QA ; usage: testing"
+        },
+        {
           "name": "embedded reference did not alter artwork",
           "actual": true,
           "expected": true
         },
         {
           "name": "linked reference missing notice in clean context",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "reference image relinked",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "relink geometry retained",
+          "actual": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ],
+          "expected": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ]
+        },
+        {
+          "name": "relink does not enter PNG",
           "actual": true,
           "expected": true
         }
@@ -828,22 +918,22 @@
     "id": "FIL-005",
     "name": "囲って塗る・消す",
     "verdict": "未判定",
-    "operation": "interior colored / concave exclusion / outside / erased inside / outside erasure retained",
-    "expected": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true",
-    "actual": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true",
+    "operation": "interior colored / concave exclusion / outside / erased inside / outside erasure retained / erase undo pixel equality",
+    "expected": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true",
+    "actual": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true",
     "problem": "",
     "improvement": "",
-    "pending": "closed-region-only and leak candidate / Undo, selection/mask/alpha protection / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "closed-region-only and leak candidate / Undo, selection/mask/alpha protection / ERROR / page.waitForFunction: Timeout 60000ms exceeded.\n    at waitRev (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:15:51)\n    at FIL-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:525:264)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45849424354",
-    "evidence": "03-chat-evidence/runs/45849424354/FIL-005/",
-    "stamp": "2026-11-26T15:32:39.198Z",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/FIL-005/",
+    "stamp": "2026-11-26T22:07:46.111Z",
     "result": {
       "id": "FIL-005",
       "group": "B",
       "status": "ERROR",
-      "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
       "checks": [
         {
           "path": "apps/editor/src/fill/pixels.test.ts",
@@ -1033,7 +1123,7 @@
         },
         {
           "id": "FIL-005",
-          "status": "PASS",
+          "status": "ERROR",
           "checks": [
             {
               "name": "interior colored",
@@ -1059,9 +1149,14 @@
               "name": "outside erasure retained",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "erase undo pixel equality",
+              "actual": true,
+              "expected": true
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "reason": "page.waitForFunction: Timeout 60000ms exceeded.\n    at waitRev (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:15:51)\n    at FIL-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:525:264)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2"
         }
       ],
       "pending": [
@@ -1072,7 +1167,7 @@
     },
     "browser": {
       "id": "FIL-005",
-      "status": "PASS",
+      "status": "ERROR",
       "checks": [
         {
           "name": "interior colored",
@@ -1098,9 +1193,14 @@
           "name": "outside erasure retained",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "erase undo pixel equality",
+          "actual": true,
+          "expected": true
         }
       ],
-      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+      "reason": "page.waitForFunction: Timeout 60000ms exceeded.\n    at waitRev (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:15:51)\n    at FIL-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:525:264)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2"
     }
   },
   {
@@ -1385,22 +1485,22 @@
     "id": "TRN-005",
     "name": "吸着・整列・等間隔配置",
     "verdict": "未判定",
-    "operation": "three distinct x positions",
-    "expected": "three distinct x positions: true",
-    "actual": "three distinct x positions: true",
-    "problem": "",
+    "operation": "three distinct x positions / left independent binary alpha coverage / left one undo restores all pixels / center-x independent binary alpha coverage",
+    "expected": "three distinct x positions: true / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x independent binary alpha coverage: 0",
+    "actual": "three distinct x positions: true / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x independent binary alpha coverage: 24552",
+    "problem": "計測不一致（アプリ側か検査側か要確認）: center-x independent binary alpha coverage",
     "improvement": "",
-    "pending": "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending / ERROR / locator.click: Error: strict mode violation: locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true }) resolved to 2 elements:\n    1) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-0\">図形</div> aka locator('#workspace-choices-64-0')\n    2) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-1\">図形</div> aka locator('#workspace-choices-64-1')\n\nCall log:\n  - waiting for locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:58)\n    at async TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:226:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:630:2",
+    "pending": "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending / FAIL / Error: center-x independent binary alpha coverage\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at TRN-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:246:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45850922336",
-    "evidence": "03-chat-evidence/runs/45850922336/TRN-005/",
-    "stamp": "2026-11-26T15:40:11.758Z",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/TRN-005/",
+    "stamp": "2026-11-26T22:07:46.111Z",
     "result": {
       "id": "TRN-005",
       "group": "C",
-      "status": "ERROR",
-      "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+      "status": "FAIL",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
       "checks": [
         {
           "path": "apps/editor/src/transform/groupTransform.test.ts",
@@ -1440,15 +1540,30 @@
         },
         {
           "id": "TRN-005",
-          "status": "ERROR",
+          "status": "FAIL",
           "checks": [
             {
               "name": "three distinct x positions",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "left independent binary alpha coverage",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "left one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "center-x independent binary alpha coverage",
+              "actual": 24552,
+              "expected": 0
             }
           ],
-          "reason": "locator.click: Error: strict mode violation: locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true }) resolved to 2 elements:\n    1) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-0\">図形</div> aka locator('#workspace-choices-64-0')\n    2) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-1\">図形</div> aka locator('#workspace-choices-64-1')\n\nCall log:\n  - waiting for locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:58)\n    at async TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:226:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:630:2"
+          "reason": "Error: center-x independent binary alpha coverage\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at TRN-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:246:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2"
         }
       ],
       "pending": [
@@ -1458,37 +1573,52 @@
     },
     "browser": {
       "id": "TRN-005",
-      "status": "ERROR",
+      "status": "FAIL",
       "checks": [
         {
           "name": "three distinct x positions",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "left independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "left one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "center-x independent binary alpha coverage",
+          "actual": 24552,
+          "expected": 0
         }
       ],
-      "reason": "locator.click: Error: strict mode violation: locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true }) resolved to 2 elements:\n    1) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-0\">図形</div> aka locator('#workspace-choices-64-0')\n    2) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-1\">図形</div> aka locator('#workspace-choices-64-1')\n\nCall log:\n  - waiting for locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:58)\n    at async TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:226:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:630:2"
+      "reason": "Error: center-x independent binary alpha coverage\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at TRN-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:246:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2"
     }
   },
   {
     "id": "VEC-004",
     "name": "簡略化・平滑化・図形合成",
     "verdict": "未判定",
-    "operation": "union independent point-in-rectangle coverage / union undo restores original / intersection independent point-in-rectangle coverage / intersection undo restores original / difference independent point-in-rectangle coverage / difference undo restores original / xor independent point-in-rectangle coverage / xor undo restores original",
-    "expected": "union independent point-in-rectangle coverage: [true,true,true,false] / union undo restores original: true / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection undo restores original: true / difference independent point-in-rectangle coverage: [true,false,false,false] / difference undo restores original: true / xor independent point-in-rectangle coverage: [true,false,true,false] / xor undo restores original: true",
-    "actual": "union independent point-in-rectangle coverage: [true,true,true,false] / union undo restores original: true / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection undo restores original: true / difference independent point-in-rectangle coverage: [true,false,false,false] / difference undo restores original: true / xor independent point-in-rectangle coverage: [true,false,true,false] / xor undo restores original: true",
-    "problem": "",
+    "operation": "union independent point-in-rectangle coverage / union full-image interior/exterior oracle",
+    "expected": "union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 0",
+    "actual": "union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 478",
+    "problem": "計測不一致（アプリ側か検査側か要確認）: union full-image interior/exterior oracle",
     "improvement": "",
-    "pending": "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending / FAIL / Error: union full-image interior/exterior oracle\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at VEC-004 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:275:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45849424354",
-    "evidence": "03-chat-evidence/runs/45849424354/VEC-004/",
-    "stamp": "2026-11-26T15:32:39.198Z",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/VEC-004/",
+    "stamp": "2026-11-26T22:07:46.111Z",
     "result": {
       "id": "VEC-004",
       "group": "C",
-      "status": "ERROR",
-      "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+      "status": "FAIL",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
       "checks": [
         {
           "path": "apps/editor/src/artwork/pathOperations.c10.test.ts",
@@ -1635,7 +1765,7 @@
         },
         {
           "id": "VEC-004",
-          "status": "PASS",
+          "status": "FAIL",
           "checks": [
             {
               "name": "union independent point-in-rectangle coverage",
@@ -1653,72 +1783,12 @@
               ]
             },
             {
-              "name": "union undo restores original",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "intersection independent point-in-rectangle coverage",
-              "actual": [
-                false,
-                true,
-                false,
-                false
-              ],
-              "expected": [
-                false,
-                true,
-                false,
-                false
-              ]
-            },
-            {
-              "name": "intersection undo restores original",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "difference independent point-in-rectangle coverage",
-              "actual": [
-                true,
-                false,
-                false,
-                false
-              ],
-              "expected": [
-                true,
-                false,
-                false,
-                false
-              ]
-            },
-            {
-              "name": "difference undo restores original",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "xor independent point-in-rectangle coverage",
-              "actual": [
-                true,
-                false,
-                true,
-                false
-              ],
-              "expected": [
-                true,
-                false,
-                true,
-                false
-              ]
-            },
-            {
-              "name": "xor undo restores original",
-              "actual": true,
-              "expected": true
+              "name": "union full-image interior/exterior oracle",
+              "actual": 478,
+              "expected": 0
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "reason": "Error: union full-image interior/exterior oracle\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at VEC-004 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:275:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2"
         }
       ],
       "pending": [
@@ -1728,7 +1798,7 @@
     },
     "browser": {
       "id": "VEC-004",
-      "status": "PASS",
+      "status": "FAIL",
       "checks": [
         {
           "name": "union independent point-in-rectangle coverage",
@@ -1746,72 +1816,12 @@
           ]
         },
         {
-          "name": "union undo restores original",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "intersection independent point-in-rectangle coverage",
-          "actual": [
-            false,
-            true,
-            false,
-            false
-          ],
-          "expected": [
-            false,
-            true,
-            false,
-            false
-          ]
-        },
-        {
-          "name": "intersection undo restores original",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "difference independent point-in-rectangle coverage",
-          "actual": [
-            true,
-            false,
-            false,
-            false
-          ],
-          "expected": [
-            true,
-            false,
-            false,
-            false
-          ]
-        },
-        {
-          "name": "difference undo restores original",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "xor independent point-in-rectangle coverage",
-          "actual": [
-            true,
-            false,
-            true,
-            false
-          ],
-          "expected": [
-            true,
-            false,
-            true,
-            false
-          ]
-        },
-        {
-          "name": "xor undo restores original",
-          "actual": true,
-          "expected": true
+          "name": "union full-image interior/exterior oracle",
+          "actual": 478,
+          "expected": 0
         }
       ],
-      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+      "reason": "Error: union full-image interior/exterior oracle\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at VEC-004 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:275:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2"
     }
   },
   {
@@ -1911,22 +1921,22 @@
     "id": "COL-008",
     "name": "出力色・色域警告",
     "verdict": "使える",
-    "operation": "known colored fixture size / fixture has saturated red / bleed excluded from pixel comparison / actual pink warning pixels present / original view has no warning pixels / proof differs from original / display toggle restores proof (premultiplied pixels, no bleed) / original toggle stable / warning disabled removes pink pixels / intent is selected / black point disabled / alternate proof has valid dimensions / proof does not alter revision / normal PNG identical pixel for pixel / eyedropper unchanged after proof",
-    "expected": "known colored fixture size: [128,96] / fixture has saturated red: true / bleed excluded from pixel comparison: \"0\" / actual pink warning pixels present: true / original view has no warning pixels: 0 / proof differs from original: true / display toggle restores proof (premultiplied pixels, no bleed): 0 / original toggle stable: true / warning disabled removes pink pixels: 0 / intent is selected: \"0\" / black point disabled: false / alternate proof has valid dimensions: true / proof does not alter revision: \"2750d4cf-a313-48d9-975a-1891833f2751\" / normal PNG identical pixel for pixel: true / eyedropper unchanged after proof: \"キャンバスから #FF0000 を取得しました。\"",
-    "actual": "known colored fixture size: [128,96] / fixture has saturated red: true / bleed excluded from pixel comparison: \"0\" / actual pink warning pixels present: true / original view has no warning pixels: 0 / proof differs from original: true / display toggle restores proof (premultiplied pixels, no bleed): 0 / original toggle stable: true / warning disabled removes pink pixels: 0 / intent is selected: \"0\" / black point disabled: false / alternate proof has valid dimensions: true / proof does not alter revision: \"2750d4cf-a313-48d9-975a-1891833f2751\" / normal PNG identical pixel for pixel: true / eyedropper unchanged after proof: \"キャンバスから #FF0000 を取得しました。\"",
+    "operation": "known colored fixture size / fixture has saturated red / bleed excluded from pixel comparison / actual pink warning pixels present / original view has no warning pixels / proof differs from original / display toggle restores proof (premultiplied pixels, no bleed) / original toggle stable / guide removed restores same proof / same guide same proof / zero guide raw comparison / repeated switching stable / warning disabled removes pink pixels / intent is selected / black point disabled / alternate proof has valid dimensions / proof does not alter revision / normal PNG identical pixel for pixel / eyedropper unchanged after proof",
+    "expected": "known colored fixture size: [128,96] / fixture has saturated red: true / bleed excluded from pixel comparison: \"0\" / actual pink warning pixels present: true / original view has no warning pixels: 0 / proof differs from original: true / display toggle restores proof (premultiplied pixels, no bleed): 0 / original toggle stable: true / guide removed restores same proof: 0 / same guide same proof: 0 / zero guide raw comparison: 0 / repeated switching stable: 0 / warning disabled removes pink pixels: 0 / intent is selected: \"0\" / black point disabled: false / alternate proof has valid dimensions: true / proof does not alter revision: \"721aa521-36e4-41bd-989d-42fc4fa9cd49\" / normal PNG identical pixel for pixel: true / eyedropper unchanged after proof: \"キャンバスから #FF0000 を取得しました。\"",
+    "actual": "known colored fixture size: [128,96] / fixture has saturated red: true / bleed excluded from pixel comparison: \"0\" / actual pink warning pixels present: true / original view has no warning pixels: 0 / proof differs from original: true / display toggle restores proof (premultiplied pixels, no bleed): 0 / original toggle stable: true / guide removed restores same proof: 0 / same guide same proof: 0 / zero guide raw comparison: 0 / repeated switching stable: 0 / warning disabled removes pink pixels: 0 / intent is selected: \"0\" / black point disabled: false / alternate proof has valid dimensions: true / proof does not alter revision: \"721aa521-36e4-41bd-989d-42fc4fa9cd49\" / normal PNG identical pixel for pixel: true / eyedropper unchanged after proof: \"キャンバスから #FF0000 を取得しました。\"",
     "problem": "",
     "improvement": "",
     "pending": "Actual display calibration and physical print appearance are not assessed in headless Chrome.",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45849424354",
-    "evidence": "03-chat-evidence/runs/45849424354/COL-008/",
-    "stamp": "2026-11-26T15:32:39.198Z",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/COL-008/",
+    "stamp": "2026-11-26T22:07:46.111Z",
     "result": {
       "id": "COL-008",
       "group": "D",
       "status": "PASS",
-      "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
       "checks": [
         {
           "path": "apps/editor/src/color/harmonyProof.test.ts",
@@ -2016,6 +2026,26 @@
               "expected": true
             },
             {
+              "name": "guide removed restores same proof",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "same guide same proof",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "zero guide raw comparison",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "repeated switching stable",
+              "actual": 0,
+              "expected": 0
+            },
+            {
               "name": "warning disabled removes pink pixels",
               "actual": 0,
               "expected": 0
@@ -2037,8 +2067,8 @@
             },
             {
               "name": "proof does not alter revision",
-              "actual": "2750d4cf-a313-48d9-975a-1891833f2751",
-              "expected": "2750d4cf-a313-48d9-975a-1891833f2751"
+              "actual": "721aa521-36e4-41bd-989d-42fc4fa9cd49",
+              "expected": "721aa521-36e4-41bd-989d-42fc4fa9cd49"
             },
             {
               "name": "normal PNG identical pixel for pixel",
@@ -2107,6 +2137,26 @@
           "expected": true
         },
         {
+          "name": "guide removed restores same proof",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "same guide same proof",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "zero guide raw comparison",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "repeated switching stable",
+          "actual": 0,
+          "expected": 0
+        },
+        {
           "name": "warning disabled removes pink pixels",
           "actual": 0,
           "expected": 0
@@ -2128,8 +2178,8 @@
         },
         {
           "name": "proof does not alter revision",
-          "actual": "2750d4cf-a313-48d9-975a-1891833f2751",
-          "expected": "2750d4cf-a313-48d9-975a-1891833f2751"
+          "actual": "721aa521-36e4-41bd-989d-42fc4fa9cd49",
+          "expected": "721aa521-36e4-41bd-989d-42fc4fa9cd49"
         },
         {
           "name": "normal PNG identical pixel for pixel",
@@ -2149,22 +2199,22 @@
     "id": "FX-007",
     "name": "修復・パッチ・クローン",
     "verdict": "未判定",
-    "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels / entry selects heal / healing decreases independent defect error / heal exterior unchanged / heal undo restores all pixels / entry selects patch / cancel leaves revision unchanged / cancel leaves original pixels / patch decreases independent defect error / patch exterior unchanged / patch undo restores all pixels / entry selects clone / entry selects heal / entry selects patch",
-    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"868cf898-cd0b-4edf-945d-b40f35b88319\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\"",
-    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"868cf898-cd0b-4edf-945d-b40f35b88319\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\"",
+    "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels / entry selects heal / healing decreases independent defect error / heal exterior unchanged / heal undo restores all pixels / entry selects patch / cancel leaves revision unchanged / cancel leaves original pixels / patch decreases independent defect error / patch exterior unchanged / patch undo restores all pixels / entry selects clone / entry selects heal / entry selects patch / entry selects clone / selection exterior unchanged / clone-selected undo restores all pixels",
+    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"e62c25b8-9591-4dc4-8b54-0253291b036e\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true",
+    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"e62c25b8-9591-4dc4-8b54-0253291b036e\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true",
     "problem": "",
     "improvement": "",
-    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#selectionClear')\n    - locator resolved to <button type=\"button\" id=\"selectionClear\">選択を解除</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:316:41)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45850922336",
-    "evidence": "03-chat-evidence/runs/45850922336/FX-007/",
-    "stamp": "2026-11-26T15:40:11.758Z",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/FX-007/",
+    "stamp": "2026-11-26T22:07:46.111Z",
     "result": {
       "id": "FX-007",
       "group": "D",
       "status": "ERROR",
-      "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
       "checks": [
         {
           "path": "apps/editor/src/wet/paint.test.ts",
@@ -2204,7 +2254,7 @@
         },
         {
           "id": "FX-007",
-          "status": "PASS",
+          "status": "ERROR",
           "checks": [
             {
               "name": "repair fixture dimensions",
@@ -2284,8 +2334,8 @@
             },
             {
               "name": "cancel leaves revision unchanged",
-              "actual": "868cf898-cd0b-4edf-945d-b40f35b88319",
-              "expected": "868cf898-cd0b-4edf-945d-b40f35b88319"
+              "actual": "e62c25b8-9591-4dc4-8b54-0253291b036e",
+              "expected": "e62c25b8-9591-4dc4-8b54-0253291b036e"
             },
             {
               "name": "cancel leaves original pixels",
@@ -2321,9 +2371,24 @@
               "name": "entry selects patch",
               "actual": "patch",
               "expected": "patch"
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "selection exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "clone-selected undo restores all pixels",
+              "actual": true,
+              "expected": true
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#selectionClear')\n    - locator resolved to <button type=\"button\" id=\"selectionClear\">選択を解除</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:316:41)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2"
         }
       ],
       "pending": [
@@ -2333,7 +2398,7 @@
     },
     "browser": {
       "id": "FX-007",
-      "status": "PASS",
+      "status": "ERROR",
       "checks": [
         {
           "name": "repair fixture dimensions",
@@ -2413,8 +2478,8 @@
         },
         {
           "name": "cancel leaves revision unchanged",
-          "actual": "868cf898-cd0b-4edf-945d-b40f35b88319",
-          "expected": "868cf898-cd0b-4edf-945d-b40f35b88319"
+          "actual": "e62c25b8-9591-4dc4-8b54-0253291b036e",
+          "expected": "e62c25b8-9591-4dc4-8b54-0253291b036e"
         },
         {
           "name": "cancel leaves original pixels",
@@ -2450,31 +2515,46 @@
           "name": "entry selects patch",
           "actual": "patch",
           "expected": "patch"
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "selection exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "clone-selected undo restores all pixels",
+          "actual": true,
+          "expected": true
         }
       ],
-      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#selectionClear')\n    - locator resolved to <button type=\"button\" id=\"selectionClear\">選択を解除</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:316:41)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2"
     }
   },
   {
     "id": "HIS-005",
     "name": "履歴ブラシ・部分復元",
     "verdict": "未判定",
-    "operation": "old stroke retained / local restoration changed pixel / remote stroke retained",
-    "expected": "old stroke retained: true / local restoration changed pixel: true / remote stroke retained: [31,38,51,255]",
-    "actual": "old stroke retained: true / local restoration changed pixel: true / remote stroke retained: [31,38,51,255]",
+    "operation": "old stroke retained / local restoration changed pixel / remote stroke retained / history restoration undo all pixels",
+    "expected": "old stroke retained: true / local restoration changed pixel: true / remote stroke retained: [31,38,51,255] / history restoration undo all pixels: true",
+    "actual": "old stroke retained: true / local restoration changed pixel: true / remote stroke retained: [31,38,51,255] / history restoration undo all pixels: true",
     "problem": "",
     "improvement": "",
     "pending": "snapshot/copy-region comparison, undo and invalid layer mapping / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45849424354",
-    "evidence": "03-chat-evidence/runs/45849424354/HIS-005/",
-    "stamp": "2026-11-26T15:32:39.198Z",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/HIS-005/",
+    "stamp": "2026-11-26T22:07:46.111Z",
     "result": {
       "id": "HIS-005",
       "group": "D",
       "status": "ERROR",
-      "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
       "checks": [
         {
           "path": "apps/editor/src/historyBrush.test.ts",
@@ -2541,6 +2621,11 @@
                 51,
                 255
               ]
+            },
+            {
+              "name": "history restoration undo all pixels",
+              "actual": true,
+              "expected": true
             }
           ],
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
@@ -2579,6 +2664,11 @@
             51,
             255
           ]
+        },
+        {
+          "name": "history restoration undo all pixels",
+          "actual": true,
+          "expected": true
         }
       ],
       "reason": "Implemented subchecks passed, see manifest for coverage gaps"

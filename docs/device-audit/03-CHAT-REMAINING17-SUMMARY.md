@@ -1,33 +1,26 @@
 # R2 チャット検査17件（実行結果・未判定を含む）
-最新検査: https://github.com/totoro0419/illustro/actions/runs/45850922336
+対象: 8bbcab518725d7c9c77ba09d8a2f07a5b8213e49
+Actions: https://github.com/totoro0419/illustro/actions/runs/45902400214
 判定済み: 2/17
 未判定: 15
-各行は実際に検査したコミットを保持。部分検査の成功は未判定のまま。
+既存記録 #113 と分離。未確認条件が残るものや計測不一致は合格にしない。物理キー・OS固有動作は人間の追加確認対象。
 
-|ID|判定|自動検査状態|実ブラウザー条件数|
-|---|---|---|---:|
-|SAV-006|未判定|ERROR|0|
-|SAV-007|未判定|ERROR|5|
-|REF-006|未判定|ERROR|5|
-|GST-005|使える|PASS|13|
-|IO-006|未判定|ERROR|4|
-|FIL-005|未判定|ERROR|5|
-|LIN-007|未判定|ERROR|5|
-|TRN-005|未判定|ERROR|1|
-|VEC-004|未判定|ERROR|8|
-|LAY-005|未判定|ERROR|3|
-|COL-008|使える|PASS|15|
-|FX-007|未判定|ERROR|20|
-|HIS-005|未判定|ERROR|3|
-|AUT-002|未判定|ERROR|3|
-|AUT-003|未判定|ERROR|5|
-|AUT-004|未判定|ERROR|8|
-|AUT-005|未判定|ERROR|2|
-
-FX-007: 3処理の実操作・画素比較・取消・Undo/Redoを含む20条件成功。未確認の条件はmanifestに保持。
-COL-008: 塗り足し0、透明度考慮による画素差0、最大差0。通常PNG・原画・スポイト不変。色変換本体は変更なし。
-SAV-006: 現行作品作成・改名まで進み、再起動後に旧 #ihContinue を探して停止。保存本体の不具合とは未確定。
-TRN-005: 同名の図形レイヤー2件をテストが区別できず停止。操作UIの識別改善候補、整列処理の不具合とは未確定。
-LAY-005: マスク無効化で全画素復元を確認。残条件あり。
-公開: https://totoro0419.github.io/illustro/r2-audit-fixes-round5/ — 815df242の成果を専用ディレクトリに保存し、再試行で公開コミット確認・公開版FX-007/COL-008ブラウザー検査とも成功。https://github.com/totoro0419/illustro/actions/runs/45851047631
-注意: FX-007の20条件は部分検査。COL-008は塗り足しと画素比較方法を同時変更したため、個別の原因の寄与は未確定。
+|ID|判定|自動検査状態|
+|---|---|---|
+|SAV-006|未判定|ERROR|
+|SAV-007|未判定|ERROR|
+|REF-006|未判定|ERROR|
+|GST-005|使える|PASS|
+|IO-006|未判定|ERROR|
+|FIL-005|未判定|ERROR|
+|LIN-007|未判定|ERROR|
+|TRN-005|未判定|FAIL|
+|VEC-004|未判定|FAIL|
+|LAY-005|未判定|ERROR|
+|COL-008|使える|PASS|
+|FX-007|未判定|ERROR|
+|HIS-005|未判定|ERROR|
+|AUT-002|未判定|ERROR|
+|AUT-003|未判定|ERROR|
+|AUT-004|未判定|ERROR|
+|AUT-005|未判定|ERROR|

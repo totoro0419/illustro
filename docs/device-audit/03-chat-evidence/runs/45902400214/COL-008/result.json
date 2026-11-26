@@ -1,0 +1,154 @@
+{
+  "id": "COL-008",
+  "group": "D",
+  "status": "PASS",
+  "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+  "checks": [
+    {
+      "path": "apps/editor/src/color/harmonyProof.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C04-013 display-only proofing covers retained artwork and temporary strokes as well as the base canvas",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C04-015 approved Aurora core palette keeps the accepted blue/periwinkle/violet/pink accents",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/export/rasterIcc.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "extracts a PNG profile with its original bytes",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "reassembles out-of-order JPEG profile segments and rejects missing pieces",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "reads a WebP ICC chunk without interpreting it as pixels",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "COL-008",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "known colored fixture size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "fixture has saturated red",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "bleed excluded from pixel comparison",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "actual pink warning pixels present",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "original view has no warning pixels",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "proof differs from original",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "display toggle restores proof (premultiplied pixels, no bleed)",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "original toggle stable",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "guide removed restores same proof",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "same guide same proof",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "zero guide raw comparison",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "repeated switching stable",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "warning disabled removes pink pixels",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "intent is selected",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "black point disabled",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "alternate proof has valid dimensions",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "proof does not alter revision",
+          "actual": "721aa521-36e4-41bd-989d-42fc4fa9cd49",
+          "expected": "721aa521-36e4-41bd-989d-42fc4fa9cd49"
+        },
+        {
+          "name": "normal PNG identical pixel for pixel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "eyedropper unchanged after proof",
+          "actual": "キャンバスから #FF0000 を取得しました。",
+          "expected": "キャンバスから #FF0000 を取得しました。"
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": []
+}
