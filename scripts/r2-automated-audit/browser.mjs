@@ -336,6 +336,12 @@ const cases={
   await button(p,'線画領域を確定・保存').click();await fillState(p,/確定済み/,'confirmed graph');
   await idle();const native=await saveCopy('line-graph');await writeFile(join(evidence,'line-graph.illustro'),await readFile(native));
   await page.screenshot({path:join(evidence,'confirmed.png')});
+  await openFile(native,128);p=await advancedFill();
+  const saved=p.getByLabel('作品に保存した線画領域',{exact:true});await saved.locator('option').nth(1).waitFor({state:'attached'});
+  const options=await saved.locator('option').evaluateAll(os=>os.map(o=>({value:o.value,label:o.textContent})));
+  yes('saved line analysis present after reopening',options.some(o=>o.value));
+  await choose(saved,options.find(o=>o.value).value);
+  await fillState(p,/確定済み|保存済み/,'reopened saved graph');
  },
  'REF-006':async()=>{
   await fresh();await drawLine([[70,100],[180,100]],8);
@@ -397,6 +403,34 @@ const cases={
   yes('exported macro JSON contains name',JSON.stringify(raw).includes('QA stroke'));
   await button(root,'素材に登録').click();await root.getByText('素材に登録しました。',{exact:true}).waitFor();
   await findCommand('自動操作','操作セットを記録・再生');yes('search reopens macro panel',await page.locator('.c04-simple-macros').isVisible());
+  await newContext();await fresh();
+  const assets=await openBox('assetsBox');
+  await choose(assets.locator('select[aria-label="取り込む素材の種類"]'),'macro');
+  await assets.locator('input[type=file]').first().setInputFiles(file);await button(assets,'追加した素材を見る').click();
+  const entry=assets.locator('.c05-asset-entry').filter({hasText:'macro.json'}).first();await button(entry,'操作セットとして読み込む').click();
+  await assets.getByText('1件の設定を読み込みました。',{exact:true}).waitFor();
+  const d=page.getByRole('dialog',{name:'操作セットを確認'});
+  async function replay(name,dy){
+   await d.getByLabel('縦のずれ（px）').fill(String(dy));const old=await revision();await button(d,'この内容で実行').click();
+   await page.getByRole('button',{name:'適用',exact:true}).filter({visible:true}).click();await waitRev(old);
+   yes(name,alpha(await png(1,'artwork',name),[120,100+dy])>0);
+  }
+  await findCommand('QA stroke','QA stroke');await replay('imported-macro-replays',0);
+  if(await page.locator('#allFeaturesPanel').isVisible())await page.locator('#featuresClose').click();
+  await page.locator('#allFeatures').click();await page.locator('#commandSearchOpen').click();
+  const search=page.locator('#commandSearchDialog');await search.locator('input[type=search]').fill('QA stroke');
+  await search.getByRole('button',{name:'QA strokeをQuickに固定',exact:true}).click();await search.waitFor({state:'hidden'});
+  if(!await page.locator('#quickControllerPanel').isVisible())await page.locator('#quickControllerOpen').click();
+  const quick=page.locator('#quickControllerPanel');
+  if(await quick.locator('.c04-quick-slot').filter({hasText:'変更'}).count())await quick.locator('.c04-quick-slot').first().click();
+  if(!await quick.isVisible())await page.locator('#quickControllerOpen').click();
+  await quick.getByRole('button',{name:'QA stroke',exact:true}).click();await replay('quick-macro-replays',90);
+  await findCommand('作業欄の設定','作業欄の設定');const shortcuts=page.locator('.c04-shortcut-settings');if(!await shortcuts.evaluate(e=>e.open))await shortcuts.locator('summary').click();
+  const macroId='macro:'+raw.items[0].id;
+  await choose(shortcuts.locator('select:has(option[value="'+macroId+'"])'),macroId);
+  await button(shortcuts,'キーを押して登録').click();await page.keyboard.press('j');
+  await shortcuts.locator('.c04-shortcut-row').filter({hasText:'QA stroke'}).waitFor();
+  await page.locator('#paint').click();await page.keyboard.press('j');await replay('shortcut-macro-replays',180);
  },
 
  'INP-006':async()=>{
@@ -449,10 +483,10 @@ const cases={
   await page.locator('#home').click();await page.locator('#ihNavWorks').click();
   for(const work of [one,two])await page.locator('[data-work-id="'+work+'"] input[type=checkbox]').check();
   await page.evaluate(()=>{
-    let attempts=0;
+    let attempts=0;const files=new Map();window.qaBatchFiles=files;window.qaBatchWrites=[];
     Object.defineProperty(window,'showDirectoryPicker',{configurable:true,value:async()=>({name:'QA isolated simulated folder',getFileHandle:async(name,opts)=>{
-      if(!opts?.create)throw new DOMException('not found','NotFoundError');
-      return {createWritable:async()=>({write:async()=>{if(++attempts===1)throw new DOMException('QA simulated quota fault','QuotaExceededError');},close:async()=>{},abort:async()=>{}})};
+      if(!opts?.create&&!files.has(name))throw new DOMException('not found','NotFoundError');
+      return {createWritable:async()=>{let next;return {write:async(blob)=>{if(++attempts===1)throw new DOMException('QA simulated quota fault','QuotaExceededError');next=Array.from(new Uint8Array(await blob.arrayBuffer()));},close:async()=>{files.set(name,next);window.qaBatchWrites.push(name);},abort:async()=>{next=undefined;}};}};
     }})});
   });
   await page.locator('#ihWorkExportSelected').click();const d=page.getByRole('dialog',{name:'選んだ作品を一括で書き出す'});
@@ -475,6 +509,20 @@ const cases={
   await button(d,'失敗・中止分を再試行').click();
   await d.getByText('1件を作成。',{exact:true}).waitFor({timeout:90000});
   eq('both output rows recovered',await d.locator('ol li').filter({hasText:'作成済み'}).count(),2);
+  const stored=await page.evaluate(()=>[...window.qaBatchFiles]);eq('two distinct saved folder files',stored.length,2);
+  for(const [,bytes] of stored){const im=PNG.sync.read(Buffer.from(bytes));const expected=[first,second].find(x=>x.width===im.width&&x.height===im.height);yes('folder output identical to original export '+im.width,!!expected&&im.data.equals(expected.data));}
+  await page.evaluate(()=>{window.qaBatchWrites.length=0;for(const name of window.qaBatchFiles.keys())window.qaBatchFiles.set(name,[7,11,13]);});
+  await button(d,'画像をまとめて作成').click();
+  const confirmation=page.locator('dialog.illustro-app-dialog[open]');await confirmation.getByText(/上書きしますか/).waitFor();
+  await button(confirmation,'キャンセル').click();await d.getByText(/元ファイルを保持/).waitFor();
+  await confirmation.getByText(/上書きしますか/).waitFor();await button(confirmation,'確定').click();
+  await d.getByText('2件を作成。',{exact:true}).waitFor({timeout:90000});
+  const overwrites=await page.evaluate(()=>({files:[...window.qaBatchFiles],writes:window.qaBatchWrites}));
+  eq('exactly one approved overwrite',overwrites.writes.length,1);
+  eq('declined original file untouched',overwrites.files.filter(([,v])=>JSON.stringify(v)==='[7,11,13]').length,1);
+  const overwritten=PNG.sync.read(Buffer.from(overwrites.files.find(([name])=>name===overwrites.writes[0])[1]));
+  const approved=[first,second].find(x=>x.width===overwritten.width&&x.height===overwritten.height);
+  yes('approved overwrite contains correct artwork',!!approved&&overwritten.data.equals(approved.data));
   await button(d,'閉じる').click();
   await openArtwork(one);const originalOne=await png(1,'artwork','original-one');yes('first original untouched',originalOne.data.equals(first.data));await page.locator('#home').click();await openArtwork(two);const originalTwo=await png(1,'artwork','original-two');yes('second original untouched',originalTwo.data.equals(second.data));
  },
@@ -502,6 +550,15 @@ const cases={
   await selectRect([90,190],[150,220]);await drawLine([[70,210],[180,210]],8);const after=await png(1,'artwork','offline');yes('new offline stroke present',alpha(after,[120,200])>0);yes('offline selection constrains stroke',alpha(after,[175,210])===0);
   await saveIdle();await page.reload({waitUntil:'domcontentloaded'});await openArtwork(docId);
   const restored=await png(1,'artwork','offline-restored');yes('offline save survived reload',after.data.equals(restored.data));
+  await page.locator('#selectionClear').click();
+  const originalLayer=await canvas.getAttribute('data-selected-layer-id');
+  await layerPage();let old=await revision();await page.locator('#addLayerPage').click();await waitRev(old);await page.locator('#closeLayerPage').click();
+  yes('offline new layer created',await canvas.getAttribute('data-selected-layer-id')!==originalLayer);
+  await drawLine([[270,300],[350,300]],12);const withLayer=await png(1,'artwork','offline-layer');
+  yes('offline new layer pixels rendered',alpha(withLayer,[310,300])>200);
+  await page.locator('#undo').click();await idle();eq('offline undo removes new stroke',alpha(await png(1,'artwork','offline-undo'),[310,300]),0);
+  await page.locator('#redo').click();await idle();yes('offline redo restores all pixels',withLayer.data.equals((await png(1,'artwork','offline-redo')).data));
+  await saveIdle();await page.reload({waitUntil:'domcontentloaded'});await openArtwork(docId);yes('offline layer/history survives reload',withLayer.data.equals((await png(1,'artwork','offline-layer-reopen')).data));
   await context.setOffline(false);
  },
  'SEL-001':async()=>{
@@ -522,9 +579,9 @@ const cases={
   await button(p,'キャンバスで塗る').click();await stroke([[110,110],[150,110],[150,150],[110,150],[110,110]]);old=await revision();await apply.click();await waitRev(old);
   const filled=im;im=await png(1,'artwork','erased');eq('erased inside',alpha(im,[130,130]),0);yes('outside erasure retained',alpha(im,[200,130])>200);
   await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);yes('erase undo pixel equality',filled.data.equals((await png(1,'artwork','erase-undo')).data));
-  await selectRect([110,110],[160,160]);await panel('smartFill');await p.getByLabel('指定部分を透明にする',{exact:true}).uncheck();await button(p,'キャンバスで塗る').click();await stroke([[90,90],[190,90],[190,190],[90,190],[90,90]]);old=await revision();await apply.click();await waitRev(old);
+  await selectRect([110,110],[160,160]);await panel('smartFill');await p.getByLabel('指定部分を透明にする',{exact:true}).check();await button(p,'キャンバスで塗る').click();await stroke([[90,90],[190,90],[190,190],[90,190],[90,90]]);old=await revision();await apply.click();await waitRev(old);
   const selected=await png(1,'artwork','selection-filled');let errors=0;for(let y=0;y<selected.height;y++)for(let x=0;x<selected.width;x++)if((x<110||x>=160||y<110||y>=160)&&JSON.stringify(rgba(selected,x,y))!==JSON.stringify(rgba(filled,x,y)))errors++;
-  eq('selection confines lasso fill',errors,0);
+  eq('selection confines lasso erase',errors,0);eq('selected portion erased',alpha(selected,[130,130]),0);
  },
  'PIX-001':async()=>{
   await fresh();await findCommand('ドット絵','1pxのドットペン');
@@ -547,6 +604,20 @@ const cases={
   if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();const masked=await png(1,'artwork','masked');yes('visible center',alpha(masked,[140,160])>200);eq('hidden exterior',alpha(masked,[240,160]),0);
   old=await revision();await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);
   if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();const disabled=await png(1,'artwork','mask-disabled');yes('disable restores artwork',before.data.equals(disabled.data));
+  const menu=async()=>{await layerActions();const p=page.locator('#layerVectorMask');if(!await p.evaluate(e=>e.open))await p.locator('summary').click();return p;};
+  const close=async()=>{if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();};
+  await menu();old=await revision();await page.locator('#vectorMaskEnabled').check();await waitRev(old);
+  await menu();old=await revision();await page.locator('#vectorMaskInverted').check();await waitRev(old);await close();
+  let result=await png(1,'artwork','inverted');eq('inverted center hidden',alpha(result,[140,160]),0);yes('inverted exterior visible',alpha(result,[240,160])>200);
+  await menu();old=await revision();await page.locator('#vectorMaskDensity').fill('50');await waitRev(old);await close();
+  result=await png(1,'artwork','density-half');yes('half density restores half the hidden opaque pixel',Math.abs(alpha(result,[140,160])-Math.round(alpha(before,[140,160])/2))<=1);
+  await menu();old=await revision();await page.locator('#maskLinked').uncheck();await waitRev(old);await close();
+  const native=await saveCopy('mask-state');await openFile(native,512);
+  yes('mask saved and reopened exactly',result.data.equals((await png(1,'artwork','mask-reopened')).data));
+  await menu();eq('unlink setting persists',await page.locator('#maskLinked').isChecked(),false);eq('inversion persists',await page.locator('#vectorMaskInverted').isChecked(),true);eq('density persists',await page.locator('#vectorMaskDensity').inputValue(),'50');
+  old=await revision();await page.locator('#vectorMaskRemove').click();await waitRev(old);await close();yes('removing mask preserves raster',before.data.equals((await png(1,'artwork','mask-removed')).data));
+  await selectRect([100,100],[190,210]);await menu();await choose(page.locator('#vectorMaskShape'),'ellipse');old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);await close();
+  const ellipse=await png(1,'artwork','ellipse');yes('ellipse center retained',alpha(ellipse,[145,160])>200);eq('ellipse far outside hidden',alpha(ellipse,[240,160]),0);
  },
  'HIS-005':async()=>{
   await fresh();await drawLine([[70,100],[180,100]]);const historical=await revision(),layer=await canvas.getAttribute('data-selected-layer-id');

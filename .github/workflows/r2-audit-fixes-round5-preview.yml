@@ -9,7 +9,6 @@ on:
       - 'prototypes/brush-rt/**'
       - 'scripts/prepare-r2-audit-fixes-round5-preview.mjs'
       - 'scripts/prepare-r2-preview.mjs'
-      - 'scripts/r2-automated-audit/browser.mjs'
       - '.github/workflows/r2-audit-fixes-round5-preview.yml'
   workflow_dispatch:
 
