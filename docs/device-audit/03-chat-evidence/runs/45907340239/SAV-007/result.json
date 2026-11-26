@@ -1,0 +1,69 @@
+{
+  "id": "SAV-007",
+  "group": "A",
+  "status": "ERROR",
+  "commit": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+  "checks": [
+    {
+      "id": "SAV-007",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "offline flag",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "same work offline",
+          "actual": "92b7a998-999c-4fbf-80b8-7c4beced4c71",
+          "expected": "92b7a998-999c-4fbf-80b8-7c4beced4c71"
+        },
+        {
+          "name": "new offline stroke present",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline selection constrains stroke",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline save survived reload",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline new layer created",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline new layer pixels rendered",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline undo removes new stroke",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "offline redo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline layer/history survives reload",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "offline layers/selection/transform/reference/history/filter/macro"
+  ],
+  "reason": "Coverage not complete: offline layers/selection/transform/reference/history/filter/macro"
+}
