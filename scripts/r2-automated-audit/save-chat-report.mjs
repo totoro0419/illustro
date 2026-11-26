@@ -9,12 +9,15 @@ const stamp=new Date().toISOString();
 const csv=v=>'"'+String(v??'').replaceAll('"','""')+'"';
 await mkdir(dest,{recursive:true});
 const rows=[];
+let previous=[];try{previous=JSON.parse(await readFile(join(dest,'actual-results.json'),'utf8'));}catch{}
+const history=join(dest,'runs',process.env.GITHUB_RUN_ID??'local');await mkdir(history,{recursive:true});
 const json=async p=>JSON.parse(await readFile(p,'utf8'));
 for(const [i,id] of ids.entries()){
- const spec=specs.find(s=>s.id===id),src=join(out,id),target=join(dest,id);
+ const spec=specs.find(s=>s.id===id),src=join(out,id),target=join(history,id);
  let result=null,browser=null;
  try{result=await json(join(src,'result.json'));}catch{}
  try{browser=await json(join(src,'browser.json'));}catch{}
+ if(!result&&!browser){const prior=previous.find(r=>r.id===id&&r.result);if(prior){rows.push(prior);continue;}}
  await mkdir(target,{recursive:true});
  for(const f of await readdir(src).catch(()=>[])){
   const path=join(src,f);
@@ -25,12 +28,13 @@ for(const [i,id] of ids.entries()){
  const missing=result?.pending??spec.pending;
  const cause=result?.status??'NOT_RUN';
  const mismatch=checks.filter(c=>JSON.stringify(c.actual)!==JSON.stringify(c.expected));
- rows.push({id,name:names[i],verdict,operation:checks.map(c=>c.name).join(' / '),expected:checks.map(c=>c.name+': '+JSON.stringify(c.expected)).join(' / '),actual:checks.map(c=>c.name+': '+JSON.stringify(c.actual)).join(' / '),problem:mismatch.length?'計測不一致（アプリ側か検査側か要確認）: '+mismatch.map(c=>c.name).join(' / '):'',improvement:'',pending:[...missing,...(cause==='PASS'?[]:[cause,browser?.reason??result?.reason??'実行結果なし'])].join(' / '),environment:'GitHub Actions Ubuntu / headless Chrome / localhost',sha,url,evidence:'03-chat-evidence/'+id+'/',stamp,result,browser});
+ rows.push({id,name:names[i],verdict,operation:checks.map(c=>c.name).join(' / '),expected:checks.map(c=>c.name+': '+JSON.stringify(c.expected)).join(' / '),actual:checks.map(c=>c.name+': '+JSON.stringify(c.actual)).join(' / '),problem:mismatch.length?'計測不一致（アプリ側か検査側か要確認）: '+mismatch.map(c=>c.name).join(' / '):'',improvement:'',pending:[...missing,...(cause==='PASS'?[]:[cause,browser?.reason??result?.reason??'実行結果なし'])].join(' / '),environment:'GitHub Actions Ubuntu / headless Chrome / localhost',sha,url,evidence:'03-chat-evidence/runs/'+(process.env.GITHUB_RUN_ID??'local')+'/'+id+'/',stamp,result,browser});
 }
 const header=['機能ID','機能名','判定','実施した操作','期待結果','実際の結果','発見した問題','改善案','未確認条件','検査環境','対象コミット','Actions実行URL','証拠の参照先','検査日時'];
 const data=rows.map(r=>[r.id,r.name,r.verdict,r.operation,r.expected,r.actual,r.problem,r.improvement,r.pending,r.environment,r.sha,r.url,r.evidence,r.stamp]);
 await writeFile('docs/device-audit/03-CHAT-REMAINING17.csv',[header,...data].map(r=>r.map(csv).join(',')).join('\n')+'\n');
 await writeFile(join(dest,'actual-results.json'),JSON.stringify(rows,null,2));
+await writeFile(join(history,'actual-results.json'),JSON.stringify(rows,null,2));
 const summary=['# R2 チャット検査17件（実行結果・未判定を含む）','対象: '+sha,'Actions: '+url,'判定済み: '+rows.filter(r=>r.verdict!=='未判定').length+'/17','未判定: '+rows.filter(r=>r.verdict==='未判定').length,'既存記録 #113 と分離。未確認条件が残るものや計測不一致は合格にしない。物理キー・OS固有動作は人間の追加確認対象。','','|ID|判定|自動検査状態|','|---|---|---|',...rows.map(r=>'|'+r.id+'|'+r.verdict+'|'+(r.result?.status??'NOT_RUN')+'|')].join('\n')+'\n';
 await writeFile('docs/device-audit/03-CHAT-REMAINING17-SUMMARY.md',summary);
 for(const r of rows)console.log('CHAT_RESULT',r.id,r.verdict,r.result?.status??'NOT_RUN',r.browser?.status??'NO_BROWSER',r.browser?.checks?.length??0);

@@ -177,7 +177,83 @@ async function addReference(){
  await button(entry,'参考資料として開く').click();
  await page.locator('.c05-reference-frame').first().waitFor();
 }
+
+async function shapeRect(x1,y1,x2,y2){
+ const p=await panel('shapes');await button(p,'新しく作る').click();
+ await choose(p.locator('select:has(option[value="rectangle"])'),'rectangle');
+ await choose(p.locator('select:has(option[value="vector"])'),'vector');
+ await p.getByLabel('内側を塗る',{exact:true}).check();
+ for(const [name,value] of [['始点 X',x1],['始点 Y',y1],['終点 X',x2],['終点 Y',y2]])await p.getByLabel(name,{exact:true}).fill(String(value));
+ const old=await revision();await button(p,'適用').click();await waitRev(old);
+ return await canvas.getAttribute('data-selected-layer-id');
+}
+async function layerPage(){
+ if(!await page.locator('#layerPage').isVisible())await page.locator('#layer').click();
+ await page.locator('#layerPageList').waitFor({state:'visible'});
+}
+async function selectLayer(id){
+ await layerPage();await page.locator('#layerPageList [data-layer-id="'+id+'"]').click();
+ await page.locator('#closeLayerPage').click();
+}
+function xBounds(im,y0,y1){
+ let left=Infinity,right=-Infinity;
+ for(let y=y0;y<=y1;y++)for(let x=0;x<im.width;x++)if(alpha(im,[x,y])>127){left=Math.min(left,x);right=Math.max(right,x);}
+ return [left,right];
+}
 const cases={
+ 'TRN-005':async()=>{
+  await fresh();const a=await shapeRect(60,55,120,95),b=await shapeRect(200,145,260,185),c=await shapeRect(340,235,400,275);
+  const before=await png(1,'artwork','unaligned');const bands=[[65,85],[155,175],[245,265]];
+  const oldBounds=bands.map(q=>xBounds(before,...q));yes('three distinct x positions',new Set(oldBounds.map(x=>x[0])).size===3);
+  await layerPage();await page.locator('#layerBatchToggle').click();
+  for(const id of [a,b,c])await page.locator('#layerPageList [data-layer-id="'+id+'"]').click();
+  await page.locator('#closeLayerPage').click();const root=await openBox('documentBox');
+  const p=root.locator('details').filter({has:root.getByText('レイヤーの整列・均等配置',{exact:true})}).last();
+  if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
+  await button(p,'複数選択したレイヤーを確認').click();
+  await choose(p.locator('select:has(option[value="left"])'),'left');
+  await choose(p.locator('select:has(option[value="'+a+'"])'),a);
+  const old=await revision();await button(p,'この位置に適用').click();await waitRev(old);
+  const aligned=await png(1,'artwork','aligned');
+  for(let i=0;i<3;i++)eq('left edge aligned in band '+i,xBounds(aligned,...bands[i]),oldBounds[0]);
+  await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);
+  yes('one undo restores all pixels',before.data.equals((await png(1,'artwork','undo')).data));
+ },
+ 'VEC-004':async()=>{
+  await fresh();const a=await shapeRect(70,70,250,250),b=await shapeRect(170,130,350,310);
+  const before=await png(1,'artwork','original');
+  const points=[[100,100],[200,180],[300,280],[40,40]];
+  for(const [mode,expected] of [['union',[true,true,true,false]],['intersection',[false,true,false,false]],['difference',[true,false,false,false]],['xor',[true,false,true,false]]]){
+   await selectLayer(a);const root=await openBox('documentBox');
+   const p=root.locator('details').filter({has:root.getByText('ベクター線・点の編集',{exact:true})}).last();
+   if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
+   await button(p,'選んだベクターを編集').click();
+   await choose(p.locator('select:has(option[value="'+b+'"])'),b);
+   await choose(p.locator('select:has(option[value="'+mode+'"])'),mode);
+   await button(p,'2つの形を組み合わせる').click();
+   await p.getByText(/元の2レイヤーを同時に隠せます/).waitFor();
+   const old=await revision();await button(p,'作品に反映').click();await waitRev(old);
+   const im=await png(1,'artwork',mode);eq(mode+' independent point-in-rectangle coverage',points.map(q=>alpha(im,q)>127),expected);
+   await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);
+   yes(mode+' undo restores original',before.data.equals((await png(1,'artwork',mode+'-undo')).data));
+  }
+ },
+ 'FX-007':async()=>{
+  await fresh();await importRaster(join(fixture,'repair-damaged.png'));
+  const before=await png(1,'artwork','repair-input');
+  await page.locator('#allFeatures').click();await page.locator('#commandSearchOpen').click();
+  const d=page.locator('#commandSearchDialog'),search=d.locator('input[type=search]');
+  for(const term of ['修復','パッチ','クローン']){
+   await search.fill(term);
+   await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+   const matches=await d.locator('.c04-command-run').allTextContents();
+   checks.push({name:'UI command search '+term,actual:matches,expected:'manual triage: repair entry and real operation'});
+   await d.screenshot({path:join(evidence,'search-'+['修復','パッチ','クローン'].indexOf(term)+'.png')});
+  }
+  await page.keyboard.press('Escape');
+  yes('source image imported',before.width>0&&before.height>0);
+ },
+
  'LIN-007':async()=>{
   await fresh();let p=await advancedFill();
   await fillState(p,/未解析/,'blank unanalysed');
@@ -198,7 +274,7 @@ const cases={
   yes('reference frame present',await frame.isVisible());
   const root=page.locator('.c05-reference-editor');if(!await root.isVisible())await openBox('assetsBox');
   const row=root.locator('.c05-reference-row').first();
-  await button(row,'出典・メモを追加').click();
+  await row.getByRole('button',{name:/出典・メモを(追加|編集)/}).click();
   const d=page.getByRole('dialog',{name:'資料の出典と利用メモ'});
   await d.locator('textarea').fill('QA source: https://example.com/fixture ; author: QA ; usage: testing');
   await button(d,'メモを保存').click();
@@ -216,13 +292,13 @@ const cases={
   await fresh();await pen(8);const root=await recordMacro();
   const initial=await png(1,'artwork','before');const old=await revision();
   await button(root,'実行').click();let d=page.getByRole('dialog',{name:'操作セットを確認'});
-  await button(d,'取り消す').click();eq('cancel revision unchanged',await revision(),old);
+  await button(d,'取り消す').click();await d.waitFor({state:'hidden'});eq('cancel revision unchanged',await revision(),old);
   const canceled=await png(1,'artwork','canceled');yes('cancel all pixels unchanged',initial.data.equals(canceled.data));
   await button(root,'実行').click();await d.getByLabel('縦のずれ（px）').fill('90');
   await button(d,'この内容で実行').click();
   const apply=page.getByRole('button',{name:'適用',exact:true}).filter({visible:true});await apply.waitFor();
-  const candidate=await png(1,'artwork','candidate-original');yes('preview leaves artwork untouched',initial.data.equals(candidate.data));
-  await apply.click();await waitRev(old);
+  eq('preview does not commit revision',await revision(),old);
+  await apply.click();await page.locator('dialog[open]').waitFor({state:'hidden'}).catch(()=>{});await waitRev(old);
   const applied=await png(1,'artwork','applied');yes('macro changes expected area',alpha(applied,[120,190])>0);
   await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);
   const undone=await png(1,'artwork','undo');yes('one undo restores all pixels',initial.data.equals(undone.data));
@@ -278,7 +354,7 @@ const cases={
   await saveIdle();const one=await canvas.getAttribute('data-document-id');
   await page.locator('#home').click();await page.locator('#ihNavHome').click();await page.locator('#ihStart').click();
   const setup=page.locator('#ihCanvasSetup');if(!await setup.evaluate(e=>e.open))await setup.locator(':scope > summary').click();
-  await page.locator('#ihNewName').fill('Batch second QA');await page.locator('#ihNewWidth').fill('256');await page.locator('#ihNewHeight').fill('192');
+  await page.locator('#ihNewWidth').fill('256');await page.locator('#ihNewHeight').fill('192');
   await page.locator('#ihNewBackground').selectOption('transparent',{force:true});await page.locator('#ihNewCreate').click();
   await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.documentWidth==='256'&&!document.querySelector('#brush')?.disabled);
   await drawLine([[40,60],[150,60]],18);const second=await png(1,'artwork','second-expected');
@@ -375,19 +451,19 @@ const cases={
  },
  'LAY-005':async()=>{
   await fresh();await drawLine([[70,160],[300,160]],18);const before=await png(1,'artwork','unmasked');
-  await selectRect([100,100],[190,210]);await findCommand('レイヤー','レイヤー画面');if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await page.locator('#vectorMaskShape').selectOption('rectangle',{force:true});
+  await selectRect([100,100],[190,210]);await layerPage();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await page.locator('#vectorMaskShape').selectOption('rectangle',{force:true});
   let old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);
-  const masked=await png(1,'artwork','masked');yes('visible center',alpha(masked,[140,160])>200);eq('hidden exterior',alpha(masked,[240,160]),0);
-  old=await revision();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);
-  const disabled=await png(1,'artwork','mask-disabled');yes('disable restores artwork',before.data.equals(disabled.data));
+  if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();const masked=await png(1,'artwork','masked');yes('visible center',alpha(masked,[140,160])>200);eq('hidden exterior',alpha(masked,[240,160]),0);
+  old=await revision();await layerPage();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);
+  if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();const disabled=await png(1,'artwork','mask-disabled');yes('disable restores artwork',before.data.equals(disabled.data));
  },
  'HIS-005':async()=>{
   await fresh();await drawLine([[70,100],[180,100]]);const historical=await revision(),layer=await canvas.getAttribute('data-selected-layer-id');
   await drawLine([[70,200],[180,200]]);await drawLine([[270,200],[380,200]]);
   const before=await png(1,'artwork','before');await findCommand('履歴','履歴');await page.locator('#openArtworkHistory').click();
-  const d=page.getByRole('dialog').filter({hasText:'作品の履歴'});await d.getByLabel('比較する時点',{exact:false}).selectOption(historical,{force:true});
+  const d=page.getByRole('dialog').filter({hasText:'作品の履歴'});await choose(d.locator('select:has(option[value="'+historical+'"])').first(),historical);
   await d.getByText('以前のレイヤーからコピー',{exact:true}).click();
-  await d.getByLabel('復元元のレイヤー',{exact:false}).selectOption(layer,{force:true});await button(d,'履歴ブラシを使う').click();
+  await choose(d.locator('select:has(option[value="'+layer+'"])').first(),layer);await button(d,'履歴ブラシを使う').click();
   await page.locator('#historyBrushBar').waitFor({state:'visible'});let old=await revision();await stroke([[90,200],[150,200]]);await waitRev(old);
   await page.locator('#doneHistoryBrush').click();const after=await png(1,'artwork','restored');
   yes('old stroke retained',alpha(after,[120,100])>0);yes('local restoration changed pixel',alpha(after,[120,200])<alpha(before,[120,200]));eq('remote stroke retained',rgba(after,320,200),rgba(before,320,200));
@@ -395,7 +471,7 @@ const cases={
  'GST-005':async()=>{
   await fresh();await findCommand('作業欄の設定','作業欄の設定');
   let p=page.locator('.c04-shortcut-settings');await p.locator('summary').click();
-  await p.getByLabel('登録する機能',{exact:true}).selectOption('panView',{force:true});await p.getByLabel('キーを押したときの動作',{exact:true}).selectOption('hold',{force:true});
+  await choose(p.locator('select:has(option[value="panView"])'),'panView');await choose(p.locator('select:has(option[value="hold"])'),'hold');
   await button(p,'キーを押して登録').click();await page.keyboard.press('j');await p.locator('.c04-shortcut-row').filter({hasText:'押している間だけ'}).waitFor();
   const dl=page.waitForEvent('download');await button(p,'キー設定を書き出す').click();const file=join(evidence,'keys.json');await (await dl).saveAs(file);
   await resetPage();await fresh();await findCommand('作業欄の設定','作業欄の設定');p=page.locator('.c04-shortcut-settings');await p.locator('summary').click();

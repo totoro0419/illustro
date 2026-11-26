@@ -192,13 +192,13 @@
     "operation": "P04-08",
     "goal": "他レイヤー吸着・整列・分布",
     "fixtures": "two-layers.ora",
-    "browser": null,
+    "browser": "TRN-005",
     "unit": [
       "apps/editor/src/transform/groupTransform.test.ts"
     ],
     "legacy": null,
     "pending": [
-      "UI snap and known-coordinate alignment/distribution"
+      "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
     ],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
@@ -265,7 +265,7 @@
     "operation": "P05-07",
     "goal": "簡略化・平滑化・形の結合/差分/共通",
     "fixtures": "shapes.svg; boolean-*.png",
-    "browser": null,
+    "browser": "VEC-004",
     "unit": [
       "apps/editor/src/artwork/pathOperations.c10.test.ts",
       "apps/editor/src/artwork/linkedBooleans.test.ts",
@@ -273,7 +273,7 @@
     ],
     "legacy": null,
     "pending": [
-      "UI boolean three operations and original preservation, simplify/smooth"
+      "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending"
     ],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
@@ -357,11 +357,11 @@
     "operation": "P06-07",
     "goal": "修復・パッチ・クローン・範囲外維持",
     "fixtures": "repair-clean.png; repair-damaged.png",
-    "browser": null,
+    "browser": "FX-007",
     "unit": [],
     "legacy": null,
     "pending": [
-      "UI sample source, repair/patch/clone and pixel comparison"
+      "UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending"
     ],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
