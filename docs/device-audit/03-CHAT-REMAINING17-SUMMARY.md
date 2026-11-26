@@ -1,6 +1,6 @@
 # R2 チャット検査17件（実行結果・未判定を含む）
-対象: 3b812fdc9c7cb6629c8663852d7d50db9ad4b89b
-Actions: https://github.com/totoro0419/illustro/actions/runs/45903537023
+対象: b4d934e49bc936aec2463ca9546d8f3aadf328b5
+Actions: https://github.com/totoro0419/illustro/actions/runs/45904075986
 判定済み: 4/17
 未判定: 13
 既存記録 #113 と分離。未確認条件が残るものや計測不一致は合格にしない。物理キー・OS固有動作は人間の追加確認対象。

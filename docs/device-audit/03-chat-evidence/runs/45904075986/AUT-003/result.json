@@ -1,0 +1,89 @@
+{
+  "id": "AUT-003",
+  "group": "E",
+  "status": "ERROR",
+  "commit": "b4d934e49bc936aec2463ca9546d8f3aadf328b5",
+  "checks": [
+    {
+      "path": "apps/editor/src/ui/legacyMacroPreview.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "stages mixed layer, view and history commands before one undoable edit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "describes the last valid partial result after a failed step without mutating the artwork",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "AUT-003",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "cancel revision unchanged",
+          "actual": "61b635a0-94ad-4330-bdf9-27045dfebffb",
+          "expected": "61b635a0-94ad-4330-bdf9-27045dfebffb"
+        },
+        {
+          "name": "cancel all pixels unchanged",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "preview does not commit revision",
+          "actual": "61b635a0-94ad-4330-bdf9-27045dfebffb",
+          "expected": "61b635a0-94ad-4330-bdf9-27045dfebffb"
+        },
+        {
+          "name": "macro changes expected area",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "failed sequence does not create revision",
+          "actual": "61b635a0-94ad-4330-bdf9-27045dfebffb",
+          "expected": "61b635a0-94ad-4330-bdf9-27045dfebffb"
+        },
+        {
+          "name": "failed sequence retains name",
+          "actual": "Layer 1",
+          "expected": "Layer 1"
+        },
+        {
+          "name": "failed sequence retains every pixel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "later drawing still possible",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "undo affects only the later drawing",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    {
+      "status": "PASS",
+      "reason": "Existing regression subchecks only"
+    }
+  ],
+  "pending": [
+    "cancel, preview and undo attempted; controlled mid-sequence failure and later edit preservation still pending"
+  ],
+  "reason": "Coverage not complete: cancel, preview and undo attempted; controlled mid-sequence failure and later edit preservation still pending"
+}
