@@ -2026,17 +2026,17 @@
     "actual": "visible center: true / hidden exterior: 0 / disable restores artwork: true / inverted center hidden: 0 / inverted exterior visible: true / half density restores half the hidden opaque pixel: true / mask saved and reopened exactly: true / unlink setting persists: false / inversion persists: true / density persists: \"50\" / removing mask preserves raster: true / ellipse center retained: true / ellipse far outside hidden: 0",
     "problem": "",
     "improvement": "",
-    "pending": "ellipse/path point editing, inversion/link/density/native preservation / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog').locator('.c04-command-run').filter({ hasText: '選択を解除する' }).first()\n    - locator resolved to <button disabled type=\"button\" class=\"c04-command-run\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    55 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at findCommand (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:54:75)\n    at async LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:659:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:837:2",
+    "pending": "ellipse/path point editing, inversion/link/density/native preservation / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog').locator('.c04-command-run').filter({ hasText: '選択を解除する' }).first()\n    - locator resolved to <button disabled type=\"button\" class=\"c04-command-run\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at findCommand (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:54:75)\n    at async LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:659:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:837:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "b4d934e49bc936aec2463ca9546d8f3aadf328b5",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45904075986",
-    "evidence": "03-chat-evidence/runs/45904075986/LAY-005/",
-    "stamp": "2026-11-26T22:22:28.789Z",
+    "sha": "a02367a78c4b879cdbae4a8c1a9c76d79aa8eba5",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45904559207",
+    "evidence": "03-chat-evidence/runs/45904559207/LAY-005/",
+    "stamp": "2026-11-26T22:26:29.429Z",
     "result": {
       "id": "LAY-005",
       "group": "D",
       "status": "ERROR",
-      "commit": "b4d934e49bc936aec2463ca9546d8f3aadf328b5",
+      "commit": "a02367a78c4b879cdbae4a8c1a9c76d79aa8eba5",
       "checks": [
         {
           "path": "apps/editor/src/selection/maskCodec.test.ts",
@@ -2129,7 +2129,7 @@
               "expected": 0
             }
           ],
-          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog').locator('.c04-command-run').filter({ hasText: '選択を解除する' }).first()\n    - locator resolved to <button disabled type=\"button\" class=\"c04-command-run\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    55 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at findCommand (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:54:75)\n    at async LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:659:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:837:2"
+          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog').locator('.c04-command-run').filter({ hasText: '選択を解除する' }).first()\n    - locator resolved to <button disabled type=\"button\" class=\"c04-command-run\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at findCommand (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:54:75)\n    at async LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:659:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:837:2"
         }
       ],
       "pending": [
@@ -2207,7 +2207,7 @@
           "expected": 0
         }
       ],
-      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog').locator('.c04-command-run').filter({ hasText: '選択を解除する' }).first()\n    - locator resolved to <button disabled type=\"button\" class=\"c04-command-run\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    55 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at findCommand (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:54:75)\n    at async LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:659:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:837:2"
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog').locator('.c04-command-run').filter({ hasText: '選択を解除する' }).first()\n    - locator resolved to <button disabled type=\"button\" class=\"c04-command-run\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at findCommand (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:54:75)\n    at async LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:659:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:837:2"
     }
   },
   {
@@ -2972,21 +2972,21 @@
     "name": "実行時の対象・数値指定",
     "verdict": "未判定",
     "operation": "selection not silently switched / non-target layer remains empty / requested target offset rendered",
-    "expected": "selection not silently switched: \"15cf1ea7-e000-4dbe-a468-519edb6ae95c\" / non-target layer remains empty: 0 / requested target offset rendered: true",
-    "actual": "selection not silently switched: \"15cf1ea7-e000-4dbe-a468-519edb6ae95c\" / non-target layer remains empty: 0 / requested target offset rendered: true",
+    "expected": "selection not silently switched: \"dc1bbb15-7004-49b2-b534-d7b2cf437a5b\" / non-target layer remains empty: 0 / requested target offset rendered: true",
+    "actual": "selection not silently switched: \"dc1bbb15-7004-49b2-b534-d7b2cf437a5b\" / non-target layer remains empty: 0 / requested target offset rendered: true",
     "problem": "",
     "improvement": "",
     "pending": "missing target and parameter types / ERROR / locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('dialog[aria-label=\"操作セットを確認\"]').getByLabel('対象レイヤー', { exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:132:19)\n    at AUT-002 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:730:41)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:837:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "b4d934e49bc936aec2463ca9546d8f3aadf328b5",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45904075986",
-    "evidence": "03-chat-evidence/runs/45904075986/AUT-002/",
-    "stamp": "2026-11-26T22:22:28.789Z",
+    "sha": "a02367a78c4b879cdbae4a8c1a9c76d79aa8eba5",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45904559207",
+    "evidence": "03-chat-evidence/runs/45904559207/AUT-002/",
+    "stamp": "2026-11-26T22:26:29.429Z",
     "result": {
       "id": "AUT-002",
       "group": "E",
       "status": "ERROR",
-      "commit": "b4d934e49bc936aec2463ca9546d8f3aadf328b5",
+      "commit": "a02367a78c4b879cdbae4a8c1a9c76d79aa8eba5",
       "checks": [
         {
           "path": "apps/editor/src/ui/macroAssetImport.test.ts",
@@ -3020,8 +3020,8 @@
           "checks": [
             {
               "name": "selection not silently switched",
-              "actual": "15cf1ea7-e000-4dbe-a468-519edb6ae95c",
-              "expected": "15cf1ea7-e000-4dbe-a468-519edb6ae95c"
+              "actual": "dc1bbb15-7004-49b2-b534-d7b2cf437a5b",
+              "expected": "dc1bbb15-7004-49b2-b534-d7b2cf437a5b"
             },
             {
               "name": "non-target layer remains empty",
@@ -3048,8 +3048,8 @@
       "checks": [
         {
           "name": "selection not silently switched",
-          "actual": "15cf1ea7-e000-4dbe-a468-519edb6ae95c",
-          "expected": "15cf1ea7-e000-4dbe-a468-519edb6ae95c"
+          "actual": "dc1bbb15-7004-49b2-b534-d7b2cf437a5b",
+          "expected": "dc1bbb15-7004-49b2-b534-d7b2cf437a5b"
         },
         {
           "name": "non-target layer remains empty",
@@ -3070,21 +3070,21 @@
     "name": "比較・失敗・取消",
     "verdict": "使える",
     "operation": "cancel revision unchanged / cancel all pixels unchanged / preview does not commit revision / macro changes expected area / one undo restores all pixels / failed sequence does not create revision / failed sequence retains name / failed sequence retains every pixel / later drawing still possible / undo affects only the later drawing",
-    "expected": "cancel revision unchanged: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / cancel all pixels unchanged: true / preview does not commit revision: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / macro changes expected area: true / one undo restores all pixels: true / failed sequence does not create revision: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / failed sequence retains name: \"Layer 1\" / failed sequence retains every pixel: true / later drawing still possible: true / undo affects only the later drawing: true",
-    "actual": "cancel revision unchanged: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / cancel all pixels unchanged: true / preview does not commit revision: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / macro changes expected area: true / one undo restores all pixels: true / failed sequence does not create revision: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / failed sequence retains name: \"Layer 1\" / failed sequence retains every pixel: true / later drawing still possible: true / undo affects only the later drawing: true",
+    "expected": "cancel revision unchanged: \"69d3aa3a-4a84-49ac-9646-396426986256\" / cancel all pixels unchanged: true / preview does not commit revision: \"69d3aa3a-4a84-49ac-9646-396426986256\" / macro changes expected area: true / one undo restores all pixels: true / failed sequence does not create revision: \"69d3aa3a-4a84-49ac-9646-396426986256\" / failed sequence retains name: \"Layer 1\" / failed sequence retains every pixel: true / later drawing still possible: true / undo affects only the later drawing: true",
+    "actual": "cancel revision unchanged: \"69d3aa3a-4a84-49ac-9646-396426986256\" / cancel all pixels unchanged: true / preview does not commit revision: \"69d3aa3a-4a84-49ac-9646-396426986256\" / macro changes expected area: true / one undo restores all pixels: true / failed sequence does not create revision: \"69d3aa3a-4a84-49ac-9646-396426986256\" / failed sequence retains name: \"Layer 1\" / failed sequence retains every pixel: true / later drawing still possible: true / undo affects only the later drawing: true",
     "problem": "",
     "improvement": "",
     "pending": "",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "b4d934e49bc936aec2463ca9546d8f3aadf328b5",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45904075986",
-    "evidence": "03-chat-evidence/runs/45904075986/AUT-003/",
-    "stamp": "2026-11-26T22:22:28.789Z",
+    "sha": "a02367a78c4b879cdbae4a8c1a9c76d79aa8eba5",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45904559207",
+    "evidence": "03-chat-evidence/runs/45904559207/AUT-003/",
+    "stamp": "2026-11-26T22:26:29.429Z",
     "result": {
       "id": "AUT-003",
       "group": "E",
       "status": "PASS",
-      "commit": "b4d934e49bc936aec2463ca9546d8f3aadf328b5",
+      "commit": "a02367a78c4b879cdbae4a8c1a9c76d79aa8eba5",
       "checks": [
         {
           "path": "apps/editor/src/ui/legacyMacroPreview.test.ts",
@@ -3108,8 +3108,8 @@
           "checks": [
             {
               "name": "cancel revision unchanged",
-              "actual": "61b635a0-94ad-4330-bdf9-27045dfebffb",
-              "expected": "61b635a0-94ad-4330-bdf9-27045dfebffb"
+              "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+              "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
             },
             {
               "name": "cancel all pixels unchanged",
@@ -3118,8 +3118,8 @@
             },
             {
               "name": "preview does not commit revision",
-              "actual": "61b635a0-94ad-4330-bdf9-27045dfebffb",
-              "expected": "61b635a0-94ad-4330-bdf9-27045dfebffb"
+              "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+              "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
             },
             {
               "name": "macro changes expected area",
@@ -3133,8 +3133,8 @@
             },
             {
               "name": "failed sequence does not create revision",
-              "actual": "61b635a0-94ad-4330-bdf9-27045dfebffb",
-              "expected": "61b635a0-94ad-4330-bdf9-27045dfebffb"
+              "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+              "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
             },
             {
               "name": "failed sequence retains name",
@@ -3164,8 +3164,7 @@
           "reason": "Existing regression subchecks only"
         }
       ],
-      "pending": [],
-      "reason": "Reviewed against immutable run 45904075986: 10 browser conditions, 2 unit tests and existing regression passed; remaining controlled failure and later edit preservation conditions satisfied."
+      "pending": []
     },
     "browser": {
       "id": "AUT-003",
@@ -3173,8 +3172,8 @@
       "checks": [
         {
           "name": "cancel revision unchanged",
-          "actual": "61b635a0-94ad-4330-bdf9-27045dfebffb",
-          "expected": "61b635a0-94ad-4330-bdf9-27045dfebffb"
+          "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+          "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
         },
         {
           "name": "cancel all pixels unchanged",
@@ -3183,8 +3182,8 @@
         },
         {
           "name": "preview does not commit revision",
-          "actual": "61b635a0-94ad-4330-bdf9-27045dfebffb",
-          "expected": "61b635a0-94ad-4330-bdf9-27045dfebffb"
+          "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+          "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
         },
         {
           "name": "macro changes expected area",
@@ -3198,8 +3197,8 @@
         },
         {
           "name": "failed sequence does not create revision",
-          "actual": "61b635a0-94ad-4330-bdf9-27045dfebffb",
-          "expected": "61b635a0-94ad-4330-bdf9-27045dfebffb"
+          "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+          "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
         },
         {
           "name": "failed sequence retains name",
