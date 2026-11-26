@@ -11,7 +11,22 @@ const launch={headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:
 const report={tests:[],errors:[],commit:process.env.EXPECTED_COMMIT_SHA??'local',mode:publicBase?'public':'local'};const record=(name,extra={})=>{report.tests.push({name,status:'PASS',...extra});console.log('PASS '+name);};
 const errors=[];let browser;
 const state=page=>page.locator('#canvas').evaluate(c=>({...c.dataset,width:c.width,height:c.height,cssWidth:c.clientWidth,cssHeight:c.clientHeight,dpr:devicePixelRatio,view:JSON.parse(c.dataset.view??'null')}));
-async function create(page,name,width=512,height=384,background='transparent'){await page.locator('#ihStart').click();await page.locator('#ihNewName').fill(name);await page.locator('#ihNewWidth').fill(String(width));await page.locator('#ihNewHeight').fill(String(height));await page.locator('#ihNewBackground').selectOption(background);await page.locator('#ihNewCreate').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:45000});return state(page);}
+async function create(page,name,width=512,height=384,background='transparent'){
+ await page.locator('#ihStart').click();
+ const setup=page.locator('#ihCanvasSetup');if(!await setup.evaluate(e=>e.open))await setup.locator(':scope > summary').click();
+ await page.locator('#ihNewWidth').fill(String(width));await page.locator('#ihNewHeight').fill(String(height));await page.locator('#ihNewBackground').selectOption(background);
+ await page.locator('#ihNewCreate').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:45000});
+ const created=await state(page);
+ await home(page);await page.locator('#ihNavWorks').click();
+ const card=page.locator('[data-work-id="'+created.documentId+'"]');
+ await card.locator('.ih-work-title').click();
+ const dialog=page.getByRole('dialog',{name:'作品名を変更'});
+ await dialog.getByLabel('作品名',{exact:true}).fill(name);
+ await dialog.getByRole('button',{name:'変更する',exact:true}).click();
+ await dialog.waitFor({state:'hidden'});
+ await card.locator('.ih-work-title').filter({hasText:name}).waitFor();
+ await open(page,created.documentId);return state(page);
+}
 async function draw(page,n=1){const box=await page.locator('#canvas').boundingBox();assert.ok(box);await page.mouse.move(box.x+box.width*.4,box.y+box.height*.4);await page.mouse.down();await page.mouse.move(box.x+box.width*.58,box.y+box.height*.56,{steps:9});await page.mouse.up();await page.waitForFunction(count=>document.getElementById('canvas').dataset.committedStrokes===String(count)&&document.getElementById('canvas').dataset.historyBusy==='false',n,{timeout:45000});}
 async function home(page){await page.locator('#home').click();await page.locator('#ihApp').waitFor({state:'visible',timeout:45000});}
 async function works(page,n){await page.locator('#ihNavWorks').click();await page.waitForFunction(count=>document.querySelectorAll('.ih-work-card').length===count,n,{timeout:15000});}
