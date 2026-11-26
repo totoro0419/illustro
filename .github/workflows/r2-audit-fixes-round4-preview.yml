@@ -27,6 +27,8 @@ concurrency:
 
 jobs:
   build:
+    # Retire the blocked concurrency queue; this temporary run cannot publish.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
