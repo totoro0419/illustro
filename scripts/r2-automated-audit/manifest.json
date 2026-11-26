@@ -417,9 +417,7 @@
       "apps/editor/src/ui/legacyMacroPreview.test.ts"
     ],
     "legacy": "D-016",
-    "pending": [
-      "cancel, preview and undo attempted; controlled mid-sequence failure and later edit preservation still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/AUT.md#aut-003"

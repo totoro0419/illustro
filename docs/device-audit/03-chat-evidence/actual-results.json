@@ -3068,13 +3068,13 @@
   {
     "id": "AUT-003",
     "name": "比較・失敗・取消",
-    "verdict": "未判定",
+    "verdict": "使える",
     "operation": "cancel revision unchanged / cancel all pixels unchanged / preview does not commit revision / macro changes expected area / one undo restores all pixels / failed sequence does not create revision / failed sequence retains name / failed sequence retains every pixel / later drawing still possible / undo affects only the later drawing",
     "expected": "cancel revision unchanged: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / cancel all pixels unchanged: true / preview does not commit revision: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / macro changes expected area: true / one undo restores all pixels: true / failed sequence does not create revision: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / failed sequence retains name: \"Layer 1\" / failed sequence retains every pixel: true / later drawing still possible: true / undo affects only the later drawing: true",
     "actual": "cancel revision unchanged: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / cancel all pixels unchanged: true / preview does not commit revision: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / macro changes expected area: true / one undo restores all pixels: true / failed sequence does not create revision: \"61b635a0-94ad-4330-bdf9-27045dfebffb\" / failed sequence retains name: \"Layer 1\" / failed sequence retains every pixel: true / later drawing still possible: true / undo affects only the later drawing: true",
     "problem": "",
     "improvement": "",
-    "pending": "cancel, preview and undo attempted; controlled mid-sequence failure and later edit preservation still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
     "sha": "b4d934e49bc936aec2463ca9546d8f3aadf328b5",
     "url": "https://github.com/totoro0419/illustro/actions/runs/45904075986",
@@ -3083,7 +3083,7 @@
     "result": {
       "id": "AUT-003",
       "group": "E",
-      "status": "ERROR",
+      "status": "PASS",
       "commit": "b4d934e49bc936aec2463ca9546d8f3aadf328b5",
       "checks": [
         {
@@ -3164,10 +3164,8 @@
           "reason": "Existing regression subchecks only"
         }
       ],
-      "pending": [
-        "cancel, preview and undo attempted; controlled mid-sequence failure and later edit preservation still pending"
-      ],
-      "reason": "Coverage not complete: cancel, preview and undo attempted; controlled mid-sequence failure and later edit preservation still pending"
+      "pending": [],
+      "reason": "Reviewed against immutable run 45904075986: 10 browser conditions, 2 unit tests and existing regression passed; remaining controlled failure and later edit preservation conditions satisfied."
     },
     "browser": {
       "id": "AUT-003",
@@ -3417,13 +3415,13 @@
   {
     "id": "AUT-005",
     "name": "高速呼び出し・共有",
-    "verdict": "未判定",
+    "verdict": "使いづらい",
     "operation": "exported macro JSON contains name / search reopens macro panel / imported-macro-replays / quick-macro-replays / imported macro appears in visible shortcut assignment list",
     "expected": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: true",
     "actual": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: false",
-    "problem": "計測不一致（アプリ側か検査側か要確認）: imported macro appears in visible shortcut assignment list",
-    "improvement": "",
-    "pending": "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending / FAIL / Error: imported macro appears in visible shortcut assignment list\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at AUT-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:451:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:800:2",
+    "problem": "取り込んだ操作セットが実際のショートカット割り当て一覧に表示されない。検索・Quickからの呼び出しと再実行は成功。",
+    "improvement": "動的に追加した操作セットがカスタム選択欄を開く際に最新の一覧へ反映されるか確認し、修正後に割り当て・キー実行を再検査する。",
+    "pending": "ショートカット割り当て・キー実行（一覧に出ないため停止）、未対応操作のブラウザー検査。原本のFAIL記録を維持。",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
     "sha": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
     "url": "https://github.com/totoro0419/illustro/actions/runs/45903537023",
