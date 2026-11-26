@@ -181,11 +181,11 @@ async function addReference(){
  await page.locator('.c05-reference-frame').first().waitFor();
 }
 
-async function shapeRect(x1,y1,x2,y2){
+async function shapeRect(x1,y1,x2,y2,lineWidth=8){
  const p=await panel('shapes');await button(p,'新しく作る').click();
  await choose(p.locator('select:has(option[value="rectangle"])'),'rectangle');
  await choose(p.locator('select:has(option[value="vector"])'),'vector');
- await p.getByLabel('内側を塗る',{exact:true}).check();
+ await p.getByLabel('内側を塗る',{exact:true}).check();await p.getByLabel('線幅（px）',{exact:true}).fill(String(lineWidth));await p.getByLabel('線幅（px）',{exact:true}).press('Tab');
  for(const [name,value] of [['始点 X',x1],['始点 Y',y1],['終点 X',x2],['終点 Y',y2]])await p.getByLabel(name,{exact:true}).fill(String(value));
  const old=await revision();await button(p,'適用').click();await waitRev(old);
  return await canvas.getAttribute('data-selected-layer-id');
@@ -227,9 +227,11 @@ const cases={
   for(const mode of ['left','center-x','right','top','center-y','bottom','spread-x','spread-y']){
    const root=await openDocumentSettings(),p=root.getByText('レイヤーの整列・均等配置',{exact:true}).locator('xpath=..');
    if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
-   await button(p,'複数選択したレイヤーを確認').click();
+   const preview=p.getByLabel('青は移動先、破線は現位置',{exact:true});
+   await preview.waitFor({state:'hidden'});await button(p,'複数選択したレイヤーを確認').click();await preview.waitFor({state:'visible'});
    await choose(p.locator('select:has(option[value="left"])'),mode);
-   await choose(p.locator('select:has(option[value="'+a+'"])'),a);
+   const reference=p.getByLabel('動かさない基準',{exact:true});
+   await choose(reference,a);eq(mode+' confirmed reference layer',await reference.inputValue(),a);
    const horizontal=['left','center-x','right','spread-x'].includes(mode),key=horizontal?'x':'y',end=horizontal?'right':'bottom';
    const sizes=bounds.map(v=>v[end]-v[key]),starts=bounds.map(v=>v[key]);
    let shift;
@@ -249,7 +251,7 @@ const cases={
   }
  },
  'VEC-004':async()=>{
-  await fresh();const a=await shapeRect(70,70,250,250),b=await shapeRect(170,130,350,310);
+  await fresh();const a=await shapeRect(70,70,250,250,0),b=await shapeRect(170,130,350,310,0);
   const before=await png(1,'artwork','original');
   const points=[[100,100],[200,180],[300,280],[40,40]];
   for(const [mode,expected] of [['union',[true,true,true,false]],['intersection',[false,true,false,false]],['difference',[true,false,false,false]],['xor',[true,false,true,false]]]){
@@ -261,6 +263,7 @@ const cases={
    await choose(p.locator('select:has(option[value="'+mode+'"])'),mode);
    await button(p,'2つの形を組み合わせる').click();
    await p.getByText(/元の2レイヤーを同時に隠せます/).waitFor();
+   eq(mode+' zero outline width for exact fill oracle',await p.getByLabel('線幅（px）',{exact:true}).inputValue(),'0');
    const old=await revision();await button(p,'作品に反映').click();await waitRev(old);
    const im=await png(1,'artwork',mode);eq(mode+' independent point-in-rectangle coverage',points.map(q=>alpha(im,q)>127),expected);
    let solidErrors=0,edgeErrors=0;
@@ -313,7 +316,7 @@ const cases={
   // Real selection clipping, using the original imported raster.
   await selectRect([46,44],[51,49]);await openRepair('clone','クローン','Clone');await pick(16.5,30.5);old=await revision();
   await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);after=await png(1,'artwork','clone-selected');eq('selection exterior unchanged',outside(after,46,44,51,49),0);await undo(old,'clone-selected');
-  await page.locator('#selectionClear').click();
+  await findCommand('選択を解除','選択を解除する');
   // Separate repair layer must leave the original active-layer PNG unchanged.
   const originalLayer=await canvas.getAttribute('data-selected-layer-id');
   const originalPixels=await png(1,'active','original-layer-before');
@@ -322,6 +325,15 @@ const cases={
   yes('separate repair layer created',await canvas.getAttribute('data-selected-layer-id')!==originalLayer);
   await selectLayer(originalLayer);yes('original layer untouched',originalPixels.data.equals((await png(1,'active','original-layer-after')).data));
   await undo(old,'separate-clone');
+  // Explicit source layer and target on a blank layer. The source remains unchanged.
+  await layerPage();old=await revision();await page.locator('#addLayerPage').click();await waitRev(old);await page.locator('#closeLayerPage').click();
+  const targetLayer=await canvas.getAttribute('data-selected-layer-id');
+  await openRepair('clone','クローン','Clone');await p.getByLabel('新しいレイヤーに結果を置く',{exact:true}).uncheck();
+  await choose(p.getByLabel('参照元',{exact:true}),'layer');await choose(p.getByLabel('採取するレイヤー',{exact:true}),originalLayer);
+  await pick(16.5,30.5);old=await revision();await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
+  eq('explicit source copied onto requested layer',await canvas.getAttribute('data-selected-layer-id'),targetLayer);
+  const clonedLayer=await png(1,'active','explicit-source');eq('specified donor pixel',rgba(clonedLayer,48,46),rgba(before,16,30));
+  await selectLayer(originalLayer);yes('specified source layer remains intact',originalPixels.data.equals((await png(1,'active','explicit-source-original')).data));
  },
 
  'LIN-007':async()=>{
@@ -337,10 +349,12 @@ const cases={
   await idle();const native=await saveCopy('line-graph');await writeFile(join(evidence,'line-graph.illustro'),await readFile(native));
   await page.screenshot({path:join(evidence,'confirmed.png')});
   await openFile(native,128);p=await advancedFill();
+  await p.locator(':scope > summary').click();await p.locator(':scope > summary').click();
+  const advanced=p.getByText('線画の解析・細かい調整',{exact:true});if(!await p.getByLabel('作品に保存した線画領域',{exact:true}).isVisible())await advanced.click();
   const saved=p.getByLabel('作品に保存した線画領域',{exact:true});await saved.locator('option').nth(1).waitFor({state:'attached'});
   const options=await saved.locator('option').evaluateAll(os=>os.map(o=>({value:o.value,label:o.textContent})));
   yes('saved line analysis present after reopening',options.some(o=>o.value));
-  await choose(saved,options.find(o=>o.value).value);
+  await choose(saved,options.find(o=>o.value).value);await button(p,'保存した領域を使う').click();
   await fillState(p,/確定済み|保存済み/,'reopened saved graph');
  },
  'REF-006':async()=>{
@@ -426,8 +440,19 @@ const cases={
   if(!await quick.isVisible())await page.locator('#quickControllerOpen').click();
   await quick.getByRole('button',{name:'QA stroke',exact:true}).click();await replay('quick-macro-replays',90);
   await findCommand('作業欄の設定','作業欄の設定');const shortcuts=page.locator('.c04-shortcut-settings');if(!await shortcuts.evaluate(e=>e.open))await shortcuts.locator('summary').click();
-  const macroId='macro:'+raw.items[0].id;
-  await choose(shortcuts.locator('select:has(option[value="'+macroId+'"])'),macroId);
+  const registration=shortcuts.getByLabel('登録する機能',{exact:true});
+  const trigger=registration.locator('xpath=following-sibling::button[contains(@class,"workspace-choice")][1]');
+  if(await trigger.isVisible()){
+   await trigger.click();const list=page.locator('#'+await trigger.getAttribute('aria-controls'));
+   await list.waitFor({state:'visible'});
+   await list.screenshot({path:join(evidence,'shortcut-visible-options.png')});
+   const actual=await list.getByRole('option').allTextContents();await trigger.click();
+   await writeFile(join(evidence,'shortcut-visible-options.json'),JSON.stringify(actual,null,2));
+   yes('imported macro appears in visible shortcut assignment list',actual.some(v=>v.includes('QA stroke')));
+  }
+  const macroId=await registration.locator('option').evaluateAll(os=>os.find(o=>o.label.startsWith('QA stroke ·'))?.value);
+  yes('imported macro has available shortcut command',!!macroId);
+  await choose(registration,macroId);
   await button(shortcuts,'キーを押して登録').click();await page.keyboard.press('j');
   await shortcuts.locator('.c04-shortcut-row').filter({hasText:'QA stroke'}).waitFor();
   await page.locator('#paint').click();await page.keyboard.press('j');await replay('shortcut-macro-replays',180);
@@ -550,7 +575,7 @@ const cases={
   await selectRect([90,190],[150,220]);await drawLine([[70,210],[180,210]],8);const after=await png(1,'artwork','offline');yes('new offline stroke present',alpha(after,[120,200])>0);yes('offline selection constrains stroke',alpha(after,[175,210])===0);
   await saveIdle();await page.reload({waitUntil:'domcontentloaded'});await openArtwork(docId);
   const restored=await png(1,'artwork','offline-restored');yes('offline save survived reload',after.data.equals(restored.data));
-  await page.locator('#selectionClear').click();
+  await findCommand('選択を解除','選択を解除する');
   const originalLayer=await canvas.getAttribute('data-selected-layer-id');
   await layerPage();let old=await revision();await page.locator('#addLayerPage').click();await waitRev(old);await page.locator('#closeLayerPage').click();
   yes('offline new layer created',await canvas.getAttribute('data-selected-layer-id')!==originalLayer);
@@ -742,7 +767,7 @@ const cases={
   await choose(display,'proof');
   const rawDelta=(a,b)=>{let count=0,max=0;for(let i=0;i<a.data.length;i+=4){let d=0;for(let k=0;k<4;k++)d=Math.max(d,Math.abs(a.data[i+k]-b.data[i+k]));if(d){count++;max=Math.max(max,d);}}return {count,max};};
   const noGuideRaw=rawDelta(warned,warningAgain);
-  await bleed.fill('0.5');await bleed.press('Tab');const guided=await capture('guided-proof');
+  await bleed.fill('3');await bleed.press('Tab');const guided=await capture('guided-proof');
   await choose(display,'original');await capture('guided-original');await choose(display,'proof');const guidedAgain=await capture('guided-proof-again');
   const withGuideRaw=rawDelta(guided,guidedAgain);
   await bleed.fill('0');await bleed.press('Tab');const restoredNoGuide=await capture('guide-removed');
