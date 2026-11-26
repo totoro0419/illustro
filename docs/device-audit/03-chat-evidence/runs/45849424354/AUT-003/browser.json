@@ -1,0 +1,32 @@
+{
+  "id": "AUT-003",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "cancel revision unchanged",
+      "actual": "6ecf487e-ea51-4180-b64e-5c51d64c41f8",
+      "expected": "6ecf487e-ea51-4180-b64e-5c51d64c41f8"
+    },
+    {
+      "name": "cancel all pixels unchanged",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preview does not commit revision",
+      "actual": "6ecf487e-ea51-4180-b64e-5c51d64c41f8",
+      "expected": "6ecf487e-ea51-4180-b64e-5c51d64c41f8"
+    },
+    {
+      "name": "macro changes expected area",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "one undo restores all pixels",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

@@ -1,0 +1,88 @@
+{
+  "id": "COL-008",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "known colored fixture size",
+      "actual": [
+        128,
+        96
+      ],
+      "expected": [
+        128,
+        96
+      ]
+    },
+    {
+      "name": "fixture has saturated red",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "bleed excluded from pixel comparison",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "name": "actual pink warning pixels present",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "original view has no warning pixels",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "proof differs from original",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "display toggle restores proof (premultiplied pixels, no bleed)",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "original toggle stable",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "warning disabled removes pink pixels",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "intent is selected",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "name": "black point disabled",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "alternate proof has valid dimensions",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "proof does not alter revision",
+      "actual": "2750d4cf-a313-48d9-975a-1891833f2751",
+      "expected": "2750d4cf-a313-48d9-975a-1891833f2751"
+    },
+    {
+      "name": "normal PNG identical pixel for pixel",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "eyedropper unchanged after proof",
+      "actual": "キャンバスから #FF0000 を取得しました。",
+      "expected": "キャンバスから #FF0000 を取得しました。"
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

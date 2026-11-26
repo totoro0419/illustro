@@ -1,0 +1,44 @@
+{
+  "id": "SAV-007",
+  "group": "A",
+  "status": "ERROR",
+  "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+  "checks": [
+    {
+      "id": "SAV-007",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "offline flag",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "same work offline",
+          "actual": "0a958089-dc03-42ca-8781-d43804181e9e",
+          "expected": "0a958089-dc03-42ca-8781-d43804181e9e"
+        },
+        {
+          "name": "new offline stroke present",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline selection constrains stroke",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline save survived reload",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "offline layers/selection/transform/reference/history/filter/macro"
+  ],
+  "reason": "Coverage not complete: offline layers/selection/transform/reference/history/filter/macro"
+}

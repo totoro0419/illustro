@@ -1,0 +1,73 @@
+{
+  "id": "FX-007",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+  "checks": [
+    {
+      "id": "FX-007",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "UI command search ブラシ",
+          "actual": [
+            "ブラシで描く描画",
+            "ブラシの設定描画",
+            "ブラシの一覧設定",
+            "修復ブラシ補正・修復",
+            "Gペンブラシ",
+            "丸ペンブラシ",
+            "ミリペン / 製図ペンブラシ",
+            "マーカーブラシ",
+            "鉛筆ブラシ",
+            "硬い消しゴムブラシ",
+            "柔らかい消しゴムブラシ",
+            "細線ペンブラシ",
+            "柔らかい鉛筆ブラシ",
+            "濃い塗りマーカーブラシ",
+            "エアブラシブラシ"
+          ],
+          "expected": "manual triage: search results"
+        },
+        {
+          "name": "UI command search 修復",
+          "actual": [
+            "修復ブラシ補正・修復",
+            "範囲パッチ補正・修復",
+            "クローン補正・修復"
+          ],
+          "expected": "manual triage: search results"
+        },
+        {
+          "name": "UI command search パッチ",
+          "actual": [
+            "範囲パッチ補正・修復"
+          ],
+          "expected": "manual triage: search results"
+        },
+        {
+          "name": "UI command search クローン",
+          "actual": [
+            "クローン補正・修復"
+          ],
+          "expected": "manual triage: search results"
+        },
+        {
+          "name": "actual retouch category contents",
+          "actual": "補正・効果\n修復ブラシ\n範囲パッチ\nクローン",
+          "expected": "manual triage: available repair tools"
+        },
+        {
+          "name": "source image imported",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending"
+  ],
+  "reason": "Coverage not complete: UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending"
+}
