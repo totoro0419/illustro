@@ -68,7 +68,7 @@
     ],
     "legacy": null,
     "pending": [
-      "embedded/linked operation round trip attempted; metadata readback, positioning and relink still pending"
+      "Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed."
     ],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",

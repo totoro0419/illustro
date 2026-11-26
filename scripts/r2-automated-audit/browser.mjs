@@ -134,7 +134,9 @@ async function choose(select,value){
   if(await select.isVisible()){await select.selectOption(value);return;}
   const trigger=select.locator('xpath=following-sibling::button[contains(@class,"workspace-choice")][1]');
   await trigger.click();const list=page.locator('#'+await trigger.getAttribute('aria-controls'));
-  await list.getByRole('option',{name:label,exact:true}).click();
+  const index=await select.locator('option[value="'+value+'"]').evaluate(o=>o.index);
+  const item=list.locator('[id="'+await trigger.getAttribute('aria-controls')+'-'+index+'"]');
+  assert.equal(await item.textContent(),label);await item.click();
   assert.equal(await select.inputValue(),value);
 }
 async function openBox(box){
@@ -213,22 +215,38 @@ function xBounds(im,y0,y1){
 }
 const cases={
  'TRN-005':async()=>{
-  await fresh();const a=await shapeRect(60,55,120,95),b=await shapeRect(200,145,260,185),c=await shapeRect(340,235,400,275);
-  const before=await png(1,'artwork','unaligned');const bands=[[65,85],[155,175],[245,265]];
-  const oldBounds=bands.map(q=>xBounds(before,...q));yes('three distinct x positions',new Set(oldBounds.map(x=>x[0])).size===3);
+  await fresh();const a=await shapeRect(60,55,120,95),b=await shapeRect(170,125,250,175),c=await shapeRect(340,245,390,305);
+  const before=await png(1,'artwork','unaligned');
+  const boxes=[[60,55,120,95],[170,125,250,175],[340,245,390,305]];
+  const layers=boxes.map(([x0,y0,x1,y1])=>{let pixels=[];for(let y=y0-5;y<=y1+5;y++)for(let x=x0-5;x<=x1+5;x++){let a=alpha(before,[x,y]);if(a)pixels.push([x,y,a]);}return pixels;});
+  const bounds=layers.map(p=>({x:Math.min(...p.map(v=>v[0])),y:Math.min(...p.map(v=>v[1])),right:Math.max(...p.map(v=>v[0]))+1,bottom:Math.max(...p.map(v=>v[1]))+1}));
+  yes('three distinct x positions',new Set(bounds.map(x=>x.x)).size===3);
   await layerActions();await page.locator('#layerBatchToggle').click();
   for(const id of [a,b,c])await page.locator('#layerPageList [data-layer-id="'+id+'"]').click();
-  await page.locator('#closeLayerPage').click();const root=await openDocumentSettings();
-  const p=root.getByText('レイヤーの整列・均等配置',{exact:true}).locator('xpath=..');
-  if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
-  await button(p,'複数選択したレイヤーを確認').click();
-  await choose(p.locator('select:has(option[value="left"])'),'left');
-  await choose(p.locator('select:has(option[value="'+a+'"])'),a);
-  const old=await revision();await button(p,'この位置に適用').click();await waitRev(old);
-  const aligned=await png(1,'artwork','aligned');
-  for(let i=0;i<3;i++)eq('left edge aligned in band '+i,xBounds(aligned,...bands[i]),oldBounds[0]);
-  await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);
-  yes('one undo restores all pixels',before.data.equals((await png(1,'artwork','undo')).data));
+  await page.locator('#closeLayerPage').click();
+  for(const mode of ['left','center-x','right','top','center-y','bottom','spread-x','spread-y']){
+   const root=await openDocumentSettings(),p=root.getByText('レイヤーの整列・均等配置',{exact:true}).locator('xpath=..');
+   if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
+   await button(p,'複数選択したレイヤーを確認').click();
+   await choose(p.locator('select:has(option[value="left"])'),mode);
+   await choose(p.locator('select:has(option[value="'+a+'"])'),a);
+   const horizontal=['left','center-x','right','spread-x'].includes(mode),key=horizontal?'x':'y',end=horizontal?'right':'bottom';
+   const sizes=bounds.map(v=>v[end]-v[key]),starts=bounds.map(v=>v[key]);
+   let shift;
+   if(mode.startsWith('spread')){const gap=(bounds[2][end]-starts[0]-sizes.reduce((s,n)=>s+n,0))/2;shift=[0,starts[0]+sizes[0]+gap-starts[1],0];}
+   else{const fraction=mode.startsWith('center')?.5:mode==='right'||mode==='bottom'?1:0;shift=starts.map((v,k)=>starts[0]+sizes[0]*fraction-v-sizes[k]*fraction);}
+   const expected=new Uint8Array(before.width*before.height);
+   for(let k=0;k<layers.length;k++)for(const [x,y,v] of layers[k]){
+    const nx=x+(horizontal?Math.round(shift[k]):0),ny=y+(horizontal?0:Math.round(shift[k]));if(nx>=0&&ny>=0&&nx<before.width&&ny<before.height)expected[ny*before.width+nx]=Math.max(expected[ny*before.width+nx],v);
+   }
+   const old=await revision();await button(p,'この位置に適用').click();await waitRev(old);
+   const im=await png(1,'artwork','aligned-'+mode);let interiorErrors=0,edgeDifferences=0;
+   for(let k=0;k<expected.length;k++){const actual=im.data[k*4+3],exp=expected[k];if((actual>127)!==(exp>127))interiorErrors++;if(actual!==exp)edgeDifferences++;}
+   await writeFile(join(evidence,'arrangement-'+mode+'.json'),JSON.stringify({bounds,shift,interiorErrors,edgeDifferences}));
+   eq(mode+' independent binary alpha coverage',interiorErrors,0);
+   await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);
+   yes(mode+' one undo restores all pixels',before.data.equals((await png(1,'artwork','undo-'+mode)).data));
+  }
  },
  'VEC-004':async()=>{
   await fresh();const a=await shapeRect(70,70,250,250),b=await shapeRect(170,130,350,310);
@@ -245,6 +263,16 @@ const cases={
    await p.getByText(/元の2レイヤーを同時に隠せます/).waitFor();
    const old=await revision();await button(p,'作品に反映').click();await waitRev(old);
    const im=await png(1,'artwork',mode);eq(mode+' independent point-in-rectangle coverage',points.map(q=>alpha(im,q)>127),expected);
+   let solidErrors=0,edgeErrors=0;
+   for(let y=0;y<im.height;y++)for(let x=0;x<im.width;x++){
+    const a=x>=70&&x<250&&y>=70&&y<250,b=x>=170&&x<350&&y>=130&&y<310;
+    const exp=mode==='union'?a||b:mode==='intersection'?a&&b:mode==='difference'?a&&!b:a!==b;
+    if((alpha(im,[x,y])>127)!==exp){
+     if([70,250,170,350].some(v=>Math.abs(x-v)<=3)||[70,250,130,310].some(v=>Math.abs(y-v)<=3))edgeErrors++;else solidErrors++;
+    }
+   }
+   await writeFile(join(evidence,'boolean-'+mode+'-oracle.json'),JSON.stringify({solidErrors,edgeErrors}));
+   eq(mode+' full-image interior/exterior oracle',solidErrors,0);
    await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);
    yes(mode+' undo restores original',before.data.equals((await png(1,'artwork',mode+'-undo')).data));
   }
@@ -282,6 +310,18 @@ const cases={
   await button(p,'キャンバスで使う').click();await stroke([[44,40],[56,52]]);await button(p,'パッチを確定').click();await waitRev(old);after=await png(1,'artwork','patch');yes('patch decreases independent defect error',error(after)<error(before));eq('patch exterior unchanged',outside(after,43,39,57,53),0);await undo(old,'patch');
   // The other three entries must launch their own actual tool, not just exist.
   await openRepair('clone','クローン','Clone',true);await openRepair('heal','修復ブラシ','Healing');await openRepair('patch','範囲パッチ','Patch');
+  // Real selection clipping, using the original imported raster.
+  await selectRect([46,44],[51,49]);await openRepair('clone','クローン','Clone');await pick(16.5,30.5);old=await revision();
+  await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);after=await png(1,'artwork','clone-selected');eq('selection exterior unchanged',outside(after,46,44,51,49),0);await undo(old,'clone-selected');
+  await page.locator('#selectionClear').click();
+  // Separate repair layer must leave the original active-layer PNG unchanged.
+  const originalLayer=await canvas.getAttribute('data-selected-layer-id');
+  const originalPixels=await png(1,'active','original-layer-before');
+  await openRepair('clone','クローン','Clone');await p.getByLabel('新しいレイヤーに結果を置く',{exact:true}).check();await pick(16.5,30.5);old=await revision();
+  await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
+  yes('separate repair layer created',await canvas.getAttribute('data-selected-layer-id')!==originalLayer);
+  await selectLayer(originalLayer);yes('original layer untouched',originalPixels.data.equals((await png(1,'active','original-layer-after')).data));
+  await undo(old,'separate-clone');
  },
 
  'LIN-007':async()=>{
@@ -309,15 +349,31 @@ const cases={
   const d=page.getByRole('dialog',{name:'資料の出典と利用メモ'});
   await d.locator('textarea').fill('QA source: https://example.com/fixture ; author: QA ; usage: testing');
   await button(d,'メモを保存').click();
+  await row.getByRole('button',{name:'位置を固定',exact:true}).click();
+  await row.getByRole('button',{name:'固定解除',exact:true}).waitFor();
+  const geometry=await frame.evaluate(e=>[e.style.left,e.style.top,e.style.width,e.style.height]);
   const mode=root.getByLabel('作品ファイルに参考画像を含めるか',{exact:true});
   await mode.selectOption('embedded',{force:true});const embedded=await saveCopy('reference-embedded');
   await mode.selectOption('linked',{force:true});const linked=await saveCopy('reference-linked');
   const after=await png(1,'artwork','with-reference');yes('reference excluded from all exported pixels',before.data.equals(after.data));
   await openFile(embedded,512);await page.locator('.c05-reference-frame img').first().waitFor();
   yes('embedded image loaded in clean context',await page.locator('.c05-reference-frame img').first().evaluate(e=>e.complete&&e.naturalWidth>0));
+  eq('embedded reference geometry restored',await page.locator('.c05-reference-frame').first().evaluate(e=>[e.style.left,e.style.top,e.style.width,e.style.height]),geometry);
+  await findCommand('参考資料ボード','参考資料ボード');
+  await page.locator('.c05-reference-row').first().getByRole('button',{name:'出典・メモを編集',exact:true}).click();
+  let notes=page.getByRole('dialog',{name:'資料の出典と利用メモ'});
+  eq('source notes restored',await notes.locator('textarea').inputValue(),'QA source: https://example.com/fixture ; author: QA ; usage: testing');
+  await button(notes,'メモを保存').click();
   const reopened=await png(1,'artwork','embedded-open');yes('embedded reference did not alter artwork',reopened.data.equals(before.data));
   await openFile(linked,512);await page.getByText('参照画像が見つかりません。素材庫から元データを復元してください。',{exact:true}).waitFor();
   yes('linked reference missing notice in clean context',true);
+  await findCommand('参考資料ボード','参考資料ボード');
+  const missing=page.locator('.c05-reference-row').first(),chooser=page.waitForEvent('filechooser');
+  await button(missing,'元画像を選び直す').click();await (await chooser).setFiles(join(fixture,'colors.png'));
+  await page.locator('.c05-reference-frame img').first().waitFor();
+  yes('reference image relinked',await page.locator('.c05-reference-frame img').first().evaluate(e=>e.complete&&e.naturalWidth>0));
+  eq('relink geometry retained',await page.locator('.c05-reference-frame').first().evaluate(e=>[e.style.left,e.style.top,e.style.width,e.style.height]),geometry);
+  yes('relink does not enter PNG',before.data.equals((await png(1,'artwork','relinked')).data));
  },
  'AUT-003':async()=>{
   await fresh();await pen(8);const root=await recordMacro();
@@ -464,7 +520,11 @@ const cases={
   let im=await png(1,'artwork','filled');yes('interior colored',alpha(im,[130,130])>200);eq('concave exclusion',alpha(im,[200,200]),0);eq('outside',alpha(im,[60,60]),0);
   await panel('smartFill');await p.getByLabel('指定部分を透明にする',{exact:true}).check({force:true});
   await button(p,'キャンバスで塗る').click();await stroke([[110,110],[150,110],[150,150],[110,150],[110,110]]);old=await revision();await apply.click();await waitRev(old);
-  im=await png(1,'artwork','erased');eq('erased inside',alpha(im,[130,130]),0);yes('outside erasure retained',alpha(im,[200,130])>200);
+  const filled=im;im=await png(1,'artwork','erased');eq('erased inside',alpha(im,[130,130]),0);yes('outside erasure retained',alpha(im,[200,130])>200);
+  await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);yes('erase undo pixel equality',filled.data.equals((await png(1,'artwork','erase-undo')).data));
+  await selectRect([110,110],[160,160]);await panel('smartFill');await p.getByLabel('指定部分を透明にする',{exact:true}).uncheck();await button(p,'キャンバスで塗る').click();await stroke([[90,90],[190,90],[190,190],[90,190],[90,90]]);old=await revision();await apply.click();await waitRev(old);
+  const selected=await png(1,'artwork','selection-filled');let errors=0;for(let y=0;y<selected.height;y++)for(let x=0;x<selected.width;x++)if((x<110||x>=160||y<110||y>=160)&&JSON.stringify(rgba(selected,x,y))!==JSON.stringify(rgba(filled,x,y)))errors++;
+  eq('selection confines lasso fill',errors,0);
  },
  'PIX-001':async()=>{
   await fresh();await findCommand('ドット絵','1pxのドットペン');
@@ -498,6 +558,7 @@ const cases={
   await page.locator('#historyBrushBar').waitFor({state:'visible'});let old=await revision();await stroke([[90,200],[150,200]]);await waitRev(old);
   await page.locator('#doneHistoryBrush').click();const after=await png(1,'artwork','restored');
   yes('old stroke retained',alpha(after,[120,100])>0);yes('local restoration changed pixel',alpha(after,[120,200])<alpha(before,[120,200]));eq('remote stroke retained',rgba(after,320,200),rgba(before,320,200));
+  await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);yes('history restoration undo all pixels',before.data.equals((await png(1,'artwork','history-undo')).data));
  },
  'GST-005':async()=>{
   await fresh();await findCommand('作業欄の設定','作業欄の設定');
@@ -608,6 +669,19 @@ const cases={
   }
   await choose(display,'original');const originalAgain=await capture('original-again');yes('original toggle stable',originalAgain.data.equals(original.data));
   await choose(display,'proof');
+  const rawDelta=(a,b)=>{let count=0,max=0;for(let i=0;i<a.data.length;i+=4){let d=0;for(let k=0;k<4;k++)d=Math.max(d,Math.abs(a.data[i+k]-b.data[i+k]));if(d){count++;max=Math.max(max,d);}}return {count,max};};
+  const noGuideRaw=rawDelta(warned,warningAgain);
+  await bleed.fill('0.5');await bleed.press('Tab');const guided=await capture('guided-proof');
+  await choose(display,'original');await capture('guided-original');await choose(display,'proof');const guidedAgain=await capture('guided-proof-again');
+  const withGuideRaw=rawDelta(guided,guidedAgain);
+  await bleed.fill('0');await bleed.press('Tab');const restoredNoGuide=await capture('guide-removed');
+  const restoredRaw=rawDelta(warned,restoredNoGuide);
+  await writeFile(join(evidence,'proof-isolation-factor.json'),JSON.stringify({noGuideRaw,withGuideRaw,restoredRaw}));
+  eq('guide removed restores same proof',restoredRaw.count,0);
+  eq('same guide same proof',withGuideRaw.count,0);
+  eq('zero guide raw comparison',noGuideRaw.count,0);
+  for(let k=0;k<5;k++){await choose(display,'original');await choose(display,'proof');}
+  eq('repeated switching stable',rawDelta(warned,await capture('rapid-switch')).count,0);
   await gamut.uncheck();const noWarning=await proof('no-warning');eq('warning disabled removes pink pixels',pinkCount(noWarning),0);
   await black.uncheck();await choose(intent,'0');const perceptual=await proof('perceptual-no-black-point');
   eq('intent is selected','0',await intent.inputValue());eq('black point disabled',await black.isChecked(),false);

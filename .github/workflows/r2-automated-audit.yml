@@ -30,7 +30,7 @@ jobs:
       PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
       R2_AUDIT_OUT: r2-audit-evidence
       R2_FIXTURE_DIR: r2-audit-fixtures
-      AUDIT_SELECTION: ${{ inputs.selection || 'SAV-006,TRN-005,LAY-005,FX-007' }}
+      AUDIT_SELECTION: ${{ inputs.selection || 'SAV-006,REF-006,FIL-005,TRN-005,VEC-004,COL-008,FX-007,HIS-005' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,16 +72,20 @@ jobs:
       - name: Run selected checks
         run: |
           set +e
-          if [ "$AUDIT_SELECTION" != "SAV-006,SAV-007,REF-006,IO-006,FIL-005,LIN-007,TRN-005,VEC-004,LAY-005,COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004,AUT-005" ]; then
-            node scripts/r2-automated-audit/run.mjs "$AUDIT_SELECTION"
-            exit $?
-          fi
           root="$R2_AUDIT_OUT"
-          R2_AUDIT_OUT="$root/group-a" node scripts/r2-automated-audit/run.mjs 'SAV-006,SAV-007,REF-006,IO-006' & a=$!
-          R2_AUDIT_OUT="$root/group-b" node scripts/r2-automated-audit/run.mjs 'FIL-005,LIN-007,TRN-005,VEC-004,LAY-005' & b=$!
-          R2_AUDIT_OUT="$root/group-c" node scripts/r2-automated-audit/run.mjs 'COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004,AUT-005' & c=$!
+          # Split selected IDs only; the built app is shared.
+          for group in A B C; do
+            case "$group" in
+              A) ids='SAV-006,SAV-007,REF-006,IO-006';;
+              B) ids='FIL-005,LIN-007,TRN-005,VEC-004,LAY-005';;
+              C) ids='COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004,AUT-005';;
+            esac
+            selected="$(node -e 'const a=process.argv[1].split(",");console.log(process.argv[2].split(",").filter(x=>a.includes(x)).join(","))' "$AUDIT_SELECTION" "$ids")"
+            if [ -n "$selected" ]; then R2_AUDIT_OUT="$root/group-$group" node scripts/r2-automated-audit/run.mjs "$selected" & pids="$pids $!"; fi
+          done
+          if [ -z "$pids" ]; then node scripts/r2-automated-audit/run.mjs "$AUDIT_SELECTION"; exit $?; fi
           rc=0
-          for pid in "$a" "$b" "$c"; do wait "$pid" || rc=1; done
+          for pid in $pids; do wait "$pid" || rc=1; done
           for group in "$root"/group-*; do
             for case in "$group"/*; do
               if [ -d "$case" ] && [ -f "$case/result.json" ]; then cp -a "$case" "$root/"; fi
