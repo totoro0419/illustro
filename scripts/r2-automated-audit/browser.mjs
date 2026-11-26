@@ -5,7 +5,7 @@ const {chromium}=require(process.env.RT_PLAYWRIGHT_PATH??'playwright');
 const {PNG}=require(process.env.PREP_PNG_PATH??'pngjs');
 const base=(process.env.R2_AUDIT_FIX_URL??'http://127.0.0.1:4173/').replace(/\/$/,'')+'/';
 const id=process.argv[2],expected=process.env.EXPECTED_COMMIT_SHA;
-if(!process.env.R2_AUDIT_FIX_URL || new URL(base).hostname!=='127.0.0.1') throw Error('Local audit URL required');
+if(!process.env.R2_AUDIT_FIX_URL || (new URL(base).hostname!=='127.0.0.1' && base!=='https://totoro0419.github.io/illustro/r2-audit-fixes-round5/')) throw Error('Isolated round 5 audit URL required');
 const browser=await chromium.launch({headless:true,...(process.env.R2_CHROME_CHANNEL?{channel:process.env.R2_CHROME_CHANNEL}:{}),args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 let context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1,acceptDownloads:true});
 let page=await context.newPage(),canvas=page.locator('#canvas');
@@ -46,6 +46,7 @@ import {join} from 'node:path';
 const temp=await mkdtemp(join(tmpdir(),'illustro-r2-'));
 const button=(parent,name)=>parent.getByRole('button',{name,exact:true});
 async function findCommand(query,name){
+  if(await page.locator('#allFeaturesPanel').isVisible())await page.locator('#featuresClose').click();
   await page.locator('#allFeatures').click();
   await page.locator('#commandSearchOpen').click();
   const dialog=page.locator('#commandSearchDialog');
@@ -156,7 +157,7 @@ async function advancedFill(){
 async function importRaster(path){
  const old=await canvas.getAttribute('data-document-id');
  await page.locator('#openFile').setInputFiles(path);
- const opened=page.waitForFunction(old=>{const c=document.querySelector('#canvas');return !!c?.dataset.documentId&&c.dataset.documentId!==old;},old,{timeout:60000});
+ const opened=page.waitForFunction(old=>{const c=document.querySelector('#canvas');return !!c?.dataset.documentId&&c.dataset.documentId!==old&&c.dataset.view&&c.dataset.view!=='null'&&!document.querySelector('#brush')?.disabled;},old,{timeout:60000});
  const warning=button(page,'編集用に開く');
  const choice=await Promise.race([opened.then(()=>false),warning.waitFor({state:'visible',timeout:60000}).then(()=>true)]);
  if(choice){await warning.click();await opened;}
@@ -218,7 +219,7 @@ const cases={
   await layerActions();await page.locator('#layerBatchToggle').click();
   for(const id of [a,b,c])await page.locator('#layerPageList [data-layer-id="'+id+'"]').click();
   await page.locator('#closeLayerPage').click();const root=await openDocumentSettings();
-  const p=root.locator('details').filter({has:root.getByText('レイヤーの整列・均等配置',{exact:true})}).last();
+  const p=root.getByText('レイヤーの整列・均等配置',{exact:true}).locator('xpath=..');
   if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
   await button(p,'複数選択したレイヤーを確認').click();
   await choose(p.locator('select:has(option[value="left"])'),'left');
@@ -250,24 +251,37 @@ const cases={
  },
  'FX-007':async()=>{
   await fresh();await importRaster(join(fixture,'repair-damaged.png'));
-  const before=await png(1,'artwork','repair-input');
-  await page.locator('#allFeatures').click();await page.locator('#commandSearchOpen').click();
-  const d=page.locator('#commandSearchDialog'),search=d.locator('input[type=search]');
-  for(const term of ['ブラシ','修復','パッチ','クローン']){
-   await search.fill(term);
-   await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
-   const matches=await d.locator('.c04-command-run').allTextContents();
-   checks.push({name:'UI command search '+term,actual:matches,expected:'manual triage: search results'});
-   await d.screenshot({path:join(evidence,'search-'+['ブラシ','修復','パッチ','クローン'].indexOf(term)+'.png')});
+  const before=await png(1,'artwork','repair-input'),clean=PNG.sync.read(await readFile(join(fixture,'repair-clean.png')));
+  eq('repair fixture dimensions',[before.width,before.height],[clean.width,clean.height]);
+  const p=page.locator('[data-tool-panel="smudge"]'),mode=p.locator('select:has(option[value="clone"])');
+  async function openRepair(kind,label,query,category=false){
+   if(category){
+    if(await page.locator('#allFeaturesPanel').isVisible())await page.locator('#featuresClose').click();
+    await page.locator('#allFeatures').click();await page.locator('[data-category="adjust-filter-retouch"]').click();
+    await button(page.locator('#featuresItems'),label).click();
+   }else await findCommand(query,label);
+   await p.waitFor({state:'visible'});if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
+   eq('entry selects '+kind,await mode.inputValue(),kind);
+   await p.getByLabel('強さ（%）',{exact:true}).fill('100');await p.getByLabel('強さ（%）',{exact:true}).press('Tab');
+   await p.getByLabel('直径（px）',{exact:true}).fill('24');await p.getByLabel('直径（px）',{exact:true}).press('Tab');
   }
-  await button(d,'閉じる').click();await d.waitFor({state:'hidden'});
-  if(await page.locator('#allFeaturesPanel').isVisible())await page.locator('#featuresClose').click();
-  await page.locator('#allFeatures').click();await page.locator('#featuresCategories').waitFor({state:'visible'});
-  await page.locator('[data-category="adjust-filter-retouch"]').click();
-  const entries=await page.locator('#featuresItems').innerText();
-  checks.push({name:'actual retouch category contents',actual:entries,expected:'manual triage: available repair tools'});
-  await page.locator('#allFeaturesPanel').screenshot({path:join(evidence,'retouch-category.png')});
-  yes('source image imported',before.width>0&&before.height>0);
+  async function pick(x,y){await button(p,'元を指定').click();await page.mouse.click(...await coords(x,y));await p.getByText(/採取点/).waitFor({state:'visible'});}
+  const error=im=>{let sum=0;for(let y=44;y<=48;y++)for(let x=46;x<=50;x++)for(let k=0;k<3;k++)sum+=Math.abs(rgba(im,x,y)[k]-rgba(clean,x,y)[k]);return sum;};
+  const outside=(im,x0,y0,x1,y1)=>{let n=0;for(let y=0;y<im.height;y++)for(let x=0;x<im.width;x++)if((x<x0||x>x1||y<y0||y>y1)&&JSON.stringify(rgba(im,x,y))!==JSON.stringify(rgba(before,x,y)))n++;return n;};
+  async function undo(old,name){await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);yes(name+' undo restores all pixels',before.data.equals((await png(1,'artwork',name+'-undo')).data));}
+  await openRepair('clone','クローン','Clone');
+  await pick(16.5,30.5);let old=await revision();
+  await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
+  let after=await png(1,'artwork','clone');eq('clone donor center',rgba(after,48,46),rgba(before,16,30));eq('clone exterior unchanged',outside(after,34,32,63,61),0);
+  const redoRevision=await revision();await undo(old,'clone');await page.locator('#redo').evaluate(e=>e.click());await waitRev(redoRevision,true);yes('clone redo restores result',after.data.equals((await png(1,'artwork','clone-redo')).data));await undo(old,'clone-second');
+  await openRepair('heal','修復ブラシ','Healing',true);await pick(16.5,30.5);old=await revision();
+  await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);after=await png(1,'artwork','heal');
+  yes('healing decreases independent defect error',error(after)<error(before));eq('heal exterior unchanged',outside(after,34,32,63,61),0);await undo(old,'heal');
+  await openRepair('patch','範囲パッチ','Patch',true);await pick(12,40);old=await revision();
+  await stroke([[44,40],[56,52]]);await button(p,'パッチを取消').click();eq('cancel leaves revision unchanged',await revision(),old);yes('cancel leaves original pixels',before.data.equals((await png(1,'artwork','patch-cancel')).data));
+  await button(p,'キャンバスで使う').click();await stroke([[44,40],[56,52]]);await button(p,'パッチを確定').click();await waitRev(old);after=await png(1,'artwork','patch');yes('patch decreases independent defect error',error(after)<error(before));eq('patch exterior unchanged',outside(after,43,39,57,53),0);await undo(old,'patch');
+  // The other three entries must launch their own actual tool, not just exist.
+  await openRepair('clone','クローン','Clone',true);await openRepair('heal','修復ブラシ','Healing');await openRepair('patch','範囲パッチ','Patch');
  },
 
  'LIN-007':async()=>{
@@ -471,7 +485,7 @@ const cases={
   await selectRect([100,100],[190,210]);await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await page.locator('#vectorMaskShape').selectOption('rectangle',{force:true});
   let old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);
   if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();const masked=await png(1,'artwork','masked');yes('visible center',alpha(masked,[140,160])>200);eq('hidden exterior',alpha(masked,[240,160]),0);
-  old=await revision();await layerPage();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);
+  old=await revision();await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);
   if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();const disabled=await png(1,'artwork','mask-disabled');yes('disable restores artwork',before.data.equals(disabled.data));
  },
  'HIS-005':async()=>{

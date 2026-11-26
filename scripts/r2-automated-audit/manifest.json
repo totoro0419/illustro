@@ -360,10 +360,12 @@
     "goal": "修復・パッチ・クローン・範囲外維持",
     "fixtures": "repair-clean.png; repair-damaged.png",
     "browser": "FX-007",
-    "unit": [],
+    "unit": [
+      "apps/editor/src/wet/paint.test.ts"
+    ],
     "legacy": null,
     "pending": [
-      "UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending"
+      "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
     ],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",

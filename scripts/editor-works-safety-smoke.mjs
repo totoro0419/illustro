@@ -14,8 +14,10 @@ const state=page=>page.locator('#canvas').evaluate(c=>({...c.dataset,width:c.wid
 async function create(page,name,width=512,height=384,background='transparent'){
  await page.locator('#ihStart').click();
  const setup=page.locator('#ihCanvasSetup');if(!await setup.evaluate(e=>e.open))await setup.locator(':scope > summary').click();
- await page.locator('#ihNewWidth').fill(String(width));await page.locator('#ihNewHeight').fill(String(height));await page.locator('#ihNewBackground').selectOption(background);
+ await page.locator('#ihNewWidth').fill(String(width));await page.locator('#ihNewHeight').fill(String(height));const bg=page.locator('#ihNewBackground');
+ if(await bg.inputValue()!==background){const label=await bg.locator('option[value="'+background+'"]').textContent();if(await bg.isVisible())await bg.selectOption(background);else{const trigger=bg.locator('xpath=following-sibling::button[contains(@class,"workspace-choice")][1]');await trigger.click();await page.locator('#'+await trigger.getAttribute('aria-controls')).getByRole('option',{name:label,exact:true}).click();}assert.equal(await bg.inputValue(),background);}
  await page.locator('#ihNewCreate').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:45000});
+ await page.waitForFunction(()=>!document.querySelector('#brush')?.disabled&&document.querySelector('#canvas')?.dataset.view!=='null');
  const created=await state(page);
  await home(page);await page.locator('#ihNavWorks').click();
  const card=page.locator('[data-work-id="'+created.documentId+'"]');
