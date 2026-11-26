@@ -1,0 +1,60 @@
+{
+  "id": "TRN-005",
+  "group": "C",
+  "status": "ERROR",
+  "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+  "checks": [
+    {
+      "path": "apps/editor/src/transform/groupTransform.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C07-003 group transformation geometry uses one common center and preserves relative positions for multiple layers",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects invalid bounds and duplicate layers before a grouped edit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects impossible scales and missing layer selection",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects finite but unrepresentable transformed bounds before publishing a group edit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry plans many grouped layers without spreading their bounds as function arguments",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry composes repeated rotations, mirroring, nonuniform scales and shear from the same original",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "TRN-005",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "three distinct x positions",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#layerBatchToggle')\n    - locator resolved to <button type=\"button\" aria-pressed=\"false\" id=\"layerBatchToggle\">複数選択</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:208:61)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2"
+    }
+  ],
+  "pending": [
+    "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+  ],
+  "reason": "Coverage not complete: left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+}

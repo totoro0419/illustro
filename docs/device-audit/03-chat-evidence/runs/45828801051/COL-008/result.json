@@ -1,0 +1,61 @@
+{
+  "id": "COL-008",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+  "checks": [
+    {
+      "path": "apps/editor/src/color/harmonyProof.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C04-013 display-only proofing covers retained artwork and temporary strokes as well as the base canvas",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C04-015 approved Aurora core palette keeps the accepted blue/periwinkle/violet/pink accents",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/export/rasterIcc.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "extracts a PNG profile with its original bytes",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "reassembles out-of-order JPEG profile segments and rejects missing pieces",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "reads a WebP ICC chunk without interpreting it as pixels",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "COL-008",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "proof is non-destructive",
+          "actual": "2253f135-111c-4057-b031-517e0b226afa",
+          "expected": "2253f135-111c-4057-b031-517e0b226afa"
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "saturated color warning pixel comparison, display toggle, artwork export not changed"
+  ],
+  "reason": "Coverage not complete: saturated color warning pixel comparison, display toggle, artwork export not changed"
+}

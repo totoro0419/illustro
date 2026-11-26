@@ -1,0 +1,59 @@
+{
+  "id": "AUT-004",
+  "group": "E",
+  "status": "ERROR",
+  "commit": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
+  "checks": [
+    {
+      "id": "AUT-004",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "different work ids",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "failure does not prevent the next file",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "two real downloadable outputs",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "name": "output dimensions and every pixel match individual export 512",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "output dimensions and every pixel match individual export 256",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "both output rows recovered",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "name": "first original untouched",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "second original untouched",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle)"
+  ],
+  "reason": "Coverage not complete: validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle)"
+}

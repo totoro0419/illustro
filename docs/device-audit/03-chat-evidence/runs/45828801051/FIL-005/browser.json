@@ -1,0 +1,32 @@
+{
+  "id": "FIL-005",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "interior colored",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "concave exclusion",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "outside",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "erased inside",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "outside erasure retained",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

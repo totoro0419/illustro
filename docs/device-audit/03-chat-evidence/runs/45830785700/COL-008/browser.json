@@ -1,0 +1,43 @@
+{
+  "id": "COL-008",
+  "status": "FAIL",
+  "checks": [
+    {
+      "name": "known colored fixture size",
+      "actual": [
+        128,
+        96
+      ],
+      "expected": [
+        128,
+        96
+      ]
+    },
+    {
+      "name": "fixture has saturated red",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "actual pink warning pixels present",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "original view has no warning pixels",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "proof differs from original",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "display toggle restores proof",
+      "actual": false,
+      "expected": true
+    }
+  ],
+  "reason": "Error: display toggle restores proof\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:103:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:26)\n    at COL-008 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:572:83)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2"
+}

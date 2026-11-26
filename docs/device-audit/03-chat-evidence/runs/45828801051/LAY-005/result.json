@@ -1,0 +1,39 @@
+{
+  "id": "LAY-005",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+  "checks": [
+    {
+      "path": "apps/editor/src/selection/maskCodec.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C06-006 portable selection compression compresses large sparse and solid selections without alpha loss",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C06-006 portable selection compression retains random alpha and literal runs across 128-byte boundaries",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C06-006 portable selection compression does not accept truncated, extra, or overexpanded packets",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "LAY-005",
+      "status": "ERROR",
+      "checks": [],
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#layerVectorMask summary')\n    - locator resolved to <summary>レイヤーマスク</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:454:169)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2"
+    }
+  ],
+  "pending": [
+    "ellipse/path point editing, inversion/link/density/native preservation"
+  ],
+  "reason": "Coverage not complete: ellipse/path point editing, inversion/link/density/native preservation"
+}

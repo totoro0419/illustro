@@ -1,0 +1,54 @@
+2026-11-26T13:15:56.0644889Z SAV-006 ERROR actual storage quota exhaustion vs simulated IndexedDB transaction abort; two-tab concurrent save; external file changes/copy recovery
+2026-11-26T13:16:11.7686914Z SAV-007 ERROR offline layers/selection/transform/reference/history/filter/macro
+2026-11-26T13:16:11.7691064Z BROWSER SAV-007 PASS Implemented subchecks passed, see manifest for coverage gaps
+2026-11-26T13:16:51.7418859Z REF-006 ERROR embedded/linked operation round trip attempted; metadata readback, positioning and relink still pending
+2026-11-26T13:16:51.7419801Z BROWSER REF-006 ERROR locator.click: Timeout 30000ms exceeded.
+2026-11-26T13:16:51.7421425Z   - waiting for locator('.c05-reference-editor').locator('.c05-reference-row').first().getByRole('button', { name: '出典・メモを追加', exact: true })
+2026-11-26T13:17:04.0173894Z GST-005 ERROR physical layout/handedness; unsupported binding preserved
+2026-11-26T13:17:04.0174751Z BROWSER GST-005 PASS Implemented subchecks passed, see manifest for coverage gaps
+2026-11-26T13:17:13.3320311Z IO-006 ERROR independent output color/alpha comparison; AVIF/EXR input and real HEIC input/unsupported notice
+2026-11-26T13:17:13.3320979Z BROWSER IO-006 PASS Implemented subchecks passed, see manifest for coverage gaps
+2026-11-26T13:17:25.8575954Z FIL-005 ERROR closed-region-only and leak candidate; Undo, selection/mask/alpha protection
+2026-11-26T13:17:25.8576560Z BROWSER FIL-005 PASS Implemented subchecks passed, see manifest for coverage gaps
+2026-11-26T13:17:37.7112556Z LIN-007 ERROR blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending
+2026-11-26T13:17:37.7113574Z BROWSER LIN-007 PASS Implemented subchecks passed, see manifest for coverage gaps
+2026-11-26T13:17:37.7115353Z TRN-005 ERROR UI snap and known-coordinate alignment/distribution
+2026-11-26T13:17:37.7117980Z VEC-004 ERROR UI boolean three operations and original preservation, simplify/smooth
+2026-11-26T13:17:46.7587333Z COL-008 ERROR saturated color warning pixel comparison, display toggle, artwork export not changed
+2026-11-26T13:17:46.7587964Z BROWSER COL-008 PASS Implemented subchecks passed, see manifest for coverage gaps
+2026-11-26T13:18:26.0890487Z LAY-005 ERROR ellipse/path point editing, inversion/link/density/native preservation
+2026-11-26T13:18:26.0891035Z BROWSER LAY-005 ERROR locator.click: Timeout 30000ms exceeded.
+2026-11-26T13:18:26.0891697Z   - waiting for locator('#layerVectorMask summary')
+2026-11-26T13:18:26.0898007Z FX-007 ERROR UI sample source, repair/patch/clone and pixel comparison
+2026-11-26T13:18:35.8742791Z HIS-005 ERROR snapshot/copy-region comparison, undo and invalid layer mapping
+2026-11-26T13:18:35.8744027Z BROWSER HIS-005 ERROR locator.selectOption: Error: strict mode violation: getByRole('dialog').filter({ hasText: '作品の履歴' }).getByLabel('比較する時点') resolved to 2 elements:
+2026-11-26T13:18:45.9535085Z AUT-002 ERROR missing target and parameter types
+2026-11-26T13:18:45.9535807Z BROWSER AUT-002 PASS Implemented subchecks passed, see manifest for coverage gaps
+2026-11-26T13:19:38.9117137Z AUT-003 ERROR cancel, preview and undo attempted; controlled mid-sequence failure and later edit preservation still pending
+2026-11-26T13:19:38.9118333Z BROWSER AUT-003 ERROR locator.click: Timeout 30000ms exceeded.
+2026-11-26T13:19:38.9119214Z   - waiting for locator('#fileActionsOpen')
+2026-11-26T13:20:17.4251613Z AUT-004 ERROR validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle)
+2026-11-26T13:20:17.4252218Z BROWSER AUT-004 ERROR locator.fill: Timeout 30000ms exceeded.
+2026-11-26T13:20:17.4252735Z   - waiting for locator('#ihNewName')
+2026-11-26T13:20:25.7657558Z AUT-005 ERROR export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending
+2026-11-26T13:20:25.7659198Z BROWSER AUT-005 PASS Implemented subchecks passed, see manifest for coverage gaps
+2026-11-26T13:20:27.5965855Z CHAT_RESULT SAV-006 未判定 ERROR NO_BROWSER 0
+2026-11-26T13:20:27.5966929Z CHAT_RESULT SAV-007 未判定 ERROR PASS 5
+2026-11-26T13:20:27.5967465Z CHAT_RESULT REF-006 未判定 ERROR ERROR 1
+2026-11-26T13:20:27.5967886Z CHAT_RESULT GST-005 未判定 ERROR PASS 2
+2026-11-26T13:20:27.5968523Z CHAT_RESULT IO-006 未判定 ERROR PASS 4
+2026-11-26T13:20:27.5968940Z CHAT_RESULT FIL-005 未判定 ERROR PASS 5
+2026-11-26T13:20:27.5969377Z CHAT_RESULT LIN-007 未判定 ERROR PASS 5
+2026-11-26T13:20:27.5969867Z CHAT_RESULT TRN-005 未判定 ERROR NO_BROWSER 0
+2026-11-26T13:20:27.5970466Z CHAT_RESULT VEC-004 未判定 ERROR NO_BROWSER 0
+2026-11-26T13:20:27.5972047Z CHAT_RESULT LAY-005 未判定 ERROR ERROR 0
+2026-11-26T13:20:27.5972527Z CHAT_RESULT COL-008 未判定 ERROR PASS 1
+2026-11-26T13:20:27.5972992Z CHAT_RESULT FX-007 未判定 ERROR NO_BROWSER 0
+2026-11-26T13:20:27.5973471Z CHAT_RESULT HIS-005 未判定 ERROR ERROR 0
+2026-11-26T13:20:27.5973919Z CHAT_RESULT AUT-002 未判定 ERROR PASS 3
+2026-11-26T13:20:27.5974410Z CHAT_RESULT AUT-003 未判定 ERROR ERROR 2
+2026-11-26T13:20:27.5974856Z CHAT_RESULT AUT-004 未判定 ERROR ERROR 0
+2026-11-26T13:20:27.5975342Z CHAT_RESULT AUT-005 未判定 ERROR PASS 2
+2026-11-26T13:20:28.3922426Z  ! [rejected]        HEAD -> qa/r2-chat-audit-remaining17-2026-11-26 (fetch first)
+2026-11-26T13:20:28.3922924Z error: failed to push some refs to 'https://github.com/totoro0419/illustro'
+2026-11-26T13:20:28.3930624Z hint: Updates were rejected because the remote contains work that you do not

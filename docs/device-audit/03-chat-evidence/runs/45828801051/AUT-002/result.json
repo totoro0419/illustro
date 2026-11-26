@@ -1,0 +1,60 @@
+{
+  "id": "AUT-002",
+  "group": "E",
+  "status": "ERROR",
+  "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+  "checks": [
+    {
+      "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "AUT-002",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "selection not silently switched",
+          "actual": "27c1cf3f-a923-407f-abbb-12a27435f704",
+          "expected": "27c1cf3f-a923-407f-abbb-12a27435f704"
+        },
+        {
+          "name": "non-target layer remains empty",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "requested target offset rendered",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "missing target and parameter types"
+  ],
+  "reason": "Coverage not complete: missing target and parameter types"
+}

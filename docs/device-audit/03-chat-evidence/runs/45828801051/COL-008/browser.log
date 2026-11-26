@@ -1,0 +1,1 @@
+{"id":"COL-008","status":"PASS","checks":[{"name":"proof is non-destructive","actual":"2253f135-111c-4057-b031-517e0b226afa","expected":"2253f135-111c-4057-b031-517e0b226afa"}],"reason":"Implemented subchecks passed, see manifest for coverage gaps"}

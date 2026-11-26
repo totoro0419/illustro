@@ -1,0 +1,8 @@
+{
+  "tests": [],
+  "errors": [
+    "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#ihNewName')\n    - locator resolved to <input name=\"name\" type=\"hidden\" value=\"新しい作品\" id=\"ihNewName\"/>\n    - fill(\"ブラウザ再起動\")\n  - attempting fill action\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    60 × waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n\n    at create (/home/runner/work/illustro/illustro/scripts/editor-works-safety-smoke.mjs:14:152)\n    at async file:///home/runner/work/illustro/illustro/scripts/editor-works-safety-smoke.mjs:24:54"
+  ],
+  "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+  "mode": "public"
+}

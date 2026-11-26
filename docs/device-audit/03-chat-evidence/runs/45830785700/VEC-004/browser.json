@@ -1,0 +1,6 @@
+{
+  "id": "VEC-004",
+  "status": "ERROR",
+  "checks": [],
+  "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').getByText('ベクター線・点の編集', { exact: true }).locator('..').locator('summary')\n    - locator resolved to <summary>ベクター線・点の編集</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at VEC-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:229:63)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2"
+}
