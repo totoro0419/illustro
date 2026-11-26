@@ -10,9 +10,9 @@
       "apps/editor/src/persistence/workLibrary.test.ts",
       "apps/editor/src/persistence/contiguousProtection.test.ts"
     ],
-    "legacy": null,
+    "legacy": "SAVE-SAFETY",
     "pending": [
-      "quota fault UI",
+      "actual storage quota exhaustion vs simulated IndexedDB transaction abort",
       "two-tab concurrent save",
       "external file changes/copy recovery"
     ],
@@ -286,14 +286,14 @@
     "operation": "P01-01",
     "goal": "カーソル位置・サイズ・ズーム追従",
     "fixtures": "blank 512x384",
-    "browser": null,
+    "browser": "INP-006",
     "unit": [
       "apps/editor/src/canvasView.test.ts",
       "apps/editor/src/brushInput.test.ts"
     ],
     "legacy": null,
     "pending": [
-      "real hover cursor center and zoom-size measurement, contact behavior"
+      "physical pen pressure/tilt and unusual cursor shapes not tested"
     ],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
@@ -342,11 +342,11 @@
     "operation": "P03-07",
     "goal": "自層/下地の明暗・合成範囲",
     "fixtures": "colors.png; two-layers.ora",
-    "browser": null,
+    "browser": "NDE-002",
     "unit": [],
     "legacy": null,
     "pending": [
-      "UI tonal ranges, channel, undo, independent pixel oracle"
+      "different colors on same layer, backdrop source and RGB channels, soft boundaries"
     ],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
@@ -430,11 +430,11 @@
     "operation": "P10-04",
     "goal": "複数作品の一括出力と失敗継続",
     "fixtures": "two independent works",
-    "browser": null,
+    "browser": "AUT-004",
     "unit": [],
     "legacy": null,
     "pending": [
-      "UI batch output, decode files, single failure continuation"
+      "validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle)"
     ],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",

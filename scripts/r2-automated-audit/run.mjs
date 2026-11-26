@@ -22,7 +22,7 @@ function unitFor(path){
  if(!t)return {path,status:'ERROR',reason:unitError??'No test result'};
  const a=t.assertionResults??[];return {path,status:a.some(x=>x.status==='failed')?'FAIL':t.status==='passed'&&a.some(x=>x.status==='passed')?'PASS':'ERROR',tests:a.map(x=>({name:x.fullName??x.title,status:x.status,failure:x.failureMessages}))};
 }
-let legacy=null;
+const legacyRuns=new Map();
 const results=[];
 for(const spec of selected){
  const dir=join(out,spec.id);await mkdir(dir,{recursive:true});
@@ -33,12 +33,15 @@ for(const spec of selected){
   await writeFile(join(dir,'browser.log'),(p.stdout??'')+(p.stderr??'')+String(p.error??''));
   try{b=JSON.parse(await readFile(join(dir,'browser.json'),'utf8'));}catch(e){b={status:'ERROR',reason:String(p.error??e)};}
  }
- if(spec.legacy&&!legacy){
-  const p=spawnSync(process.execPath,['scripts/r2-audit-fixes-round2-browser-smoke.mjs',spec.legacy],{encoding:'utf8',timeout:240000,maxBuffer:8*1024*1024});
-  await writeFile(join(out,'legacy-D-016.log'),(p.stdout??'')+(p.stderr??''));
-  legacy={status:p.status===0&&p.stdout?.includes('SAVED-MACRO-REPLAYED-REAL-STROKE')?'PASS':'ERROR',reason:p.status===0?'D-016 regression subchecks only':String(p.error??'Legacy smoke failed; triage required')};
+ if(spec.legacy&&!legacyRuns.has(spec.legacy)){
+  const safety=spec.legacy==='SAVE-SAFETY';
+  const args=safety?['scripts/editor-works-safety-smoke.mjs']:['scripts/r2-audit-fixes-round2-browser-smoke.mjs',spec.legacy];
+  const p=spawnSync(process.execPath,args,{encoding:'utf8',timeout:240000,maxBuffer:8*1024*1024,env:{...process.env,...(safety?{HOME_PUBLIC_URL:process.env.R2_AUDIT_FIX_URL,HOME_EVIDENCE_DIRECTORY:dir,CHROMIUM_EXECUTABLE:process.env.CHROMIUM_EXECUTABLE??'/usr/bin/google-chrome'}:{})}});
+  await writeFile(join(out,'legacy-'+spec.legacy+'.log'),(p.stdout??'')+(p.stderr??'')+String(p.error??''));
+  const marker=safety?'INDEXEDDB-FALLBACK-QUOTA-FAILURE-RETRY-PREVIOUS-INTACT':'SAVED-MACRO-REPLAYED-REAL-STROKE';
+  legacyRuns.set(spec.legacy,{status:p.status===0&&p.stdout?.includes(marker)?'PASS':'ERROR',reason:p.status===0?'Existing regression subchecks only':String(p.error??'Legacy smoke failed; triage required')});
  }
- const checks=[...unit,...(b?[b]:[]),...(spec.legacy?[legacy]:[])];
+ const checks=[...unit,...(b?[b]:[]),...(spec.legacy?[legacyRuns.get(spec.legacy)]:[])];
  // A passing subcheck never promotes an unfinished feature. Infrastructure failures
  // remain ERROR. Only measured assertions from a specific browser case are feature FAIL.
  const status=b?.status==='FAIL'?'FAIL':b?.status==='BLOCKED'?'BLOCKED':b?.status==='ENV_LIMIT'?'ENV_LIMIT':spec.pending.length||!checks.length||checks.some(x=>x.status!=='PASS')?'ERROR':'PASS';

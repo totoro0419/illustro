@@ -35,7 +35,7 @@ with zipfile.ZipFile(root/'two-layers.ora','w') as z:
     z.writestr('stack.xml','<image w="128" h="96" name="QA"><stack><layer name="B" src="data/b.png" opacity="1.0" visibility="visible" x="0" y="0" composite-op="svg:src-over"/><layer name="A" src="data/a.png" opacity="1.0" visibility="visible" x="0" y="0" composite-op="svg:src-over"/></stack></image>')
     for src,dst in [('shape-a.png','data/a.png'),('shape-b.png','data/b.png'),('shapes-merged.png','mergedimage.png')]:z.write(root/src,dst)
 with zipfile.ZipFile(root/'two-layers.ora') as z:assert z.testzip() is None
-(root/'shapes.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="96"><rect x="12" y="12" width="52" height="52" fill="red"/><circle cx="66" cy="56" r="26" fill="blue"/></svg>',encoding='utf8')
+(root/'shapes.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="96"><rect x="12" y="12" width="52" height="52" fill="red"/><rect x="40" y="36" width="52" height="52" fill="blue"/></svg>',encoding='utf8')
 (root/'reference.json').write_text(json.dumps({'name':'QA synthetic','source':'https://example.invalid/qa','rights':'self-generated test only'},indent=2),encoding='utf8')
 (root/'srgb.icc').write_bytes(ImageCms.ImageCmsProfile(ImageCms.createProfile('sRGB')).tobytes())
 class XY(ctypes.Structure):_fields_=[('x',ctypes.c_double),('y',ctypes.c_double),('Y',ctypes.c_double)]

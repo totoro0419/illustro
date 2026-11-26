@@ -128,6 +128,86 @@ async function viewMenu(){const b=page.locator('#viewActionsOpen');if(!await pag
 async function full(){await viewMenu();await page.locator('#c04FullscreenToggle').click();}
 async function recordMacro(){let root=await openMacros();await button(root,'操作の記録を開始').click();await stroke([[90,100],[150,100]]);await idle();await button(root,'操作の記録を停止').evaluate(e=>e.click());await root.getByText('記録したブラシの線',{exact:false}).waitFor();await root.getByLabel('操作セットの名前',{exact:true}).fill('QA stroke');await button(root,'保存').click();return root;}
 const cases={
+ 'INP-006':async()=>{
+  await fresh();await page.locator('#paint').click();await pen(20);
+  const c=page.locator('#brushCursorEnabled');
+  const summary=c.locator('xpath=ancestor::details[1]/summary');
+  if(!await c.isVisible())await summary.click();
+  await c.check();const cursor=page.locator('#brushCursor');
+  async function measure(x,y){
+   const [sx,sy]=await coords(x,y);await page.mouse.move(sx,sy);await cursor.waitFor({state:'visible'});
+   await page.waitForFunction(({sx,sy})=>{const r=document.querySelector('#brushCursor').getBoundingClientRect();return Math.abs(r.x+r.width/2-sx)<2&&Math.abs(r.y+r.height/2-sy)<2;},{sx,sy},{timeout:4000}).catch(()=>{});
+   const r=await cursor.boundingBox();yes('cursor visible bounding box',!!r);
+   yes('cursor center within 2 CSS px',Math.hypot(r.x+r.width/2-sx,r.y+r.height/2-sy)<=2);
+   return {width:r.width,height:r.height,zoom:JSON.parse(await canvas.getAttribute('data-view')).zoom};
+  }
+  const before=await measure(240,180);await viewMenu();await page.locator('#zoomIn').click();
+  const after=await measure(250,190);
+  yes('zoom actually increased',after.zoom>before.zoom);
+  yes('cursor width tracks zoom within 2 CSS px',Math.abs(after.width-before.width*after.zoom/before.zoom)<=2);
+  const rev=await revision();await page.mouse.down();await cursor.waitFor({state:'hidden'});await page.mouse.up();await waitRev(rev);
+  const im=await png(1,'artwork','contact');yes('contact mark contains indicated center',alpha(im,[250,190])>0);
+ },
+ 'NDE-002':async()=>{
+  await fresh();await drawLine([[70,140],[270,140]],24);const before=await png(1,'artwork','before');
+  const black=rgba(before,150,140);yes('initial dark opaque artwork',black[3]>200&&Math.max(...black.slice(0,3))<32);
+  await findCommand('合成モード','レイヤーの合成モード');
+  const d=page.getByRole('dialog',{name:'レイヤーの合成モード'});
+  await d.getByText('明るさで合成範囲を指定',{exact:true}).click();
+  await d.getByLabel('明るさで範囲を絞る',{exact:true}).check();
+  await d.getByLabel('調べる絵',{exact:true}).selectOption('self');
+  await d.getByLabel('色の成分',{exact:true}).selectOption('luminosity');
+  await d.getByLabel('暗部のなじみ',{exact:true}).fill('128');
+  await d.getByLabel('暗部の境界',{exact:true}).fill('128');
+  const rev=await revision();await button(d,'確定').click();await waitRev(rev);
+  const masked=await png(1,'artwork','threshold');eq('dark range excluded at center',alpha(masked,[150,140]),0);
+  eq('outside remains transparent',alpha(masked,[150,200]),0);
+  await page.locator('#undo').evaluate(e=>e.click());await waitRev(rev,true);
+  const restored=await png(1,'artwork','undo');yes('undo restores complete prior pixel buffer',before.data.equals(restored.data));
+ },
+ 'AUT-004':async()=>{
+  await fresh();await drawLine([[70,100],[180,100]],12);const first=await png(1,'artwork','first-expected');
+  await saveIdle();const one=await canvas.getAttribute('data-document-id');
+  await page.locator('#home').click();await page.locator('#ihNavHome').click();await page.locator('#ihStart').click();
+  const setup=page.locator('#ihCanvasSetup');if(!await setup.evaluate(e=>e.open))await setup.locator(':scope > summary').click();
+  await page.locator('#ihNewName').fill('Batch second QA');await page.locator('#ihNewWidth').fill('256');await page.locator('#ihNewHeight').fill('192');
+  await page.locator('#ihNewBackground').selectOption('transparent',{force:true});await page.locator('#ihNewCreate').click();
+  await page.waitForFunction(()=>document.querySelector('#canvas')?.dataset.documentWidth==='256'&&!document.querySelector('#brush')?.disabled);
+  await drawLine([[40,60],[150,60]],18);const second=await png(1,'artwork','second-expected');
+  await saveIdle();const two=await canvas.getAttribute('data-document-id');yes('different work ids',one!==two);
+  await page.locator('#home').click();await page.locator('#ihNavWorks').click();
+  for(const work of [one,two])await page.locator('[data-work-id="'+work+'"] input[type=checkbox]').check();
+  await page.evaluate(()=>{
+    let attempts=0;
+    Object.defineProperty(window,'showDirectoryPicker',{configurable:true,value:async()=>({name:'QA isolated simulated folder',getFileHandle:async(name,opts)=>{
+      if(!opts?.create)throw new DOMException('not found','NotFoundError');
+      return {createWritable:async()=>({write:async()=>{if(++attempts===1)throw new DOMException('QA simulated quota fault','QuotaExceededError');},close:async()=>{},abort:async()=>{}})};
+    }})});
+  });
+  await page.locator('#ihWorkExportSelected').click();const d=page.getByRole('dialog',{name:'選んだ作品を一括で書き出す'});
+  await d.getByLabel('形式',{exact:true}).selectOption('png');
+  await button(d,'保存先フォルダーを選ぶ').click();
+  await d.getByRole('button',{name:/保存先 QA isolated simulated folder/}).waitFor();
+  await button(d,'画像をまとめて作成').click();
+  await d.getByText('1件を作成 ／ 1件で失敗。',{exact:true}).waitFor({timeout:90000});
+  eq('failure does not prevent the next file',await d.locator('ol li').filter({hasText:'作成済み'}).count(),1);
+  let actual=[];
+  for(const link of await d.locator('ol a:visible').all()){
+   const dl=page.waitForEvent('download',{timeout:30000});await link.click();
+   const file=join(evidence,'batch-'+actual.length+'.png');await (await dl).saveAs(file);actual.push(PNG.sync.read(await readFile(file)));
+  }
+  eq('two real downloadable outputs',actual.length,2);
+  for(const expected of [first,second]){
+   const found=actual.find(x=>x.width===expected.width&&x.height===expected.height);
+   yes('output dimensions and every pixel match individual export '+expected.width,!!found&&found.data.equals(expected.data));
+  }
+  await button(d,'失敗・中止分を再試行').click();
+  await d.getByText('1件を作成。',{exact:true}).waitFor({timeout:90000});
+  eq('both output rows recovered',await d.locator('ol li').filter({hasText:'作成済み'}).count(),2);
+  await button(d,'閉じる').click();
+  for(const work of [one,two])await page.locator('[data-work-id="'+work+'"]').waitFor({state:'visible'});
+ },
+
  'BRU-011':async()=>{
   await fresh();await drawLine([[70,120],[180,120]],9);
   const before=await png(1,'artwork','before'),brush=await page.locator('#brush').inputValue(),size=await page.locator('#sizeNumber').inputValue();
