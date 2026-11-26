@@ -1,0 +1,57 @@
+{
+  "id": "SAV-007",
+  "status": "ERROR",
+  "checks": [
+    {
+      "name": "offline flag",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "same work offline",
+      "actual": "f099df73-11be-4dca-803b-fa7d5f2d833b",
+      "expected": "f099df73-11be-4dca-803b-fa7d5f2d833b"
+    },
+    {
+      "name": "new offline stroke present",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline selection constrains stroke",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline save survived reload",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline new layer created",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline new layer pixels rendered",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline undo removes new stroke",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "offline redo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline layer/history survives reload",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByRole('button', { name: '変形を始める', exact: true })\n    - locator resolved to <button disabled type=\"button\">変形を始める</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at SAV-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:707:36)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1024:2"
+}
