@@ -1,0 +1,105 @@
+{
+  "id": "LAY-005",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "379a1a88b044cff45ea27736ec5636782eb41be6",
+  "checks": [
+    {
+      "path": "apps/editor/src/selection/maskCodec.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C06-006 portable selection compression compresses large sparse and solid selections without alpha loss",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C06-006 portable selection compression retains random alpha and literal runs across 128-byte boundaries",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C06-006 portable selection compression does not accept truncated, extra, or overexpanded packets",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "LAY-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "visible center",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "hidden exterior",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "disable restores artwork",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "inverted center hidden",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "inverted exterior visible",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "half density restores half the hidden opaque pixel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "mask saved and reopened exactly",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "unlink setting persists",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "inversion persists",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "density persists",
+          "actual": "50",
+          "expected": "50"
+        },
+        {
+          "name": "removing mask preserves raster",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "ellipse center retained",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "ellipse far outside hidden",
+          "actual": 0,
+          "expected": 0
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "ellipse/path point editing, inversion/link/density/native preservation"
+  ],
+  "reason": "Coverage not complete: ellipse/path point editing, inversion/link/density/native preservation"
+}
