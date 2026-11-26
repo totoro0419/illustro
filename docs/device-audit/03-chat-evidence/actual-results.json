@@ -3,22 +3,22 @@
     "id": "SAV-006",
     "name": "容量不足・外部変更・保存競合",
     "verdict": "未判定",
-    "operation": "",
-    "expected": "",
-    "actual": "",
-    "problem": "実ファイル相当の外部版競合・比較・別名保存と原画保持は実行済み。別タブ更新時の競合通知を画面状態JSONで確認したが、保存状態欄の文言待ちで検査停止。大きすぎる生バイト比較により詳細JSONは未保存。",
-    "improvement": "保存状態ではなく実際に表示された競合通知を待ち、バイト列はSHA-256で比較する。",
-    "pending": "別タブで保存された最新版の再読込と救出、実容量制限の通知・再試行。",
+    "operation": "external conflict explicitly displayed / external conflict prevented overwrite / original external bytes retained / both actual versions compared / save copy leaves original external bytes unchanged / current canvas preserved after conflict / stale tab warns instead of overwriting / stale tab can export recovery copy / latest saved version preserved across tab conflict",
+    "expected": "external conflict explicitly displayed: true / external conflict prevented overwrite: 1 / original external bytes retained: \"1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2\" / both actual versions compared: 2 / save copy leaves original external bytes unchanged: \"1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2\" / current canvas preserved after conflict: true / stale tab warns instead of overwriting: true / stale tab can export recovery copy: true / latest saved version preserved across tab conflict: true",
+    "actual": "external conflict explicitly displayed: true / external conflict prevented overwrite: 1 / original external bytes retained: \"1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2\" / both actual versions compared: 2 / save copy leaves original external bytes unchanged: \"1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2\" / current canvas preserved after conflict: true / stale tab warns instead of overwriting: true / stale tab can export recovery copy: true / latest saved version preserved across tab conflict: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "actual storage quota exhaustion vs simulated IndexedDB transaction abort / two-tab concurrent save / external file changes/copy recovery / ERROR / page.waitForFunction: Timeout 60000ms exceeded.\n    at SAV-006 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:276:16)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45907952276",
-    "evidence": "03-chat-evidence/runs/45907952276/SAV-006/",
-    "stamp": "2026-11-26T22:19:04.894Z",
+    "sha": "0d62c0523fedfcb2f5b12c2a875316449634089b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45908920277",
+    "evidence": "03-chat-evidence/runs/45908920277/SAV-006/",
+    "stamp": "2026-11-26T23:11:43.916Z",
     "result": {
       "id": "SAV-006",
       "group": "A",
       "status": "ERROR",
-      "commit": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+      "commit": "0d62c0523fedfcb2f5b12c2a875316449634089b",
       "checks": [
         {
           "path": "apps/editor/src/persistence/workLibrary.test.ts",
@@ -58,6 +58,58 @@
           ]
         },
         {
+          "id": "SAV-006",
+          "status": "ERROR",
+          "checks": [
+            {
+              "name": "external conflict explicitly displayed",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "external conflict prevented overwrite",
+              "actual": 1,
+              "expected": 1
+            },
+            {
+              "name": "original external bytes retained",
+              "actual": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2",
+              "expected": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2"
+            },
+            {
+              "name": "both actual versions compared",
+              "actual": 2,
+              "expected": 2
+            },
+            {
+              "name": "save copy leaves original external bytes unchanged",
+              "actual": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2",
+              "expected": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2"
+            },
+            {
+              "name": "current canvas preserved after conflict",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "stale tab warns instead of overwriting",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "stale tab can export recovery copy",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "latest saved version preserved across tab conflict",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "page.waitForFunction: Timeout 60000ms exceeded.\n    at SAV-006 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:276:16)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2"
+        },
+        {
           "status": "ERROR",
           "reason": "Legacy smoke failed; triage required"
         }
@@ -69,28 +121,79 @@
       ],
       "reason": "Coverage not complete: actual storage quota exhaustion vs simulated IndexedDB transaction abort; two-tab concurrent save; external file changes/copy recovery"
     },
-    "browser": null
+    "browser": {
+      "id": "SAV-006",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "external conflict explicitly displayed",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "external conflict prevented overwrite",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "original external bytes retained",
+          "actual": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2",
+          "expected": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2"
+        },
+        {
+          "name": "both actual versions compared",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "name": "save copy leaves original external bytes unchanged",
+          "actual": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2",
+          "expected": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2"
+        },
+        {
+          "name": "current canvas preserved after conflict",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "stale tab warns instead of overwriting",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "stale tab can export recovery copy",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "latest saved version preserved across tab conflict",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "page.waitForFunction: Timeout 60000ms exceeded.\n    at SAV-006 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:276:16)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2"
+    }
   },
   {
     "id": "SAV-007",
     "name": "オフライン制作",
     "verdict": "未判定",
-    "operation": "offline flag / same work offline / new offline stroke present / offline selection constrains stroke / offline save survived reload / offline new layer created / offline new layer pixels rendered / offline undo removes new stroke / offline redo restores all pixels / offline layer/history survives reload",
-    "expected": "offline flag: false / same work offline: \"f099df73-11be-4dca-803b-fa7d5f2d833b\" / new offline stroke present: true / offline selection constrains stroke: true / offline save survived reload: true / offline new layer created: true / offline new layer pixels rendered: true / offline undo removes new stroke: 0 / offline redo restores all pixels: true / offline layer/history survives reload: true",
-    "actual": "offline flag: false / same work offline: \"f099df73-11be-4dca-803b-fa7d5f2d833b\" / new offline stroke present: true / offline selection constrains stroke: true / offline save survived reload: true / offline new layer created: true / offline new layer pixels rendered: true / offline undo removes new stroke: 0 / offline redo restores all pixels: true / offline layer/history survives reload: true",
+    "operation": "offline flag / same work offline / new offline stroke present / offline selection constrains stroke / offline save survived reload / offline new layer created / offline new layer pixels rendered / offline undo removes new stroke / offline redo restores all pixels / offline layer/history survives reload / offline transform moved pixels / offline reference image visible / offline reference excluded from export / offline invert actual opaque RGB / offline filter undo restores full image",
+    "expected": "offline flag: false / same work offline: \"911e67c6-a82e-48c2-b829-49b67e62f3aa\" / new offline stroke present: true / offline selection constrains stroke: true / offline save survived reload: true / offline new layer created: true / offline new layer pixels rendered: true / offline undo removes new stroke: 0 / offline redo restores all pixels: true / offline layer/history survives reload: true / offline transform moved pixels: true / offline reference image visible: true / offline reference excluded from export: true / offline invert actual opaque RGB: [224,217,204,255] / offline filter undo restores full image: true",
+    "actual": "offline flag: false / same work offline: \"911e67c6-a82e-48c2-b829-49b67e62f3aa\" / new offline stroke present: true / offline selection constrains stroke: true / offline save survived reload: true / offline new layer created: true / offline new layer pixels rendered: true / offline undo removes new stroke: 0 / offline redo restores all pixels: true / offline layer/history survives reload: true / offline transform moved pixels: true / offline reference image visible: true / offline reference excluded from export: true / offline invert actual opaque RGB: [224,217,204,255] / offline filter undo restores full image: true",
     "problem": "",
     "improvement": "",
-    "pending": "offline layers/selection/transform/reference/history/filter/macro / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByRole('button', { name: '変形を始める', exact: true })\n    - locator resolved to <button disabled type=\"button\">変形を始める</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at SAV-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:707:36)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1024:2",
+    "pending": "offline layers/selection/transform/reference/history/filter/macro / ERROR / locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.c04-simple-macros').getByText('記録したブラシの線') to be visible\n\n    at recordMacro (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:135:245)\n    at async SAV-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:732:65)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "140d682b9f49cee1bea91cc389b34e557dccbe99",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45908199277",
-    "evidence": "03-chat-evidence/runs/45908199277/SAV-007/",
-    "stamp": "2026-11-26T23:02:02.460Z",
+    "sha": "0d62c0523fedfcb2f5b12c2a875316449634089b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45908920277",
+    "evidence": "03-chat-evidence/runs/45908920277/SAV-007/",
+    "stamp": "2026-11-26T23:11:43.916Z",
     "result": {
       "id": "SAV-007",
       "group": "A",
       "status": "ERROR",
-      "commit": "140d682b9f49cee1bea91cc389b34e557dccbe99",
+      "commit": "0d62c0523fedfcb2f5b12c2a875316449634089b",
       "checks": [
         {
           "id": "SAV-007",
@@ -103,8 +206,8 @@
             },
             {
               "name": "same work offline",
-              "actual": "f099df73-11be-4dca-803b-fa7d5f2d833b",
-              "expected": "f099df73-11be-4dca-803b-fa7d5f2d833b"
+              "actual": "911e67c6-a82e-48c2-b829-49b67e62f3aa",
+              "expected": "911e67c6-a82e-48c2-b829-49b67e62f3aa"
             },
             {
               "name": "new offline stroke present",
@@ -145,9 +248,44 @@
               "name": "offline layer/history survives reload",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "offline transform moved pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "offline reference image visible",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "offline reference excluded from export",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "offline invert actual opaque RGB",
+              "actual": [
+                224,
+                217,
+                204,
+                255
+              ],
+              "expected": [
+                224,
+                217,
+                204,
+                255
+              ]
+            },
+            {
+              "name": "offline filter undo restores full image",
+              "actual": true,
+              "expected": true
             }
           ],
-          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByRole('button', { name: '変形を始める', exact: true })\n    - locator resolved to <button disabled type=\"button\">変形を始める</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at SAV-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:707:36)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1024:2"
+          "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.c04-simple-macros').getByText('記録したブラシの線') to be visible\n\n    at recordMacro (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:135:245)\n    at async SAV-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:732:65)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2"
         }
       ],
       "pending": [
@@ -166,8 +304,8 @@
         },
         {
           "name": "same work offline",
-          "actual": "f099df73-11be-4dca-803b-fa7d5f2d833b",
-          "expected": "f099df73-11be-4dca-803b-fa7d5f2d833b"
+          "actual": "911e67c6-a82e-48c2-b829-49b67e62f3aa",
+          "expected": "911e67c6-a82e-48c2-b829-49b67e62f3aa"
         },
         {
           "name": "new offline stroke present",
@@ -208,9 +346,44 @@
           "name": "offline layer/history survives reload",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "offline transform moved pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline reference image visible",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline reference excluded from export",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline invert actual opaque RGB",
+          "actual": [
+            224,
+            217,
+            204,
+            255
+          ],
+          "expected": [
+            224,
+            217,
+            204,
+            255
+          ]
+        },
+        {
+          "name": "offline filter undo restores full image",
+          "actual": true,
+          "expected": true
         }
       ],
-      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByRole('button', { name: '変形を始める', exact: true })\n    - locator resolved to <button disabled type=\"button\">変形を始める</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at SAV-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:707:36)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1024:2"
+      "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.c04-simple-macros').getByText('記録したブラシの線') to be visible\n\n    at recordMacro (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:135:245)\n    at async SAV-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:732:65)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2"
     }
   },
   {
@@ -1116,22 +1289,22 @@
     "id": "FIL-005",
     "name": "囲って塗る・消す",
     "verdict": "未判定",
-    "operation": "interior colored / concave exclusion / outside / erased inside / outside erasure retained / erase undo pixel equality / selection confines lasso erase / selected portion erased / closed graph ready / closed graph confirmed / closed interior painted / open interior remains transparent / outside remains transparent / closed region undo restores pixels",
-    "expected": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true",
-    "actual": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true",
+    "operation": "interior colored / concave exclusion / outside / erased inside / outside erasure retained / erase undo pixel equality / selection confines lasso erase / selected portion erased / closed graph ready / closed graph confirmed / closed interior painted / open interior remains transparent / outside remains transparent / closed region undo restores pixels / alpha lock preserves every alpha value",
+    "expected": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true / alpha lock preserves every alpha value: 0",
+    "actual": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true / alpha lock preserves every alpha value: 0",
     "problem": "",
     "improvement": "",
-    "pending": "closed-region-only and leak candidate / Undo, selection/mask/alpha protection",
+    "pending": "closed-region-only and leak candidate / Undo, selection/mask/alpha protection / ERROR / page.waitForFunction: Timeout 60000ms exceeded.\n    at waitRev (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:15:51)\n    at FIL-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:782:253)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45907952276",
-    "evidence": "03-chat-evidence/runs/45907952276/FIL-005/",
-    "stamp": "2026-11-26T22:19:04.894Z",
+    "sha": "0d62c0523fedfcb2f5b12c2a875316449634089b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45908920277",
+    "evidence": "03-chat-evidence/runs/45908920277/FIL-005/",
+    "stamp": "2026-11-26T23:11:43.916Z",
     "result": {
       "id": "FIL-005",
       "group": "B",
       "status": "ERROR",
-      "commit": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
+      "commit": "0d62c0523fedfcb2f5b12c2a875316449634089b",
       "checks": [
         {
           "path": "apps/editor/src/fill/pixels.test.ts",
@@ -1321,7 +1494,7 @@
         },
         {
           "id": "FIL-005",
-          "status": "PASS",
+          "status": "ERROR",
           "checks": [
             {
               "name": "interior colored",
@@ -1392,9 +1565,14 @@
               "name": "closed region undo restores pixels",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "alpha lock preserves every alpha value",
+              "actual": 0,
+              "expected": 0
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "reason": "page.waitForFunction: Timeout 60000ms exceeded.\n    at waitRev (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:15:51)\n    at FIL-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:782:253)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2"
         }
       ],
       "pending": [
@@ -1405,7 +1583,7 @@
     },
     "browser": {
       "id": "FIL-005",
-      "status": "PASS",
+      "status": "ERROR",
       "checks": [
         {
           "name": "interior colored",
@@ -1476,31 +1654,36 @@
           "name": "closed region undo restores pixels",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "alpha lock preserves every alpha value",
+          "actual": 0,
+          "expected": 0
         }
       ],
-      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+      "reason": "page.waitForFunction: Timeout 60000ms exceeded.\n    at waitRev (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:15:51)\n    at FIL-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:782:253)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2"
     }
   },
   {
     "id": "LIN-007",
     "name": "未解決・低信頼・無効の扱い",
     "verdict": "未判定",
-    "operation": "blank unanalysed / blank invalid / normal drawing after invalid graph / fixture awaiting confirmation / confirmed graph / saved line analysis present after reopening / reopened saved graph / problem area visible in issue list / excluded area returns to confirmation",
-    "expected": "blank unanalysed: true / blank invalid: true / normal drawing after invalid graph: true / fixture awaiting confirmation: true / confirmed graph: true / saved line analysis present after reopening: true / reopened saved graph: true / problem area visible in issue list: true / excluded area returns to confirmation: true",
-    "actual": "blank unanalysed: true / blank invalid: true / normal drawing after invalid graph: true / fixture awaiting confirmation: true / confirmed graph: true / saved line analysis present after reopening: true / reopened saved graph: true / problem area visible in issue list: true / excluded area returns to confirmation: true",
-    "problem": "保存済み線画領域で除外を変更し再確定した後、『元の線画は変更済み』表示になった。原線を変更していない場合の警告か要確認。",
-    "improvement": "原線の画素比較を行い、元線の変更と領域レシピの変更を区別する。",
-    "pending": "blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending / locator.waitFor: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smartFill\"]').locator('output').filter({ hasText: /確定済み/ }).first() to be visible\n\n    at fillState (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:175:15)\n    at LIN-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:444:112)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:984:2",
+    "operation": "blank unanalysed / blank invalid / normal drawing after invalid graph / fixture awaiting confirmation / confirmed graph / saved line analysis present after reopening / reopened saved graph / problem area visible in issue list / excluded area returns to confirmation / exclusion save leaves original artwork pixels unchanged / exclusion saved without false original-line-change notice / actual source edit explicitly flagged",
+    "expected": "blank unanalysed: true / blank invalid: true / normal drawing after invalid graph: true / fixture awaiting confirmation: true / confirmed graph: true / saved line analysis present after reopening: true / reopened saved graph: true / problem area visible in issue list: true / excluded area returns to confirmation: true / exclusion save leaves original artwork pixels unchanged: true / exclusion saved without false original-line-change notice: true / actual source edit explicitly flagged: true",
+    "actual": "blank unanalysed: true / blank invalid: true / normal drawing after invalid graph: true / fixture awaiting confirmation: true / confirmed graph: true / saved line analysis present after reopening: true / reopened saved graph: true / problem area visible in issue list: true / excluded area returns to confirmation: true / exclusion save leaves original artwork pixels unchanged: true / exclusion saved without false original-line-change notice: true / actual source edit explicitly flagged: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45907952276",
-    "evidence": "03-chat-evidence/runs/45907952276/LIN-007/",
-    "stamp": "2026-11-26T22:54:21.134Z",
+    "sha": "0d62c0523fedfcb2f5b12c2a875316449634089b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45908920277",
+    "evidence": "03-chat-evidence/runs/45908920277/LIN-007/",
+    "stamp": "2026-11-26T23:11:43.916Z",
     "result": {
       "id": "LIN-007",
       "group": "B",
       "status": "ERROR",
-      "commit": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
+      "commit": "0d62c0523fedfcb2f5b12c2a875316449634089b",
       "checks": [
         {
           "path": "apps/editor/src/fill/pixels.test.ts",
@@ -1690,7 +1873,7 @@
         },
         {
           "id": "LIN-007",
-          "status": "ERROR",
+          "status": "PASS",
           "checks": [
             {
               "name": "blank unanalysed",
@@ -1736,9 +1919,24 @@
               "name": "excluded area returns to confirmation",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "exclusion save leaves original artwork pixels unchanged",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "exclusion saved without false original-line-change notice",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "actual source edit explicitly flagged",
+              "actual": true,
+              "expected": true
             }
           ],
-          "reason": "locator.waitFor: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smartFill\"]').locator('output').filter({ hasText: /確定済み/ }).first() to be visible\n\n    at fillState (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:175:15)\n    at LIN-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:444:112)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:984:2"
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
       "pending": [
@@ -1748,7 +1946,7 @@
     },
     "browser": {
       "id": "LIN-007",
-      "status": "ERROR",
+      "status": "PASS",
       "checks": [
         {
           "name": "blank unanalysed",
@@ -1794,31 +1992,46 @@
           "name": "excluded area returns to confirmation",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "exclusion save leaves original artwork pixels unchanged",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "exclusion saved without false original-line-change notice",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "actual source edit explicitly flagged",
+          "actual": true,
+          "expected": true
         }
       ],
-      "reason": "locator.waitFor: Timeout 45000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smartFill\"]').locator('output').filter({ hasText: /確定済み/ }).first() to be visible\n\n    at fillState (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:175:15)\n    at LIN-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:444:112)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:984:2"
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
     }
   },
   {
     "id": "TRN-005",
     "name": "吸着・整列・等間隔配置",
     "verdict": "未判定",
-    "operation": "three distinct x positions / left confirmed reference layer / left independent binary alpha coverage / left one undo restores all pixels / center-x confirmed reference layer / center-x independent binary alpha coverage / center-x one undo restores all pixels / right confirmed reference layer / right independent binary alpha coverage / right one undo restores all pixels / top confirmed reference layer / top independent binary alpha coverage / top one undo restores all pixels / center-y confirmed reference layer / center-y independent binary alpha coverage / center-y one undo restores all pixels / bottom confirmed reference layer / bottom independent binary alpha coverage / bottom one undo restores all pixels / spread-x confirmed reference layer / spread-x independent binary alpha coverage / spread-x one undo restores all pixels / spread-y confirmed reference layer / spread-y independent binary alpha coverage / spread-y one undo restores all pixels",
-    "expected": "three distinct x positions: true / left confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true",
-    "actual": "three distinct x positions: true / left confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"f98c34a0-a592-4014-a055-24826e905fec\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true",
+    "operation": "three distinct x positions / left confirmed reference layer / left independent binary alpha coverage / left one undo restores all pixels / center-x confirmed reference layer / center-x independent binary alpha coverage / center-x one undo restores all pixels / right confirmed reference layer / right independent binary alpha coverage / right one undo restores all pixels / top confirmed reference layer / top independent binary alpha coverage / top one undo restores all pixels / center-y confirmed reference layer / center-y independent binary alpha coverage / center-y one undo restores all pixels / bottom confirmed reference layer / bottom independent binary alpha coverage / bottom one undo restores all pixels / spread-x confirmed reference layer / spread-x independent binary alpha coverage / spread-x one undo restores all pixels / spread-y confirmed reference layer / spread-y independent binary alpha coverage / spread-y one undo restores all pixels / canvas center snap exact x / temporary bypass keeps unsnapped x / snap resumes automatically next drag / pixel snapping produces integer x / pixel snapping produces integer y / other selected layer right edge snap",
+    "expected": "three distinct x positions: true / left confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true / canvas center snap exact x: 256 / temporary bypass keeps unsnapped x: true / snap resumes automatically next drag: 256 / pixel snapping produces integer x: 0 / pixel snapping produces integer y: 0 / other selected layer right edge snap: 124",
+    "actual": "three distinct x positions: true / left confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"007aa61d-8123-424d-b252-0e9842c8bd4c\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true / canvas center snap exact x: 256 / temporary bypass keeps unsnapped x: true / snap resumes automatically next drag: 256 / pixel snapping produces integer x: 0 / pixel snapping produces integer y: 0 / other selected layer right edge snap: 124",
     "problem": "",
     "improvement": "",
-    "pending": "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByRole('button', { name: '変形を始める', exact: true })\n    - locator resolved to <button disabled type=\"button\">変形を始める</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:325:160)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1024:2",
+    "pending": "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "140d682b9f49cee1bea91cc389b34e557dccbe99",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45908199277",
-    "evidence": "03-chat-evidence/runs/45908199277/TRN-005/",
-    "stamp": "2026-11-26T23:02:02.460Z",
+    "sha": "0d62c0523fedfcb2f5b12c2a875316449634089b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45908920277",
+    "evidence": "03-chat-evidence/runs/45908920277/TRN-005/",
+    "stamp": "2026-11-26T23:11:43.916Z",
     "result": {
       "id": "TRN-005",
       "group": "C",
       "status": "ERROR",
-      "commit": "140d682b9f49cee1bea91cc389b34e557dccbe99",
+      "commit": "0d62c0523fedfcb2f5b12c2a875316449634089b",
       "checks": [
         {
           "path": "apps/editor/src/transform/groupTransform.test.ts",
@@ -1858,7 +2071,7 @@
         },
         {
           "id": "TRN-005",
-          "status": "ERROR",
+          "status": "PASS",
           "checks": [
             {
               "name": "three distinct x positions",
@@ -1867,8 +2080,8 @@
             },
             {
               "name": "left confirmed reference layer",
-              "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-              "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+              "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+              "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
             },
             {
               "name": "left independent binary alpha coverage",
@@ -1882,8 +2095,8 @@
             },
             {
               "name": "center-x confirmed reference layer",
-              "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-              "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+              "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+              "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
             },
             {
               "name": "center-x independent binary alpha coverage",
@@ -1897,8 +2110,8 @@
             },
             {
               "name": "right confirmed reference layer",
-              "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-              "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+              "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+              "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
             },
             {
               "name": "right independent binary alpha coverage",
@@ -1912,8 +2125,8 @@
             },
             {
               "name": "top confirmed reference layer",
-              "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-              "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+              "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+              "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
             },
             {
               "name": "top independent binary alpha coverage",
@@ -1927,8 +2140,8 @@
             },
             {
               "name": "center-y confirmed reference layer",
-              "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-              "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+              "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+              "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
             },
             {
               "name": "center-y independent binary alpha coverage",
@@ -1942,8 +2155,8 @@
             },
             {
               "name": "bottom confirmed reference layer",
-              "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-              "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+              "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+              "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
             },
             {
               "name": "bottom independent binary alpha coverage",
@@ -1957,8 +2170,8 @@
             },
             {
               "name": "spread-x confirmed reference layer",
-              "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-              "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+              "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+              "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
             },
             {
               "name": "spread-x independent binary alpha coverage",
@@ -1972,8 +2185,8 @@
             },
             {
               "name": "spread-y confirmed reference layer",
-              "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-              "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+              "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+              "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
             },
             {
               "name": "spread-y independent binary alpha coverage",
@@ -1984,9 +2197,39 @@
               "name": "spread-y one undo restores all pixels",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "canvas center snap exact x",
+              "actual": 256,
+              "expected": 256
+            },
+            {
+              "name": "temporary bypass keeps unsnapped x",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "snap resumes automatically next drag",
+              "actual": 256,
+              "expected": 256
+            },
+            {
+              "name": "pixel snapping produces integer x",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "pixel snapping produces integer y",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "other selected layer right edge snap",
+              "actual": 124,
+              "expected": 124
             }
           ],
-          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByRole('button', { name: '変形を始める', exact: true })\n    - locator resolved to <button disabled type=\"button\">変形を始める</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:325:160)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1024:2"
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
       "pending": [
@@ -1996,7 +2239,7 @@
     },
     "browser": {
       "id": "TRN-005",
-      "status": "ERROR",
+      "status": "PASS",
       "checks": [
         {
           "name": "three distinct x positions",
@@ -2005,8 +2248,8 @@
         },
         {
           "name": "left confirmed reference layer",
-          "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-          "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+          "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+          "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
         },
         {
           "name": "left independent binary alpha coverage",
@@ -2020,8 +2263,8 @@
         },
         {
           "name": "center-x confirmed reference layer",
-          "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-          "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+          "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+          "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
         },
         {
           "name": "center-x independent binary alpha coverage",
@@ -2035,8 +2278,8 @@
         },
         {
           "name": "right confirmed reference layer",
-          "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-          "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+          "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+          "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
         },
         {
           "name": "right independent binary alpha coverage",
@@ -2050,8 +2293,8 @@
         },
         {
           "name": "top confirmed reference layer",
-          "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-          "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+          "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+          "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
         },
         {
           "name": "top independent binary alpha coverage",
@@ -2065,8 +2308,8 @@
         },
         {
           "name": "center-y confirmed reference layer",
-          "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-          "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+          "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+          "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
         },
         {
           "name": "center-y independent binary alpha coverage",
@@ -2080,8 +2323,8 @@
         },
         {
           "name": "bottom confirmed reference layer",
-          "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-          "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+          "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+          "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
         },
         {
           "name": "bottom independent binary alpha coverage",
@@ -2095,8 +2338,8 @@
         },
         {
           "name": "spread-x confirmed reference layer",
-          "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-          "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+          "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+          "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
         },
         {
           "name": "spread-x independent binary alpha coverage",
@@ -2110,8 +2353,8 @@
         },
         {
           "name": "spread-y confirmed reference layer",
-          "actual": "f98c34a0-a592-4014-a055-24826e905fec",
-          "expected": "f98c34a0-a592-4014-a055-24826e905fec"
+          "actual": "007aa61d-8123-424d-b252-0e9842c8bd4c",
+          "expected": "007aa61d-8123-424d-b252-0e9842c8bd4c"
         },
         {
           "name": "spread-y independent binary alpha coverage",
@@ -2122,31 +2365,61 @@
           "name": "spread-y one undo restores all pixels",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "canvas center snap exact x",
+          "actual": 256,
+          "expected": 256
+        },
+        {
+          "name": "temporary bypass keeps unsnapped x",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "snap resumes automatically next drag",
+          "actual": 256,
+          "expected": 256
+        },
+        {
+          "name": "pixel snapping produces integer x",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "pixel snapping produces integer y",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "other selected layer right edge snap",
+          "actual": 124,
+          "expected": 124
         }
       ],
-      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByRole('button', { name: '変形を始める', exact: true })\n    - locator resolved to <button disabled type=\"button\">変形を始める</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:325:160)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1024:2"
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
     }
   },
   {
     "id": "VEC-004",
     "name": "簡略化・平滑化・図形合成",
     "verdict": "未判定",
-    "operation": "union zero outline width for exact fill oracle / union independent point-in-rectangle coverage / union full-image interior/exterior oracle / union undo restores original / intersection zero outline width for exact fill oracle / intersection independent point-in-rectangle coverage / intersection full-image interior/exterior oracle / intersection undo restores original / difference zero outline width for exact fill oracle / difference independent point-in-rectangle coverage / difference full-image interior/exterior oracle / difference undo restores original / xor zero outline width for exact fill oracle / xor independent point-in-rectangle coverage / xor full-image interior/exterior oracle / xor undo restores original / polyline has redundant samples / simplification reduces points but retains corners / simplified endpoints and corners retained / smoothing changes the curve and retains endpoints / smooth undo pixel equality",
-    "expected": "union zero outline width for exact fill oracle: \"0\" / union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 0 / union undo restores original: true / intersection zero outline width for exact fill oracle: \"0\" / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection full-image interior/exterior oracle: 0 / intersection undo restores original: true / difference zero outline width for exact fill oracle: \"0\" / difference independent point-in-rectangle coverage: [true,false,false,false] / difference full-image interior/exterior oracle: 0 / difference undo restores original: true / xor zero outline width for exact fill oracle: \"0\" / xor independent point-in-rectangle coverage: [true,false,true,false] / xor full-image interior/exterior oracle: 0 / xor undo restores original: true / polyline has redundant samples: true / simplification reduces points but retains corners: true / simplified endpoints and corners retained: true / smoothing changes the curve and retains endpoints: true / smooth undo pixel equality: true",
-    "actual": "union zero outline width for exact fill oracle: \"0\" / union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 0 / union undo restores original: true / intersection zero outline width for exact fill oracle: \"0\" / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection full-image interior/exterior oracle: 0 / intersection undo restores original: true / difference zero outline width for exact fill oracle: \"0\" / difference independent point-in-rectangle coverage: [true,false,false,false] / difference full-image interior/exterior oracle: 0 / difference undo restores original: true / xor zero outline width for exact fill oracle: \"0\" / xor independent point-in-rectangle coverage: [true,false,true,false] / xor full-image interior/exterior oracle: 0 / xor undo restores original: true / polyline has redundant samples: true / simplification reduces points but retains corners: true / simplified endpoints and corners retained: true / smoothing changes the curve and retains endpoints: true / smooth undo pixel equality: true",
+    "operation": "union zero outline width for exact fill oracle / union independent point-in-rectangle coverage / union full-image interior/exterior oracle / union undo restores original / intersection zero outline width for exact fill oracle / intersection independent point-in-rectangle coverage / intersection full-image interior/exterior oracle / intersection undo restores original / difference zero outline width for exact fill oracle / difference independent point-in-rectangle coverage / difference full-image interior/exterior oracle / difference undo restores original / xor zero outline width for exact fill oracle / xor independent point-in-rectangle coverage / xor full-image interior/exterior oracle / xor undo restores original / polyline has redundant samples / simplification reduces points but retains corners / simplified endpoints and corners retained / smoothing changes the curve and retains endpoints / smooth undo pixel equality / two-pixel intersection retained / thin intersection excludes left exterior / thin intersection excludes right exterior / thin operation undo exact",
+    "expected": "union zero outline width for exact fill oracle: \"0\" / union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 0 / union undo restores original: true / intersection zero outline width for exact fill oracle: \"0\" / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection full-image interior/exterior oracle: 0 / intersection undo restores original: true / difference zero outline width for exact fill oracle: \"0\" / difference independent point-in-rectangle coverage: [true,false,false,false] / difference full-image interior/exterior oracle: 0 / difference undo restores original: true / xor zero outline width for exact fill oracle: \"0\" / xor independent point-in-rectangle coverage: [true,false,true,false] / xor full-image interior/exterior oracle: 0 / xor undo restores original: true / polyline has redundant samples: true / simplification reduces points but retains corners: true / simplified endpoints and corners retained: true / smoothing changes the curve and retains endpoints: true / smooth undo pixel equality: true / two-pixel intersection retained: true / thin intersection excludes left exterior: 0 / thin intersection excludes right exterior: 0 / thin operation undo exact: true",
+    "actual": "union zero outline width for exact fill oracle: \"0\" / union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 0 / union undo restores original: true / intersection zero outline width for exact fill oracle: \"0\" / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection full-image interior/exterior oracle: 0 / intersection undo restores original: true / difference zero outline width for exact fill oracle: \"0\" / difference independent point-in-rectangle coverage: [true,false,false,false] / difference full-image interior/exterior oracle: 0 / difference undo restores original: true / xor zero outline width for exact fill oracle: \"0\" / xor independent point-in-rectangle coverage: [true,false,true,false] / xor full-image interior/exterior oracle: 0 / xor undo restores original: true / polyline has redundant samples: true / simplification reduces points but retains corners: true / simplified endpoints and corners retained: true / smoothing changes the curve and retains endpoints: true / smooth undo pixel equality: true / two-pixel intersection retained: true / thin intersection excludes left exterior: 0 / thin intersection excludes right exterior: 0 / thin operation undo exact: true",
     "problem": "",
     "improvement": "",
-    "pending": "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending",
+    "pending": "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45907952276",
-    "evidence": "03-chat-evidence/runs/45907952276/VEC-004/",
-    "stamp": "2026-11-26T22:19:04.894Z",
+    "sha": "0d62c0523fedfcb2f5b12c2a875316449634089b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45908920277",
+    "evidence": "03-chat-evidence/runs/45908920277/VEC-004/",
+    "stamp": "2026-11-26T23:11:43.916Z",
     "result": {
       "id": "VEC-004",
       "group": "C",
       "status": "ERROR",
-      "commit": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
+      "commit": "0d62c0523fedfcb2f5b12c2a875316449634089b",
       "checks": [
         {
           "path": "apps/editor/src/artwork/pathOperations.c10.test.ts",
@@ -2439,6 +2712,26 @@
               "name": "smooth undo pixel equality",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "two-pixel intersection retained",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "thin intersection excludes left exterior",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "thin intersection excludes right exterior",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "thin operation undo exact",
+              "actual": true,
+              "expected": true
             }
           ],
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
@@ -2597,6 +2890,26 @@
           "name": "smooth undo pixel equality",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "two-pixel intersection retained",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "thin intersection excludes left exterior",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "thin intersection excludes right exterior",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "thin operation undo exact",
+          "actual": true,
+          "expected": true
         }
       ],
       "reason": "Implemented subchecks passed, see manifest for coverage gaps"
@@ -2606,22 +2919,22 @@
     "id": "LAY-005",
     "name": "ピクセル・ベクターマスク",
     "verdict": "未判定",
-    "operation": "visible center / hidden exterior / disable restores artwork / inverted center hidden / inverted exterior visible / half density restores half the hidden opaque pixel / mask saved and reopened exactly / unlink setting persists / inversion persists / density persists / removing mask preserves raster / ellipse center retained / ellipse far outside hidden / black mask hides pixel / black mask preserves remote pixel / white mask restores center / pixel mask removal preserves entire artwork / path mask interior visible / path mask exterior hidden / point editing changes path mask coverage / moved point extends visibility to the left",
-    "expected": "visible center: true / hidden exterior: 0 / disable restores artwork: true / inverted center hidden: 0 / inverted exterior visible: true / half density restores half the hidden opaque pixel: true / mask saved and reopened exactly: true / unlink setting persists: false / inversion persists: true / density persists: \"50\" / removing mask preserves raster: true / ellipse center retained: true / ellipse far outside hidden: 0 / black mask hides pixel: 0 / black mask preserves remote pixel: true / white mask restores center: true / pixel mask removal preserves entire artwork: true / path mask interior visible: true / path mask exterior hidden: 0 / point editing changes path mask coverage: true / moved point extends visibility to the left: true",
-    "actual": "visible center: true / hidden exterior: 0 / disable restores artwork: true / inverted center hidden: 0 / inverted exterior visible: true / half density restores half the hidden opaque pixel: true / mask saved and reopened exactly: true / unlink setting persists: false / inversion persists: true / density persists: \"50\" / removing mask preserves raster: true / ellipse center retained: true / ellipse far outside hidden: 0 / black mask hides pixel: 0 / black mask preserves remote pixel: true / white mask restores center: true / pixel mask removal preserves entire artwork: true / path mask interior visible: true / path mask exterior hidden: 0 / point editing changes path mask coverage: true / moved point extends visibility to the left: false",
-    "problem": "輪郭の点移動による画素変化は確認済み。特定座標の期待値は不一致、入力点の配置を見直す。",
+    "operation": "visible center / hidden exterior / disable restores artwork / inverted center hidden / inverted exterior visible / half density restores half the hidden opaque pixel / mask saved and reopened exactly / unlink setting persists / inversion persists / density persists / removing mask preserves raster / ellipse center retained / ellipse far outside hidden / black mask hides pixel / black mask preserves remote pixel / white mask restores center / pixel mask removal preserves entire artwork / path mask interior visible / path mask exterior hidden / point editing changes path mask coverage / moved point extends visibility to the left / edited path mask survives native reopen",
+    "expected": "visible center: true / hidden exterior: 0 / disable restores artwork: true / inverted center hidden: 0 / inverted exterior visible: true / half density restores half the hidden opaque pixel: true / mask saved and reopened exactly: true / unlink setting persists: false / inversion persists: true / density persists: \"50\" / removing mask preserves raster: true / ellipse center retained: true / ellipse far outside hidden: 0 / black mask hides pixel: 0 / black mask preserves remote pixel: true / white mask restores center: true / pixel mask removal preserves entire artwork: true / path mask interior visible: true / path mask exterior hidden: 0 / point editing changes path mask coverage: true / moved point extends visibility to the left: true / edited path mask survives native reopen: true",
+    "actual": "visible center: true / hidden exterior: 0 / disable restores artwork: true / inverted center hidden: 0 / inverted exterior visible: true / half density restores half the hidden opaque pixel: true / mask saved and reopened exactly: true / unlink setting persists: false / inversion persists: true / density persists: \"50\" / removing mask preserves raster: true / ellipse center retained: true / ellipse far outside hidden: 0 / black mask hides pixel: 0 / black mask preserves remote pixel: true / white mask restores center: true / pixel mask removal preserves entire artwork: true / path mask interior visible: true / path mask exterior hidden: 0 / point editing changes path mask coverage: true / moved point extends visibility to the left: true / edited path mask survives native reopen: true",
+    "problem": "",
     "improvement": "",
-    "pending": "ellipse/path point editing, inversion/link/density/native preservation / Error: moved point extends visibility to the left\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at LAY-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:767:141)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:984:2",
+    "pending": "ellipse/path point editing, inversion/link/density/native preservation / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45907952276",
-    "evidence": "03-chat-evidence/runs/45907952276/LAY-005/",
-    "stamp": "2026-11-26T22:54:21.134Z",
+    "sha": "0d62c0523fedfcb2f5b12c2a875316449634089b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45908920277",
+    "evidence": "03-chat-evidence/runs/45908920277/LAY-005/",
+    "stamp": "2026-11-26T23:11:43.916Z",
     "result": {
       "id": "LAY-005",
       "group": "D",
-      "status": "FAIL",
-      "commit": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
+      "status": "ERROR",
+      "commit": "0d62c0523fedfcb2f5b12c2a875316449634089b",
       "checks": [
         {
           "path": "apps/editor/src/selection/maskCodec.test.ts",
@@ -2646,7 +2959,7 @@
         },
         {
           "id": "LAY-005",
-          "status": "FAIL",
+          "status": "PASS",
           "checks": [
             {
               "name": "visible center",
@@ -2750,11 +3063,16 @@
             },
             {
               "name": "moved point extends visibility to the left",
-              "actual": false,
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "edited path mask survives native reopen",
+              "actual": true,
               "expected": true
             }
           ],
-          "reason": "Error: moved point extends visibility to the left\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at LAY-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:767:141)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:984:2"
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
       "pending": [
@@ -2764,7 +3082,7 @@
     },
     "browser": {
       "id": "LAY-005",
-      "status": "FAIL",
+      "status": "PASS",
       "checks": [
         {
           "name": "visible center",
@@ -2868,11 +3186,16 @@
         },
         {
           "name": "moved point extends visibility to the left",
-          "actual": false,
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "edited path mask survives native reopen",
+          "actual": true,
           "expected": true
         }
       ],
-      "reason": "Error: moved point extends visibility to the left\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at LAY-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:767:141)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:984:2"
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
     }
   },
   {

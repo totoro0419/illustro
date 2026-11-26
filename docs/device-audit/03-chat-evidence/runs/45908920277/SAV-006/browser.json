@@ -1,0 +1,52 @@
+{
+  "id": "SAV-006",
+  "status": "ERROR",
+  "checks": [
+    {
+      "name": "external conflict explicitly displayed",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "external conflict prevented overwrite",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "original external bytes retained",
+      "actual": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2",
+      "expected": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2"
+    },
+    {
+      "name": "both actual versions compared",
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "save copy leaves original external bytes unchanged",
+      "actual": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2",
+      "expected": "1f479d9800efd46b2bd6f676ced67d0bee719acd5db0f2fdb0452f959c48dfa2"
+    },
+    {
+      "name": "current canvas preserved after conflict",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "stale tab warns instead of overwriting",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "stale tab can export recovery copy",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "latest saved version preserved across tab conflict",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "page.waitForFunction: Timeout 60000ms exceeded.\n    at SAV-006 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:276:16)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2"
+}
