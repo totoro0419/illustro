@@ -1,0 +1,39 @@
+{
+  "schema": "illustro.user.shortcuts",
+  "version": 1,
+  "bindings": [
+    {
+      "commandId": "panView",
+      "key": "j",
+      "code": "KeyJ",
+      "ctrl": false,
+      "shift": false,
+      "alt": false,
+      "meta": false,
+      "physical": false,
+      "mode": "hold"
+    },
+    {
+      "commandId": "qa.unavailable-command",
+      "key": "u",
+      "code": "KeyU",
+      "ctrl": false,
+      "shift": false,
+      "alt": false,
+      "meta": false,
+      "physical": false,
+      "mode": "press"
+    },
+    {
+      "commandId": "panView",
+      "key": "q",
+      "code": "KeyH",
+      "ctrl": false,
+      "shift": false,
+      "alt": false,
+      "meta": false,
+      "physical": true,
+      "mode": "hold"
+    }
+  ]
+}

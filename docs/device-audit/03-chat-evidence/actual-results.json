@@ -286,23 +286,23 @@
   {
     "id": "GST-005",
     "name": "ショートカット設定の移行",
-    "verdict": "未判定",
-    "operation": "imported key after restart / release restores drawing tool",
-    "expected": "imported key after restart: \"true\" / release restores drawing tool: \"true\"",
-    "actual": "imported key after restart: \"true\" / release restores drawing tool: \"true\"",
+    "verdict": "使える",
+    "operation": "real exported logical binding / unsupported warning shown / imported logical key after restart / release restores drawing tool / logical key follows character, not code / logical key follows character, not code release / physical binding follows code, not character / physical binding follows code, not character release / physical binding ignores character alone / physical binding ignores character alone release / unknown command does not edit / unknown command does not change active tool / all supported and unsupported bindings preserved",
+    "expected": "real exported logical binding: false / unsupported warning shown: true / imported logical key after restart: \"true\" / release restores drawing tool: \"true\" / logical key follows character, not code: \"true\" / logical key follows character, not code release: \"true\" / physical binding follows code, not character: \"true\" / physical binding follows code, not character release: \"true\" / physical binding ignores character alone: \"false\" / physical binding ignores character alone release: \"true\" / unknown command does not edit: \"5cabf2ed-aa1e-4422-b82b-071e6794b701\" / unknown command does not change active tool: \"true\" / all supported and unsupported bindings preserved: [{\"commandId\":\"panView\",\"key\":\"j\",\"code\":\"KeyJ\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":false,\"mode\":\"hold\"},{\"commandId\":\"qa.unavailable-command\",\"key\":\"u\",\"code\":\"KeyU\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":false,\"mode\":\"press\"},{\"commandId\":\"panView\",\"key\":\"q\",\"code\":\"KeyH\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":true,\"mode\":\"hold\"}]",
+    "actual": "real exported logical binding: false / unsupported warning shown: true / imported logical key after restart: \"true\" / release restores drawing tool: \"true\" / logical key follows character, not code: \"true\" / logical key follows character, not code release: \"true\" / physical binding follows code, not character: \"true\" / physical binding follows code, not character release: \"true\" / physical binding ignores character alone: \"false\" / physical binding ignores character alone release: \"true\" / unknown command does not edit: \"5cabf2ed-aa1e-4422-b82b-071e6794b701\" / unknown command does not change active tool: \"true\" / all supported and unsupported bindings preserved: [{\"commandId\":\"panView\",\"key\":\"j\",\"code\":\"KeyJ\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":false,\"mode\":\"hold\"},{\"commandId\":\"qa.unavailable-command\",\"key\":\"u\",\"code\":\"KeyU\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":false,\"mode\":\"press\"},{\"commandId\":\"panView\",\"key\":\"q\",\"code\":\"KeyH\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":true,\"mode\":\"hold\"}]",
     "problem": "",
     "improvement": "",
-    "pending": "physical layout/handedness; unsupported binding preserved / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "Physical keyboard layout/OS-specific input must be confirmed on real device; CDP only simulates distinct key and code.",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45828801051",
-    "evidence": "03-chat-evidence/runs/45828801051/GST-005/",
-    "stamp": "2026-11-26T13:31:26.437Z",
+    "sha": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45830785700",
+    "evidence": "03-chat-evidence/runs/45830785700/GST-005/",
+    "stamp": "2026-11-26T13:39:54.953Z",
     "result": {
       "id": "GST-005",
       "group": "A",
-      "status": "ERROR",
-      "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+      "status": "PASS",
+      "commit": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
       "checks": [
         {
           "path": "apps/editor/src/ui/round2Audit.test.ts",
@@ -330,7 +330,17 @@
           "status": "PASS",
           "checks": [
             {
-              "name": "imported key after restart",
+              "name": "real exported logical binding",
+              "actual": false,
+              "expected": false
+            },
+            {
+              "name": "unsupported warning shown",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "imported logical key after restart",
               "actual": "true",
               "expected": "true"
             },
@@ -338,22 +348,142 @@
               "name": "release restores drawing tool",
               "actual": "true",
               "expected": "true"
+            },
+            {
+              "name": "logical key follows character, not code",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "logical key follows character, not code release",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "physical binding follows code, not character",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "physical binding follows code, not character release",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "physical binding ignores character alone",
+              "actual": "false",
+              "expected": "false"
+            },
+            {
+              "name": "physical binding ignores character alone release",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "unknown command does not edit",
+              "actual": "5cabf2ed-aa1e-4422-b82b-071e6794b701",
+              "expected": "5cabf2ed-aa1e-4422-b82b-071e6794b701"
+            },
+            {
+              "name": "unknown command does not change active tool",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "all supported and unsupported bindings preserved",
+              "actual": [
+                {
+                  "commandId": "panView",
+                  "key": "j",
+                  "code": "KeyJ",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": false,
+                  "mode": "hold"
+                },
+                {
+                  "commandId": "qa.unavailable-command",
+                  "key": "u",
+                  "code": "KeyU",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": false,
+                  "mode": "press"
+                },
+                {
+                  "commandId": "panView",
+                  "key": "q",
+                  "code": "KeyH",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": true,
+                  "mode": "hold"
+                }
+              ],
+              "expected": [
+                {
+                  "commandId": "panView",
+                  "key": "j",
+                  "code": "KeyJ",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": false,
+                  "mode": "hold"
+                },
+                {
+                  "commandId": "qa.unavailable-command",
+                  "key": "u",
+                  "code": "KeyU",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": false,
+                  "mode": "press"
+                },
+                {
+                  "commandId": "panView",
+                  "key": "q",
+                  "code": "KeyH",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": true,
+                  "mode": "hold"
+                }
+              ]
             }
           ],
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
-      "pending": [
-        "physical layout/handedness; unsupported binding preserved"
-      ],
-      "reason": "Coverage not complete: physical layout/handedness; unsupported binding preserved"
+      "pending": []
     },
     "browser": {
       "id": "GST-005",
       "status": "PASS",
       "checks": [
         {
-          "name": "imported key after restart",
+          "name": "real exported logical binding",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "unsupported warning shown",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported logical key after restart",
           "actual": "true",
           "expected": "true"
         },
@@ -361,6 +491,119 @@
           "name": "release restores drawing tool",
           "actual": "true",
           "expected": "true"
+        },
+        {
+          "name": "logical key follows character, not code",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "logical key follows character, not code release",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "physical binding follows code, not character",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "physical binding follows code, not character release",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "physical binding ignores character alone",
+          "actual": "false",
+          "expected": "false"
+        },
+        {
+          "name": "physical binding ignores character alone release",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "unknown command does not edit",
+          "actual": "5cabf2ed-aa1e-4422-b82b-071e6794b701",
+          "expected": "5cabf2ed-aa1e-4422-b82b-071e6794b701"
+        },
+        {
+          "name": "unknown command does not change active tool",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "all supported and unsupported bindings preserved",
+          "actual": [
+            {
+              "commandId": "panView",
+              "key": "j",
+              "code": "KeyJ",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": false,
+              "mode": "hold"
+            },
+            {
+              "commandId": "qa.unavailable-command",
+              "key": "u",
+              "code": "KeyU",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": false,
+              "mode": "press"
+            },
+            {
+              "commandId": "panView",
+              "key": "q",
+              "code": "KeyH",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": true,
+              "mode": "hold"
+            }
+          ],
+          "expected": [
+            {
+              "commandId": "panView",
+              "key": "j",
+              "code": "KeyJ",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": false,
+              "mode": "hold"
+            },
+            {
+              "commandId": "qa.unavailable-command",
+              "key": "u",
+              "code": "KeyU",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": false,
+              "mode": "press"
+            },
+            {
+              "commandId": "panView",
+              "key": "q",
+              "code": "KeyH",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": true,
+              "mode": "hold"
+            }
+          ]
         }
       ],
       "reason": "Implemented subchecks passed, see manifest for coverage gaps"
@@ -1195,17 +1438,17 @@
     "actual": "",
     "problem": "",
     "improvement": "",
-    "pending": "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending / ERROR / locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').locator('details').filter({ has: locator('#documentBoxBody').getByText('ベクター線・点の編集', { exact: true }) }).last()\n\n    at VEC-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:229:16)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2",
+    "pending": "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').getByText('ベクター線・点の編集', { exact: true }).locator('..').locator('summary')\n    - locator resolved to <summary>ベクター線・点の編集</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at VEC-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:229:63)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45828801051",
-    "evidence": "03-chat-evidence/runs/45828801051/VEC-004/",
-    "stamp": "2026-11-26T13:31:26.437Z",
+    "sha": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45830785700",
+    "evidence": "03-chat-evidence/runs/45830785700/VEC-004/",
+    "stamp": "2026-11-26T13:39:54.953Z",
     "result": {
       "id": "VEC-004",
       "group": "C",
       "status": "ERROR",
-      "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+      "commit": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
       "checks": [
         {
           "path": "apps/editor/src/artwork/pathOperations.c10.test.ts",
@@ -1354,7 +1597,7 @@
           "id": "VEC-004",
           "status": "ERROR",
           "checks": [],
-          "reason": "locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').locator('details').filter({ has: locator('#documentBoxBody').getByText('ベクター線・点の編集', { exact: true }) }).last()\n\n    at VEC-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:229:16)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2"
+          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').getByText('ベクター線・点の編集', { exact: true }).locator('..').locator('summary')\n    - locator resolved to <summary>ベクター線・点の編集</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at VEC-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:229:63)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2"
         }
       ],
       "pending": [
@@ -1366,7 +1609,7 @@
       "id": "VEC-004",
       "status": "ERROR",
       "checks": [],
-      "reason": "locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').locator('details').filter({ has: locator('#documentBoxBody').getByText('ベクター線・点の編集', { exact: true }) }).last()\n\n    at VEC-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:229:16)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2"
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').getByText('ベクター線・点の編集', { exact: true }).locator('..').locator('summary')\n    - locator resolved to <summary>ベクター線・点の編集</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at VEC-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:229:63)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2"
     }
   },
   {
@@ -1434,22 +1677,22 @@
     "id": "COL-008",
     "name": "出力色・色域警告",
     "verdict": "未判定",
-    "operation": "proof is non-destructive",
-    "expected": "proof is non-destructive: \"2253f135-111c-4057-b031-517e0b226afa\"",
-    "actual": "proof is non-destructive: \"2253f135-111c-4057-b031-517e0b226afa\"",
-    "problem": "",
+    "operation": "known colored fixture size / fixture has saturated red / actual pink warning pixels present / original view has no warning pixels / proof differs from original / display toggle restores proof",
+    "expected": "known colored fixture size: [128,96] / fixture has saturated red: true / actual pink warning pixels present: true / original view has no warning pixels: 0 / proof differs from original: true / display toggle restores proof: true",
+    "actual": "known colored fixture size: [128,96] / fixture has saturated red: true / actual pink warning pixels present: true / original view has no warning pixels: 0 / proof differs from original: true / display toggle restores proof: false",
+    "problem": "計測不一致（アプリ側か検査側か要確認）: display toggle restores proof",
     "improvement": "",
-    "pending": "saturated color warning pixel comparison, display toggle, artwork export not changed / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "Actual display calibration and physical print appearance are not assessed in headless Chrome. / FAIL / Error: display toggle restores proof\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:103:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:26)\n    at COL-008 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:572:83)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45828801051",
-    "evidence": "03-chat-evidence/runs/45828801051/COL-008/",
-    "stamp": "2026-11-26T13:31:26.437Z",
+    "sha": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45830785700",
+    "evidence": "03-chat-evidence/runs/45830785700/COL-008/",
+    "stamp": "2026-11-26T13:39:54.953Z",
     "result": {
       "id": "COL-008",
       "group": "D",
-      "status": "ERROR",
-      "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+      "status": "FAIL",
+      "commit": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
       "checks": [
         {
           "path": "apps/editor/src/color/harmonyProof.test.ts",
@@ -1490,82 +1733,156 @@
         },
         {
           "id": "COL-008",
-          "status": "PASS",
+          "status": "FAIL",
           "checks": [
             {
-              "name": "proof is non-destructive",
-              "actual": "2253f135-111c-4057-b031-517e0b226afa",
-              "expected": "2253f135-111c-4057-b031-517e0b226afa"
+              "name": "known colored fixture size",
+              "actual": [
+                128,
+                96
+              ],
+              "expected": [
+                128,
+                96
+              ]
+            },
+            {
+              "name": "fixture has saturated red",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "actual pink warning pixels present",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "original view has no warning pixels",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "proof differs from original",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "display toggle restores proof",
+              "actual": false,
+              "expected": true
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "reason": "Error: display toggle restores proof\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:103:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:26)\n    at COL-008 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:572:83)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2"
         }
       ],
-      "pending": [
-        "saturated color warning pixel comparison, display toggle, artwork export not changed"
-      ],
-      "reason": "Coverage not complete: saturated color warning pixel comparison, display toggle, artwork export not changed"
+      "pending": []
     },
     "browser": {
       "id": "COL-008",
-      "status": "PASS",
+      "status": "FAIL",
       "checks": [
         {
-          "name": "proof is non-destructive",
-          "actual": "2253f135-111c-4057-b031-517e0b226afa",
-          "expected": "2253f135-111c-4057-b031-517e0b226afa"
+          "name": "known colored fixture size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "fixture has saturated red",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "actual pink warning pixels present",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "original view has no warning pixels",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "proof differs from original",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "display toggle restores proof",
+          "actual": false,
+          "expected": true
         }
       ],
-      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+      "reason": "Error: display toggle restores proof\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:103:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:26)\n    at COL-008 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:572:83)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2"
     }
   },
   {
     "id": "FX-007",
     "name": "修復・パッチ・クローン",
     "verdict": "未判定",
-    "operation": "UI command search 修復 / UI command search パッチ / UI command search クローン / source image imported",
-    "expected": "UI command search 修復: \"manual triage: repair entry and real operation\" / UI command search パッチ: \"manual triage: repair entry and real operation\" / UI command search クローン: \"manual triage: repair entry and real operation\" / source image imported: true",
-    "actual": "UI command search 修復: [] / UI command search パッチ: [] / UI command search クローン: [] / source image imported: true",
-    "problem": "計測不一致（アプリ側か検査側か要確認）: UI command search 修復 / UI command search パッチ / UI command search クローン",
+    "operation": "UI command search ブラシ / UI command search 修復 / UI command search パッチ / UI command search クローン",
+    "expected": "UI command search ブラシ: \"manual triage: search results\" / UI command search 修復: \"manual triage: search results\" / UI command search パッチ: \"manual triage: search results\" / UI command search クローン: \"manual triage: search results\"",
+    "actual": "UI command search ブラシ: [\"ブラシで描く描画\",\"ブラシの設定描画\",\"ブラシの一覧設定\",\"Gペンブラシ\",\"丸ペンブラシ\",\"ミリペン / 製図ペンブラシ\",\"マーカーブラシ\",\"鉛筆ブラシ\",\"硬い消しゴムブラシ\",\"柔らかい消しゴムブラシ\",\"細線ペンブラシ\",\"柔らかい鉛筆ブラシ\",\"濃い塗りマーカーブラシ\",\"エアブラシブラシ\"] / UI command search 修復: [] / UI command search パッチ: [] / UI command search クローン: []",
+    "problem": "計測不一致（アプリ側か検査側か要確認）: UI command search ブラシ / UI command search 修復 / UI command search パッチ / UI command search クローン",
     "improvement": "",
-    "pending": "UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-category=\"adjust-filter-retouch\"]')\n    - locator resolved to <button type=\"button\" class=\"feature-category\" aria-label=\"補正・フィルター・修復の機能一覧\" data-category=\"adjust-filter-retouch\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:255:65)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45828801051",
-    "evidence": "03-chat-evidence/runs/45828801051/FX-007/",
-    "stamp": "2026-11-26T13:31:26.437Z",
+    "sha": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45830785700",
+    "evidence": "03-chat-evidence/runs/45830785700/FX-007/",
+    "stamp": "2026-11-26T13:39:54.953Z",
     "result": {
       "id": "FX-007",
       "group": "D",
       "status": "ERROR",
-      "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+      "commit": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
       "checks": [
         {
           "id": "FX-007",
-          "status": "PASS",
+          "status": "ERROR",
           "checks": [
+            {
+              "name": "UI command search ブラシ",
+              "actual": [
+                "ブラシで描く描画",
+                "ブラシの設定描画",
+                "ブラシの一覧設定",
+                "Gペンブラシ",
+                "丸ペンブラシ",
+                "ミリペン / 製図ペンブラシ",
+                "マーカーブラシ",
+                "鉛筆ブラシ",
+                "硬い消しゴムブラシ",
+                "柔らかい消しゴムブラシ",
+                "細線ペンブラシ",
+                "柔らかい鉛筆ブラシ",
+                "濃い塗りマーカーブラシ",
+                "エアブラシブラシ"
+              ],
+              "expected": "manual triage: search results"
+            },
             {
               "name": "UI command search 修復",
               "actual": [],
-              "expected": "manual triage: repair entry and real operation"
+              "expected": "manual triage: search results"
             },
             {
               "name": "UI command search パッチ",
               "actual": [],
-              "expected": "manual triage: repair entry and real operation"
+              "expected": "manual triage: search results"
             },
             {
               "name": "UI command search クローン",
               "actual": [],
-              "expected": "manual triage: repair entry and real operation"
-            },
-            {
-              "name": "source image imported",
-              "actual": true,
-              "expected": true
+              "expected": "manual triage: search results"
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-category=\"adjust-filter-retouch\"]')\n    - locator resolved to <button type=\"button\" class=\"feature-category\" aria-label=\"補正・フィルター・修復の機能一覧\" data-category=\"adjust-filter-retouch\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:255:65)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2"
         }
       ],
       "pending": [
@@ -1575,30 +1892,45 @@
     },
     "browser": {
       "id": "FX-007",
-      "status": "PASS",
+      "status": "ERROR",
       "checks": [
+        {
+          "name": "UI command search ブラシ",
+          "actual": [
+            "ブラシで描く描画",
+            "ブラシの設定描画",
+            "ブラシの一覧設定",
+            "Gペンブラシ",
+            "丸ペンブラシ",
+            "ミリペン / 製図ペンブラシ",
+            "マーカーブラシ",
+            "鉛筆ブラシ",
+            "硬い消しゴムブラシ",
+            "柔らかい消しゴムブラシ",
+            "細線ペンブラシ",
+            "柔らかい鉛筆ブラシ",
+            "濃い塗りマーカーブラシ",
+            "エアブラシブラシ"
+          ],
+          "expected": "manual triage: search results"
+        },
         {
           "name": "UI command search 修復",
           "actual": [],
-          "expected": "manual triage: repair entry and real operation"
+          "expected": "manual triage: search results"
         },
         {
           "name": "UI command search パッチ",
           "actual": [],
-          "expected": "manual triage: repair entry and real operation"
+          "expected": "manual triage: search results"
         },
         {
           "name": "UI command search クローン",
           "actual": [],
-          "expected": "manual triage: repair entry and real operation"
-        },
-        {
-          "name": "source image imported",
-          "actual": true,
-          "expected": true
+          "expected": "manual triage: search results"
         }
       ],
-      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-category=\"adjust-filter-retouch\"]')\n    - locator resolved to <button type=\"button\" class=\"feature-category\" aria-label=\"補正・フィルター・修復の機能一覧\" data-category=\"adjust-filter-retouch\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:255:65)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2"
     }
   },
   {
@@ -1944,34 +2276,69 @@
     "id": "AUT-004",
     "name": "複数作品の一括出力",
     "verdict": "未判定",
-    "operation": "different work ids",
-    "expected": "different work ids: true",
-    "actual": "different work ids: true",
+    "operation": "different work ids / failure does not prevent the next file / two real downloadable outputs / output dimensions and every pixel match individual export 512 / output dimensions and every pixel match individual export 256 / both output rows recovered / first original untouched / second original untouched",
+    "expected": "different work ids: true / failure does not prevent the next file: 1 / two real downloadable outputs: 2 / output dimensions and every pixel match individual export 512: true / output dimensions and every pixel match individual export 256: true / both output rows recovered: 2 / first original untouched: true / second original untouched: true",
+    "actual": "different work ids: true / failure does not prevent the next file: 1 / two real downloadable outputs: 2 / output dimensions and every pixel match individual export 512: true / output dimensions and every pixel match individual export 256: true / both output rows recovered: 2 / first original untouched: true / second original untouched: true",
     "problem": "",
     "improvement": "",
-    "pending": "validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle) / ERROR / locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog', { name: '選んだ作品を一括で書き出す' }).locator('select:has(option[value=\"png\"])')\n    - locator resolved to <select tabindex=\"-1\" aria-hidden=\"true\" class=\"workspace-choice-source\">…</select>\n  - attempting select option action\n    2 × waiting for element to be visible and enabled\n      - element is not visible\n    - retrying select option action\n    - waiting 20ms\n    2 × waiting for element to be visible and enabled\n      - element is not visible\n    - retrying select option action\n      - waiting 100ms\n    60 × waiting for element to be visible and enabled\n       - element is not visible\n     - retrying select option action\n       - waiting 500ms\n\n    at AUT-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:372:54)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2",
+    "pending": "validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle) / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45828801051",
-    "evidence": "03-chat-evidence/runs/45828801051/AUT-004/",
-    "stamp": "2026-11-26T13:31:26.437Z",
+    "sha": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45830785700",
+    "evidence": "03-chat-evidence/runs/45830785700/AUT-004/",
+    "stamp": "2026-11-26T13:39:54.953Z",
     "result": {
       "id": "AUT-004",
       "group": "E",
       "status": "ERROR",
-      "commit": "591092bbe75cb9b9f2c184c64c7df82f00d2a3c7",
+      "commit": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
       "checks": [
         {
           "id": "AUT-004",
-          "status": "ERROR",
+          "status": "PASS",
           "checks": [
             {
               "name": "different work ids",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "failure does not prevent the next file",
+              "actual": 1,
+              "expected": 1
+            },
+            {
+              "name": "two real downloadable outputs",
+              "actual": 2,
+              "expected": 2
+            },
+            {
+              "name": "output dimensions and every pixel match individual export 512",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "output dimensions and every pixel match individual export 256",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "both output rows recovered",
+              "actual": 2,
+              "expected": 2
+            },
+            {
+              "name": "first original untouched",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "second original untouched",
+              "actual": true,
+              "expected": true
             }
           ],
-          "reason": "locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog', { name: '選んだ作品を一括で書き出す' }).locator('select:has(option[value=\"png\"])')\n    - locator resolved to <select tabindex=\"-1\" aria-hidden=\"true\" class=\"workspace-choice-source\">…</select>\n  - attempting select option action\n    2 × waiting for element to be visible and enabled\n      - element is not visible\n    - retrying select option action\n    - waiting 20ms\n    2 × waiting for element to be visible and enabled\n      - element is not visible\n    - retrying select option action\n      - waiting 100ms\n    60 × waiting for element to be visible and enabled\n       - element is not visible\n     - retrying select option action\n       - waiting 500ms\n\n    at AUT-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:372:54)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2"
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
       "pending": [
@@ -1981,15 +2348,50 @@
     },
     "browser": {
       "id": "AUT-004",
-      "status": "ERROR",
+      "status": "PASS",
       "checks": [
         {
           "name": "different work ids",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "failure does not prevent the next file",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "two real downloadable outputs",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "name": "output dimensions and every pixel match individual export 512",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "output dimensions and every pixel match individual export 256",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "both output rows recovered",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "name": "first original untouched",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "second original untouched",
+          "actual": true,
+          "expected": true
         }
       ],
-      "reason": "locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog', { name: '選んだ作品を一括で書き出す' }).locator('select:has(option[value=\"png\"])')\n    - locator resolved to <select tabindex=\"-1\" aria-hidden=\"true\" class=\"workspace-choice-source\">…</select>\n  - attempting select option action\n    2 × waiting for element to be visible and enabled\n      - element is not visible\n    - retrying select option action\n    - waiting 20ms\n    2 × waiting for element to be visible and enabled\n      - element is not visible\n    - retrying select option action\n      - waiting 100ms\n    60 × waiting for element to be visible and enabled\n       - element is not visible\n     - retrying select option action\n       - waiting 500ms\n\n    at AUT-004 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:372:54)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:529:2"
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
     }
   },
   {

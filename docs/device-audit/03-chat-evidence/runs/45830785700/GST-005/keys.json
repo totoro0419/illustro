@@ -1,0 +1,17 @@
+{
+  "schema": "illustro.user.shortcuts",
+  "version": 1,
+  "bindings": [
+    {
+      "commandId": "panView",
+      "key": "j",
+      "code": "KeyJ",
+      "ctrl": false,
+      "shift": false,
+      "alt": false,
+      "meta": false,
+      "physical": false,
+      "mode": "hold"
+    }
+  ]
+}

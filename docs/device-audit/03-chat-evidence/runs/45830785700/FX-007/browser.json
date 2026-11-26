@@ -1,0 +1,42 @@
+{
+  "id": "FX-007",
+  "status": "ERROR",
+  "checks": [
+    {
+      "name": "UI command search ブラシ",
+      "actual": [
+        "ブラシで描く描画",
+        "ブラシの設定描画",
+        "ブラシの一覧設定",
+        "Gペンブラシ",
+        "丸ペンブラシ",
+        "ミリペン / 製図ペンブラシ",
+        "マーカーブラシ",
+        "鉛筆ブラシ",
+        "硬い消しゴムブラシ",
+        "柔らかい消しゴムブラシ",
+        "細線ペンブラシ",
+        "柔らかい鉛筆ブラシ",
+        "濃い塗りマーカーブラシ",
+        "エアブラシブラシ"
+      ],
+      "expected": "manual triage: search results"
+    },
+    {
+      "name": "UI command search 修復",
+      "actual": [],
+      "expected": "manual triage: search results"
+    },
+    {
+      "name": "UI command search パッチ",
+      "actual": [],
+      "expected": "manual triage: search results"
+    },
+    {
+      "name": "UI command search クローン",
+      "actual": [],
+      "expected": "manual triage: search results"
+    }
+  ],
+  "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-category=\"adjust-filter-retouch\"]')\n    - locator resolved to <button type=\"button\" class=\"feature-category\" aria-label=\"補正・フィルター・修復の機能一覧\" data-category=\"adjust-filter-retouch\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:255:65)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:592:2"
+}
