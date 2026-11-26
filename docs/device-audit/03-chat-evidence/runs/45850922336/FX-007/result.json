@@ -1,0 +1,171 @@
+{
+  "id": "FX-007",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+  "checks": [
+    {
+      "path": "apps/editor/src/wet/paint.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "wet and repair brushes blurs a translucent edge in premultiplied color",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "wet and repair brushes clones from an immutable snapshot and honors the selection",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "wet and repair brushes produces deterministic paper and pigment texture for a saved stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "copies a shaped patch with the original feathered coverage and no rectangular fringe",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "uses independent water and pigment settings to soften and mix a watercolor stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "copies straight RGBA exactly at full clone coverage, including transparency",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "FX-007",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "repair fixture dimensions",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "clone donor center",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
+        },
+        {
+          "name": "clone exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "clone undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "clone redo restores result",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "clone-second undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "healing decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "heal exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "heal undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
+        },
+        {
+          "name": "cancel leaves revision unchanged",
+          "actual": "868cf898-cd0b-4edf-945d-b40f35b88319",
+          "expected": "868cf898-cd0b-4edf-945d-b40f35b88319"
+        },
+        {
+          "name": "cancel leaves original pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "patch undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+  ],
+  "reason": "Coverage not complete: Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+}

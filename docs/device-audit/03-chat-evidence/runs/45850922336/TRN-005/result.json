@@ -1,0 +1,60 @@
+{
+  "id": "TRN-005",
+  "group": "C",
+  "status": "ERROR",
+  "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+  "checks": [
+    {
+      "path": "apps/editor/src/transform/groupTransform.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C07-003 group transformation geometry uses one common center and preserves relative positions for multiple layers",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects invalid bounds and duplicate layers before a grouped edit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects impossible scales and missing layer selection",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects finite but unrepresentable transformed bounds before publishing a group edit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry plans many grouped layers without spreading their bounds as function arguments",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry composes repeated rotations, mirroring, nonuniform scales and shear from the same original",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "TRN-005",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "three distinct x positions",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "locator.click: Error: strict mode violation: locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true }) resolved to 2 elements:\n    1) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-0\">図形</div> aka locator('#workspace-choices-64-0')\n    2) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-1\">図形</div> aka locator('#workspace-choices-64-1')\n\nCall log:\n  - waiting for locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:58)\n    at async TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:226:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:630:2"
+    }
+  ],
+  "pending": [
+    "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+  ],
+  "reason": "Coverage not complete: left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+}

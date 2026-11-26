@@ -1,0 +1,55 @@
+{
+  "id": "LAY-005",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+  "checks": [
+    {
+      "path": "apps/editor/src/selection/maskCodec.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C06-006 portable selection compression compresses large sparse and solid selections without alpha loss",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C06-006 portable selection compression retains random alpha and literal runs across 128-byte boundaries",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C06-006 portable selection compression does not accept truncated, extra, or overexpanded packets",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "LAY-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "visible center",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "hidden exterior",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "disable restores artwork",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "ellipse/path point editing, inversion/link/density/native preservation"
+  ],
+  "reason": "Coverage not complete: ellipse/path point editing, inversion/link/density/native preservation"
+}
