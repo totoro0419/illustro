@@ -19,7 +19,7 @@ export function validateLineRegions(value:unknown):LineRegions|null{
   if(!uuid(sourceRevision)||!Array.isArray(sources)||sources.length>256||sources.some(id=>!uuid(id))||
     !['active','merged','layer','layers','vector','vector-visible'].includes(reference)||
     reference!=='merged'&&!sources.length||!Number.isFinite(tolerance)||tolerance<0||tolerance>100||
-    !Number.isFinite(gap)||gap<0||gap>12||!Array.isArray(manual)||manual.length>256)throw error();
+    !Number.isFinite(gap)||gap<0||gap>32||!Array.isArray(manual)||manual.length>256)throw error();
   let total=0;
   const readPoints=(items:readonly RegionPoint[])=>{
     if(!Array.isArray(items)||!items.length||items.length>4096)throw error();

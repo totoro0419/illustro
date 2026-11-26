@@ -129,7 +129,7 @@ import {penEraserInput} from './stylusButtons';
 import {parseSavedCanvasView,seamlessBounds,type Point} from './canvasView';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,type GuideSettings} from './strokeGuide';
 import {BrushPresetLibrary} from './brushPresets';
-import {readWorkBrushSettings,saveWorkBrushSettings} from './workBrushSettings';
+import {readWorkBrushSettings,saveWorkBrushSettings,readLocalWorkBrushState,saveLocalWorkBrushState,encodeWorkBrushState,decodeWorkBrushState,WORK_BRUSH_SECTION,WORK_BRUSH_TYPE,type WorkBrushState} from './workBrushSettings';
 import {additionalBrushes} from './brushStarterPresets';
 import {installBrushDynamicsEditor} from './brushDynamicsEditor';
 import {filterBrushCatalog,type BrushCatalogGroup} from './brushCatalog';
@@ -214,6 +214,16 @@ const brushUsage=new BrushUsage();
 let builtInBrushes:FoundationPreset[]=[];
 const workBrushDrafts=new Map<string,Map<string,FoundationPreset>>();
 let brushDrafts=new Map<string,FoundationPreset>();
+const latestWorkBrushStates=new Map<string,WorkBrushState>();
+let embeddedWorkBrush:FoundationPreset|null=null;
+let brushStateTimer:number|undefined;
+const pendingBrushStateWrites=new Set<string>();
+function flushBrushStateWrites(){
+ if(brushStateTimer!==undefined)window.clearTimeout(brushStateTimer);brushStateTimer=undefined;
+ for(const id of pendingBrushStateWrites){const state=latestWorkBrushStates.get(id);if(state)saveLocalWorkBrushState(brushPresets.storage,id,state);}
+ pendingBrushStateWrites.clear();
+}
+window.addEventListener('pagehide',flushBrushStateWrites);
 let temporaryEraserReturn:string|null=null;
 let temporaryEraserRestoreRequested=false;
 let advancedBrushEditor:ReturnType<typeof installBrushAdvancedEditor>|null=null;
@@ -2187,15 +2197,32 @@ byId('eyedropper').onclick=activateEyedropper;
 byId<HTMLSelectElement>('colorSampleSource').onchange=()=>{eyedropperSettings.apply();if(selectedTool==='eyedropper'){surface?.setEyedropper(true,eyedropperSettings.options().source);}updateContextBar();};
 addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='i'||e.altKey||e.ctrlKey||e.metaKey||e.repeat||(e.target instanceof HTMLElement&&e.target.closest('input,textarea,select,[contenteditable]')))return;e.preventDefault();if(selectedTool==='eyedropper')restoreDrawingTool();else activateEyedropper();});
 
-function savedBrush(id:string):FoundationPreset|undefined{return brushPresets.all(builtInBrushes).find(p=>p.id===id);}
+function currentBrushCatalog(){
+ const catalog=brushPresets.all(builtInBrushes);
+ if(embeddedWorkBrush&&!catalog.some(p=>p.id===embeddedWorkBrush?.id))catalog.push(structuredClone(embeddedWorkBrush));
+ return catalog;
+}
+function savedBrush(id:string):FoundationPreset|undefined{return currentBrushCatalog().find(p=>p.id===id);}
+function snapshotWorkBrush():WorkBrushState|null{
+ if(!surface?.preset)return null;
+ const preset=temporaryEraserReturn?(latestWorkBrushStates.get(controller.document.root.documentId)?.preset??brushDrafts.get(temporaryEraserReturn)??savedBrush(temporaryEraserReturn)):surface.preset;
+ return preset?{version:1,preset:structuredClone(preset),commonStabilization}:null;
+}
+function cacheWorkBrush(id:string,state:WorkBrushState){
+ latestWorkBrushStates.set(id,state);
+ saveWorkBrushSettings(brushPresets.storage,id,{presetId:state.preset.id,size:state.preset.size});
+ pendingBrushStateWrites.add(id);
+ if(brushStateTimer!==undefined)window.clearTimeout(brushStateTimer);
+ brushStateTimer=window.setTimeout(flushBrushStateWrites,300);
+}
 function rememberWorkBrush(){
  if(qaMode||!documentReady||documentActivationPending||temporaryEraserReturn||!surface?.preset)return;
- saveWorkBrushSettings(brushPresets.storage,controller.document.root.documentId,{presetId:surface.preset.id,size:surface.preset.size});
+ const state=snapshotWorkBrush();if(state)cacheWorkBrush(controller.document.root.documentId,state);
 }
 function applyBrushChange(change:(draft:FoundationPreset)=>void):boolean{
  if(!surface?.preset)return false;
  if(surface.inputActive){brushMessage('描画中は設定を変更できません。線を離してから調整してください。');return false;}
- const previousSize=surface.preset.size,draft=structuredClone(surface.preset);
+ const draft=structuredClone(surface.preset);
  try{
   change(draft);
   compilePreset(draft,{forceFadeGeometry:'adaptive-v1'});
@@ -2203,7 +2230,7 @@ function applyBrushChange(change:(draft:FoundationPreset)=>void):boolean{
   const original=savedBrush(draft.id);
   if(original&&sameEditableBrush(draft,original))brushDrafts.delete(draft.id);
   else brushDrafts.set(draft.id,structuredClone(draft));
-  if(draft.size!==previousSize)rememberWorkBrush();
+  rememberWorkBrush();
   syncPreset();
   return true;
  }catch(error){brushMessage('この設定は使えません: '+String(error));return false;}
@@ -2982,7 +3009,7 @@ byId<HTMLFormElement>('canvasTemplateForm').onsubmit=event=>{
   }catch(error){byId('documentInfoStatus').textContent=error instanceof Error?error.message:String(error);}
 };
 
-async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache'],prewarmed=false,freshWhiteSurfaceKey:string|null=null){
+async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache'],prewarmed=false,freshWhiteSurfaceKey:string|null=null,opened?:PortableOpenResult){
   if(!surface)throw new Error('描画面がありません。');
   if(!prewarmed){
     const gpuStarted=performance.now();
@@ -2995,7 +3022,17 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   }
   const acceptedBrushes=surface.brushes.map(p=>structuredClone(p));
   builtInBrushes=[...acceptedBrushes,...additionalBrushes(acceptedBrushes)];
-  surface.setBrushes(brushPresets.all(builtInBrushes));
+  const documentId=controller.document.root.documentId;
+  const section=opened?.preserved.optionalSections.find(part=>part.id===WORK_BRUSH_SECTION);
+  let state:WorkBrushState|null=null,brushWarning='';
+  const local=()=>latestWorkBrushStates.get(documentId)??readLocalWorkBrushState(brushPresets.storage,documentId);
+  if(!qaMode){
+    if(opened?.generationId==='library'||!opened)state=local();
+    if(!state&&section){try{state=decodeWorkBrushState(section);}catch(error){brushWarning='作品のブラシ設定を復元できませんでした。'+String(error);}}
+    if(!state&&opened?.generationId!=='new')state=local();
+  }
+  embeddedWorkBrush=state?.preset??null;
+  surface.setBrushes(currentBrushCatalog());
   refreshBrushOptions();
   if(brushPresets.loadError)byId('brushLibraryStatus').textContent='保存済みブラシを読み取れませんでした: '+brushPresets.loadError;
   const defaultBrush=surface.brushes.find(p=>p.id==='foundation-g-pen')??surface.brushes.find(p=>p.blend!=='erase')??surface.brushes[0]!;
@@ -3003,20 +3040,24 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;
   let initialBrushId=lastBrushPresetId;
   if(!qaMode){
-    const documentId=controller.document.root.documentId;
     brushDrafts=workBrushDrafts.get(documentId)??new Map();
     workBrushDrafts.set(documentId,brushDrafts);
     temporaryEraserReturn=null;
     temporaryEraserRestoreRequested=false;
-    const settings=readWorkBrushSettings(brushPresets.storage,documentId);
+    const settings=opened?.generationId==='new'?null:readWorkBrushSettings(brushPresets.storage,documentId);
     const saved=settings&&surface.brushes.find(p=>p.id===settings.presetId);
     lastBrushPresetId=defaultBrush.id;
-    initialBrushId=saved?.id??defaultBrush.id;
-    if(saved&&settings&&(brushDrafts.get(saved.id)?.size??saved.size)!==settings.size){
+    initialBrushId=state?.preset.id??saved?.id??defaultBrush.id;
+    if(state){
+      brushDrafts.set(state.preset.id,structuredClone(state.preset));
+      commonStabilization=state.commonStabilization;surface.setCommonStabilization(commonStabilization);
+    }else if(saved&&settings&&(brushDrafts.get(saved.id)?.size??saved.size)!==settings.size){
       brushDrafts.set(saved.id,{...(brushDrafts.get(saved.id)??saved),size:settings.size});
     }
   }
   selectPreset(initialBrushId,false);
+  if(!qaMode){const restored=snapshotWorkBrush();if(restored)cacheWorkBrush(documentId,restored);}
+  if(brushWarning){brushMessage(brushWarning);homeUi?.notify(brushWarning);}
   if(freshWhiteSurfaceKey){
     // No white pixels are generated at startup. The editor already displays
     // an ordinary white paper; the layer's real color is recorded in Core.
@@ -3078,11 +3119,11 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
         return {ok:true as const};
       }).catch(error=>({ok:false as const,error}));
   }
-  try{await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache,false,freshWhiteSurfaceKey);}
+  try{await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache,false,freshWhiteSurfaceKey,opened);}
   catch(error){
     const requested=new URLSearchParams(location.search).get('backend'),selection=surface?.backendSelection as {selected?:string}|null;
     if(requested!=='webgpu'&&requested!=='webgl2'&&selection?.selected==='webgpu'){
-      surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache,false,freshWhiteSurfaceKey);
+      surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache,false,freshWhiteSurfaceKey,opened);
     }else throw error;
   }
   const savedView=qaMode||opened.generationId==='new'?null:readCanvasView(opened.document.root.documentId);
@@ -3343,7 +3384,7 @@ function refreshBrushOptions(){
 }
 function refreshBrushCatalog(selectId?:string){
  if(!surface)return;
- surface.setBrushes(brushPresets.all(builtInBrushes));
+ surface.setBrushes(currentBrushCatalog());
  refreshBrushOptions();
  if(selectId)selectPreset(selectId);else if(surface.preset)selectPreset(surface.preset.id);
 }
@@ -3396,6 +3437,7 @@ editBrushParameter('brushStabilization',value=>{
  if(surface.inputActive){brushMessage('描画中は設定を変更できません。線を離してから調整してください。');return false;}
  commonStabilization=value;
  surface.setCommonStabilization(value);
+ rememberWorkBrush();
  try{localStorage.setItem('illustro.common-stabilization.v1',String(value));}catch{}
  syncPreset();
  return true;
@@ -4251,7 +4293,7 @@ async function prepareWorkSwitch(){
   if(persistence.state.saving){homeUi?.notify('作品ファイルの保存が終わってから切り替えてください。描画は続けられます。');return false;}
   if(surface?.busy||historyPending||geometryBusy){homeUi?.notify('描いている線や操作が終わってから切り替えてください。');return false;}
   const wasInert=app.inert;app.inert=true;
-  try{librarySaving=true;await persistence.barrier();return true;}
+  try{librarySaving=true;flushBrushStateWrites();await persistence.barrier();return true;}
   catch(error){showStorageError(error);return false;}finally{app.inert=wasInert;librarySaving=false;updatePersistenceDisplay();}
 }
 async function openWork(id:string):Promise<boolean>{
@@ -5106,6 +5148,10 @@ c06Selection=installSelectionWorkbench({
 });
 persistence.setSaveAttachmentProvider(()=>{
   const preserved=persistence.preservedData;
+  const state=snapshotWorkBrush();
+  let brushSection;
+  try{if(!state)throw Error('ブラシ設定がありません。');brushSection=encodeWorkBrushState(state);}
+  catch(error){brushSection={id:WORK_BRUSH_SECTION,type:WORK_BRUSH_TYPE,required:false,bytes:new Uint8Array()};const message='ブラシ設定を保存できませんでした。絵は保存します。'+String(error);brushMessage(message);homeUi?.notify(message);}
   const documentPalette=foreground.exportDocumentPaletteSection();
   const recording=timeline?.exportNative(controller.document);
   const wetSettings=wetTools?.exportNative();
@@ -5128,7 +5174,7 @@ persistence.setSaveAttachmentProvider(()=>{
     const result=await editingState;
     if('error' in result)throw result.error;
     const [reference,selections]=result.values,fonts=await exportFonts(root,preserved);
-    return [...(reference?[reference]:[]),...selections,...fonts,...(documentPalette?[documentPalette]:[]),...(recording?[recording]:[]),...(wetSettings?[wetSettings]:[]),symmetry];
+    return [...(reference?[reference]:[]),...selections,...fonts,...(documentPalette?[documentPalette]:[]),...(recording?[recording]:[]),...(wetSettings?[wetSettings]:[]),symmetry,brushSection];
   };
 });
 const unavailableImageLinks=new Set<string>();

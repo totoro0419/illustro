@@ -2,7 +2,7 @@ import {toolConfirmation} from '../ui/toolConfirmation';
 import {appConfirm,appPrompt} from '../ui/appDialogs';
 /** C06 selection workbench. Paint and geometry are intentionally different modes. */
 import type {BrushSurface} from '../brushSurface';
-import {rasterizeSelection,combineSelection,invertSelection,fullSelection,translateSelection,featherMask,boundsOfSelection,
+import {combineSelection,invertSelection,fullSelection,translateSelection,featherMask,boundsOfSelection,
   type SelectionShape,type MaskData,type CombineMode,type SelectionBrushPoint} from './mask';
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection,storeCurrentSelection,loadCurrentSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
@@ -494,8 +494,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       });
     if(answer===null||source()?.id!==doc.id)return;
     const [x,y,w,h]=answer.trim().split(/[\s,、]+/).map(Number);
-    const candidate=rasterizeSelection({type:'rectangle',x:x!,y:y!,width:w!,height:h!},doc.width,doc.height);
-    publish(candidate);
+    applyShape({type:'rectangle',x:x!,y:y!,width:w!,height:h!});
   });
   tools.append(byCoordinates);
   const all=asButton('すべて選ぶ',()=>{const d=source();if(d)publish(fullSelection(d.width,d.height));});

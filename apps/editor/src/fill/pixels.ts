@@ -9,7 +9,7 @@ export type FillSettings=Readonly<{
   alphaTolerance?:number;matchColor?:string;antialias?:boolean;excluded?:readonly number[];included?:readonly number[];
 }>;
 export type Walls=RegionWalls;
-export type GapCandidate=Readonly<{from:Point;to:Point;length:number;kind?:'tips'|'edge'|'junction'|'near'}>;
+export type GapCandidate=Readonly<{from:Point;to:Point;length:number;kind?:'tips'|'edge'|'junction'|'near';review?:'automatic'|'likely'|'confirm'}>;
 export type RegionGraph=Readonly<{
   width:number;height:number;walls:Uint8Array;bridges:Uint8Array;labels:Uint32Array;external:Uint8Array;count:number;
   candidates:readonly GapCandidate[];
@@ -649,7 +649,8 @@ export function paintColorHints(graph:RegionGraph,hints:readonly ColorHint[],tar
   return {pixels,mask:{width,height,alpha}};
 }
 
-export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:Walls){
+type GapNeighborhood=Pick<RegionGraph,'width'|'height'|'walls'|'bridges'|'candidates'>;
+export function suggestLocalGaps(graph:GapNeighborhood,at:Point,reach:number,manual:Walls){
   const {width,height,walls,bridges}=graph;
   const radius=Math.max(3,Math.min(12,reach)),extent=radius+3;
   const isInk=(x:number,y:number)=>x>=0&&y>=0&&x<width&&y<height&&
@@ -723,6 +724,133 @@ export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:
       Math.hypot(other.from.x-candidate.from.x,other.from.y-candidate.from.y)+
       Math.hypot(other.to.x-candidate.to.x,other.to.y-candidate.to.y)<4))continue;
     output.push(candidate);
+    if(output.length>=24)break;
+  }
+  return output;
+}
+
+
+/** Send only the small neighborhood needed by the local review worker. */
+export function cropGapNeighborhood(graph:GapNeighborhood,at:Point,reach:number,manual:Walls){
+  const radius=Math.max(3,Math.min(32,Math.round(reach))),pad=radius*2+8;
+  const x=Math.max(0,Math.floor(at.x)-pad),y=Math.max(0,Math.floor(at.y)-pad);
+  const width=Math.max(1,Math.min(graph.width,Math.floor(at.x)+pad+1)-x);
+  const height=Math.max(1,Math.min(graph.height,Math.floor(at.y)+pad+1)-y);
+  const walls=new Uint8Array(width*height),bridges=new Uint8Array(width*height);
+  for(let row=0;row<height;row++){
+    const start=(y+row)*graph.width+x;
+    walls.set(graph.walls.subarray(start,start+width),row*width);
+    bridges.set(graph.bridges.subarray(start,start+width),row*width);
+  }
+  const shift=(p:Point)=>({x:p.x-x,y:p.y-y});
+  const inside=(p:Point)=>p.x>=x&&p.y>=y&&p.x<x+width&&p.y<y+height;
+  const candidates=graph.candidates.filter(g=>inside(g.from)&&inside(g.to))
+    .map(g=>({...g,from:shift(g.from),to:shift(g.to)}));
+  return {x,y,graph:{width,height,walls,bridges,candidates},point:shift(at),reach:radius,
+    manual:manual.map(edit=>({...edit,points:edit.points.map(shift)}))};
+}
+
+/** Review automatic repairs as well as uncommitted gaps. The strict
+ * automatic repair algorithm and its existing tests remain unchanged. */
+export function inspectLocalGaps(graph:GapNeighborhood,at:Point,reach:number,manual:Walls):GapCandidate[]{
+  const {width,height,walls,bridges}=graph;
+  const radius=Math.max(3,Math.min(32,Math.round(reach))),extent=radius+3;
+  const inside=(x:number,y:number)=>x>=0&&y>=0&&x<width&&y<height;
+  const ink=(x:number,y:number)=>inside(x,y)&&!!walls[y*width+x]&&!bridges[y*width+x];
+  const blocked=(x:number,y:number)=>!inside(x,y)||!!walls[y*width+x];
+  const rejected=new Set<number>();
+  // Rasterize the full rejected path, not only its endpoints. Later explicit
+  // manual additions may supersede a rejection, but automatic guesses cannot.
+  for(const edit of manual){
+    if(edit.remove&&!edit.preserveInk)continue;
+    for(let i=0;i<edit.points.length;i++){
+      const a=edit.points[Math.max(0,i-1)]!,b=edit.points[i]!;
+      const steps=Math.max(1,Math.ceil(Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y))*2));
+      for(let k=0;k<=steps;k++){
+        const x=Math.floor(a.x+(b.x-a.x)*k/steps),y=Math.floor(a.y+(b.y-a.y)*k/steps);
+        if(!inside(x,y))continue;
+        if(edit.remove)rejected.add(y*width+x);else rejected.delete(y*width+x);
+      }
+    }
+  }
+  const distanceTo=(g:GapCandidate)=>{
+    const dx=g.to.x-g.from.x,dy=g.to.y-g.from.y,len=dx*dx+dy*dy;
+    const t=len?Math.max(0,Math.min(1,((at.x-g.from.x)*dx+(at.y-g.from.y)*dy)/len)):0;
+    return Math.hypot(at.x-g.from.x-dx*t,at.y-g.from.y-dy*t);
+  };
+  const cells=(g:GapCandidate,visit:(x:number,y:number)=>boolean)=>{
+    const dx=g.to.x-g.from.x,dy=g.to.y-g.from.y,steps=Math.max(Math.abs(dx),Math.abs(dy));
+    for(let i=1;i<steps;i++)if(!visit(Math.round(g.from.x+dx*i/steps),Math.round(g.from.y+dy*i/steps)))return false;
+    return true;
+  };
+  const validRejection=(g:GapCandidate)=>cells(g,(x,y)=>inside(x,y)&&!rejected.has(y*width+x));
+  const automatic=graph.candidates.filter(g=>g.length<=radius&&distanceTo(g)<=radius*.8+1&&validRejection(g))
+    .map(g=>({...g,review:'automatic' as const}));
+  const likely=suggestLocalGaps(graph,at,reach,manual).filter(validRejection)
+    .map(g=>({...g,review:'likely' as const}));
+  const proposals:GapCandidate[]=[...automatic,...likely];
+  // Conservative cap search for wide strokes, diagonal and corner gaps. A
+  // cap must have ink extending inward farther than across the stroke. This
+  // excludes the sides of parallel strokes and genuine junctions.
+  const dirs=[[-1,0],[-1,-1],[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1]] as const;
+  type Cap={p:Point;out:Point};
+  const caps:Cap[]=[];
+  const run=(x:number,y:number,dx:number,dy:number,limit:number)=>{
+    let n=0;while(n<limit&&ink(x+dx*(n+1),y+dy*(n+1)))n++;return n;
+  };
+  for(let y=Math.max(0,Math.floor(at.y-extent));y<=Math.min(height-1,Math.ceil(at.y+extent));y++){
+    for(let x=Math.max(0,Math.floor(at.x-extent));x<=Math.min(width-1,Math.ceil(at.x+extent));x++){
+      if(!ink(x,y))continue;
+      const neighbors=dirs.map(([dx,dy])=>ink(x+dx,y+dy));
+      const branches=neighbors.filter((v,i)=>v&&!neighbors[(i+7)%8]).length;
+      if(branches!==1)continue;
+      for(const [dx,dy] of dirs){
+        if(blocked(x+dx,y+dy))continue;
+        const depth=run(x,y,-dx,-dy,Math.min(18,radius+6));
+        const breadth=1+run(x,y,-dy,dx,12)+run(x,y,dy,-dx,12);
+        if(depth<Math.max(2,breadth+1))continue;
+        const inwardX=x-dx,inwardY=y-dy;
+        // Cap centers are favored over the long outer edges of wide strokes.
+        const sideA=run(inwardX,inwardY,-dy,dx,12),sideB=run(inwardX,inwardY,dy,-dx,12);
+        if(Math.abs(sideA-sideB)>Math.max(1,Math.floor((sideA+sideB)/3)))continue;
+        caps.push({p:{x,y},out:{x:dx,y:dy}});
+      }
+    }
+  }
+  caps.sort((a,b)=>Math.hypot(a.p.x-at.x,a.p.y-at.y)-Math.hypot(b.p.x-at.x,b.p.y-at.y));
+  // Bound worst-case work on very noisy 4K artwork.
+  const nearby=caps.slice(0,256);
+  const confirmations:Array<{gap:GapCandidate;score:number}>=[];
+  for(let i=0;i<nearby.length;i++)for(let j=i+1;j<nearby.length;j++){
+    const a=nearby[i]!,b=nearby[j]!,dx=b.p.x-a.p.x,dy=b.p.y-a.p.y,len=Math.hypot(dx,dy);
+    if(len<1.99||len>radius+1)continue;
+    const faceA=(a.out.x*dx+a.out.y*dy)/(Math.hypot(a.out.x,a.out.y)*len);
+    const faceB=-(b.out.x*dx+b.out.y*dy)/(Math.hypot(b.out.x,b.out.y)*len);
+    if(faceA<.55||faceB<.55)continue;
+    const gap:GapCandidate={from:a.p,to:b.p,length:len-1,kind:'near',review:'confirm'};
+    const distance=distanceTo(gap);
+    if(distance>Math.min(6,radius*.7+1)||!validRejection(gap))continue;
+    if(!cells(gap,(x,y)=>{
+      if(blocked(x,y))return false;
+      // Third strokes in the middle of a gap invalidate the proposal.
+      if(Math.hypot(x-a.p.x,y-a.p.y)>2&&Math.hypot(x-b.p.x,y-b.p.y)>2){
+        for(let yy=y-1;yy<=y+1;yy++)for(let xx=x-1;xx<=x+1;xx++)if(blocked(xx,yy))return false;
+      }
+      return true;
+    }))continue;
+    confirmations.push({gap,score:distance*2+len+(2-faceA-faceB)*4});
+  }
+  confirmations.sort((a,b)=>a.score-b.score);
+  const close=(a:Point,b:Point)=>Math.hypot(a.x-b.x,a.y-b.y)<=2;
+  const cross=(a:Point,b:Point,c:Point)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+  const conflict=(a:GapCandidate,b:GapCandidate)=>
+    [a.from,a.to].some(p=>[b.from,b.to].some(q=>close(p,q)))||
+    cross(a.from,a.to,b.from)*cross(a.from,a.to,b.to)<0&&cross(b.from,b.to,a.from)*cross(b.from,b.to,a.to)<0;
+  proposals.sort((a,b)=>(a.review==='automatic'?0:1)-(b.review==='automatic'?0:1)||distanceTo(a)-distanceTo(b));
+  const output:GapCandidate[]=[];
+  for(const gap of [...proposals,...confirmations.map(x=>x.gap)]){
+    if(output.some(g=>conflict(g,gap)))continue;
+    output.push(gap);
     if(output.length>=24)break;
   }
   return output;
