@@ -1,0 +1,32 @@
+{
+  "id": "AUT-005",
+  "status": "FAIL",
+  "checks": [
+    {
+      "name": "exported macro JSON contains name",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "search reopens macro panel",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "imported-macro-replays",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "quick-macro-replays",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "imported macro appears in visible shortcut assignment list",
+      "actual": false,
+      "expected": true
+    }
+  ],
+  "reason": "Error: imported macro appears in visible shortcut assignment list\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at AUT-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:451:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:800:2"
+}

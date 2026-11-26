@@ -1,0 +1,74 @@
+{
+  "id": "AUT-005",
+  "group": "E",
+  "status": "FAIL",
+  "commit": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+  "checks": [
+    {
+      "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "AUT-005",
+      "status": "FAIL",
+      "checks": [
+        {
+          "name": "exported macro JSON contains name",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "search reopens macro panel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "quick-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported macro appears in visible shortcut assignment list",
+          "actual": false,
+          "expected": true
+        }
+      ],
+      "reason": "Error: imported macro appears in visible shortcut assignment list\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at AUT-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:451:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:800:2"
+    },
+    {
+      "status": "PASS",
+      "reason": "Existing regression subchecks only"
+    }
+  ],
+  "pending": [
+    "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+  ],
+  "reason": "Coverage not complete: export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+}

@@ -1,0 +1,60 @@
+{
+  "id": "TRN-005",
+  "group": "C",
+  "status": "ERROR",
+  "commit": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+  "checks": [
+    {
+      "path": "apps/editor/src/transform/groupTransform.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C07-003 group transformation geometry uses one common center and preserves relative positions for multiple layers",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects invalid bounds and duplicate layers before a grouped edit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects impossible scales and missing layer selection",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects finite but unrepresentable transformed bounds before publishing a group edit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry plans many grouped layers without spreading their bounds as function arguments",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry composes repeated rotations, mirroring, nonuniform scales and shear from the same original",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "TRN-005",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "three distinct x positions",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').getByText('レイヤーの整列・均等配置', { exact: true }).locator('..').getByLabel('青は移動先、破線は現位置', { exact: true }) to be hidden\n    62 × locator resolved to visible <canvas hidden=\"\" aria-label=\"青は移動先、破線は現位置\"></canvas>\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:231:18)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:800:2"
+    }
+  ],
+  "pending": [
+    "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+  ],
+  "reason": "Coverage not complete: left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+}
