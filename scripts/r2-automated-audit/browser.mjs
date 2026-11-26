@@ -316,6 +316,26 @@ const cases={
    await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);
    yes(mode+' one undo restores all pixels',before.data.equals((await png(1,'artwork','undo-'+mode)).data));
   }
+  // Independently measured handle coordinates; each test uses actual canvas drag.
+  await newContext();await fresh();await drawLine([[60,100],[120,100]],8);
+  const first=await canvas.getAttribute('data-selected-layer-id'),targetBefore=await png(1,'active','snap-source');
+  let old=await revision();await layerPage();await page.locator('#addLayerPage').click();await waitRev(old);await page.locator('#closeLayerPage').click();
+  await drawLine([[220,200],[300,200]],8);const target=await canvas.getAttribute('data-selected-layer-id');
+  await layerActions();await page.locator('#layerBatchToggle').click();for(const id of [first,target])await page.locator('#layerPageList [data-layer-id="'+id+'"]').click();await page.locator('#closeLayerPage').click();
+  const t=await panel('transform');await choose(t.locator('select:has(option[value="layer"]):has(option[value="boundary"])'),'layer');await button(t,'変形を始める').click();
+  const mode=t.locator('select:has(option[value="free"])');await choose(mode,'free');const x=t.getByLabel('左上 X',{exact:true}),y=t.getByLabel('左上 Y',{exact:true});
+  async function corner(toX,toY){await x.waitFor({state:'visible'});await stroke([[Number(await x.inputValue()),Number(await y.inputValue())],[toX,toY]]);}
+  const guide=t.getByLabel('キャンバスの端・中央',{exact:true});await guide.check();await corner(253,Number(await y.inputValue()));
+  eq('canvas center snap exact x',Number(await x.inputValue()),256);await t.getByText(/キャンバスの中央/).filter({visible:true}).last().waitFor();
+  await button(t,'次の操作だけ吸着を解除').click();await corner(253,Number(await y.inputValue()));
+  yes('temporary bypass keeps unsnapped x',Math.abs(Number(await x.inputValue())-253)<1);await t.getByText('この操作は吸着を解除しました。',{exact:true}).waitFor();
+  await corner(253,Number(await y.inputValue())+1);eq('snap resumes automatically next drag',Number(await x.inputValue()),256);
+  await guide.uncheck();await t.getByLabel('画素',{exact:true}).check();await corner(244.3,Number(await y.inputValue())+0.4);
+  eq('pixel snapping produces integer x',Number(await x.inputValue())%1,0);eq('pixel snapping produces integer y',Number(await y.inputValue())%1,0);
+  await t.getByLabel('画素',{exact:true}).uncheck();await t.getByLabel('複数選択した他のレイヤー',{exact:true}).check();
+  const pixels=opaque(targetBefore),right=Math.max(...pixels.map(p=>p[0]))+1;
+  await corner(right+3,Number(await y.inputValue()));eq('other selected layer right edge snap',Number(await x.inputValue()),right);
+  await button(t,'取り消す').click();
  },
  'VEC-004':async()=>{
   await fresh();const a=await shapeRect(70,70,250,250,0),b=await shapeRect(170,130,350,310,0);
@@ -682,6 +702,26 @@ const cases={
   await page.locator('#undo').click();await idle();eq('offline undo removes new stroke',alpha(await png(1,'artwork','offline-undo'),[310,300]),0);
   await page.locator('#redo').click();await idle();yes('offline redo restores all pixels',withLayer.data.equals((await png(1,'artwork','offline-redo')).data));
   await saveIdle();await page.reload({waitUntil:'domcontentloaded'});await openArtwork(docId);yes('offline layer/history survives reload',withLayer.data.equals((await png(1,'artwork','offline-layer-reopen')).data));
+  await clearSelection();
+  const transform=await panel('transform');await choose(transform.locator('select:has(option[value="layer"]):has(option[value="boundary"])'),'layer');
+  await button(transform,'変形を始める').click();const dx=transform.getByLabel('横の移動（px）',{exact:true});await dx.waitFor({state:'visible'});await dx.fill('40');await dx.press('Tab');old=await revision();
+  await button(transform,'変形を適用').click();await waitRev(old);
+  const moved=await png(1,'artwork','offline-transformed');yes('offline transform moved pixels',alpha(moved,[350,300])>127&&alpha(moved,[280,300])===0);
+  await addReference();yes('offline reference image visible',await page.locator('.c05-reference-frame img').first().evaluate(e=>e.complete&&e.naturalWidth>0));
+  yes('offline reference excluded from export',moved.data.equals((await png(1,'artwork','offline-reference')).data));
+  await layerPage();old=await revision();await page.locator('#addLayerPage').click();await waitRev(old);await page.locator('#closeLayerPage').click();
+  await drawLine([[200,60],[300,60]],12);const effectBefore=await png(1,'artwork','offline-filter-before');
+  await findCommand('レイヤーのフィルター','レイヤーのフィルターを開く');const effects=page.locator('.raster-effects');
+  await choose(effects.locator('select:has(option[value="invert"])'),'invert');await button(effects,'新しい効果').click();old=await revision();await button(effects,'レイヤーに適用').click();await waitRev(old);
+  const effectAfter=await png(1,'artwork','offline-filter-after');eq('offline invert actual opaque RGB',rgba(effectAfter,250,60),rgba(effectBefore,250,60).map((v,k)=>k===3?v:255-v));
+  await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);yes('offline filter undo restores full image',effectBefore.data.equals((await png(1,'artwork','offline-filter-undo')).data));
+  await layerPage();old=await revision();await page.locator('#addLayerPage').click();await waitRev(old);await page.locator('#closeLayerPage').click();
+  await page.locator('#paint').click();await pen(8);const macro=await recordMacro();await button(macro,'実行').click();
+  const dialog=page.getByRole('dialog',{name:'操作セットを確認'});await dialog.getByLabel('縦のずれ（px）').fill('130');old=await revision();
+  await button(dialog,'この内容で実行').click();await page.getByRole('button',{name:'適用',exact:true}).filter({visible:true}).click();await waitRev(old);
+  yes('offline macro rendered',alpha(await png(1,'artwork','offline-macro'),[120,230])>127);
+  await saveIdle();const final=await png(1,'artwork','offline-final');await page.reload();await openArtwork(docId);
+  yes('all offline edits survive reopen',final.data.equals((await png(1,'artwork','offline-final-reopened')).data));
   await context.setOffline(false);
  },
  'SEL-001':async()=>{
