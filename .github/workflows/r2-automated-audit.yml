@@ -1,9 +1,11 @@
-name: R2 chat audit remaining 17 (isolated)
+name: R2 round 5 audit (isolated)
 on:
   push:
-    branches: [qa/r2-chat-audit-remaining17-2026-11-26]
+    branches: [fix/r2-audit-round5-2026-11-27]
     paths:
       - 'scripts/r2-automated-audit/**'
+      - 'scripts/editor-works-safety-smoke.mjs'
+      - 'apps/editor/src/**'
       - '.github/workflows/r2-automated-audit.yml'
   workflow_dispatch:
     inputs:
@@ -29,7 +31,7 @@ jobs:
       PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
       R2_AUDIT_OUT: r2-audit-evidence
       R2_FIXTURE_DIR: r2-audit-fixtures
-      AUDIT_SELECTION: ${{ inputs.selection || 'GST-005,COL-008,FX-007,VEC-004,AUT-004' }}
+      AUDIT_SELECTION: ${{ inputs.selection || 'SAV-006,SAV-007,REF-006,IO-006,FIL-005,LIN-007,TRN-005,VEC-004,LAY-005,COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004,AUT-005' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,7 +71,24 @@ jobs:
           node --check scripts/r2-automated-audit/run.mjs
           node scripts/r2-automated-audit/self-test.mjs
       - name: Run selected checks
-        run: node scripts/r2-automated-audit/run.mjs "$AUDIT_SELECTION"
+        run: |
+          set +e
+          if [ "$AUDIT_SELECTION" != "SAV-006,SAV-007,REF-006,IO-006,FIL-005,LIN-007,TRN-005,VEC-004,LAY-005,COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004,AUT-005" ]; then
+            node scripts/r2-automated-audit/run.mjs "$AUDIT_SELECTION"
+            exit $?
+          fi
+          root="$R2_AUDIT_OUT"
+          R2_AUDIT_OUT="$root/group-a" node scripts/r2-automated-audit/run.mjs 'SAV-006,SAV-007,REF-006,IO-006' & a=$!
+          R2_AUDIT_OUT="$root/group-b" node scripts/r2-automated-audit/run.mjs 'FIL-005,LIN-007,TRN-005,VEC-004,LAY-005' & b=$!
+          R2_AUDIT_OUT="$root/group-c" node scripts/r2-automated-audit/run.mjs 'COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004,AUT-005' & c=$!
+          rc=0
+          for pid in "$a" "$b" "$c"; do wait "$pid" || rc=1; done
+          for group in "$root"/group-*; do
+            for case in "$group"/*; do
+              if [ -d "$case" ] && [ -f "$case/result.json" ]; then cp -a "$case" "$root/"; fi
+            done
+          done
+          exit "$rc"
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
@@ -90,7 +109,7 @@ jobs:
           git add docs/device-audit/03-CHAT-REMAINING17.csv docs/device-audit/03-CHAT-REMAINING17-SUMMARY.md docs/device-audit/03-chat-evidence/
           if ! git diff --cached --quiet; then
             git commit -m "Record actual R2 chat audit evidence for $EXPECTED_COMMIT_SHA"
-            git push origin HEAD:refs/heads/qa/r2-chat-audit-remaining17-2026-11-26
+            git push origin HEAD:refs/heads/fix/r2-audit-round5-2026-11-27
           fi
       - name: Fail if fixtures could not be verified
         if: ${{ always() && steps.fixtures.outcome != 'success' }}
