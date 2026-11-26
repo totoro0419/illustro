@@ -122,6 +122,11 @@ function opaque(im){const a=[];for(let y=0;y<im.height;y++)for(let x=0;x<im.widt
 function alpha(im,xy){return rgba(im,...xy)[3];}
 async function selectLasso(points){const p=await panel('selection');const b=button(p,'投げ縄');if(await b.getAttribute('aria-pressed')!=='true')await b.click();await stroke(points);await p.getByText('選択範囲を更新しました。',{exact:true}).waitFor();const boundary=p.getByRole('checkbox',{name:'選択の境界を表示する（隠しても選択は有効）',exact:true});if(await boundary.isChecked())await boundary.uncheck();return p;}
 async function selectRect(a,b){const p=await panel('selection');const btn=button(p,'四角形');if(await btn.getAttribute('aria-pressed')!=='true')await btn.click();await stroke([a,b]);await p.getByText('選択範囲を更新しました。',{exact:true}).waitFor();return p;}
+async function clearSelection(){
+ const p=await panel('selection'),clear=page.locator('#selectionClear');
+ if(await clear.isEnabled()){if(await clear.isVisible())await clear.click();else await clear.evaluate(e=>e.click());}
+ await page.locator('#paint').click();await idle();
+}
 async function resetPage(){await newContext();}
 async function openArtwork(id){await page.locator('#ihNavWorks').click();await page.locator('[data-work-id="'+id+'"] .ih-work-preview').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:60000});await page.waitForFunction(expected=>{const c=document.querySelector('#canvas');return c?.dataset.documentId===expected&&c.dataset.view!=='null'&&!document.querySelector('#brush')?.disabled;},id,{timeout:60000});await idle();}
 async function saveIdle(){await page.waitForFunction(()=>document.querySelector('#saveState')?.dataset.autosavePending==='false'&&document.querySelector('#saveState')?.textContent?.includes('保存済み'),undefined,{timeout:60000});}
@@ -228,9 +233,11 @@ const cases={
    const root=await openDocumentSettings(),p=root.getByText('レイヤーの整列・均等配置',{exact:true}).locator('xpath=..');
    if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
    const preview=p.getByLabel('青は移動先、破線は現位置',{exact:true});
-   await preview.waitFor({state:'hidden'});await button(p,'複数選択したレイヤーを確認').click();await preview.waitFor({state:'visible'});
+   await button(p,'候補を取り消す').click();await button(p,'複数選択したレイヤーを確認').click();
+   await page.waitForFunction(()=>{const p=[...document.querySelectorAll('canvas')].find(x=>x.getAttribute('aria-label')==='青は移動先、破線は現位置');return p&&!p.hidden;});
+   await p.getByText(/破線は現在の位置、実線は移動先/).waitFor();
    await choose(p.locator('select:has(option[value="left"])'),mode);
-   const reference=p.getByLabel('動かさない基準',{exact:true});
+   const reference=p.locator('select:has(option[value="'+a+'"])');
    await choose(reference,a);eq(mode+' confirmed reference layer',await reference.inputValue(),a);
    const horizontal=['left','center-x','right','spread-x'].includes(mode),key=horizontal?'x':'y',end=horizontal?'right':'bottom';
    const sizes=bounds.map(v=>v[end]-v[key]),starts=bounds.map(v=>v[key]);
@@ -316,7 +323,7 @@ const cases={
   // Real selection clipping, using the original imported raster.
   await selectRect([46,44],[51,49]);await openRepair('clone','クローン','Clone');await pick(16.5,30.5);old=await revision();
   await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);after=await png(1,'artwork','clone-selected');eq('selection exterior unchanged',outside(after,46,44,51,49),0);await undo(old,'clone-selected');
-  await findCommand('選択を解除','選択を解除する');
+  await clearSelection();
   // Separate repair layer must leave the original active-layer PNG unchanged.
   const originalLayer=await canvas.getAttribute('data-selected-layer-id');
   const originalPixels=await png(1,'active','original-layer-before');
@@ -351,7 +358,8 @@ const cases={
   await openFile(native,128);p=await advancedFill();
   await p.locator(':scope > summary').click();await p.locator(':scope > summary').click();
   const advanced=p.getByText('線画の解析・細かい調整',{exact:true});if(!await p.getByLabel('作品に保存した線画領域',{exact:true}).isVisible())await advanced.click();
-  const saved=p.getByLabel('作品に保存した線画領域',{exact:true});await saved.locator('option').nth(1).waitFor({state:'attached'});
+  const saved=p.getByText('作品に保存した線画領域',{exact:true}).locator('xpath=..').locator('select');
+  await saved.locator('option').nth(1).waitFor({state:'attached'});
   const options=await saved.locator('option').evaluateAll(os=>os.map(o=>({value:o.value,label:o.textContent})));
   yes('saved line analysis present after reopening',options.some(o=>o.value));
   await choose(saved,options.find(o=>o.value).value);await button(p,'保存した領域を使う').click();
@@ -587,7 +595,7 @@ const cases={
   await selectRect([90,190],[150,220]);await drawLine([[70,210],[180,210]],8);const after=await png(1,'artwork','offline');yes('new offline stroke present',alpha(after,[120,200])>0);yes('offline selection constrains stroke',alpha(after,[175,210])===0);
   await saveIdle();await page.reload({waitUntil:'domcontentloaded'});await openArtwork(docId);
   const restored=await png(1,'artwork','offline-restored');yes('offline save survived reload',after.data.equals(restored.data));
-  await findCommand('選択を解除','選択を解除する');
+  await clearSelection();
   const originalLayer=await canvas.getAttribute('data-selected-layer-id');
   await layerPage();let old=await revision();await page.locator('#addLayerPage').click();await waitRev(old);await page.locator('#closeLayerPage').click();
   yes('offline new layer created',await canvas.getAttribute('data-selected-layer-id')!==originalLayer);
@@ -656,7 +664,7 @@ const cases={
   await selectRect([100,100],[190,210]);await menu();await choose(page.locator('#vectorMaskShape'),'ellipse');old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);await close();
   const ellipse=await png(1,'artwork','ellipse');yes('ellipse center retained',alpha(ellipse,[145,160])>200);eq('ellipse far outside hidden',alpha(ellipse,[240,160]),0);
   await menu();old=await revision();await page.locator('#vectorMaskRemove').click();await waitRev(old);await close();
-  await findCommand('選択を解除','選択を解除する');await page.locator('#paint').click();await pen(50);
+  await clearSelection();await page.locator('#paint').click();await pen(50);
   await menu();old=await revision();await page.locator('#pixelMaskAdd').click();await waitRev(old);await page.locator('#maskEditingBar').waitFor({state:'visible'});
   old=await revision();await stroke([[120,160],[160,160]]);await waitRev(old);await page.locator('#doneMaskEditing').click();
   const hidden=await png(1,'artwork','pixel-mask-hide');eq('black mask hides pixel',alpha(hidden,[140,160]),0);yes('black mask preserves remote pixel',alpha(hidden,[240,160])>200);
@@ -727,7 +735,7 @@ const cases={
   await openMacros();await button(root,'新しく作る').click();const commands=root.getByLabel('追加する操作',{exact:true});
   for(const value of ['layerOpacityAtRun','layerNameAtRun']){await choose(commands,value);await button(root,'操作を追加').click();}
   await root.getByLabel('操作セットの名前',{exact:true}).fill('QA parameter types');await button(root,'保存').click();
-  await button(root,'実行').click();await choose(d.getByLabel('対象レイヤー',{exact:true}),first);
+  await button(root,'実行').click();await choose(d.locator('select:has(option[value="'+first+'"])'),first);
   await d.getByLabel('不透明度を設定（%）',{exact:true}).fill('50');await d.getByLabel('レイヤー名を設定',{exact:true}).fill('QA renamed');
   const paramRevision=await revision();await button(d,'この内容で実行').click();await page.getByRole('button',{name:'適用',exact:true}).filter({visible:true}).click();await waitRev(paramRevision);
   await selectLayer(first);eq('text parameter set on intended layer',await canvas.getAttribute('data-selected-layer-name'),'QA renamed');
@@ -750,14 +758,49 @@ const cases={
   eq('denial leaves artwork unchanged',await revision(),rev);eq('fullscreen still inactive',await page.evaluate(()=>!!document.fullscreenElement),false);
  },
  'IO-006':async()=>{
-  await fresh();await drawLine([[70,100],[180,100]]);
+  await fresh();await importRaster(join(fixture,'colors.png'));const src=await png(1,'artwork','source-colors');
+  const {spawnSync}=await import('node:child_process');
+  const ff=(args)=>{const x=spawnSync('ffmpeg',['-v','error',...args],{maxBuffer:16*1024*1024});if(x.status!==0)throw Error(x.stderr.toString());return x.stdout;};
+  const lin=v=>v<=10?v/3294.6:((v/255+.055)/1.055)**2.4;
+  const srgb=v=>Math.round(255*(v<=.0031308?12.92*v:1.055*v**(1/2.4)-.055));
   for(const format of ['avif','exr']){
     await page.locator('#fileActionsOpen').click();await page.locator('#exportImage').click();await page.locator('#exchangeExport').click();const d=page.getByRole('dialog',{name:'他の形式で書き出す'});
-    await d.locator('select:has(option[value="'+format+'"])').selectOption(format,{force:true});
+    await choose(d.locator('select:has(option[value="'+format+'"])'),format);
+    if(format==='avif')await d.getByLabel('AVIFを可逆圧縮する',{exact:true}).check();
     const dl=page.waitForEvent('download',{timeout:90000});await button(d,'書き出す').click();const file=join(evidence,'image.'+format);await (await dl).saveAs(file);
     const data=await readFile(file);yes('real '+format+' signature',format==='avif'?data.subarray(4,8).toString()==='ftyp':data.subarray(0,4).toString('hex')==='762f3101');
-    const {spawnSync}=await import('node:child_process');const probe=spawnSync('ffprobe',['-v','error','-show_entries','stream=width,height','-of','json',file],{encoding:'utf8'});if(probe.status!==0)throw Error(probe.stderr);const stream=JSON.parse(probe.stdout).streams[0];eq(format+' decoded size',[stream.width,stream.height],[512,384]);
+    const probe=spawnSync('ffprobe',['-v','error','-show_entries','stream=width,height','-of','json',file],{encoding:'utf8'});if(probe.status!==0)throw Error(probe.stderr);const stream=JSON.parse(probe.stdout).streams[0];eq(format+' decoded size',[stream.width,stream.height],[128,96]);
+    if(format==='exr'){
+      const raw=ff(['-i',file,'-f','rawvideo','-pix_fmt','gbrapf32le','-']);let max=0,n=src.width*src.height;eq('EXR buffer length',raw.length,n*16);
+      for(let i=0;i<n;i++){const a=src.data[i*4+3]/255;for(const [plane,channel] of [[0,1],[1,2],[2,0],[3,3]])max=Math.max(max,Math.abs(raw.readFloatLE((plane*n+i)*4)-(channel===3?a:lin(src.data[i*4+channel])*a)));}
+      await writeFile(join(evidence,'exr-float-oracle.json'),JSON.stringify({max}));yes('EXR all linear color and alpha channels match',max<.000001);
+    }else{
+      const decoded=join(evidence,'avif-decoded.png');const p=spawnSync('heif-convert',[file,decoded],{encoding:'utf8'});if(p.status!==0)throw Error(p.stderr);
+      const im=PNG.sync.read(await readFile(decoded));let maxAlpha=0,maxColor=0;for(let i=3;i<im.data.length;i+=4)maxAlpha=Math.max(maxAlpha,Math.abs(im.data[i]-src.data[i]));
+      for(const y of [24,72])for(const x of [16,48,80,112])for(let k=0;k<3;k++)maxColor=Math.max(maxColor,Math.abs(rgba(im,x,y)[k]-rgba(src,x,y)[k]));
+      await writeFile(join(evidence,'avif-oracle.json'),JSON.stringify({maxAlpha,maxColor}));eq('AVIF exact alpha',maxAlpha,0);yes('AVIF lossless center color tolerance',maxColor<=2);
+    }
     await button(d,'閉じる').click();
+  }
+  for(const format of ['avif','exr','heic']){
+    const old=await canvas.getAttribute('data-document-id'),file=join(fixture,'colors.'+format);
+    await page.locator('#openFile').setInputFiles(file);
+    let outcome='';
+    for(let i=0;i<4;i++){
+      const edit=button(page,'編集用に開く'),profile=button(page,'プロファイルに従って色を変換');
+      const result=await Promise.race([page.waitForFunction(old=>{const c=document.querySelector('#canvas');return c?.dataset.documentId!==old&&c?.dataset.view!=='null'&&!document.querySelector('#brush')?.disabled;},old,{timeout:60000}).then(()=> 'opened'),edit.waitFor({state:'visible',timeout:60000}).then(()=> 'edit'),profile.waitFor({state:'visible',timeout:60000}).then(()=> 'profile'),page.locator('#status').filter({hasText:/交換用ファイルを開けません/}).waitFor({timeout:60000}).then(()=> 'unsupported')]);
+      if(result==='edit'){await edit.click();continue;}if(result==='profile'){await profile.click();continue;}outcome=result;break;
+    }
+    if(format==='heic'&&outcome==='unsupported'){yes('HEIF explicit unsupported notice',/HEIF画像を開けません/.test(await page.locator('#status').textContent()));eq('unsupported HEIF preserves original work',await canvas.getAttribute('data-document-id'),old);continue;}
+    eq(format+' real fixture opened',outcome,'opened');await idle();const im=await png(1,'artwork','imported-'+format);eq(format+' import size',[im.width,im.height],[128,96]);
+    if(format==='exr'){
+      const raw=ff(['-i',file,'-f','rawvideo','-pix_fmt','gbrapf32le','-']);let n=128*96,max=0;
+      for(let i=0;i<n;i++){let a=Math.max(0,Math.min(1,raw.readFloatLE((3*n+i)*4)));max=Math.max(max,Math.abs(im.data[i*4+3]-Math.round(a*255)));for(const [plane,c] of [[0,1],[1,2],[2,0]])if(a)max=Math.max(max,Math.abs(im.data[i*4+c]-srgb(Math.max(0,Math.min(1,raw.readFloatLE((plane*n+i)*4)/a)))));}
+      await writeFile(join(evidence,'exr-import-oracle.json'),JSON.stringify({max}));yes('EXR import matches independently decoded SDR RGBA',max<=1);
+    }else{
+      let max=0;for(const y of [24,72])for(const x of [16,48,80,112]){if(format==='heic'&&x===112&&y===72)continue;for(let k=0;k<4;k++)max=Math.max(max,Math.abs(rgba(im,x,y)[k]-rgba(src,x,y)[k]));}
+      await writeFile(join(evidence,format+'-import-oracle.json'),JSON.stringify({max}));yes(format+' independently checked fixture colors',max<=25);
+    }
   }
  },
  'COL-008':async()=>{
