@@ -3668,6 +3668,13 @@ function selectCanvasTool(id:string,start?:()=>void){
 }
 byId<HTMLButtonElement>('selection').onclick=()=>selectCanvasTool('selection',()=>c06Selection?.open());
 byId('smudge').onclick=()=>selectCanvasTool('smudge',()=>wetTools?.open());
+function openRepairTool(kind:'clone'|'heal'|'patch'){
+  selectCanvasTool('smudge',()=>wetTools?.openRepair(kind));
+}
+byId('smudge').addEventListener('illustro:repair',event=>{
+  const kind=(event as CustomEvent<string>).detail;
+  if(kind==='clone'||kind==='heal'||kind==='patch')openRepairTool(kind);
+});
 byId('smartFill').onclick=()=>selectCanvasTool('smartFill',()=>fillPanel?.open());
 for(const id of ['transform','move'])byId(id).onclick=()=>selectCanvasTool(id,
  ()=>transformPanel?.open(Boolean(c06Selection?.active()),id==='move'));
@@ -4991,6 +4998,15 @@ wetTools=installWetTools(byId('documentBoxBody'),{
     return changed;
   },
 });
+c04Commands.registerProvider(()=>[
+  {id:'repair:heal',label:'修復ブラシ',aliases:'修復 修正 ヒーリング Healing retouch'},
+  {id:'repair:patch',label:'範囲パッチ',aliases:'パッチ Patch 範囲修復'},
+  {id:'repair:clone',label:'クローン',aliases:'クローン スタンプ Clone clone stamp'},
+].map(command=>({
+  ...command,category:'補正・修復',
+  availability:()=>documentReady?null:'先に作品を開いてください。',
+  execute:()=>openRepairTool(command.id.slice(7) as 'clone'|'heal'|'patch'),
+})));
 installWetPad(byId('referenceBoxBody'),{
   settings:()=>wetTools?.settings(),sample:color=>foreground.choose(rgb(color[0]!/255,color[1]!/255,color[2]!/255)),
   brushes:()=>surface?.brushes.map(preset=>brushDrafts.get(preset.id)??(surface?.preset?.id===preset.id?surface.preset:preset))??[],

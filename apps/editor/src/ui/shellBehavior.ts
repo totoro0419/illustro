@@ -11,7 +11,7 @@ const actionLabels:Readonly<Record<string,readonly [string,string][]>>={
   'fill-color-region':[['スマート塗り','smartFill'],['スポイト','eyedropper'],['色を選ぶ','colorPage']],
   'vector-text-shape':[['図形・グラデーション','shapes']],
   'guides-rulers':[['定規・ガイド','rulers']],
-  'adjust-filter-retouch':[['補正・効果','workspaceEffects']],
+  'adjust-filter-retouch':[['補正・効果','workspaceEffects'],['修復ブラシ','repair:heal'],['範囲パッチ','repair:patch'],['クローン','repair:clone']],
   'selection-transform':[['選択範囲','selection'],['変形','transform'],['レイヤーを移動','move']],
   'layers-compositing':[['レイヤー画面','layer'],['レイヤー追加','addLayerPage']],
   'canvas-view':[['画面を移動する','panView'],['全体表示','fitView'],['回転を戻す','resetRotation']],
@@ -329,9 +329,15 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
       items.replaceChildren();
       for(const [label,action] of actionLabels[id]||[]){
         const btn=document.createElement('button');btn.type='button';btn.textContent=label;
-        const control=byId<HTMLButtonElement>(action);
+        const repair=action.startsWith('repair:');
+        const control=byId<HTMLButtonElement>(repair?'smudge':action);
         btn.disabled=action==='automationBox'?!byId('automationBoxBody'):!control||control.disabled;
-        btn.onclick=event=>{showFeature(false,event.detail===0);if(action==='automationBox')openBox(action,byId('allFeatures'),event.detail===0);else control?.click();};items.append(btn);
+        btn.onclick=event=>{
+          showFeature(false,event.detail===0);
+          if(action==='automationBox')openBox(action,byId('allFeatures'),event.detail===0);
+          else if(repair)control?.dispatchEvent(new CustomEvent('illustro:repair',{detail:action.slice(7)}));
+          else control?.click();
+        };items.append(btn);
       }
       categories.hidden=true;actions.hidden=false;positionFeature();
       if(event.detail===0){

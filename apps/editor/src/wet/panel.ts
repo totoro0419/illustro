@@ -193,7 +193,11 @@ export function installWetTools(host:HTMLElement,api:{
   };
   panel.append(summary,options,target,advanced,actions,status);
   host.append(panel);describe();
-  return {open:()=>{panel.open=true;arm();},stop:leave,settings,refresh:describe,
+  return {open:()=>{panel.open=true;arm();},openRepair:(kind:'clone'|'heal'|'patch')=>{
+      leave();mode.value=kind;offset=null;panel.open=true;
+      try{localStorage.setItem(key,snapshot());}catch{/* settings remain usable */}
+      describe();arm();
+    },stop:leave,settings,refresh:describe,
     focusReference:()=>{panel.open=true;reference.focus();},
     context:()=>({tool:wetModes.find(([name])=>name===selected())?.[1]??'混色・修復',
       reference:reference.value==='merged'?'全レイヤー':anchor&&needsSource(selected())?anchor.layerName:'描画先のレイヤー',
