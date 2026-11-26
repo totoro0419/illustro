@@ -191,6 +191,16 @@ async function layerPage(){
  if(!await page.locator('#layerPage').isVisible())await page.locator('#layer').click();
  await page.locator('#layerPageList').waitFor({state:'visible'});
 }
+async function layerActions(){
+ await layerPage();const menu=page.locator('#layerActionsMenu');
+ if(!await menu.evaluate(e=>e.matches(':popover-open')))await page.locator('#layerSettingsTrigger').click();
+ await menu.waitFor({state:'visible'});assert.equal(await menu.evaluate(e=>e.matches(':popover-open')),true);
+ return menu;
+}
+async function openDocumentSettings(){
+ await page.locator('#workspacePanel').click();
+ const body=await openBox('documentBox');await body.waitFor({state:'visible'});return body;
+}
 async function selectLayer(id){
  await layerPage();await page.locator('#layerPageList [data-layer-id="'+id+'"]').click();
  await page.locator('#closeLayerPage').click();
@@ -205,9 +215,9 @@ const cases={
   await fresh();const a=await shapeRect(60,55,120,95),b=await shapeRect(200,145,260,185),c=await shapeRect(340,235,400,275);
   const before=await png(1,'artwork','unaligned');const bands=[[65,85],[155,175],[245,265]];
   const oldBounds=bands.map(q=>xBounds(before,...q));yes('three distinct x positions',new Set(oldBounds.map(x=>x[0])).size===3);
-  await layerPage();await page.locator('#layerBatchToggle').click();
+  await layerActions();await page.locator('#layerBatchToggle').click();
   for(const id of [a,b,c])await page.locator('#layerPageList [data-layer-id="'+id+'"]').click();
-  await page.locator('#closeLayerPage').click();const root=await openBox('documentBox');
+  await page.locator('#closeLayerPage').click();const root=await openDocumentSettings();
   const p=root.locator('details').filter({has:root.getByText('レイヤーの整列・均等配置',{exact:true})}).last();
   if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
   await button(p,'複数選択したレイヤーを確認').click();
@@ -224,7 +234,7 @@ const cases={
   const before=await png(1,'artwork','original');
   const points=[[100,100],[200,180],[300,280],[40,40]];
   for(const [mode,expected] of [['union',[true,true,true,false]],['intersection',[false,true,false,false]],['difference',[true,false,false,false]],['xor',[true,false,true,false]]]){
-   await selectLayer(a);const root=await openBox('documentBox');
+   await selectLayer(a);const root=await openDocumentSettings();
    const p=root.getByText('ベクター線・点の編集',{exact:true}).locator('xpath=..');
    if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
    await button(p,'選んだベクターを編集').click();
@@ -250,8 +260,9 @@ const cases={
    checks.push({name:'UI command search '+term,actual:matches,expected:'manual triage: search results'});
    await d.screenshot({path:join(evidence,'search-'+['ブラシ','修復','パッチ','クローン'].indexOf(term)+'.png')});
   }
-  await page.keyboard.press('Escape');
-  if(!await page.locator('#allFeaturesPanel').isVisible())await page.locator('#allFeatures').click();
+  await button(d,'閉じる').click();await d.waitFor({state:'hidden'});
+  if(await page.locator('#allFeaturesPanel').isVisible())await page.locator('#featuresClose').click();
+  await page.locator('#allFeatures').click();await page.locator('#featuresCategories').waitFor({state:'visible'});
   await page.locator('[data-category="adjust-filter-retouch"]').click();
   const entries=await page.locator('#featuresItems').innerText();
   checks.push({name:'actual retouch category contents',actual:entries,expected:'manual triage: available repair tools'});
@@ -277,7 +288,8 @@ const cases={
   const before=await png(1,'artwork','before');
   await addReference();const frame=page.locator('.c05-reference-frame').first();
   yes('reference frame present',await frame.isVisible());
-  const root=page.locator('.c05-reference-editor');if(!await root.isVisible())await openBox('assetsBox');
+  await findCommand('参考資料ボード','参考資料ボード');
+  const root=page.locator('.c05-reference-editor');await root.waitFor({state:'visible'});
   const row=root.locator('.c05-reference-row').first();
   await row.getByRole('button',{name:/出典・メモを(追加|編集)/}).click();
   const d=page.getByRole('dialog',{name:'資料の出典と利用メモ'});
@@ -456,7 +468,7 @@ const cases={
  },
  'LAY-005':async()=>{
   await fresh();await drawLine([[70,160],[300,160]],18);const before=await png(1,'artwork','unmasked');
-  await selectRect([100,100],[190,210]);await layerPage();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await page.locator('#vectorMaskShape').selectOption('rectangle',{force:true});
+  await selectRect([100,100],[190,210]);await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await page.locator('#vectorMaskShape').selectOption('rectangle',{force:true});
   let old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);
   if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();const masked=await png(1,'artwork','masked');yes('visible center',alpha(masked,[140,160])>200);eq('hidden exterior',alpha(masked,[240,160]),0);
   old=await revision();await layerPage();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);
@@ -550,6 +562,7 @@ const cases={
   const sampleBefore=await page.locator('#status').textContent();
   await page.locator('#fileActionsOpen').click();await page.locator('#exportImage').click();await page.locator('#exchangeExport').click();
   const d=page.getByRole('dialog',{name:'他の形式で書き出す'});await d.getByText('印刷時の大きさ',{exact:true}).click();
+  const bleed=d.getByLabel('片側の塗り足し（mm）',{exact:true});await bleed.fill('0');await bleed.press('Tab');eq('bleed excluded from pixel comparison',await bleed.inputValue(),'0');
   await d.getByLabel('出力先のICCプロファイル（確認用）',{exact:true}).setInputFiles(join(fixture,'narrow.icc'));
   const gamut=d.getByLabel('出力先の範囲外の色をピンクで強調する',{exact:true});
   const black=d.getByLabel('出力先に合わせて黒を補正する',{exact:true});
@@ -569,7 +582,18 @@ const cases={
   yes('actual pink warning pixels present',pinkCount(warned)>0);
   await choose(display,'original');const original=await capture('original-preview');eq('original view has no warning pixels',pinkCount(original),0);
   yes('proof differs from original',!warned.data.equals(original.data));
-  await choose(display,'proof');const warningAgain=await capture('warning-again');yes('display toggle restores proof',warningAgain.data.equals(warned.data));
+  await choose(display,'proof');const warningAgain=await capture('warning-again');{
+   let count=0,max=0;
+   for(let i=0;i<warned.data.length;i+=4){
+    const a=warned.data[i+3],z=warningAgain.data[i+3];let error=Math.abs(a-z);
+    for(let k=0;k<3;k++)error=Math.max(error,Math.abs(Math.round(warned.data[i+k]*a/255)-Math.round(warningAgain.data[i+k]*z/255)));
+    if(error>0){count++;max=Math.max(max,error);}
+   }
+   await writeFile(join(evidence,'proof-toggle-difference.json'),JSON.stringify({differentPixels:count,maxPremultipliedDelta:max,bleed:0}));
+   eq('display toggle restores proof (premultiplied pixels, no bleed)',count,0);
+  }
+  await choose(display,'original');const originalAgain=await capture('original-again');yes('original toggle stable',originalAgain.data.equals(original.data));
+  await choose(display,'proof');
   await gamut.uncheck();const noWarning=await proof('no-warning');eq('warning disabled removes pink pixels',pinkCount(noWarning),0);
   await black.uncheck();await choose(intent,'0');const perceptual=await proof('perceptual-no-black-point');
   eq('intent is selected','0',await intent.inputValue());eq('black point disabled',await black.isChecked(),false);
