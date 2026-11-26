@@ -10,15 +10,15 @@
     "improvement": "",
     "pending": "actual storage quota exhaustion vs simulated IndexedDB transaction abort / two-tab concurrent save / external file changes/copy recovery / ERROR / Coverage not complete: actual storage quota exhaustion vs simulated IndexedDB transaction abort; two-tab concurrent save; external file changes/copy recovery",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45849424354",
-    "evidence": "03-chat-evidence/runs/45849424354/SAV-006/",
-    "stamp": "2026-11-26T15:32:39.198Z",
+    "sha": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45850922336",
+    "evidence": "03-chat-evidence/runs/45850922336/SAV-006/",
+    "stamp": "2026-11-26T15:40:11.758Z",
     "result": {
       "id": "SAV-006",
       "group": "A",
       "status": "ERROR",
-      "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+      "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
       "checks": [
         {
           "path": "apps/editor/src/persistence/workLibrary.test.ts",
@@ -1390,17 +1390,17 @@
     "actual": "three distinct x positions: true",
     "problem": "",
     "improvement": "",
-    "pending": "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending / ERROR / locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').locator('details').filter({ has: locator('#documentBoxBody').getByText('レイヤーの整列・均等配置', { exact: true }) }).last()\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:222:15)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:616:2",
+    "pending": "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending / ERROR / locator.click: Error: strict mode violation: locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true }) resolved to 2 elements:\n    1) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-0\">図形</div> aka locator('#workspace-choices-64-0')\n    2) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-1\">図形</div> aka locator('#workspace-choices-64-1')\n\nCall log:\n  - waiting for locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:58)\n    at async TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:226:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:630:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45849424354",
-    "evidence": "03-chat-evidence/runs/45849424354/TRN-005/",
-    "stamp": "2026-11-26T15:32:39.198Z",
+    "sha": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45850922336",
+    "evidence": "03-chat-evidence/runs/45850922336/TRN-005/",
+    "stamp": "2026-11-26T15:40:11.758Z",
     "result": {
       "id": "TRN-005",
       "group": "C",
       "status": "ERROR",
-      "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+      "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
       "checks": [
         {
           "path": "apps/editor/src/transform/groupTransform.test.ts",
@@ -1448,7 +1448,7 @@
               "expected": true
             }
           ],
-          "reason": "locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').locator('details').filter({ has: locator('#documentBoxBody').getByText('レイヤーの整列・均等配置', { exact: true }) }).last()\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:222:15)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:616:2"
+          "reason": "locator.click: Error: strict mode violation: locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true }) resolved to 2 elements:\n    1) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-0\">図形</div> aka locator('#workspace-choices-64-0')\n    2) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-1\">図形</div> aka locator('#workspace-choices-64-1')\n\nCall log:\n  - waiting for locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:58)\n    at async TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:226:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:630:2"
         }
       ],
       "pending": [
@@ -1466,7 +1466,7 @@
           "expected": true
         }
       ],
-      "reason": "locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#documentBoxBody').locator('details').filter({ has: locator('#documentBoxBody').getByText('レイヤーの整列・均等配置', { exact: true }) }).last()\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:222:15)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:616:2"
+      "reason": "locator.click: Error: strict mode violation: locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true }) resolved to 2 elements:\n    1) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-0\">図形</div> aka locator('#workspace-choices-64-0')\n    2) <div role=\"option\" aria-selected=\"false\" aria-disabled=\"false\" id=\"workspace-choices-64-1\">図形</div> aka locator('#workspace-choices-64-1')\n\nCall log:\n  - waiting for locator('#workspace-choices-64').getByRole('option', { name: '図形', exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:58)\n    at async TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:226:3)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:630:2"
     }
   },
   {
@@ -1818,22 +1818,22 @@
     "id": "LAY-005",
     "name": "ピクセル・ベクターマスク",
     "verdict": "未判定",
-    "operation": "visible center / hidden exterior",
-    "expected": "visible center: true / hidden exterior: 0",
-    "actual": "visible center: true / hidden exterior: 0",
+    "operation": "visible center / hidden exterior / disable restores artwork",
+    "expected": "visible center: true / hidden exterior: 0 / disable restores artwork: true",
+    "actual": "visible center: true / hidden exterior: 0 / disable restores artwork: true",
     "problem": "",
     "improvement": "",
-    "pending": "ellipse/path point editing, inversion/link/density/native preservation / ERROR / locator.uncheck: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#vectorMaskEnabled')\n    - locator resolved to <input type=\"checkbox\" id=\"vectorMaskEnabled\"/>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:474:83)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:616:2",
+    "pending": "ellipse/path point editing, inversion/link/density/native preservation / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45849424354",
-    "evidence": "03-chat-evidence/runs/45849424354/LAY-005/",
-    "stamp": "2026-11-26T15:32:39.198Z",
+    "sha": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45850922336",
+    "evidence": "03-chat-evidence/runs/45850922336/LAY-005/",
+    "stamp": "2026-11-26T15:40:11.758Z",
     "result": {
       "id": "LAY-005",
       "group": "D",
       "status": "ERROR",
-      "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+      "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
       "checks": [
         {
           "path": "apps/editor/src/selection/maskCodec.test.ts",
@@ -1858,7 +1858,7 @@
         },
         {
           "id": "LAY-005",
-          "status": "ERROR",
+          "status": "PASS",
           "checks": [
             {
               "name": "visible center",
@@ -1869,9 +1869,14 @@
               "name": "hidden exterior",
               "actual": 0,
               "expected": 0
+            },
+            {
+              "name": "disable restores artwork",
+              "actual": true,
+              "expected": true
             }
           ],
-          "reason": "locator.uncheck: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#vectorMaskEnabled')\n    - locator resolved to <input type=\"checkbox\" id=\"vectorMaskEnabled\"/>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:474:83)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:616:2"
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
       "pending": [
@@ -1881,7 +1886,7 @@
     },
     "browser": {
       "id": "LAY-005",
-      "status": "ERROR",
+      "status": "PASS",
       "checks": [
         {
           "name": "visible center",
@@ -1892,9 +1897,14 @@
           "name": "hidden exterior",
           "actual": 0,
           "expected": 0
+        },
+        {
+          "name": "disable restores artwork",
+          "actual": true,
+          "expected": true
         }
       ],
-      "reason": "locator.uncheck: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#vectorMaskEnabled')\n    - locator resolved to <input type=\"checkbox\" id=\"vectorMaskEnabled\"/>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:474:83)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:616:2"
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
     }
   },
   {
@@ -2139,147 +2149,307 @@
     "id": "FX-007",
     "name": "修復・パッチ・クローン",
     "verdict": "未判定",
-    "operation": "UI command search ブラシ / UI command search 修復 / UI command search パッチ / UI command search クローン / actual retouch category contents / source image imported",
-    "expected": "UI command search ブラシ: \"manual triage: search results\" / UI command search 修復: \"manual triage: search results\" / UI command search パッチ: \"manual triage: search results\" / UI command search クローン: \"manual triage: search results\" / actual retouch category contents: \"manual triage: available repair tools\" / source image imported: true",
-    "actual": "UI command search ブラシ: [\"ブラシで描く描画\",\"ブラシの設定描画\",\"ブラシの一覧設定\",\"修復ブラシ補正・修復\",\"Gペンブラシ\",\"丸ペンブラシ\",\"ミリペン / 製図ペンブラシ\",\"マーカーブラシ\",\"鉛筆ブラシ\",\"硬い消しゴムブラシ\",\"柔らかい消しゴムブラシ\",\"細線ペンブラシ\",\"柔らかい鉛筆ブラシ\",\"濃い塗りマーカーブラシ\",\"エアブラシブラシ\"] / UI command search 修復: [\"修復ブラシ補正・修復\",\"範囲パッチ補正・修復\",\"クローン補正・修復\"] / UI command search パッチ: [\"範囲パッチ補正・修復\"] / UI command search クローン: [\"クローン補正・修復\"] / actual retouch category contents: \"補正・効果\\n修復ブラシ\\n範囲パッチ\\nクローン\" / source image imported: true",
-    "problem": "計測不一致（アプリ側か検査側か要確認）: UI command search ブラシ / UI command search 修復 / UI command search パッチ / UI command search クローン / actual retouch category contents",
+    "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels / entry selects heal / healing decreases independent defect error / heal exterior unchanged / heal undo restores all pixels / entry selects patch / cancel leaves revision unchanged / cancel leaves original pixels / patch decreases independent defect error / patch exterior unchanged / patch undo restores all pixels / entry selects clone / entry selects heal / entry selects patch",
+    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"868cf898-cd0b-4edf-945d-b40f35b88319\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\"",
+    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"868cf898-cd0b-4edf-945d-b40f35b88319\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\"",
+    "problem": "",
     "improvement": "",
-    "pending": "UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45849424354",
-    "evidence": "03-chat-evidence/runs/45849424354/FX-007/",
-    "stamp": "2026-11-26T15:32:39.198Z",
+    "sha": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45850922336",
+    "evidence": "03-chat-evidence/runs/45850922336/FX-007/",
+    "stamp": "2026-11-26T15:40:11.758Z",
     "result": {
       "id": "FX-007",
       "group": "D",
       "status": "ERROR",
-      "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+      "commit": "7fcd5176bad3108dedfe886e83adae6ac1a3c3e3",
       "checks": [
+        {
+          "path": "apps/editor/src/wet/paint.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "wet and repair brushes blurs a translucent edge in premultiplied color",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "wet and repair brushes clones from an immutable snapshot and honors the selection",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "wet and repair brushes produces deterministic paper and pigment texture for a saved stroke",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "copies a shaped patch with the original feathered coverage and no rectangular fringe",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "uses independent water and pigment settings to soften and mix a watercolor stroke",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "copies straight RGBA exactly at full clone coverage, including transparency",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
         {
           "id": "FX-007",
           "status": "PASS",
           "checks": [
             {
-              "name": "UI command search ブラシ",
+              "name": "repair fixture dimensions",
               "actual": [
-                "ブラシで描く描画",
-                "ブラシの設定描画",
-                "ブラシの一覧設定",
-                "修復ブラシ補正・修復",
-                "Gペンブラシ",
-                "丸ペンブラシ",
-                "ミリペン / 製図ペンブラシ",
-                "マーカーブラシ",
-                "鉛筆ブラシ",
-                "硬い消しゴムブラシ",
-                "柔らかい消しゴムブラシ",
-                "細線ペンブラシ",
-                "柔らかい鉛筆ブラシ",
-                "濃い塗りマーカーブラシ",
-                "エアブラシブラシ"
+                128,
+                96
               ],
-              "expected": "manual triage: search results"
+              "expected": [
+                128,
+                96
+              ]
             },
             {
-              "name": "UI command search 修復",
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "clone donor center",
               "actual": [
-                "修復ブラシ補正・修復",
-                "範囲パッチ補正・修復",
-                "クローン補正・修復"
+                40,
+                100,
+                180,
+                255
               ],
-              "expected": "manual triage: search results"
+              "expected": [
+                40,
+                100,
+                180,
+                255
+              ]
             },
             {
-              "name": "UI command search パッチ",
-              "actual": [
-                "範囲パッチ補正・修復"
-              ],
-              "expected": "manual triage: search results"
+              "name": "clone exterior unchanged",
+              "actual": 0,
+              "expected": 0
             },
             {
-              "name": "UI command search クローン",
-              "actual": [
-                "クローン補正・修復"
-              ],
-              "expected": "manual triage: search results"
-            },
-            {
-              "name": "actual retouch category contents",
-              "actual": "補正・効果\n修復ブラシ\n範囲パッチ\nクローン",
-              "expected": "manual triage: available repair tools"
-            },
-            {
-              "name": "source image imported",
+              "name": "clone undo restores all pixels",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "clone redo restores result",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "clone-second undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects heal",
+              "actual": "heal",
+              "expected": "heal"
+            },
+            {
+              "name": "healing decreases independent defect error",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "heal exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "heal undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects patch",
+              "actual": "patch",
+              "expected": "patch"
+            },
+            {
+              "name": "cancel leaves revision unchanged",
+              "actual": "868cf898-cd0b-4edf-945d-b40f35b88319",
+              "expected": "868cf898-cd0b-4edf-945d-b40f35b88319"
+            },
+            {
+              "name": "cancel leaves original pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "patch decreases independent defect error",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "patch exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "patch undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "entry selects heal",
+              "actual": "heal",
+              "expected": "heal"
+            },
+            {
+              "name": "entry selects patch",
+              "actual": "patch",
+              "expected": "patch"
             }
           ],
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
       "pending": [
-        "UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending"
+        "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
       ],
-      "reason": "Coverage not complete: UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending"
+      "reason": "Coverage not complete: Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
     },
     "browser": {
       "id": "FX-007",
       "status": "PASS",
       "checks": [
         {
-          "name": "UI command search ブラシ",
+          "name": "repair fixture dimensions",
           "actual": [
-            "ブラシで描く描画",
-            "ブラシの設定描画",
-            "ブラシの一覧設定",
-            "修復ブラシ補正・修復",
-            "Gペンブラシ",
-            "丸ペンブラシ",
-            "ミリペン / 製図ペンブラシ",
-            "マーカーブラシ",
-            "鉛筆ブラシ",
-            "硬い消しゴムブラシ",
-            "柔らかい消しゴムブラシ",
-            "細線ペンブラシ",
-            "柔らかい鉛筆ブラシ",
-            "濃い塗りマーカーブラシ",
-            "エアブラシブラシ"
+            128,
+            96
           ],
-          "expected": "manual triage: search results"
+          "expected": [
+            128,
+            96
+          ]
         },
         {
-          "name": "UI command search 修復",
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "clone donor center",
           "actual": [
-            "修復ブラシ補正・修復",
-            "範囲パッチ補正・修復",
-            "クローン補正・修復"
+            40,
+            100,
+            180,
+            255
           ],
-          "expected": "manual triage: search results"
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
         },
         {
-          "name": "UI command search パッチ",
-          "actual": [
-            "範囲パッチ補正・修復"
-          ],
-          "expected": "manual triage: search results"
+          "name": "clone exterior unchanged",
+          "actual": 0,
+          "expected": 0
         },
         {
-          "name": "UI command search クローン",
-          "actual": [
-            "クローン補正・修復"
-          ],
-          "expected": "manual triage: search results"
-        },
-        {
-          "name": "actual retouch category contents",
-          "actual": "補正・効果\n修復ブラシ\n範囲パッチ\nクローン",
-          "expected": "manual triage: available repair tools"
-        },
-        {
-          "name": "source image imported",
+          "name": "clone undo restores all pixels",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "clone redo restores result",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "clone-second undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "healing decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "heal exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "heal undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
+        },
+        {
+          "name": "cancel leaves revision unchanged",
+          "actual": "868cf898-cd0b-4edf-945d-b40f35b88319",
+          "expected": "868cf898-cd0b-4edf-945d-b40f35b88319"
+        },
+        {
+          "name": "cancel leaves original pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "patch undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
         }
       ],
       "reason": "Implemented subchecks passed, see manifest for coverage gaps"
