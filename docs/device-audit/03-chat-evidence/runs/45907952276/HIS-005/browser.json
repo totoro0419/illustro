@@ -1,0 +1,72 @@
+{
+  "id": "HIS-005",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "old stroke retained",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "local restoration changed pixel",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "remote stroke retained",
+      "actual": [
+        31,
+        38,
+        51,
+        255
+      ],
+      "expected": [
+        31,
+        38,
+        51,
+        255
+      ]
+    },
+    {
+      "name": "history restoration undo all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "comparison leaves revision unchanged",
+      "actual": "b5d457dc-894a-41a0-96ff-0234aea9c2d2",
+      "expected": "b5d457dc-894a-41a0-96ff-0234aea9c2d2"
+    },
+    {
+      "name": "historical copy contains selected old stroke",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "historical region excludes newer stroke",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "outside selection excluded",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "partial-copy undo restores artwork",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "different target cancellation keeps revision",
+      "actual": "8db4d106-2533-4b60-9f24-fa51e77aec90",
+      "expected": "8db4d106-2533-4b60-9f24-fa51e77aec90"
+    },
+    {
+      "name": "history brush not activated on mismatched target after cancel",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

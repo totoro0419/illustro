@@ -1,0 +1,112 @@
+{
+  "id": "LAY-005",
+  "status": "FAIL",
+  "checks": [
+    {
+      "name": "visible center",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "hidden exterior",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "disable restores artwork",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "inverted center hidden",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "inverted exterior visible",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "half density restores half the hidden opaque pixel",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "mask saved and reopened exactly",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "unlink setting persists",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "inversion persists",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "density persists",
+      "actual": "50",
+      "expected": "50"
+    },
+    {
+      "name": "removing mask preserves raster",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "ellipse center retained",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "ellipse far outside hidden",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "black mask hides pixel",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "black mask preserves remote pixel",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "white mask restores center",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "pixel mask removal preserves entire artwork",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "path mask interior visible",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "path mask exterior hidden",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "point editing changes path mask coverage",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "moved point extends visibility to the left",
+      "actual": false,
+      "expected": true
+    }
+  ],
+  "reason": "Error: moved point extends visibility to the left\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at LAY-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:767:141)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:984:2"
+}
