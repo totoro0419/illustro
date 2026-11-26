@@ -85,12 +85,13 @@
       "apps/editor/src/ui/round2Audit.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "physical layout/handedness; unsupported binding preserved"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
-    "spec": "docs/product-planning/features/GST.md#gst-005"
+    "spec": "docs/product-planning/features/GST.md#gst-005",
+    "manual": [
+      "Physical keyboard layout/OS-specific input must be confirmed on real device; CDP only simulates distinct key and code."
+    ]
   },
   {
     "id": "IO-006",
@@ -310,12 +311,13 @@
       "apps/editor/src/export/rasterIcc.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "saturated color warning pixel comparison, display toggle, artwork export not changed"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
-    "spec": "docs/product-planning/features/COL.md#col-008"
+    "spec": "docs/product-planning/features/COL.md#col-008",
+    "manual": [
+      "Actual display calibration and physical print appearance are not assessed in headless Chrome."
+    ]
   },
   {
     "id": "LAY-005",

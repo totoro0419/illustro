@@ -225,7 +225,7 @@ const cases={
   const points=[[100,100],[200,180],[300,280],[40,40]];
   for(const [mode,expected] of [['union',[true,true,true,false]],['intersection',[false,true,false,false]],['difference',[true,false,false,false]],['xor',[true,false,true,false]]]){
    await selectLayer(a);const root=await openBox('documentBox');
-   const p=root.locator('details').filter({has:root.getByText('ベクター線・点の編集',{exact:true})}).last();
+   const p=root.getByText('ベクター線・点の編集',{exact:true}).locator('xpath=..');
    if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
    await button(p,'選んだベクターを編集').click();
    await choose(p.locator('select:has(option[value="'+b+'"])'),b);
@@ -243,14 +243,19 @@ const cases={
   const before=await png(1,'artwork','repair-input');
   await page.locator('#allFeatures').click();await page.locator('#commandSearchOpen').click();
   const d=page.locator('#commandSearchDialog'),search=d.locator('input[type=search]');
-  for(const term of ['修復','パッチ','クローン']){
+  for(const term of ['ブラシ','修復','パッチ','クローン']){
    await search.fill(term);
    await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
    const matches=await d.locator('.c04-command-run').allTextContents();
-   checks.push({name:'UI command search '+term,actual:matches,expected:'manual triage: repair entry and real operation'});
-   await d.screenshot({path:join(evidence,'search-'+['修復','パッチ','クローン'].indexOf(term)+'.png')});
+   checks.push({name:'UI command search '+term,actual:matches,expected:'manual triage: search results'});
+   await d.screenshot({path:join(evidence,'search-'+['ブラシ','修復','パッチ','クローン'].indexOf(term)+'.png')});
   }
   await page.keyboard.press('Escape');
+  if(!await page.locator('#allFeaturesPanel').isVisible())await page.locator('#allFeatures').click();
+  await page.locator('[data-category="adjust-filter-retouch"]').click();
+  const entries=await page.locator('#featuresItems').innerText();
+  checks.push({name:'actual retouch category contents',actual:entries,expected:'manual triage: available repair tools'});
+  await page.locator('#allFeaturesPanel').screenshot({path:join(evidence,'retouch-category.png')});
   yes('source image imported',before.width>0&&before.height>0);
  },
 
@@ -369,7 +374,7 @@ const cases={
     }})});
   });
   await page.locator('#ihWorkExportSelected').click();const d=page.getByRole('dialog',{name:'選んだ作品を一括で書き出す'});
-  await d.locator('select:has(option[value="png"])').selectOption('png');
+  await choose(d.locator('select:has(option[value="png"])'),'png');
   await button(d,'保存先フォルダーを選ぶ').click();
   await d.getByRole('button',{name:/保存先 QA isolated simulated folder/}).waitFor();
   await button(d,'画像をまとめて作成').click();
@@ -470,15 +475,39 @@ const cases={
  },
  'GST-005':async()=>{
   await fresh();await findCommand('作業欄の設定','作業欄の設定');
-  let p=page.locator('.c04-shortcut-settings');await p.locator('summary').click();
-  await choose(p.locator('select:has(option[value="panView"])'),'panView');await choose(p.locator('select:has(option[value="hold"])'),'hold');
+  let p=page.locator('.c04-shortcut-settings');if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
+  await choose(p.locator('select:has(option[value="panView"])'),'panView');
+  await choose(p.locator('select:has(option[value="hold"])'),'hold');
   await button(p,'キーを押して登録').click();await page.keyboard.press('j');await p.locator('.c04-shortcut-row').filter({hasText:'押している間だけ'}).waitFor();
-  const dl=page.waitForEvent('download');await button(p,'キー設定を書き出す').click();const file=join(evidence,'keys.json');await (await dl).saveAs(file);
-  await resetPage();await fresh();await findCommand('作業欄の設定','作業欄の設定');p=page.locator('.c04-shortcut-settings');await p.locator('summary').click();
-  await p.locator('input[type=file]').setInputFiles(file);const d=page.locator('dialog.illustro-app-dialog[open]');await d.waitFor();await button(d,'確定').click();await p.locator('.c04-shortcut-row').filter({hasText:'押している間だけ'}).waitFor();
+  let dl=page.waitForEvent('download');await button(p,'キー設定を書き出す').click();const file=join(evidence,'keys.json');await (await dl).saveAs(file);
+  const original=JSON.parse(await readFile(file,'utf8'));
+  eq('real exported logical binding',original.bindings.find(b=>b.key==='j')?.physical,false);
+  const unknown={commandId:'qa.unavailable-command',key:'u',code:'KeyU',ctrl:false,shift:false,alt:false,meta:false,physical:false,mode:'press'};
+  const physical={...unknown,commandId:'panView',key:'q',code:'KeyH',physical:true,mode:'hold'};
+  const mixed={...original,bindings:[...original.bindings,unknown,physical]};
+  const input=join(evidence,'mixed-keys.json');await writeFile(input,JSON.stringify(mixed,null,2));
+  await resetPage();await fresh();await findCommand('作業欄の設定','作業欄の設定');p=page.locator('.c04-shortcut-settings');if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
+  await p.locator('input[type=file]').setInputFiles(input);const d=page.locator('dialog.illustro-app-dialog[open]');await d.waitFor();
+  yes('unsupported warning shown',/未対応の機能 1件/.test(await d.textContent()));
+  await button(d,'確定').click();await p.locator('.c04-shortcut-row').filter({hasText:'qa.unavailable-command（今は未対応）'}).waitFor();
   const docId=await canvas.getAttribute('data-document-id');await saveIdle();await page.reload({waitUntil:'domcontentloaded'});await openArtwork(docId);
-  await page.locator('#paint').click();await page.keyboard.down('j');eq('imported key after restart',await page.locator('#panView').getAttribute('aria-pressed'),'true');await page.keyboard.up('j');
+  await page.locator('#paint').click();
+  await page.keyboard.down('j');eq('imported logical key after restart',await page.locator('#panView').getAttribute('aria-pressed'),'true');await page.keyboard.up('j');
   eq('release restores drawing tool',await page.locator('#paint').getAttribute('aria-pressed'),'true');
+  const session=await context.newCDPSession(page);
+  async function keyPair(key,code,expected,label){
+   await session.send('Input.dispatchKeyEvent',{type:'keyDown',key,code});
+   eq(label,await page.locator('#panView').getAttribute('aria-pressed'),expected);
+   await session.send('Input.dispatchKeyEvent',{type:'keyUp',key,code});
+   eq(label+' release',await page.locator('#paint').getAttribute('aria-pressed'),'true');
+  }
+  await keyPair('j','KeyZ','true','logical key follows character, not code');
+  await keyPair('z','KeyH','true','physical binding follows code, not character');
+  await keyPair('q','KeyQ','false','physical binding ignores character alone');
+  const old=await revision();await page.keyboard.press('u');eq('unknown command does not edit',await revision(),old);eq('unknown command does not change active tool',await page.locator('#paint').getAttribute('aria-pressed'),'true');
+  await findCommand('作業欄の設定','作業欄の設定');p=page.locator('.c04-shortcut-settings');if(!await p.evaluate(e=>e.open))await p.locator('summary').click();
+  dl=page.waitForEvent('download');await button(p,'キー設定を書き出す').click();const output=join(evidence,'keys-after-restart.json');await (await dl).saveAs(output);
+  const restored=JSON.parse(await readFile(output,'utf8'));eq('all supported and unsupported bindings preserved',restored.bindings,mixed.bindings);
  },
  'AUT-002':async()=>{
   await fresh();await pen(8);const root=await recordMacro();const first=await canvas.getAttribute('data-selected-layer-id');
@@ -512,15 +541,49 @@ const cases={
   }
  },
  'COL-008':async()=>{
-  await fresh();await drawLine([[70,100],[180,100]]);const old=await revision();
+  await fresh();await importRaster(join(fixture,'colors.png'));
+  const before=await png(1,'artwork','original-before'),old=await revision();
+  eq('known colored fixture size',[before.width,before.height],[128,96]);
+  const red=rgba(before,16,72);yes('fixture has saturated red',red[0]>240&&red[1]<15&&red[2]<15);
+  await page.locator('#eyedropper').click();await page.mouse.click(...await coords(16,72));
+  await page.locator('#status').filter({hasText:/キャンバスから .* を取得しました/}).waitFor();
+  const sampleBefore=await page.locator('#status').textContent();
   await page.locator('#fileActionsOpen').click();await page.locator('#exportImage').click();await page.locator('#exchangeExport').click();
   const d=page.getByRole('dialog',{name:'他の形式で書き出す'});await d.getByText('印刷時の大きさ',{exact:true}).click();
   await d.getByLabel('出力先のICCプロファイル（確認用）',{exact:true}).setInputFiles(join(fixture,'narrow.icc'));
-  await d.getByLabel('出力先の範囲外の色をピンクで強調する',{exact:true}).check();
-  await button(d,'出力先の色を確認').click();await d.getByText(/作品と出力ファイルの色は変更されません/).waitFor({timeout:90000});
-  const p=d.getByLabel('透明部分と仕上がり線を表示する出力前の作品全体',{exact:true});await p.waitFor({state:'visible'});await p.screenshot({path:join(evidence,'proof.png')});
-  eq('proof is non-destructive',await revision(),old);
+  const gamut=d.getByLabel('出力先の範囲外の色をピンクで強調する',{exact:true});
+  const black=d.getByLabel('出力先に合わせて黒を補正する',{exact:true});
+  const intent=d.locator('select:has(option[value="3"]):has(option[value="2"])').first();
+  const display=d.locator('select:has(option[value="original"]):has(option[value="proof"])');
+  const p=d.getByLabel('透明部分と仕上がり線を表示する出力前の作品全体',{exact:true});
+  async function capture(name){
+   await p.waitFor({state:'visible'});const img=await p.evaluate(c=>({width:c.width,height:c.height,data:[...c.getContext('2d').getImageData(0,0,c.width,c.height).data]}));
+   await writeFile(join(evidence,name+'.png'),PNG.sync.write({width:img.width,height:img.height,data:Buffer.from(img.data)}));
+   return {width:img.width,height:img.height,data:Buffer.from(img.data)};
+  }
+  const pinkCount=img=>{let n=0;for(let i=0;i<img.data.length;i+=4)if(img.data[i]===255&&img.data[i+1]===45&&img.data[i+2]===140&&img.data[i+3]>0)n++;return n;};
+  async function proof(name){
+   await button(d,'出力先の色を確認').click();await d.getByText(/作品と出力ファイルの色は変更されません/).waitFor({timeout:90000});return capture(name);
+  }
+  await gamut.check();const warned=await proof('gamut-warning');
+  yes('actual pink warning pixels present',pinkCount(warned)>0);
+  await choose(display,'original');const original=await capture('original-preview');eq('original view has no warning pixels',pinkCount(original),0);
+  yes('proof differs from original',!warned.data.equals(original.data));
+  await choose(display,'proof');const warningAgain=await capture('warning-again');yes('display toggle restores proof',warningAgain.data.equals(warned.data));
+  await gamut.uncheck();const noWarning=await proof('no-warning');eq('warning disabled removes pink pixels',pinkCount(noWarning),0);
+  await black.uncheck();await choose(intent,'0');const perceptual=await proof('perceptual-no-black-point');
+  eq('intent is selected','0',await intent.inputValue());eq('black point disabled',await black.isChecked(),false);
+  yes('alternate proof has valid dimensions',perceptual.width===noWarning.width&&perceptual.height===noWarning.height);
+  await black.check();await choose(intent,'2');await proof('saturation-with-black-point');
+  await choose(intent,'3');await proof('absolute');
+  await button(d,'閉じる').click();
+  eq('proof does not alter revision',await revision(),old);
+  const after=await png(1,'artwork','original-after');yes('normal PNG identical pixel for pixel',before.data.equals(after.data));
+  await page.locator('#eyedropper').click();await page.mouse.click(...await coords(16,72));
+  await page.locator('#status').filter({hasText:/キャンバスから .* を取得しました/}).waitFor();
+  eq('eyedropper unchanged after proof',await page.locator('#status').textContent(),sampleBefore);
  },
+
 };
 let result={id,status:'ERROR',checks,reason:'not started'};
 try{

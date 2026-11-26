@@ -28,7 +28,7 @@ for(const [i,id] of ids.entries()){
  const missing=result?.pending??spec.pending;
  const cause=result?.status??'NOT_RUN';
  const mismatch=checks.filter(c=>JSON.stringify(c.actual)!==JSON.stringify(c.expected));
- rows.push({id,name:names[i],verdict,operation:checks.map(c=>c.name).join(' / '),expected:checks.map(c=>c.name+': '+JSON.stringify(c.expected)).join(' / '),actual:checks.map(c=>c.name+': '+JSON.stringify(c.actual)).join(' / '),problem:mismatch.length?'計測不一致（アプリ側か検査側か要確認）: '+mismatch.map(c=>c.name).join(' / '):'',improvement:'',pending:[...missing,...(cause==='PASS'?[]:[cause,browser?.reason??result?.reason??'実行結果なし'])].join(' / '),environment:'GitHub Actions Ubuntu / headless Chrome / localhost',sha,url,evidence:'03-chat-evidence/runs/'+(process.env.GITHUB_RUN_ID??'local')+'/'+id+'/',stamp,result,browser});
+ rows.push({id,name:names[i],verdict,operation:checks.map(c=>c.name).join(' / '),expected:checks.map(c=>c.name+': '+JSON.stringify(c.expected)).join(' / '),actual:checks.map(c=>c.name+': '+JSON.stringify(c.actual)).join(' / '),problem:mismatch.length?'計測不一致（アプリ側か検査側か要確認）: '+mismatch.map(c=>c.name).join(' / '):'',improvement:'',pending:[...missing,...(spec.manual??[]),...(cause==='PASS'?[]:[cause,browser?.reason??result?.reason??'実行結果なし'])].join(' / '),environment:'GitHub Actions Ubuntu / headless Chrome / localhost',sha,url,evidence:'03-chat-evidence/runs/'+(process.env.GITHUB_RUN_ID??'local')+'/'+id+'/',stamp,result,browser});
 }
 const header=['機能ID','機能名','判定','実施した操作','期待結果','実際の結果','発見した問題','改善案','未確認条件','検査環境','対象コミット','Actions実行URL','証拠の参照先','検査日時'];
 const data=rows.map(r=>[r.id,r.name,r.verdict,r.operation,r.expected,r.actual,r.problem,r.improvement,r.pending,r.environment,r.sha,r.url,r.evidence,r.stamp]);
