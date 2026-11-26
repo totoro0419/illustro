@@ -18,3 +18,9 @@ Inspect Round 4 workflow jobs/logs, fix any failures, extend missing acceptance 
 - Prior stopped queue retired; new concurrency group executed without allowing the obsolete pending run to publish. Selection verification optimized by direct persisted pixel read and one native export rather than repeated whole-work saves.
 - gh-pages commit `2aaebb2a0e33dd791535e48b0a592adfc4bc41ce`: independently checked all 52 changed files reside only in r2-audit-fixes-round4/. release.json in branch matches tested source. Actual served release check and postpublish browser results pending at this checkpoint.
 - Remaining acceptance coverage: pointer/numeric parity and edge cases; custom-brush actual stroke pixel equivalence and broader brush configuration/work-switch checks; complete line boundary/paint pixel and reload comparison, large-canvas performance and physical inputs. Do not claim all acceptance criteria passed.
+
+## Publication and postpublish results
+- Run 45811929102: publication succeeded; the actual served release.json and index.html matched source `60bb340807fc9682dcf77b83b663ffb421ae7888`. All three postpublish browser jobs completed successfully (SEL-001, BRU-011, LIN-006).
+- Public preview: https://totoro0419.github.io/illustro/r2-audit-fixes-round4/
+- Draft PR: https://github.com/totoro0419/illustro/pull/118 (not merged).
+- Implemented browser scenarios and regressions are green; additional acceptance coverage identified above is not verified. No physical device test claimed.
