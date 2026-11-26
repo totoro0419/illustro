@@ -5,3 +5,5 @@ Run: npm ci; npm run brush:build; build editor at base /; serve apps/editor/dist
 Known limitations: Browser selectors and full execution unverified at creation. Runtime will record errors and continue. Codec availability may vary; generator records missing encoder/decoding errors and never substitutes fake images. CI must be inspected before claiming preparation finished. 
 
 追加検査: INP-006 カーソル座標/倍率、NDE-002 暗部除外/Undo、AUT-004 2作品PNGと人工的なフォルダー書込失敗・再試行、SAV-006 既存の保存失敗保護スモークを再利用。追加検査も実行確認前は完成としない。
+
+初回試験 45771965962: 26 IDs / 21 fixtures / artifact 15094467993. Two assertion mismatches: SAV-007 read before artwork transition completed (corrected to wait for ready document), BRU-011 restored G-pen instead of technical pen (suspected defect, retain native and compare saved artwork independently). Four locator failures corrected without application changes: FIL-005, LAY-005, HIS-005, AUT-002. No application defect accepted solely from a timing/locator failure.

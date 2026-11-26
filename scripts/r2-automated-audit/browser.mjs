@@ -122,7 +122,7 @@ function alpha(im,xy){return rgba(im,...xy)[3];}
 async function selectLasso(points){const p=await panel('selection');const b=button(p,'投げ縄');if(await b.getAttribute('aria-pressed')!=='true')await b.click();await stroke(points);await p.getByText('選択範囲を更新しました。',{exact:true}).waitFor();const boundary=p.getByRole('checkbox',{name:'選択の境界を表示する（隠しても選択は有効）',exact:true});if(await boundary.isChecked())await boundary.uncheck();return p;}
 async function selectRect(a,b){const p=await panel('selection');const btn=button(p,'四角形');if(await btn.getAttribute('aria-pressed')!=='true')await btn.click();await stroke([a,b]);await p.getByText('選択範囲を更新しました。',{exact:true}).waitFor();return p;}
 async function resetPage(){await newContext();}
-async function openArtwork(id){await page.locator('#ihNavWorks').click();await page.locator('[data-work-id="'+id+'"] .ih-work-preview').click();await idle();}
+async function openArtwork(id){await page.locator('#ihNavWorks').click();await page.locator('[data-work-id="'+id+'"] .ih-work-preview').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:60000});await page.waitForFunction(expected=>{const c=document.querySelector('#canvas');return c?.dataset.documentId===expected&&c.dataset.view!=='null'&&!document.querySelector('#brush')?.disabled;},id,{timeout:60000});await idle();}
 async function saveIdle(){await page.waitForFunction(()=>document.querySelector('#saveState')?.dataset.autosavePending==='false'&&document.querySelector('#saveState')?.textContent?.includes('保存済み'),undefined,{timeout:60000});}
 async function viewMenu(){const b=page.locator('#viewActionsOpen');if(!await page.locator('#viewActions').evaluate(e=>e.matches(':popover-open')))await b.click();}
 async function full(){await viewMenu();await page.locator('#c04FullscreenToggle').click();}
@@ -130,7 +130,7 @@ async function recordMacro(){let root=await openMacros();await button(root,'操�
 const cases={
  'INP-006':async()=>{
   await fresh();await page.locator('#paint').click();await pen(20);
-  const c=page.locator('#brushCursorEnabled');
+  await findCommand('ブラシ','ブラシの一覧');const c=page.locator('#brushCursorEnabled');
   const summary=c.locator('xpath=ancestor::details[1]/summary');
   if(!await c.isVisible())await summary.click();
   await c.check();const cursor=page.locator('#brushCursor');
@@ -141,7 +141,7 @@ const cases={
    yes('cursor center within 2 CSS px',Math.hypot(r.x+r.width/2-sx,r.y+r.height/2-sy)<=2);
    return {width:r.width,height:r.height,zoom:JSON.parse(await canvas.getAttribute('data-view')).zoom};
   }
-  const before=await measure(240,180);await viewMenu();await page.locator('#zoomIn').click();
+  const before=await measure(240,180);await page.locator('#zoomIn').evaluate(e=>e.click());
   const after=await measure(250,190);
   yes('zoom actually increased',after.zoom>before.zoom);
   yes('cursor width tracks zoom within 2 CSS px',Math.abs(after.width-before.width*after.zoom/before.zoom)<=2);
@@ -155,8 +155,8 @@ const cases={
   const d=page.getByRole('dialog',{name:'レイヤーの合成モード'});
   await d.getByText('明るさで合成範囲を指定',{exact:true}).click();
   await d.getByLabel('明るさで範囲を絞る',{exact:true}).check();
-  await d.getByLabel('調べる絵',{exact:true}).selectOption('self');
-  await d.getByLabel('色の成分',{exact:true}).selectOption('luminosity');
+  await d.locator('select:has(option[value="self"])').selectOption('self');
+  await d.locator('select:has(option[value="luminosity"])').selectOption('luminosity');
   await d.getByLabel('暗部のなじみ',{exact:true}).fill('128');
   await d.getByLabel('暗部の境界',{exact:true}).fill('128');
   const rev=await revision();await button(d,'確定').click();await waitRev(rev);
@@ -185,7 +185,7 @@ const cases={
     }})});
   });
   await page.locator('#ihWorkExportSelected').click();const d=page.getByRole('dialog',{name:'選んだ作品を一括で書き出す'});
-  await d.getByLabel('形式',{exact:true}).selectOption('png');
+  await d.locator('select:has(option[value="png"])').selectOption('png');
   await button(d,'保存先フォルダーを選ぶ').click();
   await d.getByRole('button',{name:/保存先 QA isolated simulated folder/}).waitFor();
   await button(d,'画像をまとめて作成').click();
@@ -211,10 +211,11 @@ const cases={
  'BRU-011':async()=>{
   await fresh();await drawLine([[70,120],[180,120]],9);
   const before=await png(1,'artwork','before'),brush=await page.locator('#brush').inputValue(),size=await page.locator('#sizeNumber').inputValue();
-  const native=await saveCopy('brush');await openFile(native,512);
-  eq('brush identifier after native open',await page.locator('#brush').inputValue(),brush);
-  eq('brush size after native open',await page.locator('#sizeNumber').inputValue(),size);
+  const native=await saveCopy('brush');await writeFile(join(evidence,'native.illustro'),await readFile(native));await openFile(native,512);
+  const restoredBrush=await page.locator('#brush').inputValue(),restoredSize=await page.locator('#sizeNumber').inputValue();
   const after=await png(1,'artwork','after');yes('identical native round trip artwork',before.data.equals(after.data));
+  eq('brush identifier after native open',restoredBrush,brush);
+  eq('brush size after native open',restoredSize,size);
   await drawLine([[70,220],[180,220]],9);const more=await png(1,'artwork','new-stroke');
   for(const x of [100,130,160])eq('same pen coverage at '+x,rgba(more,x,220),rgba(before,x,120));
  },
@@ -241,7 +242,7 @@ const cases={
  },
  'FIL-005':async()=>{
   await fresh();const p=await panel('smartFill');
-  const method=p.getByLabel('塗る範囲',{exact:true});await method.selectOption('lasso',{force:true});
+  const method=p.locator('select:has(option[value="lasso"])');await method.selectOption('lasso',{force:true});await p.getByLabel('通常塗りも候補を確認してから適用',{exact:true}).check({force:true});
   const points=[[100,100],[240,100],[240,160],[160,160],[160,240],[100,240],[100,100]];
   await button(p,'キャンバスで塗る').click();await stroke(points);
   const apply=button(p,'候補を適用');await apply.waitFor({state:'visible'});let old=await revision();await apply.click();await waitRev(old);
@@ -266,7 +267,7 @@ const cases={
  },
  'LAY-005':async()=>{
   await fresh();await drawLine([[70,160],[300,160]],18);const before=await png(1,'artwork','unmasked');
-  await selectRect([100,100],[190,210]);await page.locator('#layerVectorMask summary').click();await page.locator('#vectorMaskShape').selectOption('rectangle',{force:true});
+  await selectRect([100,100],[190,210]);await findCommand('レイヤー','レイヤー画面');if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await page.locator('#vectorMaskShape').selectOption('rectangle',{force:true});
   let old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);
   const masked=await png(1,'artwork','masked');yes('visible center',alpha(masked,[140,160])>200);eq('hidden exterior',alpha(masked,[240,160]),0);
   old=await revision();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);
@@ -275,7 +276,7 @@ const cases={
  'HIS-005':async()=>{
   await fresh();await drawLine([[70,100],[180,100]]);const historical=await revision(),layer=await canvas.getAttribute('data-selected-layer-id');
   await drawLine([[70,200],[180,200]]);await drawLine([[270,200],[380,200]]);
-  const before=await png(1,'artwork','before');await findCommand('履歴','作品の履歴を開く');
+  const before=await png(1,'artwork','before');await findCommand('履歴','履歴');await page.locator('#openArtworkHistory').click();
   const d=page.getByRole('dialog').filter({hasText:'作品の履歴'});await d.getByLabel('比較する時点',{exact:false}).selectOption(historical,{force:true});
   await d.getByText('以前のレイヤーからコピー',{exact:true}).click();
   await d.getByLabel('復元元のレイヤー',{exact:false}).selectOption(layer,{force:true});await button(d,'履歴ブラシを使う').click();
@@ -298,8 +299,8 @@ const cases={
  'AUT-002':async()=>{
   await fresh();await pen(8);const root=await recordMacro();const first=await canvas.getAttribute('data-selected-layer-id');
   await page.locator('#addLayer').evaluate(e=>e.click());await page.waitForFunction(old=>document.querySelector('#canvas')?.dataset.selectedLayerId!==old,first);await idle();
-  const second=await canvas.getAttribute('data-selected-layer-id');await button(root,'実行').click();const d=page.getByRole('dialog',{name:'操作セットを確認'});
-  await d.getByLabel('対象レイヤー',{exact:true}).selectOption(first,{force:true});await d.getByLabel('縦のずれ（px）').fill('90');const old=await revision();
+  const second=await canvas.getAttribute('data-selected-layer-id');await button(root,'実行').click();const d=page.locator('dialog[aria-label="操作セットを確認"]');
+  await d.locator('select:has(option[value="'+first+'"])').selectOption(first,{force:true});await d.getByLabel('縦のずれ（px）').fill('90');const old=await revision();
   await button(d,'この内容で実行').click();await page.getByRole('button',{name:'適用',exact:true}).filter({visible:true}).click();await waitRev(old);
   eq('selection not silently switched',await canvas.getAttribute('data-selected-layer-id'),second);
   const active=await png(1,'active','active'),all=await png(1,'artwork','all');eq('non-target layer remains empty',opaque(active).length,0);yes('requested target offset rendered',alpha(all,[120,190])>0);

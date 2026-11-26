@@ -47,6 +47,7 @@ for(const spec of selected){
  const status=b?.status==='FAIL'?'FAIL':b?.status==='BLOCKED'?'BLOCKED':b?.status==='ENV_LIMIT'?'ENV_LIMIT':spec.pending.length||!checks.length||checks.some(x=>x.status!=='PASS')?'ERROR':'PASS';
  const result={id:spec.id,group:spec.group,status,commit:process.env.EXPECTED_COMMIT_SHA??'unknown',checks,pending:spec.pending,reason:spec.pending.length?'Coverage not complete: '+spec.pending.join('; '):undefined};
  results.push(result);await writeFile(join(dir,'result.json'),JSON.stringify(result,null,2));console.log(spec.id,status,spec.pending.join('; '));
+ if(b){console.log('BROWSER',spec.id,b.status,String(b.reason??'').slice(0,1300));for(const c of b.checks??[])if(JSON.stringify(c.actual)!==JSON.stringify(c.expected))console.log('MISMATCH',spec.id,JSON.stringify(c).slice(0,1500));}
 }
 const csv=s=>'"'+String(s??'').replaceAll('"','""')+'"';
 await writeFile(join(out,'results.json'),JSON.stringify(results,null,2));
