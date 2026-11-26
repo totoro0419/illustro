@@ -5,6 +5,9 @@ on:
     paths:
       - 'scripts/r2-automated-audit/**'
       - '.github/workflows/r2-automated-audit.yml'
+  pull_request:
+    types: [opened]
+    branches: [fix/r2-audit-round4-2026-11-26]
   workflow_dispatch:
     inputs:
       selection:
@@ -13,14 +16,18 @@ on:
         default: all
         type: string
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: r2-chat-audit-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
 jobs:
   audit:
+    if: github.event_name != 'pull_request' || github.head_ref == 'qa/r2-chat-audit-remaining17-2026-11-26'
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     env:
       R2_AUDIT_FIX_URL: http://127.0.0.1:4173/
-      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      EXPECTED_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       R2_CHROME_CHANNEL: chrome
       RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
       PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
@@ -29,6 +36,8 @@ jobs:
       AUDIT_SELECTION: ${{ inputs.selection || 'SAV-006,SAV-007,REF-006,GST-005,IO-006,FIL-005,LIN-007,TRN-005,VEC-004,LAY-005,COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004,AUT-005' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -37,8 +46,8 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm run brush:build
           npm --workspace @illustro/editor exec -- tsc --noEmit
-          VITE_COMMIT_SHA="$GITHUB_SHA" npm --workspace @illustro/editor exec -- vite build --base=/
-          printf '{"sourceCommit":"%s","isolatedStorage":true,"isolation":"localhost and fresh browser context"}\n' "$GITHUB_SHA" > apps/editor/dist/release.json
+          VITE_COMMIT_SHA="$EXPECTED_COMMIT_SHA" npm --workspace @illustro/editor exec -- vite build --base=/
+          printf '{"sourceCommit":"%s","isolatedStorage":true,"isolation":"localhost and fresh browser context"}\n' "$EXPECTED_COMMIT_SHA" > apps/editor/dist/release.json
       - name: Generate fixtures with real codecs
         id: fixtures
         continue-on-error: true
@@ -54,7 +63,7 @@ jobs:
           mkdir -p r2-audit-evidence
           python3 -m http.server 4173 --bind 127.0.0.1 --directory apps/editor/dist >r2-audit-evidence/server.log 2>&1 &
           for attempt in $(seq 1 30); do
-            if curl -fsS "${R2_AUDIT_FIX_URL}release.json" | grep -q "$GITHUB_SHA"; then exit 0; fi
+            if curl -fsS "${R2_AUDIT_FIX_URL}release.json" | grep -q "$EXPECTED_COMMIT_SHA"; then exit 0; fi
             sleep 1
           done
           exit 1
@@ -75,6 +84,17 @@ jobs:
             r2-D-016-failure.png
           if-no-files-found: warn
           retention-days: 90
+      - name: Preserve actual results on audit branch
+        if: ${{ always() }}
+        run: |
+          node scripts/r2-automated-audit/save-chat-report.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/device-audit/03-CHAT-REMAINING17.csv docs/device-audit/03-CHAT-REMAINING17-SUMMARY.md docs/device-audit/03-chat-evidence/
+          if ! git diff --cached --quiet; then
+            git commit -m "Record actual R2 chat audit evidence for $EXPECTED_COMMIT_SHA"
+            git push origin HEAD:refs/heads/qa/r2-chat-audit-remaining17-2026-11-26
+          fi
       - name: Fail if fixtures could not be verified
         if: ${{ always() && steps.fixtures.outcome != 'success' }}
         run: exit 1

@@ -127,7 +127,115 @@ async function saveIdle(){await page.waitForFunction(()=>document.querySelector(
 async function viewMenu(){const b=page.locator('#viewActionsOpen');if(!await page.locator('#viewActions').evaluate(e=>e.matches(':popover-open')))await b.click();}
 async function full(){await viewMenu();await page.locator('#c04FullscreenToggle').click();}
 async function recordMacro(){let root=await openMacros();await button(root,'操作の記録を開始').click();await stroke([[90,100],[150,100]]);await idle();await button(root,'操作の記録を停止').evaluate(e=>e.click());await root.getByText('記録したブラシの線',{exact:false}).waitFor();await root.getByLabel('操作セットの名前',{exact:true}).fill('QA stroke');await button(root,'保存').click();return root;}
+async function choose(select,value){
+  if(await select.inputValue()===value)return;
+  const label=await select.locator('option[value="'+value+'"]').textContent();
+  if(await select.isVisible()){await select.selectOption(value);return;}
+  const trigger=select.locator('xpath=following-sibling::button[contains(@class,"workspace-choice")][1]');
+  await trigger.click();const list=page.locator('#'+await trigger.getAttribute('aria-controls'));
+  await list.getByRole('option',{name:label,exact:true}).click();
+  assert.equal(await select.inputValue(),value);
+}
+async function openBox(box){
+  const body=page.locator('#'+box+'Body'),toggle=page.locator('[aria-controls="'+box+'Body"].box-toggle');
+  if(!await body.isVisible()){
+    if(!await toggle.isVisible())await page.locator('#workspacePanel').click();
+    if(!await toggle.isVisible()){
+      await page.locator('#allFeatures').click();await page.locator('#workspaceToggle').click();
+    }
+    await toggle.waitFor({state:'visible'});await toggle.click();
+  }
+  await body.waitFor({state:'visible'});return body;
+}
+
+async function advancedFill(){
+ const p=await panel('smartFill'),advanced=p.getByText('線画の解析・細かい調整',{exact:true});
+ if(await advanced.isVisible()&&!await button(p,'線画を解析・更新').isVisible())await advanced.click();
+ return p;
+}
+async function importRaster(path){
+ const old=await canvas.getAttribute('data-document-id');
+ await page.locator('#openFile').setInputFiles(path);
+ const opened=page.waitForFunction(old=>{const c=document.querySelector('#canvas');return !!c?.dataset.documentId&&c.dataset.documentId!==old;},old,{timeout:60000});
+ const warning=button(page,'編集用に開く');
+ const choice=await Promise.race([opened.then(()=>false),warning.waitFor({state:'visible',timeout:60000}).then(()=>true)]);
+ if(choice){await warning.click();await opened;}
+ await idle();
+}
+async function fillState(p,pattern,label){
+ const output=p.locator('output').filter({hasText:pattern}).first();
+ await output.waitFor({state:'visible',timeout:45000});
+ const value=await output.textContent();yes(label,pattern.test(value??''));
+}
+async function addReference(){
+ const root=await openBox('assetsBox');
+ await choose(root.locator('select[aria-label="素材の種類"]'),'brush');
+ await choose(root.locator('select[aria-label="取り込む素材の種類"]'),'reference');
+ await root.locator('input[type=file]').first().setInputFiles(join(fixture,'colors.png'));
+ await button(root,'追加した素材を見る').click();
+ const entry=root.locator('.c05-asset-entry').filter({hasText:'colors.png'}).first();
+ await button(entry,'参考資料として開く').click();
+ await page.locator('.c05-reference-frame').first().waitFor();
+}
 const cases={
+ 'LIN-007':async()=>{
+  await fresh();let p=await advancedFill();
+  await fillState(p,/未解析/,'blank unanalysed');
+  await button(p,'線画を解析・更新').click();await fillState(p,/無効/,'blank invalid');
+  await drawLine([[70,100],[180,100]],8);
+  yes('normal drawing after invalid graph',alpha(await png(1,'artwork','normal-after-invalid'),[120,100])>0);
+  await importRaster(join(fixture,'line-art.png'));p=await advancedFill();
+  const gap=p.getByLabel('埋める隙間（px）',{exact:true});await gap.fill('8');await gap.press('Tab');
+  await button(p,'線画を解析・更新').click();await fillState(p,/確定待ち/,'fixture awaiting confirmation');
+  await button(p,'線画領域を確定・保存').click();await fillState(p,/確定済み/,'confirmed graph');
+  await idle();const native=await saveCopy('line-graph');await writeFile(join(evidence,'line-graph.illustro'),await readFile(native));
+  await page.screenshot({path:join(evidence,'confirmed.png')});
+ },
+ 'REF-006':async()=>{
+  await fresh();await drawLine([[70,100],[180,100]],8);
+  const before=await png(1,'artwork','before');
+  await addReference();const frame=page.locator('.c05-reference-frame').first();
+  yes('reference frame present',await frame.isVisible());
+  const root=page.locator('.c05-reference-editor');if(!await root.isVisible())await openBox('assetsBox');
+  const row=root.locator('.c05-reference-row').first();
+  await button(row,'出典・メモを追加').click();
+  const d=page.getByRole('dialog',{name:'資料の出典と利用メモ'});
+  await d.locator('textarea').fill('QA source: https://example.com/fixture ; author: QA ; usage: testing');
+  await button(d,'メモを保存').click();
+  const mode=root.getByLabel('作品ファイルに参考画像を含めるか',{exact:true});
+  await mode.selectOption('embedded',{force:true});const embedded=await saveCopy('reference-embedded');
+  await mode.selectOption('linked',{force:true});const linked=await saveCopy('reference-linked');
+  const after=await png(1,'artwork','with-reference');yes('reference excluded from all exported pixels',before.data.equals(after.data));
+  await openFile(embedded,512);await page.locator('.c05-reference-frame img').first().waitFor();
+  yes('embedded image loaded in clean context',await page.locator('.c05-reference-frame img').first().evaluate(e=>e.complete&&e.naturalWidth>0));
+  const reopened=await png(1,'artwork','embedded-open');yes('embedded reference did not alter artwork',reopened.data.equals(before.data));
+  await openFile(linked,512);await page.getByText('参照画像が見つかりません。素材庫から元データを復元してください。',{exact:true}).waitFor();
+  yes('linked reference missing notice in clean context',true);
+ },
+ 'AUT-003':async()=>{
+  await fresh();await pen(8);const root=await recordMacro();
+  const initial=await png(1,'artwork','before');const old=await revision();
+  await button(root,'実行').click();let d=page.getByRole('dialog',{name:'操作セットを確認'});
+  await button(d,'取り消す').click();eq('cancel revision unchanged',await revision(),old);
+  const canceled=await png(1,'artwork','canceled');yes('cancel all pixels unchanged',initial.data.equals(canceled.data));
+  await button(root,'実行').click();await d.getByLabel('縦のずれ（px）').fill('90');
+  await button(d,'この内容で実行').click();
+  const apply=page.getByRole('button',{name:'適用',exact:true}).filter({visible:true});await apply.waitFor();
+  const candidate=await png(1,'artwork','candidate-original');yes('preview leaves artwork untouched',initial.data.equals(candidate.data));
+  await apply.click();await waitRev(old);
+  const applied=await png(1,'artwork','applied');yes('macro changes expected area',alpha(applied,[120,190])>0);
+  await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);
+  const undone=await png(1,'artwork','undo');yes('one undo restores all pixels',initial.data.equals(undone.data));
+ },
+ 'AUT-005':async()=>{
+  await fresh();await pen(8);const root=await recordMacro();
+  const dl=page.waitForEvent('download',{timeout:30000});await button(root,'操作セットを書き出す').click();
+  const file=join(evidence,'macro.json');await (await dl).saveAs(file);const raw=JSON.parse(await readFile(file,'utf8'));
+  yes('exported macro JSON contains name',JSON.stringify(raw).includes('QA stroke'));
+  await button(root,'素材に登録').click();await root.getByText('素材に登録しました。',{exact:true}).waitFor();
+  await findCommand('自動操作','操作セットを記録・再生');yes('search reopens macro panel',await page.locator('.c04-simple-macros').isVisible());
+ },
+
  'INP-006':async()=>{
   await fresh();await page.locator('#paint').click();await pen(20);
   await findCommand('ブラシ','ブラシの一覧');const c=page.locator('#brushCursorEnabled');
@@ -205,7 +313,7 @@ const cases={
   await d.getByText('1件を作成。',{exact:true}).waitFor({timeout:90000});
   eq('both output rows recovered',await d.locator('ol li').filter({hasText:'作成済み'}).count(),2);
   await button(d,'閉じる').click();
-  for(const work of [one,two])await page.locator('[data-work-id="'+work+'"]').waitFor({state:'visible'});
+  await openArtwork(one);const originalOne=await png(1,'artwork','original-one');yes('first original untouched',originalOne.data.equals(first.data));await page.locator('#home').click();await openArtwork(two);const originalTwo=await png(1,'artwork','original-two');yes('second original untouched',originalTwo.data.equals(second.data));
  },
 
  'BRU-011':async()=>{
@@ -228,7 +336,7 @@ const cases={
   await page.reload({waitUntil:'domcontentloaded',timeout:60000});await page.locator('#ihNavWorks').waitFor();
   await openArtwork(docId);eq('same work offline',await canvas.getAttribute('data-document-id'),docId);
   await drawLine([[70,200],[180,200]]);
-  const after=await png(1,'artwork','offline');yes('new offline stroke present',alpha(after,[120,200])>0);
+  await selectRect([90,190],[150,220]);await drawLine([[70,210],[180,210]],8);const after=await png(1,'artwork','offline');yes('new offline stroke present',alpha(after,[120,200])>0);yes('offline selection constrains stroke',alpha(after,[175,210])===0);
   await saveIdle();await page.reload({waitUntil:'domcontentloaded'});await openArtwork(docId);
   const restored=await png(1,'artwork','offline-restored');yes('offline save survived reload',after.data.equals(restored.data));
   await context.setOffline(false);
