@@ -381,9 +381,7 @@
       "apps/editor/src/partialHistoryRestore.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "snapshot/copy-region comparison, undo and invalid layer mapping"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/HIS.md#his-005"
