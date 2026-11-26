@@ -108,7 +108,7 @@ try{
     const mode=p.getByLabel('選択範囲を組み合わせる方法',{exact:true}),A=[180,120,80,70],B=[220,150,90,60];
     for(const m of ['replace','add','subtract','intersect','xor']){
       await choose(mode,'replace');await numeric(p,A);await choose(mode,m);await numeric(p,B);
-      assert.deepEqual(await mask('numeric-'+m),expectedMask(A,B,m),'numeric full pixel mask '+m);
+      assert.deepEqual(await mask('numeric-'+m),expectedMask(A,B,m),'numeric full pixel mask '+m);console.log('PASS numeric mask '+m);
     }
     await b('選択だけ元に戻す',p).click();assert.deepEqual(await mask('undo'),expectedMask(null,A,'replace'));
     await b('選択だけやり直す',p).click();assert.deepEqual(await mask('redo'),expectedMask(A,B,'xor'));
@@ -124,8 +124,13 @@ try{
     await draw(150,230,260,230);const restored=await brushState(await saveCopy('brush-restored'));assert.deepEqual(restored.preset,state.preset);
     console.log('PASS native brush section, duplicate, isolated context, subsequent stroke and resave');
   }else if(id==='LIN-006'){
+    await create('round4-import-base');const old=await doc();
     await page.locator('#openFile').setInputFiles(process.env.R2_ROUND4_FIXTURE_DIR+'/line-art.png');
-    await page.locator('#canvas').waitFor({state:'visible',timeout:60000});await idle();
+    const opened=page.waitForFunction(old=>{const id=document.querySelector('#canvas')?.dataset.documentId;return !!id&&id!==old;},old,{timeout:60000});
+    const warning=b('編集用に開く');
+    const choice=await Promise.race([opened.then(()=>false),warning.waitFor({state:'visible',timeout:60000}).then(()=>true)]);
+    if(choice){await warning.click();await opened;}
+    await idle();console.log('PASS original fixture opened');
     const p=await openPanel('smartFill');const advanced=p.getByText('線画の解析・細かい調整',{exact:true});if(await advanced.isVisible()&&!await b('線画を解析・更新',p).isVisible())await advanced.click();
     const g=p.getByLabel('埋める隙間（px）',{exact:true});await g.fill('8');await g.press('Tab');await b('線画を解析・更新',p).click();
     await page.waitForFunction(()=>[...document.querySelectorAll('[data-tool-panel="smartFill"] output')].some(e=>/閉領域|確定待ち/.test(e.textContent??'')),undefined,{timeout:60000});
@@ -141,5 +146,5 @@ try{
   const names=await page.evaluate(async()=> (await indexedDB.databases()).map(db=>db.name));
   assert.ok(names.length>0&&names.every(n=>n?.startsWith('illustro-r2-audit-fixes-round4')),JSON.stringify(names));
   console.log('PASS '+id+' '+expected);
-}catch(error){await page.screenshot({path:'r2-'+id+'-failure.png',fullPage:true}).catch(()=>{});console.error('FAIL',id,error);throw error;}
+}catch(error){await page.screenshot({path:'r2-'+id+'-failure.png',fullPage:true}).catch(()=>{});console.error('FAIL',id,await page.evaluate(()=>({status:document.querySelector('#status')?.textContent,outputs:[...document.querySelectorAll('[data-tool-panel="smartFill"] output,.c06-selection-panel output')].map(e=>e.textContent),dialogs:[...document.querySelectorAll('dialog[open]')].map(e=>e.textContent),canvas:document.querySelector('#canvas')?.dataset})).catch(()=>null),error);throw error;}
 finally{await browser.close();await rm(dir,{recursive:true,force:true});}
