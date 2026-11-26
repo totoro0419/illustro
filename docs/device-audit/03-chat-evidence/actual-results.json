@@ -166,13 +166,13 @@
   {
     "id": "REF-006",
     "name": "参考資料の保存・欠損・復元",
-    "verdict": "未判定",
+    "verdict": "使える",
     "operation": "reference frame present / reference excluded from all exported pixels / embedded image loaded in clean context / embedded reference geometry restored / source notes restored / embedded reference did not alter artwork / linked reference missing notice in clean context / reference image relinked / relink geometry retained / relink does not enter PNG",
     "expected": "reference frame present: true / reference excluded from all exported pixels: true / embedded image loaded in clean context: true / embedded reference geometry restored: [\"76px\",\"84px\",\"280px\",\"230px\"] / source notes restored: \"QA source: https://example.com/fixture ; author: QA ; usage: testing\" / embedded reference did not alter artwork: true / linked reference missing notice in clean context: true / reference image relinked: true / relink geometry retained: [\"76px\",\"84px\",\"280px\",\"230px\"] / relink does not enter PNG: true",
     "actual": "reference frame present: true / reference excluded from all exported pixels: true / embedded image loaded in clean context: true / embedded reference geometry restored: [\"76px\",\"84px\",\"280px\",\"230px\"] / source notes restored: \"QA source: https://example.com/fixture ; author: QA ; usage: testing\" / embedded reference did not alter artwork: true / linked reference missing notice in clean context: true / reference image relinked: true / relink geometry retained: [\"76px\",\"84px\",\"280px\",\"230px\"] / relink does not enter PNG: true",
     "problem": "",
     "improvement": "",
-    "pending": "Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed. / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
     "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
     "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
@@ -181,7 +181,7 @@
     "result": {
       "id": "REF-006",
       "group": "A",
-      "status": "ERROR",
+      "status": "PASS",
       "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
       "checks": [
         {
@@ -330,10 +330,8 @@
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
-      "pending": [
-        "Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed."
-      ],
-      "reason": "Coverage not complete: Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed."
+      "pending": [],
+      "reason": "Coverage reviewed against saved browser and unit results; original raw run retained."
     },
     "browser": {
       "id": "REF-006",
@@ -411,6 +409,11 @@
         }
       ],
       "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    "review": {
+      "reviewedEvidence": "03-chat-evidence/runs/45902400214/REF-006/",
+      "requiredConditions": "Embedded/linked, notes, geometry, missing notice, relink, PNG exclusion",
+      "manual": []
     }
   },
   {
@@ -2987,13 +2990,13 @@
   {
     "id": "AUT-004",
     "name": "複数作品の一括出力",
-    "verdict": "未判定",
+    "verdict": "使える",
     "operation": "different work ids / failure does not prevent the next file / two real downloadable outputs / output dimensions and every pixel match individual export 512 / output dimensions and every pixel match individual export 256 / both output rows recovered / two distinct saved folder files / folder output identical to original export 512 / folder output identical to original export 256 / exactly one approved overwrite / declined original file untouched / approved overwrite contains correct artwork / first original untouched / second original untouched",
     "expected": "different work ids: true / failure does not prevent the next file: 1 / two real downloadable outputs: 2 / output dimensions and every pixel match individual export 512: true / output dimensions and every pixel match individual export 256: true / both output rows recovered: 2 / two distinct saved folder files: 2 / folder output identical to original export 512: true / folder output identical to original export 256: true / exactly one approved overwrite: 1 / declined original file untouched: 1 / approved overwrite contains correct artwork: true / first original untouched: true / second original untouched: true",
     "actual": "different work ids: true / failure does not prevent the next file: 1 / two real downloadable outputs: 2 / output dimensions and every pixel match individual export 512: true / output dimensions and every pixel match individual export 256: true / both output rows recovered: 2 / two distinct saved folder files: 2 / folder output identical to original export 512: true / folder output identical to original export 256: true / exactly one approved overwrite: 1 / declined original file untouched: 1 / approved overwrite contains correct artwork: true / first original untouched: true / second original untouched: true",
     "problem": "",
     "improvement": "",
-    "pending": "validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle) / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "Real OS folder-picker permission and native file-system behavior require a device; browser used a controlled in-memory folder handle with actual exported PNG bytes.",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
     "sha": "b99967475bcb0fcc13cd77e23929779ae94b1a04",
     "url": "https://github.com/totoro0419/illustro/actions/runs/45902829598",
@@ -3002,7 +3005,7 @@
     "result": {
       "id": "AUT-004",
       "group": "E",
-      "status": "ERROR",
+      "status": "PASS",
       "commit": "b99967475bcb0fcc13cd77e23929779ae94b1a04",
       "checks": [
         {
@@ -3083,10 +3086,8 @@
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
-      "pending": [
-        "validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle)"
-      ],
-      "reason": "Coverage not complete: validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle)"
+      "pending": [],
+      "reason": "Coverage reviewed against saved browser and unit results; original raw run retained."
     },
     "browser": {
       "id": "AUT-004",
@@ -3164,6 +3165,13 @@
         }
       ],
       "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    "review": {
+      "reviewedEvidence": "03-chat-evidence/runs/45902829598/AUT-004/",
+      "requiredConditions": "Failure/retry, independent outputs, approved and declined overwrite, original preservation",
+      "manual": [
+        "Real OS folder-picker permission and native file-system behavior require a device; browser used a controlled in-memory folder handle with actual exported PNG bytes."
+      ]
     }
   },
   {

@@ -67,9 +67,7 @@
       "apps/editor/src/assets/referenceBoardStore.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed."
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/REF.md#ref-006"
@@ -435,12 +433,13 @@
     "browser": "AUT-004",
     "unit": [],
     "legacy": null,
-    "pending": [
-      "validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle)"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
-    "spec": "docs/product-planning/features/AUT.md#aut-004"
+    "spec": "docs/product-planning/features/AUT.md#aut-004",
+    "manual": [
+      "Real OS folder-picker permission and native file-system behavior require a device; browser used a controlled in-memory folder handle with actual exported PNG bytes."
+    ]
   },
   {
     "id": "AUT-005",
