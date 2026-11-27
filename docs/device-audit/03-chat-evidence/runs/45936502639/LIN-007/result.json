@@ -1,0 +1,275 @@
+{
+  "id": "LIN-007",
+  "group": "B",
+  "status": "ERROR",
+  "commit": "a11a4ce6284d9dce535f68c5880b5f816f8b7736",
+  "checks": [
+    {
+      "path": "apps/editor/src/fill/pixels.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C08 fill boundaries and destination gating keeps canonical region topology for a blank large canvas without flood analysis",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating recognizes bright white line art on an opaque dark background",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating recognizes opaque white strokes on a transparent background",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating uses the majority background when a stroke touches one image corner",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating applies a transparent-only color hint only to transparent destination pixels",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating never auto-connects neighboring parallel strokes without tips",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating connects only two collinear opposing thin-line tips",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating does not seal a long line-art gap when a separate stroke passes close to its interior",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating rejects 45-degree false repairs between perpendicular line tips",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating repairs a one-pixel horizontal gap without unnecessary diagonal scanning",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating preserves a genuine diagonal repair between aligned diagonal tips",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating does not auto-connect two gaps that cross an already proposed bridge",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating does not suggest two competing repairs crossing the same empty corridor",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating does not suggest a second gap through an already repaired bridge",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating never applies untracked bridges after the 4096-candidate review limit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating still connects two isolated opposite tips with no third line beside the gap",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating filters misleading gap suggestions that run alongside another stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating rejects perpendicular hairs even when both endpoints look like tips",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating does not suggest bridging a genuine crossing as if it were a line tip",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating preserves existing ink when a manual erase requests preserveInk without automatic gap repair",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating does not falsely connect an inner hole to the canvas outside",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating classifies three nested boundaries as alternating closed areas and enclosed holes",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating keeps disconnected enclosed regions distinct even if they share a background",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating adds a soft border only when the optional smooth-boundary mode is requested",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating checks transparent-only against the destination, not the opaque reference",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating matches an original target color independently of the output color",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating uses the original match color for color hints while painting a different output color",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C08 fill boundaries and destination gating allows alpha and RGB tolerances to be independently controlled",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "R2 D-007 gap repair and exterior leak protection honors an 18 source-pixel gap instead of silently clamping it to 12",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "R2 D-007 gap repair and exterior leak protection requires review for a center-seeded gap-assisted fill touching two outside edges",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "R2 D-007 a corner break must not flood the exterior closes a short right-angle gap without painting the canvas background",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "R2 D-008 drag only enclosed regions fills two disjoint closed regions without touching the intervening outside",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "R2 D-007 real-size thick rounded corner caps uses the full 18px gap for a thick corner and fills only the enclosed area",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "R2 D-007 real-size thick rounded corner caps measures the shortest clear gap on rounded cap edges rather than axial center tips",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "R2 D-007 real-size thick rounded corner caps leaves an over-limit opening and unrelated thick strokes open",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "D-008 keeps the exterior untouched even when closed-region tracing expands the edge",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "LIN-007",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "blank unanalysed",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "blank invalid",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "invalid graph cannot create a revision",
+          "actual": "f9e29c38-5b34-4c2a-9576-b1e7fa62b2d6",
+          "expected": "f9e29c38-5b34-4c2a-9576-b1e7fa62b2d6"
+        },
+        {
+          "name": "invalid graph cannot change pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "normal drawing after invalid graph",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "fixture awaiting confirmation",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "confirmed graph",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "saved line analysis present after reopening",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "reopened saved graph",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "problem area visible in issue list",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "excluded area returns to confirmation",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "exclusion save leaves original artwork pixels unchanged",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "exclusion saved without false original-line-change notice",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "actual source edit explicitly flagged",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending"
+  ],
+  "reason": "Coverage not complete: blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending"
+}

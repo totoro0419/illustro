@@ -1,0 +1,210 @@
+{
+  "id": "TRN-005",
+  "group": "C",
+  "status": "ERROR",
+  "commit": "a11a4ce6284d9dce535f68c5880b5f816f8b7736",
+  "checks": [
+    {
+      "path": "apps/editor/src/transform/groupTransform.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C07-003 group transformation geometry uses one common center and preserves relative positions for multiple layers",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects invalid bounds and duplicate layers before a grouped edit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects impossible scales and missing layer selection",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry rejects finite but unrepresentable transformed bounds before publishing a group edit",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry plans many grouped layers without spreading their bounds as function arguments",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C07-003 group transformation geometry composes repeated rotations, mirroring, nonuniform scales and shear from the same original",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "TRN-005",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "three distinct x positions",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "left confirmed reference layer",
+          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
+          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+        },
+        {
+          "name": "left independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "left one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "center-x confirmed reference layer",
+          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
+          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+        },
+        {
+          "name": "center-x independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "center-x one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "right confirmed reference layer",
+          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
+          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+        },
+        {
+          "name": "right independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "right one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "top confirmed reference layer",
+          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
+          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+        },
+        {
+          "name": "top independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "top one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "center-y confirmed reference layer",
+          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
+          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+        },
+        {
+          "name": "center-y independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "center-y one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "bottom confirmed reference layer",
+          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
+          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+        },
+        {
+          "name": "bottom independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "bottom one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "spread-x confirmed reference layer",
+          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
+          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+        },
+        {
+          "name": "spread-x independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "spread-x one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "spread-y confirmed reference layer",
+          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
+          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+        },
+        {
+          "name": "spread-y independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "spread-y one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "canvas center snap exact x",
+          "actual": 256,
+          "expected": 256
+        },
+        {
+          "name": "temporary bypass keeps unsnapped x",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "snap resumes automatically next drag",
+          "actual": 256,
+          "expected": 256
+        },
+        {
+          "name": "pixel snapping produces integer x",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "pixel snapping produces integer y",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "other selected layer right edge snap",
+          "actual": 124,
+          "expected": 124
+        }
+      ],
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.guide-settings summary')\n    - locator resolved to <summary>直線定規</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:342:152)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1086:2"
+    }
+  ],
+  "pending": [
+    "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+  ],
+  "reason": "Coverage not complete: left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+}
