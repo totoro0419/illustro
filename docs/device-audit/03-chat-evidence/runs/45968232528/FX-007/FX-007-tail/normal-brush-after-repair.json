@@ -1,0 +1,21 @@
+{
+  "baselineMs": [
+    563.0414519999977,
+    545.3851609999983,
+    521.9027060000008,
+    539.9516629999998,
+    529.1490579999991,
+    545.9558290000023
+  ],
+  "resumedMs": [
+    650.8169280000002,
+    530.2873690000015,
+    558.946770999999,
+    609.3570480000017,
+    576.9973500000015,
+    562.382329
+  ],
+  "baselineMedianMs": 542.6684119999991,
+  "resumedMedianMs": 569.6898395000007,
+  "scope": "pointer input to committed revision in same headless browser, not physical pen/display or cross-build benchmark"
+}

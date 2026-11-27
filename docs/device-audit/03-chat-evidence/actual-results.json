@@ -3670,21 +3670,21 @@
     "name": "修復・パッチ・クローン",
     "verdict": "使える",
     "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels / entry selects clone / clone-soft undo restores all pixels / entry selects clone / hard boundary uses donor RGB at outer sample / soft boundary blends donor and destination / clone-hard undo restores all pixels / entry selects clone / entry selects heal / healing decreases independent defect error / heal exterior unchanged / heal undo restores all pixels / entry selects patch / cancel leaves revision unchanged / cancel leaves original pixels / patch decreases independent defect error / patch exterior unchanged / patch undo restores all pixels / entry selects clone / entry selects heal / entry selects patch / entry selects clone / selection exterior unchanged / clone-selected undo restores all pixels / entry selects clone / separate repair layer created / next separate stroke creates its own layer / separate stroke retains original source instead of reading previous repair / original layer untouched / separate-clone undo restores all pixels / entry selects clone / explicit source copied onto requested layer / specified donor pixel / specified source layer remains intact / entry selects clone / aligned clone follows donor offset / unaligned clone restarts from donor / entry selects clone / mask protects actual stored exterior pixels / entry selects clone / deleted source absent from reference options / missing source does not commit / finger drawing fixture enabled via actual setting / touch scenario clone mode / emulated touch clone donor pixel / all ordinary brush strokes before and after repair are present",
-    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects clone: \"clone\" / clone-soft undo restores all pixels: true / entry selects clone: \"clone\" / hard boundary uses donor RGB at outer sample: [220,220,220,255] / soft boundary blends donor and destination: true / clone-hard undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"e1d42143-d0f0-4bc8-ae89-d8a3a42201dd\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / next separate stroke creates its own layer: true / separate stroke retains original source instead of reading previous repair: [220,220,220,255] / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"4963eebd-d008-4116-bef6-f48449d8ee95\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true / entry selects clone: \"clone\" / aligned clone follows donor offset: [220,220,220,255] / unaligned clone restarts from donor: [40,100,180,255] / entry selects clone: \"clone\" / mask protects actual stored exterior pixels: 0 / entry selects clone: \"clone\" / deleted source absent from reference options: 0 / missing source does not commit: \"4765fc4d-bcdd-48d1-b7b2-d8511c0bf15d\" / finger drawing fixture enabled via actual setting: true / touch scenario clone mode: \"clone\" / emulated touch clone donor pixel: [40,100,180,255] / all ordinary brush strokes before and after repair are present: true",
-    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects clone: \"clone\" / clone-soft undo restores all pixels: true / entry selects clone: \"clone\" / hard boundary uses donor RGB at outer sample: [220,220,220,255] / soft boundary blends donor and destination: true / clone-hard undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"e1d42143-d0f0-4bc8-ae89-d8a3a42201dd\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / next separate stroke creates its own layer: true / separate stroke retains original source instead of reading previous repair: [220,220,220,255] / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"4963eebd-d008-4116-bef6-f48449d8ee95\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true / entry selects clone: \"clone\" / aligned clone follows donor offset: [220,220,220,255] / unaligned clone restarts from donor: [40,100,180,255] / entry selects clone: \"clone\" / mask protects actual stored exterior pixels: 0 / entry selects clone: \"clone\" / deleted source absent from reference options: 0 / missing source does not commit: \"4765fc4d-bcdd-48d1-b7b2-d8511c0bf15d\" / finger drawing fixture enabled via actual setting: true / touch scenario clone mode: \"clone\" / emulated touch clone donor pixel: [40,100,180,255] / all ordinary brush strokes before and after repair are present: true",
+    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects clone: \"clone\" / clone-soft undo restores all pixels: true / entry selects clone: \"clone\" / hard boundary uses donor RGB at outer sample: [220,220,220,255] / soft boundary blends donor and destination: true / clone-hard undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / next separate stroke creates its own layer: true / separate stroke retains original source instead of reading previous repair: [220,220,220,255] / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"46ffcf47-46dc-474e-9c1e-9ebc990988cc\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true / entry selects clone: \"clone\" / aligned clone follows donor offset: [220,220,220,255] / unaligned clone restarts from donor: [40,100,180,255] / entry selects clone: \"clone\" / mask protects actual stored exterior pixels: 0 / entry selects clone: \"clone\" / deleted source absent from reference options: 0 / missing source does not commit: \"f47d77f3-fbc8-4ff3-90de-2be3c1e19e61\" / finger drawing fixture enabled via actual setting: true / touch scenario clone mode: \"clone\" / emulated touch clone donor pixel: [40,100,180,255] / all ordinary brush strokes before and after repair are present: true",
+    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects clone: \"clone\" / clone-soft undo restores all pixels: true / entry selects clone: \"clone\" / hard boundary uses donor RGB at outer sample: [220,220,220,255] / soft boundary blends donor and destination: true / clone-hard undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / next separate stroke creates its own layer: true / separate stroke retains original source instead of reading previous repair: [220,220,220,255] / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"46ffcf47-46dc-474e-9c1e-9ebc990988cc\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true / entry selects clone: \"clone\" / aligned clone follows donor offset: [220,220,220,255] / unaligned clone restarts from donor: [40,100,180,255] / entry selects clone: \"clone\" / mask protects actual stored exterior pixels: 0 / entry selects clone: \"clone\" / deleted source absent from reference options: 0 / missing source does not commit: \"f47d77f3-fbc8-4ff3-90de-2be3c1e19e61\" / finger drawing fixture enabled via actual setting: true / touch scenario clone mode: \"clone\" / emulated touch clone donor pixel: [40,100,180,255] / all ordinary brush strokes before and after repair are present: true",
     "problem": "",
-    "improvement": "修復境界の硬さ、採取元保持、画素中心の採取位置を修正。公開版で再現条件・指入力・通常描画を確認。",
+    "improvement": "",
     "pending": "実機の筆圧・タッチ操作の体感速度、大きな作品での性能（PC/Android）",
-    "environment": "GitHub Actions Ubuntu / headless Chrome / published isolated Round5 preview; supporting local unit checks",
-    "sha": "64b67895b298f6e7219a1beec17e7a32caabadf8",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45954426190",
-    "evidence": "03-chat-evidence/round5-final-public-evidence.json",
-    "stamp": "2026-11-27T06:52:22.915Z",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "368c260ad7ecb66b417ea9825e69d97447037335",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45968232528",
+    "evidence": "03-chat-evidence/runs/45968232528/FX-007/",
+    "stamp": "2026-11-27T08:48:47.321Z",
     "result": {
       "id": "FX-007",
       "group": "D",
       "status": "PASS",
-      "commit": "64b67895b298f6e7219a1beec17e7a32caabadf8",
+      "commit": "368c260ad7ecb66b417ea9825e69d97447037335",
       "checks": [
         {
           "path": "apps/editor/src/wet/paint.test.ts",
@@ -3859,8 +3859,8 @@
             },
             {
               "name": "cancel leaves revision unchanged",
-              "actual": "e1d42143-d0f0-4bc8-ae89-d8a3a42201dd",
-              "expected": "e1d42143-d0f0-4bc8-ae89-d8a3a42201dd"
+              "actual": "58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f",
+              "expected": "58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f"
             },
             {
               "name": "cancel leaves original pixels",
@@ -3959,8 +3959,8 @@
             },
             {
               "name": "explicit source copied onto requested layer",
-              "actual": "4963eebd-d008-4116-bef6-f48449d8ee95",
-              "expected": "4963eebd-d008-4116-bef6-f48449d8ee95"
+              "actual": "46ffcf47-46dc-474e-9c1e-9ebc990988cc",
+              "expected": "46ffcf47-46dc-474e-9c1e-9ebc990988cc"
             },
             {
               "name": "specified donor pixel",
@@ -4039,16 +4039,9 @@
             },
             {
               "name": "missing source does not commit",
-              "actual": "4765fc4d-bcdd-48d1-b7b2-d8511c0bf15d",
-              "expected": "4765fc4d-bcdd-48d1-b7b2-d8511c0bf15d"
-            }
-          ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
-        },
-        {
-          "id": "FX-007-tail",
-          "status": "PASS",
-          "checks": [
+              "actual": "f47d77f3-fbc8-4ff3-90de-2be3c1e19e61",
+              "expected": "f47d77f3-fbc8-4ff3-90de-2be3c1e19e61"
+            },
             {
               "name": "finger drawing fixture enabled via actual setting",
               "actual": true,
@@ -4080,11 +4073,362 @@
               "expected": true
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "parts": [
+            {
+              "id": "FX-007",
+              "status": "PASS",
+              "checks": [
+                {
+                  "name": "repair fixture dimensions",
+                  "actual": [
+                    128,
+                    96
+                  ],
+                  "expected": [
+                    128,
+                    96
+                  ]
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "clone donor center",
+                  "actual": [
+                    40,
+                    100,
+                    180,
+                    255
+                  ],
+                  "expected": [
+                    40,
+                    100,
+                    180,
+                    255
+                  ]
+                },
+                {
+                  "name": "clone exterior unchanged",
+                  "actual": 0,
+                  "expected": 0
+                },
+                {
+                  "name": "clone undo restores all pixels",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "clone redo restores result",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "clone-second undo restores all pixels",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "clone-soft undo restores all pixels",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "hard boundary uses donor RGB at outer sample",
+                  "actual": [
+                    220,
+                    220,
+                    220,
+                    255
+                  ],
+                  "expected": [
+                    220,
+                    220,
+                    220,
+                    255
+                  ]
+                },
+                {
+                  "name": "soft boundary blends donor and destination",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "clone-hard undo restores all pixels",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "entry selects heal",
+                  "actual": "heal",
+                  "expected": "heal"
+                },
+                {
+                  "name": "healing decreases independent defect error",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "heal exterior unchanged",
+                  "actual": 0,
+                  "expected": 0
+                },
+                {
+                  "name": "heal undo restores all pixels",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "entry selects patch",
+                  "actual": "patch",
+                  "expected": "patch"
+                },
+                {
+                  "name": "cancel leaves revision unchanged",
+                  "actual": "58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f",
+                  "expected": "58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f"
+                },
+                {
+                  "name": "cancel leaves original pixels",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "patch decreases independent defect error",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "patch exterior unchanged",
+                  "actual": 0,
+                  "expected": 0
+                },
+                {
+                  "name": "patch undo restores all pixels",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "entry selects heal",
+                  "actual": "heal",
+                  "expected": "heal"
+                },
+                {
+                  "name": "entry selects patch",
+                  "actual": "patch",
+                  "expected": "patch"
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "selection exterior unchanged",
+                  "actual": 0,
+                  "expected": 0
+                },
+                {
+                  "name": "clone-selected undo restores all pixels",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "separate repair layer created",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "next separate stroke creates its own layer",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "separate stroke retains original source instead of reading previous repair",
+                  "actual": [
+                    220,
+                    220,
+                    220,
+                    255
+                  ],
+                  "expected": [
+                    220,
+                    220,
+                    220,
+                    255
+                  ]
+                },
+                {
+                  "name": "original layer untouched",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "separate-clone undo restores all pixels",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "explicit source copied onto requested layer",
+                  "actual": "46ffcf47-46dc-474e-9c1e-9ebc990988cc",
+                  "expected": "46ffcf47-46dc-474e-9c1e-9ebc990988cc"
+                },
+                {
+                  "name": "specified donor pixel",
+                  "actual": [
+                    40,
+                    100,
+                    180,
+                    255
+                  ],
+                  "expected": [
+                    40,
+                    100,
+                    180,
+                    255
+                  ]
+                },
+                {
+                  "name": "specified source layer remains intact",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "aligned clone follows donor offset",
+                  "actual": [
+                    220,
+                    220,
+                    220,
+                    255
+                  ],
+                  "expected": [
+                    220,
+                    220,
+                    220,
+                    255
+                  ]
+                },
+                {
+                  "name": "unaligned clone restarts from donor",
+                  "actual": [
+                    40,
+                    100,
+                    180,
+                    255
+                  ],
+                  "expected": [
+                    40,
+                    100,
+                    180,
+                    255
+                  ]
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "mask protects actual stored exterior pixels",
+                  "actual": 0,
+                  "expected": 0
+                },
+                {
+                  "name": "entry selects clone",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "deleted source absent from reference options",
+                  "actual": 0,
+                  "expected": 0
+                },
+                {
+                  "name": "missing source does not commit",
+                  "actual": "f47d77f3-fbc8-4ff3-90de-2be3c1e19e61",
+                  "expected": "f47d77f3-fbc8-4ff3-90de-2be3c1e19e61"
+                }
+              ],
+              "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+            },
+            {
+              "id": "FX-007-tail",
+              "status": "PASS",
+              "checks": [
+                {
+                  "name": "finger drawing fixture enabled via actual setting",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "touch scenario clone mode",
+                  "actual": "clone",
+                  "expected": "clone"
+                },
+                {
+                  "name": "emulated touch clone donor pixel",
+                  "actual": [
+                    40,
+                    100,
+                    180,
+                    255
+                  ],
+                  "expected": [
+                    40,
+                    100,
+                    180,
+                    255
+                  ]
+                },
+                {
+                  "name": "all ordinary brush strokes before and after repair are present",
+                  "actual": true,
+                  "expected": true
+                }
+              ],
+              "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+            }
+          ],
+          "reason": "FX-007: PASS Implemented subchecks passed, see manifest for coverage gaps / FX-007-tail: PASS Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
-      "pending": [],
-      "reason": "Reviewed matching source, public main and tail scenarios; original run results preserved."
+      "pending": []
     },
     "browser": {
       "id": "FX-007",
@@ -4213,8 +4557,8 @@
         },
         {
           "name": "cancel leaves revision unchanged",
-          "actual": "e1d42143-d0f0-4bc8-ae89-d8a3a42201dd",
-          "expected": "e1d42143-d0f0-4bc8-ae89-d8a3a42201dd"
+          "actual": "58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f",
+          "expected": "58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f"
         },
         {
           "name": "cancel leaves original pixels",
@@ -4313,8 +4657,8 @@
         },
         {
           "name": "explicit source copied onto requested layer",
-          "actual": "4963eebd-d008-4116-bef6-f48449d8ee95",
-          "expected": "4963eebd-d008-4116-bef6-f48449d8ee95"
+          "actual": "46ffcf47-46dc-474e-9c1e-9ebc990988cc",
+          "expected": "46ffcf47-46dc-474e-9c1e-9ebc990988cc"
         },
         {
           "name": "specified donor pixel",
@@ -4393,8 +4737,8 @@
         },
         {
           "name": "missing source does not commit",
-          "actual": "4765fc4d-bcdd-48d1-b7b2-d8511c0bf15d",
-          "expected": "4765fc4d-bcdd-48d1-b7b2-d8511c0bf15d"
+          "actual": "f47d77f3-fbc8-4ff3-90de-2be3c1e19e61",
+          "expected": "f47d77f3-fbc8-4ff3-90de-2be3c1e19e61"
         },
         {
           "name": "finger drawing fixture enabled via actual setting",
@@ -4427,7 +4771,6 @@
           "expected": true
         }
       ],
-      "reason": "Reviewed two successful public browser scenarios on same published application source.",
       "parts": [
         {
           "id": "FX-007",
@@ -4556,8 +4899,8 @@
             },
             {
               "name": "cancel leaves revision unchanged",
-              "actual": "e1d42143-d0f0-4bc8-ae89-d8a3a42201dd",
-              "expected": "e1d42143-d0f0-4bc8-ae89-d8a3a42201dd"
+              "actual": "58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f",
+              "expected": "58f3f7f3-7b9d-4cec-96b0-0d9077ccdc6f"
             },
             {
               "name": "cancel leaves original pixels",
@@ -4656,8 +4999,8 @@
             },
             {
               "name": "explicit source copied onto requested layer",
-              "actual": "4963eebd-d008-4116-bef6-f48449d8ee95",
-              "expected": "4963eebd-d008-4116-bef6-f48449d8ee95"
+              "actual": "46ffcf47-46dc-474e-9c1e-9ebc990988cc",
+              "expected": "46ffcf47-46dc-474e-9c1e-9ebc990988cc"
             },
             {
               "name": "specified donor pixel",
@@ -4736,8 +5079,8 @@
             },
             {
               "name": "missing source does not commit",
-              "actual": "4765fc4d-bcdd-48d1-b7b2-d8511c0bf15d",
-              "expected": "4765fc4d-bcdd-48d1-b7b2-d8511c0bf15d"
+              "actual": "f47d77f3-fbc8-4ff3-90de-2be3c1e19e61",
+              "expected": "f47d77f3-fbc8-4ff3-90de-2be3c1e19e61"
             }
           ],
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
@@ -4779,12 +5122,8 @@
           ],
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
-      ]
-    },
-    "review": {
-      "publicMainRun": 45954060327,
-      "publicTailRun": 45954426190,
-      "localUnitRun": 45954426190
+      ],
+      "reason": "FX-007: PASS Implemented subchecks passed, see manifest for coverage gaps / FX-007-tail: PASS Implemented subchecks passed, see manifest for coverage gaps"
     }
   },
   {
@@ -5478,21 +5817,21 @@
     "name": "高速呼び出し・共有",
     "verdict": "使える",
     "operation": "exported macro JSON contains name / search reopens macro panel / imported-macro-replays / quick-macro-replays / imported macro appears in visible shortcut assignment list / imported macro has available shortcut command / shortcut-macro-replays / missing dependency cannot be invoked / missing dependency reason displayed / unavailable and rejected imports do not modify revision / unavailable and rejected imports preserve artwork",
-    "expected": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: true / imported macro has available shortcut command: true / shortcut-macro-replays: true / missing dependency cannot be invoked: true / missing dependency reason displayed: true / unavailable and rejected imports do not modify revision: \"25eff505-5e96-4b72-8af7-8951ff73b776\" / unavailable and rejected imports preserve artwork: true",
-    "actual": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: true / imported macro has available shortcut command: true / shortcut-macro-replays: true / missing dependency cannot be invoked: true / missing dependency reason displayed: true / unavailable and rejected imports do not modify revision: \"25eff505-5e96-4b72-8af7-8951ff73b776\" / unavailable and rejected imports preserve artwork: true",
+    "expected": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: true / imported macro has available shortcut command: true / shortcut-macro-replays: true / missing dependency cannot be invoked: true / missing dependency reason displayed: true / unavailable and rejected imports do not modify revision: \"e31d8f92-69c2-46ff-bbb8-de1cd7be5881\" / unavailable and rejected imports preserve artwork: true",
+    "actual": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: true / imported macro has available shortcut command: true / shortcut-macro-replays: true / missing dependency cannot be invoked: true / missing dependency reason displayed: true / unavailable and rejected imports do not modify revision: \"e31d8f92-69c2-46ff-bbb8-de1cd7be5881\" / unavailable and rejected imports preserve artwork: true",
     "problem": "",
-    "improvement": "取り込み後のキー割当候補更新、未対応依存の表示と実行防止を修正。公開版で確認。",
+    "improvement": "",
     "pending": "実機の物理キー配列・端末固有のキー動作",
-    "environment": "GitHub Actions Ubuntu / headless Chrome / published isolated Round5 preview; supporting local unit checks",
-    "sha": "64b67895b298f6e7219a1beec17e7a32caabadf8",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45954426190",
-    "evidence": "03-chat-evidence/round5-final-public-evidence.json",
-    "stamp": "2026-11-27T06:52:22.915Z",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "368c260ad7ecb66b417ea9825e69d97447037335",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45968232528",
+    "evidence": "03-chat-evidence/runs/45968232528/AUT-005/",
+    "stamp": "2026-11-27T08:48:47.321Z",
     "result": {
       "id": "AUT-005",
       "group": "E",
       "status": "PASS",
-      "commit": "64b67895b298f6e7219a1beec17e7a32caabadf8",
+      "commit": "368c260ad7ecb66b417ea9825e69d97447037335",
       "checks": [
         {
           "path": "apps/editor/src/ui/macroAssetImport.test.ts",
@@ -5519,10 +5858,6 @@
               "failure": []
             }
           ]
-        },
-        {
-          "status": "PASS",
-          "reason": "Existing regression subchecks only"
         },
         {
           "id": "AUT-005",
@@ -5562,14 +5897,7 @@
               "name": "shortcut-macro-replays",
               "actual": true,
               "expected": true
-            }
-          ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
-        },
-        {
-          "id": "AUT-005-tail",
-          "status": "PASS",
-          "checks": [
+            },
             {
               "name": "missing dependency cannot be invoked",
               "actual": true,
@@ -5582,8 +5910,8 @@
             },
             {
               "name": "unavailable and rejected imports do not modify revision",
-              "actual": "25eff505-5e96-4b72-8af7-8951ff73b776",
-              "expected": "25eff505-5e96-4b72-8af7-8951ff73b776"
+              "actual": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881",
+              "expected": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881"
             },
             {
               "name": "unavailable and rejected imports preserve artwork",
@@ -5591,11 +5919,85 @@
               "expected": true
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "parts": [
+            {
+              "id": "AUT-005",
+              "status": "PASS",
+              "checks": [
+                {
+                  "name": "exported macro JSON contains name",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "search reopens macro panel",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "imported-macro-replays",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "quick-macro-replays",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "imported macro appears in visible shortcut assignment list",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "imported macro has available shortcut command",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "shortcut-macro-replays",
+                  "actual": true,
+                  "expected": true
+                }
+              ],
+              "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+            },
+            {
+              "id": "AUT-005-tail",
+              "status": "PASS",
+              "checks": [
+                {
+                  "name": "missing dependency cannot be invoked",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "missing dependency reason displayed",
+                  "actual": true,
+                  "expected": true
+                },
+                {
+                  "name": "unavailable and rejected imports do not modify revision",
+                  "actual": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881",
+                  "expected": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881"
+                },
+                {
+                  "name": "unavailable and rejected imports preserve artwork",
+                  "actual": true,
+                  "expected": true
+                }
+              ],
+              "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+            }
+          ],
+          "reason": "AUT-005: PASS Implemented subchecks passed, see manifest for coverage gaps / AUT-005-tail: PASS Implemented subchecks passed, see manifest for coverage gaps"
+        },
+        {
+          "status": "PASS",
+          "reason": "Existing regression subchecks only"
         }
       ],
-      "pending": [],
-      "reason": "Reviewed matching source, public main and tail scenarios; original run results preserved."
+      "pending": []
     },
     "browser": {
       "id": "AUT-005",
@@ -5648,8 +6050,8 @@
         },
         {
           "name": "unavailable and rejected imports do not modify revision",
-          "actual": "25eff505-5e96-4b72-8af7-8951ff73b776",
-          "expected": "25eff505-5e96-4b72-8af7-8951ff73b776"
+          "actual": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881",
+          "expected": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881"
         },
         {
           "name": "unavailable and rejected imports preserve artwork",
@@ -5657,7 +6059,6 @@
           "expected": true
         }
       ],
-      "reason": "Reviewed two successful public browser scenarios on same published application source.",
       "parts": [
         {
           "id": "AUT-005",
@@ -5717,8 +6118,8 @@
             },
             {
               "name": "unavailable and rejected imports do not modify revision",
-              "actual": "25eff505-5e96-4b72-8af7-8951ff73b776",
-              "expected": "25eff505-5e96-4b72-8af7-8951ff73b776"
+              "actual": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881",
+              "expected": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881"
             },
             {
               "name": "unavailable and rejected imports preserve artwork",
@@ -5728,12 +6129,8 @@
           ],
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
-      ]
-    },
-    "review": {
-      "publicMainRun": 45954060327,
-      "publicTailRun": 45954426190,
-      "localUnitRun": 45954426190
+      ],
+      "reason": "AUT-005: PASS Implemented subchecks passed, see manifest for coverage gaps / AUT-005-tail: PASS Implemented subchecks passed, see manifest for coverage gaps"
     }
   }
 ]
