@@ -19,10 +19,15 @@ for(const [i,id] of ids.entries()){
  try{browser=await json(join(src,'browser.json'));}catch{}
  if(!result&&!browser){const prior=previous.find(r=>r.id===id&&r.result);if(prior){rows.push(prior);continue;}}
  await mkdir(target,{recursive:true});
- for(const f of await readdir(src).catch(()=>[])){
-  const path=join(src,f);
-  if(/\.(json|log|png|avif|exr)$/.test(f)&&(await stat(path)).size<2000000)await copyFile(path,join(target,f));
+ async function copyEvidence(from,to){
+  await mkdir(to,{recursive:true});
+  for(const f of await readdir(from,{withFileTypes:true}).catch(()=>[])){
+   const path=join(from,f.name),output=join(to,f.name);
+   if(f.isDirectory())await copyEvidence(path,output);
+   else if(f.isFile()&&/\.(json|log|png|avif|exr)$/.test(f.name)&&(await stat(path)).size<2000000)await copyFile(path,output);
+  }
  }
+ await copyEvidence(src,target);
  const checks=browser?.checks??[];
  const verdict=result?.status==='PASS'?'使える':'未判定';
  const missing=result?.pending??spec.pending;
