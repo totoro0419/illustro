@@ -100,6 +100,7 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
   };
   updateCommands();
   commandSelect.onfocus=updateCommands;
+  commandSelect.addEventListener('illustro:before-choice-open',updateCommands);
   commandSelect.onchange=()=>{if(!isHoldable(commandSelect.value)&&mode.value==='hold')mode.value='press';};
   mode.onchange=()=>{if(mode.value==='hold'&&!isHoldable(commandSelect.value)){mode.value='press';status.textContent='押している間だけ使えるのは、スポイト・消しゴム・表示移動です。';}};
   const active=new Map<string,{restore:()=>void;epoch:number;binding:Binding}>();

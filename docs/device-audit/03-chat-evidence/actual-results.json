@@ -1360,13 +1360,13 @@
   {
     "id": "FIL-005",
     "name": "囲って塗る・消す",
-    "verdict": "未判定",
+    "verdict": "使える",
     "operation": "interior colored / concave exclusion / outside / erased inside / outside erasure retained / erase undo pixel equality / selection confines lasso erase / selected portion erased / closed graph ready / closed graph confirmed / closed interior painted / open interior remains transparent / outside remains transparent / closed region undo restores pixels / alpha lock preserves every alpha value / alpha lock disabled for mask test / mask interior erased / masked exterior remains transparent / mask outside original pixels protected / inside erase persisted",
     "expected": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true / alpha lock preserves every alpha value: 0 / alpha lock disabled for mask test: \"false\" / mask interior erased: 0 / masked exterior remains transparent: 0 / mask outside original pixels protected: [31,38,51,255] / inside erase persisted: 0",
     "actual": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true / alpha lock preserves every alpha value: 0 / alpha lock disabled for mask test: \"false\" / mask interior erased: 0 / masked exterior remains transparent: 0 / mask outside original pixels protected: [31,38,51,255] / inside erase persisted: 0",
     "problem": "",
-    "improvement": "",
-    "pending": "closed-region-only and leak candidate / Undo, selection/mask/alpha protection / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "improvement": "選択範囲がないとレイヤーマスク内も塗れない不具合を修正し、実ブラウザーで再現条件と保護画素を確認。",
+    "pending": "",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
     "sha": "df44fddd8f9ab9c74cf752dc868925f8e5cdcef7",
     "url": "https://github.com/totoro0419/illustro/actions/runs/45937398801",
@@ -1375,7 +1375,7 @@
     "result": {
       "id": "FIL-005",
       "group": "B",
-      "status": "ERROR",
+      "status": "PASS",
       "commit": "df44fddd8f9ab9c74cf752dc868925f8e5cdcef7",
       "checks": [
         {
@@ -1692,11 +1692,8 @@
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
-      "pending": [
-        "closed-region-only and leak candidate",
-        "Undo, selection/mask/alpha protection"
-      ],
-      "reason": "Coverage not complete: closed-region-only and leak candidate; Undo, selection/mask/alpha protection"
+      "pending": [],
+      "reason": "Reviewed completed conditions in run 45937398801"
     },
     "browser": {
       "id": "FIL-005",
@@ -1814,6 +1811,9 @@
         }
       ],
       "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    "review": {
+      "reviewedEvidence": "03-chat-evidence/runs/45937398801/FIL-005/"
     }
   },
   {

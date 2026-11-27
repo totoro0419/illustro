@@ -325,8 +325,10 @@ const cases={
   let old=await revision();await layerPage();await page.locator('#addLayerPage').click();await waitRev(old);await page.locator('#closeLayerPage').click();
   await drawLine([[220,200],[300,200]],8);const target=await canvas.getAttribute('data-selected-layer-id');
   await layerActions();await page.locator('#layerBatchToggle').click();for(const id of [first,target])await page.locator('#layerPageList [data-layer-id="'+id+'"]').click();await page.locator('#closeLayerPage').click();
-  const t=await panel('transform');await choose(t.locator('select:has(option[value="layer"]):has(option[value="boundary"])'),'layer');if(await button(t,'変形を始める').isEnabled())await button(t,'変形を始める').click();
-  const mode=t.locator('select:has(option[value="free"])');await choose(mode,'free');const x=t.getByLabel('左上 X',{exact:true}),y=t.getByLabel('左上 Y',{exact:true});
+  await openBox('navigatorBox');const rule=page.locator('#guideEnabled');if(!await rule.isVisible())await page.locator('.guide-settings summary').click();await rule.check();
+  const t=await panel('transform');await choose(t.locator('select:has(option[value="layer"]):has(option[value="boundary"])'),'layer');
+  const mode=t.locator('select:has(option[value="free"])');await page.waitForFunction(()=>!document.querySelector('[data-tool-panel="transform"] select:has(option[value="free"])')?.disabled);
+  await choose(mode,'free');const x=t.getByLabel('左上 X',{exact:true}),y=t.getByLabel('左上 Y',{exact:true});
   async function corner(toX,toY){await x.waitFor({state:'visible'});await stroke([[Number(await x.inputValue()),Number(await y.inputValue())],[toX,toY]]);}
   const guide=t.getByLabel('キャンバスの端・中央',{exact:true});await guide.check();await corner(253,Number(await y.inputValue()));
   eq('canvas center snap exact x',Number(await x.inputValue()),256);await t.getByText(/キャンバスの中央/).filter({visible:true}).last().waitFor();
@@ -338,13 +340,9 @@ const cases={
   await t.getByLabel('画素',{exact:true}).uncheck();await t.getByLabel('複数選択した他のレイヤー',{exact:true}).check();
   const pixels=opaque(targetBefore),right=Math.max(...pixels.map(p=>p[0]))+1;
   await corner(right+3,Number(await y.inputValue()));eq('other selected layer right edge snap',Number(await x.inputValue()),right);
+  for(const label of ['画素','キャンバスの端・中央','複数選択した他のレイヤー'])await t.getByLabel(label,{exact:true}).uncheck();
+  await t.getByLabel('定規の基準位置',{exact:true}).check();await corner(3,Number(await y.inputValue()));eq('ruler reference snap x',Number(await x.inputValue()),0);await t.getByText(/定規の基準 X/).filter({visible:true}).last().waitFor();
   await button(t,'取り消す').click();
-  await openBox('navigatorBox');const rule=page.locator('#guideEnabled');if(!await rule.isVisible())await page.locator('.guide-settings summary').click();await rule.check();
-  const t2=await panel('transform');await choose(t2.locator('select:has(option[value="layer"]):has(option[value="boundary"])'),'layer');if(await button(t2,'変形を始める').isEnabled())await button(t2,'変形を始める').click();
-  await choose(t2.locator('select:has(option[value="free"])'),'free');
-  for(const label of ['画素','キャンバスの端・中央','複数選択した他のレイヤー'])await t2.getByLabel(label,{exact:true}).uncheck();
-  await t2.getByLabel('定規の基準位置',{exact:true}).check();await corner(3,Number(await y.inputValue()));eq('ruler reference snap x',Number(await x.inputValue()),0);await t2.getByText(/定規の基準 X/).filter({visible:true}).last().waitFor();
-  await button(t2,'取り消す').click();
  },
  'VEC-004':async()=>{
   await fresh();const a=await shapeRect(70,70,250,250,0),b=await shapeRect(170,130,350,310,0);
@@ -445,9 +443,9 @@ const cases={
   await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
   yes('separate repair layer created',await canvas.getAttribute('data-selected-layer-id')!==originalLayer);
   await p.getByText('一筆を反映しました。取り消しで戻せます。',{exact:true}).waitFor();const firstRepair=await canvas.getAttribute('data-selected-layer-id'),secondOld=await revision();
-  await page.mouse.click(...await coords(72.5,46.5));await waitRev(secondOld);
+  await page.mouse.click(...await coords(70.5,46.5));await waitRev(secondOld);
   yes('next separate stroke creates its own layer',await canvas.getAttribute('data-selected-layer-id')!==firstRepair);
-  eq('separate stroke retains original source instead of reading previous repair',rgba(await png(1,'active','separate-second'),72,46),rgba(before,40,30));
+  eq('separate stroke retains original source instead of reading previous repair',rgba(await png(1,'active','separate-second'),70,46),rgba(before,38,30));
   await page.locator('#undo').evaluate(e=>e.click());await waitRev(secondOld,true);
   await selectLayer(originalLayer);yes('original layer untouched',originalPixels.data.equals((await png(1,'active','original-layer-after')).data));
   await undo(old,'separate-clone');
@@ -463,10 +461,10 @@ const cases={
   await selectLayer(targetLayer);await openRepair('clone','クローン','Clone');
   const aligned=p.getByLabel('次の一筆にも採取元との位置関係を保つ',{exact:true});await aligned.check();await pick(16.5,30.5);
   old=await revision();await page.mouse.click(...await coords(80.5,20.5));await waitRev(old);await p.getByText('一筆を反映しました。取り消しで戻せます。',{exact:true}).waitFor();
-  old=await revision();await page.mouse.click(...await coords(100.5,20.5));await waitRev(old);
-  const continuous=await png(1,'active','aligned-clone');eq('aligned clone follows donor offset',rgba(continuous,100,20),rgba(before,36,30));
-  await aligned.uncheck();await pick(16.5,30.5);old=await revision();await page.mouse.click(...await coords(80.5,70.5));await waitRev(old);old=await revision();await page.mouse.click(...await coords(100.5,70.5));await waitRev(old);
-  const repeated=await png(1,'active','unaligned-clone');eq('unaligned clone restarts from donor',rgba(repeated,100,70),rgba(before,16,30));
+  old=await revision();await page.mouse.click(...await coords(102.5,20.5));await waitRev(old);
+  const continuous=await png(1,'active','aligned-clone');eq('aligned clone follows donor offset',rgba(continuous,102,20),rgba(before,38,30));
+  await aligned.uncheck();await pick(16.5,30.5);old=await revision();await page.mouse.click(...await coords(80.5,70.5));await waitRev(old);old=await revision();await page.mouse.click(...await coords(102.5,70.5));await waitRev(old);
+  const repeated=await png(1,'active','unaligned-clone');eq('unaligned clone restarts from donor',rgba(repeated,102,70),rgba(before,16,30));
   await selectRect([40,35],[55,55]);await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await choose(page.locator('#vectorMaskShape'),'rectangle');old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);await page.locator('#closeLayerPage').click();await clearSelection();
   await openRepair('clone','クローン','Clone');await pick(20.5,30.5);old=await revision();await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
   await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();old=await revision();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);await page.locator('#closeLayerPage').click();

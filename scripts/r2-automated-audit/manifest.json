@@ -117,10 +117,7 @@
       "apps/editor/src/fill/pixels.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "closed-region-only and leak candidate",
-      "Undo, selection/mask/alpha protection"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/FIL.md#fil-005"

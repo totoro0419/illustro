@@ -109,7 +109,8 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
     const weight=clamp(strength*falloff*mask);
     let value:Sample;
     if(mode==='clone'||mode==='heal'||mode==='patch'){
-      const sx=Math.floor(x+offset.x),sy=Math.floor(y+offset.y);
+      // Map pixel centers, not upper-left corners. Fractional pointer jitter must not shift a whole pixel.
+      const sx=Math.floor(x+.5+offset.x),sy=Math.floor(y+.5+offset.y);
       if(sx<source.area.x||sy<source.area.y||sx>=source.area.x+source.area.width||sy>=source.area.y+source.area.height)return;
       const donor=sample(source,sx,sy);
       if(mode==='clone')value=mix(old,donor,weight);

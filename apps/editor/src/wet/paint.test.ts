@@ -74,3 +74,12 @@ it('changes repair brush boundary hardness without changing the full-coverage ce
    expect(soft[at(9,4)+3]).toBeLessThan(255);
  }
 });
+
+it('samples clone offsets from pixel centers under subpixel pointer jitter',()=>{
+ const run=job(),reference=patch();
+ reference.pixels.set([12,34,56,255],at(2,2));reference.pixels.set([210,30,40,255],at(1,1));
+ for(const jitter of [-.24,.24]){
+  const result=paintWet({...run,reference,offset:{x:-3+jitter,y:-2+jitter},settings:{...run.settings,mode:'clone'}});
+  expect([...result.pixels.slice(at(5,4),at(5,4)+4)]).toEqual([12,34,56,255]);
+ }
+});
