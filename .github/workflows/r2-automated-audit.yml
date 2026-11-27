@@ -93,6 +93,21 @@ jobs:
             done
           done
           exit "$rc"
+      - name: Recheck remaining conditions on already published app
+        if: ${{ always() && !cancelled() }}
+        env:
+          R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes-round5/
+          EXPECTED_COMMIT_SHA: 64b67895b298f6e7219a1beec17e7a32caabadf8
+        run: |
+          set +e
+          mkdir -p "$R2_AUDIT_OUT/public-tail"
+          for id in FX-007-tail AUT-005-tail; do
+            R2_CASE_DIR="$R2_AUDIT_OUT/public-tail/$id" node scripts/r2-automated-audit/browser.mjs "$id" &
+            pids="$pids $!"
+          done
+          rc=0
+          for pid in $pids; do wait "$pid" || rc=1; done
+          exit "$rc"
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:

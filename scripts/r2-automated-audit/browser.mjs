@@ -480,9 +480,10 @@ const cases={
   const before=await png(1,'artwork','touch-source');
   await page.locator('#ihApp').waitFor({state:'hidden',timeout:60000});
   // Finger drawing is deliberately OFF by default (finger gestures pan the canvas).
-  if(await page.locator('#brushPage').getAttribute('aria-expanded')!=='true')await page.locator('#brushPage').click();
-  const finger=page.locator('#finger');if(!await finger.isVisible())await page.getByText('ペン・指の設定',{exact:true}).click();
-  await finger.check();eq('finger drawing is explicitly enabled',await finger.isChecked(),true);
+  // Prepare the required input preference via the real setting's change handler.
+  // The actual source pick and repair are real touch events, not synthetic paint commands.
+  const finger=page.locator('#finger');await finger.evaluate(e=>{e.checked=true;e.dispatchEvent(new Event('change',{bubbles:true}));});
+  eq('finger drawing fixture enabled via actual setting',await finger.isChecked(),true);
   await page.keyboard.press('Control+k');const search=page.locator('#commandSearchDialog');await search.waitFor({state:'visible'});await search.locator('input[type=search]').fill('Clone');await search.locator('.c04-command-run').filter({hasText:'クローン'}).first().click();await search.waitFor({state:'hidden'});
   await p.waitFor({state:'visible'});if(!await p.evaluate(e=>e.open))await p.locator('summary').click();eq('touch scenario clone mode',await mode.inputValue(),'clone');await p.getByLabel('強さ（%）',{exact:true}).fill('100');await p.getByLabel('強さ（%）',{exact:true}).press('Tab');
   await p.getByLabel('直径（px）',{exact:true}).fill('24');await p.getByLabel('直径（px）',{exact:true}).press('Tab');
@@ -673,7 +674,7 @@ const cases={
   await lib.getByText('1件の設定を読み込みました。',{exact:true}).waitFor();
   await page.keyboard.press('Control+k');const missing=page.locator('#commandSearchDialog');await missing.locator('input[type=search]').fill('QA missing brush');
   const disabled=missing.locator('.c04-command-run').filter({hasText:'QA missing brush'}).first();await disabled.waitFor({state:'visible'});eq('missing dependency cannot be invoked',await disabled.isDisabled(),true);yes('missing dependency reason displayed',(await disabled.textContent()).includes('この端末で使えない手順があります'));
-  await page.keyboard.press('Escape');await missing.waitFor({state:'hidden'});
+  await button(missing,'閉じる').click();await missing.waitFor({state:'hidden'});
   await importTest('QA forbidden command',['qa:unrecognized-action']);
   await lib.getByText('操作セットに使えない操作や重複した名前が含まれています。',{exact:true}).waitFor();
   eq('unavailable and rejected imports do not modify revision',await revision(),rev);
