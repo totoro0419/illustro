@@ -476,6 +476,10 @@ const cases={
   await newContext();await fresh();await importRaster(join(fixture,'repair-damaged.png'));
   await page.locator('#ihApp').waitFor({state:'hidden',timeout:60000});
   await page.locator('#status').filter({hasText:'交換用ファイルを新しい作品として開きました。'}).waitFor({timeout:60000});
+  // Finger drawing is deliberately OFF by default (finger gestures pan the canvas).
+  if(await page.locator('#brushPage').getAttribute('aria-expanded')!=='true')await page.locator('#brushPage').click();
+  const finger=page.locator('#finger');if(!await finger.isVisible())await page.getByText('ペン・指の設定',{exact:true}).click();
+  await finger.check();eq('finger drawing is explicitly enabled',await finger.isChecked(),true);
   await page.keyboard.press('Control+k');const search=page.locator('#commandSearchDialog');await search.waitFor({state:'visible'});await search.locator('input[type=search]').fill('Clone');await search.locator('.c04-command-run').filter({hasText:'クローン'}).first().click();await search.waitFor({state:'hidden'});
   await p.waitFor({state:'visible'});if(!await p.evaluate(e=>e.open))await p.locator('summary').click();eq('touch scenario clone mode',await mode.inputValue(),'clone');await p.getByLabel('強さ（%）',{exact:true}).fill('100');await p.getByLabel('強さ（%）',{exact:true}).press('Tab');
   await p.getByLabel('直径（px）',{exact:true}).fill('24');await p.getByLabel('直径（px）',{exact:true}).press('Tab');

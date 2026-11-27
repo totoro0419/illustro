@@ -123,7 +123,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [FX-007, COL-008]
+        check: [FX-007, COL-008, FIL-005, AUT-005]
     env:
       R2_CHROME_CHANNEL: chrome
       RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
