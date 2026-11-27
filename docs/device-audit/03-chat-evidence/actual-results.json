@@ -3484,22 +3484,22 @@
     "id": "FX-007",
     "name": "修復・パッチ・クローン",
     "verdict": "未判定",
-    "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels / entry selects heal / healing decreases independent defect error / heal exterior unchanged / heal undo restores all pixels / entry selects patch / cancel leaves revision unchanged / cancel leaves original pixels / patch decreases independent defect error / patch exterior unchanged / patch undo restores all pixels / entry selects clone / entry selects heal / entry selects patch / entry selects clone / selection exterior unchanged / clone-selected undo restores all pixels / entry selects clone / separate repair layer created / original layer untouched / separate-clone undo restores all pixels / entry selects clone / explicit source copied onto requested layer / specified donor pixel / specified source layer remains intact",
-    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"425928f2-36dc-4c12-b508-dbb477065073\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"acbbf4f7-7b87-4216-83b8-512731c4fb01\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true",
-    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"425928f2-36dc-4c12-b508-dbb477065073\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"acbbf4f7-7b87-4216-83b8-512731c4fb01\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true",
+    "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels",
+    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true",
+    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true",
     "problem": "",
     "improvement": "",
-    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified.",
+    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smudge\"]').getByLabel('境界の硬さ（%）', { exact: true })\n    - locator resolved to <input min=\"0\" step=\"1\" max=\"100\" type=\"number\"/>\n    - fill(\"0\")\n  - attempting fill action\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    60 × waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:424:71)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45907952276",
-    "evidence": "03-chat-evidence/runs/45907952276/FX-007/",
-    "stamp": "2026-11-26T22:54:21.134Z",
+    "sha": "1a2e417021938b8b024641e453d669411dd2cf8f",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45936942571",
+    "evidence": "03-chat-evidence/runs/45936942571/FX-007/",
+    "stamp": "2026-11-27T03:57:28.292Z",
     "result": {
       "id": "FX-007",
       "group": "D",
       "status": "ERROR",
-      "commit": "3322e901d5c2d2d253dea989e683dd3ba43ef883",
+      "commit": "1a2e417021938b8b024641e453d669411dd2cf8f",
       "checks": [
         {
           "path": "apps/editor/src/wet/paint.test.ts",
@@ -3534,12 +3534,17 @@
               "name": "copies straight RGBA exactly at full clone coverage, including transparency",
               "status": "passed",
               "failure": []
+            },
+            {
+              "name": "changes repair brush boundary hardness without changing the full-coverage center",
+              "status": "passed",
+              "failure": []
             }
           ]
         },
         {
           "id": "FX-007",
-          "status": "PASS",
+          "status": "ERROR",
           "checks": [
             {
               "name": "repair fixture dimensions",
@@ -3591,139 +3596,9 @@
               "name": "clone-second undo restores all pixels",
               "actual": true,
               "expected": true
-            },
-            {
-              "name": "entry selects heal",
-              "actual": "heal",
-              "expected": "heal"
-            },
-            {
-              "name": "healing decreases independent defect error",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "heal exterior unchanged",
-              "actual": 0,
-              "expected": 0
-            },
-            {
-              "name": "heal undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects patch",
-              "actual": "patch",
-              "expected": "patch"
-            },
-            {
-              "name": "cancel leaves revision unchanged",
-              "actual": "425928f2-36dc-4c12-b508-dbb477065073",
-              "expected": "425928f2-36dc-4c12-b508-dbb477065073"
-            },
-            {
-              "name": "cancel leaves original pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "patch decreases independent defect error",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "patch exterior unchanged",
-              "actual": 0,
-              "expected": 0
-            },
-            {
-              "name": "patch undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "entry selects heal",
-              "actual": "heal",
-              "expected": "heal"
-            },
-            {
-              "name": "entry selects patch",
-              "actual": "patch",
-              "expected": "patch"
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "selection exterior unchanged",
-              "actual": 0,
-              "expected": 0
-            },
-            {
-              "name": "clone-selected undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "separate repair layer created",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "original layer untouched",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "separate-clone undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "explicit source copied onto requested layer",
-              "actual": "acbbf4f7-7b87-4216-83b8-512731c4fb01",
-              "expected": "acbbf4f7-7b87-4216-83b8-512731c4fb01"
-            },
-            {
-              "name": "specified donor pixel",
-              "actual": [
-                40,
-                100,
-                180,
-                255
-              ],
-              "expected": [
-                40,
-                100,
-                180,
-                255
-              ]
-            },
-            {
-              "name": "specified source layer remains intact",
-              "actual": true,
-              "expected": true
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "reason": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smudge\"]').getByLabel('境界の硬さ（%）', { exact: true })\n    - locator resolved to <input min=\"0\" step=\"1\" max=\"100\" type=\"number\"/>\n    - fill(\"0\")\n  - attempting fill action\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    60 × waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:424:71)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2"
         }
       ],
       "pending": [
@@ -3733,7 +3608,7 @@
     },
     "browser": {
       "id": "FX-007",
-      "status": "PASS",
+      "status": "ERROR",
       "checks": [
         {
           "name": "repair fixture dimensions",
@@ -3785,139 +3660,9 @@
           "name": "clone-second undo restores all pixels",
           "actual": true,
           "expected": true
-        },
-        {
-          "name": "entry selects heal",
-          "actual": "heal",
-          "expected": "heal"
-        },
-        {
-          "name": "healing decreases independent defect error",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "heal exterior unchanged",
-          "actual": 0,
-          "expected": 0
-        },
-        {
-          "name": "heal undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects patch",
-          "actual": "patch",
-          "expected": "patch"
-        },
-        {
-          "name": "cancel leaves revision unchanged",
-          "actual": "425928f2-36dc-4c12-b508-dbb477065073",
-          "expected": "425928f2-36dc-4c12-b508-dbb477065073"
-        },
-        {
-          "name": "cancel leaves original pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "patch decreases independent defect error",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "patch exterior unchanged",
-          "actual": 0,
-          "expected": 0
-        },
-        {
-          "name": "patch undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "entry selects heal",
-          "actual": "heal",
-          "expected": "heal"
-        },
-        {
-          "name": "entry selects patch",
-          "actual": "patch",
-          "expected": "patch"
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "selection exterior unchanged",
-          "actual": 0,
-          "expected": 0
-        },
-        {
-          "name": "clone-selected undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "separate repair layer created",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "original layer untouched",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "separate-clone undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "explicit source copied onto requested layer",
-          "actual": "acbbf4f7-7b87-4216-83b8-512731c4fb01",
-          "expected": "acbbf4f7-7b87-4216-83b8-512731c4fb01"
-        },
-        {
-          "name": "specified donor pixel",
-          "actual": [
-            40,
-            100,
-            180,
-            255
-          ],
-          "expected": [
-            40,
-            100,
-            180,
-            255
-          ]
-        },
-        {
-          "name": "specified source layer remains intact",
-          "actual": true,
-          "expected": true
         }
       ],
-      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+      "reason": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smudge\"]').getByLabel('境界の硬さ（%）', { exact: true })\n    - locator resolved to <input min=\"0\" step=\"1\" max=\"100\" type=\"number\"/>\n    - fill(\"0\")\n  - attempting fill action\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    60 × waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:424:71)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2"
     }
   },
   {
