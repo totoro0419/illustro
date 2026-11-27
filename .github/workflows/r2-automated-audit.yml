@@ -30,7 +30,7 @@ jobs:
       PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
       R2_AUDIT_OUT: r2-audit-evidence
       R2_FIXTURE_DIR: r2-audit-fixtures
-      AUDIT_SELECTION: ${{ inputs.selection || 'TRN-005,FX-007,AUT-005' }}
+      AUDIT_SELECTION: ${{ inputs.selection || 'FX-007,AUT-005' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,11 +74,12 @@ jobs:
           set +e
           root="$R2_AUDIT_OUT"
           # Split selected IDs only; the built app is shared.
-          for group in A B C; do
+          for group in A B C D; do
             case "$group" in
               A) ids='SAV-006,SAV-007,REF-006,IO-006';;
               B) ids='FIL-005,LIN-007,TRN-005,VEC-004,LAY-005';;
-              C) ids='COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004,AUT-005';;
+              C) ids='COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004';;
+              D) ids='AUT-005';;
             esac
             selected="$(node -e 'const a=process.argv[1].split(",");console.log(process.argv[2].split(",").filter(x=>a.includes(x)).join(","))' "$AUDIT_SELECTION" "$ids")"
             if [ -n "$selected" ]; then R2_AUDIT_OUT="$root/group-$group" node scripts/r2-automated-audit/run.mjs "$selected" & pids="$pids $!"; fi

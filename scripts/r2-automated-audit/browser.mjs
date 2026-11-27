@@ -473,10 +473,33 @@ const cases={
   await selectLayer(originalLayer);await layerActions();old=await revision();await page.locator('#deleteLayer').click();const confirm=page.locator('dialog.illustro-app-dialog[open]');if(await confirm.isVisible())await button(confirm,'確定').click();await waitRev(old);if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();
   await selectLayer(targetLayer);await openRepair('clone','クローン','Clone');const sourceSelect=p.locator('select:has(option[value="'+targetLayer+'"])');eq('deleted source absent from reference options',await sourceSelect.locator('option[value="'+originalLayer+'"]').count(),0);
   old=await revision();await button(p,'キャンバスで使う').click();await p.getByText('採取するレイヤーを選んでください。',{exact:true}).waitFor();eq('missing source does not commit',await revision(),old);
-  await newContext();await fresh();await importRaster(join(fixture,'repair-damaged.png'));await openRepair('clone','クローン','Clone');await pick(16.5,30.5);
+  await newContext();await fresh();await importRaster(join(fixture,'repair-damaged.png'));
+  await page.locator('#ihApp').waitFor({state:'hidden',timeout:60000});
+  await page.locator('#status').filter({hasText:'交換用ファイルを新しい作品として開きました。'}).waitFor({timeout:60000});
+  await page.keyboard.press('Control+k');const search=page.locator('#commandSearchDialog');await search.waitFor({state:'visible'});await search.locator('input[type=search]').fill('Clone');await search.locator('.c04-command-run').filter({hasText:'クローン'}).first().click();await search.waitFor({state:'hidden'});
+  await p.waitFor({state:'visible'});if(!await p.evaluate(e=>e.open))await p.locator('summary').click();eq('touch scenario clone mode',await mode.inputValue(),'clone');await p.getByLabel('強さ（%）',{exact:true}).fill('100');await p.getByLabel('強さ（%）',{exact:true}).press('Tab');
+  await p.getByLabel('直径（px）',{exact:true}).fill('24');await p.getByLabel('直径（px）',{exact:true}).press('Tab');
   const cdp=await context.newCDPSession(page);await cdp.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+  await button(p,'元を指定').click();const [sx,sy]=await coords(16.5,30.5);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:sx,y:sy}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.getByText(/採取点/).waitFor({state:'visible'});
   const [tx,ty]=await coords(48.5,46.5);old=await revision();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await waitRev(old);
   eq('emulated touch clone donor pixel',rgba(await png(1,'artwork','touch-clone'),48,46),rgba(before,16,30));
+  await cdp.send('Emulation.setTouchEmulationEnabled',{enabled:false});
+  // Measure normal brush commit latency before and after entering/leaving repair,
+  // in the same browser/device environment. This is not physical display latency.
+  await newContext();await fresh();await page.locator('#paint').click();await pen(8);
+  async function normalSamples(y){
+    const durations=[];for(let n=0;n<6;n++){const old=await revision(),start=performance.now();await stroke([[70,y+16*n],[180,y+16*n]]);await waitRev(old);durations.push(performance.now()-start);}
+    return durations;
+  }
+  await drawLine([[70,35],[180,35]],8);
+  const baseline=await normalSamples(55);
+  await page.keyboard.press('Control+k');const palette=page.locator('#commandSearchDialog');await palette.locator('input[type=search]').fill('Clone');await palette.locator('.c04-command-run').filter({hasText:'クローン'}).first().click();await p.waitFor({state:'visible'});
+  await page.locator('#paint').click();await pen(8);const resumed=await normalSamples(210);
+  const median=a=>[...a].sort((x,y)=>x-y).slice(2,4).reduce((x,y)=>x+y,0)/2;
+  const stats={baselineMs:baseline,resumedMs:resumed,baselineMedianMs:median(baseline),resumedMedianMs:median(resumed),scope:'pointer input to committed revision in same headless browser, not physical pen/display or cross-build benchmark'};
+  await writeFile(join(evidence,'normal-brush-after-repair.json'),JSON.stringify(stats,null,2));
+  const normal=await png(1,'artwork','normal-brush-after-repair');
+  yes('all ordinary brush strokes before and after repair are present',Array.from({length:6},(_,n)=>alpha(normal,[120,55+16*n])>200&&alpha(normal,[120,210+16*n])>200).every(Boolean));
  },
 
  'LIN-007':async()=>{
@@ -627,6 +650,23 @@ const cases={
   await button(shortcuts,'キーを押して登録').click();await page.keyboard.press('j');
   await shortcuts.locator('.c04-shortcut-row').filter({hasText:'QA stroke'}).waitFor();
   await page.locator('#paint').click();await page.keyboard.press('j');await replay('shortcut-macro-replays',180);
+  const intact=await png(1,'artwork','before-invalid-macro'),rev=await revision();
+  const lib=await openBox('assetsBox');
+  await choose(lib.locator('select[aria-label="取り込む素材の種類"]'),'macro');
+  async function importTest(name,steps){
+    const file=join(evidence,name+'.json');await writeFile(file,JSON.stringify({schema:'illustro.macros.simple',version:1,items:[{id:name,name,steps}]}));
+    await lib.locator('input[type=file]').first().setInputFiles(file);await button(lib,'追加した素材を見る').click();
+    const row=lib.locator('.c05-asset-entry').filter({hasText:name+'.json'}).first();await button(row,'操作セットとして読み込む').click();
+  }
+  await importTest('QA missing brush',['brush:qa-brush-not-installed']);
+  await lib.getByText('1件の設定を読み込みました。',{exact:true}).waitFor();
+  await page.keyboard.press('Control+k');const missing=page.locator('#commandSearchDialog');await missing.locator('input[type=search]').fill('QA missing brush');
+  const disabled=missing.locator('.c04-command-run').filter({hasText:'QA missing brush'}).first();await disabled.waitFor({state:'visible'});eq('missing dependency cannot be invoked',await disabled.isDisabled(),true);yes('missing dependency reason displayed',(await disabled.textContent()).includes('この端末で使えない手順があります'));
+  await page.keyboard.press('Escape');await missing.waitFor({state:'hidden'});
+  await importTest('QA forbidden command',['qa:unrecognized-action']);
+  await lib.getByText('操作セットに使えない操作や重複した名前が含まれています。',{exact:true}).waitFor();
+  eq('unavailable and rejected imports do not modify revision',await revision(),rev);
+  yes('unavailable and rejected imports preserve artwork',intact.data.equals((await png(1,'artwork','after-invalid-macro')).data));
  },
 
  'INP-006':async()=>{

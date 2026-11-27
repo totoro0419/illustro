@@ -161,6 +161,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
     if(options().some(c=>c.id===old))commandSelect.value=old;
   };
   commandSelect.onfocus=refreshOptions;
+  commandSelect.addEventListener('illustro:before-choice-open',refreshOptions);
   function refreshSelect(){
     const current=selectedId;
     select.replaceChildren(new Option('新しい操作セット',''));
@@ -169,6 +170,19 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
     remove.disabled=!select.value;
   }
   const recordedLabel=(step:string)=>step.startsWith('artwork:{"kind":"stroke"')?'記録したブラシの線':'記録した移動・回転・拡縮';
+  const missingDependencies=(enabled:readonly string[])=>{
+    const known=new Set(commands.list().map(command=>command.id));
+    return enabled.filter(id=>!layerMacroStep(id)&&!known.has(id));
+  };
+  const missingReason=(enabled:readonly string[])=>{
+    const missing=missingDependencies(enabled);
+    return missing.length?'この端末で使えない手順があります。'+missing.join('、'):null;
+  };
+  function syncRunAvailability(){
+    const reason=missingReason(steps.filter((_,index)=>!muted[index]));
+    run.disabled=!steps.some((_,index)=>!muted[index])||playing||!!unlisten||!!reason;
+    run.title=reason??'';
+  }
   function refreshSteps(){
     const lookup=new Map(options().map(c=>[c.id,c.label]));
     stepsList.replaceChildren();
@@ -176,8 +190,8 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
       const id=steps[i]!;
       const row=document.createElement('div');row.className='c04-macro-step';
       const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=!muted[i];
-      const label=document.createElement('label');label.append(enabled,(i+1)+'. '+(lookup.get(id)??(isMacroArtwork(id)?recordedLabel(id):id)));
-      enabled.onchange=()=>{muted[i]=!enabled.checked;};
+      const label=document.createElement('label');label.append(enabled,(i+1)+'. '+(lookup.get(id)??(isMacroArtwork(id)?recordedLabel(id):id+'（この端末では未対応）')));
+      enabled.onchange=()=>{muted[i]=!enabled.checked;syncRunAvailability();};
       const up=document.createElement('button');up.type='button';up.textContent='↑';up.title='前へ移動';up.disabled=i===0;
       const down=document.createElement('button');down.type='button';down.textContent='↓';down.title='後へ移動';down.disabled=i===steps.length-1;
       const del=document.createElement('button');del.type='button';del.textContent='×';del.title='この操作を削除';
@@ -187,7 +201,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
       row.append(label,up,down,del);stepsList.append(row);
     }
     if(!steps.length){const empty=document.createElement('p');empty.textContent='下の候補から操作を登録してください。';stepsList.append(empty);}
-    run.disabled=steps.length===0||playing||!!unlisten;
+    syncRunAvailability();
   }
   function stopRecording(message?:string){
     if(!unlisten)return;
@@ -342,9 +356,8 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
     try{
       const enabled=macro.steps.filter((_,index)=>!macro.disabled?.includes(index));
       if(!enabled.length)throw Error('少なくとも1つの手順を有効にしてください。');
-      const dependencies=new Set(commands.list().map(command=>command.id));
-      const missing=enabled.filter(id=>!layerMacroStep(id)&&!dependencies.has(id));
-      if(missing.length)throw Error('この端末で使えない手順があります。'+missing.join('、'));
+      const reason=missingReason(enabled);
+      if(reason)throw Error(reason);
       const context=commands.contextKey?.();
       if(api?.applyHistory&&enabled.every(step=>step==='undo'||step==='redo')){
         const changed=await api.applyHistory(enabled as ('undo'|'redo')[],macro.name,playback.signal);
@@ -390,7 +403,7 @@ export function installSimpleMacros(commands:CommandService,api?:Readonly<{
   const provider=():readonly CommandDefinition[]=>macros.map(macro=>({
     id:'macro:'+macro.id,label:macro.name,category:'マクロ',
     aliases:'登録した操作 複数の操作 まとめて実行',
-    availability:()=>playing?'別の操作セットを実行中です。':null,
+    availability:()=>playing?'別の操作セットを実行中です。':missingReason(macro.steps.filter((_,index)=>!macro.disabled?.includes(index))),
     execute:()=>play(macro)
   }));
   commands.registerProvider(provider);

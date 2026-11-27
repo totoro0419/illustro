@@ -185,9 +185,7 @@
       "apps/editor/src/transform/groupTransform.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/TRN.md#trn-005"
