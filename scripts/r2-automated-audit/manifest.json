@@ -271,9 +271,7 @@
       "apps/editor/src/artwork/booleanSourceVisibility.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/VEC.md#vec-004"
@@ -328,9 +326,7 @@
       "apps/editor/src/selection/maskCodec.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "ellipse/path point editing, inversion/link/density/native preservation"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/LAY.md#lay-005"

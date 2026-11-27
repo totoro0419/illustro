@@ -2403,13 +2403,13 @@
   {
     "id": "VEC-004",
     "name": "簡略化・平滑化・図形合成",
-    "verdict": "未判定",
+    "verdict": "使える",
     "operation": "union zero outline width for exact fill oracle / union independent point-in-rectangle coverage / union full-image interior/exterior oracle / union undo restores original / intersection zero outline width for exact fill oracle / intersection independent point-in-rectangle coverage / intersection full-image interior/exterior oracle / intersection undo restores original / difference zero outline width for exact fill oracle / difference independent point-in-rectangle coverage / difference full-image interior/exterior oracle / difference undo restores original / xor zero outline width for exact fill oracle / xor independent point-in-rectangle coverage / xor full-image interior/exterior oracle / xor undo restores original / polyline has redundant samples / simplification reduces points but retains corners / simplified endpoints and corners retained / smoothing changes the curve and retains endpoints / smooth undo pixel equality / two-pixel intersection retained / thin intersection excludes left exterior / thin intersection excludes right exterior / thin operation undo exact",
     "expected": "union zero outline width for exact fill oracle: \"0\" / union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 0 / union undo restores original: true / intersection zero outline width for exact fill oracle: \"0\" / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection full-image interior/exterior oracle: 0 / intersection undo restores original: true / difference zero outline width for exact fill oracle: \"0\" / difference independent point-in-rectangle coverage: [true,false,false,false] / difference full-image interior/exterior oracle: 0 / difference undo restores original: true / xor zero outline width for exact fill oracle: \"0\" / xor independent point-in-rectangle coverage: [true,false,true,false] / xor full-image interior/exterior oracle: 0 / xor undo restores original: true / polyline has redundant samples: true / simplification reduces points but retains corners: true / simplified endpoints and corners retained: true / smoothing changes the curve and retains endpoints: true / smooth undo pixel equality: true / two-pixel intersection retained: true / thin intersection excludes left exterior: 0 / thin intersection excludes right exterior: 0 / thin operation undo exact: true",
     "actual": "union zero outline width for exact fill oracle: \"0\" / union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 0 / union undo restores original: true / intersection zero outline width for exact fill oracle: \"0\" / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection full-image interior/exterior oracle: 0 / intersection undo restores original: true / difference zero outline width for exact fill oracle: \"0\" / difference independent point-in-rectangle coverage: [true,false,false,false] / difference full-image interior/exterior oracle: 0 / difference undo restores original: true / xor zero outline width for exact fill oracle: \"0\" / xor independent point-in-rectangle coverage: [true,false,true,false] / xor full-image interior/exterior oracle: 0 / xor undo restores original: true / polyline has redundant samples: true / simplification reduces points but retains corners: true / simplified endpoints and corners retained: true / smoothing changes the curve and retains endpoints: true / smooth undo pixel equality: true / two-pixel intersection retained: true / thin intersection excludes left exterior: 0 / thin intersection excludes right exterior: 0 / thin operation undo exact: true",
     "problem": "",
     "improvement": "",
-    "pending": "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
     "sha": "0d62c0523fedfcb2f5b12c2a875316449634089b",
     "url": "https://github.com/totoro0419/illustro/actions/runs/45908920277",
@@ -2418,7 +2418,7 @@
     "result": {
       "id": "VEC-004",
       "group": "C",
-      "status": "ERROR",
+      "status": "PASS",
       "commit": "0d62c0523fedfcb2f5b12c2a875316449634089b",
       "checks": [
         {
@@ -2737,10 +2737,8 @@
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
-      "pending": [
-        "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending"
-      ],
-      "reason": "Coverage not complete: four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending"
+      "pending": [],
+      "reason": "Reviewed all planned conditions against immutable run 45908920277."
     },
     "browser": {
       "id": "VEC-004",
@@ -2913,18 +2911,22 @@
         }
       ],
       "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    "review": {
+      "reviewedEvidence": "03-chat-evidence/runs/45908920277/VEC-004/",
+      "scope": "four Boolean operations, simplification, smoothing, thin intersections, empty result in linkedBooleans unit test"
     }
   },
   {
     "id": "LAY-005",
     "name": "ピクセル・ベクターマスク",
-    "verdict": "未判定",
+    "verdict": "使える",
     "operation": "visible center / hidden exterior / disable restores artwork / inverted center hidden / inverted exterior visible / half density restores half the hidden opaque pixel / mask saved and reopened exactly / unlink setting persists / inversion persists / density persists / removing mask preserves raster / ellipse center retained / ellipse far outside hidden / black mask hides pixel / black mask preserves remote pixel / white mask restores center / pixel mask removal preserves entire artwork / path mask interior visible / path mask exterior hidden / point editing changes path mask coverage / moved point extends visibility to the left / edited path mask survives native reopen",
     "expected": "visible center: true / hidden exterior: 0 / disable restores artwork: true / inverted center hidden: 0 / inverted exterior visible: true / half density restores half the hidden opaque pixel: true / mask saved and reopened exactly: true / unlink setting persists: false / inversion persists: true / density persists: \"50\" / removing mask preserves raster: true / ellipse center retained: true / ellipse far outside hidden: 0 / black mask hides pixel: 0 / black mask preserves remote pixel: true / white mask restores center: true / pixel mask removal preserves entire artwork: true / path mask interior visible: true / path mask exterior hidden: 0 / point editing changes path mask coverage: true / moved point extends visibility to the left: true / edited path mask survives native reopen: true",
     "actual": "visible center: true / hidden exterior: 0 / disable restores artwork: true / inverted center hidden: 0 / inverted exterior visible: true / half density restores half the hidden opaque pixel: true / mask saved and reopened exactly: true / unlink setting persists: false / inversion persists: true / density persists: \"50\" / removing mask preserves raster: true / ellipse center retained: true / ellipse far outside hidden: 0 / black mask hides pixel: 0 / black mask preserves remote pixel: true / white mask restores center: true / pixel mask removal preserves entire artwork: true / path mask interior visible: true / path mask exterior hidden: 0 / point editing changes path mask coverage: true / moved point extends visibility to the left: true / edited path mask survives native reopen: true",
     "problem": "",
     "improvement": "",
-    "pending": "ellipse/path point editing, inversion/link/density/native preservation / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "pending": "",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
     "sha": "0d62c0523fedfcb2f5b12c2a875316449634089b",
     "url": "https://github.com/totoro0419/illustro/actions/runs/45908920277",
@@ -2933,7 +2935,7 @@
     "result": {
       "id": "LAY-005",
       "group": "D",
-      "status": "ERROR",
+      "status": "PASS",
       "commit": "0d62c0523fedfcb2f5b12c2a875316449634089b",
       "checks": [
         {
@@ -3075,10 +3077,8 @@
           "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
-      "pending": [
-        "ellipse/path point editing, inversion/link/density/native preservation"
-      ],
-      "reason": "Coverage not complete: ellipse/path point editing, inversion/link/density/native preservation"
+      "pending": [],
+      "reason": "Reviewed all planned conditions against immutable run 45908920277."
     },
     "browser": {
       "id": "LAY-005",
@@ -3196,6 +3196,10 @@
         }
       ],
       "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    "review": {
+      "reviewedEvidence": "03-chat-evidence/runs/45908920277/LAY-005/",
+      "scope": "pixel and vector masks, link/inversion/density, point movement, persistence"
     }
   },
   {

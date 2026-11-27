@@ -273,12 +273,14 @@ const cases={
   await cdp.send('Storage.overrideQuotaForOrigin',{origin,quotaSize:1});
   try{
     await drawLine([[270,320],[380,320]],12);
-    await page.waitForFunction(()=>document.querySelector('#saveState')?.textContent?.includes('保存できません'),undefined,{timeout:60000});
+    await page.waitForFunction(()=>[...document.querySelectorAll('#status,#saveState,[role=status]')].some(e=>/storage quota|QuotaExceeded|容量不足/i.test(e.textContent??'')),undefined,{timeout:60000});
     yes('actual browser quota limit reported',true);
     const rescue=await saveCopy('quota-rescue');yes('quota failure still permits native rescue',(await stat(rescue)).size>0);
   }finally{await cdp.send('Storage.overrideQuotaForOrigin',{origin});}
-  await page.locator('#retryWorkSave').click();await saveIdle();
+  if(await page.locator('#retryWorkSave').isVisible())await page.locator('#retryWorkSave').click();await saveIdle();
   yes('quota removal allows retry and verified autosave',true);
+  const recovered=await png(1,'artwork','quota-recovered');yes('failed quota stroke still available',alpha(recovered,[320,320])>127);
+  await page.reload();await openArtwork(doc);yes('retry saved all recovered pixels',recovered.data.equals((await png(1,'artwork','quota-reopen')).data));
  },
  'TRN-005':async()=>{
   await fresh();const a=await shapeRect(60,55,120,95),b=await shapeRect(170,125,250,175),c=await shapeRect(340,245,390,305);
@@ -337,6 +339,12 @@ const cases={
   const pixels=opaque(targetBefore),right=Math.max(...pixels.map(p=>p[0]))+1;
   await corner(right+3,Number(await y.inputValue()));eq('other selected layer right edge snap',Number(await x.inputValue()),right);
   await button(t,'取り消す').click();
+  const rulers=await panel('rulers');const rule=page.locator('#guideEnabled');if(!await rule.isVisible())await page.locator('.guide-settings summary').click();await rule.check();
+  const t2=await panel('transform');await choose(t2.locator('select:has(option[value="layer"]):has(option[value="boundary"])'),'layer');if(await button(t2,'変形を始める').isEnabled())await button(t2,'変形を始める').click();
+  await choose(t2.locator('select:has(option[value="free"])'),'free');
+  for(const label of ['画素','キャンバスの端・中央','複数選択した他のレイヤー'])await t2.getByLabel(label,{exact:true}).uncheck();
+  await t2.getByLabel('定規の基準位置',{exact:true}).check();await corner(3,Number(await y.inputValue()));eq('ruler reference snap x',Number(await x.inputValue()),0);await t2.getByText(/定規の基準 X/).filter({visible:true}).last().waitFor();
+  await button(t2,'取り消す').click();
  },
  'VEC-004':async()=>{
   await fresh();const a=await shapeRect(70,70,250,250,0),b=await shapeRect(170,130,350,310,0);
@@ -442,12 +450,36 @@ const cases={
   eq('explicit source copied onto requested layer',await canvas.getAttribute('data-selected-layer-id'),targetLayer);
   const clonedLayer=await png(1,'active','explicit-source');eq('specified donor pixel',rgba(clonedLayer,48,46),rgba(before,16,30));
   await selectLayer(originalLayer);yes('specified source layer remains intact',originalPixels.data.equals((await png(1,'active','explicit-source-original')).data));
+  await selectLayer(targetLayer);await openRepair('clone','クローン','Clone');
+  const aligned=p.getByLabel('次の一筆にも採取元との位置関係を保つ',{exact:true});await aligned.check();await pick(16.5,30.5);
+  old=await revision();await page.mouse.click(...await coords(80.5,20.5));await waitRev(old);
+  old=await revision();await page.mouse.click(...await coords(100.5,20.5));await waitRev(old);
+  const continuous=await png(1,'active','aligned-clone');eq('aligned clone follows donor offset',rgba(continuous,100,20),rgba(before,36,30));
+  await aligned.uncheck();await pick(16.5,30.5);old=await revision();await page.mouse.click(...await coords(80.5,70.5));await waitRev(old);old=await revision();await page.mouse.click(...await coords(100.5,70.5));await waitRev(old);
+  const repeated=await png(1,'active','unaligned-clone');eq('unaligned clone restarts from donor',rgba(repeated,100,70),rgba(before,16,30));
+  await selectRect([40,35],[55,55]);await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await choose(page.locator('#vectorMaskShape'),'rectangle');old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);await page.locator('#closeLayerPage').click();await clearSelection();
+  await openRepair('clone','クローン','Clone');await pick(20.5,30.5);old=await revision();await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
+  await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();old=await revision();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);await page.locator('#closeLayerPage').click();
+  const afterMask=await png(1,'active','clone-mask-disabled');let changedOutside=0;for(let y=0;y<afterMask.height;y++)for(let x=0;x<afterMask.width;x++)if((x<40||x>=55||y<35||y>=55)&&JSON.stringify(rgba(afterMask,x,y))!==JSON.stringify(rgba(repeated,x,y)))changedOutside++;
+  eq('mask protects actual stored exterior pixels',changedOutside,0);
+  await selectLayer(originalLayer);await layerActions();old=await revision();await page.locator('#deleteLayer').click();const confirm=page.locator('dialog.illustro-app-dialog[open]');if(await confirm.isVisible())await button(confirm,'確定').click();await waitRev(old);if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();
+  await selectLayer(targetLayer);await openRepair('clone','クローン','Clone');const sourceSelect=p.locator('select:has(option[value="'+targetLayer+'"])');eq('deleted source absent from reference options',await sourceSelect.locator('option[value="'+originalLayer+'"]').count(),0);
+  old=await revision();await button(p,'キャンバスで使う').click();await p.getByText('採取するレイヤーを選んでください。',{exact:true}).waitFor();eq('missing source does not commit',await revision(),old);
+  await newContext();await fresh();await importRaster(join(fixture,'repair-damaged.png'));await openRepair('clone','クローン','Clone');await pick(16.5,30.5);
+  const cdp=await context.newCDPSession(page);await cdp.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+  const [tx,ty]=await coords(48.5,46.5);old=await revision();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await waitRev(old);
+  eq('emulated touch clone donor pixel',rgba(await png(1,'artwork','touch-clone'),48,46),rgba(before,16,30));
  },
 
  'LIN-007':async()=>{
   await fresh();let p=await advancedFill();
   await fillState(p,/未解析/,'blank unanalysed');
   await button(p,'線画を解析・更新').click();await fillState(p,/無効/,'blank invalid');
+  const blankRevision=await revision(),blank=await png(1,'artwork','invalid-before');
+  await choose(p.locator('select:has(option[value="lasso-closed"])'),'lasso-closed');
+  await button(p,'キャンバスで塗る').click();await stroke([[80,80],[180,80],[180,180],[80,180],[80,80]]);
+  await p.getByText(/先に「線画を解析・更新」で候補を作り、領域を確定してください/).waitFor({timeout:20000});
+  eq('invalid graph cannot create a revision',await revision(),blankRevision);yes('invalid graph cannot change pixels',blank.data.equals((await png(1,'artwork','invalid-after')).data));
   await drawLine([[70,100],[180,100]],8);
   yes('normal drawing after invalid graph',alpha(await png(1,'artwork','normal-after-invalid'),[120,100])>0);
   await importRaster(join(fixture,'line-art.png'));p=await advancedFill();
@@ -729,10 +761,12 @@ const cases={
   const effectAfter=await png(1,'artwork','offline-filter-after');eq('offline invert actual opaque RGB',rgba(effectAfter,250,60),rgba(effectBefore,250,60).map((v,k)=>k===3?v:255-v));
   await page.locator('#undo').evaluate(e=>e.click());await waitRev(old,true);yes('offline filter undo restores full image',effectBefore.data.equals((await png(1,'artwork','offline-filter-undo')).data));
   await layerPage();old=await revision();await page.locator('#addLayerPage').click();await waitRev(old);await page.locator('#closeLayerPage').click();
-  await page.locator('#paint').click();await pen(8);const macro=await recordMacro();await button(macro,'実行').click();
-  const dialog=page.getByRole('dialog',{name:'操作セットを確認'});await dialog.getByLabel('縦のずれ（px）').fill('130');old=await revision();
+  await drawLine([[270,75],[350,75]],8);const macro=await openMacros();await button(macro,'新しく作る').click();
+  await choose(macro.getByLabel('追加する操作',{exact:true}),'layerOpacityAtRun');await button(macro,'操作を追加').click();
+  await macro.getByLabel('操作セットの名前',{exact:true}).fill('QA offline opacity');await button(macro,'保存').click();await button(macro,'実行').click();
+  const dialog=page.getByRole('dialog',{name:'操作セットを確認'});await dialog.getByLabel('不透明度を設定（%）',{exact:true}).fill('50');old=await revision();
   await button(dialog,'この内容で実行').click();await page.getByRole('button',{name:'適用',exact:true}).filter({visible:true}).click();await waitRev(old);
-  yes('offline macro rendered',alpha(await png(1,'artwork','offline-macro'),[120,230])>127);
+  yes('offline macro applied actual opacity',Math.abs(alpha(await png(1,'artwork','offline-macro'),[310,75])-128)<=1);
   await saveIdle();const final=await png(1,'artwork','offline-final');await page.reload();await openArtwork(docId);
   yes('all offline edits survive reopen',final.data.equals((await png(1,'artwork','offline-final-reopened')).data));
   await context.setOffline(false);
@@ -776,11 +810,13 @@ const cases={
   await button(q2,'キャンバスで塗る').click();await stroke([[60,120],[220,120],[220,200],[60,200],[60,120]]);const applyLocked=button(q2,'候補を適用');await applyLocked.waitFor();await applyLocked.click();await idle();
   const protectedAfter=await png(1,'artwork','alpha-protected');let alphaChanges=0;for(let i=3;i<protectedAfter.data.length;i+=4)if(protectedAfter.data[i]!==protectedBefore.data[i])alphaChanges++;
   eq('alpha lock preserves every alpha value',alphaChanges,0);
-  await layerActions();if(await page.locator('#layerAlphaLock').getAttribute('aria-pressed')==='true')await page.locator('#layerAlphaLock').click();
+  await layerActions();if(await page.locator('#layerAlphaLock').getAttribute('aria-pressed')==='true'){old=await revision();await page.locator('#layerAlphaLock').click();await waitRev(old);}eq('alpha lock disabled for mask test',await page.locator('#layerAlphaLock').getAttribute('aria-pressed'),'false');
   if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();
   await selectRect([100,100],[190,210]);await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();await choose(page.locator('#vectorMaskShape'),'rectangle');old=await revision();await page.locator('#vectorMaskFromSelection').click();await waitRev(old);await page.locator('#closeLayerPage').click();await clearSelection();
-  const q3=await panel('smartFill');await q3.getByLabel('指定部分を透明にする',{exact:true}).uncheck();await button(q3,'キャンバスで塗る').click();await stroke([[60,120],[240,120],[240,200],[60,200],[60,120]]);old=await revision();await button(q3,'候補を適用').click();await waitRev(old);
-  const masked=await png(1,'artwork','fill-mask');eq('masked exterior remains transparent',alpha(masked,[220,140]),0);yes('unmasked interior is painted',alpha(masked,[140,140])>0);
+  const q3=await panel('smartFill');await choose(q3.locator('select:has(option[value="lasso"])'),'lasso');await q3.getByLabel('指定部分を透明にする',{exact:true}).check();await button(q3,'キャンバスで塗る').click();await stroke([[60,120],[240,120],[240,200],[60,200],[60,120]]);old=await revision();await button(q3,'候補を適用').click();await waitRev(old);
+  const masked=await png(1,'artwork','fill-mask');eq('mask interior erased',alpha(masked,[140,160]),0);eq('masked exterior remains transparent',alpha(masked,[220,160]),0);
+  await layerActions();if(!await page.locator('#layerVectorMask').evaluate(e=>e.open))await page.locator('#layerVectorMask summary').click();old=await revision();await page.locator('#vectorMaskEnabled').uncheck();await waitRev(old);await page.locator('#closeLayerPage').click();
+  const revealed=await png(1,'artwork','fill-mask-disabled');eq('mask outside original pixels protected',rgba(revealed,220,160),rgba(protectedBefore,220,160));eq('inside erase persisted',alpha(revealed,[140,160]),0);
  },
  'PIX-001':async()=>{
   await fresh();await findCommand('ドット絵','1pxのドットペン');

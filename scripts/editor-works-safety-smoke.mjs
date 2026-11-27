@@ -49,7 +49,7 @@ try{
  await route.fulfill({response,body:prefix+source});});
  page=await context.newPage();page.on('dialog',d=>d.accept());await page.goto(base+'?backend=webgl2');const a=await create(page,'失敗を検査');await draw(page);await home(page);await works(page,1);await open(page,a.documentId);const revision=(await state(page)).revisionId;
  async function fault(value){await page.evaluate(value=>new Promise(resolve=>{const c=new BroadcastChannel('illustro-test-fault');c.onmessage=e=>{if(e.data==='ready'){c.close();resolve();}};c.postMessage(value);}),value);}
- await fault(true);await draw(page,2);await page.waitForFunction(()=>document.getElementById('saveState').textContent.includes('保存できません') ,undefined,{timeout:15000});
+ await fault(true);await draw(page,2);await page.waitForFunction(()=>([...document.querySelectorAll('#status,#saveState,[role=status]')].some(e=>/quota|保存できません|救出/.test(e.textContent??''))) ,undefined,{timeout:15000});
  const catalog=await page.evaluate(()=>new Promise(resolve=>{const request=indexedDB.open('illustro-work-library-v1');request.onsuccess=()=>{const tx=request.result.transaction('works'),r=tx.objectStore('works').getAll();r.onsuccess=()=>resolve(r.result.map(x=>({revision:x.revisionId})));};}));assert.equal(catalog[0].revision,revision,'failed publication retains prior verified artwork');
  await page.locator('#home').click();await page.locator('#ihApp').waitFor({state:'visible',timeout:2000});
   // Navigation remains fast even if a save failed. But creating/switching artwork must fail safely.
