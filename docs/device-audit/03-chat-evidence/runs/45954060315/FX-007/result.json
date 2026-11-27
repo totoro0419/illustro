@@ -1,0 +1,64 @@
+{
+  "id": "FX-007",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "64b67895b298f6e7219a1beec17e7a32caabadf8",
+  "checks": [
+    {
+      "path": "apps/editor/src/wet/paint.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "wet and repair brushes blurs a translucent edge in premultiplied color",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "wet and repair brushes clones from an immutable snapshot and honors the selection",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "wet and repair brushes produces deterministic paper and pigment texture for a saved stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "copies a shaped patch with the original feathered coverage and no rectangular fringe",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "uses independent water and pigment settings to soften and mix a watercolor stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "copies straight RGBA exactly at full clone coverage, including transparency",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "changes repair brush boundary hardness without changing the full-coverage center",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "samples clone offsets from pixel centers under subpixel pointer jitter",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "FX-007-tail",
+      "status": "ERROR",
+      "checks": [],
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('ペン・指の設定', { exact: true })\n    - locator resolved to <summary>ペン・指の設定</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:484:114)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2"
+    }
+  ],
+  "pending": [
+    "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+  ],
+  "reason": "Coverage not complete: Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+}

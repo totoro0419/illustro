@@ -3669,22 +3669,22 @@
     "id": "FX-007",
     "name": "修復・パッチ・クローン",
     "verdict": "未判定",
-    "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels / entry selects clone / clone-soft undo restores all pixels / entry selects clone / hard boundary uses donor RGB at outer sample / soft boundary blends donor and destination / clone-hard undo restores all pixels / entry selects clone / entry selects heal / healing decreases independent defect error / heal exterior unchanged / heal undo restores all pixels / entry selects patch / cancel leaves revision unchanged / cancel leaves original pixels / patch decreases independent defect error / patch exterior unchanged / patch undo restores all pixels / entry selects clone / entry selects heal / entry selects patch / entry selects clone / selection exterior unchanged / clone-selected undo restores all pixels / entry selects clone / separate repair layer created / next separate stroke creates its own layer / separate stroke retains original source instead of reading previous repair / original layer untouched / separate-clone undo restores all pixels / entry selects clone / explicit source copied onto requested layer / specified donor pixel / specified source layer remains intact / entry selects clone / aligned clone follows donor offset / unaligned clone restarts from donor / entry selects clone / mask protects actual stored exterior pixels / entry selects clone / deleted source absent from reference options / missing source does not commit",
-    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects clone: \"clone\" / clone-soft undo restores all pixels: true / entry selects clone: \"clone\" / hard boundary uses donor RGB at outer sample: [220,220,220,255] / soft boundary blends donor and destination: true / clone-hard undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"e04ef0e0-3ae0-4e96-8174-9ce113f59915\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / next separate stroke creates its own layer: true / separate stroke retains original source instead of reading previous repair: [220,220,220,255] / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"37517760-2281-49fa-b398-16b0b7f5ad8b\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true / entry selects clone: \"clone\" / aligned clone follows donor offset: [220,220,220,255] / unaligned clone restarts from donor: [40,100,180,255] / entry selects clone: \"clone\" / mask protects actual stored exterior pixels: 0 / entry selects clone: \"clone\" / deleted source absent from reference options: 0 / missing source does not commit: \"71c7de34-9756-42c1-9bde-453e1beb8150\"",
-    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects clone: \"clone\" / clone-soft undo restores all pixels: true / entry selects clone: \"clone\" / hard boundary uses donor RGB at outer sample: [220,220,220,255] / soft boundary blends donor and destination: true / clone-hard undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"e04ef0e0-3ae0-4e96-8174-9ce113f59915\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / next separate stroke creates its own layer: true / separate stroke retains original source instead of reading previous repair: [220,220,220,255] / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"37517760-2281-49fa-b398-16b0b7f5ad8b\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true / entry selects clone: \"clone\" / aligned clone follows donor offset: [220,220,220,255] / unaligned clone restarts from donor: [40,100,180,255] / entry selects clone: \"clone\" / mask protects actual stored exterior pixels: 0 / entry selects clone: \"clone\" / deleted source absent from reference options: 0 / missing source does not commit: \"71c7de34-9756-42c1-9bde-453e1beb8150\"",
-    "problem": "旧版の整列採取画素の不一致は画素中心計算修正後に再現せず。最新48条件合格。新規コンテキストでの検索入口待ちがタイムアウト。",
-    "improvement": "取込完了を待ってキーボード検索から修復を開き、タッチエミュレーションを検査。",
-    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchOpen')\n    - locator resolved to <button type=\"button\" title=\"機能を探す（Ctrl+K）\" id=\"commandSearchOpen\" class=\"c04-command-open\">⌕ 機能を探す</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at findCommand (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:51:44)\n    at async openRepair (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:407:10)\n    at async FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:476:91)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1094:2",
+    "operation": "",
+    "expected": "",
+    "actual": "",
+    "problem": "",
+    "improvement": "",
+    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('ペン・指の設定', { exact: true })\n    - locator resolved to <summary>ペン・指の設定</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:484:114)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "bd2c8e951a902e25ca5a492ef8562241d0d8c5a0",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45952725933",
-    "evidence": "03-chat-evidence/runs/45952725933/FX-007/",
-    "stamp": "2026-11-27T06:37:57.483Z",
+    "sha": "64b67895b298f6e7219a1beec17e7a32caabadf8",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45954060315",
+    "evidence": "03-chat-evidence/runs/45954060315/FX-007/",
+    "stamp": "2026-11-27T06:48:51.660Z",
     "result": {
       "id": "FX-007",
       "group": "D",
       "status": "ERROR",
-      "commit": "bd2c8e951a902e25ca5a492ef8562241d0d8c5a0",
+      "commit": "64b67895b298f6e7219a1beec17e7a32caabadf8",
       "checks": [
         {
           "path": "apps/editor/src/wet/paint.test.ts",
@@ -3733,317 +3733,10 @@
           ]
         },
         {
-          "id": "FX-007",
+          "id": "FX-007-tail",
           "status": "ERROR",
-          "checks": [
-            {
-              "name": "repair fixture dimensions",
-              "actual": [
-                128,
-                96
-              ],
-              "expected": [
-                128,
-                96
-              ]
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "clone donor center",
-              "actual": [
-                40,
-                100,
-                180,
-                255
-              ],
-              "expected": [
-                40,
-                100,
-                180,
-                255
-              ]
-            },
-            {
-              "name": "clone exterior unchanged",
-              "actual": 0,
-              "expected": 0
-            },
-            {
-              "name": "clone undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "clone redo restores result",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "clone-second undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "clone-soft undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "hard boundary uses donor RGB at outer sample",
-              "actual": [
-                220,
-                220,
-                220,
-                255
-              ],
-              "expected": [
-                220,
-                220,
-                220,
-                255
-              ]
-            },
-            {
-              "name": "soft boundary blends donor and destination",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "clone-hard undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "entry selects heal",
-              "actual": "heal",
-              "expected": "heal"
-            },
-            {
-              "name": "healing decreases independent defect error",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "heal exterior unchanged",
-              "actual": 0,
-              "expected": 0
-            },
-            {
-              "name": "heal undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects patch",
-              "actual": "patch",
-              "expected": "patch"
-            },
-            {
-              "name": "cancel leaves revision unchanged",
-              "actual": "e04ef0e0-3ae0-4e96-8174-9ce113f59915",
-              "expected": "e04ef0e0-3ae0-4e96-8174-9ce113f59915"
-            },
-            {
-              "name": "cancel leaves original pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "patch decreases independent defect error",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "patch exterior unchanged",
-              "actual": 0,
-              "expected": 0
-            },
-            {
-              "name": "patch undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "entry selects heal",
-              "actual": "heal",
-              "expected": "heal"
-            },
-            {
-              "name": "entry selects patch",
-              "actual": "patch",
-              "expected": "patch"
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "selection exterior unchanged",
-              "actual": 0,
-              "expected": 0
-            },
-            {
-              "name": "clone-selected undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "separate repair layer created",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "next separate stroke creates its own layer",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "separate stroke retains original source instead of reading previous repair",
-              "actual": [
-                220,
-                220,
-                220,
-                255
-              ],
-              "expected": [
-                220,
-                220,
-                220,
-                255
-              ]
-            },
-            {
-              "name": "original layer untouched",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "separate-clone undo restores all pixels",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "explicit source copied onto requested layer",
-              "actual": "37517760-2281-49fa-b398-16b0b7f5ad8b",
-              "expected": "37517760-2281-49fa-b398-16b0b7f5ad8b"
-            },
-            {
-              "name": "specified donor pixel",
-              "actual": [
-                40,
-                100,
-                180,
-                255
-              ],
-              "expected": [
-                40,
-                100,
-                180,
-                255
-              ]
-            },
-            {
-              "name": "specified source layer remains intact",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "aligned clone follows donor offset",
-              "actual": [
-                220,
-                220,
-                220,
-                255
-              ],
-              "expected": [
-                220,
-                220,
-                220,
-                255
-              ]
-            },
-            {
-              "name": "unaligned clone restarts from donor",
-              "actual": [
-                40,
-                100,
-                180,
-                255
-              ],
-              "expected": [
-                40,
-                100,
-                180,
-                255
-              ]
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "mask protects actual stored exterior pixels",
-              "actual": 0,
-              "expected": 0
-            },
-            {
-              "name": "entry selects clone",
-              "actual": "clone",
-              "expected": "clone"
-            },
-            {
-              "name": "deleted source absent from reference options",
-              "actual": 0,
-              "expected": 0
-            },
-            {
-              "name": "missing source does not commit",
-              "actual": "71c7de34-9756-42c1-9bde-453e1beb8150",
-              "expected": "71c7de34-9756-42c1-9bde-453e1beb8150"
-            }
-          ],
-          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchOpen')\n    - locator resolved to <button type=\"button\" title=\"機能を探す（Ctrl+K）\" id=\"commandSearchOpen\" class=\"c04-command-open\">⌕ 機能を探す</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at findCommand (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:51:44)\n    at async openRepair (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:407:10)\n    at async FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:476:91)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1094:2"
+          "checks": [],
+          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('ペン・指の設定', { exact: true })\n    - locator resolved to <summary>ペン・指の設定</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:484:114)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2"
         }
       ],
       "pending": [
@@ -4052,317 +3745,10 @@
       "reason": "Coverage not complete: Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
     },
     "browser": {
-      "id": "FX-007",
+      "id": "FX-007-tail",
       "status": "ERROR",
-      "checks": [
-        {
-          "name": "repair fixture dimensions",
-          "actual": [
-            128,
-            96
-          ],
-          "expected": [
-            128,
-            96
-          ]
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "clone donor center",
-          "actual": [
-            40,
-            100,
-            180,
-            255
-          ],
-          "expected": [
-            40,
-            100,
-            180,
-            255
-          ]
-        },
-        {
-          "name": "clone exterior unchanged",
-          "actual": 0,
-          "expected": 0
-        },
-        {
-          "name": "clone undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "clone redo restores result",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "clone-second undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "clone-soft undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "hard boundary uses donor RGB at outer sample",
-          "actual": [
-            220,
-            220,
-            220,
-            255
-          ],
-          "expected": [
-            220,
-            220,
-            220,
-            255
-          ]
-        },
-        {
-          "name": "soft boundary blends donor and destination",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "clone-hard undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "entry selects heal",
-          "actual": "heal",
-          "expected": "heal"
-        },
-        {
-          "name": "healing decreases independent defect error",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "heal exterior unchanged",
-          "actual": 0,
-          "expected": 0
-        },
-        {
-          "name": "heal undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects patch",
-          "actual": "patch",
-          "expected": "patch"
-        },
-        {
-          "name": "cancel leaves revision unchanged",
-          "actual": "e04ef0e0-3ae0-4e96-8174-9ce113f59915",
-          "expected": "e04ef0e0-3ae0-4e96-8174-9ce113f59915"
-        },
-        {
-          "name": "cancel leaves original pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "patch decreases independent defect error",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "patch exterior unchanged",
-          "actual": 0,
-          "expected": 0
-        },
-        {
-          "name": "patch undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "entry selects heal",
-          "actual": "heal",
-          "expected": "heal"
-        },
-        {
-          "name": "entry selects patch",
-          "actual": "patch",
-          "expected": "patch"
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "selection exterior unchanged",
-          "actual": 0,
-          "expected": 0
-        },
-        {
-          "name": "clone-selected undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "separate repair layer created",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "next separate stroke creates its own layer",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "separate stroke retains original source instead of reading previous repair",
-          "actual": [
-            220,
-            220,
-            220,
-            255
-          ],
-          "expected": [
-            220,
-            220,
-            220,
-            255
-          ]
-        },
-        {
-          "name": "original layer untouched",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "separate-clone undo restores all pixels",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "explicit source copied onto requested layer",
-          "actual": "37517760-2281-49fa-b398-16b0b7f5ad8b",
-          "expected": "37517760-2281-49fa-b398-16b0b7f5ad8b"
-        },
-        {
-          "name": "specified donor pixel",
-          "actual": [
-            40,
-            100,
-            180,
-            255
-          ],
-          "expected": [
-            40,
-            100,
-            180,
-            255
-          ]
-        },
-        {
-          "name": "specified source layer remains intact",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "aligned clone follows donor offset",
-          "actual": [
-            220,
-            220,
-            220,
-            255
-          ],
-          "expected": [
-            220,
-            220,
-            220,
-            255
-          ]
-        },
-        {
-          "name": "unaligned clone restarts from donor",
-          "actual": [
-            40,
-            100,
-            180,
-            255
-          ],
-          "expected": [
-            40,
-            100,
-            180,
-            255
-          ]
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "mask protects actual stored exterior pixels",
-          "actual": 0,
-          "expected": 0
-        },
-        {
-          "name": "entry selects clone",
-          "actual": "clone",
-          "expected": "clone"
-        },
-        {
-          "name": "deleted source absent from reference options",
-          "actual": 0,
-          "expected": 0
-        },
-        {
-          "name": "missing source does not commit",
-          "actual": "71c7de34-9756-42c1-9bde-453e1beb8150",
-          "expected": "71c7de34-9756-42c1-9bde-453e1beb8150"
-        }
-      ],
-      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchOpen')\n    - locator resolved to <button type=\"button\" title=\"機能を探す（Ctrl+K）\" id=\"commandSearchOpen\" class=\"c04-command-open\">⌕ 機能を探す</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at findCommand (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:51:44)\n    at async openRepair (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:407:10)\n    at async FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:476:91)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1094:2"
+      "checks": [],
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('ペン・指の設定', { exact: true })\n    - locator resolved to <summary>ペン・指の設定</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:484:114)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2"
     }
   },
   {
@@ -5055,22 +4441,22 @@
     "id": "AUT-005",
     "name": "高速呼び出し・共有",
     "verdict": "未判定",
-    "operation": "exported macro JSON contains name / search reopens macro panel / imported-macro-replays / quick-macro-replays / imported macro appears in visible shortcut assignment list / imported macro has available shortcut command / shortcut-macro-replays",
-    "expected": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: true / imported macro has available shortcut command: true / shortcut-macro-replays: true",
-    "actual": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: true / imported macro has available shortcut command: true / shortcut-macro-replays: true",
-    "problem": "以前のショートカット割当一覧に出ない不具合は修正済み。実ブラウザーで登録・キー実行を確認。",
-    "improvement": "未対応コマンドを含む共有データが実行可能に見えないようにする。",
-    "pending": "未対応の依存と不正なマクロの取込拒否を実画面で検証。",
+    "operation": "missing dependency cannot be invoked / missing dependency reason displayed",
+    "expected": "missing dependency cannot be invoked: true / missing dependency reason displayed: true",
+    "actual": "missing dependency cannot be invoked: true / missing dependency reason displayed: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending / ERROR / locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog') to be hidden\n    63 × locator resolved to visible <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog>\n\n    at AUT-005-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:676:53)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "bd2c8e951a902e25ca5a492ef8562241d0d8c5a0",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45952725933",
-    "evidence": "03-chat-evidence/runs/45952725933/AUT-005/",
-    "stamp": "2026-11-27T06:37:57.483Z",
+    "sha": "64b67895b298f6e7219a1beec17e7a32caabadf8",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45954060315",
+    "evidence": "03-chat-evidence/runs/45954060315/AUT-005/",
+    "stamp": "2026-11-27T06:48:51.660Z",
     "result": {
       "id": "AUT-005",
       "group": "E",
       "status": "ERROR",
-      "commit": "bd2c8e951a902e25ca5a492ef8562241d0d8c5a0",
+      "commit": "64b67895b298f6e7219a1beec17e7a32caabadf8",
       "checks": [
         {
           "path": "apps/editor/src/ui/macroAssetImport.test.ts",
@@ -5099,46 +4485,21 @@
           ]
         },
         {
-          "id": "AUT-005",
-          "status": "PASS",
+          "id": "AUT-005-tail",
+          "status": "ERROR",
           "checks": [
             {
-              "name": "exported macro JSON contains name",
+              "name": "missing dependency cannot be invoked",
               "actual": true,
               "expected": true
             },
             {
-              "name": "search reopens macro panel",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "imported-macro-replays",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "quick-macro-replays",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "imported macro appears in visible shortcut assignment list",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "imported macro has available shortcut command",
-              "actual": true,
-              "expected": true
-            },
-            {
-              "name": "shortcut-macro-replays",
+              "name": "missing dependency reason displayed",
               "actual": true,
               "expected": true
             }
           ],
-          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+          "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog') to be hidden\n    63 × locator resolved to visible <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog>\n\n    at AUT-005-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:676:53)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2"
         },
         {
           "status": "PASS",
@@ -5151,46 +4512,21 @@
       "reason": "Coverage not complete: export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
     },
     "browser": {
-      "id": "AUT-005",
-      "status": "PASS",
+      "id": "AUT-005-tail",
+      "status": "ERROR",
       "checks": [
         {
-          "name": "exported macro JSON contains name",
+          "name": "missing dependency cannot be invoked",
           "actual": true,
           "expected": true
         },
         {
-          "name": "search reopens macro panel",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "imported-macro-replays",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "quick-macro-replays",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "imported macro appears in visible shortcut assignment list",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "imported macro has available shortcut command",
-          "actual": true,
-          "expected": true
-        },
-        {
-          "name": "shortcut-macro-replays",
+          "name": "missing dependency reason displayed",
           "actual": true,
           "expected": true
         }
       ],
-      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+      "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog') to be hidden\n    63 × locator resolved to visible <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog>\n\n    at AUT-005-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:676:53)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2"
     }
   }
 ]
