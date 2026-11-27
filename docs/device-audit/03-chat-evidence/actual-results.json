@@ -3669,22 +3669,22 @@
     "id": "FX-007",
     "name": "修復・パッチ・クローン",
     "verdict": "未判定",
-    "operation": "",
-    "expected": "",
-    "actual": "",
+    "operation": "finger drawing fixture enabled via actual setting / touch scenario clone mode / emulated touch clone donor pixel / all ordinary brush strokes before and after repair are present",
+    "expected": "finger drawing fixture enabled via actual setting: true / touch scenario clone mode: \"clone\" / emulated touch clone donor pixel: [40,100,180,255] / all ordinary brush strokes before and after repair are present: true",
+    "actual": "finger drawing fixture enabled via actual setting: true / touch scenario clone mode: \"clone\" / emulated touch clone donor pixel: [40,100,180,255] / all ordinary brush strokes before and after repair are present: true",
     "problem": "",
     "improvement": "",
-    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('ペン・指の設定', { exact: true })\n    - locator resolved to <summary>ペン・指の設定</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:484:114)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2",
+    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "64b67895b298f6e7219a1beec17e7a32caabadf8",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45954060315",
-    "evidence": "03-chat-evidence/runs/45954060315/FX-007/",
-    "stamp": "2026-11-27T06:48:51.660Z",
+    "sha": "d96765e71258d22888cfdab98e919ae0170f35ac",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45954426190",
+    "evidence": "03-chat-evidence/runs/45954426190/FX-007/",
+    "stamp": "2026-11-27T06:52:22.915Z",
     "result": {
       "id": "FX-007",
       "group": "D",
       "status": "ERROR",
-      "commit": "64b67895b298f6e7219a1beec17e7a32caabadf8",
+      "commit": "d96765e71258d22888cfdab98e919ae0170f35ac",
       "checks": [
         {
           "path": "apps/editor/src/wet/paint.test.ts",
@@ -3734,9 +3734,40 @@
         },
         {
           "id": "FX-007-tail",
-          "status": "ERROR",
-          "checks": [],
-          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('ペン・指の設定', { exact: true })\n    - locator resolved to <summary>ペン・指の設定</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:484:114)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2"
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "finger drawing fixture enabled via actual setting",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "touch scenario clone mode",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "emulated touch clone donor pixel",
+              "actual": [
+                40,
+                100,
+                180,
+                255
+              ],
+              "expected": [
+                40,
+                100,
+                180,
+                255
+              ]
+            },
+            {
+              "name": "all ordinary brush strokes before and after repair are present",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
       "pending": [
@@ -3746,9 +3777,40 @@
     },
     "browser": {
       "id": "FX-007-tail",
-      "status": "ERROR",
-      "checks": [],
-      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('ペン・指の設定', { exact: true })\n    - locator resolved to <summary>ペン・指の設定</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:484:114)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2"
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "finger drawing fixture enabled via actual setting",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "touch scenario clone mode",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "emulated touch clone donor pixel",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
+        },
+        {
+          "name": "all ordinary brush strokes before and after repair are present",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
     }
   },
   {
@@ -4441,22 +4503,22 @@
     "id": "AUT-005",
     "name": "高速呼び出し・共有",
     "verdict": "未判定",
-    "operation": "missing dependency cannot be invoked / missing dependency reason displayed",
-    "expected": "missing dependency cannot be invoked: true / missing dependency reason displayed: true",
-    "actual": "missing dependency cannot be invoked: true / missing dependency reason displayed: true",
+    "operation": "missing dependency cannot be invoked / missing dependency reason displayed / unavailable and rejected imports do not modify revision / unavailable and rejected imports preserve artwork",
+    "expected": "missing dependency cannot be invoked: true / missing dependency reason displayed: true / unavailable and rejected imports do not modify revision: \"2d4c00d6-8a92-4ae8-8cfd-766cea7448fc\" / unavailable and rejected imports preserve artwork: true",
+    "actual": "missing dependency cannot be invoked: true / missing dependency reason displayed: true / unavailable and rejected imports do not modify revision: \"2d4c00d6-8a92-4ae8-8cfd-766cea7448fc\" / unavailable and rejected imports preserve artwork: true",
     "problem": "",
     "improvement": "",
-    "pending": "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending / ERROR / locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog') to be hidden\n    63 × locator resolved to visible <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog>\n\n    at AUT-005-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:676:53)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2",
+    "pending": "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "64b67895b298f6e7219a1beec17e7a32caabadf8",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45954060315",
-    "evidence": "03-chat-evidence/runs/45954060315/AUT-005/",
-    "stamp": "2026-11-27T06:48:51.660Z",
+    "sha": "d96765e71258d22888cfdab98e919ae0170f35ac",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45954426190",
+    "evidence": "03-chat-evidence/runs/45954426190/AUT-005/",
+    "stamp": "2026-11-27T06:52:22.915Z",
     "result": {
       "id": "AUT-005",
       "group": "E",
       "status": "ERROR",
-      "commit": "64b67895b298f6e7219a1beec17e7a32caabadf8",
+      "commit": "d96765e71258d22888cfdab98e919ae0170f35ac",
       "checks": [
         {
           "path": "apps/editor/src/ui/macroAssetImport.test.ts",
@@ -4486,7 +4548,7 @@
         },
         {
           "id": "AUT-005-tail",
-          "status": "ERROR",
+          "status": "PASS",
           "checks": [
             {
               "name": "missing dependency cannot be invoked",
@@ -4497,9 +4559,19 @@
               "name": "missing dependency reason displayed",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "unavailable and rejected imports do not modify revision",
+              "actual": "2d4c00d6-8a92-4ae8-8cfd-766cea7448fc",
+              "expected": "2d4c00d6-8a92-4ae8-8cfd-766cea7448fc"
+            },
+            {
+              "name": "unavailable and rejected imports preserve artwork",
+              "actual": true,
+              "expected": true
             }
           ],
-          "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog') to be hidden\n    63 × locator resolved to visible <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog>\n\n    at AUT-005-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:676:53)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2"
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         },
         {
           "status": "PASS",
@@ -4513,7 +4585,7 @@
     },
     "browser": {
       "id": "AUT-005-tail",
-      "status": "ERROR",
+      "status": "PASS",
       "checks": [
         {
           "name": "missing dependency cannot be invoked",
@@ -4524,9 +4596,19 @@
           "name": "missing dependency reason displayed",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "unavailable and rejected imports do not modify revision",
+          "actual": "2d4c00d6-8a92-4ae8-8cfd-766cea7448fc",
+          "expected": "2d4c00d6-8a92-4ae8-8cfd-766cea7448fc"
+        },
+        {
+          "name": "unavailable and rejected imports preserve artwork",
+          "actual": true,
+          "expected": true
         }
       ],
-      "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#commandSearchDialog') to be hidden\n    63 × locator resolved to visible <dialog open=\"\" id=\"commandSearchDialog\" class=\"c04-command-dialog\">…</dialog>\n\n    at AUT-005-tail (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:676:53)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1145:2"
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
     }
   }
 ]

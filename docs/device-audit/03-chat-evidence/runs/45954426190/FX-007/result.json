@@ -1,0 +1,95 @@
+{
+  "id": "FX-007",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "d96765e71258d22888cfdab98e919ae0170f35ac",
+  "checks": [
+    {
+      "path": "apps/editor/src/wet/paint.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "wet and repair brushes blurs a translucent edge in premultiplied color",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "wet and repair brushes clones from an immutable snapshot and honors the selection",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "wet and repair brushes produces deterministic paper and pigment texture for a saved stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "copies a shaped patch with the original feathered coverage and no rectangular fringe",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "uses independent water and pigment settings to soften and mix a watercolor stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "copies straight RGBA exactly at full clone coverage, including transparency",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "changes repair brush boundary hardness without changing the full-coverage center",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "samples clone offsets from pixel centers under subpixel pointer jitter",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "FX-007-tail",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "finger drawing fixture enabled via actual setting",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "touch scenario clone mode",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "emulated touch clone donor pixel",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
+        },
+        {
+          "name": "all ordinary brush strokes before and after repair are present",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+  ],
+  "reason": "Coverage not complete: Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+}
