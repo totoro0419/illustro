@@ -473,9 +473,12 @@ const cases={
   await selectLayer(originalLayer);await layerActions();old=await revision();await page.locator('#deleteLayer').click();const confirm=page.locator('dialog.illustro-app-dialog[open]');if(await confirm.isVisible())await button(confirm,'確定').click();await waitRev(old);if(await page.locator('#layerPage').isVisible())await page.locator('#closeLayerPage').click();
   await selectLayer(targetLayer);await openRepair('clone','クローン','Clone');const sourceSelect=p.locator('select:has(option[value="'+targetLayer+'"])');eq('deleted source absent from reference options',await sourceSelect.locator('option[value="'+originalLayer+'"]').count(),0);
   old=await revision();await button(p,'キャンバスで使う').click();await p.getByText('採取するレイヤーを選んでください。',{exact:true}).waitFor();eq('missing source does not commit',await revision(),old);
-  await newContext();await fresh();await importRaster(join(fixture,'repair-damaged.png'));
+ },
+ 'FX-007-tail':async()=>{
+  await fresh();await importRaster(join(fixture,'repair-damaged.png'));
+  const p=page.locator('[data-tool-panel="smudge"]'),mode=p.locator('select:has(option[value="clone"])');
+  const before=await png(1,'artwork','touch-source');
   await page.locator('#ihApp').waitFor({state:'hidden',timeout:60000});
-  await page.locator('#status').filter({hasText:'交換用ファイルを新しい作品として開きました。'}).waitFor({timeout:60000});
   // Finger drawing is deliberately OFF by default (finger gestures pan the canvas).
   if(await page.locator('#brushPage').getAttribute('aria-expanded')!=='true')await page.locator('#brushPage').click();
   const finger=page.locator('#finger');if(!await finger.isVisible())await page.getByText('ペン・指の設定',{exact:true}).click();
@@ -485,7 +488,7 @@ const cases={
   await p.getByLabel('直径（px）',{exact:true}).fill('24');await p.getByLabel('直径（px）',{exact:true}).press('Tab');
   const cdp=await context.newCDPSession(page);await cdp.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
   await button(p,'元を指定').click();const [sx,sy]=await coords(16.5,30.5);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:sx,y:sy}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.getByText(/採取点/).waitFor({state:'visible'});
-  const [tx,ty]=await coords(48.5,46.5);old=await revision();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await waitRev(old);
+  const [tx,ty]=await coords(48.5,46.5);const old=await revision();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await waitRev(old);
   eq('emulated touch clone donor pixel',rgba(await png(1,'artwork','touch-clone'),48,46),rgba(before,16,30));
   await cdp.send('Emulation.setTouchEmulationEnabled',{enabled:false});
   // Measure normal brush commit latency before and after entering/leaving repair,
@@ -497,7 +500,7 @@ const cases={
   }
   await drawLine([[70,35],[180,35]],8);
   const baseline=await normalSamples(55);
-  await page.keyboard.press('Control+k');const palette=page.locator('#commandSearchDialog');await palette.locator('input[type=search]').fill('Clone');await palette.locator('.c04-command-run').filter({hasText:'クローン'}).first().click();await p.waitFor({state:'visible'});
+  await page.keyboard.press('Control+k');const palette=page.locator('#commandSearchDialog');await palette.locator('input[type=search]').fill('Clone');await palette.locator('.c04-command-run').filter({hasText:'クローン'}).first().click();await page.locator('[data-tool-panel="smudge"]').waitFor({state:'visible'});
   await page.locator('#paint').click();await pen(8);const resumed=await normalSamples(210);
   const median=a=>[...a].sort((x,y)=>x-y).slice(2,4).reduce((x,y)=>x+y,0)/2;
   const stats={baselineMs:baseline,resumedMs:resumed,baselineMedianMs:median(baseline),resumedMedianMs:median(resumed),scope:'pointer input to committed revision in same headless browser, not physical pen/display or cross-build benchmark'};
@@ -654,8 +657,12 @@ const cases={
   await button(shortcuts,'キーを押して登録').click();await page.keyboard.press('j');
   await shortcuts.locator('.c04-shortcut-row').filter({hasText:'QA stroke'}).waitFor();
   await page.locator('#paint').click();await page.keyboard.press('j');await replay('shortcut-macro-replays',180);
+ },
+ 'AUT-005-tail':async()=>{
+  await fresh();await drawLine([[70,100],[180,100]],12);
   const intact=await png(1,'artwork','before-invalid-macro'),rev=await revision();
-  const lib=await openBox('assetsBox');
+  await page.keyboard.press('Control+k');const searchLib=page.locator('#commandSearchDialog');await searchLib.locator('input[type=search]').fill('素材庫');await searchLib.locator('.c04-command-run').filter({hasText:'素材庫'}).first().click();await searchLib.waitFor({state:'hidden'});
+  const lib=page.locator('#assetsBoxBody');await lib.waitFor({state:'visible'});
   await choose(lib.locator('select[aria-label="取り込む素材の種類"]'),'macro');
   async function importTest(name,steps){
     const file=join(evidence,name+'.json');await writeFile(file,JSON.stringify({schema:'illustro.macros.simple',version:1,items:[{id:name,name,steps}]}));
