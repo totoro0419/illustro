@@ -1,0 +1,84 @@
+{
+  "id": "AUT-005",
+  "group": "E",
+  "status": "ERROR",
+  "commit": "bd2c8e951a902e25ca5a492ef8562241d0d8c5a0",
+  "checks": [
+    {
+      "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "AUT-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "exported macro JSON contains name",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "search reopens macro panel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "quick-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported macro appears in visible shortcut assignment list",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported macro has available shortcut command",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "shortcut-macro-replays",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    {
+      "status": "PASS",
+      "reason": "Existing regression subchecks only"
+    }
+  ],
+  "pending": [
+    "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+  ],
+  "reason": "Coverage not complete: export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+}
