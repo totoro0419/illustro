@@ -7,7 +7,7 @@ export type WetSettings=Readonly<{
   paperScale:number;absorb:number;thickness:number;water?:number;waterInput?:number;pigmentInput?:number;waterSpeed?:number;pigmentSpeed?:number;color:readonly number[];
 }>;
 export type WetJob=Readonly<{
-  destination:Patch;reference:Patch|null;selection:Uint8Array|null;shapePatch?:boolean;points:readonly Point[];
+  destination:Patch;reference:Patch|null;toneReference?:Patch;selection:Uint8Array|null;shapePatch?:boolean;points:readonly Point[];
   offset:Point;alphaLocked:boolean;settings:WetSettings;
 }>;
 type Sample=readonly [number,number,number,number]; // premultiplied RGB, alpha in 0..1
@@ -105,16 +105,20 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
     const index=(y-area.y)*area.width+x-area.x,at=index*4;
     const mask=(selection?.[index]??255)/255;if(!mask)return;
     const old=sample(dest,x,y);
-    const falloff=job.shapePatch?1:clamp((1-distance)/(mode==='patch'?Math.max(.05,1-edge):.6));
+    const falloff=job.shapePatch?1:clamp((1-distance)/(needsSource(mode)?Math.max(.05,1-edge):.6));
     const weight=clamp(strength*falloff*mask);
     let value:Sample;
     if(mode==='clone'||mode==='heal'||mode==='patch'){
-      const donor=sample(source,x+offset.x,y+offset.y);
-      if(donor[3]===0)return;
-      if(mode==='heal'&&old[3]){
-        const neighborhood=average(source,x+offset.x,y+offset.y,sampleStep),target=average(destination,x,y,sampleStep);
+      // Map pixel centers, not upper-left corners. Fractional pointer jitter must not shift a whole pixel.
+      const sx=Math.floor(x+.5+offset.x),sy=Math.floor(y+.5+offset.y);
+      if(sx<source.area.x||sy<source.area.y||sx>=source.area.x+source.area.width||sy>=source.area.y+source.area.height)return;
+      const donor=sample(source,sx,sy);
+      if(mode==='clone')value=mix(old,donor,weight);
+      else if(donor[3]===0)return;
+      else if(mode==='heal'&&(job.toneReference||old[3])){
+        const neighborhood=average(source,sx,sy,sampleStep),target=average(job.toneReference??destination,x,y,sampleStep);
         const tone=(i:number)=>clamp(donor[i]!/donor[3]-(neighborhood[3]?neighborhood[i]!/neighborhood[3]:0)+
-          (target[3]?target[i]!/target[3]:old[i]!/old[3]))*donor[3];
+          (target[3]?target[i]!/target[3]:old[3]?old[i]!/old[3]:donor[i]!/donor[3]))*donor[3];
         value=sourceOver(old,[tone(0),tone(1),tone(2),donor[3]],weight);
       }else value=sourceOver(old,donor,weight);
     }else if(mode==='blur')value=mix(old,average(source,x,y,sampleStep),weight);

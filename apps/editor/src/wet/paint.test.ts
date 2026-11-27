@@ -51,3 +51,35 @@ it('uses independent water and pigment settings to soften and mix a watercolor s
   expect(wet[at(6,4)+2]).toBeGreaterThan(0);
   expect(noPigment[at(6,4)+2]).toBeGreaterThan(200);
 });
+
+ it('copies straight RGBA exactly at full clone coverage, including transparency',()=>{
+   const run=job(),reference=patch();run.destination.pixels.set([200,20,80,255],at(5,4));
+   reference.pixels.set([30,80,190,128],at(2,2));
+   const result=paintWet({...run,reference,offset:{x:-3,y:-2},settings:{...run.settings,mode:'clone'}});
+   expect([...result.pixels.slice(at(5,4),at(5,4)+4)]).toEqual([30,80,190,128]);
+   expect([...run.destination.pixels.slice(at(5,4),at(5,4)+4)]).toEqual([200,20,80,255]);
+ });
+
+it('changes repair brush boundary hardness without changing the full-coverage center',()=>{
+ const run=job(),reference=patch();
+ for(let y=0;y<area.height;y++)for(let x=0;x<area.width;x++)reference.pixels.set([30,80,190,255],at(x,y));
+ for(const mode of ['clone','heal'] as const){
+   const settings={...run.settings,mode,size:10,strength:1};
+   const soft=paintWet({...run,reference,settings:{...settings,edge:0}}).pixels;
+   const hard=paintWet({...run,reference,settings:{...settings,edge:100/100}}).pixels;
+   expect([...soft.slice(at(5,4),at(5,4)+4)]).toEqual([30,80,190,255]);
+   expect([...hard.slice(at(5,4),at(5,4)+4)]).toEqual([30,80,190,255]);
+   expect(hard[at(9,4)+3]).toBe(255);
+   expect(soft[at(9,4)+3]).toBeGreaterThan(0);
+   expect(soft[at(9,4)+3]).toBeLessThan(255);
+ }
+});
+
+it('samples clone offsets from pixel centers under subpixel pointer jitter',()=>{
+ const run=job(),reference=patch();
+ reference.pixels.set([12,34,56,255],at(2,2));reference.pixels.set([210,30,40,255],at(1,1));
+ for(const jitter of [-.24,.24]){
+  const result=paintWet({...run,reference,offset:{x:-3+jitter,y:-2+jitter},settings:{...run.settings,mode:'clone'}});
+  expect([...result.pixels.slice(at(5,4),at(5,4)+4)]).toEqual([12,34,56,255]);
+ }
+});

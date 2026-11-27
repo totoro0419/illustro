@@ -1,0 +1,42 @@
+{
+  "id": "AUT-005",
+  "status": "ERROR",
+  "checks": [
+    {
+      "name": "exported macro JSON contains name",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "search reopens macro panel",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "imported-macro-replays",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "quick-macro-replays",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "imported macro appears in visible shortcut assignment list",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "imported macro has available shortcut command",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "shortcut-macro-replays",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#assetsBoxBody') to be visible\n    63 × locator resolved to hidden <div hidden=\"\" class=\"box-body\" id=\"assetsBoxBody\">…</div>\n\n    at openBox (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:156:14)\n    at async AUT-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:654:13)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1134:2"
+}

@@ -1,0 +1,188 @@
+{
+  "id": "FX-007",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "repair fixture dimensions",
+      "actual": [
+        128,
+        96
+      ],
+      "expected": [
+        128,
+        96
+      ]
+    },
+    {
+      "name": "entry selects clone",
+      "actual": "clone",
+      "expected": "clone"
+    },
+    {
+      "name": "clone donor center",
+      "actual": [
+        40,
+        100,
+        180,
+        255
+      ],
+      "expected": [
+        40,
+        100,
+        180,
+        255
+      ]
+    },
+    {
+      "name": "clone exterior unchanged",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "clone undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "clone redo restores result",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "clone-second undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "entry selects heal",
+      "actual": "heal",
+      "expected": "heal"
+    },
+    {
+      "name": "healing decreases independent defect error",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "heal exterior unchanged",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "heal undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "entry selects patch",
+      "actual": "patch",
+      "expected": "patch"
+    },
+    {
+      "name": "cancel leaves revision unchanged",
+      "actual": "425928f2-36dc-4c12-b508-dbb477065073",
+      "expected": "425928f2-36dc-4c12-b508-dbb477065073"
+    },
+    {
+      "name": "cancel leaves original pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "patch decreases independent defect error",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "patch exterior unchanged",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "patch undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "entry selects clone",
+      "actual": "clone",
+      "expected": "clone"
+    },
+    {
+      "name": "entry selects heal",
+      "actual": "heal",
+      "expected": "heal"
+    },
+    {
+      "name": "entry selects patch",
+      "actual": "patch",
+      "expected": "patch"
+    },
+    {
+      "name": "entry selects clone",
+      "actual": "clone",
+      "expected": "clone"
+    },
+    {
+      "name": "selection exterior unchanged",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "clone-selected undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "entry selects clone",
+      "actual": "clone",
+      "expected": "clone"
+    },
+    {
+      "name": "separate repair layer created",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "original layer untouched",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "separate-clone undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "entry selects clone",
+      "actual": "clone",
+      "expected": "clone"
+    },
+    {
+      "name": "explicit source copied onto requested layer",
+      "actual": "acbbf4f7-7b87-4216-83b8-512731c4fb01",
+      "expected": "acbbf4f7-7b87-4216-83b8-512731c4fb01"
+    },
+    {
+      "name": "specified donor pixel",
+      "actual": [
+        40,
+        100,
+        180,
+        255
+      ],
+      "expected": [
+        40,
+        100,
+        180,
+        255
+      ]
+    },
+    {
+      "name": "specified source layer remains intact",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

@@ -1,0 +1,92 @@
+{
+  "id": "SAV-007",
+  "status": "ERROR",
+  "checks": [
+    {
+      "name": "offline flag",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "same work offline",
+      "actual": "911e67c6-a82e-48c2-b829-49b67e62f3aa",
+      "expected": "911e67c6-a82e-48c2-b829-49b67e62f3aa"
+    },
+    {
+      "name": "new offline stroke present",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline selection constrains stroke",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline save survived reload",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline new layer created",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline new layer pixels rendered",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline undo removes new stroke",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "offline redo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline layer/history survives reload",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline transform moved pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline reference image visible",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline reference excluded from export",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline invert actual opaque RGB",
+      "actual": [
+        224,
+        217,
+        204,
+        255
+      ],
+      "expected": [
+        224,
+        217,
+        204,
+        255
+      ]
+    },
+    {
+      "name": "offline filter undo restores full image",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.c04-simple-macros').getByText('記録したブラシの線') to be visible\n\n    at recordMacro (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:135:245)\n    at async SAV-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:732:65)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1050:2"
+}

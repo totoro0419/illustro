@@ -1,5 +1,5 @@
 import type {ColorHint,RegionWalls} from '@illustro/core';
-import {growOrShrink,rasterizeSelection,type MaskData} from '../selection/mask';
+import {combineSelection,growOrShrink,rasterizeSelection,type MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
 
 export type FillSettings=Readonly<{
@@ -8,6 +8,10 @@ export type FillSettings=Readonly<{
   edge?:number;edgeShape?:'square'|'round';traceWidth?:number;condition?:'all'|'transparent'|'color';
   alphaTolerance?:number;matchColor?:string;antialias?:boolean;excluded?:readonly number[];included?:readonly number[];
 }>;
+/** No active selection means unrestricted painting, not an explicit empty selection. */
+export function intersectFillMasks(selection:MaskData|null,targetMask:MaskData|null):MaskData|null{
+  return !selection?targetMask:!targetMask?selection:combineSelection(selection,targetMask,'intersect');
+}
 export type Walls=RegionWalls;
 export type GapCandidate=Readonly<{from:Point;to:Point;length:number;kind?:'tips'|'edge'|'junction'|'near';review?:'automatic'|'likely'|'confirm'}>;
 export type RegionGraph=Readonly<{

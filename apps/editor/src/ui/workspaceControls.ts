@@ -103,6 +103,7 @@ function bindSelect(select: HTMLSelectElement) {
     list.style.top = (upwards ? Math.max(top + 8, rect.top - list.offsetHeight - 4) : rect.bottom + 4) + 'px';
   };
   const open = () => {
+    select.dispatchEvent(new Event('illustro:before-choice-open'));
     sync();
     if (trigger.disabled) return;
     populate();

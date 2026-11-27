@@ -1,0 +1,157 @@
+{
+  "id": "REF-006",
+  "group": "A",
+  "status": "ERROR",
+  "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+  "checks": [
+    {
+      "path": "apps/editor/src/assets/referenceBundleMode.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-013 local-only reference compatibility accepts only the same immutable reference asset, not another same-sized file",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-013 local-only reference compatibility requires exact image bytes even when ID, name, type and length match",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-013 local-only reference compatibility rejects ambiguous, duplicate, malformed and oversize reference manifests",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/assets/referenceUnavailable.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-001 reference export failure does not lose artwork writes an explicit missing-reference marker alongside valid artwork",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-001 reference export failure does not lose artwork refuses to attach an unnamed unavailable marker",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/assets/referenceBoardStore.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05 reference-board data safety treats only an absent record as an empty reference board",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05 reference-board data safety keeps every valid image reference and its position",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05 reference-board data safety preserves a reference resized wider than 1000px after reload",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05 reference-board data safety rejects damaged visibility flags instead of treating a string as true",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05 reference-board data safety refuses partial, duplicate, invalid and oversized records rather than silently erasing images",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "REF-006",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "reference frame present",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "reference excluded from all exported pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "embedded image loaded in clean context",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "embedded reference geometry restored",
+          "actual": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ],
+          "expected": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ]
+        },
+        {
+          "name": "source notes restored",
+          "actual": "QA source: https://example.com/fixture ; author: QA ; usage: testing",
+          "expected": "QA source: https://example.com/fixture ; author: QA ; usage: testing"
+        },
+        {
+          "name": "embedded reference did not alter artwork",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "linked reference missing notice in clean context",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "reference image relinked",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "relink geometry retained",
+          "actual": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ],
+          "expected": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ]
+        },
+        {
+          "name": "relink does not enter PNG",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed."
+  ],
+  "reason": "Coverage not complete: Verify embedded metadata and geometry, linked missing and relink via browser; keep pending until this execution is reviewed."
+}

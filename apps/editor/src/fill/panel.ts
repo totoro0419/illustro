@@ -2,9 +2,9 @@ import {appPrompt} from '../ui/appDialogs';
 import {toolConfirmation} from '../ui/toolConfirmation';
 import type {ColorHint,LayerId,LineRegions,RevisionId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
-import {combineSelection,type MaskData} from '../selection/mask';
+import type {MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
-import {cropGapNeighborhood,needsLeakingFillReview} from './pixels';
+import {cropGapNeighborhood,needsLeakingFillReview,intersectFillMasks} from './pixels';
 import type {FillSettings,GapCandidate,RegionGraph,Walls} from './pixels';
 import {releaseLiveFillPreview,runFill} from './run';
 import {visibleFillReferenceIds} from './reference';
@@ -496,7 +496,7 @@ export function installFillPanel(host:HTMLElement,api:{
         if(epoch!==gestureEpoch||gesture!==drawing||drawing!==api.drawing()||!source.valid()||initialSourceKey!==sourceKey())return;
         prepared=source;
         context={source:source.source,target:source.target,width:source.width,height:source.height,
-          selection:asSelection?null:source.targetMask?combineSelection(source.selection,source.targetMask,'intersect'):source.selection,
+          selection:asSelection?null:intersectFillMasks(source.selection,source.targetMask),
           alphaLocked:source.alphaLocked,asSelection};
         if(latestPoints.length)update(latestPoints);
       }).catch(()=>{
@@ -516,7 +516,7 @@ export function installFillPanel(host:HTMLElement,api:{
     const edit=candidate,{source,asSelection,points}=edit,options=settings();
     if(options.erase&&destination.value!=='active'&&!asSelection)
       throw Error('透明にする場合は、既存のレイヤーを選んでください。');
-    const selection=source.targetMask?combineSelection(source.selection,source.targetMask,'intersect'):source.selection;
+    const selection=intersectFillMasks(source.selection,source.targetMask);
     let graph=usesRegions()?edit.savedGraph??currentGraph:null;
     if(edit.adjustment&&graph){
       const key=options.tolerance+':'+options.gap;

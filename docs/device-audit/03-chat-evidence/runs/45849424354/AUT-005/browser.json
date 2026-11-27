@@ -1,0 +1,17 @@
+{
+  "id": "AUT-005",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "exported macro JSON contains name",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "search reopens macro panel",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

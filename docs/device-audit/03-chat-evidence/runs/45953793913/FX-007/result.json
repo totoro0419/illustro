@@ -1,0 +1,371 @@
+{
+  "id": "FX-007",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "e9f0373ed77f4ed15a5f61a810ac850499d5222f",
+  "checks": [
+    {
+      "path": "apps/editor/src/wet/paint.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "wet and repair brushes blurs a translucent edge in premultiplied color",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "wet and repair brushes clones from an immutable snapshot and honors the selection",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "wet and repair brushes produces deterministic paper and pigment texture for a saved stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "copies a shaped patch with the original feathered coverage and no rectangular fringe",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "uses independent water and pigment settings to soften and mix a watercolor stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "copies straight RGBA exactly at full clone coverage, including transparency",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "changes repair brush boundary hardness without changing the full-coverage center",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "samples clone offsets from pixel centers under subpixel pointer jitter",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "FX-007",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "repair fixture dimensions",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "clone donor center",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
+        },
+        {
+          "name": "clone exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "clone undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "clone redo restores result",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "clone-second undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "clone-soft undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "hard boundary uses donor RGB at outer sample",
+          "actual": [
+            220,
+            220,
+            220,
+            255
+          ],
+          "expected": [
+            220,
+            220,
+            220,
+            255
+          ]
+        },
+        {
+          "name": "soft boundary blends donor and destination",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "clone-hard undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "healing decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "heal exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "heal undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
+        },
+        {
+          "name": "cancel leaves revision unchanged",
+          "actual": "3cd16aaa-78e7-4ebb-b6c9-f684fbc7557a",
+          "expected": "3cd16aaa-78e7-4ebb-b6c9-f684fbc7557a"
+        },
+        {
+          "name": "cancel leaves original pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "patch undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "selection exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "clone-selected undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "separate repair layer created",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "next separate stroke creates its own layer",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "separate stroke retains original source instead of reading previous repair",
+          "actual": [
+            220,
+            220,
+            220,
+            255
+          ],
+          "expected": [
+            220,
+            220,
+            220,
+            255
+          ]
+        },
+        {
+          "name": "original layer untouched",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "separate-clone undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "explicit source copied onto requested layer",
+          "actual": "267fefdd-a6d5-4101-a7a5-86c182568506",
+          "expected": "267fefdd-a6d5-4101-a7a5-86c182568506"
+        },
+        {
+          "name": "specified donor pixel",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
+        },
+        {
+          "name": "specified source layer remains intact",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "aligned clone follows donor offset",
+          "actual": [
+            220,
+            220,
+            220,
+            255
+          ],
+          "expected": [
+            220,
+            220,
+            220,
+            255
+          ]
+        },
+        {
+          "name": "unaligned clone restarts from donor",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "mask protects actual stored exterior pixels",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "deleted source absent from reference options",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "missing source does not commit",
+          "actual": "7d332ead-8eda-4ed9-80b1-3fffe65a0852",
+          "expected": "7d332ead-8eda-4ed9-80b1-3fffe65a0852"
+        }
+      ],
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('ペン・指の設定', { exact: true })\n    - locator resolved to <summary>ペン・指の設定</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:481:114)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1138:2"
+    }
+  ],
+  "pending": [
+    "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+  ],
+  "reason": "Coverage not complete: Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+}

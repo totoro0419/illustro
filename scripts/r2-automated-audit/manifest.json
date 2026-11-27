@@ -5,17 +5,13 @@
     "operation": "P12-06",
     "goal": "容量不足・競合・外部変更で原本を保護",
     "fixtures": "two-layers.ora",
-    "browser": null,
+    "browser": "SAV-006",
     "unit": [
       "apps/editor/src/persistence/workLibrary.test.ts",
       "apps/editor/src/persistence/contiguousProtection.test.ts"
     ],
     "legacy": "SAVE-SAFETY",
-    "pending": [
-      "actual storage quota exhaustion vs simulated IndexedDB transaction abort",
-      "two-tab concurrent save",
-      "external file changes/copy recovery"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/SAV.md#sav-006"
@@ -29,9 +25,7 @@
     "browser": "SAV-007",
     "unit": [],
     "legacy": null,
-    "pending": [
-      "offline layers/selection/transform/reference/history/filter/macro"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/SAV.md#sav-007"
@@ -67,9 +61,7 @@
       "apps/editor/src/assets/referenceBoardStore.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "embedded/linked operation round trip attempted; metadata readback, positioning and relink still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/REF.md#ref-006"
@@ -106,13 +98,13 @@
       "apps/editor/src/export/isoImageIcc.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "independent output color/alpha comparison",
-      "AVIF/EXR input and real HEIC input/unsupported notice"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
-    "spec": "docs/product-planning/features/IO.md#io-006"
+    "spec": "docs/product-planning/features/IO.md#io-006",
+    "manual": [
+      "HEIF-capable devices: actual decoding and color/alpha support remain device-specific; current browser correctly reports unsupported and retains work."
+    ]
   },
   {
     "id": "FIL-005",
@@ -125,10 +117,7 @@
       "apps/editor/src/fill/pixels.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "closed-region-only and leak candidate",
-      "Undo, selection/mask/alpha protection"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/FIL.md#fil-005"
@@ -162,9 +151,7 @@
       "apps/editor/src/fill/pixels.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/LIN.md#lin-007"
@@ -198,9 +185,7 @@
       "apps/editor/src/transform/groupTransform.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/TRN.md#trn-005"
@@ -273,9 +258,7 @@
       "apps/editor/src/artwork/booleanSourceVisibility.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/VEC.md#vec-004"
@@ -330,9 +313,7 @@
       "apps/editor/src/selection/maskCodec.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "ellipse/path point editing, inversion/link/density/native preservation"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/LAY.md#lay-005"
@@ -360,14 +341,20 @@
     "goal": "修復・パッチ・クローン・範囲外維持",
     "fixtures": "repair-clean.png; repair-damaged.png",
     "browser": "FX-007",
-    "unit": [],
-    "legacy": null,
-    "pending": [
-      "UI command discovery and actual input image added; source selection and repair/clone/patch pixels still pending"
+    "unit": [
+      "apps/editor/src/wet/paint.test.ts"
     ],
+    "legacy": null,
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
-    "spec": "docs/product-planning/features/FX.md#fx-007"
+    "spec": "docs/product-planning/features/FX.md#fx-007",
+    "additionalBrowsers": [
+      "FX-007-tail"
+    ],
+    "manual": [
+      "実機の筆圧・タッチ操作の体感速度、大きな作品での性能（PC/Android）"
+    ]
   },
   {
     "id": "HIS-005",
@@ -381,9 +368,7 @@
       "apps/editor/src/partialHistoryRestore.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "snapshot/copy-region comparison, undo and invalid layer mapping"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/HIS.md#his-005"
@@ -399,9 +384,7 @@
       "apps/editor/src/ui/macroAssetImport.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "missing target and parameter types"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/AUT.md#aut-002"
@@ -417,9 +400,7 @@
       "apps/editor/src/ui/legacyMacroPreview.test.ts"
     ],
     "legacy": "D-016",
-    "pending": [
-      "cancel, preview and undo attempted; controlled mid-sequence failure and later edit preservation still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/AUT.md#aut-003"
@@ -433,12 +414,13 @@
     "browser": "AUT-004",
     "unit": [],
     "legacy": null,
-    "pending": [
-      "validate original work pixels after batch and native folder overwrite handling (fault is a simulated handle)"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
-    "spec": "docs/product-planning/features/AUT.md#aut-004"
+    "spec": "docs/product-planning/features/AUT.md#aut-004",
+    "manual": [
+      "Real OS folder-picker permission and native file-system behavior require a device; browser used a controlled in-memory folder handle with actual exported PNG bytes."
+    ]
   },
   {
     "id": "AUT-005",
@@ -451,12 +433,16 @@
       "apps/editor/src/ui/macroAssetImport.test.ts"
     ],
     "legacy": "D-016",
-    "pending": [
-      "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
-    "spec": "docs/product-planning/features/AUT.md#aut-005"
+    "spec": "docs/product-planning/features/AUT.md#aut-005",
+    "additionalBrowsers": [
+      "AUT-005-tail"
+    ],
+    "manual": [
+      "実機の物理キー配列・端末固有のキー動作"
+    ]
   },
   {
     "id": "UI-007",

@@ -29,9 +29,17 @@ for(const spec of selected){
  const unit=spec.unit.map(unitFor);
  let b=null;
  if(spec.browser){
-  const p=spawnSync(process.execPath,['scripts/r2-automated-audit/browser.mjs',spec.browser],{encoding:'utf8',timeout:240000,maxBuffer:8*1024*1024,env:{...process.env,R2_CASE_DIR:dir,R2_FIXTURE_DIR:fixture}});
-  await writeFile(join(dir,'browser.log'),(p.stdout??'')+(p.stderr??'')+String(p.error??''));
-  try{b=JSON.parse(await readFile(join(dir,'browser.json'),'utf8'));}catch(e){b={status:'ERROR',reason:String(p.error??e)};}
+  const scenarios=[spec.browser,...(spec.additionalBrowsers??[])],parts=[];
+  for(const scenario of scenarios){
+   const caseDir=scenarios.length===1?dir:join(dir,scenario);await mkdir(caseDir,{recursive:true});
+   const p=spawnSync(process.execPath,['scripts/r2-automated-audit/browser.mjs',scenario],{encoding:'utf8',timeout:240000,maxBuffer:8*1024*1024,env:{...process.env,R2_CASE_DIR:caseDir,R2_FIXTURE_DIR:fixture}});
+   await writeFile(join(caseDir,'browser.log'),(p.stdout??'')+(p.stderr??'')+String(p.error??''));
+   let part;try{part=JSON.parse(await readFile(join(caseDir,'browser.json'),'utf8'));}catch(e){part={id:scenario,status:'ERROR',reason:String(p.error??e)};}
+   if(part.id!==scenario||p.status!==0&&part.status==='PASS'||part.status==='PASS'&&(!part.checks?.length||part.checks.some(c=>JSON.stringify(c.actual)!==JSON.stringify(c.expected))))part={...part,status:'ERROR',reason:'Inconsistent scenario output'};
+   parts.push(part);
+  }
+  b=parts.length===1?parts[0]:{id:spec.id,status:['FAIL','BLOCKED','ENV_LIMIT','ERROR'].find(status=>parts.some(part=>part.status===status))??(parts.every(part=>part.status==='PASS')?'PASS':'ERROR'),checks:parts.flatMap(part=>part.checks??[]),parts,reason:parts.map(part=>part.id+': '+part.status+' '+(part.reason??'')).join(' / ')};
+  await writeFile(join(dir,'browser.json'),JSON.stringify(b,null,2));
  }
  if(spec.legacy&&!legacyRuns.has(spec.legacy)){
   const safety=spec.legacy==='SAVE-SAFETY';

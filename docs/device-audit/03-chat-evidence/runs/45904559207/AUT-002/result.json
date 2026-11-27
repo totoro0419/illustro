@@ -1,0 +1,60 @@
+{
+  "id": "AUT-002",
+  "group": "E",
+  "status": "ERROR",
+  "commit": "a02367a78c4b879cdbae4a8c1a9c76d79aa8eba5",
+  "checks": [
+    {
+      "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "AUT-002",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "selection not silently switched",
+          "actual": "dc1bbb15-7004-49b2-b534-d7b2cf437a5b",
+          "expected": "dc1bbb15-7004-49b2-b534-d7b2cf437a5b"
+        },
+        {
+          "name": "non-target layer remains empty",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "requested target offset rendered",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('dialog[aria-label=\"操作セットを確認\"]').getByLabel('対象レイヤー', { exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:132:19)\n    at AUT-002 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:730:41)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:837:2"
+    }
+  ],
+  "pending": [
+    "missing target and parameter types"
+  ],
+  "reason": "Coverage not complete: missing target and parameter types"
+}

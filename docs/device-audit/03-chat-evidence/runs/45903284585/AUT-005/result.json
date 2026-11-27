@@ -1,0 +1,69 @@
+{
+  "id": "AUT-005",
+  "group": "E",
+  "status": "ERROR",
+  "commit": "379a1a88b044cff45ea27736ec5636782eb41be6",
+  "checks": [
+    {
+      "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "AUT-005",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "exported macro JSON contains name",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "search reopens macro panel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "quick-macro-replays",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.c04-shortcut-settings').locator('select:has(option[value=\"macro:c6f1b825-2b93-4596-bb9c-9b2706b2a19e\"])')\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:132:19)\n    at AUT-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:430:9)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:775:2"
+    },
+    {
+      "status": "PASS",
+      "reason": "Existing regression subchecks only"
+    }
+  ],
+  "pending": [
+    "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+  ],
+  "reason": "Coverage not complete: export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+}

@@ -1,0 +1,152 @@
+{
+  "id": "VEC-004",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "union zero outline width for exact fill oracle",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "name": "union independent point-in-rectangle coverage",
+      "actual": [
+        true,
+        true,
+        true,
+        false
+      ],
+      "expected": [
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "union full-image interior/exterior oracle",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "union undo restores original",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "intersection zero outline width for exact fill oracle",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "name": "intersection independent point-in-rectangle coverage",
+      "actual": [
+        false,
+        true,
+        false,
+        false
+      ],
+      "expected": [
+        false,
+        true,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "intersection full-image interior/exterior oracle",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "intersection undo restores original",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "difference zero outline width for exact fill oracle",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "name": "difference independent point-in-rectangle coverage",
+      "actual": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "expected": [
+        true,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "difference full-image interior/exterior oracle",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "difference undo restores original",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "xor zero outline width for exact fill oracle",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "name": "xor independent point-in-rectangle coverage",
+      "actual": [
+        true,
+        false,
+        true,
+        false
+      ],
+      "expected": [
+        true,
+        false,
+        true,
+        false
+      ]
+    },
+    {
+      "name": "xor full-image interior/exterior oracle",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "xor undo restores original",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "polyline has redundant samples",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "simplification reduces points but retains corners",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "simplified endpoints and corners retained",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "smoothing changes the curve and retains endpoints",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "smooth undo pixel equality",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

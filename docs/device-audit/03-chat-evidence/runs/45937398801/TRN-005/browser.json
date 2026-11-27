@@ -1,0 +1,162 @@
+{
+  "id": "TRN-005",
+  "status": "ERROR",
+  "checks": [
+    {
+      "name": "three distinct x positions",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "left confirmed reference layer",
+      "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+      "expected": "f64ad676-dd39-45af-8622-52489ba60648"
+    },
+    {
+      "name": "left independent binary alpha coverage",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "left one undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "center-x confirmed reference layer",
+      "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+      "expected": "f64ad676-dd39-45af-8622-52489ba60648"
+    },
+    {
+      "name": "center-x independent binary alpha coverage",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "center-x one undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "right confirmed reference layer",
+      "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+      "expected": "f64ad676-dd39-45af-8622-52489ba60648"
+    },
+    {
+      "name": "right independent binary alpha coverage",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "right one undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "top confirmed reference layer",
+      "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+      "expected": "f64ad676-dd39-45af-8622-52489ba60648"
+    },
+    {
+      "name": "top independent binary alpha coverage",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "top one undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "center-y confirmed reference layer",
+      "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+      "expected": "f64ad676-dd39-45af-8622-52489ba60648"
+    },
+    {
+      "name": "center-y independent binary alpha coverage",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "center-y one undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "bottom confirmed reference layer",
+      "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+      "expected": "f64ad676-dd39-45af-8622-52489ba60648"
+    },
+    {
+      "name": "bottom independent binary alpha coverage",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "bottom one undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "spread-x confirmed reference layer",
+      "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+      "expected": "f64ad676-dd39-45af-8622-52489ba60648"
+    },
+    {
+      "name": "spread-x independent binary alpha coverage",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "spread-x one undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "spread-y confirmed reference layer",
+      "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+      "expected": "f64ad676-dd39-45af-8622-52489ba60648"
+    },
+    {
+      "name": "spread-y independent binary alpha coverage",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "spread-y one undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "canvas center snap exact x",
+      "actual": 256,
+      "expected": 256
+    },
+    {
+      "name": "temporary bypass keeps unsnapped x",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "snap resumes automatically next drag",
+      "actual": 256,
+      "expected": 256
+    },
+    {
+      "name": "pixel snapping produces integer x",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "pixel snapping produces integer y",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "other selected layer right edge snap",
+      "actual": 124,
+      "expected": 124
+    }
+  ],
+  "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByLabel('左上 X', { exact: true }) to be visible\n    63 × locator resolved to hidden <input step=\".5\" type=\"number\"/>\n\n    at corner (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:330:42)\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:346:61)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2"
+}

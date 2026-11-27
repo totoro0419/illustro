@@ -1,0 +1,132 @@
+{
+  "id": "SAV-006",
+  "group": "A",
+  "status": "ERROR",
+  "commit": "a11a4ce6284d9dce535f68c5880b5f816f8b7736",
+  "checks": [
+    {
+      "path": "apps/editor/src/persistence/workLibrary.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "Work library document identity rename persists in portable roots without changing artwork or its identity",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "Work library document identity copy has its own identity and edits never change the source",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/persistence/contiguousProtection.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "advances only through a verified contiguous dependency prefix",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "does not regress the verified head on duplicate old writes",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "does not retain a growing map of already acknowledged writes",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "SAV-006",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "external conflict explicitly displayed",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "external conflict prevented overwrite",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "original external bytes retained",
+          "actual": "c1097ecb4a90614965fb80e9f72c1d3bb9fb7f095a62c7ba8ca15d51472cd1ba",
+          "expected": "c1097ecb4a90614965fb80e9f72c1d3bb9fb7f095a62c7ba8ca15d51472cd1ba"
+        },
+        {
+          "name": "both actual versions compared",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "name": "save copy leaves original external bytes unchanged",
+          "actual": "c1097ecb4a90614965fb80e9f72c1d3bb9fb7f095a62c7ba8ca15d51472cd1ba",
+          "expected": "c1097ecb4a90614965fb80e9f72c1d3bb9fb7f095a62c7ba8ca15d51472cd1ba"
+        },
+        {
+          "name": "current canvas preserved after conflict",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "stale tab warns instead of overwriting",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "stale tab can export recovery copy",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "latest saved version preserved across tab conflict",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "actual browser quota limit reported",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "quota failure still permits native rescue",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "quota removal allows retry and verified autosave",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "failed quota stroke still available",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "retry saved all recovered pixels",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    {
+      "status": "PASS",
+      "reason": "Existing regression subchecks only"
+    }
+  ],
+  "pending": [
+    "actual storage quota exhaustion vs simulated IndexedDB transaction abort",
+    "two-tab concurrent save",
+    "external file changes/copy recovery"
+  ],
+  "reason": "Coverage not complete: actual storage quota exhaustion vs simulated IndexedDB transaction abort; two-tab concurrent save; external file changes/copy recovery"
+}

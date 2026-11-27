@@ -1,0 +1,22 @@
+{
+  "id": "LAY-005",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "visible center",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "hidden exterior",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "disable restores artwork",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

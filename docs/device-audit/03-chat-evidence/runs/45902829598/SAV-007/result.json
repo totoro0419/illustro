@@ -1,0 +1,44 @@
+{
+  "id": "SAV-007",
+  "group": "A",
+  "status": "ERROR",
+  "commit": "b99967475bcb0fcc13cd77e23929779ae94b1a04",
+  "checks": [
+    {
+      "id": "SAV-007",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "offline flag",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "same work offline",
+          "actual": "7e2bcdc3-716d-4961-b8fb-a75ed4b97c5e",
+          "expected": "7e2bcdc3-716d-4961-b8fb-a75ed4b97c5e"
+        },
+        {
+          "name": "new offline stroke present",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline selection constrains stroke",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline save survived reload",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#selectionClear')\n    - locator resolved to <button type=\"button\" id=\"selectionClear\">選択を解除</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at SAV-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:553:41)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:775:2"
+    }
+  ],
+  "pending": [
+    "offline layers/selection/transform/reference/history/filter/macro"
+  ],
+  "reason": "Coverage not complete: offline layers/selection/transform/reference/history/filter/macro"
+}

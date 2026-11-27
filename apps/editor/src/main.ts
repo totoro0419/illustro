@@ -3668,6 +3668,13 @@ function selectCanvasTool(id:string,start?:()=>void){
 }
 byId<HTMLButtonElement>('selection').onclick=()=>selectCanvasTool('selection',()=>c06Selection?.open());
 byId('smudge').onclick=()=>selectCanvasTool('smudge',()=>wetTools?.open());
+function openRepairTool(kind:'clone'|'heal'|'patch'){
+  selectCanvasTool('smudge',()=>wetTools?.openRepair(kind));
+}
+byId('smudge').addEventListener('illustro:repair',event=>{
+  const kind=(event as CustomEvent<string>).detail;
+  if(kind==='clone'||kind==='heal'||kind==='patch')openRepairTool(kind);
+});
 byId('smartFill').onclick=()=>selectCanvasTool('smartFill',()=>fillPanel?.open());
 for(const id of ['transform','move'])byId(id).onclick=()=>selectCanvasTool(id,
  ()=>transformPanel?.open(Boolean(c06Selection?.active()),id==='move'));
@@ -4947,13 +4954,14 @@ wetTools=installWetTools(byId('documentBoxBody'),{
   activate:start=>selectCanvasTool('smudge',start),
   hasSelection:()=>!!c06Selection?.active(),
   current:()=>documentReady&&surface?{drawing:surface,documentId:controller.document.root.documentId,
-    layerId:controller.selectedLayer.id,layerName:controller.selectedLayer.name}:null,
+    layerId:controller.selectedLayer.id,layerName:controller.selectedLayer.name,revisionId:controller.document.head,selectionKey:c06Selection?.active()??null}:null,
+  sources:()=>documentReady?controller.layers.map(layer=>({id:layer.id,name:layer.name})):[],
   color:()=>[foreground.current.r,foreground.current.g,foreground.current.b].map(channel=>Math.round(channel*255)),
   left:()=>{if(activeCanvasTool==='smudge'){leaveCanvasTool();reflectRailTool();}},
   preview:async stroke=>{
     const drawing=surface,artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
     const selection=c06Selection?.active()??null;
-    if(!drawing||stroke.documentId!==artwork.root.documentId||!artwork.root.isLayerVisible(layer.id)||
+    if(!drawing||stroke.documentId!==artwork.root.documentId||stroke.targetLayerId!==layer.id||stroke.targetRevision!==head||stroke.selectionKey!==selection||!artwork.root.isLayerVisible(layer.id)||
       artwork.root.groupsForLayer(layer.id).some(group=>group.locked)||
       !stroke.separate&&stroke.reference!=='merged'&&(artwork.root.isLayerContentLocked(layer.id)||layer.baseColor||layer.editable||layer.deformation||layer.imageLink||layer.lineRegions))return false;
     const patch=await createWetPatch(artwork,drawing,layer.id,selection,stroke,true);
@@ -4968,7 +4976,7 @@ wetTools=installWetTools(byId('documentBoxBody'),{
     let changed=false;
     await withClipboardAccess(async drawing=>{
       const valid=()=>!stroke.signal.aborted&&controller.document===artwork&&artwork.head===head&&
-        root.documentId===stroke.documentId&&controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
+        root.documentId===stroke.documentId&&stroke.targetLayerId===layer.id&&stroke.targetRevision===head&&stroke.selectionKey===selection&&controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
       if(!valid())return 'read';
       const separate=stroke.separate||stroke.reference==='merged';
       if(!root.isLayerVisible(layer.id)||root.groupsForLayer(layer.id).some(group=>group.locked)||
@@ -4991,6 +4999,15 @@ wetTools=installWetTools(byId('documentBoxBody'),{
     return changed;
   },
 });
+c04Commands.registerProvider(()=>[
+  {id:'repair:heal',label:'修復ブラシ',aliases:'修復 修正 ヒーリング Healing retouch'},
+  {id:'repair:patch',label:'範囲パッチ',aliases:'パッチ Patch 範囲修復'},
+  {id:'repair:clone',label:'クローン',aliases:'クローン スタンプ Clone clone stamp'},
+].map(command=>({
+  ...command,category:'補正・修復',
+  availability:()=>documentReady?null:'先に作品を開いてください。',
+  execute:()=>openRepairTool(command.id.slice(7) as 'clone'|'heal'|'patch'),
+})));
 installWetPad(byId('referenceBoxBody'),{
   settings:()=>wetTools?.settings(),sample:color=>foreground.choose(rgb(color[0]!/255,color[1]!/255,color[2]!/255)),
   brushes:()=>surface?.brushes.map(preset=>brushDrafts.get(preset.id)??(surface?.preset?.id===preset.id?surface.preset:preset))??[],

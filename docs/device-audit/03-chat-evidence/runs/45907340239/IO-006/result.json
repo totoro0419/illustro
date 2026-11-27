@@ -1,0 +1,192 @@
+{
+  "id": "IO-006",
+  "group": "A",
+  "status": "ERROR",
+  "commit": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+  "checks": [
+    {
+      "path": "apps/editor/src/export/exchange.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "exchange formats round-trips PSD layers and restores the imported document",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "exchange formats round-trips PSB layers and restores the imported document",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "exchange formats preserves TIFF alpha and physical resolution and rejects truncated strips",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "exchange formats writes the OpenRaster stack in top-to-bottom order with real PNGs",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "round-trips linear OpenEXR and keeps semi-transparent straight sRGB values",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "embeds the standard sRGB profile and optional text in PNG without an overlapping sRGB chunk",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "writes simple SVG text as editable, escaped lines and retains complex text as artwork pixels",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/export/avifMetadata.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "stores ICC, EXIF and XMP while preserving both encoded image extents",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/export/isoImageIcc.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "uses the profile associated with the primary AVIF or HEIF item",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "preserves TIFF ICC, text and density alongside the original alpha",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "IO-006",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "real avif signature",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "avif decoded size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "AVIF exact alpha",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "AVIF lossless center color tolerance",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "real exr signature",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "exr decoded size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "EXR buffer length",
+          "actual": 196608,
+          "expected": 196608
+        },
+        {
+          "name": "EXR all linear color and alpha channels match",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "avif real fixture opened",
+          "actual": "opened",
+          "expected": "opened"
+        },
+        {
+          "name": "avif import size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "avif independently checked fixture colors",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "exr real fixture opened",
+          "actual": "opened",
+          "expected": "opened"
+        },
+        {
+          "name": "exr import size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "EXR import matches independently decoded SDR RGBA",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "HEIF explicit unsupported notice",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "unsupported HEIF preserves original work",
+          "actual": "b2eadae9-0fd9-419a-8384-0ce10baea41e",
+          "expected": "b2eadae9-0fd9-419a-8384-0ce10baea41e"
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "independent output color/alpha comparison",
+    "AVIF/EXR input and real HEIC input/unsupported notice"
+  ],
+  "reason": "Coverage not complete: independent output color/alpha comparison; AVIF/EXR input and real HEIC input/unsupported notice"
+}

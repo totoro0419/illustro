@@ -1,0 +1,59 @@
+{
+  "id": "AUT-005",
+  "group": "E",
+  "status": "ERROR",
+  "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+  "checks": [
+    {
+      "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "AUT-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "exported macro JSON contains name",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "search reopens macro panel",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    {
+      "status": "PASS",
+      "reason": "Existing regression subchecks only"
+    }
+  ],
+  "pending": [
+    "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+  ],
+  "reason": "Coverage not complete: export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+}

@@ -11,7 +11,24 @@ const launch={headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:
 const report={tests:[],errors:[],commit:process.env.EXPECTED_COMMIT_SHA??'local',mode:publicBase?'public':'local'};const record=(name,extra={})=>{report.tests.push({name,status:'PASS',...extra});console.log('PASS '+name);};
 const errors=[];let browser;
 const state=page=>page.locator('#canvas').evaluate(c=>({...c.dataset,width:c.width,height:c.height,cssWidth:c.clientWidth,cssHeight:c.clientHeight,dpr:devicePixelRatio,view:JSON.parse(c.dataset.view??'null')}));
-async function create(page,name,width=512,height=384,background='transparent'){await page.locator('#ihStart').click();await page.locator('#ihNewName').fill(name);await page.locator('#ihNewWidth').fill(String(width));await page.locator('#ihNewHeight').fill(String(height));await page.locator('#ihNewBackground').selectOption(background);await page.locator('#ihNewCreate').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:45000});return state(page);}
+async function create(page,name,width=512,height=384,background='transparent'){
+ await page.locator('#ihStart').click();
+ const setup=page.locator('#ihCanvasSetup');if(!await setup.evaluate(e=>e.open))await setup.locator(':scope > summary').click();
+ await page.locator('#ihNewWidth').fill(String(width));await page.locator('#ihNewHeight').fill(String(height));const bg=page.locator('#ihNewBackground');
+ if(await bg.inputValue()!==background){const label=await bg.locator('option[value="'+background+'"]').textContent();if(await bg.isVisible())await bg.selectOption(background);else{const trigger=bg.locator('xpath=following-sibling::button[contains(@class,"workspace-choice")][1]');await trigger.click();await page.locator('#'+await trigger.getAttribute('aria-controls')).getByRole('option',{name:label,exact:true}).click();}assert.equal(await bg.inputValue(),background);}
+ await page.locator('#ihNewCreate').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:45000});
+ await page.waitForFunction(()=>!document.querySelector('#brush')?.disabled&&document.querySelector('#canvas')?.dataset.view!=='null');
+ const created=await state(page);
+ await home(page);await page.locator('#ihNavWorks').click();
+ const card=page.locator('[data-work-id="'+created.documentId+'"]');
+ await card.locator('.ih-work-title').click();
+ const dialog=page.getByRole('dialog',{name:'作品名を変更'});
+ await dialog.getByLabel('作品名',{exact:true}).fill(name);
+ await dialog.getByRole('button',{name:'変更する',exact:true}).click();
+ await dialog.waitFor({state:'hidden'});
+ await card.locator('.ih-work-title').filter({hasText:name}).waitFor();
+ await open(page,created.documentId);return state(page);
+}
 async function draw(page,n=1){const box=await page.locator('#canvas').boundingBox();assert.ok(box);await page.mouse.move(box.x+box.width*.4,box.y+box.height*.4);await page.mouse.down();await page.mouse.move(box.x+box.width*.58,box.y+box.height*.56,{steps:9});await page.mouse.up();await page.waitForFunction(count=>document.getElementById('canvas').dataset.committedStrokes===String(count)&&document.getElementById('canvas').dataset.historyBusy==='false',n,{timeout:45000});}
 async function home(page){await page.locator('#home').click();await page.locator('#ihApp').waitFor({state:'visible',timeout:45000});}
 async function works(page,n){await page.locator('#ihNavWorks').click();await page.waitForFunction(count=>document.querySelectorAll('.ih-work-card').length===count,n,{timeout:15000});}
@@ -23,23 +40,23 @@ try{
  let persistent=await chromium.launchPersistentContext(profile,{...launch,viewport:{width:1024,height:768}}),page=await persistent.newPage();
  await page.goto(base+'?backend=webgl2');const saved=await create(page,'ブラウザ再起動');await draw(page);await home(page);
   // Home is intentionally immediate. Persistence is independently confirmed before a simulated clean browser exit.
-  await page.waitForFunction(()=>{const el=document.getElementById('saveState');return el?.dataset.autosavePending==='false'&&el.dataset.protectedThrough!=='0'&&el.textContent.includes('保存済み');},{timeout:30000});
+  await page.waitForFunction(()=>{const el=document.getElementById('saveState');return el?.dataset.autosavePending==='false'&&el.dataset.protectedThrough!=='0'&&el.textContent.includes('保存済み');},undefined,{timeout:30000});
   await persistent.close();
- persistent=await chromium.launchPersistentContext(profile,{...launch,viewport:{width:1024,height:768}});page=await persistent.newPage();await page.goto(base+'?backend=webgl2');await page.locator('#ihContinue').click();await page.locator('#ihApp').waitFor({state:'hidden'});assert.equal((await state(page)).documentId,saved.documentId);assert.equal((await state(page)).committedStrokes,'1');await persistent.close();record('BROWSER-PROCESS-RESTART');
+ persistent=await chromium.launchPersistentContext(profile,{...launch,viewport:{width:1024,height:768}});page=await persistent.newPage();await page.goto(base+'?backend=webgl2');await works(page,1);await open(page,saved.documentId);await page.waitForFunction(()=>!document.querySelector('#brush')?.disabled&&document.querySelector('#canvas')?.dataset.view!=='null');assert.equal((await state(page)).documentId,saved.documentId);assert.equal((await state(page)).committedStrokes,'1');await persistent.close();record('BROWSER-PROCESS-RESTART');
  const context=await browser.newContext({viewport:{width:1200,height:900},serviceWorkers:'block',acceptDownloads:true});await context.addInitScript(()=>Object.defineProperty(window,'showSaveFilePicker',{value:undefined,configurable:true}));
  await context.route('**/assets/persistence.worker-*.js',async route=>{const response=await route.fetch(),source=await response.text();
- const prefix=`Object.defineProperty(navigator.storage,'getDirectory',{value:async()=>{throw new Error('OPFS disabled for fallback test');}});let testFail=false;const bc=new BroadcastChannel('illustro-test-fault');bc.onmessage=e=>{testFail=e.data===true;bc.postMessage('ready');};const originalPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){const request=originalPut.apply(this,args);if(testFail&&this.name==='works')this.transaction.abort();return request;};`;
+ const prefix=`Object.defineProperty(navigator.storage,'getDirectory',{value:async()=>{throw new Error('OPFS disabled for fallback test');}});let testFail=false;const bc=new BroadcastChannel('illustro-test-fault');bc.onmessage=e=>{testFail=e.data===true;bc.postMessage('ready');};const originalPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(testFail&&(this.name==='files'||this.name==='works'))throw new DOMException('QA controlled quota fault','QuotaExceededError');return originalPut.apply(this,args);};`;
  await route.fulfill({response,body:prefix+source});});
  page=await context.newPage();page.on('dialog',d=>d.accept());await page.goto(base+'?backend=webgl2');const a=await create(page,'失敗を検査');await draw(page);await home(page);await works(page,1);await open(page,a.documentId);const revision=(await state(page)).revisionId;
  async function fault(value){await page.evaluate(value=>new Promise(resolve=>{const c=new BroadcastChannel('illustro-test-fault');c.onmessage=e=>{if(e.data==='ready'){c.close();resolve();}};c.postMessage(value);}),value);}
- await fault(true);await draw(page,2);await page.waitForFunction(()=>document.getElementById('saveState').textContent.includes('保存できません'),{timeout:15000});
+ await fault(true);await draw(page,2);await page.waitForFunction(()=>([...document.querySelectorAll('#status,#saveState,[role=status]')].some(e=>/quota|保存できません|救出/.test(e.textContent??''))) ,undefined,{timeout:15000});
  const catalog=await page.evaluate(()=>new Promise(resolve=>{const request=indexedDB.open('illustro-work-library-v1');request.onsuccess=()=>{const tx=request.result.transaction('works'),r=tx.objectStore('works').getAll();r.onsuccess=()=>resolve(r.result.map(x=>({revision:x.revisionId})));};}));assert.equal(catalog[0].revision,revision,'failed publication retains prior verified artwork');
  await page.locator('#home').click();await page.locator('#ihApp').waitFor({state:'visible',timeout:2000});
   // Navigation remains fast even if a save failed. But creating/switching artwork must fail safely.
   await page.locator('#ihStart').click();await page.locator('#ihNewCreate').click();
-  await page.waitForFunction(()=>document.getElementById('ihNewError').textContent.includes('作成できません')||document.getElementById('ihNotice').textContent.includes('保存できません'),{timeout:20000});
+  await page.waitForFunction(()=>document.getElementById('ihNewError').textContent.includes('作成できません')||document.getElementById('ihNotice').textContent.includes('保存できません') ,undefined,{timeout:20000});
   assert.equal(await page.locator('#ihApp').isVisible(),true,'failed save prevents destructive artwork replacement');
-  await page.locator('#ihNewCancel').click();await page.locator('#ihReturnEditor').click();
+  await page.locator('#ihNewCancel').click();await page.locator('#ihNavSettings').click();await page.locator('#ihSettingsEditor').click();
   assert.equal((await state(page)).documentId,a.documentId,'failed save keeps active artwork available');
  await fault(false);
   // The save queue may automatically recover when the fault is lifted; retry only if needed.
@@ -47,7 +64,7 @@ try{
   const recoveryAction=await page.evaluate(()=>{const button=document.getElementById('retryWorkSave');if(button&&!button.hidden){button.click();return 'requested-retry';}return 'already-recovered';});
   console.log('SAVE-RECOVERY '+recoveryAction);
   await page.waitForFunction(()=>document.getElementById('saveState').textContent.includes('保存済み')&&document.getElementById('saveState').dataset.autosavePending==='false',null,{timeout:20000});await home(page);await works(page,1);await open(page,a.documentId);assert.equal((await state(page)).committedStrokes,'2');record('INDEXEDDB-FALLBACK-QUOTA-FAILURE-RETRY-PREVIOUS-INTACT');
- await home(page);await page.locator('#ihNavHome').click();const white=await create(page,'白い背景',128,96,'white');await draw(page);const output=await download(page,async()=>{await page.evaluate(()=>document.getElementById('exportImage').click());await page.locator('#exportFormat').selectOption('png');await page.locator('#exportRun').click();});
+ await home(page);await page.locator('#ihNavHome').click();const white=await create(page,'白い背景',128,96,'white');await draw(page);const output=await download(page,async()=>{await page.locator('#fileActionsOpen').click();await page.locator('#exportImage').click();const fmt=page.locator('#exportFormat');if(await fmt.inputValue()!=='png'){const tr=fmt.locator('xpath=following-sibling::button[contains(@class,"workspace-choice")][1]');if(await fmt.isVisible())await fmt.selectOption('png');else{await tr.click();await page.locator('#'+await tr.getAttribute('aria-controls')).getByRole('option',{name:'PNG',exact:true}).click();}}await page.locator('#exportRun').click();});
  const pixel=await page.evaluate(async bytes=>{const b=await createImageBitmap(new Blob([new Uint8Array(bytes)])),c=new OffscreenCanvas(b.width,b.height),ctx=c.getContext('2d');ctx.drawImage(b,0,0);b.close();return Array.from(ctx.getImageData(1,1,1,1).data);},Array.from(output.buffer));assert.deepEqual(pixel,[255,255,255,255]);await home(page);await page.reload();await works(page,2);await open(page,white.documentId);assert.equal((await state(page)).layerCount,'2');record('BACKGROUND-REAL-RASTER-SAVE-REOPEN-EXPORT');
  await context.close();
 }catch(error){report.errors.push(String(error.stack??error));throw error;}finally{await fs.writeFile(path.join(evidence,'safety-report.json'),JSON.stringify(report,null,2));await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));}

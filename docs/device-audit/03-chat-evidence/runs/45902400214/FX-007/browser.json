@@ -1,0 +1,138 @@
+{
+  "id": "FX-007",
+  "status": "ERROR",
+  "checks": [
+    {
+      "name": "repair fixture dimensions",
+      "actual": [
+        128,
+        96
+      ],
+      "expected": [
+        128,
+        96
+      ]
+    },
+    {
+      "name": "entry selects clone",
+      "actual": "clone",
+      "expected": "clone"
+    },
+    {
+      "name": "clone donor center",
+      "actual": [
+        40,
+        100,
+        180,
+        255
+      ],
+      "expected": [
+        40,
+        100,
+        180,
+        255
+      ]
+    },
+    {
+      "name": "clone exterior unchanged",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "clone undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "clone redo restores result",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "clone-second undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "entry selects heal",
+      "actual": "heal",
+      "expected": "heal"
+    },
+    {
+      "name": "healing decreases independent defect error",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "heal exterior unchanged",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "heal undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "entry selects patch",
+      "actual": "patch",
+      "expected": "patch"
+    },
+    {
+      "name": "cancel leaves revision unchanged",
+      "actual": "e62c25b8-9591-4dc4-8b54-0253291b036e",
+      "expected": "e62c25b8-9591-4dc4-8b54-0253291b036e"
+    },
+    {
+      "name": "cancel leaves original pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "patch decreases independent defect error",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "patch exterior unchanged",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "patch undo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "entry selects clone",
+      "actual": "clone",
+      "expected": "clone"
+    },
+    {
+      "name": "entry selects heal",
+      "actual": "heal",
+      "expected": "heal"
+    },
+    {
+      "name": "entry selects patch",
+      "actual": "patch",
+      "expected": "patch"
+    },
+    {
+      "name": "entry selects clone",
+      "actual": "clone",
+      "expected": "clone"
+    },
+    {
+      "name": "selection exterior unchanged",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "clone-selected undo restores all pixels",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#selectionClear')\n    - locator resolved to <button type=\"button\" id=\"selectionClear\">選択を解除</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:316:41)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:704:2"
+}

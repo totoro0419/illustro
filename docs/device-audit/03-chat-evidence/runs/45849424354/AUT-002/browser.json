@@ -1,0 +1,22 @@
+{
+  "id": "AUT-002",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "selection not silently switched",
+      "actual": "82dc4fae-1849-49c7-bd95-4833748b8edd",
+      "expected": "82dc4fae-1849-49c7-bd95-4833748b8edd"
+    },
+    {
+      "name": "non-target layer remains empty",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "requested target offset rendered",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

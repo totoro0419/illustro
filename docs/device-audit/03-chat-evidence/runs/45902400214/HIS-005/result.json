@@ -1,0 +1,86 @@
+{
+  "id": "HIS-005",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+  "checks": [
+    {
+      "path": "apps/editor/src/historyBrush.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C03-003 history brush respects C06 per-pixel selection only restores selected pixels inside a free-form selection",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C03-003 history brush respects C06 per-pixel selection uses feathered selection alpha as proportional restoration strength",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C03-003 history brush respects C06 per-pixel selection rejects a selection mask from another canvas size without changing pixels",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/partialHistoryRestore.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C06-002 cold materialized history recovery restores the authoritative current head only when an image-history miss requires raster baseline data",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C06-002 cold materialized history recovery does not hide unrelated rendering failures or claim a successful restore",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "HIS-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "old stroke retained",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "local restoration changed pixel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "remote stroke retained",
+          "actual": [
+            31,
+            38,
+            51,
+            255
+          ],
+          "expected": [
+            31,
+            38,
+            51,
+            255
+          ]
+        },
+        {
+          "name": "history restoration undo all pixels",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "snapshot/copy-region comparison, undo and invalid layer mapping"
+  ],
+  "reason": "Coverage not complete: snapshot/copy-region comparison, undo and invalid layer mapping"
+}

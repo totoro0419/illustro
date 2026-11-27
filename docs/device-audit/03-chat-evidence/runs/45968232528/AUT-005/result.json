@@ -1,0 +1,172 @@
+{
+  "id": "AUT-005",
+  "group": "E",
+  "status": "PASS",
+  "commit": "368c260ad7ecb66b417ea9825e69d97447037335",
+  "checks": [
+    {
+      "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "AUT-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "exported macro JSON contains name",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "search reopens macro panel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "quick-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported macro appears in visible shortcut assignment list",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported macro has available shortcut command",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "shortcut-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "missing dependency cannot be invoked",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "missing dependency reason displayed",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "unavailable and rejected imports do not modify revision",
+          "actual": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881",
+          "expected": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881"
+        },
+        {
+          "name": "unavailable and rejected imports preserve artwork",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "parts": [
+        {
+          "id": "AUT-005",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "exported macro JSON contains name",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "search reopens macro panel",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "imported-macro-replays",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "quick-macro-replays",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "imported macro appears in visible shortcut assignment list",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "imported macro has available shortcut command",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "shortcut-macro-replays",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        },
+        {
+          "id": "AUT-005-tail",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "missing dependency cannot be invoked",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "missing dependency reason displayed",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "unavailable and rejected imports do not modify revision",
+              "actual": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881",
+              "expected": "e31d8f92-69c2-46ff-bbb8-de1cd7be5881"
+            },
+            {
+              "name": "unavailable and rejected imports preserve artwork",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "reason": "AUT-005: PASS Implemented subchecks passed, see manifest for coverage gaps / AUT-005-tail: PASS Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    {
+      "status": "PASS",
+      "reason": "Existing regression subchecks only"
+    }
+  ],
+  "pending": []
+}

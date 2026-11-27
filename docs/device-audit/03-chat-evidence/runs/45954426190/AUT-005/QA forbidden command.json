@@ -1,0 +1,1 @@
+{"schema":"illustro.macros.simple","version":1,"items":[{"id":"QA forbidden command","name":"QA forbidden command","steps":["qa:unrecognized-action"]}]}

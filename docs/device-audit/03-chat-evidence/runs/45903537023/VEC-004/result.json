@@ -1,0 +1,282 @@
+{
+  "id": "VEC-004",
+  "group": "C",
+  "status": "ERROR",
+  "commit": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+  "checks": [
+    {
+      "path": "apps/editor/src/artwork/pathOperations.c10.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C10 vector editing geometry groups two separate strokes without bridging them and erases only the touched stroke",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10 vector editing geometry appends legacy solid paths with the same color written in a different hex case",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10 vector editing geometry rejects distant endpoints instead of silently creating a bridge",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10 vector editing geometry joins nearby curves with a straight bridge and merges coincident endpoints without losing original handles",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10 vector editing geometry hits a strongly curved 4K stroke that a fixed 16-segment approximation misses",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10 vector editing geometry samples high-curvature Bézier paths with sub-pixel error",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10 vector editing geometry can refine a long high-curvature 4K Bézier beyond the former 255-point cap",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10 vector editing geometry honors the requested error and point budget for large ellipses and rectangles",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10 vector editing geometry preserves the original operands when two closed shapes are combined",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "adds a width point to the selected location of a transformed straight segment",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "adds a width point to a curved section without changing its curve",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/artwork/linkedBooleans.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C10-006 live non-destructive boolean dependencies updates union repeatedly from the editable sources",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 live non-destructive boolean dependencies updates difference repeatedly from the editable sources",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 live non-destructive boolean dependencies updates intersection repeatedly from the editable sources",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 live non-destructive boolean dependencies updates xor repeatedly from the editable sources",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 live non-destructive boolean dependencies retains an empty intersection, then restores its shape when sources overlap again",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 live non-destructive boolean dependencies updates chains once in order and safely freezes a deleted source",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 live non-destructive boolean dependencies rejects cycles and invalid coordinates before applying any updates",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 live non-destructive boolean dependencies commits source/result pixels and links in one revision and restores them losslessly",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 recomputes once from both final sources in a simultaneous alignment",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 existing operand-edit action saves live sources and recomputes legacy results directly",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-006 handles valid extreme coordinates without nonfinite or out-of-range geometry",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "path": "apps/editor/src/artwork/booleanSourceVisibility.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C10-005 atomic boolean source hiding allows two different unlocked editable shapes without deleting either",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-005 atomic boolean source hiding rejects incomplete or duplicate operands and editing an existing result",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C10-005 atomic boolean source hiding never hides missing, locked or non-path layers",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "VEC-004",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "union zero outline width for exact fill oracle",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "union independent point-in-rectangle coverage",
+          "actual": [
+            true,
+            true,
+            true,
+            false
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            false
+          ]
+        },
+        {
+          "name": "union full-image interior/exterior oracle",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "union undo restores original",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "intersection zero outline width for exact fill oracle",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "intersection independent point-in-rectangle coverage",
+          "actual": [
+            false,
+            true,
+            false,
+            false
+          ],
+          "expected": [
+            false,
+            true,
+            false,
+            false
+          ]
+        },
+        {
+          "name": "intersection full-image interior/exterior oracle",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "intersection undo restores original",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "difference zero outline width for exact fill oracle",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "difference independent point-in-rectangle coverage",
+          "actual": [
+            true,
+            false,
+            false,
+            false
+          ],
+          "expected": [
+            true,
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "name": "difference full-image interior/exterior oracle",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "difference undo restores original",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "xor zero outline width for exact fill oracle",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "xor independent point-in-rectangle coverage",
+          "actual": [
+            true,
+            false,
+            true,
+            false
+          ],
+          "expected": [
+            true,
+            false,
+            true,
+            false
+          ]
+        },
+        {
+          "name": "xor full-image interior/exterior oracle",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "xor undo restores original",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  ],
+  "pending": [
+    "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending"
+  ],
+  "reason": "Coverage not complete: four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending"
+}

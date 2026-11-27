@@ -1,9 +1,10 @@
-name: R2 chat audit remaining 17 (isolated)
+name: R2 round 5 audit (isolated)
 on:
   push:
-    branches: [qa/r2-chat-audit-remaining17-2026-11-26]
+    branches: [fix/r2-audit-round5-2026-11-27]
     paths:
       - 'scripts/r2-automated-audit/**'
+      - 'scripts/editor-works-safety-smoke.mjs'
       - '.github/workflows/r2-automated-audit.yml'
   workflow_dispatch:
     inputs:
@@ -29,7 +30,7 @@ jobs:
       PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
       R2_AUDIT_OUT: r2-audit-evidence
       R2_FIXTURE_DIR: r2-audit-fixtures
-      AUDIT_SELECTION: ${{ inputs.selection || 'GST-005,COL-008,FX-007,VEC-004,AUT-004' }}
+      AUDIT_SELECTION: ${{ inputs.selection || 'FX-007,AUT-005' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,7 +70,29 @@ jobs:
           node --check scripts/r2-automated-audit/run.mjs
           node scripts/r2-automated-audit/self-test.mjs
       - name: Run selected checks
-        run: node scripts/r2-automated-audit/run.mjs "$AUDIT_SELECTION"
+        run: |
+          set +e
+          root="$R2_AUDIT_OUT"
+          # Split selected IDs only; the built app is shared.
+          for group in A B C D; do
+            case "$group" in
+              A) ids='SAV-006,SAV-007,REF-006,IO-006';;
+              B) ids='FIL-005,LIN-007,TRN-005,VEC-004,LAY-005';;
+              C) ids='COL-008,FX-007,HIS-005,AUT-002,AUT-003,AUT-004';;
+              D) ids='AUT-005';;
+            esac
+            selected="$(node -e 'const a=process.argv[1].split(",");console.log(process.argv[2].split(",").filter(x=>a.includes(x)).join(","))' "$AUDIT_SELECTION" "$ids")"
+            if [ -n "$selected" ]; then R2_AUDIT_OUT="$root/group-$group" node scripts/r2-automated-audit/run.mjs "$selected" & pids="$pids $!"; fi
+          done
+          if [ -z "$pids" ]; then node scripts/r2-automated-audit/run.mjs "$AUDIT_SELECTION"; exit $?; fi
+          rc=0
+          for pid in $pids; do wait "$pid" || rc=1; done
+          for group in "$root"/group-*; do
+            for case in "$group"/*; do
+              if [ -d "$case" ] && [ -f "$case/result.json" ]; then cp -a "$case" "$root/"; fi
+            done
+          done
+          exit "$rc"
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
@@ -84,13 +107,18 @@ jobs:
         if: ${{ always() && !cancelled() }}
         run: |
           test -d r2-audit-evidence || exit 1
+          git fetch origin fix/r2-audit-round5-2026-11-27
+          git checkout --detach FETCH_HEAD
           node scripts/r2-automated-audit/save-chat-report.mjs
+          if ! git diff --quiet "$EXPECTED_COMMIT_SHA" HEAD -- apps packages prototypes scripts .github/workflows; then
+            git restore docs/device-audit/03-CHAT-REMAINING17.csv docs/device-audit/03-CHAT-REMAINING17-SUMMARY.md docs/device-audit/03-chat-evidence/actual-results.json
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/device-audit/03-CHAT-REMAINING17.csv docs/device-audit/03-CHAT-REMAINING17-SUMMARY.md docs/device-audit/03-chat-evidence/
           if ! git diff --cached --quiet; then
             git commit -m "Record actual R2 chat audit evidence for $EXPECTED_COMMIT_SHA"
-            git push origin HEAD:refs/heads/qa/r2-chat-audit-remaining17-2026-11-26
+            git push origin HEAD:refs/heads/fix/r2-audit-round5-2026-11-27
           fi
       - name: Fail if fixtures could not be verified
         if: ${{ always() && steps.fixtures.outcome != 'success' }}

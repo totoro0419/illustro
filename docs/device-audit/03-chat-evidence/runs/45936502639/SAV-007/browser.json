@@ -1,0 +1,102 @@
+{
+  "id": "SAV-007",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "offline flag",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "same work offline",
+      "actual": "99008198-e7a1-4821-9d7b-726e355dcdb9",
+      "expected": "99008198-e7a1-4821-9d7b-726e355dcdb9"
+    },
+    {
+      "name": "new offline stroke present",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline selection constrains stroke",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline save survived reload",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline new layer created",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline new layer pixels rendered",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline undo removes new stroke",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "offline redo restores all pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline layer/history survives reload",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline transform moved pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline reference image visible",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline reference excluded from export",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline invert actual opaque RGB",
+      "actual": [
+        224,
+        217,
+        204,
+        255
+      ],
+      "expected": [
+        224,
+        217,
+        204,
+        255
+      ]
+    },
+    {
+      "name": "offline filter undo restores full image",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline macro applied actual opacity",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "all offline edits survive reopen",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

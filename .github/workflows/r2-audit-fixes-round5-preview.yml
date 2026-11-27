@@ -1,0 +1,153 @@
+name: Publish isolated R2 Round 5 audit fixes preview
+on:
+  push:
+    branches:
+      - fix/r2-audit-round5-2026-11-27
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'prototypes/brush-rt/**'
+      - 'scripts/prepare-r2-audit-fixes-round5-preview.mjs'
+      - 'scripts/prepare-r2-preview.mjs'
+      - '.github/workflows/r2-audit-fixes-round5-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: illustro-r2-audit-fixes-round5-preview-recovery
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run brush:build
+      - name: Generate audit fixtures
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-pil libheif-examples ffmpeg
+          sudo apt-get install -y --no-install-recommends libheif-plugin-x265 libheif-plugin-aomenc libheif-plugin-libde265 libheif-plugin-dav1d || true
+          /usr/bin/python3 scripts/r2-automated-audit/generate-fixtures.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: round5-fixtures
+          path: r2-audit-fixtures/
+      - name: Related automated regression tests
+        run: |
+          npx --no-install vitest run apps/editor/src/wet apps/editor/src/selection apps/editor/src/color apps/editor/src/export
+          node --check scripts/r2-automated-audit/browser.mjs
+      - name: Isolate Round 5 fixes from R2 and main storage
+        run: node scripts/prepare-r2-audit-fixes-round5-preview.mjs
+      - name: Typecheck and compile independent app
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          VITE_COMMIT_SHA="$GITHUB_SHA" npm --workspace @illustro/editor exec -- vite build --base=/illustro/r2-audit-fixes-round5/
+          test -f apps/editor/dist/index.html
+          grep -q '/illustro/r2-audit-fixes-round5/assets/' apps/editor/dist/index.html
+          grep -q 'illustro-preview-cache:illustro-r2-audit-fixes-round5:' apps/editor/dist/sw.js
+          printf '{"sourceCommit":"%s","branch":"fix/r2-audit-round5-2026-11-27","isolatedStorage":true,"isolation":"localStorage/sessionStorage/IndexedDB/OPFS/Cache/SW (Round5 namespace)"}\n' "$GITHUB_SHA" > apps/editor/dist/release.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: illustro-r2-audit-fixes-round5-preview
+          path: apps/editor/dist/
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out site without touching existing folders
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+          fetch-depth: 0
+      - run: |
+          rm -rf site/r2-audit-fixes-round5
+          mkdir -p site/r2-audit-fixes-round5
+      - uses: actions/download-artifact@v4
+        with:
+          name: illustro-r2-audit-fixes-round5-preview
+          path: site/r2-audit-fixes-round5
+      - name: Commit only new isolated directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f site/r2-audit-fixes-round5/index.html
+          test -f site/r2-audit-fixes-round5/release.json
+          git -C site config user.name 'github-actions[bot]'
+          git -C site config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C site add --all r2-audit-fixes-round5
+          unexpected="$(git -C site diff --cached --name-only | grep -Ev '^r2-audit-fixes-round5/' || true)"
+          test -z "$unexpected"
+          if git -C site diff --cached --quiet; then exit 0; fi
+          git -C site commit -m "preview: isolated R2 audit fixes $GITHUB_SHA"
+          git -C site pull --rebase origin gh-pages
+          unexpected="$(git -C site diff-tree --no-commit-id --name-only -r HEAD | grep -Ev '^r2-audit-fixes-round5/' || true)"
+          test -z "$unexpected"
+          git -C site push origin HEAD:gh-pages
+      - name: Verify actual served commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL=https://totoro0419.github.io/illustro/r2-audit-fixes-round5/
+          for attempt in $(seq 1 24); do
+            if curl --fail --location --silent "${URL}release.json" -o /tmp/audit-fix-release.json &&
+              grep -q "$GITHUB_SHA" /tmp/audit-fix-release.json &&
+              curl --fail --location --silent "$URL" -o /tmp/audit-fix-index.html &&
+              grep -q 'r2-audit-fixes-round5/assets/' /tmp/audit-fix-index.html; then
+              echo "Verified isolated preview at $URL commit $GITHUB_SHA"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Fix preview content did not match source commit"; exit 1
+
+
+  browser-smoke:
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [FX-007, FX-007-tail, COL-008, FIL-005, AUT-005, AUT-005-tail]
+    env:
+      R2_CHROME_CHANNEL: chrome
+      RT_PLAYWRIGHT_PATH: /tmp/r2-audit-browser/node_modules/playwright
+      PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      R2_AUDIT_FIX_URL: https://totoro0419.github.io/illustro/r2-audit-fixes-round5/
+      R2_CASE_DIR: r2-public-evidence
+      R2_FIXTURE_DIR: r2-audit-fixtures
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --prefix /tmp/r2-audit-browser playwright@1.62.1 pngjs@7.0.0 --no-audit --no-fund
+      - uses: actions/download-artifact@v4
+        with:
+          name: round5-fixtures
+          path: r2-audit-fixtures
+      - name: Verify actual published browser operation and pixels
+        run: node scripts/r2-automated-audit/browser.mjs "${{ matrix.check }}"
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: public-round5-${{ matrix.check }}
+          path: r2-public-evidence/
+          if-no-files-found: warn
+          retention-days: 90

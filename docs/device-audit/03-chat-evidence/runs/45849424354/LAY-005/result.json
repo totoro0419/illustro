@@ -1,0 +1,50 @@
+{
+  "id": "LAY-005",
+  "group": "D",
+  "status": "ERROR",
+  "commit": "f8f03b173afa3318e7aba89c0790b2f7b6da2f76",
+  "checks": [
+    {
+      "path": "apps/editor/src/selection/maskCodec.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C06-006 portable selection compression compresses large sparse and solid selections without alpha loss",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C06-006 portable selection compression retains random alpha and literal runs across 128-byte boundaries",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C06-006 portable selection compression does not accept truncated, extra, or overexpanded packets",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "LAY-005",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "visible center",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "hidden exterior",
+          "actual": 0,
+          "expected": 0
+        }
+      ],
+      "reason": "locator.uncheck: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('#vectorMaskEnabled')\n    - locator resolved to <input type=\"checkbox\" id=\"vectorMaskEnabled\"/>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at LAY-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:474:83)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:616:2"
+    }
+  ],
+  "pending": [
+    "ellipse/path point editing, inversion/link/density/native preservation"
+  ],
+  "reason": "Coverage not complete: ellipse/path point editing, inversion/link/density/native preservation"
+}

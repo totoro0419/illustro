@@ -1,0 +1,69 @@
+{
+  "id": "AUT-005",
+  "group": "E",
+  "status": "ERROR",
+  "commit": "d96765e71258d22888cfdab98e919ae0170f35ac",
+  "checks": [
+    {
+      "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+      "status": "PASS",
+      "tests": [
+        {
+          "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+          "status": "passed",
+          "failure": []
+        },
+        {
+          "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+          "status": "passed",
+          "failure": []
+        }
+      ]
+    },
+    {
+      "id": "AUT-005-tail",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "missing dependency cannot be invoked",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "missing dependency reason displayed",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "unavailable and rejected imports do not modify revision",
+          "actual": "2d4c00d6-8a92-4ae8-8cfd-766cea7448fc",
+          "expected": "2d4c00d6-8a92-4ae8-8cfd-766cea7448fc"
+        },
+        {
+          "name": "unavailable and rejected imports preserve artwork",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    {
+      "status": "PASS",
+      "reason": "Existing regression subchecks only"
+    }
+  ],
+  "pending": [
+    "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+  ],
+  "reason": "Coverage not complete: export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+}

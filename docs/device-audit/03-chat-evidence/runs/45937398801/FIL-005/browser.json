@@ -1,0 +1,117 @@
+{
+  "id": "FIL-005",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "interior colored",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "concave exclusion",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "outside",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "erased inside",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "outside erasure retained",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "erase undo pixel equality",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "selection confines lasso erase",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "selected portion erased",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "closed graph ready",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "closed graph confirmed",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "closed interior painted",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "open interior remains transparent",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "outside remains transparent",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "closed region undo restores pixels",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "alpha lock preserves every alpha value",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "alpha lock disabled for mask test",
+      "actual": "false",
+      "expected": "false"
+    },
+    {
+      "name": "mask interior erased",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "masked exterior remains transparent",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "mask outside original pixels protected",
+      "actual": [
+        31,
+        38,
+        51,
+        255
+      ],
+      "expected": [
+        31,
+        38,
+        51,
+        255
+      ]
+    },
+    {
+      "name": "inside erase persisted",
+      "actual": 0,
+      "expected": 0
+    }
+  ],
+  "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+}

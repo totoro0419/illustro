@@ -1,0 +1,4120 @@
+[
+  {
+    "id": "SAV-006",
+    "name": "容量不足・外部変更・保存競合",
+    "verdict": "未判定",
+    "operation": "",
+    "expected": "",
+    "actual": "",
+    "problem": "",
+    "improvement": "",
+    "pending": "actual storage quota exhaustion vs simulated IndexedDB transaction abort / two-tab concurrent save / external file changes/copy recovery / ERROR / Coverage not complete: actual storage quota exhaustion vs simulated IndexedDB transaction abort; two-tab concurrent save; external file changes/copy recovery",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45903537023",
+    "evidence": "03-chat-evidence/runs/45903537023/SAV-006/",
+    "stamp": "2026-11-26T22:19:04.894Z",
+    "result": {
+      "id": "SAV-006",
+      "group": "A",
+      "status": "ERROR",
+      "commit": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+      "checks": [
+        {
+          "path": "apps/editor/src/persistence/workLibrary.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "Work library document identity rename persists in portable roots without changing artwork or its identity",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "Work library document identity copy has its own identity and edits never change the source",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "path": "apps/editor/src/persistence/contiguousProtection.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "advances only through a verified contiguous dependency prefix",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "does not regress the verified head on duplicate old writes",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "does not retain a growing map of already acknowledged writes",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "status": "ERROR",
+          "reason": "Legacy smoke failed; triage required"
+        }
+      ],
+      "pending": [
+        "actual storage quota exhaustion vs simulated IndexedDB transaction abort",
+        "two-tab concurrent save",
+        "external file changes/copy recovery"
+      ],
+      "reason": "Coverage not complete: actual storage quota exhaustion vs simulated IndexedDB transaction abort; two-tab concurrent save; external file changes/copy recovery"
+    },
+    "browser": null
+  },
+  {
+    "id": "SAV-007",
+    "name": "オフライン制作",
+    "verdict": "未判定",
+    "operation": "offline flag / same work offline / new offline stroke present / offline selection constrains stroke / offline save survived reload / offline new layer created / offline new layer pixels rendered / offline undo removes new stroke / offline redo restores all pixels / offline layer/history survives reload",
+    "expected": "offline flag: false / same work offline: \"92b7a998-999c-4fbf-80b8-7c4beced4c71\" / new offline stroke present: true / offline selection constrains stroke: true / offline save survived reload: true / offline new layer created: true / offline new layer pixels rendered: true / offline undo removes new stroke: 0 / offline redo restores all pixels: true / offline layer/history survives reload: true",
+    "actual": "offline flag: false / same work offline: \"92b7a998-999c-4fbf-80b8-7c4beced4c71\" / new offline stroke present: true / offline selection constrains stroke: true / offline save survived reload: true / offline new layer created: true / offline new layer pixels rendered: true / offline undo removes new stroke: 0 / offline redo restores all pixels: true / offline layer/history survives reload: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "offline layers/selection/transform/reference/history/filter/macro / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45907340239",
+    "evidence": "03-chat-evidence/runs/45907340239/SAV-007/",
+    "stamp": "2026-11-26T22:54:21.134Z",
+    "result": {
+      "id": "SAV-007",
+      "group": "A",
+      "status": "ERROR",
+      "commit": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+      "checks": [
+        {
+          "id": "SAV-007",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "offline flag",
+              "actual": false,
+              "expected": false
+            },
+            {
+              "name": "same work offline",
+              "actual": "92b7a998-999c-4fbf-80b8-7c4beced4c71",
+              "expected": "92b7a998-999c-4fbf-80b8-7c4beced4c71"
+            },
+            {
+              "name": "new offline stroke present",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "offline selection constrains stroke",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "offline save survived reload",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "offline new layer created",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "offline new layer pixels rendered",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "offline undo removes new stroke",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "offline redo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "offline layer/history survives reload",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": [
+        "offline layers/selection/transform/reference/history/filter/macro"
+      ],
+      "reason": "Coverage not complete: offline layers/selection/transform/reference/history/filter/macro"
+    },
+    "browser": {
+      "id": "SAV-007",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "offline flag",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "same work offline",
+          "actual": "92b7a998-999c-4fbf-80b8-7c4beced4c71",
+          "expected": "92b7a998-999c-4fbf-80b8-7c4beced4c71"
+        },
+        {
+          "name": "new offline stroke present",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline selection constrains stroke",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline save survived reload",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline new layer created",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline new layer pixels rendered",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline undo removes new stroke",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "offline redo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "offline layer/history survives reload",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "REF-006",
+    "name": "参考資料の保存・欠損・復元",
+    "verdict": "使える",
+    "operation": "reference frame present / reference excluded from all exported pixels / embedded image loaded in clean context / embedded reference geometry restored / source notes restored / embedded reference did not alter artwork / linked reference missing notice in clean context / reference image relinked / relink geometry retained / relink does not enter PNG",
+    "expected": "reference frame present: true / reference excluded from all exported pixels: true / embedded image loaded in clean context: true / embedded reference geometry restored: [\"76px\",\"84px\",\"280px\",\"230px\"] / source notes restored: \"QA source: https://example.com/fixture ; author: QA ; usage: testing\" / embedded reference did not alter artwork: true / linked reference missing notice in clean context: true / reference image relinked: true / relink geometry retained: [\"76px\",\"84px\",\"280px\",\"230px\"] / relink does not enter PNG: true",
+    "actual": "reference frame present: true / reference excluded from all exported pixels: true / embedded image loaded in clean context: true / embedded reference geometry restored: [\"76px\",\"84px\",\"280px\",\"230px\"] / source notes restored: \"QA source: https://example.com/fixture ; author: QA ; usage: testing\" / embedded reference did not alter artwork: true / linked reference missing notice in clean context: true / reference image relinked: true / relink geometry retained: [\"76px\",\"84px\",\"280px\",\"230px\"] / relink does not enter PNG: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/REF-006/",
+    "stamp": "2026-11-26T22:07:46.111Z",
+    "result": {
+      "id": "REF-006",
+      "group": "A",
+      "status": "PASS",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+      "checks": [
+        {
+          "path": "apps/editor/src/assets/referenceBundleMode.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C05-013 local-only reference compatibility accepts only the same immutable reference asset, not another same-sized file",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05-013 local-only reference compatibility requires exact image bytes even when ID, name, type and length match",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05-013 local-only reference compatibility rejects ambiguous, duplicate, malformed and oversize reference manifests",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "path": "apps/editor/src/assets/referenceUnavailable.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C05-001 reference export failure does not lose artwork writes an explicit missing-reference marker alongside valid artwork",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05-001 reference export failure does not lose artwork refuses to attach an unnamed unavailable marker",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "path": "apps/editor/src/assets/referenceBoardStore.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C05 reference-board data safety treats only an absent record as an empty reference board",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05 reference-board data safety keeps every valid image reference and its position",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05 reference-board data safety preserves a reference resized wider than 1000px after reload",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05 reference-board data safety rejects damaged visibility flags instead of treating a string as true",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05 reference-board data safety refuses partial, duplicate, invalid and oversized records rather than silently erasing images",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "REF-006",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "reference frame present",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "reference excluded from all exported pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "embedded image loaded in clean context",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "embedded reference geometry restored",
+              "actual": [
+                "76px",
+                "84px",
+                "280px",
+                "230px"
+              ],
+              "expected": [
+                "76px",
+                "84px",
+                "280px",
+                "230px"
+              ]
+            },
+            {
+              "name": "source notes restored",
+              "actual": "QA source: https://example.com/fixture ; author: QA ; usage: testing",
+              "expected": "QA source: https://example.com/fixture ; author: QA ; usage: testing"
+            },
+            {
+              "name": "embedded reference did not alter artwork",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "linked reference missing notice in clean context",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "reference image relinked",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "relink geometry retained",
+              "actual": [
+                "76px",
+                "84px",
+                "280px",
+                "230px"
+              ],
+              "expected": [
+                "76px",
+                "84px",
+                "280px",
+                "230px"
+              ]
+            },
+            {
+              "name": "relink does not enter PNG",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": [],
+      "reason": "Coverage reviewed against saved browser and unit results; original raw run retained."
+    },
+    "browser": {
+      "id": "REF-006",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "reference frame present",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "reference excluded from all exported pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "embedded image loaded in clean context",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "embedded reference geometry restored",
+          "actual": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ],
+          "expected": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ]
+        },
+        {
+          "name": "source notes restored",
+          "actual": "QA source: https://example.com/fixture ; author: QA ; usage: testing",
+          "expected": "QA source: https://example.com/fixture ; author: QA ; usage: testing"
+        },
+        {
+          "name": "embedded reference did not alter artwork",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "linked reference missing notice in clean context",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "reference image relinked",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "relink geometry retained",
+          "actual": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ],
+          "expected": [
+            "76px",
+            "84px",
+            "280px",
+            "230px"
+          ]
+        },
+        {
+          "name": "relink does not enter PNG",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    "review": {
+      "reviewedEvidence": "03-chat-evidence/runs/45902400214/REF-006/",
+      "requiredConditions": "Embedded/linked, notes, geometry, missing notice, relink, PNG exclusion",
+      "manual": []
+    }
+  },
+  {
+    "id": "GST-005",
+    "name": "ショートカット設定の移行",
+    "verdict": "使える",
+    "operation": "real exported logical binding / unsupported warning shown / imported logical key after restart / release restores drawing tool / logical key follows character, not code / logical key follows character, not code release / physical binding follows code, not character / physical binding follows code, not character release / physical binding ignores character alone / physical binding ignores character alone release / unknown command does not edit / unknown command does not change active tool / all supported and unsupported bindings preserved",
+    "expected": "real exported logical binding: false / unsupported warning shown: true / imported logical key after restart: \"true\" / release restores drawing tool: \"true\" / logical key follows character, not code: \"true\" / logical key follows character, not code release: \"true\" / physical binding follows code, not character: \"true\" / physical binding follows code, not character release: \"true\" / physical binding ignores character alone: \"false\" / physical binding ignores character alone release: \"true\" / unknown command does not edit: \"5cabf2ed-aa1e-4422-b82b-071e6794b701\" / unknown command does not change active tool: \"true\" / all supported and unsupported bindings preserved: [{\"commandId\":\"panView\",\"key\":\"j\",\"code\":\"KeyJ\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":false,\"mode\":\"hold\"},{\"commandId\":\"qa.unavailable-command\",\"key\":\"u\",\"code\":\"KeyU\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":false,\"mode\":\"press\"},{\"commandId\":\"panView\",\"key\":\"q\",\"code\":\"KeyH\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":true,\"mode\":\"hold\"}]",
+    "actual": "real exported logical binding: false / unsupported warning shown: true / imported logical key after restart: \"true\" / release restores drawing tool: \"true\" / logical key follows character, not code: \"true\" / logical key follows character, not code release: \"true\" / physical binding follows code, not character: \"true\" / physical binding follows code, not character release: \"true\" / physical binding ignores character alone: \"false\" / physical binding ignores character alone release: \"true\" / unknown command does not edit: \"5cabf2ed-aa1e-4422-b82b-071e6794b701\" / unknown command does not change active tool: \"true\" / all supported and unsupported bindings preserved: [{\"commandId\":\"panView\",\"key\":\"j\",\"code\":\"KeyJ\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":false,\"mode\":\"hold\"},{\"commandId\":\"qa.unavailable-command\",\"key\":\"u\",\"code\":\"KeyU\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":false,\"mode\":\"press\"},{\"commandId\":\"panView\",\"key\":\"q\",\"code\":\"KeyH\",\"ctrl\":false,\"shift\":false,\"alt\":false,\"meta\":false,\"physical\":true,\"mode\":\"hold\"}]",
+    "problem": "",
+    "improvement": "",
+    "pending": "実物のキーボードの配列・OS固有の入力挙動のみ実機追加確認。ブラウザー内13条件は合格。",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45830785700",
+    "evidence": "03-chat-evidence/runs/45830785700/GST-005/",
+    "stamp": "2026-11-26T13:39:54.953Z",
+    "result": {
+      "id": "GST-005",
+      "group": "A",
+      "status": "PASS",
+      "commit": "205f61b1b6eaace854e5ddd1be77f6ab0e69008c",
+      "checks": [
+        {
+          "path": "apps/editor/src/ui/round2Audit.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "D-017 waits for a pending stroke, then snapshots the new head",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "D-017 rejects a changed layer or document instead of retrying it",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "D-020 distinguishes the stored modes and rejects stale restoration",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "GST-005",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "real exported logical binding",
+              "actual": false,
+              "expected": false
+            },
+            {
+              "name": "unsupported warning shown",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "imported logical key after restart",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "release restores drawing tool",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "logical key follows character, not code",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "logical key follows character, not code release",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "physical binding follows code, not character",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "physical binding follows code, not character release",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "physical binding ignores character alone",
+              "actual": "false",
+              "expected": "false"
+            },
+            {
+              "name": "physical binding ignores character alone release",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "unknown command does not edit",
+              "actual": "5cabf2ed-aa1e-4422-b82b-071e6794b701",
+              "expected": "5cabf2ed-aa1e-4422-b82b-071e6794b701"
+            },
+            {
+              "name": "unknown command does not change active tool",
+              "actual": "true",
+              "expected": "true"
+            },
+            {
+              "name": "all supported and unsupported bindings preserved",
+              "actual": [
+                {
+                  "commandId": "panView",
+                  "key": "j",
+                  "code": "KeyJ",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": false,
+                  "mode": "hold"
+                },
+                {
+                  "commandId": "qa.unavailable-command",
+                  "key": "u",
+                  "code": "KeyU",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": false,
+                  "mode": "press"
+                },
+                {
+                  "commandId": "panView",
+                  "key": "q",
+                  "code": "KeyH",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": true,
+                  "mode": "hold"
+                }
+              ],
+              "expected": [
+                {
+                  "commandId": "panView",
+                  "key": "j",
+                  "code": "KeyJ",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": false,
+                  "mode": "hold"
+                },
+                {
+                  "commandId": "qa.unavailable-command",
+                  "key": "u",
+                  "code": "KeyU",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": false,
+                  "mode": "press"
+                },
+                {
+                  "commandId": "panView",
+                  "key": "q",
+                  "code": "KeyH",
+                  "ctrl": false,
+                  "shift": false,
+                  "alt": false,
+                  "meta": false,
+                  "physical": true,
+                  "mode": "hold"
+                }
+              ]
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": []
+    },
+    "browser": {
+      "id": "GST-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "real exported logical binding",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "unsupported warning shown",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported logical key after restart",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "release restores drawing tool",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "logical key follows character, not code",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "logical key follows character, not code release",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "physical binding follows code, not character",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "physical binding follows code, not character release",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "physical binding ignores character alone",
+          "actual": "false",
+          "expected": "false"
+        },
+        {
+          "name": "physical binding ignores character alone release",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "unknown command does not edit",
+          "actual": "5cabf2ed-aa1e-4422-b82b-071e6794b701",
+          "expected": "5cabf2ed-aa1e-4422-b82b-071e6794b701"
+        },
+        {
+          "name": "unknown command does not change active tool",
+          "actual": "true",
+          "expected": "true"
+        },
+        {
+          "name": "all supported and unsupported bindings preserved",
+          "actual": [
+            {
+              "commandId": "panView",
+              "key": "j",
+              "code": "KeyJ",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": false,
+              "mode": "hold"
+            },
+            {
+              "commandId": "qa.unavailable-command",
+              "key": "u",
+              "code": "KeyU",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": false,
+              "mode": "press"
+            },
+            {
+              "commandId": "panView",
+              "key": "q",
+              "code": "KeyH",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": true,
+              "mode": "hold"
+            }
+          ],
+          "expected": [
+            {
+              "commandId": "panView",
+              "key": "j",
+              "code": "KeyJ",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": false,
+              "mode": "hold"
+            },
+            {
+              "commandId": "qa.unavailable-command",
+              "key": "u",
+              "code": "KeyU",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": false,
+              "mode": "press"
+            },
+            {
+              "commandId": "panView",
+              "key": "q",
+              "code": "KeyH",
+              "ctrl": false,
+              "shift": false,
+              "alt": false,
+              "meta": false,
+              "physical": true,
+              "mode": "hold"
+            }
+          ]
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "IO-006",
+    "name": "EXR・AVIF・HEIF",
+    "verdict": "未判定",
+    "operation": "real avif signature / avif decoded size / AVIF exact alpha / AVIF lossless center color tolerance / real exr signature / exr decoded size / EXR buffer length / EXR all linear color and alpha channels match / avif real fixture opened / avif import size / avif independently checked fixture colors / exr real fixture opened / exr import size / EXR import matches independently decoded SDR RGBA / HEIF explicit unsupported notice / unsupported HEIF preserves original work",
+    "expected": "real avif signature: true / avif decoded size: [128,96] / AVIF exact alpha: 0 / AVIF lossless center color tolerance: true / real exr signature: true / exr decoded size: [128,96] / EXR buffer length: 196608 / EXR all linear color and alpha channels match: true / avif real fixture opened: \"opened\" / avif import size: [128,96] / avif independently checked fixture colors: true / exr real fixture opened: \"opened\" / exr import size: [128,96] / EXR import matches independently decoded SDR RGBA: true / HEIF explicit unsupported notice: true / unsupported HEIF preserves original work: \"b2eadae9-0fd9-419a-8384-0ce10baea41e\"",
+    "actual": "real avif signature: true / avif decoded size: [128,96] / AVIF exact alpha: 0 / AVIF lossless center color tolerance: true / real exr signature: true / exr decoded size: [128,96] / EXR buffer length: 196608 / EXR all linear color and alpha channels match: true / avif real fixture opened: \"opened\" / avif import size: [128,96] / avif independently checked fixture colors: true / exr real fixture opened: \"opened\" / exr import size: [128,96] / EXR import matches independently decoded SDR RGBA: true / HEIF explicit unsupported notice: true / unsupported HEIF preserves original work: \"b2eadae9-0fd9-419a-8384-0ce10baea41e\"",
+    "problem": "",
+    "improvement": "",
+    "pending": "independent output color/alpha comparison / AVIF/EXR input and real HEIC input/unsupported notice / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45907340239",
+    "evidence": "03-chat-evidence/runs/45907340239/IO-006/",
+    "stamp": "2026-11-26T22:54:21.134Z",
+    "result": {
+      "id": "IO-006",
+      "group": "A",
+      "status": "ERROR",
+      "commit": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+      "checks": [
+        {
+          "path": "apps/editor/src/export/exchange.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "exchange formats round-trips PSD layers and restores the imported document",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "exchange formats round-trips PSB layers and restores the imported document",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "exchange formats preserves TIFF alpha and physical resolution and rejects truncated strips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "exchange formats writes the OpenRaster stack in top-to-bottom order with real PNGs",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "round-trips linear OpenEXR and keeps semi-transparent straight sRGB values",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "embeds the standard sRGB profile and optional text in PNG without an overlapping sRGB chunk",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "writes simple SVG text as editable, escaped lines and retains complex text as artwork pixels",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "path": "apps/editor/src/export/avifMetadata.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "stores ICC, EXIF and XMP while preserving both encoded image extents",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "path": "apps/editor/src/export/isoImageIcc.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "uses the profile associated with the primary AVIF or HEIF item",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "preserves TIFF ICC, text and density alongside the original alpha",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "IO-006",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "real avif signature",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "avif decoded size",
+              "actual": [
+                128,
+                96
+              ],
+              "expected": [
+                128,
+                96
+              ]
+            },
+            {
+              "name": "AVIF exact alpha",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "AVIF lossless center color tolerance",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "real exr signature",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "exr decoded size",
+              "actual": [
+                128,
+                96
+              ],
+              "expected": [
+                128,
+                96
+              ]
+            },
+            {
+              "name": "EXR buffer length",
+              "actual": 196608,
+              "expected": 196608
+            },
+            {
+              "name": "EXR all linear color and alpha channels match",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "avif real fixture opened",
+              "actual": "opened",
+              "expected": "opened"
+            },
+            {
+              "name": "avif import size",
+              "actual": [
+                128,
+                96
+              ],
+              "expected": [
+                128,
+                96
+              ]
+            },
+            {
+              "name": "avif independently checked fixture colors",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "exr real fixture opened",
+              "actual": "opened",
+              "expected": "opened"
+            },
+            {
+              "name": "exr import size",
+              "actual": [
+                128,
+                96
+              ],
+              "expected": [
+                128,
+                96
+              ]
+            },
+            {
+              "name": "EXR import matches independently decoded SDR RGBA",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "HEIF explicit unsupported notice",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "unsupported HEIF preserves original work",
+              "actual": "b2eadae9-0fd9-419a-8384-0ce10baea41e",
+              "expected": "b2eadae9-0fd9-419a-8384-0ce10baea41e"
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": [
+        "independent output color/alpha comparison",
+        "AVIF/EXR input and real HEIC input/unsupported notice"
+      ],
+      "reason": "Coverage not complete: independent output color/alpha comparison; AVIF/EXR input and real HEIC input/unsupported notice"
+    },
+    "browser": {
+      "id": "IO-006",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "real avif signature",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "avif decoded size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "AVIF exact alpha",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "AVIF lossless center color tolerance",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "real exr signature",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "exr decoded size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "EXR buffer length",
+          "actual": 196608,
+          "expected": 196608
+        },
+        {
+          "name": "EXR all linear color and alpha channels match",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "avif real fixture opened",
+          "actual": "opened",
+          "expected": "opened"
+        },
+        {
+          "name": "avif import size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "avif independently checked fixture colors",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "exr real fixture opened",
+          "actual": "opened",
+          "expected": "opened"
+        },
+        {
+          "name": "exr import size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "EXR import matches independently decoded SDR RGBA",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "HEIF explicit unsupported notice",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "unsupported HEIF preserves original work",
+          "actual": "b2eadae9-0fd9-419a-8384-0ce10baea41e",
+          "expected": "b2eadae9-0fd9-419a-8384-0ce10baea41e"
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "FIL-005",
+    "name": "囲って塗る・消す",
+    "verdict": "未判定",
+    "operation": "interior colored / concave exclusion / outside / erased inside / outside erasure retained / erase undo pixel equality / selection confines lasso erase / selected portion erased",
+    "expected": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0",
+    "actual": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0",
+    "problem": "",
+    "improvement": "",
+    "pending": "closed-region-only and leak candidate / Undo, selection/mask/alpha protection / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45903537023",
+    "evidence": "03-chat-evidence/runs/45903537023/FIL-005/",
+    "stamp": "2026-11-26T22:19:04.894Z",
+    "result": {
+      "id": "FIL-005",
+      "group": "B",
+      "status": "ERROR",
+      "commit": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+      "checks": [
+        {
+          "path": "apps/editor/src/fill/pixels.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C08 fill boundaries and destination gating keeps canonical region topology for a blank large canvas without flood analysis",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating recognizes bright white line art on an opaque dark background",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating recognizes opaque white strokes on a transparent background",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating uses the majority background when a stroke touches one image corner",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating applies a transparent-only color hint only to transparent destination pixels",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating never auto-connects neighboring parallel strokes without tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating connects only two collinear opposing thin-line tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not seal a long line-art gap when a separate stroke passes close to its interior",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating rejects 45-degree false repairs between perpendicular line tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating repairs a one-pixel horizontal gap without unnecessary diagonal scanning",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating preserves a genuine diagonal repair between aligned diagonal tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not auto-connect two gaps that cross an already proposed bridge",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not suggest two competing repairs crossing the same empty corridor",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not suggest a second gap through an already repaired bridge",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating never applies untracked bridges after the 4096-candidate review limit",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating still connects two isolated opposite tips with no third line beside the gap",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating filters misleading gap suggestions that run alongside another stroke",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating rejects perpendicular hairs even when both endpoints look like tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not suggest bridging a genuine crossing as if it were a line tip",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating preserves existing ink when a manual erase requests preserveInk without automatic gap repair",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not falsely connect an inner hole to the canvas outside",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating classifies three nested boundaries as alternating closed areas and enclosed holes",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating keeps disconnected enclosed regions distinct even if they share a background",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating adds a soft border only when the optional smooth-boundary mode is requested",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating checks transparent-only against the destination, not the opaque reference",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating matches an original target color independently of the output color",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating uses the original match color for color hints while painting a different output color",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating allows alpha and RGB tolerances to be independently controlled",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 gap repair and exterior leak protection honors an 18 source-pixel gap instead of silently clamping it to 12",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 gap repair and exterior leak protection requires review for a center-seeded gap-assisted fill touching two outside edges",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 a corner break must not flood the exterior closes a short right-angle gap without painting the canvas background",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-008 drag only enclosed regions fills two disjoint closed regions without touching the intervening outside",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 real-size thick rounded corner caps uses the full 18px gap for a thick corner and fills only the enclosed area",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 real-size thick rounded corner caps measures the shortest clear gap on rounded cap edges rather than axial center tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 real-size thick rounded corner caps leaves an over-limit opening and unrelated thick strokes open",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "D-008 keeps the exterior untouched even when closed-region tracing expands the edge",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "FIL-005",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "interior colored",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "concave exclusion",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "outside",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "erased inside",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "outside erasure retained",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "erase undo pixel equality",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "selection confines lasso erase",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "selected portion erased",
+              "actual": 0,
+              "expected": 0
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": [
+        "closed-region-only and leak candidate",
+        "Undo, selection/mask/alpha protection"
+      ],
+      "reason": "Coverage not complete: closed-region-only and leak candidate; Undo, selection/mask/alpha protection"
+    },
+    "browser": {
+      "id": "FIL-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "interior colored",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "concave exclusion",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "outside",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "erased inside",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "outside erasure retained",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "erase undo pixel equality",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "selection confines lasso erase",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "selected portion erased",
+          "actual": 0,
+          "expected": 0
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "LIN-007",
+    "name": "未解決・低信頼・無効の扱い",
+    "verdict": "未判定",
+    "operation": "blank unanalysed / blank invalid / normal drawing after invalid graph / fixture awaiting confirmation / confirmed graph",
+    "expected": "blank unanalysed: true / blank invalid: true / normal drawing after invalid graph: true / fixture awaiting confirmation: true / confirmed graph: true",
+    "actual": "blank unanalysed: true / blank invalid: true / normal drawing after invalid graph: true / fixture awaiting confirmation: true / confirmed graph: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending / ERROR / locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smartFill\"]').getByText('作品に保存した線画領域', { exact: true }).locator('..').locator('select').locator('option').nth(1)\n\n    at LIN-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:362:40)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:880:2",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45907340239",
+    "evidence": "03-chat-evidence/runs/45907340239/LIN-007/",
+    "stamp": "2026-11-26T22:54:21.134Z",
+    "result": {
+      "id": "LIN-007",
+      "group": "B",
+      "status": "ERROR",
+      "commit": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+      "checks": [
+        {
+          "path": "apps/editor/src/fill/pixels.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C08 fill boundaries and destination gating keeps canonical region topology for a blank large canvas without flood analysis",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating recognizes bright white line art on an opaque dark background",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating recognizes opaque white strokes on a transparent background",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating uses the majority background when a stroke touches one image corner",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating applies a transparent-only color hint only to transparent destination pixels",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating never auto-connects neighboring parallel strokes without tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating connects only two collinear opposing thin-line tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not seal a long line-art gap when a separate stroke passes close to its interior",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating rejects 45-degree false repairs between perpendicular line tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating repairs a one-pixel horizontal gap without unnecessary diagonal scanning",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating preserves a genuine diagonal repair between aligned diagonal tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not auto-connect two gaps that cross an already proposed bridge",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not suggest two competing repairs crossing the same empty corridor",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not suggest a second gap through an already repaired bridge",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating never applies untracked bridges after the 4096-candidate review limit",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating still connects two isolated opposite tips with no third line beside the gap",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating filters misleading gap suggestions that run alongside another stroke",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating rejects perpendicular hairs even when both endpoints look like tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not suggest bridging a genuine crossing as if it were a line tip",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating preserves existing ink when a manual erase requests preserveInk without automatic gap repair",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating does not falsely connect an inner hole to the canvas outside",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating classifies three nested boundaries as alternating closed areas and enclosed holes",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating keeps disconnected enclosed regions distinct even if they share a background",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating adds a soft border only when the optional smooth-boundary mode is requested",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating checks transparent-only against the destination, not the opaque reference",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating matches an original target color independently of the output color",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating uses the original match color for color hints while painting a different output color",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C08 fill boundaries and destination gating allows alpha and RGB tolerances to be independently controlled",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 gap repair and exterior leak protection honors an 18 source-pixel gap instead of silently clamping it to 12",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 gap repair and exterior leak protection requires review for a center-seeded gap-assisted fill touching two outside edges",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 a corner break must not flood the exterior closes a short right-angle gap without painting the canvas background",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-008 drag only enclosed regions fills two disjoint closed regions without touching the intervening outside",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 real-size thick rounded corner caps uses the full 18px gap for a thick corner and fills only the enclosed area",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 real-size thick rounded corner caps measures the shortest clear gap on rounded cap edges rather than axial center tips",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 D-007 real-size thick rounded corner caps leaves an over-limit opening and unrelated thick strokes open",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "D-008 keeps the exterior untouched even when closed-region tracing expands the edge",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "LIN-007",
+          "status": "ERROR",
+          "checks": [
+            {
+              "name": "blank unanalysed",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "blank invalid",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "normal drawing after invalid graph",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "fixture awaiting confirmation",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "confirmed graph",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smartFill\"]').getByText('作品に保存した線画領域', { exact: true }).locator('..').locator('select').locator('option').nth(1)\n\n    at LIN-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:362:40)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:880:2"
+        }
+      ],
+      "pending": [
+        "blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending"
+      ],
+      "reason": "Coverage not complete: blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending"
+    },
+    "browser": {
+      "id": "LIN-007",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "blank unanalysed",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "blank invalid",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "normal drawing after invalid graph",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "fixture awaiting confirmation",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "confirmed graph",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smartFill\"]').getByText('作品に保存した線画領域', { exact: true }).locator('..').locator('select').locator('option').nth(1)\n\n    at LIN-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:362:40)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:880:2"
+    }
+  },
+  {
+    "id": "TRN-005",
+    "name": "吸着・整列・等間隔配置",
+    "verdict": "未判定",
+    "operation": "three distinct x positions / left confirmed reference layer / left independent binary alpha coverage / left one undo restores all pixels / center-x confirmed reference layer / center-x independent binary alpha coverage / center-x one undo restores all pixels / right confirmed reference layer / right independent binary alpha coverage / right one undo restores all pixels / top confirmed reference layer / top independent binary alpha coverage / top one undo restores all pixels / center-y confirmed reference layer / center-y independent binary alpha coverage / center-y one undo restores all pixels / bottom confirmed reference layer / bottom independent binary alpha coverage / bottom one undo restores all pixels / spread-x confirmed reference layer / spread-x independent binary alpha coverage / spread-x one undo restores all pixels / spread-y confirmed reference layer / spread-y independent binary alpha coverage / spread-y one undo restores all pixels",
+    "expected": "three distinct x positions: true / left confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true",
+    "actual": "three distinct x positions: true / left confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45907340239",
+    "evidence": "03-chat-evidence/runs/45907340239/TRN-005/",
+    "stamp": "2026-11-26T22:54:21.134Z",
+    "result": {
+      "id": "TRN-005",
+      "group": "C",
+      "status": "ERROR",
+      "commit": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+      "checks": [
+        {
+          "path": "apps/editor/src/transform/groupTransform.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C07-003 group transformation geometry uses one common center and preserves relative positions for multiple layers",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C07-003 group transformation geometry rejects invalid bounds and duplicate layers before a grouped edit",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C07-003 group transformation geometry rejects impossible scales and missing layer selection",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C07-003 group transformation geometry rejects finite but unrepresentable transformed bounds before publishing a group edit",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C07-003 group transformation geometry plans many grouped layers without spreading their bounds as function arguments",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C07-003 group transformation geometry composes repeated rotations, mirroring, nonuniform scales and shear from the same original",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "TRN-005",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "three distinct x positions",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "left confirmed reference layer",
+              "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+              "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+            },
+            {
+              "name": "left independent binary alpha coverage",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "left one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "center-x confirmed reference layer",
+              "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+              "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+            },
+            {
+              "name": "center-x independent binary alpha coverage",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "center-x one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "right confirmed reference layer",
+              "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+              "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+            },
+            {
+              "name": "right independent binary alpha coverage",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "right one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "top confirmed reference layer",
+              "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+              "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+            },
+            {
+              "name": "top independent binary alpha coverage",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "top one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "center-y confirmed reference layer",
+              "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+              "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+            },
+            {
+              "name": "center-y independent binary alpha coverage",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "center-y one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "bottom confirmed reference layer",
+              "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+              "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+            },
+            {
+              "name": "bottom independent binary alpha coverage",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "bottom one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "spread-x confirmed reference layer",
+              "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+              "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+            },
+            {
+              "name": "spread-x independent binary alpha coverage",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "spread-x one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "spread-y confirmed reference layer",
+              "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+              "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+            },
+            {
+              "name": "spread-y independent binary alpha coverage",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "spread-y one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": [
+        "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+      ],
+      "reason": "Coverage not complete: left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending"
+    },
+    "browser": {
+      "id": "TRN-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "three distinct x positions",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "left confirmed reference layer",
+          "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+          "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+        },
+        {
+          "name": "left independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "left one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "center-x confirmed reference layer",
+          "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+          "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+        },
+        {
+          "name": "center-x independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "center-x one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "right confirmed reference layer",
+          "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+          "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+        },
+        {
+          "name": "right independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "right one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "top confirmed reference layer",
+          "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+          "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+        },
+        {
+          "name": "top independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "top one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "center-y confirmed reference layer",
+          "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+          "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+        },
+        {
+          "name": "center-y independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "center-y one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "bottom confirmed reference layer",
+          "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+          "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+        },
+        {
+          "name": "bottom independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "bottom one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "spread-x confirmed reference layer",
+          "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+          "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+        },
+        {
+          "name": "spread-x independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "spread-x one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "spread-y confirmed reference layer",
+          "actual": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8",
+          "expected": "8ea6e1c2-6e2f-4fb1-a9de-012fe7bcd8c8"
+        },
+        {
+          "name": "spread-y independent binary alpha coverage",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "spread-y one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "VEC-004",
+    "name": "簡略化・平滑化・図形合成",
+    "verdict": "未判定",
+    "operation": "union zero outline width for exact fill oracle / union independent point-in-rectangle coverage / union full-image interior/exterior oracle / union undo restores original / intersection zero outline width for exact fill oracle / intersection independent point-in-rectangle coverage / intersection full-image interior/exterior oracle / intersection undo restores original / difference zero outline width for exact fill oracle / difference independent point-in-rectangle coverage / difference full-image interior/exterior oracle / difference undo restores original / xor zero outline width for exact fill oracle / xor independent point-in-rectangle coverage / xor full-image interior/exterior oracle / xor undo restores original",
+    "expected": "union zero outline width for exact fill oracle: \"0\" / union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 0 / union undo restores original: true / intersection zero outline width for exact fill oracle: \"0\" / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection full-image interior/exterior oracle: 0 / intersection undo restores original: true / difference zero outline width for exact fill oracle: \"0\" / difference independent point-in-rectangle coverage: [true,false,false,false] / difference full-image interior/exterior oracle: 0 / difference undo restores original: true / xor zero outline width for exact fill oracle: \"0\" / xor independent point-in-rectangle coverage: [true,false,true,false] / xor full-image interior/exterior oracle: 0 / xor undo restores original: true",
+    "actual": "union zero outline width for exact fill oracle: \"0\" / union independent point-in-rectangle coverage: [true,true,true,false] / union full-image interior/exterior oracle: 0 / union undo restores original: true / intersection zero outline width for exact fill oracle: \"0\" / intersection independent point-in-rectangle coverage: [false,true,false,false] / intersection full-image interior/exterior oracle: 0 / intersection undo restores original: true / difference zero outline width for exact fill oracle: \"0\" / difference independent point-in-rectangle coverage: [true,false,false,false] / difference full-image interior/exterior oracle: 0 / difference undo restores original: true / xor zero outline width for exact fill oracle: \"0\" / xor independent point-in-rectangle coverage: [true,false,true,false] / xor full-image interior/exterior oracle: 0 / xor undo restores original: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45903537023",
+    "evidence": "03-chat-evidence/runs/45903537023/VEC-004/",
+    "stamp": "2026-11-26T22:19:04.894Z",
+    "result": {
+      "id": "VEC-004",
+      "group": "C",
+      "status": "ERROR",
+      "commit": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+      "checks": [
+        {
+          "path": "apps/editor/src/artwork/pathOperations.c10.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C10 vector editing geometry groups two separate strokes without bridging them and erases only the touched stroke",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10 vector editing geometry appends legacy solid paths with the same color written in a different hex case",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10 vector editing geometry rejects distant endpoints instead of silently creating a bridge",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10 vector editing geometry joins nearby curves with a straight bridge and merges coincident endpoints without losing original handles",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10 vector editing geometry hits a strongly curved 4K stroke that a fixed 16-segment approximation misses",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10 vector editing geometry samples high-curvature Bézier paths with sub-pixel error",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10 vector editing geometry can refine a long high-curvature 4K Bézier beyond the former 255-point cap",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10 vector editing geometry honors the requested error and point budget for large ellipses and rectangles",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10 vector editing geometry preserves the original operands when two closed shapes are combined",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "adds a width point to the selected location of a transformed straight segment",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "adds a width point to a curved section without changing its curve",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "path": "apps/editor/src/artwork/linkedBooleans.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C10-006 live non-destructive boolean dependencies updates union repeatedly from the editable sources",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 live non-destructive boolean dependencies updates difference repeatedly from the editable sources",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 live non-destructive boolean dependencies updates intersection repeatedly from the editable sources",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 live non-destructive boolean dependencies updates xor repeatedly from the editable sources",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 live non-destructive boolean dependencies retains an empty intersection, then restores its shape when sources overlap again",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 live non-destructive boolean dependencies updates chains once in order and safely freezes a deleted source",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 live non-destructive boolean dependencies rejects cycles and invalid coordinates before applying any updates",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 live non-destructive boolean dependencies commits source/result pixels and links in one revision and restores them losslessly",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 recomputes once from both final sources in a simultaneous alignment",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 existing operand-edit action saves live sources and recomputes legacy results directly",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-006 handles valid extreme coordinates without nonfinite or out-of-range geometry",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "path": "apps/editor/src/artwork/booleanSourceVisibility.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C10-005 atomic boolean source hiding allows two different unlocked editable shapes without deleting either",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-005 atomic boolean source hiding rejects incomplete or duplicate operands and editing an existing result",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C10-005 atomic boolean source hiding never hides missing, locked or non-path layers",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "VEC-004",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "union zero outline width for exact fill oracle",
+              "actual": "0",
+              "expected": "0"
+            },
+            {
+              "name": "union independent point-in-rectangle coverage",
+              "actual": [
+                true,
+                true,
+                true,
+                false
+              ],
+              "expected": [
+                true,
+                true,
+                true,
+                false
+              ]
+            },
+            {
+              "name": "union full-image interior/exterior oracle",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "union undo restores original",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "intersection zero outline width for exact fill oracle",
+              "actual": "0",
+              "expected": "0"
+            },
+            {
+              "name": "intersection independent point-in-rectangle coverage",
+              "actual": [
+                false,
+                true,
+                false,
+                false
+              ],
+              "expected": [
+                false,
+                true,
+                false,
+                false
+              ]
+            },
+            {
+              "name": "intersection full-image interior/exterior oracle",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "intersection undo restores original",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "difference zero outline width for exact fill oracle",
+              "actual": "0",
+              "expected": "0"
+            },
+            {
+              "name": "difference independent point-in-rectangle coverage",
+              "actual": [
+                true,
+                false,
+                false,
+                false
+              ],
+              "expected": [
+                true,
+                false,
+                false,
+                false
+              ]
+            },
+            {
+              "name": "difference full-image interior/exterior oracle",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "difference undo restores original",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "xor zero outline width for exact fill oracle",
+              "actual": "0",
+              "expected": "0"
+            },
+            {
+              "name": "xor independent point-in-rectangle coverage",
+              "actual": [
+                true,
+                false,
+                true,
+                false
+              ],
+              "expected": [
+                true,
+                false,
+                true,
+                false
+              ]
+            },
+            {
+              "name": "xor full-image interior/exterior oracle",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "xor undo restores original",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": [
+        "four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending"
+      ],
+      "reason": "Coverage not complete: four boolean operation point samples and undo added; full pixel oracle, simplify/smooth and empty/thin results still pending"
+    },
+    "browser": {
+      "id": "VEC-004",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "union zero outline width for exact fill oracle",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "union independent point-in-rectangle coverage",
+          "actual": [
+            true,
+            true,
+            true,
+            false
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            false
+          ]
+        },
+        {
+          "name": "union full-image interior/exterior oracle",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "union undo restores original",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "intersection zero outline width for exact fill oracle",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "intersection independent point-in-rectangle coverage",
+          "actual": [
+            false,
+            true,
+            false,
+            false
+          ],
+          "expected": [
+            false,
+            true,
+            false,
+            false
+          ]
+        },
+        {
+          "name": "intersection full-image interior/exterior oracle",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "intersection undo restores original",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "difference zero outline width for exact fill oracle",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "difference independent point-in-rectangle coverage",
+          "actual": [
+            true,
+            false,
+            false,
+            false
+          ],
+          "expected": [
+            true,
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "name": "difference full-image interior/exterior oracle",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "difference undo restores original",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "xor zero outline width for exact fill oracle",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "xor independent point-in-rectangle coverage",
+          "actual": [
+            true,
+            false,
+            true,
+            false
+          ],
+          "expected": [
+            true,
+            false,
+            true,
+            false
+          ]
+        },
+        {
+          "name": "xor full-image interior/exterior oracle",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "xor undo restores original",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "LAY-005",
+    "name": "ピクセル・ベクターマスク",
+    "verdict": "未判定",
+    "operation": "visible center / hidden exterior / disable restores artwork / inverted center hidden / inverted exterior visible / half density restores half the hidden opaque pixel / mask saved and reopened exactly / unlink setting persists / inversion persists / density persists / removing mask preserves raster / ellipse center retained / ellipse far outside hidden / black mask hides pixel / black mask preserves remote pixel / white mask restores center / pixel mask removal preserves entire artwork / path mask interior visible / path mask exterior hidden / point editing changes path mask coverage",
+    "expected": "visible center: true / hidden exterior: 0 / disable restores artwork: true / inverted center hidden: 0 / inverted exterior visible: true / half density restores half the hidden opaque pixel: true / mask saved and reopened exactly: true / unlink setting persists: false / inversion persists: true / density persists: \"50\" / removing mask preserves raster: true / ellipse center retained: true / ellipse far outside hidden: 0 / black mask hides pixel: 0 / black mask preserves remote pixel: true / white mask restores center: true / pixel mask removal preserves entire artwork: true / path mask interior visible: true / path mask exterior hidden: 0 / point editing changes path mask coverage: true",
+    "actual": "visible center: true / hidden exterior: 0 / disable restores artwork: true / inverted center hidden: 0 / inverted exterior visible: true / half density restores half the hidden opaque pixel: true / mask saved and reopened exactly: true / unlink setting persists: false / inversion persists: true / density persists: \"50\" / removing mask preserves raster: true / ellipse center retained: true / ellipse far outside hidden: 0 / black mask hides pixel: 0 / black mask preserves remote pixel: true / white mask restores center: true / pixel mask removal preserves entire artwork: true / path mask interior visible: true / path mask exterior hidden: 0 / point editing changes path mask coverage: false",
+    "problem": "計測不一致（アプリ側か検査側か要確認）: point editing changes path mask coverage",
+    "improvement": "",
+    "pending": "ellipse/path point editing, inversion/link/density/native preservation / FAIL / Error: point editing changes path mask coverage\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at LAY-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:677:58)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:880:2",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45907340239",
+    "evidence": "03-chat-evidence/runs/45907340239/LAY-005/",
+    "stamp": "2026-11-26T22:54:21.134Z",
+    "result": {
+      "id": "LAY-005",
+      "group": "D",
+      "status": "FAIL",
+      "commit": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+      "checks": [
+        {
+          "path": "apps/editor/src/selection/maskCodec.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C06-006 portable selection compression compresses large sparse and solid selections without alpha loss",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C06-006 portable selection compression retains random alpha and literal runs across 128-byte boundaries",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C06-006 portable selection compression does not accept truncated, extra, or overexpanded packets",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "LAY-005",
+          "status": "FAIL",
+          "checks": [
+            {
+              "name": "visible center",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "hidden exterior",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "disable restores artwork",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "inverted center hidden",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "inverted exterior visible",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "half density restores half the hidden opaque pixel",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "mask saved and reopened exactly",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "unlink setting persists",
+              "actual": false,
+              "expected": false
+            },
+            {
+              "name": "inversion persists",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "density persists",
+              "actual": "50",
+              "expected": "50"
+            },
+            {
+              "name": "removing mask preserves raster",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "ellipse center retained",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "ellipse far outside hidden",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "black mask hides pixel",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "black mask preserves remote pixel",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "white mask restores center",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "pixel mask removal preserves entire artwork",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "path mask interior visible",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "path mask exterior hidden",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "point editing changes path mask coverage",
+              "actual": false,
+              "expected": true
+            }
+          ],
+          "reason": "Error: point editing changes path mask coverage\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at LAY-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:677:58)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:880:2"
+        }
+      ],
+      "pending": [
+        "ellipse/path point editing, inversion/link/density/native preservation"
+      ],
+      "reason": "Coverage not complete: ellipse/path point editing, inversion/link/density/native preservation"
+    },
+    "browser": {
+      "id": "LAY-005",
+      "status": "FAIL",
+      "checks": [
+        {
+          "name": "visible center",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "hidden exterior",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "disable restores artwork",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "inverted center hidden",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "inverted exterior visible",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "half density restores half the hidden opaque pixel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "mask saved and reopened exactly",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "unlink setting persists",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "inversion persists",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "density persists",
+          "actual": "50",
+          "expected": "50"
+        },
+        {
+          "name": "removing mask preserves raster",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "ellipse center retained",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "ellipse far outside hidden",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "black mask hides pixel",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "black mask preserves remote pixel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "white mask restores center",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "pixel mask removal preserves entire artwork",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "path mask interior visible",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "path mask exterior hidden",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "point editing changes path mask coverage",
+          "actual": false,
+          "expected": true
+        }
+      ],
+      "reason": "Error: point editing changes path mask coverage\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at LAY-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:677:58)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:880:2"
+    }
+  },
+  {
+    "id": "COL-008",
+    "name": "出力色・色域警告",
+    "verdict": "使える",
+    "operation": "known colored fixture size / fixture has saturated red / bleed excluded from pixel comparison / actual pink warning pixels present / original view has no warning pixels / proof differs from original / display toggle restores proof (premultiplied pixels, no bleed) / original toggle stable / guide removed restores same proof / same guide same proof / zero guide raw comparison / repeated switching stable / warning disabled removes pink pixels / intent is selected / black point disabled / alternate proof has valid dimensions / proof does not alter revision / normal PNG identical pixel for pixel / eyedropper unchanged after proof",
+    "expected": "known colored fixture size: [128,96] / fixture has saturated red: true / bleed excluded from pixel comparison: \"0\" / actual pink warning pixels present: true / original view has no warning pixels: 0 / proof differs from original: true / display toggle restores proof (premultiplied pixels, no bleed): 0 / original toggle stable: true / guide removed restores same proof: 0 / same guide same proof: 0 / zero guide raw comparison: 0 / repeated switching stable: 0 / warning disabled removes pink pixels: 0 / intent is selected: \"0\" / black point disabled: false / alternate proof has valid dimensions: true / proof does not alter revision: \"7c03adaf-84a5-4687-9bae-f402a004e68b\" / normal PNG identical pixel for pixel: true / eyedropper unchanged after proof: \"キャンバスから #FF0000 を取得しました。\"",
+    "actual": "known colored fixture size: [128,96] / fixture has saturated red: true / bleed excluded from pixel comparison: \"0\" / actual pink warning pixels present: true / original view has no warning pixels: 0 / proof differs from original: true / display toggle restores proof (premultiplied pixels, no bleed): 0 / original toggle stable: true / guide removed restores same proof: 0 / same guide same proof: 0 / zero guide raw comparison: 0 / repeated switching stable: 0 / warning disabled removes pink pixels: 0 / intent is selected: \"0\" / black point disabled: false / alternate proof has valid dimensions: true / proof does not alter revision: \"7c03adaf-84a5-4687-9bae-f402a004e68b\" / normal PNG identical pixel for pixel: true / eyedropper unchanged after proof: \"キャンバスから #FF0000 を取得しました。\"",
+    "problem": "",
+    "improvement": "",
+    "pending": "Actual display calibration and physical print appearance are not assessed in headless Chrome.",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45903537023",
+    "evidence": "03-chat-evidence/runs/45903537023/COL-008/",
+    "stamp": "2026-11-26T22:19:04.894Z",
+    "result": {
+      "id": "COL-008",
+      "group": "D",
+      "status": "PASS",
+      "commit": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+      "checks": [
+        {
+          "path": "apps/editor/src/color/harmonyProof.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C04-013 display-only proofing covers retained artwork and temporary strokes as well as the base canvas",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C04-015 approved Aurora core palette keeps the accepted blue/periwinkle/violet/pink accents",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "path": "apps/editor/src/export/rasterIcc.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "extracts a PNG profile with its original bytes",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "reassembles out-of-order JPEG profile segments and rejects missing pieces",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "reads a WebP ICC chunk without interpreting it as pixels",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "COL-008",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "known colored fixture size",
+              "actual": [
+                128,
+                96
+              ],
+              "expected": [
+                128,
+                96
+              ]
+            },
+            {
+              "name": "fixture has saturated red",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "bleed excluded from pixel comparison",
+              "actual": "0",
+              "expected": "0"
+            },
+            {
+              "name": "actual pink warning pixels present",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "original view has no warning pixels",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "proof differs from original",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "display toggle restores proof (premultiplied pixels, no bleed)",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "original toggle stable",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "guide removed restores same proof",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "same guide same proof",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "zero guide raw comparison",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "repeated switching stable",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "warning disabled removes pink pixels",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "intent is selected",
+              "actual": "0",
+              "expected": "0"
+            },
+            {
+              "name": "black point disabled",
+              "actual": false,
+              "expected": false
+            },
+            {
+              "name": "alternate proof has valid dimensions",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "proof does not alter revision",
+              "actual": "7c03adaf-84a5-4687-9bae-f402a004e68b",
+              "expected": "7c03adaf-84a5-4687-9bae-f402a004e68b"
+            },
+            {
+              "name": "normal PNG identical pixel for pixel",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "eyedropper unchanged after proof",
+              "actual": "キャンバスから #FF0000 を取得しました。",
+              "expected": "キャンバスから #FF0000 を取得しました。"
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": []
+    },
+    "browser": {
+      "id": "COL-008",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "known colored fixture size",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "fixture has saturated red",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "bleed excluded from pixel comparison",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "actual pink warning pixels present",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "original view has no warning pixels",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "proof differs from original",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "display toggle restores proof (premultiplied pixels, no bleed)",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "original toggle stable",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "guide removed restores same proof",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "same guide same proof",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "zero guide raw comparison",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "repeated switching stable",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "warning disabled removes pink pixels",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "intent is selected",
+          "actual": "0",
+          "expected": "0"
+        },
+        {
+          "name": "black point disabled",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "name": "alternate proof has valid dimensions",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "proof does not alter revision",
+          "actual": "7c03adaf-84a5-4687-9bae-f402a004e68b",
+          "expected": "7c03adaf-84a5-4687-9bae-f402a004e68b"
+        },
+        {
+          "name": "normal PNG identical pixel for pixel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "eyedropper unchanged after proof",
+          "actual": "キャンバスから #FF0000 を取得しました。",
+          "expected": "キャンバスから #FF0000 を取得しました。"
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "FX-007",
+    "name": "修復・パッチ・クローン",
+    "verdict": "未判定",
+    "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels / entry selects heal / healing decreases independent defect error / heal exterior unchanged / heal undo restores all pixels / entry selects patch / cancel leaves revision unchanged / cancel leaves original pixels / patch decreases independent defect error / patch exterior unchanged / patch undo restores all pixels / entry selects clone / entry selects heal / entry selects patch / entry selects clone / selection exterior unchanged / clone-selected undo restores all pixels / entry selects clone / separate repair layer created / original layer untouched / separate-clone undo restores all pixels / entry selects clone",
+    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"b1e8c241-3427-4b83-bf7a-1304d7bf9318\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\"",
+    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"b1e8c241-3427-4b83-bf7a-1304d7bf9318\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\"",
+    "problem": "",
+    "improvement": "",
+    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smudge\"]').getByLabel('参照元', { exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:19)\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:339:9)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:880:2",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45907340239",
+    "evidence": "03-chat-evidence/runs/45907340239/FX-007/",
+    "stamp": "2026-11-26T22:54:21.134Z",
+    "result": {
+      "id": "FX-007",
+      "group": "D",
+      "status": "ERROR",
+      "commit": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+      "checks": [
+        {
+          "path": "apps/editor/src/wet/paint.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "wet and repair brushes blurs a translucent edge in premultiplied color",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "wet and repair brushes clones from an immutable snapshot and honors the selection",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "wet and repair brushes produces deterministic paper and pigment texture for a saved stroke",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "copies a shaped patch with the original feathered coverage and no rectangular fringe",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "uses independent water and pigment settings to soften and mix a watercolor stroke",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "copies straight RGBA exactly at full clone coverage, including transparency",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "FX-007",
+          "status": "ERROR",
+          "checks": [
+            {
+              "name": "repair fixture dimensions",
+              "actual": [
+                128,
+                96
+              ],
+              "expected": [
+                128,
+                96
+              ]
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "clone donor center",
+              "actual": [
+                40,
+                100,
+                180,
+                255
+              ],
+              "expected": [
+                40,
+                100,
+                180,
+                255
+              ]
+            },
+            {
+              "name": "clone exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "clone undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "clone redo restores result",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "clone-second undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects heal",
+              "actual": "heal",
+              "expected": "heal"
+            },
+            {
+              "name": "healing decreases independent defect error",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "heal exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "heal undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects patch",
+              "actual": "patch",
+              "expected": "patch"
+            },
+            {
+              "name": "cancel leaves revision unchanged",
+              "actual": "b1e8c241-3427-4b83-bf7a-1304d7bf9318",
+              "expected": "b1e8c241-3427-4b83-bf7a-1304d7bf9318"
+            },
+            {
+              "name": "cancel leaves original pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "patch decreases independent defect error",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "patch exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "patch undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "entry selects heal",
+              "actual": "heal",
+              "expected": "heal"
+            },
+            {
+              "name": "entry selects patch",
+              "actual": "patch",
+              "expected": "patch"
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "selection exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "clone-selected undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "separate repair layer created",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "original layer untouched",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "separate-clone undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            }
+          ],
+          "reason": "locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smudge\"]').getByLabel('参照元', { exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:19)\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:339:9)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:880:2"
+        }
+      ],
+      "pending": [
+        "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+      ],
+      "reason": "Coverage not complete: Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified."
+    },
+    "browser": {
+      "id": "FX-007",
+      "status": "ERROR",
+      "checks": [
+        {
+          "name": "repair fixture dimensions",
+          "actual": [
+            128,
+            96
+          ],
+          "expected": [
+            128,
+            96
+          ]
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "clone donor center",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
+        },
+        {
+          "name": "clone exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "clone undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "clone redo restores result",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "clone-second undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "healing decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "heal exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "heal undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
+        },
+        {
+          "name": "cancel leaves revision unchanged",
+          "actual": "b1e8c241-3427-4b83-bf7a-1304d7bf9318",
+          "expected": "b1e8c241-3427-4b83-bf7a-1304d7bf9318"
+        },
+        {
+          "name": "cancel leaves original pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "patch undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "selection exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "clone-selected undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "separate repair layer created",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "original layer untouched",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "separate-clone undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        }
+      ],
+      "reason": "locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smudge\"]').getByLabel('参照元', { exact: true })\n\n    at choose (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:137:19)\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:339:9)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:880:2"
+    }
+  },
+  {
+    "id": "HIS-005",
+    "name": "履歴ブラシ・部分復元",
+    "verdict": "未判定",
+    "operation": "old stroke retained / local restoration changed pixel / remote stroke retained / history restoration undo all pixels",
+    "expected": "old stroke retained: true / local restoration changed pixel: true / remote stroke retained: [31,38,51,255] / history restoration undo all pixels: true",
+    "actual": "old stroke retained: true / local restoration changed pixel: true / remote stroke retained: [31,38,51,255] / history restoration undo all pixels: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "snapshot/copy-region comparison, undo and invalid layer mapping / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902400214",
+    "evidence": "03-chat-evidence/runs/45902400214/HIS-005/",
+    "stamp": "2026-11-26T22:07:46.111Z",
+    "result": {
+      "id": "HIS-005",
+      "group": "D",
+      "status": "ERROR",
+      "commit": "8bbcab518725d7c9c77ba09d8a2f07a5b8213e49",
+      "checks": [
+        {
+          "path": "apps/editor/src/historyBrush.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C03-003 history brush respects C06 per-pixel selection only restores selected pixels inside a free-form selection",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C03-003 history brush respects C06 per-pixel selection uses feathered selection alpha as proportional restoration strength",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C03-003 history brush respects C06 per-pixel selection rejects a selection mask from another canvas size without changing pixels",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "path": "apps/editor/src/partialHistoryRestore.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C06-002 cold materialized history recovery restores the authoritative current head only when an image-history miss requires raster baseline data",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C06-002 cold materialized history recovery does not hide unrelated rendering failures or claim a successful restore",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "HIS-005",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "old stroke retained",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "local restoration changed pixel",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "remote stroke retained",
+              "actual": [
+                31,
+                38,
+                51,
+                255
+              ],
+              "expected": [
+                31,
+                38,
+                51,
+                255
+              ]
+            },
+            {
+              "name": "history restoration undo all pixels",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": [
+        "snapshot/copy-region comparison, undo and invalid layer mapping"
+      ],
+      "reason": "Coverage not complete: snapshot/copy-region comparison, undo and invalid layer mapping"
+    },
+    "browser": {
+      "id": "HIS-005",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "old stroke retained",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "local restoration changed pixel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "remote stroke retained",
+          "actual": [
+            31,
+            38,
+            51,
+            255
+          ],
+          "expected": [
+            31,
+            38,
+            51,
+            255
+          ]
+        },
+        {
+          "name": "history restoration undo all pixels",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "AUT-002",
+    "name": "実行時の対象・数値指定",
+    "verdict": "未判定",
+    "operation": "selection not silently switched / non-target layer remains empty / requested target offset rendered / text parameter set on intended layer / numeric opacity affects exported pixels / deleted target unavailable in confirmation UI",
+    "expected": "selection not silently switched: \"31f7a548-ede1-4aae-88b9-9b73994215d3\" / non-target layer remains empty: 0 / requested target offset rendered: true / text parameter set on intended layer: \"QA renamed\" / numeric opacity affects exported pixels: true / deleted target unavailable in confirmation UI: 0",
+    "actual": "selection not silently switched: \"31f7a548-ede1-4aae-88b9-9b73994215d3\" / non-target layer remains empty: 0 / requested target offset rendered: true / text parameter set on intended layer: \"QA renamed\" / numeric opacity affects exported pixels: true / deleted target unavailable in confirmation UI: 0",
+    "problem": "",
+    "improvement": "",
+    "pending": "missing target and parameter types / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45907340239",
+    "evidence": "03-chat-evidence/runs/45907340239/AUT-002/",
+    "stamp": "2026-11-26T22:54:21.134Z",
+    "result": {
+      "id": "AUT-002",
+      "group": "E",
+      "status": "ERROR",
+      "commit": "a9020886bfd7a0d4e881f223ff87722c43c0c795",
+      "checks": [
+        {
+          "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "AUT-002",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "selection not silently switched",
+              "actual": "31f7a548-ede1-4aae-88b9-9b73994215d3",
+              "expected": "31f7a548-ede1-4aae-88b9-9b73994215d3"
+            },
+            {
+              "name": "non-target layer remains empty",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "requested target offset rendered",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "text parameter set on intended layer",
+              "actual": "QA renamed",
+              "expected": "QA renamed"
+            },
+            {
+              "name": "numeric opacity affects exported pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "deleted target unavailable in confirmation UI",
+              "actual": 0,
+              "expected": 0
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": [
+        "missing target and parameter types"
+      ],
+      "reason": "Coverage not complete: missing target and parameter types"
+    },
+    "browser": {
+      "id": "AUT-002",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "selection not silently switched",
+          "actual": "31f7a548-ede1-4aae-88b9-9b73994215d3",
+          "expected": "31f7a548-ede1-4aae-88b9-9b73994215d3"
+        },
+        {
+          "name": "non-target layer remains empty",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "requested target offset rendered",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "text parameter set on intended layer",
+          "actual": "QA renamed",
+          "expected": "QA renamed"
+        },
+        {
+          "name": "numeric opacity affects exported pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "deleted target unavailable in confirmation UI",
+          "actual": 0,
+          "expected": 0
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "AUT-003",
+    "name": "比較・失敗・取消",
+    "verdict": "使える",
+    "operation": "cancel revision unchanged / cancel all pixels unchanged / preview does not commit revision / macro changes expected area / one undo restores all pixels / failed sequence does not create revision / failed sequence retains name / failed sequence retains every pixel / later drawing still possible / undo affects only the later drawing",
+    "expected": "cancel revision unchanged: \"69d3aa3a-4a84-49ac-9646-396426986256\" / cancel all pixels unchanged: true / preview does not commit revision: \"69d3aa3a-4a84-49ac-9646-396426986256\" / macro changes expected area: true / one undo restores all pixels: true / failed sequence does not create revision: \"69d3aa3a-4a84-49ac-9646-396426986256\" / failed sequence retains name: \"Layer 1\" / failed sequence retains every pixel: true / later drawing still possible: true / undo affects only the later drawing: true",
+    "actual": "cancel revision unchanged: \"69d3aa3a-4a84-49ac-9646-396426986256\" / cancel all pixels unchanged: true / preview does not commit revision: \"69d3aa3a-4a84-49ac-9646-396426986256\" / macro changes expected area: true / one undo restores all pixels: true / failed sequence does not create revision: \"69d3aa3a-4a84-49ac-9646-396426986256\" / failed sequence retains name: \"Layer 1\" / failed sequence retains every pixel: true / later drawing still possible: true / undo affects only the later drawing: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "a02367a78c4b879cdbae4a8c1a9c76d79aa8eba5",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45904559207",
+    "evidence": "03-chat-evidence/runs/45904559207/AUT-003/",
+    "stamp": "2026-11-26T22:26:29.429Z",
+    "result": {
+      "id": "AUT-003",
+      "group": "E",
+      "status": "PASS",
+      "commit": "a02367a78c4b879cdbae4a8c1a9c76d79aa8eba5",
+      "checks": [
+        {
+          "path": "apps/editor/src/ui/legacyMacroPreview.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "stages mixed layer, view and history commands before one undoable edit",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "describes the last valid partial result after a failed step without mutating the artwork",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "AUT-003",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "cancel revision unchanged",
+              "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+              "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
+            },
+            {
+              "name": "cancel all pixels unchanged",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "preview does not commit revision",
+              "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+              "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
+            },
+            {
+              "name": "macro changes expected area",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "one undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "failed sequence does not create revision",
+              "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+              "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
+            },
+            {
+              "name": "failed sequence retains name",
+              "actual": "Layer 1",
+              "expected": "Layer 1"
+            },
+            {
+              "name": "failed sequence retains every pixel",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "later drawing still possible",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "undo affects only the later drawing",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        },
+        {
+          "status": "PASS",
+          "reason": "Existing regression subchecks only"
+        }
+      ],
+      "pending": []
+    },
+    "browser": {
+      "id": "AUT-003",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "cancel revision unchanged",
+          "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+          "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
+        },
+        {
+          "name": "cancel all pixels unchanged",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "preview does not commit revision",
+          "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+          "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
+        },
+        {
+          "name": "macro changes expected area",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "one undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "failed sequence does not create revision",
+          "actual": "69d3aa3a-4a84-49ac-9646-396426986256",
+          "expected": "69d3aa3a-4a84-49ac-9646-396426986256"
+        },
+        {
+          "name": "failed sequence retains name",
+          "actual": "Layer 1",
+          "expected": "Layer 1"
+        },
+        {
+          "name": "failed sequence retains every pixel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "later drawing still possible",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "undo affects only the later drawing",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    }
+  },
+  {
+    "id": "AUT-004",
+    "name": "複数作品の一括出力",
+    "verdict": "使える",
+    "operation": "different work ids / failure does not prevent the next file / two real downloadable outputs / output dimensions and every pixel match individual export 512 / output dimensions and every pixel match individual export 256 / both output rows recovered / two distinct saved folder files / folder output identical to original export 512 / folder output identical to original export 256 / exactly one approved overwrite / declined original file untouched / approved overwrite contains correct artwork / first original untouched / second original untouched",
+    "expected": "different work ids: true / failure does not prevent the next file: 1 / two real downloadable outputs: 2 / output dimensions and every pixel match individual export 512: true / output dimensions and every pixel match individual export 256: true / both output rows recovered: 2 / two distinct saved folder files: 2 / folder output identical to original export 512: true / folder output identical to original export 256: true / exactly one approved overwrite: 1 / declined original file untouched: 1 / approved overwrite contains correct artwork: true / first original untouched: true / second original untouched: true",
+    "actual": "different work ids: true / failure does not prevent the next file: 1 / two real downloadable outputs: 2 / output dimensions and every pixel match individual export 512: true / output dimensions and every pixel match individual export 256: true / both output rows recovered: 2 / two distinct saved folder files: 2 / folder output identical to original export 512: true / folder output identical to original export 256: true / exactly one approved overwrite: 1 / declined original file untouched: 1 / approved overwrite contains correct artwork: true / first original untouched: true / second original untouched: true",
+    "problem": "",
+    "improvement": "",
+    "pending": "Real OS folder-picker permission and native file-system behavior require a device; browser used a controlled in-memory folder handle with actual exported PNG bytes.",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "b99967475bcb0fcc13cd77e23929779ae94b1a04",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45902829598",
+    "evidence": "03-chat-evidence/runs/45902829598/AUT-004/",
+    "stamp": "2026-11-26T22:11:24.272Z",
+    "result": {
+      "id": "AUT-004",
+      "group": "E",
+      "status": "PASS",
+      "commit": "b99967475bcb0fcc13cd77e23929779ae94b1a04",
+      "checks": [
+        {
+          "id": "AUT-004",
+          "status": "PASS",
+          "checks": [
+            {
+              "name": "different work ids",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "failure does not prevent the next file",
+              "actual": 1,
+              "expected": 1
+            },
+            {
+              "name": "two real downloadable outputs",
+              "actual": 2,
+              "expected": 2
+            },
+            {
+              "name": "output dimensions and every pixel match individual export 512",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "output dimensions and every pixel match individual export 256",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "both output rows recovered",
+              "actual": 2,
+              "expected": 2
+            },
+            {
+              "name": "two distinct saved folder files",
+              "actual": 2,
+              "expected": 2
+            },
+            {
+              "name": "folder output identical to original export 512",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "folder output identical to original export 256",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "exactly one approved overwrite",
+              "actual": 1,
+              "expected": 1
+            },
+            {
+              "name": "declined original file untouched",
+              "actual": 1,
+              "expected": 1
+            },
+            {
+              "name": "approved overwrite contains correct artwork",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "first original untouched",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "second original untouched",
+              "actual": true,
+              "expected": true
+            }
+          ],
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+        }
+      ],
+      "pending": [],
+      "reason": "Coverage reviewed against saved browser and unit results; original raw run retained."
+    },
+    "browser": {
+      "id": "AUT-004",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "different work ids",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "failure does not prevent the next file",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "two real downloadable outputs",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "name": "output dimensions and every pixel match individual export 512",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "output dimensions and every pixel match individual export 256",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "both output rows recovered",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "name": "two distinct saved folder files",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "name": "folder output identical to original export 512",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "folder output identical to original export 256",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "exactly one approved overwrite",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "declined original file untouched",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "name": "approved overwrite contains correct artwork",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "first original untouched",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "second original untouched",
+          "actual": true,
+          "expected": true
+        }
+      ],
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
+    },
+    "review": {
+      "reviewedEvidence": "03-chat-evidence/runs/45902829598/AUT-004/",
+      "requiredConditions": "Failure/retry, independent outputs, approved and declined overwrite, original preservation",
+      "manual": [
+        "Real OS folder-picker permission and native file-system behavior require a device; browser used a controlled in-memory folder handle with actual exported PNG bytes."
+      ]
+    }
+  },
+  {
+    "id": "AUT-005",
+    "name": "高速呼び出し・共有",
+    "verdict": "使いづらい",
+    "operation": "exported macro JSON contains name / search reopens macro panel / imported-macro-replays / quick-macro-replays / imported macro appears in visible shortcut assignment list",
+    "expected": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: true",
+    "actual": "exported macro JSON contains name: true / search reopens macro panel: true / imported-macro-replays: true / quick-macro-replays: true / imported macro appears in visible shortcut assignment list: false",
+    "problem": "取り込んだ操作セットが実際のショートカット割り当て一覧に表示されない。検索・Quickからの呼び出しと再実行は成功。",
+    "improvement": "動的に追加した操作セットがカスタム選択欄を開く際に最新の一覧へ反映されるか確認し、修正後に割り当て・キー実行を再検査する。",
+    "pending": "ショートカット割り当て・キー実行（一覧に出ないため停止）、未対応操作のブラウザー検査。原本のFAIL記録を維持。",
+    "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
+    "sha": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45903537023",
+    "evidence": "03-chat-evidence/runs/45903537023/AUT-005/",
+    "stamp": "2026-11-26T22:19:04.894Z",
+    "result": {
+      "id": "AUT-005",
+      "group": "E",
+      "status": "FAIL",
+      "commit": "3b812fdc9c7cb6629c8663852d7d50db9ad4b89b",
+      "checks": [
+        {
+          "path": "apps/editor/src/ui/macroAssetImport.test.ts",
+          "status": "PASS",
+          "tests": [
+            {
+              "name": "C05-020 safe macro asset import accepts an existing approved macro format without executing its commands",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05-020 safe macro asset import refuses unsafe, duplicate or empty command sequences",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "C05-020 safe macro asset import refuses oversized and unknown formats before storing anything",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "round-trips editable affine parameters in the existing macro file and rejects invalid scale",
+              "status": "passed",
+              "failure": []
+            }
+          ]
+        },
+        {
+          "id": "AUT-005",
+          "status": "FAIL",
+          "checks": [
+            {
+              "name": "exported macro JSON contains name",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "search reopens macro panel",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "imported-macro-replays",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "quick-macro-replays",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "imported macro appears in visible shortcut assignment list",
+              "actual": false,
+              "expected": true
+            }
+          ],
+          "reason": "Error: imported macro appears in visible shortcut assignment list\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at AUT-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:451:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:800:2"
+        },
+        {
+          "status": "PASS",
+          "reason": "Existing regression subchecks only"
+        }
+      ],
+      "pending": [
+        "export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+      ],
+      "reason": "Coverage not complete: export, asset registration, search attempted; clean-context import, Quick/key/asset invocation and unsupported command still pending"
+    },
+    "browser": {
+      "id": "AUT-005",
+      "status": "FAIL",
+      "checks": [
+        {
+          "name": "exported macro JSON contains name",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "search reopens macro panel",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "quick-macro-replays",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "imported macro appears in visible shortcut assignment list",
+          "actual": false,
+          "expected": true
+        }
+      ],
+      "reason": "Error: imported macro appears in visible shortcut assignment list\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at yes (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:105:26)\n    at AUT-005 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:451:4)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:800:2"
+    }
+  }
+]
