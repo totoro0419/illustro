@@ -88,16 +88,18 @@ export function installWetTools(host:HTMLElement,api:{
   function describe(){
     const context=api.current();
     if(anchor&&anchor.documentId!==context?.documentId){anchor=null;offset=null;}
-    const sourceId=sourceLayer.value;
-    sourceLayer.replaceChildren(new Option('選択してください',''),...api.sources().map(item=>new Option(item.name,item.id)));
+    const sourceId=sourceLayer.value,sources=api.sources();
+    if(anchor&&reference.value!=='merged'&&!sources.some(item=>item.id===anchor?.layerId)){anchor=null;offset=null;}
+    sourceLayer.replaceChildren(new Option('選択してください',''),...sources.map(item=>new Option(item.name,item.id)));
     sourceLayer.value=sourceId&&[...sourceLayer.options].some(o=>o.value===sourceId)?sourceId:'';
     sourceLayer.parentElement!.hidden=reference.value!=='layer'||!needsSource(selected());
-    const ref=reference.value==='merged'?'表示中の全レイヤー':reference.value==='layer'?sourceLayer.selectedOptions[0]?.textContent??'なし':context?.layerName??'なし';
+    const ref=reference.value==='merged'?'表示中の全レイヤー':reference.value==='layer'?sourceLayer.selectedOptions[0]?.textContent??'なし':anchor?.layerName??context?.layerName??'なし';
     const paintMode=selected(),repair=needsSource(paintMode);
     advanced.hidden=repair;
     if(repair&&edge.parentElement!.parentElement!==options)options.append(edge.parentElement!);
     else if(!repair&&edge.parentElement!.parentElement!==fine)fine.prepend(edge.parentElement!);
-    edge.parentElement!.hidden=repair&&paintMode!=='patch';
+    edge.parentElement!.hidden=false;
+    if(edge.parentElement!.firstChild?.nodeType===Node.TEXT_NODE)edge.parentElement!.firstChild.textContent=repair?'境界の硬さ（%）':'水彩のふち（%）';
     target.textContent='参照 '+ref+' ／ 描画先 '+(separate.checked||reference.value==='merged'?'新規レイヤー':context?.layerName??'なし')+
       (anchor&&needsSource(paintMode)?' ／ 採取点 '+Math.floor(anchor.point.x)+', '+Math.floor(anchor.point.y):'')+
       (paintMode==='smudge'||paintMode==='blur'?' ／ 既存の色だけ':paintMode==='mix'?' ／ 描画色を足す':'');
@@ -143,7 +145,7 @@ export function installWetTools(host:HTMLElement,api:{
       const origin=brush==='patch'?{x:Math.min(first.x,tail.x),y:Math.min(first.y,tail.y)}:first;
       const delta=anchor&&(offset&&aligned.checked?offset:{x:anchor.point.x-origin.x,y:anchor.point.y-origin.y});
       return {settings:settings(),source:anchor?.point??null,reference:reference.value==='merged'?'merged':reference.value==='layer'?'layer':'active',
-        sourceLayerId:reference.value==='layer'?sourceLayer.value||null:next.layerId,selectedPatch:transfer(),separate:separate.checked,
+        sourceLayerId:repair&&!transfer()?anchor?.layerId??null:reference.value==='layer'?sourceLayer.value||null:next.layerId,selectedPatch:transfer(),separate:separate.checked,
         offset:delta??{x:0,y:0},points,signal,documentId:next.documentId,targetLayerId:next.layerId,targetRevision:next.revisionId,selectionKey:next.selectionKey};
     };
     status.textContent=pick?'キャンバスで採取する位置を選んでください。':brush==='patch'?(transfer()?'貼り付ける場所までドラッグしてください。':'貼り付け先の対角線をドラッグしてください。'):'離すと一筆の結果を適用します。';
@@ -175,7 +177,9 @@ export function installWetTools(host:HTMLElement,api:{
         const next=api.current();
         if(!first||!next||next.documentId!==context.documentId||pending)return;
         if(pick){
-          anchor={point:first,documentId:next.documentId,layerId:next.layerId,layerName:next.layerName};
+          const picked=reference.value==='layer'?api.sources().find(item=>item.id===sourceLayer.value):{id:next.layerId,name:next.layerName};
+          if(!picked){status.textContent='採取元のレイヤーを選び直してください。';return;}
+          anchor={point:first,documentId:next.documentId,layerId:picked.id,layerName:picked.name};
           offset=null;arm();return;
         }
         const controller=new AbortController();
@@ -239,7 +243,7 @@ export function installWetTools(host:HTMLElement,api:{
   panel.append(summary,options,target,advanced,actions,status);
   host.append(panel);describe();
   return {open:()=>{panel.open=true;arm();},openRepair:(kind:'clone'|'heal'|'patch')=>{
-      leave();mode.value=kind;offset=null;panel.open=true;
+      leave();if(selected()!==kind)anchor=null;mode.value=kind;offset=null;panel.open=true;
       try{localStorage.setItem(key,snapshot());}catch{/* settings remain usable */}
       describe();arm();
     },stop:leave,settings,refresh:describe,

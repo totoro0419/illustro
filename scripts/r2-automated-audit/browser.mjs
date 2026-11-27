@@ -421,6 +421,11 @@ const cases={
   await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
   let after=await png(1,'artwork','clone');eq('clone donor center',rgba(after,48,46),rgba(before,16,30));eq('clone exterior unchanged',outside(after,34,32,63,61),0);
   const redoRevision=await revision();await undo(old,'clone');await page.locator('#redo').evaluate(e=>e.click());await waitRev(redoRevision,true);yes('clone redo restores result',after.data.equals((await png(1,'artwork','clone-redo')).data));await undo(old,'clone-second');
+  const hardness=p.getByLabel('境界の硬さ（%）',{exact:true});await hardness.fill('0');await hardness.press('Tab');await pick(20.5,30.5);old=await revision();await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
+  const soft=await png(1,'artwork','clone-soft');await undo(old,'clone-soft');
+  await hardness.fill('100');await hardness.press('Tab');await pick(20.5,30.5);old=await revision();await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
+  const hard=await png(1,'artwork','clone-hard');eq('hard boundary uses donor RGB at outer sample',rgba(hard,57,46),rgba(before,29,30));yes('soft boundary blends donor and destination',JSON.stringify(rgba(soft,57,46))!==JSON.stringify(rgba(hard,57,46))&&JSON.stringify(rgba(soft,57,46))!==JSON.stringify(rgba(before,57,46)));await undo(old,'clone-hard');
+  await hardness.fill('35');await hardness.press('Tab');
   await openRepair('heal','修復ブラシ','Healing',true);await pick(16.5,30.5);old=await revision();
   await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);after=await png(1,'artwork','heal');
   yes('healing decreases independent defect error',error(after)<error(before));eq('heal exterior unchanged',outside(after,34,32,63,61),0);await undo(old,'heal');
@@ -439,6 +444,11 @@ const cases={
   await openRepair('clone','クローン','Clone');await p.getByLabel('新しいレイヤーに結果を置く',{exact:true}).check();await pick(16.5,30.5);old=await revision();
   await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
   yes('separate repair layer created',await canvas.getAttribute('data-selected-layer-id')!==originalLayer);
+  const firstRepair=await canvas.getAttribute('data-selected-layer-id'),secondOld=await revision();
+  await page.mouse.click(...await coords(72.5,46.5));await waitRev(secondOld);
+  yes('next separate stroke creates its own layer',await canvas.getAttribute('data-selected-layer-id')!==firstRepair);
+  eq('separate stroke retains original source instead of reading previous repair',rgba(await png(1,'active','separate-second'),72,46),rgba(before,40,30));
+  await page.locator('#undo').evaluate(e=>e.click());await waitRev(secondOld,true);
   await selectLayer(originalLayer);yes('original layer untouched',originalPixels.data.equals((await png(1,'active','original-layer-after')).data));
   await undo(old,'separate-clone');
   // Explicit source layer and target on a blank layer. The source remains unchanged.

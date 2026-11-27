@@ -105,7 +105,7 @@ export function paintWet(job:WetJob):Readonly<{pixels:Uint8ClampedArray;changed:
     const index=(y-area.y)*area.width+x-area.x,at=index*4;
     const mask=(selection?.[index]??255)/255;if(!mask)return;
     const old=sample(dest,x,y);
-    const falloff=job.shapePatch?1:clamp((1-distance)/(mode==='patch'?Math.max(.05,1-edge):.6));
+    const falloff=job.shapePatch?1:clamp((1-distance)/(needsSource(mode)?Math.max(.05,1-edge):.6));
     const weight=clamp(strength*falloff*mask);
     let value:Sample;
     if(mode==='clone'||mode==='heal'||mode==='patch'){

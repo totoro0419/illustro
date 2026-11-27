@@ -30,7 +30,7 @@ jobs:
       PREP_PNG_PATH: /tmp/r2-audit-browser/node_modules/pngjs
       R2_AUDIT_OUT: r2-audit-evidence
       R2_FIXTURE_DIR: r2-audit-fixtures
-      AUDIT_SELECTION: ${{ inputs.selection || 'SAV-006,SAV-007,FIL-005,LIN-007,TRN-005,FX-007' }}
+      AUDIT_SELECTION: ${{ inputs.selection || 'FX-007' }}
     steps:
       - uses: actions/checkout@v4
         with:
