@@ -11,11 +11,7 @@
       "apps/editor/src/persistence/contiguousProtection.test.ts"
     ],
     "legacy": "SAVE-SAFETY",
-    "pending": [
-      "actual storage quota exhaustion vs simulated IndexedDB transaction abort",
-      "two-tab concurrent save",
-      "external file changes/copy recovery"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/SAV.md#sav-006"
@@ -29,9 +25,7 @@
     "browser": "SAV-007",
     "unit": [],
     "legacy": null,
-    "pending": [
-      "offline layers/selection/transform/reference/history/filter/macro"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/SAV.md#sav-007"
@@ -160,9 +154,7 @@
       "apps/editor/src/fill/pixels.test.ts"
     ],
     "legacy": null,
-    "pending": [
-      "blank invalid/normal drawing and confirmed fixture now exercised; source modification, exclusion, reopen and invalid fill request still pending"
-    ],
+    "pending": [],
     "initial": "Fresh isolated Chromium context, transparent document 512×384 unless case specifies otherwise",
     "reset": "Close browser context, discard test storage; never touch real work",
     "spec": "docs/product-planning/features/LIN.md#lin-007"

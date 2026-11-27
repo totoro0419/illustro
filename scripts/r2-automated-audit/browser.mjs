@@ -339,7 +339,7 @@ const cases={
   const pixels=opaque(targetBefore),right=Math.max(...pixels.map(p=>p[0]))+1;
   await corner(right+3,Number(await y.inputValue()));eq('other selected layer right edge snap',Number(await x.inputValue()),right);
   await button(t,'取り消す').click();
-  const rulers=await panel('rulers');const rule=page.locator('#guideEnabled');if(!await rule.isVisible())await page.locator('.guide-settings summary').click();await rule.check();
+  await openBox('navigatorBox');const rule=page.locator('#guideEnabled');if(!await rule.isVisible())await page.locator('.guide-settings summary').click();await rule.check();
   const t2=await panel('transform');await choose(t2.locator('select:has(option[value="layer"]):has(option[value="boundary"])'),'layer');if(await button(t2,'変形を始める').isEnabled())await button(t2,'変形を始める').click();
   await choose(t2.locator('select:has(option[value="free"])'),'free');
   for(const label of ['画素','キャンバスの端・中央','複数選択した他のレイヤー'])await t2.getByLabel(label,{exact:true}).uncheck();
@@ -421,10 +421,10 @@ const cases={
   await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
   let after=await png(1,'artwork','clone');eq('clone donor center',rgba(after,48,46),rgba(before,16,30));eq('clone exterior unchanged',outside(after,34,32,63,61),0);
   const redoRevision=await revision();await undo(old,'clone');await page.locator('#redo').evaluate(e=>e.click());await waitRev(redoRevision,true);yes('clone redo restores result',after.data.equals((await png(1,'artwork','clone-redo')).data));await undo(old,'clone-second');
-  const hardness=p.getByLabel('境界の硬さ（%）',{exact:true});await hardness.fill('0');await hardness.press('Tab');await pick(20.5,30.5);old=await revision();await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
-  const soft=await png(1,'artwork','clone-soft');await undo(old,'clone-soft');
+  await openRepair('clone','クローン','Clone');const hardness=p.getByLabel('境界の硬さ（%）',{exact:true});await hardness.fill('0');await hardness.press('Tab');await pick(20.5,30.5);old=await revision();await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
+  const soft=await png(1,'artwork','clone-soft');await undo(old,'clone-soft');await openRepair('clone','クローン','Clone');
   await hardness.fill('100');await hardness.press('Tab');await pick(20.5,30.5);old=await revision();await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
-  const hard=await png(1,'artwork','clone-hard');eq('hard boundary uses donor RGB at outer sample',rgba(hard,57,46),rgba(before,29,30));yes('soft boundary blends donor and destination',JSON.stringify(rgba(soft,57,46))!==JSON.stringify(rgba(hard,57,46))&&JSON.stringify(rgba(soft,57,46))!==JSON.stringify(rgba(before,57,46)));await undo(old,'clone-hard');
+  const hard=await png(1,'artwork','clone-hard');eq('hard boundary uses donor RGB at outer sample',rgba(hard,57,46),rgba(before,29,30));yes('soft boundary blends donor and destination',JSON.stringify(rgba(soft,57,46))!==JSON.stringify(rgba(hard,57,46))&&JSON.stringify(rgba(soft,57,46))!==JSON.stringify(rgba(before,57,46)));await undo(old,'clone-hard');await openRepair('clone','クローン','Clone');
   await hardness.fill('35');await hardness.press('Tab');
   await openRepair('heal','修復ブラシ','Healing',true);await pick(16.5,30.5);old=await revision();
   await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);after=await png(1,'artwork','heal');
@@ -444,7 +444,7 @@ const cases={
   await openRepair('clone','クローン','Clone');await p.getByLabel('新しいレイヤーに結果を置く',{exact:true}).check();await pick(16.5,30.5);old=await revision();
   await page.mouse.click(...await coords(48.5,46.5));await waitRev(old);
   yes('separate repair layer created',await canvas.getAttribute('data-selected-layer-id')!==originalLayer);
-  const firstRepair=await canvas.getAttribute('data-selected-layer-id'),secondOld=await revision();
+  await p.getByText('一筆を反映しました。取り消しで戻せます。',{exact:true}).waitFor();const firstRepair=await canvas.getAttribute('data-selected-layer-id'),secondOld=await revision();
   await page.mouse.click(...await coords(72.5,46.5));await waitRev(secondOld);
   yes('next separate stroke creates its own layer',await canvas.getAttribute('data-selected-layer-id')!==firstRepair);
   eq('separate stroke retains original source instead of reading previous repair',rgba(await png(1,'active','separate-second'),72,46),rgba(before,40,30));
@@ -462,7 +462,7 @@ const cases={
   await selectLayer(originalLayer);yes('specified source layer remains intact',originalPixels.data.equals((await png(1,'active','explicit-source-original')).data));
   await selectLayer(targetLayer);await openRepair('clone','クローン','Clone');
   const aligned=p.getByLabel('次の一筆にも採取元との位置関係を保つ',{exact:true});await aligned.check();await pick(16.5,30.5);
-  old=await revision();await page.mouse.click(...await coords(80.5,20.5));await waitRev(old);
+  old=await revision();await page.mouse.click(...await coords(80.5,20.5));await waitRev(old);await p.getByText('一筆を反映しました。取り消しで戻せます。',{exact:true}).waitFor();
   old=await revision();await page.mouse.click(...await coords(100.5,20.5));await waitRev(old);
   const continuous=await png(1,'active','aligned-clone');eq('aligned clone follows donor offset',rgba(continuous,100,20),rgba(before,36,30));
   await aligned.uncheck();await pick(16.5,30.5);old=await revision();await page.mouse.click(...await coords(80.5,70.5));await waitRev(old);old=await revision();await page.mouse.click(...await coords(100.5,70.5));await waitRev(old);

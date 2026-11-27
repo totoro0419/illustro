@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {buildRegions,fillBoundaries,fillMask,needsLeakingFillReview,paintColorHints,suggestLocalGaps,type FillSettings} from './pixels';
+import {buildRegions,fillBoundaries,fillMask,intersectFillMasks,colorMask,needsLeakingFillReview,paintColorHints,suggestLocalGaps,type FillSettings} from './pixels';
 
 const settings:FillSettings={
   method:'color',tolerance:15,gap:0,opacity:1,color:'#ff0000',erase:false,
@@ -405,4 +405,26 @@ it('D-008 keeps the exterior untouched even when closed-region tracing expands t
   expect(result.alpha[6*width+5]).toBe(255);
   expect(result.alpha[6*width+17]).toBe(255);
   for(let i=0;i<result.alpha.length;i++)if(graph.external[graph.labels[i]!])expect(result.alpha[i]).toBe(0);
+});
+
+describe('R2 mask-aware fill with no active selection',()=>{
+ it('restricts paint and erase to the layer mask even when no selection exists',()=>{
+  const mask={width:3,height:1,alpha:Uint8Array.of(255,128,0)};
+  expect(intersectFillMasks(null,null)).toBeNull();
+  expect(intersectFillMasks(null,mask)).toBe(mask);
+  const original=image(3,1,[10,20,30,255]);
+  const erased=colorMask(original,intersectFillMasks(null,mask)!,{...settings,erase:true},false);
+  expect([...erased]).toEqual([0,0,0,0,10,20,30,127,10,20,30,255]);
+  const painted=colorMask(original,intersectFillMasks(null,mask)!,settings,false);
+  expect([...painted.slice(0,4)]).toEqual([255,0,0,255]);
+  expect([...painted.slice(8,12)]).toEqual([10,20,30,255]);
+  expect([...original]).toEqual([10,20,30,255,10,20,30,255,10,20,30,255]);
+ });
+ it('keeps explicit empty selections empty and intersects two actual masks',()=>{
+  const mask={width:3,height:1,alpha:Uint8Array.of(255,128,0)};
+  const selected={width:3,height:1,alpha:Uint8Array.of(0,255,255)};
+  expect(intersectFillMasks(selected,null)).toBe(selected);
+  expect([...intersectFillMasks(selected,mask)!.alpha]).toEqual([0,128,0]);
+  expect([...intersectFillMasks({...selected,alpha:new Uint8Array(3)},mask)!.alpha]).toEqual([0,0,0]);
+ });
 });
