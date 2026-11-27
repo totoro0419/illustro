@@ -1361,22 +1361,22 @@
     "id": "FIL-005",
     "name": "囲って塗る・消す",
     "verdict": "未判定",
-    "operation": "interior colored / concave exclusion / outside / erased inside / outside erasure retained / erase undo pixel equality / selection confines lasso erase / selected portion erased / closed graph ready / closed graph confirmed / closed interior painted / open interior remains transparent / outside remains transparent / closed region undo restores pixels / alpha lock preserves every alpha value / alpha lock disabled for mask test",
-    "expected": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true / alpha lock preserves every alpha value: 0 / alpha lock disabled for mask test: \"false\"",
-    "actual": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true / alpha lock preserves every alpha value: 0 / alpha lock disabled for mask test: \"false\"",
-    "problem": "選択範囲なし・レイヤーマスクありの場合に塗り候補が空になる不具合。combineSelection(null,targetMask,'intersect') が空のマスクを生成する。",
-    "improvement": "選択なしを無制限として扱い、マスクだけの場合はマスクを直接使用。ライブプレビューと確定候補双方を修正。",
-    "pending": "修正後のマスク内の消去・外側の元画素保護、回帰テスト。",
+    "operation": "interior colored / concave exclusion / outside / erased inside / outside erasure retained / erase undo pixel equality / selection confines lasso erase / selected portion erased / closed graph ready / closed graph confirmed / closed interior painted / open interior remains transparent / outside remains transparent / closed region undo restores pixels / alpha lock preserves every alpha value / alpha lock disabled for mask test / mask interior erased / masked exterior remains transparent / mask outside original pixels protected / inside erase persisted",
+    "expected": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true / alpha lock preserves every alpha value: 0 / alpha lock disabled for mask test: \"false\" / mask interior erased: 0 / masked exterior remains transparent: 0 / mask outside original pixels protected: [31,38,51,255] / inside erase persisted: 0",
+    "actual": "interior colored: true / concave exclusion: 0 / outside: 0 / erased inside: 0 / outside erasure retained: true / erase undo pixel equality: true / selection confines lasso erase: 0 / selected portion erased: 0 / closed graph ready: true / closed graph confirmed: true / closed interior painted: true / open interior remains transparent: 0 / outside remains transparent: 0 / closed region undo restores pixels: true / alpha lock preserves every alpha value: 0 / alpha lock disabled for mask test: \"false\" / mask interior erased: 0 / masked exterior remains transparent: 0 / mask outside original pixels protected: [31,38,51,255] / inside erase persisted: 0",
+    "problem": "",
+    "improvement": "",
+    "pending": "closed-region-only and leak candidate / Undo, selection/mask/alpha protection / ERROR / Implemented subchecks passed, see manifest for coverage gaps",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "a11a4ce6284d9dce535f68c5880b5f816f8b7736",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45936502639",
-    "evidence": "03-chat-evidence/runs/45936502639/FIL-005/",
-    "stamp": "2026-11-27T03:55:32.429Z",
+    "sha": "df44fddd8f9ab9c74cf752dc868925f8e5cdcef7",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45937398801",
+    "evidence": "03-chat-evidence/runs/45937398801/FIL-005/",
+    "stamp": "2026-11-27T04:03:58.776Z",
     "result": {
       "id": "FIL-005",
       "group": "B",
       "status": "ERROR",
-      "commit": "a11a4ce6284d9dce535f68c5880b5f816f8b7736",
+      "commit": "df44fddd8f9ab9c74cf752dc868925f8e5cdcef7",
       "checks": [
         {
           "path": "apps/editor/src/fill/pixels.test.ts",
@@ -1561,12 +1561,22 @@
               "name": "D-008 keeps the exterior untouched even when closed-region tracing expands the edge",
               "status": "passed",
               "failure": []
+            },
+            {
+              "name": "R2 mask-aware fill with no active selection restricts paint and erase to the layer mask even when no selection exists",
+              "status": "passed",
+              "failure": []
+            },
+            {
+              "name": "R2 mask-aware fill with no active selection keeps explicit empty selections empty and intersects two actual masks",
+              "status": "passed",
+              "failure": []
             }
           ]
         },
         {
           "id": "FIL-005",
-          "status": "ERROR",
+          "status": "PASS",
           "checks": [
             {
               "name": "interior colored",
@@ -1647,9 +1657,39 @@
               "name": "alpha lock disabled for mask test",
               "actual": "false",
               "expected": "false"
+            },
+            {
+              "name": "mask interior erased",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "masked exterior remains transparent",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "mask outside original pixels protected",
+              "actual": [
+                31,
+                38,
+                51,
+                255
+              ],
+              "expected": [
+                31,
+                38,
+                51,
+                255
+              ]
+            },
+            {
+              "name": "inside erase persisted",
+              "actual": 0,
+              "expected": 0
             }
           ],
-          "reason": "page.waitForFunction: Timeout 60000ms exceeded.\n    at waitRev (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:15:51)\n    at FIL-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:816:321)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1086:2"
+          "reason": "Implemented subchecks passed, see manifest for coverage gaps"
         }
       ],
       "pending": [
@@ -1660,7 +1700,7 @@
     },
     "browser": {
       "id": "FIL-005",
-      "status": "ERROR",
+      "status": "PASS",
       "checks": [
         {
           "name": "interior colored",
@@ -1741,9 +1781,39 @@
           "name": "alpha lock disabled for mask test",
           "actual": "false",
           "expected": "false"
+        },
+        {
+          "name": "mask interior erased",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "masked exterior remains transparent",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "mask outside original pixels protected",
+          "actual": [
+            31,
+            38,
+            51,
+            255
+          ],
+          "expected": [
+            31,
+            38,
+            51,
+            255
+          ]
+        },
+        {
+          "name": "inside erase persisted",
+          "actual": 0,
+          "expected": 0
         }
       ],
-      "reason": "page.waitForFunction: Timeout 60000ms exceeded.\n    at waitRev (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:15:51)\n    at FIL-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:816:321)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1086:2"
+      "reason": "Implemented subchecks passed, see manifest for coverage gaps"
     }
   },
   {
@@ -2121,21 +2191,21 @@
     "name": "吸着・整列・等間隔配置",
     "verdict": "未判定",
     "operation": "three distinct x positions / left confirmed reference layer / left independent binary alpha coverage / left one undo restores all pixels / center-x confirmed reference layer / center-x independent binary alpha coverage / center-x one undo restores all pixels / right confirmed reference layer / right independent binary alpha coverage / right one undo restores all pixels / top confirmed reference layer / top independent binary alpha coverage / top one undo restores all pixels / center-y confirmed reference layer / center-y independent binary alpha coverage / center-y one undo restores all pixels / bottom confirmed reference layer / bottom independent binary alpha coverage / bottom one undo restores all pixels / spread-x confirmed reference layer / spread-x independent binary alpha coverage / spread-x one undo restores all pixels / spread-y confirmed reference layer / spread-y independent binary alpha coverage / spread-y one undo restores all pixels / canvas center snap exact x / temporary bypass keeps unsnapped x / snap resumes automatically next drag / pixel snapping produces integer x / pixel snapping produces integer y / other selected layer right edge snap",
-    "expected": "three distinct x positions: true / left confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true / canvas center snap exact x: 256 / temporary bypass keeps unsnapped x: true / snap resumes automatically next drag: 256 / pixel snapping produces integer x: 0 / pixel snapping produces integer y: 0 / other selected layer right edge snap: 124",
-    "actual": "three distinct x positions: true / left confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"d0a981eb-b245-4aae-a029-a7a27fd2a787\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true / canvas center snap exact x: 256 / temporary bypass keeps unsnapped x: true / snap resumes automatically next drag: 256 / pixel snapping produces integer x: 0 / pixel snapping produces integer y: 0 / other selected layer right edge snap: 124",
+    "expected": "three distinct x positions: true / left confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true / canvas center snap exact x: 256 / temporary bypass keeps unsnapped x: true / snap resumes automatically next drag: 256 / pixel snapping produces integer x: 0 / pixel snapping produces integer y: 0 / other selected layer right edge snap: 124",
+    "actual": "three distinct x positions: true / left confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / left independent binary alpha coverage: 0 / left one undo restores all pixels: true / center-x confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / center-x independent binary alpha coverage: 0 / center-x one undo restores all pixels: true / right confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / right independent binary alpha coverage: 0 / right one undo restores all pixels: true / top confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / top independent binary alpha coverage: 0 / top one undo restores all pixels: true / center-y confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / center-y independent binary alpha coverage: 0 / center-y one undo restores all pixels: true / bottom confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / bottom independent binary alpha coverage: 0 / bottom one undo restores all pixels: true / spread-x confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / spread-x independent binary alpha coverage: 0 / spread-x one undo restores all pixels: true / spread-y confirmed reference layer: \"f64ad676-dd39-45af-8622-52489ba60648\" / spread-y independent binary alpha coverage: 0 / spread-y one undo restores all pixels: true / canvas center snap exact x: 256 / temporary bypass keeps unsnapped x: true / snap resumes automatically next drag: 256 / pixel snapping produces integer x: 0 / pixel snapping produces integer y: 0 / other selected layer right edge snap: 124",
     "problem": "",
     "improvement": "",
-    "pending": "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending / ERROR / locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.guide-settings summary')\n    - locator resolved to <summary>直線定規</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:342:152)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1086:2",
+    "pending": "left alignment and one-undo scenario added; right/center/top/bottom, both distributions and snap targets/temporary disable still pending / ERROR / locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByLabel('左上 X', { exact: true }) to be visible\n    63 × locator resolved to hidden <input step=\".5\" type=\"number\"/>\n\n    at corner (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:330:42)\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:346:61)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "a11a4ce6284d9dce535f68c5880b5f816f8b7736",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45936502639",
-    "evidence": "03-chat-evidence/runs/45936502639/TRN-005/",
-    "stamp": "2026-11-27T03:55:32.429Z",
+    "sha": "df44fddd8f9ab9c74cf752dc868925f8e5cdcef7",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45937398801",
+    "evidence": "03-chat-evidence/runs/45937398801/TRN-005/",
+    "stamp": "2026-11-27T04:03:58.776Z",
     "result": {
       "id": "TRN-005",
       "group": "C",
       "status": "ERROR",
-      "commit": "a11a4ce6284d9dce535f68c5880b5f816f8b7736",
+      "commit": "df44fddd8f9ab9c74cf752dc868925f8e5cdcef7",
       "checks": [
         {
           "path": "apps/editor/src/transform/groupTransform.test.ts",
@@ -2184,8 +2254,8 @@
             },
             {
               "name": "left confirmed reference layer",
-              "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-              "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+              "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+              "expected": "f64ad676-dd39-45af-8622-52489ba60648"
             },
             {
               "name": "left independent binary alpha coverage",
@@ -2199,8 +2269,8 @@
             },
             {
               "name": "center-x confirmed reference layer",
-              "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-              "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+              "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+              "expected": "f64ad676-dd39-45af-8622-52489ba60648"
             },
             {
               "name": "center-x independent binary alpha coverage",
@@ -2214,8 +2284,8 @@
             },
             {
               "name": "right confirmed reference layer",
-              "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-              "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+              "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+              "expected": "f64ad676-dd39-45af-8622-52489ba60648"
             },
             {
               "name": "right independent binary alpha coverage",
@@ -2229,8 +2299,8 @@
             },
             {
               "name": "top confirmed reference layer",
-              "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-              "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+              "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+              "expected": "f64ad676-dd39-45af-8622-52489ba60648"
             },
             {
               "name": "top independent binary alpha coverage",
@@ -2244,8 +2314,8 @@
             },
             {
               "name": "center-y confirmed reference layer",
-              "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-              "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+              "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+              "expected": "f64ad676-dd39-45af-8622-52489ba60648"
             },
             {
               "name": "center-y independent binary alpha coverage",
@@ -2259,8 +2329,8 @@
             },
             {
               "name": "bottom confirmed reference layer",
-              "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-              "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+              "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+              "expected": "f64ad676-dd39-45af-8622-52489ba60648"
             },
             {
               "name": "bottom independent binary alpha coverage",
@@ -2274,8 +2344,8 @@
             },
             {
               "name": "spread-x confirmed reference layer",
-              "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-              "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+              "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+              "expected": "f64ad676-dd39-45af-8622-52489ba60648"
             },
             {
               "name": "spread-x independent binary alpha coverage",
@@ -2289,8 +2359,8 @@
             },
             {
               "name": "spread-y confirmed reference layer",
-              "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-              "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+              "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+              "expected": "f64ad676-dd39-45af-8622-52489ba60648"
             },
             {
               "name": "spread-y independent binary alpha coverage",
@@ -2333,7 +2403,7 @@
               "expected": 124
             }
           ],
-          "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.guide-settings summary')\n    - locator resolved to <summary>直線定規</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:342:152)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1086:2"
+          "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByLabel('左上 X', { exact: true }) to be visible\n    63 × locator resolved to hidden <input step=\".5\" type=\"number\"/>\n\n    at corner (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:330:42)\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:346:61)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2"
         }
       ],
       "pending": [
@@ -2352,8 +2422,8 @@
         },
         {
           "name": "left confirmed reference layer",
-          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+          "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+          "expected": "f64ad676-dd39-45af-8622-52489ba60648"
         },
         {
           "name": "left independent binary alpha coverage",
@@ -2367,8 +2437,8 @@
         },
         {
           "name": "center-x confirmed reference layer",
-          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+          "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+          "expected": "f64ad676-dd39-45af-8622-52489ba60648"
         },
         {
           "name": "center-x independent binary alpha coverage",
@@ -2382,8 +2452,8 @@
         },
         {
           "name": "right confirmed reference layer",
-          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+          "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+          "expected": "f64ad676-dd39-45af-8622-52489ba60648"
         },
         {
           "name": "right independent binary alpha coverage",
@@ -2397,8 +2467,8 @@
         },
         {
           "name": "top confirmed reference layer",
-          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+          "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+          "expected": "f64ad676-dd39-45af-8622-52489ba60648"
         },
         {
           "name": "top independent binary alpha coverage",
@@ -2412,8 +2482,8 @@
         },
         {
           "name": "center-y confirmed reference layer",
-          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+          "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+          "expected": "f64ad676-dd39-45af-8622-52489ba60648"
         },
         {
           "name": "center-y independent binary alpha coverage",
@@ -2427,8 +2497,8 @@
         },
         {
           "name": "bottom confirmed reference layer",
-          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+          "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+          "expected": "f64ad676-dd39-45af-8622-52489ba60648"
         },
         {
           "name": "bottom independent binary alpha coverage",
@@ -2442,8 +2512,8 @@
         },
         {
           "name": "spread-x confirmed reference layer",
-          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+          "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+          "expected": "f64ad676-dd39-45af-8622-52489ba60648"
         },
         {
           "name": "spread-x independent binary alpha coverage",
@@ -2457,8 +2527,8 @@
         },
         {
           "name": "spread-y confirmed reference layer",
-          "actual": "d0a981eb-b245-4aae-a029-a7a27fd2a787",
-          "expected": "d0a981eb-b245-4aae-a029-a7a27fd2a787"
+          "actual": "f64ad676-dd39-45af-8622-52489ba60648",
+          "expected": "f64ad676-dd39-45af-8622-52489ba60648"
         },
         {
           "name": "spread-y independent binary alpha coverage",
@@ -2501,7 +2571,7 @@
           "expected": 124
         }
       ],
-      "reason": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.guide-settings summary')\n    - locator resolved to <summary>直線定規</summary>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    56 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:342:152)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1086:2"
+      "reason": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"transform\"]').getByLabel('左上 X', { exact: true }) to be visible\n    63 × locator resolved to hidden <input step=\".5\" type=\"number\"/>\n\n    at corner (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:330:42)\n    at TRN-005 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:346:61)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2"
     }
   },
   {
@@ -3588,22 +3658,22 @@
     "id": "FX-007",
     "name": "修復・パッチ・クローン",
     "verdict": "未判定",
-    "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels",
-    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true",
-    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true",
-    "problem": "旧版の整列採取2筆目の画素不一致（45936502639）。境界硬さと採取元保持を修正（1a2e417）。単体7件合格。最新ブラウザー検査は硬さ欄操作で停止。",
-    "improvement": "修復パネルを再表示して操作する。描画確定後の状態を待ち、必要なら整列オフセット処理を修正する。",
-    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / ERROR / locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smudge\"]').getByLabel('境界の硬さ（%）', { exact: true })\n    - locator resolved to <input min=\"0\" step=\"1\" max=\"100\" type=\"number\"/>\n    - fill(\"0\")\n  - attempting fill action\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    60 × waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:424:71)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2",
+    "operation": "repair fixture dimensions / entry selects clone / clone donor center / clone exterior unchanged / clone undo restores all pixels / clone redo restores result / clone-second undo restores all pixels / entry selects clone / clone-soft undo restores all pixels / entry selects clone / hard boundary uses donor RGB at outer sample / soft boundary blends donor and destination / clone-hard undo restores all pixels / entry selects clone / entry selects heal / healing decreases independent defect error / heal exterior unchanged / heal undo restores all pixels / entry selects patch / cancel leaves revision unchanged / cancel leaves original pixels / patch decreases independent defect error / patch exterior unchanged / patch undo restores all pixels / entry selects clone / entry selects heal / entry selects patch / entry selects clone / selection exterior unchanged / clone-selected undo restores all pixels / entry selects clone / separate repair layer created / next separate stroke creates its own layer / separate stroke retains original source instead of reading previous repair / original layer untouched / separate-clone undo restores all pixels / entry selects clone / explicit source copied onto requested layer / specified donor pixel / specified source layer remains intact / entry selects clone / aligned clone follows donor offset",
+    "expected": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects clone: \"clone\" / clone-soft undo restores all pixels: true / entry selects clone: \"clone\" / hard boundary uses donor RGB at outer sample: [220,220,220,255] / soft boundary blends donor and destination: true / clone-hard undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"f7d90a54-5a8c-4a02-95ed-55095e26f10b\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / next separate stroke creates its own layer: true / separate stroke retains original source instead of reading previous repair: [40,100,180,255] / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"3023e35d-ba3f-44e1-b558-25c381784c90\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true / entry selects clone: \"clone\" / aligned clone follows donor offset: [220,220,220,255]",
+    "actual": "repair fixture dimensions: [128,96] / entry selects clone: \"clone\" / clone donor center: [40,100,180,255] / clone exterior unchanged: 0 / clone undo restores all pixels: true / clone redo restores result: true / clone-second undo restores all pixels: true / entry selects clone: \"clone\" / clone-soft undo restores all pixels: true / entry selects clone: \"clone\" / hard boundary uses donor RGB at outer sample: [220,220,220,255] / soft boundary blends donor and destination: true / clone-hard undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / healing decreases independent defect error: true / heal exterior unchanged: 0 / heal undo restores all pixels: true / entry selects patch: \"patch\" / cancel leaves revision unchanged: \"f7d90a54-5a8c-4a02-95ed-55095e26f10b\" / cancel leaves original pixels: true / patch decreases independent defect error: true / patch exterior unchanged: 0 / patch undo restores all pixels: true / entry selects clone: \"clone\" / entry selects heal: \"heal\" / entry selects patch: \"patch\" / entry selects clone: \"clone\" / selection exterior unchanged: 0 / clone-selected undo restores all pixels: true / entry selects clone: \"clone\" / separate repair layer created: true / next separate stroke creates its own layer: true / separate stroke retains original source instead of reading previous repair: [40,100,180,255] / original layer untouched: true / separate-clone undo restores all pixels: true / entry selects clone: \"clone\" / explicit source copied onto requested layer: \"3023e35d-ba3f-44e1-b558-25c381784c90\" / specified donor pixel: [40,100,180,255] / specified source layer remains intact: true / entry selects clone: \"clone\" / aligned clone follows donor offset: [40,100,180,255]",
+    "problem": "計測不一致（アプリ側か検査側か要確認）: aligned clone follows donor offset",
+    "improvement": "",
+    "pending": "Layer-source selection and deletion, selection/mask confinement, separate layer source preservation, aligned/unaligned comparison, touch and performance regression remain to be verified. / FAIL / Error: aligned clone follows donor offset\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at FX-007 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:467:58)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2",
     "environment": "GitHub Actions Ubuntu / headless Chrome / localhost",
-    "sha": "1a2e417021938b8b024641e453d669411dd2cf8f",
-    "url": "https://github.com/totoro0419/illustro/actions/runs/45936942571",
-    "evidence": "03-chat-evidence/runs/45936942571/FX-007/",
-    "stamp": "2026-11-27T03:57:28.292Z",
+    "sha": "df44fddd8f9ab9c74cf752dc868925f8e5cdcef7",
+    "url": "https://github.com/totoro0419/illustro/actions/runs/45937398801",
+    "evidence": "03-chat-evidence/runs/45937398801/FX-007/",
+    "stamp": "2026-11-27T04:03:58.776Z",
     "result": {
       "id": "FX-007",
       "group": "D",
-      "status": "ERROR",
-      "commit": "1a2e417021938b8b024641e453d669411dd2cf8f",
+      "status": "FAIL",
+      "commit": "df44fddd8f9ab9c74cf752dc868925f8e5cdcef7",
       "checks": [
         {
           "path": "apps/editor/src/wet/paint.test.ts",
@@ -3648,7 +3718,7 @@
         },
         {
           "id": "FX-007",
-          "status": "ERROR",
+          "status": "FAIL",
           "checks": [
             {
               "name": "repair fixture dimensions",
@@ -3700,9 +3770,224 @@
               "name": "clone-second undo restores all pixels",
               "actual": true,
               "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "clone-soft undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "hard boundary uses donor RGB at outer sample",
+              "actual": [
+                220,
+                220,
+                220,
+                255
+              ],
+              "expected": [
+                220,
+                220,
+                220,
+                255
+              ]
+            },
+            {
+              "name": "soft boundary blends donor and destination",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "clone-hard undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "entry selects heal",
+              "actual": "heal",
+              "expected": "heal"
+            },
+            {
+              "name": "healing decreases independent defect error",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "heal exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "heal undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects patch",
+              "actual": "patch",
+              "expected": "patch"
+            },
+            {
+              "name": "cancel leaves revision unchanged",
+              "actual": "f7d90a54-5a8c-4a02-95ed-55095e26f10b",
+              "expected": "f7d90a54-5a8c-4a02-95ed-55095e26f10b"
+            },
+            {
+              "name": "cancel leaves original pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "patch decreases independent defect error",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "patch exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "patch undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "entry selects heal",
+              "actual": "heal",
+              "expected": "heal"
+            },
+            {
+              "name": "entry selects patch",
+              "actual": "patch",
+              "expected": "patch"
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "selection exterior unchanged",
+              "actual": 0,
+              "expected": 0
+            },
+            {
+              "name": "clone-selected undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "separate repair layer created",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "next separate stroke creates its own layer",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "separate stroke retains original source instead of reading previous repair",
+              "actual": [
+                40,
+                100,
+                180,
+                255
+              ],
+              "expected": [
+                40,
+                100,
+                180,
+                255
+              ]
+            },
+            {
+              "name": "original layer untouched",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "separate-clone undo restores all pixels",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "explicit source copied onto requested layer",
+              "actual": "3023e35d-ba3f-44e1-b558-25c381784c90",
+              "expected": "3023e35d-ba3f-44e1-b558-25c381784c90"
+            },
+            {
+              "name": "specified donor pixel",
+              "actual": [
+                40,
+                100,
+                180,
+                255
+              ],
+              "expected": [
+                40,
+                100,
+                180,
+                255
+              ]
+            },
+            {
+              "name": "specified source layer remains intact",
+              "actual": true,
+              "expected": true
+            },
+            {
+              "name": "entry selects clone",
+              "actual": "clone",
+              "expected": "clone"
+            },
+            {
+              "name": "aligned clone follows donor offset",
+              "actual": [
+                40,
+                100,
+                180,
+                255
+              ],
+              "expected": [
+                220,
+                220,
+                220,
+                255
+              ]
             }
           ],
-          "reason": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smudge\"]').getByLabel('境界の硬さ（%）', { exact: true })\n    - locator resolved to <input min=\"0\" step=\"1\" max=\"100\" type=\"number\"/>\n    - fill(\"0\")\n  - attempting fill action\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    60 × waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:424:71)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2"
+          "reason": "Error: aligned clone follows donor offset\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at FX-007 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:467:58)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2"
         }
       ],
       "pending": [
@@ -3712,7 +3997,7 @@
     },
     "browser": {
       "id": "FX-007",
-      "status": "ERROR",
+      "status": "FAIL",
       "checks": [
         {
           "name": "repair fixture dimensions",
@@ -3764,9 +4049,224 @@
           "name": "clone-second undo restores all pixels",
           "actual": true,
           "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "clone-soft undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "hard boundary uses donor RGB at outer sample",
+          "actual": [
+            220,
+            220,
+            220,
+            255
+          ],
+          "expected": [
+            220,
+            220,
+            220,
+            255
+          ]
+        },
+        {
+          "name": "soft boundary blends donor and destination",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "clone-hard undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "healing decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "heal exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "heal undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
+        },
+        {
+          "name": "cancel leaves revision unchanged",
+          "actual": "f7d90a54-5a8c-4a02-95ed-55095e26f10b",
+          "expected": "f7d90a54-5a8c-4a02-95ed-55095e26f10b"
+        },
+        {
+          "name": "cancel leaves original pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch decreases independent defect error",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "patch exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "patch undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "entry selects heal",
+          "actual": "heal",
+          "expected": "heal"
+        },
+        {
+          "name": "entry selects patch",
+          "actual": "patch",
+          "expected": "patch"
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "selection exterior unchanged",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "name": "clone-selected undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "separate repair layer created",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "next separate stroke creates its own layer",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "separate stroke retains original source instead of reading previous repair",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
+        },
+        {
+          "name": "original layer untouched",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "separate-clone undo restores all pixels",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "explicit source copied onto requested layer",
+          "actual": "3023e35d-ba3f-44e1-b558-25c381784c90",
+          "expected": "3023e35d-ba3f-44e1-b558-25c381784c90"
+        },
+        {
+          "name": "specified donor pixel",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            40,
+            100,
+            180,
+            255
+          ]
+        },
+        {
+          "name": "specified source layer remains intact",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "name": "entry selects clone",
+          "actual": "clone",
+          "expected": "clone"
+        },
+        {
+          "name": "aligned clone follows donor offset",
+          "actual": [
+            40,
+            100,
+            180,
+            255
+          ],
+          "expected": [
+            220,
+            220,
+            220,
+            255
+          ]
         }
       ],
-      "reason": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-tool-panel=\"smudge\"]').getByLabel('境界の硬さ（%）', { exact: true })\n    - locator resolved to <input min=\"0\" step=\"1\" max=\"100\" type=\"number\"/>\n    - fill(\"0\")\n  - attempting fill action\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    60 × waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n\n    at FX-007 (/home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:424:71)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2"
+      "reason": "Error: aligned clone follows donor offset\n    at eq (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:104:137)\n    at FX-007 (file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:467:58)\n    at async file:///home/runner/work/illustro/illustro/scripts/r2-automated-audit/browser.mjs:1096:2"
     }
   },
   {
